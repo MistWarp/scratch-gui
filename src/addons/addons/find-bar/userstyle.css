@@ -17,7 +17,7 @@
 .sa-find-wrapper {
   overflow: visible;
   position: relative;
-  height: 2rem;
+  height: 100%;
   width: 100%;
   max-width: 16em;
 }
@@ -27,11 +27,12 @@
   top: -6px;
   z-index: 100;
   width: 100%;
+  height: 100%;
   max-width: 16em;
   position: relative;
   padding: 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: 15px;
   margin-top: 6px;
 }
 
@@ -56,10 +57,10 @@
   width: 100%;
   box-sizing: border-box !important;
   /* !important required for extension, because CSS injection method (and hence order) differs from addon */
-  height: 1.5rem;
+  height: 100%;
 
   /* Change Scratch default styles */
-  border-radius: 0.25rem;
+  border-radius: 10px;
   font-size: 0.75rem;
   padding-left: 0.4em;
 }
@@ -76,12 +77,11 @@
   font-size: 0.75rem;
   line-height: 1;
   overflow-y: auto;
-  min-height: 128px;
-  max-height: 65vh;
   user-select: none;
   max-width: 100%;
-  margin-top: 6px;
+  margin-top: 3px;
   border: none;
+  height: 100%;
 }
 
 .sa-find-dropdown-out.visible > .sa-find-dropdown {
