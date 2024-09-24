@@ -36,6 +36,19 @@ export default async function ({ addon, console, msg }) {
     setPaused(true);
     setInterfaceVisible(true);
   };
+  
+  const clear = () => {
+    logsTab.clearLogs();
+  };
+
+  const hide = () => {
+    setInterfaceVisible(false);
+  }
+
+  const show = () => {
+    setInterfaceVisible(true);
+  }
+
   addon.tab.addBlock("\u200B\u200Bbreakpoint\u200B\u200B", {
     args: [],
     displayName: msg("block-breakpoint"),
@@ -62,6 +75,23 @@ export default async function ({ addon, console, msg }) {
       logMessage(content, thread, "error");
     },
   });
+  addon.tab.addBlock("\u200B\u200Bclear\u200B\u200B", {
+    args: [],
+    displayName: "clear",
+    callback: clear,
+  });
+  addon.tab.addBlock("\u200B\u200Bshow\u200B\u200B", {
+    args: [],
+    displayName: "show debugger",
+    callback: show,
+  });
+  addon.tab.addBlock("\u200B\u200Bhide\u200B\u200B", {
+    args: [],
+    displayName: "hide debugger",
+    callback: hide,
+  });
+
+  console.log(logsTab)
 
   const vm = addon.tab.traps.vm;
   await new Promise((resolve, reject) => {

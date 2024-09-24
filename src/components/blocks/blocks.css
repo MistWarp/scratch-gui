@@ -43,8 +43,10 @@
 .blocks :global(.blocklyToolboxDiv) {
     border-right: 1px solid $ui-black-transparent;
     border-bottom: 1px solid $ui-black-transparent;
+    border-radius: 10px;
     box-sizing: content-box;
-    height: calc(100% - 3.25rem) !important;
+    height: calc(100% - 4.25rem) !important;
+    top: 0.5rem;
 
     /*
         For now, the layout cannot support scrollbars in the category menu.
@@ -58,6 +60,7 @@
 [dir="rtl"] .blocks :global(.blocklyToolboxDiv) {
     border-right: none;
     border-left: 1px solid $ui-black-transparent;
+    border-radius: 10px;
 }
 
 .blocks :global(.blocklyToolboxDiv::-webkit-scrollbar) {
@@ -67,6 +70,7 @@
 .blocks :global(.blocklyFlyout) {
     border-right: 1px solid $ui-black-transparent;
     box-sizing: content-box;
+    border-radius: 10px;
 }
 
 [dir="rtl"] .blocks :global(.blocklyFlyout) {

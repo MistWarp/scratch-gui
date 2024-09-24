@@ -23,6 +23,11 @@ const messages = defineMessages({
         description: 'Label for the size monitor when shown on the stage',
         id: 'gui.opcodeLabels.size'
     },
+    looks_costumes: {
+        defaultMessage: 'costumes',
+        description: 'Label for the costumes monitor when shown on the stage',
+        id: 'gui.opcodeLabels.costumes'
+    },
     looks_costumename: {
         defaultMessage: 'costume name',
         description: 'Label for the costume name monitor when shown on the stage',
@@ -157,6 +162,7 @@ class OpcodeLabels {
 
             // Looks
             looks_size: {category: 'looks'},
+            looks_costumes: {category: 'looks'},
             looks_costumenumbername: {category: 'looks'},
             looks_backdropnumbername: {category: 'looks'},
             looks_backdropname: {category: 'looks'},
@@ -207,6 +213,7 @@ class OpcodeLabels {
 
         // Looks
         this._opcodeMap.looks_size.labelFn = () => this._translator(messages.looks_size);
+        this._opcodeMap.looks_costumes.labelFn = () => this._translator(messages.looks_costumes);
         this._opcodeMap.looks_costumenumbername.labelFn = params => {
             if (params.NUMBER_NAME === 'number') {
                 return this._translator(messages.looks_costumenumber);
