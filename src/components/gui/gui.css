@@ -75,12 +75,13 @@
 .tab {
     flex-grow: 1;
     height: 80%;
-    margin-bottom: 0;
+    margin-bottom: 5px;
+    margin-right: 12px;
 
-    border-radius: 1rem 1rem 0 0;
+    border-radius: 10px;
     border: 1px solid $ui-black-transparent;
 
-    padding: 0.125rem 1.25rem 0;
+    padding: 15px;
     font-size: 0.75rem;
 
     background-color: $ui-tertiary;
@@ -122,11 +123,11 @@
 }
 
 .tab:hover {
-  background-color: $ui-primary;
+  border-color: $looks-secondary;
 }
 
 .tab.is-selected {
-    height: 90%;
+    height: 80%;
     color: $looks-secondary;
     background-color: $ui-white;
     z-index: 4; /* Make sure selected is always above */

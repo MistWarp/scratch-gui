@@ -3,8 +3,8 @@
 .menu {
     position: absolute;
     border: 1px solid $ui-black-transparent;
-    border-radius: 0 0 8px 8px;
-    background-color: $menu-bar-background;
+    border-radius: 10px;
+    background-color: $ui-transparent;
     padding: 0;
     margin: 0;
     min-width: 186px;

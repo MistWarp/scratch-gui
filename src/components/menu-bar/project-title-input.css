@@ -13,7 +13,7 @@ can set a width for example or what it should do in a flex box (eg. grow).
     border-radius: $form-radius;
     -webkit-border-radius: $form-radius;
     -moz-border-radius: $form-radius;
-    background-color: $project-title-inactive;
+    background-color: $ui-transparent;
     background-clip: padding-box;
     -webkit-background-clip: padding-box;
     height: auto;

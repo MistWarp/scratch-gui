@@ -54,14 +54,14 @@
 [dir="rtl"] .button:last-child,
 .button:first-child:focus::before,
 [dir="rtl"] .button:last-child:focus::before {
-    border-radius: $form-radius 0 0 $form-radius;
+    border-radius: 10px 0 0 10px;
 }
 
 .button:last-child,
 [dir="rtl"] .button:first-child,
 .button:last-child:focus::before,
 [dir="rtl"] .button:first-child:focus::before {
-    border-radius: 0 $form-radius $form-radius 0;
+    border-radius: 0 10px 10px 0;
 }
 
 /* selected button styling */

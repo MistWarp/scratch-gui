@@ -64,7 +64,7 @@
 .stage-button {
     display: block;
     border: 1px solid $ui-black-transparent;
-    border-radius: $form-radius;
+    border-radius: 10px;
     width: calc(2rem + 2px);
     height: calc(2rem + 2px);
     background: $ui-white;
