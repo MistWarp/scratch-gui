@@ -106,6 +106,40 @@ const motion = function (isInitialSetup, isStage, targetId, colors) {
                 </shadow>
             </value>
         </block>
+        <block type="motion_pointtowards_xy">
+            <value name="X">
+                <shadow id="pointx" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+            <value name="Y">
+                <shadow id="pointy" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="motion_pointtowards_xyfrom">
+            <value name="X">
+                <shadow id="pointx" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+            <value name="Y">
+                <shadow id="pointy" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+            <value name="FROMX">
+                <shadow id="pointx" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+            <value name="FROMY">
+                <shadow id="pointy" type="math_number">
+                    <field name="NUM">0</field>
+                </shadow>
+            </value>
+        </block>
         ${blockSeparator}
         <block type="motion_changexby">
             <value name="DX">
@@ -292,6 +326,7 @@ const looks = function (isInitialSetup, isStage, targetId, costumeName, backdrop
             <block id="${targetId}_costumenumbername" type="looks_costumenumbername"/>
             <block id="backdropnumbername" type="looks_backdropnumbername"/>
             <block id="${targetId}_size" type="looks_size"/>
+            <block id="${targetId}_costumes" type="looks_costumes"/>
         `}
         ${categorySeparator}
     </category>
@@ -424,6 +459,10 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
         <block id="wait_until" type="control_wait_until"/>
         <block id="repeat_until" type="control_repeat_until"/>
         <block id="while" type="control_while"/>
+        ${blockSeparator}
+        <block type="control_incr_counter" id="control_incr_counter"/>
+        <block type="control_get_counter" id="control_get_counter"/>
+        <block type="control_clear_counter" id="control_clear_counter"/>
         ${blockSeparator}
         <block type="control_stop"/>
         ${blockSeparator}
@@ -715,6 +754,8 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
             </value>
         </block>
         ${categorySeparator}
+        <block type="operator_pi"/>
+        <block type="operator_newline"/>
     </category>
     `;
 };

@@ -37,7 +37,7 @@
 
 [dir="ltr"] .blocklyFlyout.sa-flyoutClose,
 [dir="ltr"] .blocklyFlyoutScrollbar.sa-flyoutClose {
-  margin-left: calc(0px - var(--sa-flyout-width) - 10px);
+  margin-left: calc(0px - var(--sa-flyout-width) - 100px);
 }
 
 [dir="rtl"] .blocklyFlyout.sa-flyoutClose,

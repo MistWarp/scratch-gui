@@ -73,6 +73,12 @@ const blockColors = {
         tertiary: '#3aa8a4',
         quaternary: '#3aa8a4'
     },
+    patch: {
+        primary: '#2DA4A0',
+        secondary: '#66BDBA',
+        tertiary: '#24827F',
+        quaternary: '#1B615F'
+    },
     text: '#FFFFFF',
     workspace: '#F9F9F9',
     toolboxHover: '#4C97FF',

@@ -2,9 +2,10 @@
 
 .menu {
     position: absolute;
-    border: 1px solid $ui-black-transparent;
+    border: 2px solid $looks-secondary;
     border-radius: 10px;
-    background-color: $ui-transparent;
+    background-color: $ui-secondary;
+    color: $text-primary;
     padding: 0;
     margin: 0;
     min-width: 186px;
