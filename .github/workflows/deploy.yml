@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and deploy
 
 on:
   workflow_dispatch:
@@ -23,7 +23,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: npm
     - run: npm ci
     - run: npm run build
       env:
