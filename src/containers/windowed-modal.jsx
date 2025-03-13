@@ -36,23 +36,15 @@ class WindowedModal extends React.Component {
         
         // Handle initial visibility
         if (this.window) {
-            if (this.props.visible !== false) {
-                this.window.show();
-            } else {
+            if (this.props.visible === false) {
                 this.window.hide();
+            } else {
+                this.window.show();
             }
         }
     }
     
-    componentWillUnmount () {
-        this.removeEventListeners();
-        // Only close the window if we created it, not if we reused an existing one
-        if (this.window && this.createdWindow) {
-            this.window.close();
-        }
-    }
-    
-    componentDidUpdate(prevProps) {
+    componentDidUpdate (prevProps) {
         // Handle visibility changes
         if (this.props.visible !== prevProps.visible) {
             if (this.props.visible && !this.window) {
@@ -68,10 +60,10 @@ class WindowedModal extends React.Component {
         
         // Show/hide window based on visibility
         if (this.window) {
-            if (this.props.visible !== false) {
-                this.window.show();
-            } else {
+            if (this.props.visible === false) {
                 this.window.hide();
+            } else {
+                this.window.show();
             }
         }
         
@@ -81,7 +73,15 @@ class WindowedModal extends React.Component {
         }
     }
     
-    createWindow() {
+    componentWillUnmount () {
+        this.removeEventListeners();
+        // Only close the window if we created it, not if we reused an existing one
+        if (this.window && this.createdWindow) {
+            this.window.close();
+        }
+    }
+    
+    createWindow () {
         // Prevent creating duplicate windows
         if (this.window) {
             return;
@@ -103,10 +103,7 @@ class WindowedModal extends React.Component {
             id,
             contentLabel,
             className = '',
-            fullScreen = false,
-            headerImage,
-            onHelp,
-            children
+            fullScreen = false
         } = this.props;
         
         // Determine window size based on content type
@@ -180,7 +177,7 @@ class WindowedModal extends React.Component {
         // Don't auto-show here, let componentDidUpdate handle visibility
     }
     
-    renderContent() {
+    renderContent () {
         if (!this.contentContainer) return null;
         
         const {
@@ -188,11 +185,8 @@ class WindowedModal extends React.Component {
             headerImage,
             contentLabel,
             onHelp,
-            onRequestClose,
             isRtl,
-            fullScreen,
             showHeader = false,
-            intl,
             locale,
             messages
         } = this.props;
@@ -243,7 +237,7 @@ class WindowedModal extends React.Component {
                 // Header image
                 headerImage && React.createElement('img', {
                     src: headerImage,
-                    style: { marginRight: '1rem', maxHeight: '24px' },
+                    style: {marginRight: '1rem', maxHeight: '24px'},
                     draggable: false
                 }),
                 // Title
@@ -352,7 +346,6 @@ WindowedModal.propTypes = {
     id: PropTypes.string.isRequired,
     isRtl: PropTypes.bool,
     onRequestClose: PropTypes.func,
-    onRequestOpen: PropTypes.func,
     children: PropTypes.node,
     className: PropTypes.string,
     contentLabel: PropTypes.oneOfType([
@@ -360,7 +353,6 @@ WindowedModal.propTypes = {
         PropTypes.object
     ]).isRequired,
     fullScreen: PropTypes.bool,
-    headerClassName: PropTypes.string,
     headerImage: PropTypes.string,
     onHelp: PropTypes.func,
     showHeader: PropTypes.bool,
@@ -381,19 +373,15 @@ const ConnectedWindowedModal = connect(
 )(WindowedModal);
 
 // Wrapper component to access store from context
-class WindowedModalWithStore extends React.Component {
-    static contextTypes = {
-        store: PropTypes.object
-    };
-    
-    render () {
-        return (
-            <ConnectedWindowedModal
-                {...this.props}
-                store={this.context.store}
-            />
-        );
-    }
-}
+const WindowedModalWithStore = (props, context) => (
+    <ConnectedWindowedModal
+        {...props}
+        store={context.store}
+    />
+);
+
+WindowedModalWithStore.contextTypes = {
+    store: PropTypes.object
+};
 
 export default WindowedModalWithStore;
