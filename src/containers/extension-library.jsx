@@ -42,12 +42,22 @@ const translateGalleryItem = (extension, locale) => ({
 let cachedGallery = null;
 
 const fetchLibrary = async () => {
-    const res = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
-    if (!res.ok) {
-        throw new Error(`HTTP status ${res.status}`);
+    // Fetch from TurboWarp extensions
+    const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
+    if (!twRes.ok) {
+        throw new Error(`TurboWarp extensions: HTTP status ${twRes.status}`);
     }
-    const data = await res.json();
-    return data.extensions.map(extension => ({
+    const twData = await twRes.json();
+    
+    // Fetch from Mistium extensions
+    const mistiumRes = await fetch('https://extensions.mistium.com/generated-metadata/extensions-v0.json');
+    if (!mistiumRes.ok) {
+        throw new Error(`Mistium extensions: HTTP status ${mistiumRes.status}`);
+    }
+    const mistiumData = await mistiumRes.json();
+    
+    // Process TurboWarp extensions
+    const twExtensions = twData.extensions.map(extension => ({
         name: extension.name,
         nameTranslations: extension.nameTranslations || {},
         description: extension.description,
@@ -82,6 +92,46 @@ const fetchLibrary = async () => {
         incompatibleWithScratch: true,
         featured: true
     }));
+    
+    // Process Mistium extensions
+    const mistiumExtensions = mistiumData.extensions.map(extension => ({
+        name: extension.name,
+        nameTranslations: extension.nameTranslations || {},
+        description: extension.description,
+        descriptionTranslations: extension.descriptionTranslations || {},
+        extensionId: extension.id,
+        extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
+        iconURL: `https://extensions.mistium.com/${extension.image || 'images/unknown.svg'}`,
+        tags: ['mistium', 'tw'],
+        credits: [
+            ...(extension.by || []),
+            ...(extension.original || [])
+        ].map(credit => {
+            if (credit.link) {
+                return (
+                    <a
+                        href={credit.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={credit.name}
+                    >
+                        {credit.name}
+                    </a>
+                );
+            }
+            return credit.name;
+        }),
+        docsURI: null,
+        samples: extension.samples ? extension.samples.map(sample => ({
+            href: `${process.env.ROOT}editor?project_url=https://extensions-mistium.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+            text: sample
+        })) : null,
+        incompatibleWithScratch: true,
+        featured: true
+    }));
+    
+    // Combine both extension sets
+    return [...twExtensions, ...mistiumExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {
