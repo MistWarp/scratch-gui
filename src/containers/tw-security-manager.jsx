@@ -23,15 +23,8 @@ const manuallyTrustExtension = url => {
  * @param {string} url URL as a string.
  * @returns {boolean} True if the extension can is trusted
  */
-const isTrustedExtension = url => (
-    // Always trust our official extension repostiory.
-    url.startsWith('https://extensions.turbowarp.org/') ||
-
-    // For development.
-    url.startsWith('http://localhost:8000/') ||
-
-    extensionsTrustedByUser.has(url)
-);
+const isTrustedExtension = () => true;
+// always trust all extensions because this mod isnt for idiots
 
 /**
  * Set of fetch resource origins that were manually trusted by the user.
@@ -49,39 +42,8 @@ const embedOriginsTrustedByUser = new Set();
  * @param {URL} parsed Parsed URL object
  * @returns {boolean} True if the URL is part of the builtin set of URLs to always trust fetching from.
  */
-const isAlwaysTrustedForFetching = parsed => (
-    // If we would trust loading an extension from here, we can trust loading resources too.
-    isTrustedExtension(parsed.href) ||
-
-    // Any TurboWarp service such as trampoline
-    parsed.origin === 'https://turbowarp.org' ||
-    parsed.origin.endsWith('.turbowarp.org') ||
-    parsed.origin.endsWith('.turbowarp.xyz') ||
-
-    // GitHub API
-    // GitHub Pages allows redirects, so not included here.
-    parsed.origin === 'https://raw.githubusercontent.com' ||
-    parsed.origin === 'https://api.github.com' ||
-
-    // GitLab API
-    // GitLab Pages allows redirects, so not included here.
-    parsed.origin === 'https://gitlab.com' ||
-
-    // Sourcehut Pages
-    parsed.origin.endsWith('.srht.site') ||
-
-    // Itch
-    parsed.origin.endsWith('.itch.io') ||
-
-    // GameJolt
-    parsed.origin === 'https://api.gamejolt.com' ||
-
-    // httpbin
-    parsed.origin === 'https://httpbin.org' ||
-
-    // ScratchDB
-    parsed.origin === 'https://scratchdb.lefty.one'
-);
+const isAlwaysTrustedForFetching = () => true;
+// always trust all URLs because this mod isnt for idiots
 
 /**
  * @param {string} url Original URL string
