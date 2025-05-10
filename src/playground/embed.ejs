@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="google" value="notranslate">
+    <!-- OpenGraph Meta Tags for Discord/Social Embeds -->
+    <meta property="og:title" content="<%= htmlWebpackPlugin.options.title %>" />
+    <meta property="og:description" content="An embedded <%= htmlWebpackPlugin.options.APP_NAME %> project" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="<%= htmlWebpackPlugin.options.root %>images/apple-touch-icon.png" />
+    <meta property="og:url" content="https://warp.mistium.com/" />
     <title><%= htmlWebpackPlugin.options.title %></title>
     <style>
       .splash-screen {
