@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="google" value="notranslate">
-    <meta name="description" content="MistWarp is a Scratch mod with a compiler to run projects faster, dark mode for your eyes, a bunch of addons to improve the editor, and more." />
-    <title>MistWarp - Run Scratch projects faster</title>
+    <meta name="description" content="MistWarp is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations." />
+    <!-- OpenGraph Meta Tags for Discord/Social Embeds -->
+    <meta property="og:title" content="MistWarp - Enhance Your Scratch Experience" />
+    <meta property="og:description" content="MistWarp is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="images/apple-touch-icon.png" />
+    <meta property="og:url" content="https://warp.mistium.com/" />
+    <title>MistWarp - Enhance Your Scratch Experience</title>
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
     
       <link rel="manifest" href="manifest.webmanifest">
@@ -132,9 +138,12 @@
         var splash = document.querySelector('.spash-waiting-for-js');
         splash.setAttribute('data-theme', theme);
         if (theme !== 'dark') {
-          
+          if () {
+            splash.style.backgroundColor = accent;
+            splash.style.color = 'white';
+          } else {
             splash.style.color = accent;
-          
+          }
         }
         splash.hidden = false;
 
