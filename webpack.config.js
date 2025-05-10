@@ -50,8 +50,10 @@ const base = {
     },
     output: {
         library: 'GUI',
-        filename: process.env.NODE_ENV === 'production' ? `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
-        chunkFilename: process.env.NODE_ENV === 'production' ? `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
+        filename: process.env.NODE_ENV === 'production' ?
+            `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
+        chunkFilename: process.env.NODE_ENV === 'production' ?
+            `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
         publicPath: root
     },
     resolve: {
@@ -190,7 +192,7 @@ module.exports = [
                 chunks: ['editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'editor.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
@@ -198,14 +200,14 @@ module.exports = [
                 chunks: ['player'],
                 template: 'src/playground/index.ejs',
                 filename: 'index.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['fullscreen'],
                 template: 'src/playground/index.ejs',
                 filename: 'fullscreen.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({

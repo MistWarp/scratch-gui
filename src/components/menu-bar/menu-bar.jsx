@@ -15,7 +15,7 @@ import CommunityButton from './community-button.jsx';
 import ShareButton from './share-button.jsx';
 import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import Divider from '../divider/divider.jsx';
-import SaveStatus from './save-status.jsx';
+// import SaveStatus from './save-status.jsx';
 import ProjectWatcher from '../../containers/project-watcher.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
@@ -84,9 +84,9 @@ import collectMetadata from '../../lib/collect-metadata';
 
 import styles from './menu-bar.css';
 
-import helpIcon from '../../lib/assets/icon--tutorials.svg';
-import mystuffIcon from './icon--mystuff.png';
-import profileIcon from './icon--profile.png';
+// import helpIcon from '../../lib/assets/icon--tutorials.svg';
+// import mystuffIcon from './icon--mystuff.png';
+// import profileIcon from './icon--profile.png';
 import remixIcon from './icon--remix.svg';
 import dropdownCaret from './dropdown-caret.svg';
 import aboutIcon from './icon--about.svg';
@@ -107,13 +107,13 @@ import SeeInsideButton from './tw-see-inside.jsx';
 import {notScratchDesktop} from '../../lib/isScratchDesktop.js';
 import {APP_NAME} from '../../lib/brand.js';
 
-const ariaMessages = defineMessages({
+/* const ariaMessages = defineMessages({
     tutorials: {
         id: 'gui.menuBar.tutorialsLibrary',
         defaultMessage: 'Tutorials',
         description: 'accessibility text for the tutorials button'
     }
-});
+}); */
 
 const twMessages = defineMessages({
     compileError: {
@@ -538,20 +538,6 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         </div>}
-                        {(this.props.canChangeTheme || this.props.canChangeLanguage) && (<SettingsMenu
-                            canChangeLanguage={this.props.canChangeLanguage}
-                            canChangeTheme={this.props.canChangeTheme}
-                            isRtl={this.props.isRtl}
-                            onClickDesktopSettings={
-                                this.props.onClickDesktopSettings &&
-                                this.handleClickDesktopSettings
-                            }
-                            // eslint-disable-next-line react/jsx-no-bind
-                            onOpenCustomSettings={this.props.onClickAddonSettings.bind(null, 'editor-theme3')}
-                            onRequestClose={this.props.onRequestCloseSettings}
-                            onRequestOpen={this.props.onClickSettings}
-                            settingsMenuOpen={this.props.settingsMenuOpen}
-                        />)}
                         {(this.props.canManageFiles) && (
                             <MenuLabel
                                 open={this.props.fileMenuOpen}
@@ -875,7 +861,20 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
-
+                        {(this.props.canChangeTheme || this.props.canChangeLanguage) && (<SettingsMenu
+                            canChangeLanguage={this.props.canChangeLanguage}
+                            canChangeTheme={this.props.canChangeTheme}
+                            isRtl={this.props.isRtl}
+                            onClickDesktopSettings={
+                                this.props.onClickDesktopSettings &&
+                                this.handleClickDesktopSettings
+                            }
+                            // eslint-disable-next-line react/jsx-no-bind
+                            onOpenCustomSettings={this.props.onClickAddonSettings.bind(null, 'editor-theme3')}
+                            onRequestClose={this.props.onRequestCloseSettings}
+                            onRequestOpen={this.props.onClickSettings}
+                            settingsMenuOpen={this.props.settingsMenuOpen}
+                        />)}
                         {this.props.onClickAddonSettings && (
                             <div
                                 className={classNames(styles.menuBarItem, styles.hoverable)}
@@ -892,26 +891,6 @@ class MenuBar extends React.Component {
                                         defaultMessage="Addons"
                                         description="Button to open addon settings"
                                         id="tw.menuBar.addons"
-                                    />
-                                </span>
-                            </div>
-                        )}
-                        {this.props.onClickSettingsModal && (
-                            <div
-                                className={classNames(styles.menuBarItem, styles.hoverable)}
-                                onClick={this.props.onClickSettingsModal}
-                            >
-                                <img
-                                    src={advancedIcon}
-                                    draggable={false}
-                                    width={20}
-                                    height={20}
-                                />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="Advanced"
-                                        description="Button to open advanced settings menu"
-                                        id="tw.menuBar.advanced"
                                     />
                                 </span>
                             </div>
@@ -1056,6 +1035,7 @@ MenuBar.propTypes = {
     canSave: PropTypes.bool,
     canShare: PropTypes.bool,
     className: PropTypes.string,
+    logo: PropTypes.string,
     errors: PropTypes.arrayOf(PropTypes.shape({
         sprite: PropTypes.string,
         error: PropTypes.string,
