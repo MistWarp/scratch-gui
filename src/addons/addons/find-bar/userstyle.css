@@ -81,7 +81,9 @@
   max-width: 100%;
   margin-top: 3px;
   border: none;
-  height: 100%;
+  height: auto;
+  max-height: 300px;
+  background-color: var(--ui-modal-background);
 }
 
 .sa-find-dropdown-out.visible > .sa-find-dropdown {
