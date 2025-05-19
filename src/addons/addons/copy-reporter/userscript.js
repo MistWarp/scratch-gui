@@ -34,7 +34,9 @@ export default async function ({ addon, console, msg }) {
 
     let valueReportBox = document.createElement("div");
     valueReportBox.setAttribute("class", "valueReportBox");
-    valueReportBox.innerText = typeof value === "object" ? JSON.stringify(value) : value;
+    const displayValue = typeof value === "object" ? JSON.stringify(value) : value;
+    displayValue = displayValue.length > 5000 ? `${displayValue.slice(0, 5000)}...` : displayValue;
+    valueReportBox.innerText = displayValue;
     if (!addon.self.disabled) {
       // use to get focus and event priority
       valueReportBox.setAttribute("tabindex", "0");

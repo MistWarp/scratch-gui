@@ -8,7 +8,6 @@
   columns: 2;
   column-gap: 0.5rem;
   padding: 0.25rem;
-  border-radius: 10px;
 }
 
 .scratchCategorySecondMenu {
@@ -27,7 +26,7 @@
   display: inline-flex; /* inline so that it isn't split between both columns */
   width: 100%;
   padding: 0.25rem;
-  border-radius: 10px;
+  border-radius: 0.875rem;
 }
 
 .scratchCategoryItemBubble,

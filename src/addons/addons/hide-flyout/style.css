@@ -37,7 +37,7 @@
 
 [dir="ltr"] .blocklyFlyout.sa-flyoutClose,
 [dir="ltr"] .blocklyFlyoutScrollbar.sa-flyoutClose {
-  margin-left: calc(0px - var(--sa-flyout-width) - 100px);
+  margin-left: calc(0px - var(--sa-flyout-width) - 10px);
 }
 
 [dir="rtl"] .blocklyFlyout.sa-flyoutClose,
@@ -81,7 +81,7 @@
   align-items: center;
   background-color: var(--editorDarkMode-accent, white);
   border: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .sa-lock-object.locked .sa-lock-button {

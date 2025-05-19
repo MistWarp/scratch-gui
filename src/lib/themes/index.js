@@ -3,10 +3,14 @@ import defaultsDeep from 'lodash.defaultsdeep';
 import * as accentPurple from './accent/purple';
 import * as accentBlue from './accent/blue';
 import * as accentRed from './accent/red';
+import * as accentOrange from './accent/orange';
+import * as accentYellow from './accent/yellow';
+import * as accentGreen from './accent/green';
 import * as accentRainbow from './accent/rainbow';
 import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
 import * as accentRotur from './accent/rotur';
+import * as accentPink from './accent/pink';
 
 import * as guiLight from './gui/light';
 import * as guiDark from './gui/dark';
@@ -15,24 +19,85 @@ import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
 import * as blocksDark from './blocks/dark';
 
-const ACCENT_PURPLE = 'purple';
-const ACCENT_BLUE = 'blue';
-const ACCENT_RED = 'red';
-const ACCENT_RAINBOW = 'rainbow';
-const ACCENT_TRANS = 'trans';
-const ACCENT_GAY = 'gay';
-const ACCENT_ROTUR = 'rotur';
+const ACCENTS = [
+    {
+        name: 'Red',
+        accent: accentRed,
+        description: 'Red accent color',
+        id: 'tw.accent.red'
+    },
+    {
+        name: 'Orange',
+        accent: accentOrange,
+        description: 'Orange accent color',
+        id: 'tw.accent.orange'
+    },
+    {
+        name: 'Yellow',
+        accent: accentYellow,
+        description: 'Yellow accent color',
+        id: 'tw.accent.yellow'
+    },
+    {
+        name: 'Green',
+        accent: accentGreen,
+        description: 'Green accent color',
+        id: 'tw.accent.green'
+    },
+    {
+        name: 'Purple',
+        accent: accentPurple,
+        description: 'Purple accent color',
+        id: 'tw.accent.purple'
+    },
+    {
+        name: 'Blue',
+        accent: accentBlue,
+        description: 'Blue accent color',
+        id: 'tw.accent.blue'
+    },
+    {
+        name: 'Rainbow',
+        accent: accentRainbow,
+        description: 'Rainbow accent color',
+        id: 'tw.accent.rainbow'
+    },
+    {
+        name: 'Trans',
+        accent: accentTrans,
+        description: 'Trans accent color',
+        id: 'tw.accent.trans'
+    },
+    {
+        name: 'Gay',
+        accent: accentGay,
+        description: 'Gay accent color',
+        id: 'tw.accent.gay'
+    },
+    {
+        name: 'Rotur',
+        accent: accentRotur,
+        description: 'Rotur accent color',
+        id: 'tw.accent.rotur'
+    },
+    {
+        name: 'Pink',
+        accent: accentPink,
+        description: 'Pink accent color',
+        id: 'tw.accent.pink'
+    }
+];
 
-const ACCENT_MAP = {
-    [ACCENT_PURPLE]: accentPurple,
-    [ACCENT_BLUE]: accentBlue,
-    [ACCENT_RED]: accentRed,
-    [ACCENT_RAINBOW]: accentRainbow,
-    [ACCENT_TRANS]: accentTrans,
-    [ACCENT_GAY]: accentGay,
-    [ACCENT_ROTUR]: accentRotur
-};
-const ACCENT_DEFAULT = ACCENT_RED;
+const ACCENT_MAP = {};
+for (const accent of ACCENTS) {
+    ACCENT_MAP[accent.name.toLowerCase()] = {
+        defaultMessage: accent.name,
+        accent: accent.accent,
+        description: accent.description,
+        id: accent.id
+    };
+}
+const ACCENT_DEFAULT = ACCENTS[0].name.toLowerCase();
 
 const GUI_LIGHT = 'light';
 const GUI_DARK = 'dark';
@@ -155,14 +220,6 @@ class Theme {
 export {
     Theme,
     defaultBlockColors,
-
-    ACCENT_RED,
-    ACCENT_PURPLE,
-    ACCENT_BLUE,
-    ACCENT_RAINBOW,
-    ACCENT_TRANS,
-    ACCENT_GAY,
-    ACCENT_ROTUR,
 
     ACCENT_MAP,
 
