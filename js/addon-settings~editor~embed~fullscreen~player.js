@@ -1488,6 +1488,82 @@ const blockColors = {};
 
 /***/ }),
 
+/***/ "./src/lib/themes/gui/midnight.js":
+/*!****************************************!*\
+  !*** ./src/lib/themes/gui/midnight.js ***!
+  \****************************************/
+/*! exports provided: guiColors, blockColors */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "guiColors", function() { return guiColors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
+/**
+ * Midnight theme - a pure black theme for better OLED display efficiency and contrast.
+ * This theme is darker than the regular dark theme, using true black (#000000) for backgrounds
+ * and maintaining high contrast for text and UI elements.
+ */
+const guiColors = {
+  'color-scheme': 'dark',
+  'ui-primary': '#000000',
+  'ui-secondary': '#0a0a0a',
+  'ui-tertiary': '#151515',
+  'ui-modal-overlay': '#222222aa',
+  'ui-modal-background': '#000000',
+  'ui-modal-foreground': '#eeeeee',
+  'ui-modal-header-background': '#222222',
+  'ui-modal-header-foreground': '#ffffff',
+  'ui-white': '#000000',
+  'ui-black-transparent': '#ffffff26',
+  'text-primary': '#eeeeee',
+  'menu-bar-background': '#222222',
+  'assets-background': '#000000',
+  'input-background': '#0a0a0a',
+  'popover-background': '#0a0a0a',
+  'badge-background': '#101820',
+  'badge-border': '#152638',
+  'fullscreen-background': '#000000',
+  'fullscreen-accent': '#000000',
+  'page-background': '#000000',
+  'page-foreground': '#eeeeee',
+  'project-title-inactive': 'var(--ui-secondary)',
+  'project-title-hover': '#ffffff3f',
+  'link-color': '#44aaff',
+  'filter-icon-black': 'invert(100%)',
+  'filter-icon-gray': 'grayscale(100%) brightness(1.7)',
+  'filter-icon-white': 'brightness(0) invert(100%)',
+  'paint-filter-icon-gray': 'brightness(1.7)'
+};
+const blockColors = {
+  insertionMarker: '#cccccc',
+  workspace: '#0a0a0a',
+  toolboxSelected: '#0a0a0a',
+  toolboxText: '#cccccc',
+  toolbox: '#000000',
+  flyout: '#000000',
+  scrollbar: '#555555',
+  valueReportBackground: '#0a0a0a',
+  valueReportBorder: '#222222',
+  valueReportForeground: '#eeeeee',
+  contextMenuBackground: '#000000',
+  contextMenuBorder: '#ffffff26',
+  contextMenuForeground: '#eeeeee',
+  contextMenuActiveBackground: '#1a1a1a',
+  contextMenuDisabledForeground: '#666666',
+  flyoutLabelColor: '#cccccc',
+  checkboxInactiveBackground: '#111111',
+  checkboxInactiveBorder: '#c8c8c8',
+  buttonBorder: '#c6c6c6',
+  buttonActiveBackground: '#111111',
+  buttonForeground: '#cccccc',
+  zoomIconFilter: 'invert(100%)',
+  gridColor: '#383838'
+};
+
+
+/***/ }),
+
 /***/ "./src/lib/themes/guiHelpers.js":
 /*!**************************************!*\
   !*** ./src/lib/themes/guiHelpers.js ***!
@@ -1569,7 +1645,7 @@ const applyGuiColors = theme => {
 /*!*********************************!*\
   !*** ./src/lib/themes/index.js ***!
   \*********************************/
-/*! exports provided: Theme, defaultBlockColors, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MAP, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
+/*! exports provided: Theme, defaultBlockColors, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MIDNIGHT, GUI_MAP, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1579,6 +1655,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_MAP", function() { return ACCENT_MAP; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_LIGHT", function() { return GUI_LIGHT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_DARK", function() { return GUI_DARK; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_MIDNIGHT", function() { return GUI_MIDNIGHT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_MAP", function() { return GUI_MAP; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BLOCKS_THREE", function() { return BLOCKS_THREE; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BLOCKS_DARK", function() { return BLOCKS_DARK; });
@@ -1600,13 +1677,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _accent_pink__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./accent/pink */ "./src/lib/themes/accent/pink.js");
 /* harmony import */ var _gui_light__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./gui/light */ "./src/lib/themes/gui/light.js");
 /* harmony import */ var _gui_dark__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./gui/dark */ "./src/lib/themes/gui/dark.js");
-/* harmony import */ var _blocks_three__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./blocks/three */ "./src/lib/themes/blocks/three.js");
-/* harmony import */ var _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./blocks/high-contrast */ "./src/lib/themes/blocks/high-contrast.js");
-/* harmony import */ var _blocks_dark__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./blocks/dark */ "./src/lib/themes/blocks/dark.js");
+/* harmony import */ var _gui_midnight__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./gui/midnight */ "./src/lib/themes/gui/midnight.js");
+/* harmony import */ var _blocks_three__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./blocks/three */ "./src/lib/themes/blocks/three.js");
+/* harmony import */ var _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./blocks/high-contrast */ "./src/lib/themes/blocks/high-contrast.js");
+/* harmony import */ var _blocks_dark__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./blocks/dark */ "./src/lib/themes/blocks/dark.js");
 var _Theme;
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
 
 
 
@@ -1692,9 +1771,11 @@ for (const accent of ACCENTS) {
 const ACCENT_DEFAULT = ACCENTS[0].name.toLowerCase();
 const GUI_LIGHT = 'light';
 const GUI_DARK = 'dark';
+const GUI_MIDNIGHT = 'midnight';
 const GUI_MAP = {
   [GUI_LIGHT]: _gui_light__WEBPACK_IMPORTED_MODULE_12__,
-  [GUI_DARK]: _gui_dark__WEBPACK_IMPORTED_MODULE_13__
+  [GUI_DARK]: _gui_dark__WEBPACK_IMPORTED_MODULE_13__,
+  [GUI_MIDNIGHT]: _gui_midnight__WEBPACK_IMPORTED_MODULE_14__
 };
 const GUI_DEFAULT = GUI_LIGHT;
 const BLOCKS_THREE = 'three';
@@ -1702,33 +1783,33 @@ const BLOCKS_DARK = 'dark';
 const BLOCKS_HIGH_CONTRAST = 'high-contrast';
 const BLOCKS_CUSTOM = 'custom';
 const BLOCKS_DEFAULT = BLOCKS_THREE;
-const defaultBlockColors = _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"];
+const defaultBlockColors = _blocks_three__WEBPACK_IMPORTED_MODULE_15__["blockColors"];
 const BLOCKS_MAP = {
   [BLOCKS_THREE]: {
     blocksMediaFolder: 'blocks-media/default',
-    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"],
-    extensions: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["extensions"],
+    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_15__["blockColors"],
+    extensions: _blocks_three__WEBPACK_IMPORTED_MODULE_15__["extensions"],
     customExtensionColors: {},
     useForStage: true
   },
   [BLOCKS_HIGH_CONTRAST]: {
     blocksMediaFolder: 'blocks-media/high-contrast',
-    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["blockColors"], defaultBlockColors),
-    extensions: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["extensions"],
-    customExtensionColors: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["customExtensionColors"],
+    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_16__["blockColors"], defaultBlockColors),
+    extensions: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_16__["extensions"],
+    customExtensionColors: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_16__["customExtensionColors"],
     useForStage: true
   },
   [BLOCKS_DARK]: {
     blocksMediaFolder: 'blocks-media/default',
-    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["blockColors"], defaultBlockColors),
-    extensions: _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["extensions"],
-    customExtensionColors: _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["customExtensionColors"],
+    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_dark__WEBPACK_IMPORTED_MODULE_17__["blockColors"], defaultBlockColors),
+    extensions: _blocks_dark__WEBPACK_IMPORTED_MODULE_17__["extensions"],
+    customExtensionColors: _blocks_dark__WEBPACK_IMPORTED_MODULE_17__["customExtensionColors"],
     useForStage: false
   },
   [BLOCKS_CUSTOM]: {
     // to be filled by editor-theme3 addon
     blocksMediaFolder: 'blocks-media/default',
-    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"],
+    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_15__["blockColors"],
     extensions: {},
     customExtensionColors: {},
     useForStage: false
@@ -1785,6 +1866,7 @@ class Theme {
 _Theme = Theme;
 _defineProperty(Theme, "light", new _Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT));
 _defineProperty(Theme, "dark", new _Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT));
+_defineProperty(Theme, "midnight", new _Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT));
 _defineProperty(Theme, "highContrast", new _Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST));
 
 
