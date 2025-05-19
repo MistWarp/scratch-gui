@@ -300,6 +300,28 @@ const WarpTimer = props => (
     />
 );
 
+const CaseSensitiveLists = props => (
+    <BooleanSetting
+        value={props.value !== undefined ? props.value : false}
+        onChange={props.onChange}
+        label={
+            <FormattedMessage
+                defaultMessage="Case Sensitive Lists"
+                description="Case Sensitive Lists setting"
+                id="tw.settingsModal.caseSensitiveLists"
+            />
+        }
+        help={
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Makes lists case sensitive. This means that 'a' and 'A' are different values. This is not recommended for most projects but can improve speed massively for list heavy projects."
+                description="Case Sensitive Lists help"
+                id="tw.settingsModal.caseSensitiveListsHelp"
+            />
+        }
+    />
+);
+
 const DisableCompiler = props => (
     <BooleanSetting
         {...props}
@@ -495,6 +517,10 @@ const SettingsModalComponent = props => (
                     {...props}
                 />
             )}
+            <CaseSensitiveLists 
+                value={props.caseSensitiveLists}
+                onChange={props.onCaseSensitiveListsChange}
+            />
             <DisableCompiler
                 value={props.disableCompiler}
                 onChange={props.onDisableCompilerChange}
@@ -528,7 +554,15 @@ SettingsModalComponent.propTypes = {
     warpTimer: PropTypes.bool,
     onWarpTimerChange: PropTypes.func,
     disableCompiler: PropTypes.bool,
-    onDisableCompilerChange: PropTypes.func
+    onDisableCompilerChange: PropTypes.func,
+    caseSensitiveLists: PropTypes.bool,
+    onCaseSensitiveListsChange: PropTypes.func,
+    customStageSizeEnabled: PropTypes.bool,
+    stageWidth: PropTypes.number,
+    onStageWidthChange: PropTypes.func,
+    stageHeight: PropTypes.number,
+    onStageHeightChange: PropTypes.func,
+    onStoreProjectOptions: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);
