@@ -42,6 +42,18 @@
     flex-grow: 1;
     gap: 0.5rem;
 }
+
+/* Menu bar alignment options */
+.main-menu-align-left {
+    justify-content: flex-start;
+}
+.main-menu-align-center {
+    justify-content: center;
+}
+.main-menu-align-right {
+    justify-content: flex-end;
+}
+
 .inactive {
     opacity: 0;
 }

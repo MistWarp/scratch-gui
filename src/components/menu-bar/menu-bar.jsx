@@ -486,7 +486,14 @@ class MenuBar extends React.Component {
                     styles.menuBar
                 )}
             >
-                <div className={styles.mainMenu}>
+                <div className={classNames(
+                    styles.mainMenu,
+                    {
+                        [styles['main-menu-align-left']]: this.props.theme.menuBarAlign === 'left',
+                        [styles['main-menu-align-center']]: this.props.theme.menuBarAlign === 'center',
+                        [styles['main-menu-align-right']]: this.props.theme.menuBarAlign === 'right'
+                    }
+                )}>
                     <div className={styles.fileGroup}>
                         {this.props.errors.length > 0 && <div>
                             <MenuLabel
@@ -1117,6 +1124,9 @@ MenuBar.propTypes = {
     shouldSaveBeforeTransition: PropTypes.func,
     showSaveFilePicker: PropTypes.func,
     showComingSoon: PropTypes.bool,
+    theme: PropTypes.shape({
+        menuBarAlign: PropTypes.string
+    }),
     username: PropTypes.string,
     userOwnsProject: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
@@ -1150,6 +1160,7 @@ const mapStateToProps = (state, ownProps) => {
         projectTitle: state.scratchGui.projectTitle,
         sessionExists: state.session && typeof state.session.session !== 'undefined',
         settingsMenuOpen: settingsMenuOpen(state),
+        theme: state.scratchGui.theme.theme,
         username: user ? user.username : null,
         userOwnsProject: ownProps.authorUsername && user &&
             (ownProps.authorUsername === user.username),

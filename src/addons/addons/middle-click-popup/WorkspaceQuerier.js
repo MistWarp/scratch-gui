@@ -725,19 +725,32 @@ class TokenTypeBlock extends TokenType {
      */
     this.stringForms = [];
 
-    const enumerateStringForms = (partIdx = 0, strings = [], inputs = [], length = 0) => {
+    // Track how many enum inputs we've encountered to prevent combinatorial explosion
+    let enumInputCount = 0;
+    for (const part of block.parts) {
+      if (typeof part !== "string" && part.type === BlockInputType.ENUM) {
+        enumInputCount++;
+      }
+    }
+
+    const enumerateStringForms = (partIdx = 0, strings = [], inputs = [], length = 0, enumsHandled = 0) => {
       for (; partIdx < block.parts.length; partIdx++) {
         let blockPart = block.parts[partIdx];
         if (typeof blockPart === "string") {
           length += blockPart.length;
           strings.push(...blockPart.toLowerCase().split(" "));
         } else if (blockPart.type === BlockInputType.ENUM) {
-          for (const enumValue of blockPart.values) {
+          // When we have multiple enum inputs, only use the first value for all but the current input
+          // to avoid combinatorial explosion
+          const valuesToUse = enumsHandled > 0 ? [blockPart.values[0]] : blockPart.values;
+          
+          for (const enumValue of valuesToUse) {
             enumerateStringForms(
               partIdx + 1,
               [...strings, ...enumValue.string.toLowerCase().split(" ")],
               [...inputs, enumValue],
-              length + enumValue.string.length
+              length + enumValue.string.length,
+              enumsHandled + 1
             );
           }
           return;
@@ -858,9 +871,14 @@ class TokenTypeBlock extends TokenType {
    * @param {boolean} parseNextToken
    * @yields {Token[]}
    */
-  *_parseSubtokens(query, idx, subtokenProviders, depth, tokenProviderIdx = 0, parseNextToken = true) {
+  *_parseSubtokens(query, idx, subtokenProviders, depth, tokenProviderIdx = 0, parseNextToken = true, combinationCount = 0) {
     idx = query.skipIgnorable(idx);
     let tokenProvider = subtokenProviders[tokenProviderIdx];
+    
+    // Limit the number of combinations per block to prevent exponential explosion
+    if (combinationCount >= WorkspaceQuerier.MAX_COMBINATIONS_PER_BLOCK) {
+      return;
+    }
 
     for (const token of tokenProvider.parseTokens(query, idx, depth + 1)) {
       ++query.tokenCount;
@@ -899,7 +917,8 @@ class TokenTypeBlock extends TokenType {
           subtokenProviders,
           depth,
           tokenProviderIdx + 1,
-          !token.isTruncated
+          !token.isTruncated,
+          combinationCount + 1
         )) {
           subTokenArr.push(token);
           yield subTokenArr;
@@ -1165,6 +1184,11 @@ export default class WorkspaceQuerier {
    * The maximum number of tokens to find before giving up.
    */
   static MAX_TOKENS = 10000;
+  
+  /**
+   * The maximum number of combinations per block type.
+   */
+  static MAX_COMBINATIONS_PER_BLOCK = 20;
 
   /**
    * Indexes a workspace in preparation for querying it.
@@ -1190,11 +1214,22 @@ export default class WorkspaceQuerier {
     const results = [];
     let foundTokenCount = 0;
     let limited = false;
+    
+    // Set a start time to prevent hanging
+    const startTime = Date.now();
+    const MAX_EXECUTION_TIME = 2000; // 2 seconds max
 
     let bestIllegalResult = null;
     let bestIllegalResultText = "";
 
     for (const option of this.tokenGroupBlocks.parseTokens(query, 0, 0)) {
+      // Check if we're exceeding time limit
+      if (Date.now() - startTime > MAX_EXECUTION_TIME) {
+        console.log("Warning: Workspace query exceeded maximum execution time.");
+        limited = true;
+        break;
+      }
+      
       if (option.end >= queryStr.length) {
         if (option.isLegal) {
           results.push(new QueryResult(query, option));

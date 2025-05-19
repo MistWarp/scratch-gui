@@ -110,6 +110,11 @@ const GUI_MAP = {
 };
 const GUI_DEFAULT = GUI_LIGHT;
 
+const MENUBAR_ALIGN_LEFT = 'left';
+const MENUBAR_ALIGN_CENTER = 'center';
+const MENUBAR_ALIGN_RIGHT = 'right';
+const MENUBAR_ALIGN_DEFAULT = MENUBAR_ALIGN_CENTER;
+
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
 const BLOCKS_HIGH_CONTRAST = 'high-contrast';
@@ -151,7 +156,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks) {
+    constructor (accent, gui, blocks, menuBarAlign) {
         // do not modify these directly
         /** @readonly */
         this.id = ++themeObjectsCreated;
@@ -161,20 +166,25 @@ class Theme {
         this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
         /** @readonly */
         this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
+        /** @readonly */
+        this.menuBarAlign = [MENUBAR_ALIGN_LEFT, MENUBAR_ALIGN_CENTER, MENUBAR_ALIGN_RIGHT].includes(menuBarAlign) ? 
+            menuBarAlign : MENUBAR_ALIGN_DEFAULT;
     }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT);
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT);
-    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT);
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST);
+    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
+    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
+    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
+    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT);
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks);
+            return new Theme(to, this.gui, this.blocks, this.menuBarAlign);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks);
+            return new Theme(this.accent, to, this.blocks, this.menuBarAlign);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to);
+            return new Theme(this.accent, this.gui, to, this.menuBarAlign);
+        } else if (what === 'menuBarAlign') {
+            return new Theme(this.accent, this.gui, this.blocks, to);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }
@@ -231,6 +241,11 @@ export {
     GUI_DARK,
     GUI_MIDNIGHT,
     GUI_MAP,
+
+    MENUBAR_ALIGN_LEFT,
+    MENUBAR_ALIGN_CENTER,
+    MENUBAR_ALIGN_RIGHT,
+    MENUBAR_ALIGN_DEFAULT,
 
     BLOCKS_THREE,
     BLOCKS_DARK,
