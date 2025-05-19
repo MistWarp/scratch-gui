@@ -302,13 +302,134 @@ const guiColors = {
   'drop-highlight': '#26cfaa',
   // light green
 
-  'menu-bar-background-image': 'linear-gradient(90deg, rgba(7, 142, 112, 0.75) 0%, rgba(38, 207, 170, 0.75) 16.67%, rgba(152, 233, 193, 0.75) 33.33%, rgba(251, 254, 252, 0.75) 50%, rgba(123, 173, 226, 0.75) 66.67%, rgba(80, 73, 203, 0.75) 83.33%, rgba(63, 32, 130, 0.75) 100%)' // new gradient
+  'menu-bar-background-image': 'linear-gradient(90deg, rgba(7, 142, 112, 0.75) 0%, rgba(38, 207, 170, 0.75) 16.67%, ' + 'rgba(152, 233, 193, 0.75) 33.33%, rgba(251, 254, 252, 0.75) 50%, ' + 'rgba(123, 173, 226, 0.75) 66.67%, rgba(80, 73, 203, 0.75) 83.33%, ' + 'rgba(63, 32, 130, 0.75) 100%)' // new gradient
 };
 const blockColors = {
   checkboxActiveBackground: '#078e70',
   // teal green
   checkboxActiveBorder: '#26cfaa' // light green
 };
+
+
+/***/ }),
+
+/***/ "./src/lib/themes/accent/green.js":
+/*!****************************************!*\
+  !*** ./src/lib/themes/accent/green.js ***!
+  \****************************************/
+/*! exports provided: guiColors, blockColors */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "guiColors", function() { return guiColors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
+const guiColors = {
+  'motion-primary': '#4caf50',
+  // bright green
+  'motion-primary-transparent': '#4caf50e6',
+  // semi-transparent green
+  'motion-tertiary': '#388e3c',
+  // darker green
+
+  'looks-secondary': '#4caf50',
+  // bright green
+  'looks-transparent': '#4caf5059',
+  // more transparent green
+  'looks-light-transparent': '#4caf5026',
+  // very transparent green
+  'looks-secondary-dark': 'hsla(122, 39%, 35%, 1)',
+  // dark green
+
+  'extensions-primary': 'hsla(122, 39%, 65%, 1)',
+  // light green
+  'extensions-tertiary': 'hsla(122, 39%, 45%, 1)',
+  // medium green
+  'extensions-transparent': 'hsla(122, 39%, 65%, 0.35)',
+  // semi-transparent green
+  'extensions-light': 'hsla(122, 39%, 85%, 1)',
+  // very light green
+
+  'drop-highlight': '#80c883' // light green
+};
+const blockColors = {
+  checkboxActiveBackground: '#4caf50',
+  // bright green
+  checkboxActiveBorder: '#388e3c' // darker green
+};
+
+
+/***/ }),
+
+/***/ "./src/lib/themes/accent/orange.js":
+/*!*****************************************!*\
+  !*** ./src/lib/themes/accent/orange.js ***!
+  \*****************************************/
+/*! exports provided: guiColors, blockColors */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "guiColors", function() { return guiColors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
+const guiColors = {
+  'motion-primary': '#ff7f2a',
+  // bright orange
+  'motion-primary-transparent': '#ff7f2ae6',
+  // semi-transparent orange
+  'motion-tertiary': '#e65c00',
+  // darker orange
+
+  'looks-secondary': '#ff7f2a',
+  // bright orange
+  'looks-transparent': '#ff7f2a59',
+  // more transparent orange
+  'looks-light-transparent': '#ff7f2a26',
+  // very transparent orange
+  'looks-secondary-dark': 'hsla(25, 100%, 45%, 1)',
+  // dark orange
+
+  'extensions-primary': 'hsla(30, 100%, 65%, 1)',
+  // light orange
+  'extensions-tertiary': 'hsla(30, 90%, 45%, 1)',
+  // medium orange
+  'extensions-transparent': 'hsla(30, 90%, 65%, 0.35)',
+  // semi-transparent orange
+  'extensions-light': 'hsla(30, 100%, 85%, 1)',
+  // very light orange
+
+  'drop-highlight': '#ffad66' // light orange
+};
+const blockColors = {
+  checkboxActiveBackground: '#ff7f2a',
+  // bright orange
+  checkboxActiveBorder: '#e65c00' // darker orange
+};
+
+
+/***/ }),
+
+/***/ "./src/lib/themes/accent/pink.js":
+/*!***************************************!*\
+  !*** ./src/lib/themes/accent/pink.js ***!
+  \***************************************/
+/*! exports provided: guiColors, blockColors */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "guiColors", function() { return guiColors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
+const guiColors = {
+  'motion-primary': 'hsla(330, 80%, 70%, 1)',
+  'motion-primary-transparent': 'hsla(330, 80%, 70%, 0.9)',
+  'motion-tertiary': 'hsla(330, 60%, 55%, 1)',
+  'looks-secondary': 'hsla(330, 80%, 70%, 1)',
+  'looks-transparent': 'hsla(330, 80%, 70%, 0.35)',
+  'looks-light-transparent': 'hsla(330, 80%, 70%, 0.15)',
+  'looks-secondary-dark': 'hsla(330, 60%, 55%, 1)'
+};
+const blockColors = {};
 
 
 /***/ }),
@@ -362,7 +483,7 @@ const guiColors = {
   'extensions-transparent': 'hsla(10, 85%, 65%, 0.35)',
   'extensions-light': 'hsla(10, 57%, 85%, 1)',
   'drop-highlight': '#ff8c8c',
-  'menu-bar-background-image': 'linear-gradient(90deg, rgba(255, 0, 0, 0.75) 0%, rgba(255, 154, 0, 0.75) 10%, rgba(208, 222, 33, 0.75) 20%, rgba(79, 220, 74, 0.75) 30%, rgba(63, 218, 216, 0.75) 40%, rgba(47, 201, 226, 0.75) 50%, rgba(28, 127, 238, 0.75) 60%, rgba(95, 21, 242, 0.75) 70%, rgba(186, 12, 248, 0.75) 80%, rgba(251, 7, 217, 0.75) 90%, rgba(255, 0, 0, 0.75) 100%)'
+  'menu-bar-background-image': 'linear-gradient(90deg, rgba(255, 0, 0, 0.75) 0%, rgba(255, 154, 0, 0.75) 10%, ' + 'rgba(208, 222, 33, 0.75) 20%, rgba(79, 220, 74, 0.75) 30%, rgba(63, 218, 216, 0.75) 40%, ' + 'rgba(47, 201, 226, 0.75) 50%, rgba(28, 127, 238, 0.75) 60%, rgba(95, 21, 242, 0.75) 70%, ' + 'rgba(186, 12, 248, 0.75) 80%, rgba(251, 7, 217, 0.75) 90%, rgba(255, 0, 0, 0.75) 100%)'
 };
 const blockColors = {
   checkboxActiveBackground: '#ff4c4c',
@@ -445,7 +566,7 @@ const guiColors = {
   'drop-highlight': '#4a4769',
   // secondary color
 
-  'menu-bar-background-image': 'linear-gradient(90deg, rgba(81, 86, 124, 0.4) 0%, rgba(74, 71, 105, 0.4) 50%, rgba(64, 48, 65, 0.4) 100%)' // gradient with specified colors
+  'menu-bar-background-image': 'linear-gradient(90deg, ' + 'rgba(81, 86, 124, 0.4) 0%, ' + 'rgba(74, 71, 105, 0.4) 50%, ' + 'rgba(64, 48, 65, 0.4) 100%)' // gradient with specified colors
 };
 const blockColors = {
   checkboxActiveBackground: '#51567c',
@@ -469,38 +590,70 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
 const guiColors = {
   'motion-primary': '#f7a8b8',
-  // light pink
   'motion-primary-transparent': '#f7a8b8bf',
-  // semi-transparent light pink
   'motion-tertiary': '#f7a8b8',
-  // light pink
-
   'looks-secondary': '#f7a8b8',
   'looks-transparent': '#f7a8b8bf',
-  // semi-transparent light pink
   'looks-light-transparent': '#f7a8b8bf',
-  // semi-transparent light pink
   'looks-secondary-dark': '#f7a8b8',
-  // light pink
-
   'extensions-primary': 'hsla(350, 85%, 75%, 1)',
-  // light pink
   'extensions-tertiary': 'hsla(350, 85%, 55%, 1)',
-  // darker pink
   'extensions-transparent': 'hsla(350, 85%, 75%, 0.35)',
-  // semi-transparent pink
   'extensions-light': '#f7a8b8',
-  // light pink
-
   'drop-highlight': '#f7a8b8',
-  // light pink
-
-  'menu-bar-background-image': 'linear-gradient(90deg, rgba(85, 205, 252, 0.75) 0%, rgba(247, 168, 184, 0.75) 50%, rgba(255, 255, 255, 0.75) 100%)' // transgender pride colors gradient
+  'menu-bar-background-image': 'linear-gradient(90deg, ' + 'rgba(85,205,252,0.75) 0%, ' + 'rgba(247,168,184,0.75) 50%, ' + 'rgba(255,255,255,0.75) 100%)'
 };
 const blockColors = {
   checkboxActiveBackground: '#f7a8b8',
-  // light pink
-  checkboxActiveBorder: '#f7a8b8' // light pink
+  checkboxActiveBorder: '#f7a8b8'
+};
+
+
+/***/ }),
+
+/***/ "./src/lib/themes/accent/yellow.js":
+/*!*****************************************!*\
+  !*** ./src/lib/themes/accent/yellow.js ***!
+  \*****************************************/
+/*! exports provided: guiColors, blockColors */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "guiColors", function() { return guiColors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "blockColors", function() { return blockColors; });
+const guiColors = {
+  'motion-primary': '#ffcc00',
+  // bright yellow
+  'motion-primary-transparent': '#ffcc00e6',
+  // semi-transparent yellow
+  'motion-tertiary': '#e6b800',
+  // darker yellow
+
+  'looks-secondary': '#ffcc00',
+  // bright yellow
+  'looks-transparent': '#ffcc0059',
+  // more transparent yellow
+  'looks-light-transparent': '#ffcc0026',
+  // very transparent yellow
+  'looks-secondary-dark': 'hsla(48, 100%, 40%, 1)',
+  // dark yellow
+
+  'extensions-primary': 'hsla(50, 100%, 65%, 1)',
+  // light yellow
+  'extensions-tertiary': 'hsla(50, 90%, 45%, 1)',
+  // medium yellow
+  'extensions-transparent': 'hsla(50, 90%, 65%, 0.35)',
+  // semi-transparent yellow
+  'extensions-light': 'hsla(50, 100%, 85%, 1)',
+  // very light yellow
+
+  'drop-highlight': '#ffdb4d' // light yellow
+};
+const blockColors = {
+  checkboxActiveBackground: '#ffcc00',
+  // bright yellow
+  checkboxActiveBorder: '#e6b800' // darker yellow
 };
 
 
@@ -1303,20 +1456,13 @@ const applyGuiColors = theme => {
 /*!*********************************!*\
   !*** ./src/lib/themes/index.js ***!
   \*********************************/
-/*! exports provided: Theme, defaultBlockColors, ACCENT_RED, ACCENT_PURPLE, ACCENT_BLUE, ACCENT_RAINBOW, ACCENT_TRANS, ACCENT_GAY, ACCENT_ROTUR, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MAP, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
+/*! exports provided: Theme, defaultBlockColors, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MAP, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Theme", function() { return Theme; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultBlockColors", function() { return defaultBlockColors; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_RED", function() { return ACCENT_RED; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_PURPLE", function() { return ACCENT_PURPLE; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_BLUE", function() { return ACCENT_BLUE; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_RAINBOW", function() { return ACCENT_RAINBOW; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_TRANS", function() { return ACCENT_TRANS; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_GAY", function() { return ACCENT_GAY; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_ROTUR", function() { return ACCENT_ROTUR; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ACCENT_MAP", function() { return ACCENT_MAP; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_LIGHT", function() { return GUI_LIGHT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_DARK", function() { return GUI_DARK; });
@@ -1331,15 +1477,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _accent_purple__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./accent/purple */ "./src/lib/themes/accent/purple.js");
 /* harmony import */ var _accent_blue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./accent/blue */ "./src/lib/themes/accent/blue.js");
 /* harmony import */ var _accent_red__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./accent/red */ "./src/lib/themes/accent/red.js");
-/* harmony import */ var _accent_rainbow__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./accent/rainbow */ "./src/lib/themes/accent/rainbow.js");
-/* harmony import */ var _accent_trans__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./accent/trans */ "./src/lib/themes/accent/trans.js");
-/* harmony import */ var _accent_gay__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./accent/gay */ "./src/lib/themes/accent/gay.js");
-/* harmony import */ var _accent_rotur__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./accent/rotur */ "./src/lib/themes/accent/rotur.js");
-/* harmony import */ var _gui_light__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./gui/light */ "./src/lib/themes/gui/light.js");
-/* harmony import */ var _gui_dark__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./gui/dark */ "./src/lib/themes/gui/dark.js");
-/* harmony import */ var _blocks_three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./blocks/three */ "./src/lib/themes/blocks/three.js");
-/* harmony import */ var _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./blocks/high-contrast */ "./src/lib/themes/blocks/high-contrast.js");
-/* harmony import */ var _blocks_dark__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./blocks/dark */ "./src/lib/themes/blocks/dark.js");
+/* harmony import */ var _accent_orange__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./accent/orange */ "./src/lib/themes/accent/orange.js");
+/* harmony import */ var _accent_yellow__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./accent/yellow */ "./src/lib/themes/accent/yellow.js");
+/* harmony import */ var _accent_green__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./accent/green */ "./src/lib/themes/accent/green.js");
+/* harmony import */ var _accent_rainbow__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./accent/rainbow */ "./src/lib/themes/accent/rainbow.js");
+/* harmony import */ var _accent_trans__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./accent/trans */ "./src/lib/themes/accent/trans.js");
+/* harmony import */ var _accent_gay__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./accent/gay */ "./src/lib/themes/accent/gay.js");
+/* harmony import */ var _accent_rotur__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./accent/rotur */ "./src/lib/themes/accent/rotur.js");
+/* harmony import */ var _accent_pink__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./accent/pink */ "./src/lib/themes/accent/pink.js");
+/* harmony import */ var _gui_light__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./gui/light */ "./src/lib/themes/gui/light.js");
+/* harmony import */ var _gui_dark__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./gui/dark */ "./src/lib/themes/gui/dark.js");
+/* harmony import */ var _blocks_three__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./blocks/three */ "./src/lib/themes/blocks/three.js");
+/* harmony import */ var _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./blocks/high-contrast */ "./src/lib/themes/blocks/high-contrast.js");
+/* harmony import */ var _blocks_dark__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./blocks/dark */ "./src/lib/themes/blocks/dark.js");
 var _Theme;
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
@@ -1357,28 +1507,81 @@ function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = 
 
 
 
-const ACCENT_PURPLE = 'purple';
-const ACCENT_BLUE = 'blue';
-const ACCENT_RED = 'red';
-const ACCENT_RAINBOW = 'rainbow';
-const ACCENT_TRANS = 'trans';
-const ACCENT_GAY = 'gay';
-const ACCENT_ROTUR = 'rotur';
-const ACCENT_MAP = {
-  [ACCENT_PURPLE]: _accent_purple__WEBPACK_IMPORTED_MODULE_1__,
-  [ACCENT_BLUE]: _accent_blue__WEBPACK_IMPORTED_MODULE_2__,
-  [ACCENT_RED]: _accent_red__WEBPACK_IMPORTED_MODULE_3__,
-  [ACCENT_RAINBOW]: _accent_rainbow__WEBPACK_IMPORTED_MODULE_4__,
-  [ACCENT_TRANS]: _accent_trans__WEBPACK_IMPORTED_MODULE_5__,
-  [ACCENT_GAY]: _accent_gay__WEBPACK_IMPORTED_MODULE_6__,
-  [ACCENT_ROTUR]: _accent_rotur__WEBPACK_IMPORTED_MODULE_7__
-};
-const ACCENT_DEFAULT = ACCENT_RED;
+
+
+
+
+const ACCENTS = [{
+  name: 'Red',
+  accent: _accent_red__WEBPACK_IMPORTED_MODULE_3__,
+  description: 'Red accent color',
+  id: 'tw.accent.red'
+}, {
+  name: 'Orange',
+  accent: _accent_orange__WEBPACK_IMPORTED_MODULE_4__,
+  description: 'Orange accent color',
+  id: 'tw.accent.orange'
+}, {
+  name: 'Yellow',
+  accent: _accent_yellow__WEBPACK_IMPORTED_MODULE_5__,
+  description: 'Yellow accent color',
+  id: 'tw.accent.yellow'
+}, {
+  name: 'Green',
+  accent: _accent_green__WEBPACK_IMPORTED_MODULE_6__,
+  description: 'Green accent color',
+  id: 'tw.accent.green'
+}, {
+  name: 'Purple',
+  accent: _accent_purple__WEBPACK_IMPORTED_MODULE_1__,
+  description: 'Purple accent color',
+  id: 'tw.accent.purple'
+}, {
+  name: 'Blue',
+  accent: _accent_blue__WEBPACK_IMPORTED_MODULE_2__,
+  description: 'Blue accent color',
+  id: 'tw.accent.blue'
+}, {
+  name: 'Rainbow',
+  accent: _accent_rainbow__WEBPACK_IMPORTED_MODULE_7__,
+  description: 'Rainbow accent color',
+  id: 'tw.accent.rainbow'
+}, {
+  name: 'Trans',
+  accent: _accent_trans__WEBPACK_IMPORTED_MODULE_8__,
+  description: 'Trans accent color',
+  id: 'tw.accent.trans'
+}, {
+  name: 'Gay',
+  accent: _accent_gay__WEBPACK_IMPORTED_MODULE_9__,
+  description: 'Gay accent color',
+  id: 'tw.accent.gay'
+}, {
+  name: 'Rotur',
+  accent: _accent_rotur__WEBPACK_IMPORTED_MODULE_10__,
+  description: 'Rotur accent color',
+  id: 'tw.accent.rotur'
+}, {
+  name: 'Pink',
+  accent: _accent_pink__WEBPACK_IMPORTED_MODULE_11__,
+  description: 'Pink accent color',
+  id: 'tw.accent.pink'
+}];
+const ACCENT_MAP = {};
+for (const accent of ACCENTS) {
+  ACCENT_MAP[accent.name.toLowerCase()] = {
+    defaultMessage: accent.name,
+    accent: accent.accent,
+    description: accent.description,
+    id: accent.id
+  };
+}
+const ACCENT_DEFAULT = ACCENTS[0].name.toLowerCase();
 const GUI_LIGHT = 'light';
 const GUI_DARK = 'dark';
 const GUI_MAP = {
-  [GUI_LIGHT]: _gui_light__WEBPACK_IMPORTED_MODULE_8__,
-  [GUI_DARK]: _gui_dark__WEBPACK_IMPORTED_MODULE_9__
+  [GUI_LIGHT]: _gui_light__WEBPACK_IMPORTED_MODULE_12__,
+  [GUI_DARK]: _gui_dark__WEBPACK_IMPORTED_MODULE_13__
 };
 const GUI_DEFAULT = GUI_LIGHT;
 const BLOCKS_THREE = 'three';
@@ -1386,33 +1589,33 @@ const BLOCKS_DARK = 'dark';
 const BLOCKS_HIGH_CONTRAST = 'high-contrast';
 const BLOCKS_CUSTOM = 'custom';
 const BLOCKS_DEFAULT = BLOCKS_THREE;
-const defaultBlockColors = _blocks_three__WEBPACK_IMPORTED_MODULE_10__["blockColors"];
+const defaultBlockColors = _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"];
 const BLOCKS_MAP = {
   [BLOCKS_THREE]: {
     blocksMediaFolder: 'blocks-media/default',
-    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_10__["blockColors"],
-    extensions: _blocks_three__WEBPACK_IMPORTED_MODULE_10__["extensions"],
+    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"],
+    extensions: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["extensions"],
     customExtensionColors: {},
     useForStage: true
   },
   [BLOCKS_HIGH_CONTRAST]: {
     blocksMediaFolder: 'blocks-media/high-contrast',
-    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_11__["blockColors"], defaultBlockColors),
-    extensions: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_11__["extensions"],
-    customExtensionColors: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_11__["customExtensionColors"],
+    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["blockColors"], defaultBlockColors),
+    extensions: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["extensions"],
+    customExtensionColors: _blocks_high_contrast__WEBPACK_IMPORTED_MODULE_15__["customExtensionColors"],
     useForStage: true
   },
   [BLOCKS_DARK]: {
     blocksMediaFolder: 'blocks-media/default',
-    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_dark__WEBPACK_IMPORTED_MODULE_12__["blockColors"], defaultBlockColors),
-    extensions: _blocks_dark__WEBPACK_IMPORTED_MODULE_12__["extensions"],
-    customExtensionColors: _blocks_dark__WEBPACK_IMPORTED_MODULE_12__["customExtensionColors"],
+    colors: lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["blockColors"], defaultBlockColors),
+    extensions: _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["extensions"],
+    customExtensionColors: _blocks_dark__WEBPACK_IMPORTED_MODULE_16__["customExtensionColors"],
     useForStage: false
   },
   [BLOCKS_CUSTOM]: {
     // to be filled by editor-theme3 addon
     blocksMediaFolder: 'blocks-media/default',
-    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_10__["blockColors"],
+    colors: _blocks_three__WEBPACK_IMPORTED_MODULE_14__["blockColors"],
     extensions: {},
     customExtensionColors: {},
     useForStage: false
@@ -1445,7 +1648,7 @@ class Theme {
     return BLOCKS_MAP[this.blocks].blocksMediaFolder;
   }
   getGuiColors() {
-    return lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, ACCENT_MAP[this.accent].guiColors, GUI_MAP[this.gui].guiColors, _gui_light__WEBPACK_IMPORTED_MODULE_8__["guiColors"]);
+    return lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, ACCENT_MAP[this.accent].guiColors, GUI_MAP[this.gui].guiColors, _gui_light__WEBPACK_IMPORTED_MODULE_12__["guiColors"]);
   }
   getBlockColors() {
     return lodash_defaultsdeep__WEBPACK_IMPORTED_MODULE_0___default()({}, ACCENT_MAP[this.accent].blockColors, GUI_MAP[this.gui].blockColors, BLOCKS_MAP[this.blocks].colors);
