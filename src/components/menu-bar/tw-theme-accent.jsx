@@ -1,61 +1,38 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage, defineMessages} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 
 import check from './check.svg';
 import dropdownCaret from './dropdown-caret.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {ACCENT_BLUE, ACCENT_MAP, ACCENT_PURPLE, ACCENT_RED, ACCENT_RAINBOW, ACCENT_TRANS, ACCENT_GAY, ACCENT_ROTUR, Theme} from '../../lib/themes/index.js';
+import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {persistTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
-const options = defineMessages({
-    [ACCENT_RED]: {
-        defaultMessage: 'Red',
-        description: '',
-        id: 'tw.accent.red'
-    },
-    [ACCENT_PURPLE]: {
-        defaultMessage: 'Purple',
-        description: '',
-        id: 'tw.accent.purple'
-    },
-    [ACCENT_BLUE]: {
-        defaultMessage: 'Blue',
-        description: '',
-        id: 'tw.accent.blue'
-    },
-    [ACCENT_RAINBOW]: {
-        defaultMessage: 'Rainbow',
-        description: '',
-        id: 'tw.accent.rainbow'
-    },
-    [ACCENT_TRANS]: {
-        defaultMessage: 'Trans',
-        description: '',
-        id: 'tw.accent.trans'
-    },
-    [ACCENT_GAY]: {
-        defaultMessage: 'Gay',
-        description: '',
-        id: 'tw.accent.gay'
-    },
-    [ACCENT_ROTUR]: {
-        defaultMessage: 'Rotur',
-        description: '',
-        id: 'tw.accent.rotur'
-    }
-});
+// Keep the original accent messages for FormattedMessage component
+const ACCENT_MESSAGES = {};
+for (const key in ACCENT_MAP) {
+    ACCENT_MESSAGES[key] = {
+        id: ACCENT_MAP[key].id,
+        defaultMessage: ACCENT_MAP[key].defaultMessage,
+        description: ACCENT_MAP[key].description
+    };
+}
+
+// Use accent values for styles
+for (const key in ACCENT_MAP) {
+    ACCENT_MAP[key] = ACCENT_MAP[key].accent;
+}
 
 const icons = {
 
 };
 
-const ColorIcon = props => icons[props.id] ? (
+const ColorIcon = props => (icons[props.id] ? (
     <img
         className={styles.accentIconOuter}
         src={icons[props.id]}
@@ -69,10 +46,10 @@ const ColorIcon = props => icons[props.id] ? (
         style={{
             // menu-bar-background is var(...), don't want to evaluate with the current values
             backgroundColor: ACCENT_MAP[props.id].guiColors['looks-secondary'],
-            backgroundImage: ACCENT_MAP[props.id].guiColors['menu-bar-background-image'],
+            backgroundImage: ACCENT_MAP[props.id].guiColors['menu-bar-background-image']
         }}
     />
-);
+));
 
 ColorIcon.propTypes = {
     id: PropTypes.string
@@ -89,7 +66,7 @@ const AccentMenuItem = props => (
                 draggable={false}
             />
             <ColorIcon id={props.id} />
-            <FormattedMessage {...options[props.id]} />
+            <FormattedMessage {...ACCENT_MESSAGES[props.id]} />
         </div>
     </MenuItem>
 );
@@ -127,7 +104,7 @@ const AccentThemeMenu = ({
             />
         </div>
         <Submenu place={isRtl ? 'left' : 'right'}>
-            {Object.keys(options).map(item => (
+            {Object.keys(ACCENT_MAP).map(item => (
                 <AccentMenuItem
                     key={item}
                     id={item}

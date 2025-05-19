@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unused-prop-types */
+/* eslint-disable no-unused-vars */
 import classNames from 'classnames';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
