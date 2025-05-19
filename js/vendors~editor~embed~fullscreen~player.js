@@ -220518,7 +220518,7 @@ runtimeFunctions.listContains = "const listContains = (list, item) => {\n    // 
  * @param {*} item The item to search for
  * @returns {number} The 1-indexed index of the item in the list, otherwise 0
  */
-runtimeFunctions.listIndexOf = "const listIndexOf = (list, item) => {\nfor (let i = 0; i < list.value.length; i++) {\n     if (compareEqual(list.value[i], item)) {\n            return i + 1;\n        }\n    }\n    return 0;\n}";
+runtimeFunctions.listIndexOf = "const listIndexOf = (list, item) => {\nconst index = list.value.indexOf(item) + 1; // check the conventional indexOf first\nif (index > 0) return index;\n\nfor (let i = 0; i < list.value.length; i++) {\n     if (compareEqual(list.value[i], item)) {\n            return i + 1;\n        }\n    }\n    return 0;\n}";
 
 /**
  * Get the stringified form of a list.
@@ -221768,7 +221768,7 @@ class JSGenerator {
           const value = this.localVariables.next();
           this.source += "const ".concat(value, " = ").concat(this.descendInput(node.input).asUnknown(), ";");
           // blocks like legacy no-ops can return a literal `undefined`
-          this.source += "runtime.visualReport(\"".concat(sanitize(this.script.topBlockId), "\", typeof ").concat(value, " === \"object\" ? JSON.stringify(").concat(value, ") : typeof ").concat(value, " === \"undefined\" ? \"undefined\" : ").concat(value, ");\n");
+          this.source += "runtime.visualReport(\"".concat(sanitize(this.script.topBlockId), "\", ").concat(value, ");\n");
           break;
         }
       default:
@@ -225987,7 +225987,8 @@ class Runtime extends EventEmitter {
     this.runtimeOptions = {
       maxClones: Runtime.MAX_CLONES,
       miscLimits: true,
-      fencing: true
+      fencing: true,
+      caseSensitiveLists: false
     };
     this.compilerOptions = {
       enabled: true,
@@ -228457,12 +228458,14 @@ class Runtime extends EventEmitter {
    */
   visualReport(blockId, value) {
     if (typeof value === 'object') {
-      value = ExtendedJSON.stringify(value);
+      value = JSON.stringify(value);
     }
-    if (value.length > 1000) {
-      value = "".concat(value.substr(0, 1000), "...");
+    if (typeof value === 'undefined') {
+      value = 'undefined';
     }
-    console.log(value);
+    if (value.length > 10000) {
+      value = "".concat(value.substr(0, 10000), "...");
+    }
     this.emit(Runtime.VISUAL_REPORT, {
       id: blockId,
       value: value

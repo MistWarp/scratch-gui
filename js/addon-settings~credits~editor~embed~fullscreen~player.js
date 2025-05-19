@@ -1,45 +1,4 @@
-(window["webpackJsonpGUI"] = window["webpackJsonpGUI"] || []).push([["addon-settings~editor~embed~fullscreen~player"],{
-
-/***/ "./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/components/tw-fancy-checkbox/checkbox.css":
-/*!**************************************************************************************************************************************!*\
-  !*** ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/src??postcss!./src/components/tw-fancy-checkbox/checkbox.css ***!
-  \**************************************************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var escape = __webpack_require__(/*! ../../../node_modules/css-loader/lib/url/escape.js */ "./node_modules/css-loader/lib/url/escape.js");
-exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loader/lib/css-base.js */ "./node_modules/css-loader/lib/css-base.js")(false);
-// imports
-
-
-// module
-exports.push([module.i, "/* overridden by src/lib/themes/guiHelpers.js */\n\n.checkbox_checkbox_2QbUl {\n    -webkit-appearance: none;\n       -moz-appearance: none;\n            appearance: none;\n    width: 18px;\n    height: 18px;\n    border-radius: 4px;\n    transition: .2s;\n    background-color: var(--ui-white);\n    transition-property: background-color;\n    background-size: 100%;\n    border: 1px solid var(--ui-black-transparent);\n    outline: none;\n}\n\n.checkbox_checkbox_2QbUl:hover, .checkbox_checkbox_2QbUl:focus, .checkbox_checkbox_2QbUl:active, .checkbox_checkbox_2QbUl:checked {\n    border-color: var(--looks-secondary);\n}\n\n.checkbox_checkbox_2QbUl:focus, .checkbox_checkbox_2QbUl:active {\n    box-shadow: 0 0 0 3px var(--looks-transparent);\n}\n\n.checkbox_checkbox_2QbUl:checked {\n    background-color: var(--looks-secondary);\n    background-image: url(" + escape(__webpack_require__(/*! ./checkbox.svg */ "./src/components/tw-fancy-checkbox/checkbox.svg")) + ");\n}\n", ""]);
-
-// exports
-exports.locals = {
-	"checkbox": "checkbox_checkbox_2QbUl"
-};
-
-/***/ }),
-
-/***/ "./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/lib/normalize.css":
-/*!**************************************************************************************************************!*\
-  !*** ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/src??postcss!./src/lib/normalize.css ***!
-  \**************************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(/*! ../../node_modules/css-loader/lib/css-base.js */ "./node_modules/css-loader/lib/css-base.js")(false);
-// imports
-
-
-// module
-exports.push([module.i, "/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */\nhtml{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}\nbody{margin:0}\narticle,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}\naudio,canvas,progress,video{display:inline-block;vertical-align:baseline}\naudio:not([controls]){display:none;height:0}\n[hidden],template{display:none}\na{background-color:transparent}\na:active,a:hover{outline:0}\nabbr[title]{border-bottom:1px dotted}\nb,strong{font-weight:bold}\ndfn{font-style:italic}\nh1{font-size:2em;margin:.67em 0}\nmark{background:#ff0;color:#000}\nsmall{font-size:80%}\nsub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}\nsup{top:-0.5em}\nsub{bottom:-0.25em}\nimg{border:0}\nsvg:not(:root){overflow:hidden}\nfigure{margin:1em 40px}\nhr{box-sizing:content-box;height:0}\npre{overflow:auto}\ncode,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}\nbutton,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}\nbutton{overflow:visible}\nbutton,select{text-transform:none}\nbutton,html input[type=\"button\"],input[type=\"reset\"],input[type=\"submit\"]{-webkit-appearance:button;cursor:pointer}\nbutton[disabled],html input[disabled]{cursor:default}\nbutton::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}\ninput{line-height:normal}\ninput[type=\"checkbox\"],input[type=\"radio\"]{box-sizing:border-box;padding:0}\ninput[type=\"number\"]::-webkit-inner-spin-button,input[type=\"number\"]::-webkit-outer-spin-button{height:auto}\ninput[type=\"search\"]{-webkit-appearance:textfield;box-sizing:content-box}\ninput[type=\"search\"]::-webkit-search-cancel-button,input[type=\"search\"]::-webkit-search-decoration{-webkit-appearance:none}\nfieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}\nlegend{border:0;padding:0}\ntextarea{overflow:auto}\noptgroup{font-weight:bold}\ntable{border-collapse:collapse;border-spacing:0}\ntd,th{padding:0}\n", ""]);
-
-// exports
-
-
-/***/ }),
+(window["webpackJsonpGUI"] = window["webpackJsonpGUI"] || []).push([["addon-settings~credits~editor~embed~fullscreen~player"],{
 
 /***/ "./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/lib/themes/global-styles.css":
 /*!*************************************************************************************************************************!*\
@@ -81,80 +40,6 @@ const AddonHooks = {
 
 /***/ }),
 
-/***/ "./src/components/tw-fancy-checkbox/checkbox.css":
-/*!*******************************************************!*\
-  !*** ./src/components/tw-fancy-checkbox/checkbox.css ***!
-  \*******************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-
-var content = __webpack_require__(/*! !../../../node_modules/css-loader??ref--5-1!../../../node_modules/postcss-loader/src??postcss!./checkbox.css */ "./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/components/tw-fancy-checkbox/checkbox.css");
-
-if(typeof content === 'string') content = [[module.i, content, '']];
-
-var transform;
-var insertInto;
-
-
-
-var options = {"hmr":true}
-
-options.transform = transform
-options.insertInto = undefined;
-
-var update = __webpack_require__(/*! ../../../node_modules/style-loader/lib/addStyles.js */ "./node_modules/style-loader/lib/addStyles.js")(content, options);
-
-if(content.locals) module.exports = content.locals;
-
-if(false) {}
-
-/***/ }),
-
-/***/ "./src/components/tw-fancy-checkbox/checkbox.jsx":
-/*!*******************************************************!*\
-  !*** ./src/components/tw-fancy-checkbox/checkbox.jsx ***!
-  \*******************************************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var prop_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
-/* harmony import */ var prop_types__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(prop_types__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _checkbox_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./checkbox.css */ "./src/components/tw-fancy-checkbox/checkbox.css");
-/* harmony import */ var _checkbox_css__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_checkbox_css__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var classnames__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! classnames */ "./node_modules/classnames/index.js");
-/* harmony import */ var classnames__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(classnames__WEBPACK_IMPORTED_MODULE_3__);
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-
-
-
-
-const FancyCheckbox = props => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", _extends({}, props, {
-  type: "checkbox",
-  className: classnames__WEBPACK_IMPORTED_MODULE_3___default()(props.className, _checkbox_css__WEBPACK_IMPORTED_MODULE_2___default.a.checkbox)
-}));
-FancyCheckbox.propTypes = {
-  className: prop_types__WEBPACK_IMPORTED_MODULE_1___default.a.string
-};
-/* harmony default export */ __webpack_exports__["default"] = (FancyCheckbox);
-
-/***/ }),
-
-/***/ "./src/components/tw-fancy-checkbox/checkbox.svg":
-/*!*******************************************************!*\
-  !*** ./src/components/tw-fancy-checkbox/checkbox.svg ***!
-  \*******************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = "data:image/svg+xml;base64,PCEtLSBodHRwczovL2FrYXJpY29ucy5jb20vIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIGFyaWEtaGlkZGVuPSJ0cnVlIiBmb2N1c2FibGU9ImZhbHNlIiB3aWR0aD0iMWVtIiBoZWlnaHQ9IjFlbSIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxnIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik00IDEybDYgNkwyMCA2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvZz48L3N2Zz4="
-
-/***/ }),
-
 /***/ "./src/lib/brand.js":
 /*!**************************!*\
   !*** ./src/lib/brand.js ***!
@@ -167,189 +52,6 @@ module.exports = "data:image/svg+xml;base64,PCEtLSBodHRwczovL2FrYXJpY29ucy5jb20v
 module.exports = {
   APP_NAME: 'MistWarp'
 };
-
-/***/ }),
-
-/***/ "./src/lib/detect-locale.js":
-/*!**********************************!*\
-  !*** ./src/lib/detect-locale.js ***!
-  \**********************************/
-/*! exports provided: LANGUAGE_KEY, detectLocale */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LANGUAGE_KEY", function() { return LANGUAGE_KEY; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "detectLocale", function() { return detectLocale; });
-/* harmony import */ var query_string__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! query-string */ "./node_modules/query-string/index.js");
-/* harmony import */ var query_string__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(query_string__WEBPACK_IMPORTED_MODULE_0__);
-/**
- * @fileoverview
- * Utility function to detect locale from the browser setting or paramenter on the URL.
- */
-
-
-
-// tw: read language from localStorage
-const LANGUAGE_KEY = 'tw:language';
-
-/**
- * look for language setting in the browser. Check against supported locales.
- * If there's a parameter in the URL, override the browser setting
- * @param {Array.string} supportedLocales An array of supported locale codes.
- * @return {string} the preferred locale
- */
-const detectLocale = supportedLocales => {
-  // tw: read language from localStorage
-  try {
-    const storedLanguage = localStorage.getItem(LANGUAGE_KEY);
-    if (storedLanguage && supportedLocales.includes(storedLanguage)) {
-      return storedLanguage;
-    }
-  } catch (e) {/* ignore */}
-  let locale = 'en'; // default
-  let browserLocale = window.navigator.userLanguage || window.navigator.language;
-  browserLocale = browserLocale.toLowerCase();
-  // try to set locale from browserLocale
-  if (supportedLocales.includes(browserLocale)) {
-    locale = browserLocale;
-  } else {
-    browserLocale = browserLocale.split('-')[0];
-    if (supportedLocales.includes(browserLocale)) {
-      locale = browserLocale;
-    }
-  }
-  const queryParams = query_string__WEBPACK_IMPORTED_MODULE_0___default.a.parse(location.search);
-  // Flatten potential arrays and remove falsy values
-  const potentialLocales = [].concat(queryParams.locale, queryParams.lang).filter(l => l);
-  if (!potentialLocales.length) {
-    return locale;
-  }
-  const urlLocale = potentialLocales[0].toLowerCase();
-  if (supportedLocales.includes(urlLocale)) {
-    return urlLocale;
-  }
-  return locale;
-};
-
-
-/***/ }),
-
-/***/ "./src/lib/download-blob.js":
-/*!**********************************!*\
-  !*** ./src/lib/download-blob.js ***!
-  \**********************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ((filename, blob) => {
-  const downloadLink = document.createElement('a');
-  document.body.appendChild(downloadLink);
-
-  // Use special ms version if available to get it working on Edge.
-  if (navigator.msSaveOrOpenBlob) {
-    navigator.msSaveOrOpenBlob(blob, filename);
-    return;
-  }
-  if ('download' in HTMLAnchorElement.prototype) {
-    const url = window.URL.createObjectURL(blob);
-    downloadLink.href = url;
-    downloadLink.download = filename;
-    downloadLink.type = blob.type;
-    downloadLink.click();
-    // remove the link after a timeout to prevent a crash on iOS 13 Safari
-    window.setTimeout(() => {
-      document.body.removeChild(downloadLink);
-      window.URL.revokeObjectURL(url);
-    }, 1000);
-  } else {
-    // iOS 12 Safari, open a new page and set href to data-uri
-    let popup = window.open('', '_blank');
-    const reader = new FileReader();
-    reader.onloadend = function () {
-      popup.location.href = reader.result;
-      popup = null;
-    };
-    reader.readAsDataURL(blob);
-  }
-});
-
-/***/ }),
-
-/***/ "./src/lib/isScratchDesktop.js":
-/*!*************************************!*\
-  !*** ./src/lib/isScratchDesktop.js ***!
-  \*************************************/
-/*! exports provided: default, isScratchDesktop, notScratchDesktop, setIsScratchDesktop */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isScratchDesktop", function() { return isScratchDesktop; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "notScratchDesktop", function() { return notScratchDesktop; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setIsScratchDesktop", function() { return setIsScratchDesktop; });
-/**
- * Internal stored state. Not valid until after at least one call to `setIsScratchDesktop()`.
- * @type {boolean}
- */
-let _isScratchDesktop; // undefined = not ready yet
-
-/**
- * Tell the `isScratchDesktop()` whether or not the GUI is running under Scratch Desktop.
- * @param {boolean} value - the new value which `isScratchDesktop()` should return in the future.
- */
-const setIsScratchDesktop = function setIsScratchDesktop(value) {
-  _isScratchDesktop = value;
-};
-
-/**
- * @returns {boolean} - true if it seems like the GUI is running under Scratch Desktop; false otherwise.
- * If `setIsScratchDesktop()` has not yet been called, this can return `undefined`.
- */
-const isScratchDesktop = function isScratchDesktop() {
-  return _isScratchDesktop;
-};
-
-/**
- * @returns {boolean} - false if it seems like the GUI is running under Scratch Desktop; true otherwise.
- */
-const notScratchDesktop = function notScratchDesktop() {
-  return !isScratchDesktop();
-};
-/* harmony default export */ __webpack_exports__["default"] = (isScratchDesktop);
-
-
-/***/ }),
-
-/***/ "./src/lib/normalize.css":
-/*!*******************************!*\
-  !*** ./src/lib/normalize.css ***!
-  \*******************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-
-var content = __webpack_require__(/*! !../../node_modules/css-loader??ref--5-1!../../node_modules/postcss-loader/src??postcss!./normalize.css */ "./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/lib/normalize.css");
-
-if(typeof content === 'string') content = [[module.i, content, '']];
-
-var transform;
-var insertInto;
-
-
-
-var options = {"hmr":true}
-
-options.transform = transform
-options.insertInto = undefined;
-
-var update = __webpack_require__(/*! ../../node_modules/style-loader/lib/addStyles.js */ "./node_modules/style-loader/lib/addStyles.js")(content, options);
-
-if(content.locals) module.exports = content.locals;
-
-if(false) {}
 
 /***/ }),
 
@@ -1645,7 +1347,7 @@ const applyGuiColors = theme => {
 /*!*********************************!*\
   !*** ./src/lib/themes/index.js ***!
   \*********************************/
-/*! exports provided: Theme, defaultBlockColors, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MIDNIGHT, GUI_MAP, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
+/*! exports provided: Theme, defaultBlockColors, ACCENT_MAP, GUI_LIGHT, GUI_DARK, GUI_MIDNIGHT, GUI_MAP, MENUBAR_ALIGN_LEFT, MENUBAR_ALIGN_CENTER, MENUBAR_ALIGN_RIGHT, MENUBAR_ALIGN_DEFAULT, BLOCKS_THREE, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_CUSTOM, BLOCKS_MAP */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1657,6 +1359,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_DARK", function() { return GUI_DARK; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_MIDNIGHT", function() { return GUI_MIDNIGHT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GUI_MAP", function() { return GUI_MAP; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MENUBAR_ALIGN_LEFT", function() { return MENUBAR_ALIGN_LEFT; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MENUBAR_ALIGN_CENTER", function() { return MENUBAR_ALIGN_CENTER; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MENUBAR_ALIGN_RIGHT", function() { return MENUBAR_ALIGN_RIGHT; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MENUBAR_ALIGN_DEFAULT", function() { return MENUBAR_ALIGN_DEFAULT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BLOCKS_THREE", function() { return BLOCKS_THREE; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BLOCKS_DARK", function() { return BLOCKS_DARK; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BLOCKS_HIGH_CONTRAST", function() { return BLOCKS_HIGH_CONTRAST; });
@@ -1778,6 +1484,10 @@ const GUI_MAP = {
   [GUI_MIDNIGHT]: _gui_midnight__WEBPACK_IMPORTED_MODULE_14__
 };
 const GUI_DEFAULT = GUI_LIGHT;
+const MENUBAR_ALIGN_LEFT = 'left';
+const MENUBAR_ALIGN_CENTER = 'center';
+const MENUBAR_ALIGN_RIGHT = 'right';
+const MENUBAR_ALIGN_DEFAULT = MENUBAR_ALIGN_CENTER;
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
 const BLOCKS_HIGH_CONTRAST = 'high-contrast';
@@ -1817,7 +1527,7 @@ const BLOCKS_MAP = {
 };
 let themeObjectsCreated = 0;
 class Theme {
-  constructor(accent, gui, blocks) {
+  constructor(accent, gui, blocks, menuBarAlign) {
     // do not modify these directly
     /** @readonly */
     this.id = ++themeObjectsCreated;
@@ -1827,14 +1537,18 @@ class Theme {
     this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
     /** @readonly */
     this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
+    /** @readonly */
+    this.menuBarAlign = [MENUBAR_ALIGN_LEFT, MENUBAR_ALIGN_CENTER, MENUBAR_ALIGN_RIGHT].includes(menuBarAlign) ? menuBarAlign : MENUBAR_ALIGN_DEFAULT;
   }
   set(what, to) {
     if (what === 'accent') {
-      return new Theme(to, this.gui, this.blocks);
+      return new Theme(to, this.gui, this.blocks, this.menuBarAlign);
     } else if (what === 'gui') {
-      return new Theme(this.accent, to, this.blocks);
+      return new Theme(this.accent, to, this.blocks, this.menuBarAlign);
     } else if (what === 'blocks') {
-      return new Theme(this.accent, this.gui, to);
+      return new Theme(this.accent, this.gui, to, this.menuBarAlign);
+    } else if (what === 'menuBarAlign') {
+      return new Theme(this.accent, this.gui, this.blocks, to);
     }
     throw new Error("Unknown theme property: ".concat(what));
   }
@@ -1864,10 +1578,10 @@ class Theme {
   }
 }
 _Theme = Theme;
-_defineProperty(Theme, "light", new _Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT));
-_defineProperty(Theme, "dark", new _Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT));
-_defineProperty(Theme, "midnight", new _Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT));
-_defineProperty(Theme, "highContrast", new _Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST));
+_defineProperty(Theme, "light", new _Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT));
+_defineProperty(Theme, "dark", new _Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT));
+_defineProperty(Theme, "midnight", new _Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT));
+_defineProperty(Theme, "highContrast", new _Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT));
 
 
 /***/ }),
@@ -2143,4 +1857,4 @@ const render = children => {
 /***/ })
 
 }]);
-//# sourceMappingURL=addon-settings~editor~embed~fullscreen~player.js.map
+//# sourceMappingURL=addon-settings~credits~editor~embed~fullscreen~player.js.map
