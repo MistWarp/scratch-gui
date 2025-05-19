@@ -221037,9 +221037,8 @@ class JSGenerator {
             if (index.isAlwaysNumberOrNaN()) {
               if (!isNaN(index)) {
                 return new TypedInput("(".concat(this.referenceVariable(node.list), ".value[").concat(index - 1, "] ?? \"\")"), TYPE_UNKNOWN);
-              } else {
-                return new TypedInput("(".concat(this.referenceVariable(node.list), ".value[").concat(index.asNumber(), " - 1] ?? \"\")"), TYPE_UNKNOWN);
               }
+              return new TypedInput("(".concat(this.referenceVariable(node.list), ".value[").concat(index.asNumber(), " - 1] ?? \"\")"), TYPE_UNKNOWN);
             }
             if (index instanceof ConstantInput && index.constantValue === 'last') {
               return new TypedInput("(".concat(this.referenceVariable(node.list), ".value[").concat(this.referenceVariable(node.list), ".value.length - 1] ?? \"\")"), TYPE_UNKNOWN);
@@ -221184,7 +221183,7 @@ class JSGenerator {
         }
       case 'op.letterOf':
         const letter_of_index = this.descendInput(node.letter).asNumber();
-        let after = "";
+        let after = '';
         if (!isNaN(letter_of_index)) {
           after = "[".concat(letter_of_index - 1, "]");
         } else {
@@ -221646,10 +221645,10 @@ class JSGenerator {
         this.source += "target.setDirection(".concat(this.descendInput(node.direction).asNumber(), ");\n");
         break;
       case 'motion.pointtowards_xy':
-        this.source += "target.setDirection(((Math.atan((".concat(this.descendInput(node.x).asNumber(), " - target.x) / (").concat(this.descendInput(node.y).asNumber(), " - target.y)) * 180 / Math.PI) + (").concat(this.descendInput(node.y).asNumber(), " > target.y ? 180 : 0)));\n");
+        this.source += "target.setDirection(180 + ((Math.atan((".concat(this.descendInput(node.x).asNumber(), " - target.x) / (").concat(this.descendInput(node.y).asNumber(), " - target.y)) * 180 / Math.PI) + (").concat(this.descendInput(node.y).asNumber(), " > target.y ? 180 : 0)));\n");
         break;
       case 'motion.pointtowards_xyfrom':
-        this.source += "target.setDirection(((Math.atan((".concat(this.descendInput(node.x).asNumber(), " - ").concat(this.descendInput(node.fromx).asNumber(), ") / (").concat(this.descendInput(node.y).asNumber(), " - ").concat(this.descendInput(node.fromy).asNumber(), ")) * 180 / Math.PI) + (").concat(this.descendInput(node.y).asNumber(), " > ").concat(this.descendInput(node.fromy).asNumber(), " ? 180 : 0)));\n");
+        this.source += "target.setDirection(180 + ((Math.atan((".concat(this.descendInput(node.x).asNumber(), " - ").concat(this.descendInput(node.fromx).asNumber(), ") / (").concat(this.descendInput(node.y).asNumber(), " - ").concat(this.descendInput(node.fromy).asNumber(), ")) * 180 / Math.PI) + (").concat(this.descendInput(node.y).asNumber(), " > ").concat(this.descendInput(node.fromy).asNumber(), " ? 180 : 0)));\n");
         break;
       case 'motion.setRotationStyle':
         this.source += "target.setRotationStyle(\"".concat(sanitize(node.style), "\");\n");
