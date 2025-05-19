@@ -30,6 +30,7 @@ class UsernameModal extends React.Component {
             'handleStageWidthChange',
             'handleStageHeightChange',
             'handleDisableCompilerChange',
+            'handleCaseSensitiveListsChange',
             'handleStoreProjectOptions'
         ]);
     }
@@ -76,6 +77,11 @@ class UsernameModal extends React.Component {
             enabled: !e.target.checked
         });
     }
+    handleCaseSensitiveListsChange (e) {
+        this.props.vm.setRuntimeOptions({
+            caseSensitiveLists: e.target.checked
+        });
+    }
     handleStageWidthChange (value) {
         this.props.vm.setStageSize(value, this.props.customStageSize.height);
     }
@@ -107,6 +113,7 @@ class UsernameModal extends React.Component {
                 onStageWidthChange={this.handleStageWidthChange}
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}
+                onCaseSensitiveListsChange={this.handleCaseSensitiveListsChange}
                 stageWidth={this.props.customStageSize.width}
                 stageHeight={this.props.customStageSize.height}
                 customStageSizeEnabled={
@@ -146,7 +153,8 @@ UsernameModal.propTypes = {
         width: PropTypes.number,
         height: PropTypes.number
     }),
-    disableCompiler: PropTypes.bool
+    disableCompiler: PropTypes.bool,
+    caseSensitiveLists: PropTypes.bool
 };
 
 const mapStateToProps = state => ({
@@ -160,7 +168,9 @@ const mapStateToProps = state => ({
     removeLimits: !state.scratchGui.tw.runtimeOptions.miscLimits,
     warpTimer: state.scratchGui.tw.compilerOptions.warpTimer,
     customStageSize: state.scratchGui.customStageSize,
-    disableCompiler: !state.scratchGui.tw.compilerOptions.enabled
+    disableCompiler: !state.scratchGui.tw.compilerOptions.enabled,
+    // Handle possible undefined value for caseSensitiveLists
+    caseSensitiveLists: !!state.scratchGui.tw.runtimeOptions.caseSensitiveLists
 });
 
 const mapDispatchToProps = dispatch => ({
