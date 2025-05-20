@@ -300,6 +300,27 @@ const WarpTimer = props => (
     />
 );
 
+const UnsafeOptimisations = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Unsafe Optimisations"
+                description="Unsafe Optimisations setting"
+                id="tw.settingsModal.unsafeOptimisations"
+            />
+        }
+        help={
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Enables optimisations that may break some projects. Use with caution!"
+                description="Unsafe Optimisations setting help"
+                id="tw.settingsModal.unsafeOptimisationsHelp"
+            />
+        }
+    />
+);
+
 const CaseSensitiveLists = props => (
     <BooleanSetting
         value={props.value !== undefined ? props.value : false}
@@ -517,9 +538,9 @@ const SettingsModalComponent = props => (
                     {...props}
                 />
             )}
-            <CaseSensitiveLists 
-                value={props.caseSensitiveLists}
-                onChange={props.onCaseSensitiveListsChange}
+            <UnsafeOptimisations
+                value={props.unsafeOptimisations}
+                onChange={props.onUnsafeOptimisationsChange}
             />
             <DisableCompiler
                 value={props.disableCompiler}
@@ -557,6 +578,8 @@ SettingsModalComponent.propTypes = {
     onDisableCompilerChange: PropTypes.func,
     caseSensitiveLists: PropTypes.bool,
     onCaseSensitiveListsChange: PropTypes.func,
+    unsafeOptimisations: PropTypes.bool,
+    onUnsafeOptimisationsChange: PropTypes.func,
     customStageSizeEnabled: PropTypes.bool,
     stageWidth: PropTypes.number,
     onStageWidthChange: PropTypes.func,
