@@ -149,7 +149,7 @@ class StageSelector extends React.Component {
                 .then(payload => {
                     const centered = placeInViewport(
                         payload,
-                        this.props.workspaceMetrics.targets[this.props.id],
+                        this.props.getWorkspaceMetrics().targets[this.props.id],
                         this.props.isRtl
                     );
                     this.props.vm.shareBlocksToTarget(centered, this.props.id);
@@ -167,7 +167,7 @@ class StageSelector extends React.Component {
         const componentProps = omit(this.props, [
             'asset', 'dispatchSetHoveredSprite', 'id', 'intl',
             'onActivateTab', 'onSelect', 'onShowImporting', 'onCloseImporting',
-            'isRtl', 'workspaceMetrics'
+            'isRtl', 'getWorkspaceMetrics'
         ]);
         return (
             <DroppableThrottledStage
@@ -194,9 +194,7 @@ StageSelector.propTypes = {
     onCloseImporting: PropTypes.func,
     onSelect: PropTypes.func,
     onShowImporting: PropTypes.func,
-    workspaceMetrics: PropTypes.shape({
-        targets: PropTypes.object
-    })
+    getWorkspaceMetrics: PropTypes.func
 };
 
 const mapStateToProps = (state, {asset, id}) => ({
@@ -205,8 +203,7 @@ const mapStateToProps = (state, {asset, id}) => ({
     vm: state.scratchGui.vm,
     receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
             state.scratchGui.hoveredTarget.sprite === id,
-    raised: state.scratchGui.blockDrag,
-    workspaceMetrics: state.scratchGui.workspaceMetrics
+    raised: state.scratchGui.blockDrag
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -224,7 +221,21 @@ const mapDispatchToProps = dispatch => ({
     onShowImporting: () => dispatch(showStandardAlert('importingAsset'))
 });
 
+// Custom mergeProps to provide on-demand access to workspace metrics
+const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+    ...stateProps,
+    ...dispatchProps,
+    ...ownProps,
+    getWorkspaceMetrics: () => {
+        // Access the store directly through the connect context
+        // This avoids subscribing to workspace metrics changes
+        const store = ownProps.store || (typeof window !== 'undefined' && window.ReduxStore);
+        return store ? store.getState().scratchGui.workspaceMetrics : {};
+    }
+});
+
 export default injectIntl(connect(
     mapStateToProps,
-    mapDispatchToProps
+    mapDispatchToProps,
+    mergeProps
 )(StageSelector));

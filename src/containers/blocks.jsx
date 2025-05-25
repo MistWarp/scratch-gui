@@ -132,6 +132,7 @@ class Blocks extends React.Component {
             prompt: null
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
+        this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
     }
     componentDidMount () {
@@ -290,6 +291,10 @@ class Blocks extends React.Component {
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
 
+        // Cancel any pending debounced calls
+        this.onTargetsUpdate.cancel();
+        this.onWorkspaceMetricsChange.cancel();
+
         // Clear the flyout blocks so that they can be recreated on mount.
         this.props.vm.clearFlyoutBlocks();
 
@@ -408,17 +413,12 @@ class Blocks extends React.Component {
     onWorkspaceMetricsChange () {
         const target = this.props.vm.editingTarget;
         if (target && target.id) {
-            // Dispatch updateMetrics later, since onWorkspaceMetricsChange may be (very indirectly)
-            // called from a reducer, i.e. when you create a custom procedure.
-            // TODO: Is this a vehement hack?
-            setTimeout(() => {
-                this.props.updateMetrics({
-                    targetID: target.id,
-                    scrollX: this.workspace.scrollX,
-                    scrollY: this.workspace.scrollY,
-                    scale: this.workspace.scale
-                });
-            }, 0);
+            this.props.updateMetrics({
+                targetID: target.id,
+                scrollX: this.workspace.scrollX,
+                scrollY: this.workspace.scrollY,
+                scale: this.workspace.scale
+            });
         }
     }
     onScriptGlowOn (data) {
