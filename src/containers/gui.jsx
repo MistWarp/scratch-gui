@@ -4,7 +4,7 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import ReactModal from 'react-modal';
 import VM from 'scratch-vm';
-import {injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import {
@@ -28,6 +28,7 @@ import {
 import FontLoaderHOC from '../lib/font-loader-hoc.jsx';
 import LocalizationHOC from '../lib/localization-hoc.jsx';
 import SBFileUploaderHOC from '../lib/sb-file-uploader-hoc.jsx';
+import SB3PostMessageHOC from '../lib/sb3-postmessage-hoc.jsx';
 import ProjectFetcherHOC from '../lib/project-fetcher-hoc.jsx';
 import TitledHOC from '../lib/titled-hoc.jsx';
 import ProjectSaverHOC from '../lib/project-saver-hoc.jsx';
@@ -207,6 +208,7 @@ const WrappedGui = compose(
     FontLoaderHOC,
     // QueryParserHOC, // tw: HOC is unused
     ProjectFetcherHOC,
+    SB3PostMessageHOC, // Handle postMessage events for SB3 loading
     TitledHOC,
     ProjectSaverHOC,
     vmListenerHOC,

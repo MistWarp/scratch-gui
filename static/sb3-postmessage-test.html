@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistwarp SB3 PostMessage Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #3367d6;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .iframe-container {
+            margin-top: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .code {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            border-left: 4px solid #4285f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mistwarp SB3 PostMessage Test</h1>
+        
+        <div class="info">
+            <h3>How to use this feature:</h3>
+            <p>This page demonstrates how external applications can send SB3 files to Mistwarp using postMessage.</p>
+            <p>The message format should be:</p>
+            <div class="code">
+{<br>
+  &nbsp;&nbsp;type: 'LOAD_SB3',<br>
+  &nbsp;&nbsp;data: ArrayBuffer | string (URL) | Uint8Array,<br>
+  &nbsp;&nbsp;title?: string<br>
+}
+            </div>
+        </div>
+
+        <h3>Test Methods:</h3>
+
+        <div class="input-group">
+            <label for="urlInput">Load SB3 from URL:</label>
+            <input type="text" id="urlInput" placeholder="https://example.com/project.sb3" value="">
+            <input type="text" id="titleInput" placeholder="Project Title (optional)" value="">
+            <button class="button" onclick="loadFromUrl()">Load from URL</button>
+        </div>
+
+        <div class="input-group">
+            <label for="fileInput">Load SB3 from File:</label>
+            <input type="file" id="fileInput" accept=".sb3,.sb2,.sb" onchange="handleFileSelect(event)">
+            <button class="button" onclick="loadFromFile()">Load Selected File</button>
+        </div>
+
+        <div class="input-group">
+            <button class="button" onclick="loadSampleProject()">Load Sample Project (Cat Flying)</button>
+        </div>
+
+        <div class="iframe-container">
+            <iframe id="mistwarpFrame" src="http://localhost:8601/" title="Mistwarp Editor"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        function loadFromUrl() {
+            const url = document.getElementById('urlInput').value.trim();
+            const title = document.getElementById('titleInput').value.trim();
+            
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            const message = {
+                type: 'LOAD_SB3',
+                data: url
+            };
+
+            if (title) {
+                message.title = title;
+            }
+
+            sendMessageToMistwarp(message);
+        }
+
+        function handleFileSelect(event) {
+            selectedFile = event.target.files[0];
+        }
+
+        function loadFromFile() {
+            if (!selectedFile) {
+                alert('Please select a file first');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const title = selectedFile.name.replace(/\.sb[23]?$/, '');
+                
+                const message = {
+                    type: 'LOAD_SB3',
+                    data: e.target.result, // ArrayBuffer
+                    title: title
+                };
+
+                sendMessageToMistwarp(message);
+            };
+            reader.readAsArrayBuffer(selectedFile);
+        }
+
+        function loadSampleProject() {
+            // Create a simple sample project data (this would normally be actual SB3 data)
+            // For demonstration, we'll use a URL to a sample project
+            const message = {
+                type: 'LOAD_SB3',
+                data: 'https://extensions.turbowarp.org/samples/Stretch.sb3',
+                title: 'Sample Project - Stretch'
+            };
+
+            sendMessageToMistwarp(message);
+        }
+
+        function sendMessageToMistwarp(message) {
+            const iframe = document.getElementById('mistwarpFrame');
+            
+            console.log('Sending message to Mistwarp:', message);
+            
+            // Send message to the iframe
+            iframe.contentWindow.postMessage(message, '*');
+            
+            // You could also specify the exact origin for security:
+            // iframe.contentWindow.postMessage(message, 'http://localhost:8601');
+        }
+
+        // Listen for messages back from Mistwarp (optional)
+        window.addEventListener('message', function(event) {
+            if (event.origin !== 'http://localhost:8601') {
+                return;
+            }
+            
+            console.log('Received message from Mistwarp:', event.data);
+        });
+
+        // Update the default Mistwarp URL based on the current protocol
+        window.addEventListener('load', function() {
+            const iframe = document.getElementById('mistwarpFrame');
+            const currentProtocol = window.location.protocol;
+            const defaultUrl = currentProtocol === 'https:' ? 
+                'https://localhost:8601/' : 
+                'http://localhost:8601/';
+            iframe.src = defaultUrl;
+        });
+    </script>
+</body>
+</html>
