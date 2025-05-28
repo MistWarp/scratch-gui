@@ -20,6 +20,7 @@ const manifest = {
             url: 'style.css'
         }
     ],
-    dynamicDisable: true
+    dynamicDisable: true,
+    enabledByDefault: true
 };
 export default manifest;

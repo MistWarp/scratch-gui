@@ -94,7 +94,6 @@ import dropdownCaret from './dropdown-caret.svg';
 import aboutIcon from './icon--about.svg';
 import fileIcon from './icon--file.svg';
 import editIcon from './icon--edit.svg';
-import addonsIcon from './addons.svg';
 import errorIcon from './tw-error.svg';
 import advancedIcon from './tw-advanced.svg';
 
@@ -893,26 +892,6 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
-                        {this.props.onClickAddonSettings && (
-                            <div
-                                className={classNames(styles.menuBarItem, styles.hoverable)}
-                                onClick={this.props.onClickAddonSettings}
-                            >
-                                <img
-                                    src={addonsIcon}
-                                    draggable={false}
-                                    width={20}
-                                    height={20}
-                                />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="Addons"
-                                        description="Button to open addon settings"
-                                        id="tw.menuBar.addons"
-                                    />
-                                </span>
-                            </div>
-                        )}
                     </div>
 
                     <Divider className={styles.divider} />
