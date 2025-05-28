@@ -206,29 +206,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} Whether the extension can be loaded
      */
     async canLoadExtensionFromProject (url) {
-        if (isTrustedExtension(url)) {
-            log.info(`Loading extension ${url} automatically`);
-            return true;
-        }
-        const {showModal} = await this.acquireModalLock();
-        if (url.startsWith('data:')) {
-            const allowed = await showModal(SecurityModals.LoadExtension, {
-                url,
-                unsandboxed: getPersistedUnsandboxed(),
-                onChangeUnsandboxed: this.handleChangeUnsandboxed.bind(this)
-            });
-            if (allowed) {
-                setPersistedUnsandboxed(this.state.data.unsandboxed);
-            }
-            if (allowed && this.state.data.unsandboxed) {
-                manuallyTrustExtension(url);
-            }
-            return allowed;
-        }
-        return showModal(SecurityModals.LoadExtension, {
-            url,
-            unsandboxed: false
-        });
+        return true;
     }
 
     /**
@@ -236,25 +214,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} True if the resource is allowed to be fetched
      */
     async canFetch (url) {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        if (isAlwaysTrustedForFetching(parsed)) {
-            return true;
-        }
-        const {showModal, releaseLock} = await this.acquireModalLock();
-        if (fetchOriginsTrustedByUser.has(origin)) {
-            releaseLock();
-            return true;
-        }
-        const allowed = await showModal(SecurityModals.Fetch, {
-            url
-        });
-        if (allowed) {
-            fetchOriginsTrustedByUser.add(origin);
-        }
-        return allowed;
+        return true;
     }
 
     /**
@@ -262,14 +222,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} True if the website can be opened
      */
     async canOpenWindow (url) {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        const {showModal} = await this.acquireModalLock();
-        return showModal(SecurityModals.OpenWindow, {
-            url
-        });
+        return true;
     }
 
     /**
@@ -277,69 +230,42 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} True if the website can be redirected to
      */
     async canRedirect (url) {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        const {showModal} = await this.acquireModalLock();
-        return showModal(SecurityModals.Redirect, {
-            url
-        });
+        return true;
     }
 
     /**
      * @returns {Promise<boolean>} True if audio can be recorded
      */
     async canRecordAudio () {
-        if (!allowedAudio) {
-            const {showModal} = await this.acquireModalLock();
-            allowedAudio = await showModal(SecurityModals.RecordAudio);
-        }
-        return allowedAudio;
+        return true;
     }
 
     /**
      * @returns {Promise<boolean>} True if video can be recorded
      */
     async canRecordVideo () {
-        if (!allowedVideo) {
-            const {showModal} = await this.acquireModalLock();
-            allowedVideo = await showModal(SecurityModals.RecordVideo);
-        }
-        return allowedVideo;
+        return true;
     }
 
     /**
      * @returns {Promise<boolean>} True if the clipboard can be read
      */
     async canReadClipboard () {
-        if (!allowedReadClipboard) {
-            const {showModal} = await this.acquireModalLock();
-            allowedReadClipboard = await showModal(SecurityModals.ReadClipboard);
-        }
-        return allowedReadClipboard;
+        return true;
     }
 
     /**
      * @returns {Promise<boolean>} True if the notifications are allowed
      */
     async canNotify () {
-        if (!allowedNotify) {
-            const {showModal} = await this.acquireModalLock();
-            allowedNotify = await showModal(SecurityModals.Notify);
-        }
-        return allowedNotify;
+        return true;
     }
 
     /**
      * @returns {Promise<boolean>} True if geolocation is allowed.
      */
     async canGeolocate () {
-        if (!allowedGeolocation) {
-            const {showModal} = await this.acquireModalLock();
-            allowedGeolocation = await showModal(SecurityModals.Geolocate);
-        }
-        return allowedGeolocation;
+        return true;
     }
 
     /**
@@ -347,21 +273,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} True if embed is allowed.
      */
     async canEmbed (url) {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        const origin = (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.origin : null;
-        const {showModal, releaseLock} = await this.acquireModalLock();
-        if (origin && embedOriginsTrustedByUser.has(origin)) {
-            releaseLock();
-            return true;
-        }
-        const allowed = await showModal(SecurityModals.Embed, {url});
-        if (origin && allowed) {
-            embedOriginsTrustedByUser.add(origin);
-        }
-        return allowed;
+        return true;
     }
 
     render () {

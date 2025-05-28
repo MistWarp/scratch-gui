@@ -824,6 +824,15 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>
+                                    {this.props.onClickAddonSettings && (
+                                        <MenuItem onClick={this.props.onClickAddonSettings}>
+                                            <FormattedMessage
+                                                defaultMessage="Addons"
+                                                description="Menu bar item for addon settings"
+                                                id="tw.menuBar.addons"
+                                            />
+                                        </MenuItem>
+                                    )}
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
