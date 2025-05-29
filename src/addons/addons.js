@@ -81,12 +81,12 @@ const addons = [
     'tw-disable-cloud-variables',
     'tw-disable-compiler',
     'editor-stepping',
-    'custom-theme-manager'
+    'autosave'
 ];
 
 const newAddons = [
     'expanded-backpack',
-    'custom-theme-manager'
+    'autosave'
 ];
 
 // eslint-disable-next-line import/no-commonjs
