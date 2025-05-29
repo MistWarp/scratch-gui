@@ -270,5 +270,11 @@
     "swap-local-global/edit-variable-option": "Rename or edit variable",
     "swap-local-global/to-global": "Convert to \"For all sprites\"",
     "swap-local-global/to-local": "Convert to \"For this sprite only\"",
-    "hide-stage/hide-stage": "Hide stage"
+    "hide-stage/hide-stage": "Hide stage",
+    "autosave/autosave-tooltip": "Autosave",
+    "autosave/autosave-enabled": "Autosave enabled (every {interval} minutes)",
+    "autosave/autosave-disabled": "Autosave disabled",
+    "autosave/autosave-success": "Project saved as {filename}",
+    "autosave/autosave-error": "Failed to save project automatically",
+    "autosave/autosave-manual-disabled": "Autosave is disabled. Enable it in settings to save manually."
 }
