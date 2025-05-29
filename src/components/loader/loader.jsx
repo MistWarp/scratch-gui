@@ -45,6 +45,31 @@ const messages = defineMessages({
     }
 });
 
+// Array of random loading messages
+const randomMessages = [
+  "I'm bald - Mistium",
+  "MistWarp's anniversary is less than a year away! - Nameless",
+  "ur gay - Flufi",
+  "that is making my braincells consider dying as their next action - JustNoone",
+  "i moved the addons tab to edit because i like it :yum: - Mistium",
+  "OH MY FLIPPERS - roturBOT",
+  "what is a her - pier",
+  "we have more themes than Turbowarp, which makes MistWarp better - Mistium",
+  "peak - literally everyone",
+  "rotur is fake - That one guy from the song",
+  "Femboys can be not gray - JustNoone",
+  "Penguinmod cringe fr fr ong no cap (real) (not gone wrong) (mistwarp better real) - Flufi",
+  "Fences are always gray - Nameless",
+  "Gamer keyboard - Mistium",
+  "Dont try, dont try to hide it - Flufi",
+  "CSS is my passion - Nameless",
+  "CSS is a turing complete scripting language - Mistium",
+  "I want to be Poland - Andrew",
+  "BOO - The invisible man",
+  "THERES A FUCKING TOILET MARKED ON THE MAP - Andrew",
+  "Programer socks are part of the official MistWarp uniform - Nameless"
+];
+
 // Because progress events are fired so often during the very performance-critical loading
 // process and React updates are very slow, we bypass React for updating the progress bar.
 
@@ -60,6 +85,8 @@ class LoaderComponent extends React.Component {
         this.barInnerEl = null;
         this.messageEl = null;
         this.ignoreProgress = false;
+        // Select a random message when the component is created
+        this.randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
     }
     componentDidMount () {
         this.handleAssetProgress(
@@ -145,6 +172,10 @@ class LoaderComponent extends React.Component {
                             className={styles.barInner}
                             ref={this.barInnerRef}
                         />
+                    </div>
+                    
+                    <div className={styles.randomMessage}>
+                        {this.randomMessage}
                     </div>
                 </div>
             </div>
