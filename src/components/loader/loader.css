@@ -190,3 +190,23 @@
     height: 100%;
     background-color: $ui-white-default;
 }
+
+.random-message {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-style: italic;
+    color: $ui-white-transparent-default;
+    animation: fade-in 0.8s ease-in-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 0.8;
+        transform: translateY(0);
+    }
+}
