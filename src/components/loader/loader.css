@@ -194,7 +194,7 @@
 .random-message {
     margin-top: 20px;
     font-size: 0.9rem;
-    opacity: 0.8;
+    opacity: 0.95;
     font-style: italic;
     color: $ui-white-transparent-default;
     animation: fade-in 0.8s ease-in-out;
