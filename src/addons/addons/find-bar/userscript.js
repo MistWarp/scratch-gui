@@ -297,6 +297,7 @@ export default async function ({ addon, msg, console }) {
           addBlock("event", getDescFromField(root), root); // "when I start as a clone"
           continue;
         }
+        addBlock("block", root.type, root);
       }
 
       let map = this.workspace.getVariableMap();
@@ -482,11 +483,17 @@ export default async function ({ addon, msg, console }) {
         LIST: "data-lists",
         costume: "looks",
         sound: "sounds",
+        block: "more"
       };
       if (proc.cls === "flag") {
         item.className = "sa-find-flag";
       } else {
-        const colorId = colorIds[proc.cls];
+        let colorId = colorIds[proc.cls];
+        if (proc.cls === "block") { // yea ik this is a shitty solution but it works lol
+          if (["motion", "control", "sensing", "operators", "pen", "extensions", "other"].includes((proc?.procCode ?? "").split("_", 1)[0])) {
+            colorId = proc.procCode.split("_", 1)[0];
+          }
+        }
         item.className = `sa-block-color sa-block-color-${colorId}`;
       }
       item.addEventListener("mousedown", (e) => {
