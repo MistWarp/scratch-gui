@@ -301,7 +301,9 @@ export default async function ({ addon, msg, console }) {
 
       const blocks = this.workspace.getAllBlocks().filter(v => !v.isShadow_);
       for (const block of blocks) {
-        addBlock(block.type, block.type, block);
+        if (!block.type.startsWith("data_")) {
+          addBlock(block.type, block.type, block);
+        }
       }
 
       let map = this.workspace.getVariableMap();
@@ -494,8 +496,21 @@ export default async function ({ addon, msg, console }) {
       } else {
         let colorId = colorIds[proc.cls];
         if (!colorId) { // yea ik this is a shitty solution but it works lol
-          if (["motion", "control", "sensing", "operators", "pen", "extensions", "other"].includes((proc?.procCode ?? "").split("_", 1)[0])) {
-            colorId = proc.procCode.split("_", 1)[0];
+          const code = proc.procCode.split("_", 1)[0];
+          if ([
+              "motion",
+              "control",
+              "looks",
+              "event",
+              "sound",
+              "sensing",
+              "data",
+              "pen",
+              "extensions",
+              "other"].includes(code)) {
+            colorId = code;
+          } else if (code === "operator") {
+            colorId = "operators";
           } else {
             colorId = "more";
           }
