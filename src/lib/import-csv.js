@@ -3,7 +3,8 @@ import Papa from 'papaparse';
 export default () => new Promise((resolve, reject) => {
     const fileInput = document.createElement('input');
     fileInput.setAttribute('type', 'file');
-    fileInput.setAttribute('accept', '.csv, .tsv, .txt'); // parser auto-detects delimiter
+    // accepting only these file types by default gets really annoying :3
+    // fileInput.setAttribute('accept', '.csv, .tsv, .txt'); // parser auto-detects delimiter
     fileInput.onchange = e => {
         const file = e.target.files[0];
         const fr = new FileReader();
