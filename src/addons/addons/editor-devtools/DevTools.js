@@ -78,6 +78,32 @@ export default class DevTools {
                         }, 10);
                     }
                 });
+                
+                // Add "Clean up detached scripts" option after "Clean up blocks"
+                const detachedBlocks = this.getDetachedBlocks();
+                if (detachedBlocks.length > 0) {
+                    // Find the index of the "Clean up" option
+                    const cleanUpIndex = items.findIndex(item => 
+                        item.text && (item.text === blockly.Msg.CLEAN_UP || item.text.includes('Clean up'))
+                    );
+                    
+                    const cleanUpDetachedOption = {
+                        enabled: true,
+                        text: this.m('clean-up-detached'),
+                        callback: () => {
+                            this.cleanUpDetachedScripts();
+                        }
+                    };
+                    
+                    if (cleanUpIndex !== -1) {
+                        // Insert right after the "Clean up blocks" option
+                        items.splice(cleanUpIndex + 1, 0, cleanUpDetachedOption);
+                    } else {
+                        // Fallback: add at the end if "Clean up" option not found
+                        items.push(cleanUpDetachedOption);
+                    }
+                }
+                
                 return items;
             },
             {workspace: true}
@@ -324,6 +350,39 @@ export default class DevTools {
    */
     isBlockAnOrphan (topBlock) {
         return !!topBlock.outputConnection;
+    }
+
+    /**
+     * Get all detached blocks (blocks without hat blocks)
+     * @returns {Array} Array of detached blocks
+     */
+    getDetachedBlocks() {
+        const workspace = this.getWorkspace();
+        const topBlocks = workspace.getTopBlocks();
+        return topBlocks.filter(block => !block.startHat_);
+    }
+
+    /**
+     * Clean up detached scripts after user confirmation
+     */
+    cleanUpDetachedScripts() {
+        const detachedBlocks = this.getDetachedBlocks();
+        if (detachedBlocks.length === 0) return;
+
+        const message = this.msg('detached-scripts', {
+            count: detachedBlocks.length
+        });
+
+        if (confirm(message)) {
+            const workspace = this.getWorkspace();
+            UndoGroup.startUndoGroup(workspace);
+
+            for (const block of detachedBlocks) {
+                block.dispose();
+            }
+
+            UndoGroup.endUndoGroup(workspace);
+        }
     }
 
     /**
@@ -728,6 +787,7 @@ export default class DevTools {
         this.domHelpers.bindOnce(document, 'mousedown', (...e) => this.eventMouseDown(...e), true); // true to capture all mouse downs 'before' the dom events handle them
         this.domHelpers.bindOnce(document, 'mouseup', (...e) => this.eventMouseUp(...e), true);
     }
+
 }
 
 class Col {
