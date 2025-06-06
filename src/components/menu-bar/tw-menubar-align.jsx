@@ -6,28 +6,19 @@ import {connect} from 'react-redux';
 
 import check from './check.svg';
 import dropdownCaret from './dropdown-caret.svg';
-import alignLeftIcon from './tw-align-left.svg';
-import alignCenterIcon from './tw-align-center.svg';
-import alignRightIcon from './tw-align-right.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {
-    MENUBAR_ALIGN_LEFT,
-    MENUBAR_ALIGN_CENTER,
-    MENUBAR_ALIGN_RIGHT,
-    Theme
-} from '../../lib/themes/index.js';
+import {MENUBAR_ALIGN, Theme} from '../../lib/themes/index.js';
 import {closeSettingsMenu, menubarAlignMenuOpen, openMenubarAlignMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {persistTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 const AlignIcon = ({id}) => {
-    const icons = {
-        [MENUBAR_ALIGN_LEFT]: alignLeftIcon,
-        [MENUBAR_ALIGN_CENTER]: alignCenterIcon,
-        [MENUBAR_ALIGN_RIGHT]: alignRightIcon
-    };
-    
+    const icons = Object.entries(MENUBAR_ALIGN).reduce((acc, [key, value]) => {
+        acc[key] = value.icon;
+        return acc;
+    }, {});
+
     return (
         <img
             className={styles.accentIconOuter}
@@ -57,27 +48,9 @@ const AlignMenuItem = props => (
             />
             <AlignIcon id={props.id} />
             <span className={styles.themeName}>
-                {props.id === MENUBAR_ALIGN_LEFT && (
-                    <FormattedMessage
-                        defaultMessage="Left"
-                        description="Label for left alignment option"
-                        id="tw.menuBar.left"
-                    />
-                )}
-                {props.id === MENUBAR_ALIGN_CENTER && (
-                    <FormattedMessage
-                        defaultMessage="Center"
-                        description="Label for center alignment option"
-                        id="tw.menuBar.center"
-                    />
-                )}
-                {props.id === MENUBAR_ALIGN_RIGHT && (
-                    <FormattedMessage
-                        defaultMessage="Right"
-                        description="Label for right alignment option"
-                        id="tw.menuBar.right"
-                    />
-                )}
+                <FormattedMessage
+                    {...MENUBAR_ALIGN[props.id]}
+                />
             </span>
         </div>
     </MenuItem>
@@ -95,8 +68,13 @@ const MenubarAlignMenu = ({
     onChangeMenuBarAlign,
     onOpen,
     theme
-}) => (
-    <MenuItem expanded={isOpen}>
+}) => {
+    const MENUBAR_ALIGN_MENUS = Object.keys(MENUBAR_ALIGN).map(id => ({
+        id,
+        isSelected: theme.menuBarAlign === id,
+        onClick: () => onChangeMenuBarAlign(theme.set('menuBarAlign', id))
+    }));
+    return (<MenuItem expanded={isOpen}>
         <div
             className={styles.option}
             onClick={onOpen}
@@ -119,27 +97,17 @@ const MenubarAlignMenu = ({
             place={isRtl ? 'left' : 'right'}
             className={styles.submenu}
         >
-            <AlignMenuItem
-                id={MENUBAR_ALIGN_LEFT}
-                isSelected={theme.menuBarAlign === MENUBAR_ALIGN_LEFT}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeMenuBarAlign(theme.set('menuBarAlign', MENUBAR_ALIGN_LEFT))}
-            />
-            <AlignMenuItem
-                id={MENUBAR_ALIGN_CENTER}
-                isSelected={theme.menuBarAlign === MENUBAR_ALIGN_CENTER}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeMenuBarAlign(theme.set('menuBarAlign', MENUBAR_ALIGN_CENTER))}
-            />
-            <AlignMenuItem
-                id={MENUBAR_ALIGN_RIGHT}
-                isSelected={theme.menuBarAlign === MENUBAR_ALIGN_RIGHT}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeMenuBarAlign(theme.set('menuBarAlign', MENUBAR_ALIGN_RIGHT))}
-            />
+            {MENUBAR_ALIGN_MENUS.map(menu => (
+                <AlignMenuItem
+                    key={menu.id}
+                    id={menu.id}
+                    isSelected={menu.isSelected}
+                    onClick={menu.onClick}
+                />
+            ))}
         </Submenu>
-    </MenuItem>
-);
+    </MenuItem>)
+};
 
 MenubarAlignMenu.propTypes = {
     isOpen: PropTypes.bool,

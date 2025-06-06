@@ -20,6 +20,10 @@ import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
 import * as blocksDark from './blocks/dark';
 
+import alignLeftIcon from '../../components/menu-bar/tw-align-left.svg';
+import alignCenterIcon from '../../components/menu-bar/tw-align-center.svg';
+import alignRightIcon from '../../components/menu-bar/tw-align-right.svg';
+
 const ACCENTS = [
     {
         name: 'Red',
@@ -110,10 +114,30 @@ const GUI_MAP = {
 };
 const GUI_DEFAULT = GUI_LIGHT;
 
-const MENUBAR_ALIGN_LEFT = 'left';
-const MENUBAR_ALIGN_CENTER = 'center';
-const MENUBAR_ALIGN_RIGHT = 'right';
-const MENUBAR_ALIGN_DEFAULT = MENUBAR_ALIGN_CENTER;
+
+// menubar config
+
+const MENUBAR_ALIGN = {
+    left: {
+        defaultMessage: 'Left',
+        description: 'Label for left-aligned menu bar',
+        id: 'tw.menuBar.align.left',
+        icon: alignLeftIcon
+    },
+    center: {
+        defaultMessage: 'Center',
+        description: 'Label for center-aligned menu bar',
+        id: 'tw.menuBar.align.center',
+        icon: alignCenterIcon
+    },
+    right: {
+        defaultMessage: 'Right',
+        description: 'Label for right-aligned menu bar',
+        id: 'tw.menuBar.align.right',
+        icon: alignRightIcon
+    }
+};
+const MENUBAR_ALIGN_DEFAULT =  'center';
 
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
@@ -156,7 +180,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign) {
+    constructor (accent, gui, blocks, menuBarAlign, wallpaper) {
         // do not modify these directly
         /** @readonly */
         this.id = ++themeObjectsCreated;
@@ -167,24 +191,28 @@ class Theme {
         /** @readonly */
         this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
         /** @readonly */
-        this.menuBarAlign = [MENUBAR_ALIGN_LEFT, MENUBAR_ALIGN_CENTER, MENUBAR_ALIGN_RIGHT].includes(menuBarAlign) ? 
+        this.menuBarAlign = ['left', 'center', 'right'].includes(menuBarAlign) ? 
             menuBarAlign : MENUBAR_ALIGN_DEFAULT;
+        /** @readonly */
+        this.wallpaper = wallpaper || { url: '', opacity: 0.3, history: [] };
     }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
-    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT);
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT);
+    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
+    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
+    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
+    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign);
+            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign);
+            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign);
+            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper);
         } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to);
+            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper);
+        } else if (what === 'wallpaper') {
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }
@@ -242,10 +270,7 @@ export {
     GUI_MIDNIGHT,
     GUI_MAP,
 
-    MENUBAR_ALIGN_LEFT,
-    MENUBAR_ALIGN_CENTER,
-    MENUBAR_ALIGN_RIGHT,
-    MENUBAR_ALIGN_DEFAULT,
+    MENUBAR_ALIGN,
 
     BLOCKS_THREE,
     BLOCKS_DARK,

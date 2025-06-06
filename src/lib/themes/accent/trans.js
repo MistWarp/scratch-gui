@@ -1,30 +1,30 @@
 const guiColors = {
-    'motion-primary': '#f7a8b8',
-    'motion-primary-transparent': '#f7a8b8bf',
-    'motion-tertiary': '#f7a8b8',
+    'motion-primary': 'oklab(0.85 0.08 0.02)',
+    'motion-primary-transparent': 'oklab(0.85 0.08 0.02 / 0.75)',
+    'motion-tertiary': 'oklab(0.85 0.08 0.02)',
 
-    'looks-secondary': '#f7a8b8',
-    'looks-transparent': '#f7a8b8bf',
-    'looks-light-transparent': '#f7a8b8bf',
-    'looks-secondary-dark': '#f7a8b8',
+    'looks-secondary': 'oklab(0.85 0.08 0.02)',
+    'looks-transparent': 'oklab(0.85 0.08 0.02 / 0.75)',
+    'looks-light-transparent': 'oklab(0.85 0.08 0.02 / 0.75)',
+    'looks-secondary-dark': 'oklab(0.85 0.08 0.02)',
 
-    'extensions-primary': 'hsla(350, 85%, 75%, 1)',
-    'extensions-tertiary': 'hsla(350, 85%, 55%, 1)',
-    'extensions-transparent': 'hsla(350, 85%, 75%, 0.35)',
-    'extensions-light': '#f7a8b8',
+    'extensions-primary': 'oklab(0.85 0.08 0.02)',
+    'extensions-tertiary': 'oklab(0.72 0.10 0.03)',
+    'extensions-transparent': 'oklab(0.85 0.08 0.02 / 0.35)',
+    'extensions-light': 'oklab(0.85 0.08 0.02)',
     
-    'drop-highlight': '#f7a8b8',
+    'drop-highlight': 'oklab(0.85 0.08 0.02)',
 
     'menu-bar-background-image':
         'linear-gradient(90deg, ' +
-        'rgba(85,205,252,0.75) 0%, ' +
-        'rgba(247,168,184,0.75) 50%, ' +
-        'rgba(255,255,255,0.75) 100%)'
+        'oklab(0.82 -0.05 -0.15 / 0.75) 0%, ' +
+        'oklab(0.85 0.08 0.02 / 0.75) 50%, ' +
+        'oklab(1.0 0.0 0.0 / 0.75) 100%)'
 };
 
 const blockColors = {
-    checkboxActiveBackground: '#f7a8b8',
-    checkboxActiveBorder: '#f7a8b8'
+    checkboxActiveBackground: 'oklab(0.85 0.08 0.02)',
+    checkboxActiveBorder: 'oklab(0.85 0.08 0.02)'
 };
 
 export {

@@ -66,7 +66,8 @@ const detectTheme = () => {
             parsed.accent || systemPreferences.accent,
             parsed.gui || systemPreferences.gui,
             parsed.blocks || systemPreferences.blocks,
-            parsed.menuBarAlign || systemPreferences.menuBarAlign
+            parsed.menuBarAlign || systemPreferences.menuBarAlign,
+            parsed.wallpaper || { url: '', opacity: 0.3, history: [] }
         );
     } catch (e) {
         // ignore
@@ -94,6 +95,10 @@ const persistTheme = theme => {
     }
     if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
         nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
+    }
+    // Always save wallpaper settings if they exist
+    if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
+        nonDefaultSettings.wallpaper = theme.wallpaper;
     }
 
     if (Object.keys(nonDefaultSettings).length === 0) {

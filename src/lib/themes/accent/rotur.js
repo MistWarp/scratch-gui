@@ -1,30 +1,30 @@
 const guiColors = {
-    'motion-primary': '#51567c', // primary color
-    'motion-primary-transparent': 'rgba(81, 86, 124, 0.8)', // semi-transparent primary
-    'motion-tertiary': '#4a4769', // secondary color
+    'motion-primary': 'oklab(0.42 -0.01 -0.08)',
+    'motion-primary-transparent': 'oklab(0.42 -0.01 -0.08 / 0.8)',
+    'motion-tertiary': 'oklab(0.37 0.01 -0.07)',
 
-    'looks-secondary': '#4a4769', // secondary color
-    'looks-transparent': 'rgba(74, 71, 105, 0.6)', // more transparent secondary
-    'looks-light-transparent': 'rgba(74, 71, 105, 0.3)', // very transparent secondary
-    'looks-secondary-dark': '#403041', // dark variant
+    'looks-secondary': 'oklab(0.37 0.01 -0.07)',
+    'looks-transparent': 'oklab(0.37 0.01 -0.07 / 0.6)',
+    'looks-light-transparent': 'oklab(0.37 0.01 -0.07 / 0.3)',
+    'looks-secondary-dark': 'oklab(0.30 0.02 -0.04)',
 
-    'extensions-primary': '#403041', // dark variant
-    'extensions-tertiary': 'rgba(64, 48, 65, 0.8)', // semi-transparent dark
-    'extensions-transparent': 'rgba(64, 48, 65, 0.35)', // semi-transparent dark
-    'extensions-light': 'rgba(81, 86, 124, 0.9)', // lighter variant for contrast
+    'extensions-primary': 'oklab(0.30 0.02 -0.04)',
+    'extensions-tertiary': 'oklab(0.30 0.02 -0.04 / 0.8)',
+    'extensions-transparent': 'oklab(0.30 0.02 -0.04 / 0.35)',
+    'extensions-light': 'oklab(0.42 -0.01 -0.08 / 0.9)',
 
-    'drop-highlight': '#4a4769', // secondary color
+    'drop-highlight': 'oklab(0.37 0.01 -0.07)',
 
     'menu-bar-background-image':
         'linear-gradient(90deg, ' +
-        'rgba(81, 86, 124, 0.4) 0%, ' +
-        'rgba(74, 71, 105, 0.4) 50%, ' +
-        'rgba(64, 48, 65, 0.4) 100%)' // gradient with specified colors
+        'oklab(0.42 -0.01 -0.08 / 0.4) 0%, ' +
+        'oklab(0.37 0.01 -0.07 / 0.4) 50%, ' +
+        'oklab(0.30 0.02 -0.04 / 0.4) 100%)'
 };
 
 const blockColors = {
-    checkboxActiveBackground: '#51567c', // primary color
-    checkboxActiveBorder: '#4a4769' // secondary color
+    checkboxActiveBackground: 'oklab(0.42 -0.01 -0.08)',
+    checkboxActiveBorder: 'oklab(0.37 0.01 -0.07)'
 };
 
 export {
