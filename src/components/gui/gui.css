@@ -333,3 +333,24 @@ $fade-out-distance: 15px;
     /* overridden by JS; this will be used if the browser can't understand that color */
     background-color: white;
 }
+
+/* Wallpaper support */
+.has-wallpaper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--ui-primary);
+    opacity: var(--wallpaper-overlay-opacity, 0.7);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.has-wallpaper > * {
+    position: relative;
+    z-index: 1;
+}
+
+

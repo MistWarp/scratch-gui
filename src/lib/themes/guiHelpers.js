@@ -31,6 +31,20 @@ const evaluateCSS = css => {
 };
 
 /**
+ * Convert hex color to rgba with given opacity
+ * @param {string} hex hex color string
+ * @param {number} opacity opacity value (0-1)
+ * @returns {string} rgba color string
+ */
+const hexToRgba = (hex, opacity) => {
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.substr(0, 2), 16);
+    const g = parseInt(cleanHex.substr(2, 2), 16);
+    const b = parseInt(cleanHex.substr(4, 2), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
+/**
  * @param {Theme} theme the theme
  */
 const applyGuiColors = theme => {
@@ -44,6 +58,18 @@ const applyGuiColors = theme => {
     const guiColors = theme.getGuiColors();
     for (const [name, value] of Object.entries(guiColors)) {
         doc.style.setProperty(`--${name}`, value);
+        
+        // Convert hex colors to RGB values for overlay purposes
+        if (name === 'ui-primary' && value.startsWith('#')) {
+            const hex = value.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            doc.style.setProperty('--ui-primary-rgb', `${r}, ${g}, ${b}`);
+        } else if (name === 'ui-primary' && value.startsWith('hsla')) {
+            // For HSLA values, set a default RGB fallback
+            doc.style.setProperty('--ui-primary-rgb', '229, 240, 255');
+        }
     }
 
     const blockColors = theme.getBlockColors();
@@ -72,8 +98,219 @@ const applyGuiColors = theme => {
         primary: guiColors['looks-secondary']
     };
     AddonHooks.recolorCallbacks.forEach(i => i());
+
+    // Apply wallpaper
+    applyWallpaper(theme.wallpaper);
+};
+
+/**
+ * Apply wallpaper background to the GUI
+ * @param {Object} wallpaper wallpaper configuration
+ */
+const applyWallpaper = wallpaper => {
+    const target = document.querySelector("[class*='gui_body-wrapper_']");
+
+    let checkCountTarget = 0;
+    if (!target) {
+        const maxChecks = 50;
+        const checkInterval = setInterval(() => {
+            checkCountTarget++;
+            const newTarget = document.querySelector("[class*='gui_body-wrapper_']");
+            if (newTarget) {
+                applyWallpaper(wallpaper);
+                clearInterval(checkInterval);
+            } else if (checkCountTarget >= maxChecks) {
+                clearInterval(checkInterval);
+            }
+        }, 500);
+        return;
+    }
+
+    if (wallpaper.url) {
+        target.style.backgroundImage = `url("${wallpaper.url}")`;
+        target.style.backgroundSize = 'cover';
+        target.style.backgroundPosition = 'center';
+        target.style.backgroundRepeat = 'no-repeat';
+        target.style.backgroundAttachment = 'fixed';
+        
+        // Apply opacity by creating a semi-transparent overlay
+        const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
+        const overlayOpacity = 1 - opacity;
+        
+        // Use CSS custom property for overlay
+        document.documentElement.style.setProperty('--wallpaper-overlay-opacity', overlayOpacity.toString());
+        target.classList.add('has-wallpaper');
+        
+        // Apply JavaScript-based transparency to blocks workspace
+        applyBlocksWorkspaceTransparency(true, opacity);
+        
+        // Update observer state for future blocks workspace changes
+        updateWallpaperObserverState(true, opacity);
+        
+        // Also set up a periodic check for blocks workspace in case it loads later
+        let checkCount = 0;
+        const maxChecks = 50;
+        const checkInterval = setInterval(() => {
+            checkCount++;
+            const blocksSvg = document.querySelector('svg.blocklySvg');
+            console.log(blocksSvg);
+            
+            if (blocksSvg) {
+                // Found the blocks workspace, apply transparency and stop checking
+                applyTransparencyToElement(blocksSvg, true, opacity);
+                clearInterval(checkInterval);
+            } else if (checkCount >= maxChecks) {
+                // Stop checking after max attempts
+                clearInterval(checkInterval);
+            }
+        }, 500);
+    } else {
+        // Remove wallpaper
+        target.style.backgroundImage = '';
+        target.style.backgroundSize = '';
+        target.style.backgroundPosition = '';
+        target.style.backgroundRepeat = '';
+        target.style.backgroundAttachment = '';
+        target.classList.remove('has-wallpaper');
+        document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
+        
+        // Remove transparency from blocks workspace
+        applyBlocksWorkspaceTransparency(false);
+        
+        // Update observer state
+        updateWallpaperObserverState(false);
+    }
+};
+
+/**
+ * Apply or remove transparency from the blocks workspace using JavaScript
+ * @param {boolean} hasWallpaper whether wallpaper is active
+ * @param {number} wallpaperOpacity opacity of the wallpaper (0.1 to 1.0)
+ * @param {number} retryCount current retry attempt (for internal use)
+ */
+const applyBlocksWorkspaceTransparency = (hasWallpaper, wallpaperOpacity = 0.3, retryCount = 0) => {
+    // Find the blocks workspace SVG element using the specific selector
+    const blocksSvg = document.querySelector("svg.blocklySvg");
+    
+    if (!blocksSvg) {
+        // Fallback to a more general selector if the specific one doesn't work
+        const fallbackSvg = document.querySelector('svg.blocklySvg');
+        if (fallbackSvg) {
+            applyTransparencyToElement(fallbackSvg, hasWallpaper, wallpaperOpacity);
+            return;
+        }
+        
+        // If no blocks workspace is found and we haven't retried too many times, try again
+        // This handles cases where wallpaper is applied before blocks are loaded
+        const maxRetries = 20; // Try for up to 10 seconds (50ms * 20 = 1000ms, then exponential backoff)
+        if (retryCount < maxRetries) {
+            // Use exponential backoff: start with 50ms, then increase
+            const delay = retryCount < 10 ? 50 : Math.min(500, 50 * Math.pow(2, retryCount - 10));
+            setTimeout(() => {
+                applyBlocksWorkspaceTransparency(hasWallpaper, wallpaperOpacity, retryCount + 1);
+            }, delay);
+        }
+        return;
+    }
+    
+    applyTransparencyToElement(blocksSvg, hasWallpaper, wallpaperOpacity);
+};
+
+/**
+ * Apply transparency styling to a specific element
+ * @param {Element} element the element to apply transparency to
+ * @param {boolean} hasWallpaper whether wallpaper is active
+ * @param {number} wallpaperOpacity opacity of the wallpaper (0.1 to 1.0)
+ */
+const applyTransparencyToElement = (element, hasWallpaper, wallpaperOpacity = 0.3) => {
+    if (hasWallpaper) {
+        // Calculate appropriate background transparency based on wallpaper opacity
+        // Higher wallpaper opacity means we need more workspace transparency to see through
+        const backgroundOpacity = Math.max(0.2, Math.min(0.8, 1 - wallpaperOpacity + 0.1));
+        const guiColors = document.documentElement.style.getPropertyValue('--ui-primary') || '#e5f0ff';
+        const backgroundColor = guiColors.startsWith('#') ? 
+            hexToRgba(guiColors, backgroundOpacity) :
+            `rgba(229, 240, 255, ${backgroundOpacity})`;
+        element.style.backgroundColor = backgroundColor;
+    } else {
+        // Remove transparency styling
+        element.style.backgroundColor = '';
+    }
+};
+
+// Keep track of the current wallpaper state for observer
+let currentWallpaperState = {hasWallpaper: false, opacity: 0.3};
+
+/**
+ * Observer to watch for blocks workspace changes and apply transparency when needed
+ */
+const createBlocksWorkspaceObserver = () => {
+    // Only create observer if we don't already have one
+    if (window.blocksWorkspaceObserver) {
+        return;
+    }
+    
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.type === 'childList') {
+                // Check for both specific and general blocks workspace selectors
+                const blocksSvg = document.querySelector('svg.blocklySvg');
+                
+                if (blocksSvg && currentWallpaperState.hasWallpaper) {
+                    // Apply transparency to newly created blocks workspace
+                    applyTransparencyToElement(blocksSvg, true, currentWallpaperState.opacity);
+                    
+                    // Also check for any nested SVG elements that might need transparency
+                    const nestedSvgs = blocksSvg.querySelectorAll('svg');
+                    nestedSvgs.forEach(svg => {
+                        applyTransparencyToElement(svg, true, currentWallpaperState.opacity);
+                    });
+                    break;
+                }
+            }
+        }
+    });
+    
+    // Observe the entire document for changes
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    window.blocksWorkspaceObserver = observer;
+};
+
+/**
+ * Update the observer's knowledge of current wallpaper state
+ * @param {boolean} hasWallpaper whether wallpaper is active
+ * @param {number} opacity wallpaper opacity
+ */
+const updateWallpaperObserverState = (hasWallpaper, opacity = 0.3) => {
+    currentWallpaperState = {hasWallpaper, opacity};
+    
+    if (hasWallpaper) {
+        createBlocksWorkspaceObserver();
+        
+        // Also add a listener for workspace creation events if available
+        if (window.AddonHooks && window.AddonHooks.workspaceCreated) {
+            window.AddonHooks.workspaceCreated(() => {
+                if (currentWallpaperState.hasWallpaper) {
+                    // Small delay to ensure workspace is fully initialized
+                    setTimeout(() => {
+                        applyBlocksWorkspaceTransparency(true, currentWallpaperState.opacity);
+                    }, 50);
+                }
+            });
+        }
+    } else if (window.blocksWorkspaceObserver) {
+        // Clean up observer when no wallpaper is active
+        window.blocksWorkspaceObserver.disconnect();
+        window.blocksWorkspaceObserver = null;
+    }
 };
 
 export {
-    applyGuiColors
+    applyGuiColors,
+    applyWallpaper,
+    applyBlocksWorkspaceTransparency
 };

@@ -10,9 +10,11 @@ class MenuLabel extends React.Component {
         super(props);
         bindAll(this, [
             'handleClick',
+            'handleMouseDown',
             'handleMouseUp',
             'menuRef'
         ]);
+        this.mouseDownInsideMenu = false;
     }
     componentDidMount () {
         if (this.props.open) this.addListeners();
@@ -25,9 +27,11 @@ class MenuLabel extends React.Component {
         this.removeListeners();
     }
     addListeners () {
+        document.addEventListener('mousedown', this.handleMouseDown);
         document.addEventListener('mouseup', this.handleMouseUp);
     }
     removeListeners () {
+        document.removeEventListener('mousedown', this.handleMouseDown);
         document.removeEventListener('mouseup', this.handleMouseUp);
     }
     handleClick (e) {
@@ -42,10 +46,22 @@ class MenuLabel extends React.Component {
             }
         }
     }
+    handleMouseDown (e) {
+        // Track whether the mousedown happened inside the menu
+        this.mouseDownInsideMenu = this.menuEl && this.menuEl.contains(e.target);
+    }
     handleMouseUp (e) {
-        if (this.props.open && !this.menuEl.contains(e.target)) {
+        // Only close the menu if:
+        // 1. The menu is open
+        // 2. The mouseup is outside the menu
+        // 3. The initial mousedown was also outside the menu (indicating a click outside)
+        if (this.props.open && 
+            !this.menuEl.contains(e.target) && 
+            !this.mouseDownInsideMenu) {
             this.props.onClose();
         }
+        // Reset the flag for the next interaction
+        this.mouseDownInsideMenu = false;
     }
     menuRef (c) {
         this.menuEl = c;
