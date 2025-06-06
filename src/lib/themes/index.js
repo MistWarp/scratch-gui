@@ -11,6 +11,12 @@ import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
 import * as accentRotur from './accent/rotur';
 import * as accentPink from './accent/pink';
+import * as accentSunset from './accent/sunset';
+import * as accentOcean from './accent/ocean';
+import * as accentAurora from './accent/aurora';
+import * as accentCosmic from './accent/cosmic';
+import * as accentFire from './accent/fire';
+import * as accentNebula from './accent/nebula';
 
 import * as guiLight from './gui/light';
 import * as guiDark from './gui/dark';
@@ -90,6 +96,42 @@ const ACCENTS = [
         accent: accentPink,
         description: 'Pink accent color',
         id: 'tw.accent.pink'
+    },
+    {
+        name: 'Sunset',
+        accent: accentSunset,
+        description: 'Beautiful sunset gradient',
+        id: 'tw.accent.sunset'
+    },
+    {
+        name: 'Ocean',
+        accent: accentOcean,
+        description: 'Deep ocean gradient',
+        id: 'tw.accent.ocean'
+    },
+    {
+        name: 'Aurora',
+        accent: accentAurora,
+        description: 'Aurora borealis gradient',
+        id: 'tw.accent.aurora'
+    },
+    {
+        name: 'Cosmic',
+        accent: accentCosmic,
+        description: 'Cosmic space gradient',
+        id: 'tw.accent.cosmic'
+    },
+    {
+        name: 'Fire',
+        accent: accentFire,
+        description: 'Fiery gradient',
+        id: 'tw.accent.fire'
+    },
+    {
+        name: 'Nebula',
+        accent: accentNebula,
+        description: 'Stellar nebula gradient',
+        id: 'tw.accent.nebula'
     }
 ];
 
