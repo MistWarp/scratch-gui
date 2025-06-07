@@ -39,8 +39,8 @@
 }
 
 .sa-debugger-interface [class*="card_header-buttons_"] {
-  background-color: #29beb8;
-  border-color: #3aa8a4;
+  background-color: var(--looks-secondary);
+  border-color: var(--looks-secondary-dark);
 }
 
 .sa-debugger-interface h1 {
@@ -179,7 +179,7 @@
 }
 
 .sa-debugger-log-repeats {
-  background-color: hsla(163, 85%, 40%, 1);
+  background-color: var(--extensions-primary);
   color: white;
   border-radius: 100px;
   padding: 1px 6px;
