@@ -1,5 +1,6 @@
 import {Theme} from '.';
 import AddonHooks from '../../addons/hooks';
+import {applyThemeFonts} from '../theme-fonts';
 import './global-styles.css';
 
 const BLOCK_COLOR_NAMES = [
@@ -100,7 +101,15 @@ const applyGuiColors = theme => {
     AddonHooks.recolorCallbacks.forEach(i => i());
 
     // Apply wallpaper
+    console.log('🎨 applyGuiColors Debug - applying wallpaper:', {
+        wallpaperUrl: theme.wallpaper.url,
+        wallpaperOpacity: theme.wallpaper.opacity,
+        fullWallpaperObject: theme.wallpaper
+    });
     applyWallpaper(theme.wallpaper);
+    
+    // Apply fonts (async but don't block UI)
+    applyThemeFonts(theme.fonts).catch(console.error);
 };
 
 /**
@@ -139,7 +148,6 @@ const applyWallpaper = wallpaper => {
         
         // Use CSS custom property for overlay
         document.documentElement.style.setProperty('--wallpaper-overlay-opacity', overlayOpacity.toString());
-        target.classList.add('has-wallpaper');
         
         // Apply JavaScript-based transparency to blocks workspace
         applyBlocksWorkspaceTransparency(true, opacity);
@@ -153,7 +161,6 @@ const applyWallpaper = wallpaper => {
         const checkInterval = setInterval(() => {
             checkCount++;
             const blocksSvg = document.querySelector('svg.blocklySvg');
-            console.log(blocksSvg);
             
             if (blocksSvg) {
                 // Found the blocks workspace, apply transparency and stop checking
@@ -171,7 +178,6 @@ const applyWallpaper = wallpaper => {
         target.style.backgroundPosition = '';
         target.style.backgroundRepeat = '';
         target.style.backgroundAttachment = '';
-        target.classList.remove('has-wallpaper');
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         
         // Remove transparency from blocks workspace

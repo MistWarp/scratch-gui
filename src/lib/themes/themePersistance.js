@@ -67,7 +67,8 @@ const detectTheme = () => {
             parsed.gui || systemPreferences.gui,
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
-            parsed.wallpaper || { url: '', opacity: 0.3, history: [] }
+            parsed.wallpaper || { url: '', opacity: 0.3, history: [] },
+            parsed.fonts || { system: [], google: [], history: [] }
         );
     } catch (e) {
         // ignore
@@ -99,6 +100,11 @@ const persistTheme = theme => {
     // Always save wallpaper settings if they exist
     if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
         nonDefaultSettings.wallpaper = theme.wallpaper;
+    }
+
+    // Always save fonts settings if they exist
+    if (theme.fonts && (theme.fonts.system.length > 0 || theme.fonts.google.length > 0 || theme.fonts.history.length > 0)) {
+        nonDefaultSettings.fonts = theme.fonts;
     }
 
     if (Object.keys(nonDefaultSettings).length === 0) {

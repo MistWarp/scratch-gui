@@ -1,6 +1,10 @@
 <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-  <rect x="3" y="6" width="18" height="2" fill="white"/>
-  <rect x="9" y="10" width="12" height="2" fill="white"/>
-  <rect x="3" y="14" width="18" height="2" fill="white"/>
-  <rect x="9" y="18" width="12" height="2" fill="white"/>
+  <!-- Circular background -->
+  <circle cx="12" cy="12" r="11" fill="#FFB84D" stroke="#FF9800" stroke-width="1"/>
+  
+  <!-- Right-aligned text lines in white -->
+  <rect x="6" y="8" width="12" height="1.5" rx="0.75" fill="white"/>
+  <rect x="10" y="11" width="8" height="1.5" rx="0.75" fill="white"/>
+  <rect x="6" y="14" width="12" height="1.5" rx="0.75" fill="white"/>
+  <rect x="10" y="17" width="8" height="1.5" rx="0.75" fill="white"/>
 </svg>

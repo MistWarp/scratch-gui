@@ -14,6 +14,7 @@ const MENU_BLOCKS_THEME = 'blocksThemeMenu';
 const MENU_GUI = 'guiMenu';
 const MENU_MENUBAR_ALIGN = 'menubarAlignMenu';
 const MENU_WALLPAPER = 'wallpaperMenu';
+const MENU_FONTS = 'fontsMenu';
 const MENU_ERRORS = 'errorsMenu';
 
 class Menu {
@@ -61,6 +62,7 @@ const rootMenu = new Menu('root')
             .addChild(new Menu(MENU_GUI))
             .addChild(new Menu(MENU_MENUBAR_ALIGN))
             .addChild(new Menu(MENU_WALLPAPER))
+            .addChild(new Menu(MENU_FONTS))
             .addChild(new Menu(MENU_BLOCKS_THEME))
     )
     .addChild(new Menu(MENU_FILE))
@@ -84,6 +86,7 @@ const initialState = {
     [MENU_GUI]: false,
     [MENU_MENUBAR_ALIGN]: false,
     [MENU_WALLPAPER]: false,
+    [MENU_FONTS]: false,
     [MENU_BLOCKS_THEME]: false,
     [MENU_ERRORS]: false
 };
@@ -177,6 +180,10 @@ const openWallpaperMenu = () => openMenu(MENU_WALLPAPER);
 const closeWallpaperMenu = () => closeMenu(MENU_WALLPAPER);
 const wallpaperMenuOpen = state => state.scratchGui.menus[MENU_WALLPAPER];
 
+const openFontsMenu = () => openMenu(MENU_FONTS);
+const closeFontsMenu = () => closeMenu(MENU_FONTS);
+const fontsMenuOpen = state => state.scratchGui.menus[MENU_FONTS];
+
 const openErrorsMenu = () => openMenu(MENU_ERRORS);
 const closeErrorsMenu = () => closeMenu(MENU_ERRORS);
 const errorsMenuOpen = state => state.scratchGui.menus[MENU_ERRORS];
@@ -223,6 +230,9 @@ export {
     openWallpaperMenu,
     closeWallpaperMenu,
     wallpaperMenuOpen,
+    openFontsMenu,
+    closeFontsMenu,
+    fontsMenuOpen,
     openErrorsMenu,
     closeErrorsMenu,
     errorsMenuOpen
