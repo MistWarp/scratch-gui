@@ -27,25 +27,6 @@ const isTrustedExtension = () => true;
 // always trust all extensions because this mod isnt for idiots
 
 /**
- * Set of fetch resource origins that were manually trusted by the user.
- * @type {Set<string>}
- */
-const fetchOriginsTrustedByUser = new Set();
-
-/**
- * Set of origins manually trusted by the user for embedding.
- * @type {Set<string>}
- */
-const embedOriginsTrustedByUser = new Set();
-
-/**
- * @param {URL} parsed Parsed URL object
- * @returns {boolean} True if the URL is part of the builtin set of URLs to always trust fetching from.
- */
-const isAlwaysTrustedForFetching = () => true;
-// always trust all URLs because this mod isnt for idiots
-
-/**
  * @param {string} url Original URL string
  * @returns {URL|null} A URL object if it is valid and of a known protocol, otherwise null.
  */
@@ -184,11 +165,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {string} The VM worker mode to use
      */
     getSandboxMode (url) {
-        if (isTrustedExtension(url)) {
-            log.info(`Loading extension ${url} unsandboxed`);
-            return 'unsandboxed';
-        }
-        return 'iframe';
+        return 'unsandboxed';
     }
 
     handleChangeUnsandboxed (e) {
