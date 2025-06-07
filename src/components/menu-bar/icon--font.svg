@@ -1,0 +1,10 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular background -->
+  <circle cx="10" cy="10" r="9" fill="#4C97FF" stroke="#3373CC" stroke-width="1"/>
+  
+  <!-- Letter "A" in white -->
+  <path d="M10 4L13.5 15H11.8L11 12.5H9L8.2 15H6.5L10 4Z M9.4 11H10.6L10 9L9.4 11Z" fill="white"/>
+  
+  <!-- Small decorative underline -->
+  <rect x="7" y="15.5" width="6" height="0.5" rx="0.25" fill="white" opacity="0.8"/>
+</svg>

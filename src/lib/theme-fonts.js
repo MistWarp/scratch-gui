@@ -1,0 +1,128 @@
+/**
+ * Font management utility for applying theme fonts to the document
+ */
+
+import {loadGoogleFont} from './google-fonts';
+
+let currentFontStyleElement = null;
+
+/**
+ * Apply theme fonts to the document
+ * @param {Object} fonts - The fonts object from theme
+ * @param {Array} fonts.google - Array of Google Font names
+ * @param {Array} fonts.system - Array of system font names
+ */
+const applyThemeFonts = async (fonts) => {
+    // Debug logging
+    console.log('applyThemeFonts called with:', fonts);
+    
+    // Remove existing font styles
+    if (currentFontStyleElement) {
+        currentFontStyleElement.remove();
+        currentFontStyleElement = null;
+    }
+
+    if (!fonts || (!fonts.google?.length && !fonts.system?.length)) {
+        console.log('No fonts to apply, returning early');
+        return;
+    }
+
+    // Load Google Fonts first
+    if (fonts.google?.length) {
+        console.log('Loading Google Fonts:', fonts.google);
+        await Promise.all(fonts.google.map(fontName => loadGoogleFont(fontName)));
+    }
+
+    // Create CSS for theme fonts
+    const fontStack = [];
+    
+    // Add Google Fonts first (they have priority)
+    if (fonts.google?.length) {
+        fontStack.push(...fonts.google.map(font => `"${font}"`));
+    }
+    
+    // Add system fonts
+    if (fonts.system?.length) {
+        fontStack.push(...fonts.system.map(font => `"${font}"`));
+    }
+    
+    // Add fallback fonts
+    fontStack.push('system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif');
+    
+    const fontFamily = fontStack.join(', ');
+    
+    console.log('Generated font family string:', fontFamily);
+    
+    // Create style element
+    currentFontStyleElement = document.createElement('style');
+    currentFontStyleElement.id = 'theme-fonts';
+    currentFontStyleElement.textContent = `
+        /* Theme Fonts - High Priority Overrides */
+        * {
+            font-family: ${fontFamily} !important;
+        }
+        
+        /* Specific targets for better coverage */
+        body, html, 
+        .gui, .blocklySvg,
+        [class*="gui_"],
+        [class*="menu-bar_"],
+        [class*="settings-menu_"],
+        [class*="blocklyText"],
+        .blocklyText,
+        .blocklyHtmlInput,
+        button, input, textarea, select,
+        .menu-bar, .menu-item {
+            font-family: ${fontFamily} !important;
+        }
+        
+        /* SVG text elements in Blockly */
+        text, tspan {
+            font-family: ${fontFamily} !important;
+        }
+    `;
+    
+    console.log('Adding style element to document head');
+    document.head.appendChild(currentFontStyleElement);
+};
+
+/**
+ * Remove theme fonts from the document
+ */
+const removeThemeFonts = () => {
+    if (currentFontStyleElement) {
+        currentFontStyleElement.remove();
+        currentFontStyleElement = null;
+    }
+};
+
+/**
+ * Get the current font stack as a CSS font-family string
+ * @param {Object} fonts - The fonts object from theme
+ * @returns {string} CSS font-family string
+ */
+const getFontFamilyString = (fonts) => {
+    if (!fonts || (!fonts.google?.length && !fonts.system?.length)) {
+        return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    }
+
+    const fontStack = [];
+    
+    if (fonts.google?.length) {
+        fontStack.push(...fonts.google.map(font => `"${font}"`));
+    }
+    
+    if (fonts.system?.length) {
+        fontStack.push(...fonts.system.map(font => `"${font}"`));
+    }
+    
+    fontStack.push('system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif');
+    
+    return fontStack.join(', ');
+};
+
+export {
+    applyThemeFonts,
+    removeThemeFonts,
+    getFontFamilyString
+};

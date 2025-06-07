@@ -264,7 +264,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign, wallpaper) {
+    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts) {
         // do not modify these directly
         /** @readonly */
         this.id = ++themeObjectsCreated;
@@ -279,24 +279,28 @@ class Theme {
             menuBarAlign : MENUBAR_ALIGN_DEFAULT;
         /** @readonly */
         this.wallpaper = wallpaper || { url: '', opacity: 0.3, history: [] };
+        /** @readonly */
+        this.fonts = fonts || { system: [], google: [], history: [] };
     }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
-    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] });
+    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
+    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
+    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
+    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper);
+            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper);
+            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper);
+            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper);
+            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts);
         } else if (what === 'wallpaper') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to);
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts);
+        } else if (what === 'fonts') {
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }

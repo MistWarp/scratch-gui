@@ -67,6 +67,11 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, currentOpacity}) => {
     const [url, setUrl] = React.useState('');
     const [opacity, setOpacity] = React.useState(currentOpacity);
 
+    // Sync local opacity state with currentOpacity prop
+    React.useEffect(() => {
+        setOpacity(currentOpacity);
+    }, [currentOpacity]);
+
     const handleSubmit = e => {
         e.preventDefault();
         if (url.trim()) {
@@ -77,6 +82,12 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, currentOpacity}) => {
 
     const handleOpacityChange = e => {
         const newOpacity = parseFloat(e.target.value);
+        console.log('🎚️ Slider Debug - handleOpacityChange:', {
+            rawValue: e.target.value,
+            parsedOpacity: newOpacity,
+            currentLocalOpacity: opacity,
+            currentPropOpacity: currentOpacity
+        });
         setOpacity(newOpacity);
         onOpacityChange(newOpacity);
     };
@@ -168,10 +179,16 @@ const WallpaperMenu = ({
     };
 
     const handleOpacityChange = opacity => {
+        console.log('🔄 WallpaperMenu Debug - handleOpacityChange:', {
+            newOpacity: opacity,
+            currentWallpaperOpacity: theme.wallpaper.opacity,
+            fullWallpaperObject: theme.wallpaper
+        });
         const newWallpaper = {
             ...theme.wallpaper,
             opacity
         };
+        console.log('🔄 Created new wallpaper object:', newWallpaper);
         onChangeTheme(theme.set('wallpaper', newWallpaper));
     };
 
@@ -254,6 +271,11 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
+        console.log('🚀 Redux Debug - dispatching setTheme:', {
+            newTheme: theme,
+            wallpaperOpacity: theme.wallpaper.opacity,
+            themeId: theme.id
+        });
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
         persistTheme(theme);
