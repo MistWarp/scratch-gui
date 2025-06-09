@@ -1,0 +1,173 @@
+export default async function ({ addon, msg, console }) {
+  const vm = addon.tab.traps.vm;
+  
+  await new Promise((resolve, reject) => {
+    if (vm.editingTarget) {
+      return resolve();
+    }
+    vm.runtime.once("PROJECT_LOADED", () => {
+      resolve();
+    });
+  });
+
+  const screenshotButtonOuter = document.createElement("div");
+  screenshotButtonOuter.className = "sa-screenshot-container";
+  
+  const screenshotButton = document.createElement("div");
+  screenshotButton.className = addon.tab.scratchClass("button_outlined-button", "stage-header_stage-button");
+  
+  const screenshotButtonContent = document.createElement("div");
+  screenshotButtonContent.className = addon.tab.scratchClass("button_content");
+  
+  const screenshotButtonImage = document.createElement("img");
+  screenshotButtonImage.className = addon.tab.scratchClass("stage-header_stage-button-icon");
+  screenshotButtonImage.draggable = false;
+  const iconSrc = addon.self.getResource("/icons/camera.svg");
+  screenshotButtonImage.src = iconSrc;
+  
+  screenshotButtonContent.appendChild(screenshotButtonImage);
+  screenshotButton.appendChild(screenshotButtonContent);
+  screenshotButtonOuter.appendChild(screenshotButton);
+
+  const playSoundEffect = () => {
+    const soundUrl = addon.settings.get("sound_url");
+    if (soundUrl) {
+      try {
+        const audio = new Audio(soundUrl);
+        audio.volume = 0.3;
+        audio.play().catch(err => {
+          // Sound play failed - ignore silently
+        });
+      } catch (err) {
+        // Audio creation failed - ignore silently
+      }
+    }
+  };
+
+  const showNotification = (message, type = 'success') => {
+    if (!addon.settings.get("show_notifications")) return;
+    
+    const notification = document.createElement("div");
+    notification.className = `sa-screenshot-notification sa-screenshot-notification-${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add("sa-screenshot-notification-visible"), 100);
+    setTimeout(() => {
+      notification.classList.remove("sa-screenshot-notification-visible");
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  };
+
+  const takeScreenshot = async () => {
+    try {
+      const renderer = vm.renderer;
+      
+      if (!renderer) {
+        showNotification(msg("screenshot-error"), "error");
+        return;
+      }
+
+      // Use Scratch's built-in snapshot method
+      const snapshotPromise = new Promise((resolve) => {
+        renderer.requestSnapshot((uri) => {
+          resolve(uri);
+        });
+      });
+
+      const dataUrl = await snapshotPromise;
+      
+      if (!dataUrl) {
+        showNotification(msg("screenshot-error"), "error");
+        return;
+      }
+
+      // Convert data URL to blob for clipboard
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+
+      if (!blob || blob.size === 0) {
+        showNotification(msg("screenshot-error"), "error");
+        return;
+      }
+
+      // Copy to clipboard if supported
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          showNotification(msg("screenshot-taken"));
+          playSoundEffect();
+        } catch (err) {
+          showNotification(msg("screenshot-error"), "error");
+        }
+      } else {
+        showNotification(msg("clipboard-not-supported"), "success");
+        playSoundEffect();
+      }
+      
+    } catch (err) {
+      showNotification(msg("screenshot-error"), "error");
+    }
+  };
+
+  // Add click event listener
+  screenshotButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    takeScreenshot();
+  });
+
+  // Function to manage button visibility
+  const updateButtonVisibility = () => {
+    if (addon.tab.editorMode === "editor") {
+      // Add next to debugger with order 1 (debugger has order 0)
+      try {
+        addon.tab.appendToSharedSpace({ 
+          space: "stageHeader", 
+          element: screenshotButtonOuter, 
+          order: 1 
+        });
+      } catch (err) {
+        // Failed to add button - ignore silently
+      }
+    } else {
+      if (screenshotButtonOuter.parentNode) {
+        screenshotButtonOuter.remove();
+      }
+    }
+  };
+
+  // Wait for stage header and manage button visibility
+  let loopCount = 0;
+  while (true) {
+    loopCount++;
+    
+    try {
+      await addon.tab.waitForElement(
+        '[class^="stage-header_stage-size-row"], [class^="stage-header_fullscreen-buttons-row_"]',
+        {
+          markAsSeen: true,
+          reduxEvents: [
+            "scratch-gui/mode/SET_PLAYER",
+            "scratch-gui/mode/SET_FULL_SCREEN",
+            "fontsLoaded/SET_FONTS_LOADED",
+            "scratch-gui/locales/SELECT_LOCALE",
+          ],
+        }
+      );
+      
+      updateButtonVisibility();
+      
+      // Add a delay to avoid excessive processing
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+}

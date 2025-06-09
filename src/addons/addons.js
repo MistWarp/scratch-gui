@@ -14,6 +14,7 @@ const addons = [
     'mediarecorder',
     'drag-drop',
     'debugger',
+    'canvas-screenshot',
     'pause',
     'mute-project',
     'vol-slider',

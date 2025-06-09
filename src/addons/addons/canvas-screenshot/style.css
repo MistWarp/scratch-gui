@@ -1,0 +1,65 @@
+[dir="ltr"] .sa-screenshot-container {
+  margin-right: 0.2rem;
+}
+
+[dir="rtl"] .sa-screenshot-container {
+  margin-left: 0.2rem;
+}
+
+.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-screenshot-container {
+  display: none !important;
+}
+
+.sa-screenshot-container [class*="button_content_"] {
+  position: relative;
+}
+
+.sa-screenshot-container [class*="button_outlined-button"] {
+  background-color: var(--ui-secondary);
+  border-color: var(--ui-secondary-dark, var(--ui-black-transparent));
+  color: var(--text-primary);
+}
+
+.sa-screenshot-container [class*="button_outlined-button"]:hover {
+  background-color: var(--ui-secondary-dark, var(--ui-tertiary));
+  border-color: var(--ui-secondary-darker, var(--ui-black-transparent));
+}
+
+.sa-screenshot-container img {
+  filter: var(--editorDarkMode-accent-filter, none);
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sa-screenshot-notification {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4c97ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.sa-screenshot-notification-error {
+  background: #ff6680;
+}
+
+.sa-screenshot-notification-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes sa-screenshot-flash {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
