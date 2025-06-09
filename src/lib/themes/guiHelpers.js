@@ -101,11 +101,6 @@ const applyGuiColors = theme => {
     AddonHooks.recolorCallbacks.forEach(i => i());
 
     // Apply wallpaper
-    console.log('🎨 applyGuiColors Debug - applying wallpaper:', {
-        wallpaperUrl: theme.wallpaper.url,
-        wallpaperOpacity: theme.wallpaper.opacity,
-        fullWallpaperObject: theme.wallpaper
-    });
     applyWallpaper(theme.wallpaper);
     
     // Apply fonts (async but don't block UI)
