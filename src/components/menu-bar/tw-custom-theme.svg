@@ -1,0 +1,19 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Color palette background -->
+  <rect x="2" y="2" width="20" height="20" rx="3" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+  
+  <!-- Color swatches -->
+  <rect x="4" y="4" width="4" height="4" rx="1" fill="#ff4757"/>
+  <rect x="9" y="4" width="4" height="4" rx="1" fill="#2ed573"/>
+  <rect x="15" y="4" width="4" height="4" rx="1" fill="#3742fa"/>
+  
+  <rect x="4" y="10" width="4" height="4" rx="1" fill="#ffa726"/>
+  <rect x="9" y="10" width="4" height="4" rx="1" fill="#ab47bc"/>
+  <rect x="15" y="10" width="4" height="4" rx="1" fill="#26c6da"/>
+  
+  <!-- Brush icon overlay -->
+  <g transform="translate(10, 16)">
+    <path d="M2 1L1 3L3 5L5 3L4 1Z" fill="#8b4513" stroke="#654321" stroke-width="0.5"/>
+    <ellipse cx="2.5" cy="6" rx="1.5" ry="2" fill="#c0c0c0"/>
+  </g>
+</svg>

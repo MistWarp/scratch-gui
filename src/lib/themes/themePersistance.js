@@ -1,4 +1,5 @@
 import {BLOCKS_CUSTOM, Theme} from '.';
+import {customThemeManager, CustomTheme} from './custom-themes.js';
 
 const matchMedia = query => (window.matchMedia ? window.matchMedia(query) : null);
 const PREFERS_HIGH_CONTRAST_QUERY = matchMedia('(prefers-contrast: more)');
@@ -61,6 +62,17 @@ const detectTheme = () => {
         }
 
         const parsed = JSON.parse(local);
+        
+        // Check if this is a custom theme
+        if (parsed.isCustom && parsed.customThemeUuid) {
+            const customTheme = customThemeManager.getTheme(parsed.customThemeUuid);
+            if (customTheme) {
+                return customTheme;
+            }
+            // Fall back to system preferences if custom theme not found
+            console.warn(`Custom theme ${parsed.customThemeUuid} not found, falling back to system preferences`);
+        }
+        
         // Any invalid values in storage will be handled by Theme itself
         return new Theme(
             parsed.accent || systemPreferences.accent,
@@ -84,27 +96,33 @@ const persistTheme = theme => {
     const systemPreferences = systemPreferencesTheme();
     const nonDefaultSettings = {};
 
-    if (theme.accent !== systemPreferences.accent) {
-        nonDefaultSettings.accent = theme.accent;
-    }
-    if (theme.gui !== systemPreferences.gui) {
-        nonDefaultSettings.gui = theme.gui;
-    }
-    // custom blocks are managed by addon at runtime, don't save here
-    if (theme.blocks !== systemPreferences.blocks && theme.blocks !== BLOCKS_CUSTOM) {
-        nonDefaultSettings.blocks = theme.blocks;
-    }
-    if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
-        nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
-    }
-    // Always save wallpaper settings if they exist
-    if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
-        nonDefaultSettings.wallpaper = theme.wallpaper;
-    }
+    // Handle custom themes differently
+    if (theme instanceof CustomTheme) {
+        nonDefaultSettings.customThemeUuid = theme.uuid;
+        nonDefaultSettings.isCustom = true;
+    } else {
+        if (theme.accent !== systemPreferences.accent) {
+            nonDefaultSettings.accent = theme.accent;
+        }
+        if (theme.gui !== systemPreferences.gui) {
+            nonDefaultSettings.gui = theme.gui;
+        }
+        // custom blocks are managed by addon at runtime, don't save here
+        if (theme.blocks !== systemPreferences.blocks && theme.blocks !== BLOCKS_CUSTOM) {
+            nonDefaultSettings.blocks = theme.blocks;
+        }
+        if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
+            nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
+        }
+        // Always save wallpaper settings if they exist
+        if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
+            nonDefaultSettings.wallpaper = theme.wallpaper;
+        }
 
-    // Always save fonts settings if they exist
-    if (theme.fonts && (theme.fonts.system.length > 0 || theme.fonts.google.length > 0 || theme.fonts.history.length > 0)) {
-        nonDefaultSettings.fonts = theme.fonts;
+        // Always save fonts settings if they exist
+        if (theme.fonts && (theme.fonts.system.length > 0 || theme.fonts.google.length > 0 || theme.fonts.history.length > 0)) {
+            nonDefaultSettings.fonts = theme.fonts;
+        }
     }
 
     if (Object.keys(nonDefaultSettings).length === 0) {

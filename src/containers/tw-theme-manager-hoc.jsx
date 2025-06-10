@@ -21,13 +21,6 @@ const TWThemeManagerHOC = function (WrappedComponent) {
         }
         componentDidUpdate (prevProps) {
             if (prevProps.reduxTheme !== this.props.reduxTheme) {
-                console.log('🎨 ThemeManager Debug - theme changed:', {
-                    oldTheme: prevProps.reduxTheme,
-                    newTheme: this.props.reduxTheme,
-                    oldWallpaperOpacity: prevProps.reduxTheme?.wallpaper?.opacity,
-                    newWallpaperOpacity: this.props.reduxTheme?.wallpaper?.opacity,
-                    themeIdChanged: prevProps.reduxTheme?.id !== this.props.reduxTheme?.id
-                });
                 applyGuiColors(this.props.reduxTheme);
             }
         }
