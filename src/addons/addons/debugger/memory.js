@@ -199,7 +199,6 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
   const getVariableDataSize = () => {
     let totalChars = 0;
     for (const target of vm.runtime.targets) {
-      if (!target.isOriginal) continue;
       const variableMap = target.variables;
       for (const variableId in variableMap) {
         const variable = variableMap[variableId];
@@ -228,7 +227,6 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
   const getListItemsCount = () => {
     let count = 0;
     for (const target of vm.runtime.targets) {
-      if (!target.isOriginal) continue;
       const variableMap = target.variables;
       for (const variableId in variableMap) {
         const variable = variableMap[variableId];
