@@ -1,4 +1,6 @@
 @import "../../css/colors.css";
+@import "../../css/filters.css";
+@import "../../css/filters.css";
 
 .icon {
     width: 1.5rem;
@@ -150,10 +152,12 @@
     border-radius: 2px;
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .opacity-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -460,4 +464,426 @@
     opacity: 0.7;
     text-align: center;
     padding: 0.25rem;
+}
+
+/* Custom theme menu styles */
+.customThemeSubmenu {
+    min-width: 280px;
+    max-width: 320px;
+}
+
+.customThemeAction {
+    transition: background-color 0.1s ease;
+}
+
+.customThemeAction:hover {
+    background-color: $ui-black-transparent;
+}
+
+.customThemeAction.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.customThemeAction.disabled:hover {
+    background-color: transparent;
+}
+
+.customThemeActionIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    filter: $filter-icon-black;
+}
+
+.customThemeItem {
+    position: relative;
+    transition: background-color 0.1s ease;
+}
+
+.customThemeItem:hover {
+    background-color: $ui-black-transparent;
+}
+
+.customThemeItem.selected {
+    background-color: $looks-transparent;
+}
+
+.customThemeItemInfo {
+    flex: 1;
+    min-width: 0;
+    margin-left: 8px;
+}
+
+.customThemeActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.customThemeActionButton {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customThemeActionButton:hover {
+    opacity: 1;
+    background-color: rgba(0, 100, 200, 0.15);
+}
+
+.customThemeEditButton {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customThemeEditButton:hover {
+    opacity: 1;
+    background-color: rgba(0, 100, 200, 0.15);
+}
+
+.customThemeActionButton img {
+    width: 12px;
+    height: 12px;
+    filter: $filter-icon-black;
+}
+
+.customThemeEditButton img {
+    width: 12px;
+    height: 12px;
+    /* No filter applied - uses currentColor from SVG */
+}
+
+.customThemeItemName {
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.customThemeItemDescription {
+    font-size: 0.625rem;
+    color: $text-primary;
+    opacity: 0.7;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.customThemeDeleteButton {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customThemeDeleteButton:hover {
+    opacity: 1;
+    background-color: rgba(255, 0, 0, 0.15);
+}
+
+.customThemeDeleteButton img {
+    width: 12px;
+    height: 12px;
+}
+
+.customThemeEmpty {
+    padding: 12px;
+    text-align: center;
+    font-style: italic;
+    opacity: 0.6;
+    font-size: 0.75rem;
+    color: $text-primary;
+}
+
+.menuSeparator {
+    height: 1px;
+    background: $ui-black-transparent;
+    margin: 0.25rem 0;
+}
+
+/* Create theme dialog */
+.customThemeDialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.customThemeDialogContent {
+    background: $ui-modal-background;
+    border-radius: 8px;
+    padding: 24px;
+    width: 400px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.customThemeDialogContent h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: $text-primary;
+}
+
+.customThemeDialogField {
+    margin-bottom: 16px;
+}
+
+.customThemeDialogField label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    color: $text-primary;
+}
+
+.customThemeDialogField input,
+.customThemeDialogField textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $input-background;
+    color: $text-primary;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.customThemeDialogField input:focus,
+.customThemeDialogField textarea:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.customThemeDialogField textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.customThemeDialogButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.customThemeDialogButton {
+    padding: 8px 16px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.customThemeDialogButton:hover {
+    background: $ui-secondary;
+}
+
+.customThemeDialogButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.customThemeDialogButton.primary {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.customThemeDialogButton.primary:hover {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.selectedIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* Gradient Creator Styles */
+.gradientPreview {
+    width: 100%;
+    height: 60px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.colorStops {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-white;
+}
+
+.colorStop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: $ui-secondary;
+}
+
+.colorStop:hover {
+    border-color: $ui-black-transparent;
+}
+
+.colorPicker {
+    width: 40px;
+    height: 30px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+}
+
+.colorPicker::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.colorPicker::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+.positionInput {
+    width: 60px;
+    padding: 4px 6px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.positionInput:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.removeColorButton {
+    padding: 4px 8px;
+    background: $ui-white;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    color: $text-primary;
+}
+
+.removeColorButton:hover {
+    background: #ff4444;
+    color: white;
+    border-color: #ff4444;
+}
+
+.addColorButton {
+    padding: 6px 12px;
+    background: $ui-white;
+    border: 1px solid $looks-secondary;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: $looks-secondary;
+    align-self: flex-start;
+}
+
+.addColorButton:hover {
+    background: $looks-secondary;
+    color: white;
+}
+
+.directionSlider {
+    width: 100%;
+    margin: 8px 0;
+}
+
+.directionSlider::-webkit-slider-track {
+    background: $ui-black-transparent;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.directionSlider::-webkit-slider-thumb {
+    background: $looks-secondary;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    -webkit-appearance: none;
+}
+
+.directionSlider::-moz-range-track {
+    background: $ui-black-transparent;
+    height: 4px;
+    border-radius: 2px;
+    border: none;
+}
+
+.directionSlider::-moz-range-thumb {
+    background: $looks-secondary;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
 }
