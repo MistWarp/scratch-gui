@@ -203,7 +203,7 @@ export default async ({ addon, console, msg }) => {
     };
     const disposeRecorder = () => {
       isRecording = false;
-      recordElem.textContent = msg("record");
+      updateRecordButton(msg("record"));
       recordElem.title = "";
       recorder = null;
       recordBuffer = [];
@@ -236,6 +236,26 @@ export default async ({ addon, console, msg }) => {
         recorder.stop();
       }
     };
+    
+    // Function to update record button content while preserving camera icon
+    const updateRecordButton = (text) => {
+      // Clear all content
+      recordElem.innerHTML = '';
+      
+      // Re-add camera icon
+      const cameraIcon = document.createElement('span');
+      cameraIcon.innerHTML = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 5px; vertical-align: middle;">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      `;
+      
+      // Add icon and text
+      recordElem.appendChild(cameraIcon);
+      recordElem.appendChild(document.createTextNode(text));
+    };
+    
     const startRecording = async (opts) => {
       // Timer
       const secs = Math.min(600, Math.max(1, opts.secs));
@@ -256,10 +276,8 @@ export default async ({ addon, console, msg }) => {
       }
       if (opts.waitUntilFlag) {
         isWaitingForFlag = true;
-        Object.assign(recordElem, {
-          textContent: msg("click-flag"),
-          title: msg("click-flag-description"),
-        });
+        updateRecordButton(msg("click-flag"));
+        recordElem.title = msg("click-flag-description");
         abortController = new AbortController();
         try {
           await Promise.race([
@@ -315,12 +333,12 @@ export default async ({ addon, console, msg }) => {
       const delay = opts.delay || 0;
       const roundedDelay = Math.floor(delay);
       for (let index = 0; index < roundedDelay; index++) {
-        recordElem.textContent = msg("starting-in", { secs: roundedDelay - index });
+        updateRecordButton(msg("starting-in", { secs: roundedDelay - index }));
         await new Promise((resolve) => setTimeout(resolve, 975));
       }
       setTimeout(
         () => {
-          recordElem.textContent = msg("stop");
+          updateRecordButton(msg("stop"));
 
           recorder.start(1000);
         },
@@ -330,8 +348,11 @@ export default async ({ addon, console, msg }) => {
     if (!recordElem) {
       recordElem = Object.assign(document.createElement("div"), {
         className: "sa-record " + elem.className,
-        textContent: msg("record"),
       });
+      
+      // Initialize button with camera icon and text
+      updateRecordButton(msg("record"));
+      
       recordElem.addEventListener("click", async () => {
         if (isRecording) {
           stopRecording();

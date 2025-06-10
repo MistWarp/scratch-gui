@@ -2,7 +2,7 @@
 const manifest = {
   "editorOnly": true,
   "name": "Block count",
-  "description": "Shows the total number of blocks in a project in the editor menu bar. Previously part of \"sprite and script count\".",
+  "description": "Shows the total number of blocks in a project in the editor menu bar with detailed complexity analysis. Click the block count to see detailed project metrics including nesting depth, script complexity, and block type distribution. Previously part of \"sprite and script count\".",
   "tags": [],
   "credits": [
     {
@@ -14,6 +14,19 @@ const manifest = {
   "userscripts": [
     {
       "url": "blockcount.js"
+    }
+  ],
+  "userstyles": [
+    {
+      "url": "style.css"
+    }
+  ],
+  "settings": [
+    {
+      "name": "Show complexity score in menu bar",
+      "id": "show_complexity_score",
+      "type": "boolean",
+      "default": false
     }
   ],
   "enabledByDefault": true

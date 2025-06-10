@@ -14,13 +14,15 @@ class CustomProcedures extends React.Component {
             'handleAddBoolean',
             'handleAddTextNumber',
             'handleToggleWarp',
+            'handleColorChange',
             'handleCancel',
             'handleOk',
             'setBlocks'
         ]);
         this.state = {
             rtlOffset: 0,
-            warp: false
+            warp: false,
+            color: '#FF6680' // Default "more" category color
         };
     }
     componentWillUnmount () {
@@ -104,7 +106,27 @@ class CustomProcedures extends React.Component {
         this.mutationRoot.domToMutation(this.props.mutator);
         this.mutationRoot.initSvg();
         this.mutationRoot.render();
-        this.setState({warp: this.mutationRoot.getWarp()});
+        
+        // Set warp state if the method exists
+        if (typeof this.mutationRoot.getWarp === 'function') {
+            this.setState({warp: this.mutationRoot.getWarp()});
+        }
+        
+        // Load custom color from mutation if available
+        var customColor = null;
+        if (this.props.mutator && this.props.mutator.hasAttribute('customcolor')) {
+            customColor = this.props.mutator.getAttribute('customcolor');
+        } else if (this.props.mutator && this.props.mutator.hasAttribute('customColor')) {
+            customColor = this.props.mutator.getAttribute('customColor');
+        }
+        
+        if (customColor) {
+            this.setState({color: customColor});
+            if (typeof this.mutationRoot.setCustomColor === 'function') {
+                this.mutationRoot.setCustomColor(customColor);
+            }
+        }
+        
         // Allow the initial events to run to position this block, then focus.
         setTimeout(() => {
             this.mutationRoot.focusLastEditor_();
@@ -115,6 +137,10 @@ class CustomProcedures extends React.Component {
     }
     handleOk () {
         const newMutation = this.mutationRoot ? this.mutationRoot.mutationToDom(true) : null;
+        // Include the custom color in the mutation data
+        if (newMutation && this.state.color !== '#FF6680') {
+            newMutation.setAttribute('customColor', this.state.color);
+        }
         this.props.onRequestClose(newMutation);
     }
     handleAddLabel () {
@@ -133,10 +159,18 @@ class CustomProcedures extends React.Component {
         }
     }
     handleToggleWarp () {
-        if (this.mutationRoot) {
+        if (this.mutationRoot && typeof this.mutationRoot.getWarp === 'function' && typeof this.mutationRoot.setWarp === 'function') {
             const newWarp = !this.mutationRoot.getWarp();
             this.mutationRoot.setWarp(newWarp);
             this.setState({warp: newWarp});
+        }
+    }
+    handleColorChange (event) {
+        const newColor = event.target.value;
+        this.setState({color: newColor});
+        // Apply color to the block immediately for preview
+        if (this.mutationRoot && typeof this.mutationRoot.setCustomColor === 'function') {
+            this.mutationRoot.setCustomColor(newColor);
         }
     }
     render () {
@@ -144,10 +178,12 @@ class CustomProcedures extends React.Component {
             <CustomProceduresComponent
                 componentRef={this.setBlocks}
                 warp={this.state.warp}
+                color={this.state.color}
                 onAddBoolean={this.handleAddBoolean}
                 onAddLabel={this.handleAddLabel}
                 onAddTextNumber={this.handleAddTextNumber}
                 onCancel={this.handleCancel}
+                onColorChange={this.handleColorChange}
                 onOk={this.handleOk}
                 onToggleWarp={this.handleToggleWarp}
             />

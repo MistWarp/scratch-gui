@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Modal from '../../containers/modal.jsx';
 import Box from '../box/box.jsx';
+import ColorPicker from './color-picker.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 
 import booleanInputIcon from './icon--boolean-input.svg';
@@ -117,6 +118,10 @@ const CustomProcedures = props => (
                     />
                 </label>
             </div>
+            <ColorPicker
+                color={props.color || '#FF6680'}
+                onColorChange={props.onColorChange}
+            />
             <Box className={styles.buttonRow}>
                 <button
                     className={styles.cancelButton}
@@ -144,12 +149,14 @@ const CustomProcedures = props => (
 );
 
 CustomProcedures.propTypes = {
+    color: PropTypes.string,
     componentRef: PropTypes.func.isRequired,
     intl: intlShape,
     onAddBoolean: PropTypes.func.isRequired,
     onAddLabel: PropTypes.func.isRequired,
     onAddTextNumber: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
+    onColorChange: PropTypes.func.isRequired,
     onOk: PropTypes.func.isRequired,
     onToggleWarp: PropTypes.func.isRequired,
     warp: PropTypes.bool.isRequired

@@ -36,6 +36,58 @@
   color: var(--ui-modal-foreground);
   width: 565px;
   height: 25rem;
+  min-width: 300px;
+  min-height: 200px;
+  max-width: 90vw;
+  max-height: 90vh;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sa-debugger-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nw-resize;
+  z-index: 1000;
+  background: linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 4px,
+    var(--ui-black-transparent) 4px,
+    var(--ui-black-transparent) 6px,
+    transparent 6px,
+    transparent 8px,
+    var(--ui-black-transparent) 8px,
+    var(--ui-black-transparent) 10px,
+    transparent 10px,
+    transparent 12px,
+    var(--ui-black-transparent) 12px,
+    var(--ui-black-transparent) 14px,
+    transparent 14px
+  );
+}
+
+.sa-debugger-resize-handle:hover {
+  background: linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 4px,
+    var(--looks-secondary) 4px,
+    var(--looks-secondary) 6px,
+    transparent 6px,
+    transparent 8px,
+    var(--looks-secondary) 8px,
+    var(--looks-secondary) 10px,
+    transparent 10px,
+    transparent 12px,
+    var(--looks-secondary) 12px,
+    var(--looks-secondary) 14px,
+    transparent 14px
+  );
 }
 
 .sa-debugger-interface [class*="card_header-buttons_"] {
@@ -276,4 +328,88 @@
 }
 .sa-debugger-compiler-warning[hidden] {
   display: none;
+}
+
+/* Memory tab specific styles */
+.sa-memory-tab-content {
+  padding: 10px;
+}
+
+.sa-memory-info-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: var(--ui-secondary);
+  border-radius: 8px;
+}
+
+.sa-memory-info-card {
+  background-color: var(--ui-primary);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid var(--ui-black-transparent);
+}
+
+.sa-memory-info-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ui-modal-foreground);
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sa-memory-info-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--ui-modal-foreground);
+  margin: 0;
+}
+
+.sa-memory-clones .sa-memory-info-value {
+  color: var(--looks-secondary);
+}
+
+.sa-memory-variables .sa-memory-info-value {
+  color: var(--data-primary);
+}
+
+.sa-memory-lists .sa-memory-info-value {
+  color: var(--data-lists-primary);
+}
+
+.sa-memory-list-items .sa-memory-info-value {
+  color: var(--operators-primary);
+}
+
+.sa-memory-info-card.sa-memory-warning {
+  border-color: var(--orange-primary, #ff8c1a);
+  background-color: var(--orange-transparent, rgba(255, 140, 26, 0.1));
+}
+
+.sa-memory-info-card.sa-memory-critical {
+  border-color: var(--red-primary, #ff4c4c);
+  background-color: var(--red-transparent, rgba(255, 76, 76, 0.1));
+  animation: sa-memory-pulse 2s infinite;
+}
+
+@keyframes sa-memory-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.sa-memory-tab-content h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0 10px 0;
+  color: var(--ui-modal-foreground);
+}
+
+.sa-memory-tab-content .sa-debugger-chart {
+  margin-bottom: 15px;
+  background-color: var(--ui-primary);
+  border-radius: 4px;
 }

@@ -1,0 +1,334 @@
+/* Workspace Tabs Dropdown Menu */
+@import url("../../../css/colors.css");
+
+.sa-workspace-tabs-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sa-workspace-tabs-menu-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+  height: 2.75rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  /* Inherit text color from parent menu bar to match theme */
+  color: inherit;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.75rem;
+  font-weight: bold;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-workspace-tabs-menu-container:hover,
+.sa-workspace-tabs-menu-container.active {
+  background-color: $ui-black-transparent;
+}
+
+/* Dropdown menu positioning and styling */
+.sa-workspace-tabs-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  margin-top: 0;
+  box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+/* Search bar styling */
+.sa-workspace-tabs-search-container {
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 1001; /* Higher than dropdown to prevent event conflicts */
+}
+
+.sa-workspace-tabs-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sa-workspace-tabs-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: inherit;
+  color: inherit;
+  box-sizing: border-box;
+  /* Prevent text selection conflicts */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+.sa-workspace-tabs-search-input:focus {
+  outline: none;
+  border-color: #4c97ff;
+  box-shadow: 0 0 0 2px rgba(76, 151, 255, 0.2);
+}
+
+.sa-workspace-tabs-search-clear {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.sa-workspace-tabs-search-clear:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Category styling */
+.sa-workspace-tabs-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 4px 10px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  opacity: 0.7;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.sa-workspace-tabs-category-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sa-workspace-tabs-category-toggle {
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.sa-workspace-tabs-category-toggle.collapsed {
+  transform: rotate(-90deg);
+}
+
+.sa-workspace-tabs-category-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.sa-workspace-tabs-category-content.collapsed {
+  max-height: 0;
+}
+
+/* Enhanced menu item styling */
+.sa-workspace-tabs-menu-item {
+  display: block;
+  line-height: 34px;
+  white-space: nowrap;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  margin: 0;
+  font-weight: bold;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.sa-workspace-tabs-menu-item.category-item {
+  padding-left: 20px;
+}
+
+.sa-workspace-tabs-menu-item.filtered-out {
+  display: none;
+}
+
+/* Import/Export controls */
+.sa-workspace-tabs-controls {
+  padding: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sa-workspace-tabs-control-button {
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  color: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sa-workspace-tabs-control-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Category selector in bookmark editor */
+.sa-workspace-tabs-category-select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: inherit;
+  color: inherit;
+  margin-top: 4px;
+}
+
+/* Bookmark metadata display */
+.sa-workspace-tabs-bookmark-meta {
+  font-size: 0.6rem;
+  opacity: 0.6;
+  margin-left: 0.5rem;
+}
+
+/* Enhanced item content */
+.sa-workspace-tabs-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sa-workspace-tabs-item-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.sa-workspace-tabs-item-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-workspace-tabs-button-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.sa-workspace-tabs-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.sa-workspace-tabs-item-edit,
+.sa-workspace-tabs-item-delete {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+
+.sa-workspace-tabs-item-edit:hover,
+.sa-workspace-tabs-item-delete:hover {
+  opacity: 1;
+}
+
+.sa-workspace-tabs-item-edit {
+  font-size: 0.875rem;
+}
+
+.sa-workspace-tabs-item-delete {
+  font-size: 1.25rem;
+}
+
+.sa-workspace-tabs-add-button {
+  color: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.sa-workspace-tabs-menu-item.empty-item {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.sa-workspace-tabs-menu-item.empty-item:hover {
+  background-color: transparent;
+}
+
+/* Menu separator */
+.sa-workspace-tabs-menu-separator {
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  margin: 0;
+  padding: 0;
+  height: 0;
+  line-height: 0;
+}
+
+/* Dark theme support */
+[theme="dark"] .sa-workspace-tabs-menu-container:hover,
+[theme="dark"] .sa-workspace-tabs-menu-container.active,
+[theme="dark"] .sa-workspace-tabs-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+[theme="dark"] .sa-workspace-tabs-menu-separator,
+[theme="dark"] .sa-workspace-tabs-search-container,
+[theme="dark"] .sa-workspace-tabs-category-header,
+[theme="dark"] .sa-workspace-tabs-controls {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[theme="dark"] .sa-workspace-tabs-search-input,
+[theme="dark"] .sa-workspace-tabs-category-select,
+[theme="dark"] .sa-workspace-tabs-control-button {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+[theme="dark"] .sa-workspace-tabs-search-input:focus,
+[theme="dark"] .sa-workspace-tabs-category-select:focus {
+  border-color: #4c97ff;
+}
+
+[theme="dark"] .sa-workspace-tabs-search-clear {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+[theme="dark"] .sa-workspace-tabs-search-clear:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+[theme="dark"] .sa-workspace-tabs-control-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+[theme="dark"] .sa-workspace-tabs-category-header:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}

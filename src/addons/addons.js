@@ -82,7 +82,8 @@ const addons = [
     'tw-disable-cloud-variables',
     'tw-disable-compiler',
     'editor-stepping',
-    'autosave'
+    'autosave',
+    'workspace-tabs'
 ];
 
 const newAddons = [

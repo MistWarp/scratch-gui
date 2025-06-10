@@ -75,7 +75,7 @@
 .tab {
     flex-grow: 1;
     height: 80%;
-    margin-bottom: 5px;
+    top: -4px;
     margin-right: 12px;
 
     border-radius: 10px;

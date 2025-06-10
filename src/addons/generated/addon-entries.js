@@ -82,4 +82,5 @@ export default {
   "tw-disable-compiler": () => import(/* webpackChunkName: "addon-entry-tw-disable-compiler" */ "../addons/tw-disable-compiler/_runtime_entry.js"),
   "editor-stepping": () => import(/* webpackChunkName: "addon-entry-editor-stepping" */ "../addons/editor-stepping/_runtime_entry.js"),
   "autosave": () => import(/* webpackChunkName: "addon-entry-autosave" */ "../addons/autosave/_runtime_entry.js"),
+  "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
 };

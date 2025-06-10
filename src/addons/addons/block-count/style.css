@@ -1,0 +1,104 @@
+/* Block count complexity modal styles */
+.sa-block-count-modal {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.sa-block-count-modal h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ui-modal-foreground, #000);
+  border-bottom: 1px solid var(--ui-black-transparent, #e0e0e0);
+  padding-bottom: 10px;
+}
+
+.sa-block-count-modal h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ui-modal-foreground, #000);
+}
+
+.sa-block-count-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sa-block-count-stat-card {
+  background: var(--ui-secondary, #f8f9fa);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--ui-black-transparent, #e0e0e0);
+}
+
+.sa-block-count-stat-list {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sa-block-count-stat-list > div {
+  margin-bottom: 5px;
+}
+
+.sa-block-count-stat-list strong {
+  color: var(--ui-modal-foreground, #000);
+  font-weight: 600;
+}
+
+.sa-block-count-block-types {
+  background: var(--ui-secondary, #f8f9fa);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid var(--ui-black-transparent, #e0e0e0);
+}
+
+.sa-block-count-types-grid {
+  font-size: 12px;
+  line-height: 1.6;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.sa-block-count-close-btn {
+  background: var(--looks-secondary, #0fbd8c);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.sa-block-count-close-btn:hover {
+  background: var(--looks-secondary-dark, #0da471);
+}
+
+.sa-block-count-complexity-score {
+  display: inline-block;
+  background: var(--motion-primary, #4c97ff);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.sa-block-count-complexity-high {
+  background: var(--error-primary, #ff4444);
+}
+
+.sa-block-count-complexity-medium {
+  background: var(--orange-primary, #ff8c1a);
+}
+
+.sa-block-count-complexity-low {
+  background: var(--motion-primary, #4c97ff);
+}
