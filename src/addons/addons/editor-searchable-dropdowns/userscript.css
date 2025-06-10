@@ -1,23 +1,25 @@
 .u-dropdown-searchbar {
   width: 100%;
   box-sizing: border-box;
-  /* based on styles for the title input */
-  color: white;
-  background-color: hsla(0, 100%, 100%, 0.25);
-  border: 1px solid hsla(0, 0%, 0%, 0.15);
-  padding: 0.5rem;
+  /* Match main tab styling */
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
+  background-color: var(--ui-tertiary, #e6f3ff);
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  padding: 0.5rem 0.8rem; /* Increased horizontal padding to match main tabs */
   outline: none;
-  transition: 0.25s ease-out;
+  transition: all 0.2s ease;
   font-size: 13px;
   font-weight: bold;
-  border-radius: 4px;
+  border-radius: 10px; /* Match Code/Costumes/Sounds tab rounding */
 }
 .u-dropdown-searchbar:hover {
-  background-color: hsla(0, 100%, 100%, 0.5);
+  border-color: var(--looks-secondary, #4c97ff);
 }
 .u-dropdown-searchbar:focus {
-  background-color: white;
-  color: black;
+  background-color: var(--ui-white, #ffffff);
+  color: var(--text-primary, #575e75);
+  border-color: var(--looks-secondary, #4c97ff);
+  box-shadow: 0 0 0 2px var(--looks-transparent, rgba(76, 151, 255, 0.25));
 }
 .blocklyDropDownDiv .goog-menu {
   overflow-x: hidden;

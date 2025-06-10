@@ -2,6 +2,7 @@ import { isPaused, setPaused, onPauseChanged, setup } from "./module.js";
 import createLogsTab from "./logs.js";
 import createThreadsTab from "./threads.js";
 import createPerformanceTab from "./performance.js";
+import createMemoryTab from "./memory.js";
 import Utils from "../find-bar/blockly/Utils.js";
 import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
 
@@ -135,7 +136,19 @@ export default async function ({ addon, console, msg }) {
   let mouseOffsetY = 0;
   let lastX = 0;
   let lastY = 0;
+  
+  // Resize variables
+  let isResizing = false;
+  let resizeStartX = 0;
+  let resizeStartY = 0;
+  let startWidth = 0;
+  let startHeight = 0;
+  
   const handleStartDrag = (e) => {
+    // Don't start dragging if we're on the resize handle or already resizing
+    if (isResizing || e.target.classList.contains("sa-debugger-resize-handle")) {
+      return;
+    }
     e.preventDefault();
     mouseOffsetX = e.clientX - interfaceContainer.offsetLeft;
     mouseOffsetY = e.clientY - interfaceContainer.offsetTop;
@@ -168,7 +181,52 @@ export default async function ({ addon, console, msg }) {
   interfaceHeader.addEventListener("mousedown", handleStartDrag);
 
   interfaceHeader.append(tabListElement, buttonContainerElement);
-  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
+  
+  // Add resize handle
+  const resizeHandle = Object.assign(document.createElement("div"), {
+    className: "sa-debugger-resize-handle",
+  });
+  
+  const handleStartResize = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizing = true;
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+    startWidth = interfaceContainer.offsetWidth;
+    startHeight = interfaceContainer.offsetHeight;
+    document.addEventListener("mouseup", handleStopResize);
+    document.addEventListener("mousemove", handleResizeInterface);
+    document.body.style.userSelect = "none";
+  };
+  
+  const handleStopResize = () => {
+    isResizing = false;
+    document.removeEventListener("mouseup", handleStopResize);
+    document.removeEventListener("mousemove", handleResizeInterface);
+    document.body.style.userSelect = "";
+  };
+  
+  const handleResizeInterface = (e) => {
+    if (!isResizing) return;
+    e.preventDefault();
+    
+    const deltaX = e.clientX - resizeStartX;
+    const deltaY = e.clientY - resizeStartY;
+    
+    const newWidth = Math.max(300, Math.min(startWidth + deltaX, window.innerWidth * 0.9));
+    const newHeight = Math.max(200, Math.min(startHeight + deltaY, window.innerHeight * 0.9));
+    
+    interfaceContainer.style.width = newWidth + "px";
+    interfaceContainer.style.height = newHeight + "px";
+    
+    // Ensure the window doesn't go off-screen when resizing
+    moveInterface(lastX, lastY);
+  };
+  
+  resizeHandle.addEventListener("mousedown", handleStartResize);
+  
+  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer, resizeHandle);
   document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
@@ -520,7 +578,8 @@ export default async function ({ addon, console, msg }) {
   logsTab = await createLogsTab(api);
   const threadsTab = await createThreadsTab(api);
   const performanceTab = await createPerformanceTab(api);
-  const allTabs = [logsTab, threadsTab, performanceTab];
+  const memoryTab = await createMemoryTab(api);
+  const allTabs = [logsTab, threadsTab, performanceTab, memoryTab];
 
   for (const message of messagesLoggedBeforeLogsTabLoaded) {
     logsTab.addLog(...message);
