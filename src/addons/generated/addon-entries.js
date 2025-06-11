@@ -83,4 +83,5 @@ export default {
   "editor-stepping": () => import(/* webpackChunkName: "addon-entry-editor-stepping" */ "../addons/editor-stepping/_runtime_entry.js"),
   "autosave": () => import(/* webpackChunkName: "addon-entry-autosave" */ "../addons/autosave/_runtime_entry.js"),
   "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
+  "no-category-text": () => import(/* webpackChunkName: "addon-entry-no-category-text" */ "../addons/no-category-text/_runtime_entry.js"),
 };

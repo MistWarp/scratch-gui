@@ -83,12 +83,15 @@ const addons = [
     'tw-disable-compiler',
     'editor-stepping',
     'autosave',
-    'workspace-tabs'
+    'workspace-tabs',
+    'no-category-text',
 ];
 
 const newAddons = [
     'expanded-backpack',
-    'autosave'
+    'autosave',
+    'workspace-tabs',
+    'no-category-text',
 ];
 
 // eslint-disable-next-line import/no-commonjs

@@ -30,20 +30,62 @@ const vmManagerHOC = function (WrappedComponent) {
         }
         componentDidMount () {
             if (!this.props.vm.initialized) {
+                const initStartTime = performance.now();
                 window.vm = this.props.vm;
-                try {
-                    this.audioEngine = new AudioEngine();
-                    this.props.vm.attachAudioEngine(this.audioEngine);
-                } catch (e) {
-                    log.error('could not create scratch-audio', e);
-                }
+                
+                // Initialize audio engine asynchronously for better performance
+                this.initializeAudioAsync();
+                
                 this.props.vm.initialized = true;
                 this.props.vm.setLocale(this.props.locale, this.props.messages);
+                
+                // Enable optimizations for faster loading
+                this.props.vm.setRuntimeOptions({
+                    fencing: false,        // Disable fencing during load for speed
+                    miscLimits: false,     // Disable misc limits during load
+                    maxClones: 10          // Reduce clone limit during initial load
+                });
+                
+                const initTime = performance.now() - initStartTime;
+                
+                // Log VM initialization time
+                if (window.MISTWARP_LOAD_START_TIME) {
+                    const vmInitTime = Date.now() - window.MISTWARP_LOAD_START_TIME;
+                    console.log(`🖥️ VM initialized in ${vmInitTime}ms (${(vmInitTime / 1000).toFixed(2)}s) [init: ${initTime.toFixed(2)}ms]`);
+                    
+                    if (window.performance && window.performance.mark) {
+                        window.performance.mark('mistwarp-vm-init');
+                    }
+                }
             }
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();
             }
         }
+        
+        /**
+         * Initialize audio engine asynchronously to avoid blocking VM initialization
+         */
+        async initializeAudioAsync() {
+            try {
+                // Use requestIdleCallback if available to avoid blocking main thread
+                const scheduleAudioInit = window.requestIdleCallback || 
+                    ((callback) => setTimeout(callback, 0));
+                
+                scheduleAudioInit(() => {
+                    try {
+                        this.audioEngine = new AudioEngine();
+                        this.props.vm.attachAudioEngine(this.audioEngine);
+                        console.log('🎵 Audio engine initialized asynchronously');
+                    } catch (e) {
+                        log.error('could not create scratch-audio', e);
+                    }
+                });
+            } catch (e) {
+                log.error('async audio initialization failed', e);
+            }
+        }
+        
         componentDidUpdate (prevProps) {
             // if project is in loading state, AND fonts are loaded,
             // and they weren't both that way until now... load project!
@@ -59,27 +101,50 @@ const vmManagerHOC = function (WrappedComponent) {
         loadProject () {
             // tw: stop when loading new project
             this.props.vm.quit();
-            return this.props.vm.loadProject(this.props.projectData)
-                .then(() => {
-                    this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+            
+            // Import VM load optimizer
+            import('../lib/vm-load-optimizer.js').then(module => {
+                const vmLoadOptimizer = module.default;
+                
+                // Use optimized loading
+                return vmLoadOptimizer.loadProject(this.props.vm, this.props.projectData, {
+                    useCache: true,
+                    priority: 'high'
+                });
+            }).catch(error => {
+                console.warn('VM optimizer not available, falling back to standard loading:', error);
+                // Fallback to standard loading
+                return this.props.vm.loadProject(this.props.projectData);
+            }).then(() => {
+                // Log project loading completion time
+                if (window.MISTWARP_LOAD_START_TIME) {
+                    const projectLoadTime = Date.now() - window.MISTWARP_LOAD_START_TIME;
+                    console.log(`📦 Project data loaded in ${projectLoadTime}ms (${(projectLoadTime / 1000).toFixed(2)}s)`);
+                    
+                    if (window.performance && window.performance.mark) {
+                        window.performance.mark('mistwarp-project-loaded');
+                    }
+                }
+                
+                this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+                // Wrap in a setTimeout because skin loading in
+                // the renderer can be async.
+                setTimeout(() => this.props.onSetProjectUnchanged());
+
+                // If the vm is not running, call draw on the renderer manually
+                // This draws the state of the loaded project with no blocks running
+                // which closely matches the 2.0 behavior, except for monitors–
+                // 2.0 runs monitors and shows updates (e.g. timer monitor)
+                // before the VM starts running other hat blocks.
+                if (!this.props.isStarted) {
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.
-                    setTimeout(() => this.props.onSetProjectUnchanged());
-
-                    // If the vm is not running, call draw on the renderer manually
-                    // This draws the state of the loaded project with no blocks running
-                    // which closely matches the 2.0 behavior, except for monitors–
-                    // 2.0 runs monitors and shows updates (e.g. timer monitor)
-                    // before the VM starts running other hat blocks.
-                    if (!this.props.isStarted) {
-                        // Wrap in a setTimeout because skin loading in
-                        // the renderer can be async.
-                        setTimeout(() => this.props.vm.renderer.draw());
-                    }
-                })
-                .catch(e => {
-                    this.props.onError(e);
-                });
+                    setTimeout(() => this.props.vm.renderer.draw());
+                }
+            })
+            .catch(e => {
+                this.props.onError(e);
+            });
         }
         render () {
             const {

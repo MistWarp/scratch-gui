@@ -1,0 +1,22 @@
+/* Hide category text labels */
+.scratchCategoryMenuItemLabel {
+  display: none !important;
+}
+
+/* Adjust category menu items for better spacing with larger icons */
+.scratchCategoryMenuItem {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* For horizontal layout, adjust accordingly */
+.scratchCategoryMenuHorizontal .scratchCategoryMenuItem {
+  min-height: auto;
+}
+
+/* Ensure icons in bubbles (from block-palette-icons addon) scale properly */
+.scratchCategoryItemBubble::after {
+  background-size: 60% !important;
+}

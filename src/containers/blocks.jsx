@@ -161,11 +161,22 @@ class Blocks extends React.Component {
                 colours: this.props.theme.getBlockColors(),
                 grid: {
                     colour: this.props.theme.getBlockColors().gridColor
-                }
+                },
+                // Optimization: reduce initial render load
+                maxInstances: {
+                    test: 10  // Reduce test block instances for faster initial load
+                },
+                oneBasedIndex: true,
+                comments: false,  // Disable comments initially for speed
+                sounds: false     // Disable sounds initially for speed
             },
             Blocks.defaultOptions
         );
+        
+        const startTime = performance.now();
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
+        const injectTime = performance.now() - startTime;
+        console.log(`🧩 Blocks workspace injected in ${injectTime.toFixed(2)}ms`);
         AddonHooks.blocklyWorkspace = this.workspace;
 
         // Register buttons under new callback keys for creating variables,
@@ -267,14 +278,29 @@ class Blocks extends React.Component {
         // @todo hack to resize blockly manually in case resize happened while hidden
         // @todo hack to reload the workspace due to gui bug #413
         if (this.props.isVisible) { // Scripts tab
-            this.workspace.setVisible(true);
+            // Set workspace visibility with performance optimization
+            if (this.workspace) {
+                this.workspace.setVisible(true);
+                
+                // Defer expensive operations to next tick
+                setTimeout(() => {
+                    if (this.workspace) {
+                        this.workspace.resize();
+                    }
+                }, 0);
+            }
             if (prevProps.locale !== this.props.locale || this.props.locale !== this.props.vm.getLocale()) {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
             } else {
-                this.props.vm.refreshWorkspace();
-                this.requestToolboxUpdate();
+                // Defer workspace refresh to next tick for better performance
+                setTimeout(() => {
+                    if (this.workspace && !this.unmounted) {
+                        this.workspace.refreshToolboxSelection();
+                        this.workspace.resize();
+                    }
+                }, 0);
             }
 
             window.dispatchEvent(new Event('resize'));
