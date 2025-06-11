@@ -278,15 +278,15 @@ class Theme {
         this.menuBarAlign = ['left', 'center', 'right'].includes(menuBarAlign) ? 
             menuBarAlign : MENUBAR_ALIGN_DEFAULT;
         /** @readonly */
-        this.wallpaper = wallpaper || { url: '', opacity: 0.3, history: [] };
+        this.wallpaper = wallpaper || { url: '', opacity: 0.3, darkness: 0, history: [] };
         /** @readonly */
         this.fonts = fonts || { system: [], google: [], history: [] };
     }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
-    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, history: [] }, { system: [], google: [], history: [] });
+    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, history: [] }, { system: [], google: [], history: [] });
+    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, history: [] }, { system: [], google: [], history: [] });
+    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, history: [] }, { system: [], google: [], history: [] });
+    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, history: [] }, { system: [], google: [], history: [] });
 
     set (what, to) {
         if (what === 'accent') {

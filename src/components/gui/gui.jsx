@@ -11,8 +11,9 @@ import VM from 'scratch-vm';
 
 import Blocks from '../../containers/blocks.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
-import TargetPane from '../../containers/target-pane.jsx';
 import SoundTab from '../../containers/sound-tab.jsx';
+import ExtensionsTab from '../../containers/extensions-tab.jsx';
+import TargetPane from '../../containers/target-pane.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
@@ -49,14 +50,6 @@ import addExtensionIcon from './icon--extensions.svg';
 import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
 import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
 import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
-
-const messages = defineMessages({
-    addExtension: {
-        id: 'gui.gui.addExtension',
-        description: 'Button to add an extension in the target pane',
-        defaultMessage: 'Add Extension'
-    }
-});
 
 const getFullscreenBackgroundColor = () => {
     const params = new URLSearchParams(location.search);
@@ -360,11 +353,11 @@ const GUIComponent = props => {
                                                 id="gui.gui.backdropsTab"
                                             />
                                         ) : (
-                                            <FormattedMessage
-                                                defaultMessage="Costumes"
-                                                description="Button to get to the costumes panel"
-                                                id="gui.gui.costumesTab"
-                                            />
+                                        <FormattedMessage
+                                            defaultMessage="Costumes"
+                                            description="Button to get to the costumes panel"
+                                            id="gui.gui.costumesTab"
+                                        />
                                         )}
                                     </Tab>
                                     <Tab
@@ -379,6 +372,17 @@ const GUIComponent = props => {
                                             defaultMessage="Sounds"
                                             description="Button to get to the sounds panel"
                                             id="gui.gui.soundsTab"
+                                        />
+                                    </Tab>
+                                    <Tab className={tabClassNames.tab}>
+                                        <img
+                                            draggable={false}
+                                            src={addExtensionIcon}
+                                        />
+                                        <FormattedMessage
+                                            defaultMessage="Extensions"
+                                            description="Button to get to the extensions panel"
+                                            id="gui.gui.extensionsTab"
                                         />
                                     </Tab>
                                 </TabList>
@@ -398,19 +402,6 @@ const GUIComponent = props => {
                                             vm={vm}
                                         />
                                     </Box>
-                                    <Box className={styles.extensionButtonContainer}>
-                                        <button
-                                            className={styles.extensionButton}
-                                            title={intl.formatMessage(messages.addExtension)}
-                                            onClick={onExtensionButtonClick}
-                                        >
-                                            <img
-                                                className={styles.extensionButtonIcon}
-                                                draggable={false}
-                                                src={addExtensionIcon}
-                                            />
-                                        </button>
-                                    </Box>
                                     <Box className={styles.watermark}>
                                         <Watermark />
                                     </Box>
@@ -422,6 +413,17 @@ const GUIComponent = props => {
                                 </TabPanel>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                </TabPanel>
+                                <TabPanel className={tabClassNames.tabPanel}>
+                                    <ExtensionsTab
+                                        vm={vm}
+                                        onExtensionButtonClick={onExtensionButtonClick}
+                                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                        isRtl={isRtl}
+                                        isTotallyNormal={isTotallyNormal}
+                                        isRendererSupported={isRendererSupported()}
+                                        isEmbedded={isEmbedded}
+                                    />
                                 </TabPanel>
                             </Tabs>
                             {backpackVisible ? (

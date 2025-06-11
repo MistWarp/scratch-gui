@@ -185,18 +185,24 @@ class ExtensionLibrary extends React.PureComponent {
 
         if (extensionId === 'procedures_enable_return') {
             this.props.onEnableProcedureReturns();
-            this.props.onCategorySelected('myBlocks');
+            if (typeof this.props.onCategorySelected === 'function') {
+                this.props.onCategorySelected('myBlocks');
+            }
             return;
         }
 
         const url = item.extensionURL ? item.extensionURL : extensionId;
         if (!item.disabled) {
             if (this.props.vm.extensionManager.isExtensionLoaded(extensionId)) {
-                this.props.onCategorySelected(extensionId);
+                if (typeof this.props.onCategorySelected === 'function') {
+                    this.props.onCategorySelected(extensionId);
+                }
             } else {
                 this.props.vm.extensionManager.loadExtensionURL(url)
                     .then(() => {
-                        this.props.onCategorySelected(extensionId);
+                        if (typeof this.props.onCategorySelected === 'function') {
+                            this.props.onCategorySelected(extensionId);
+                        }
                     })
                     .catch(err => {
                         log.error(err);

@@ -15,14 +15,14 @@ import {
     activateTab,
     BLOCKS_TAB_INDEX,
     COSTUMES_TAB_INDEX,
-    SOUNDS_TAB_INDEX
+    SOUNDS_TAB_INDEX,
+    EXTENSIONS_TAB_INDEX
 } from '../reducers/editor-tab';
 
 import {
     closeCostumeLibrary,
     closeBackdropLibrary,
-    closeTelemetryModal,
-    openExtensionLibrary
+    closeTelemetryModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/font-loader-hoc.jsx';
@@ -183,7 +183,6 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = dispatch => ({
-    onExtensionButtonClick: () => dispatch(openExtensionLibrary()),
     onActivateTab: tab => dispatch(activateTab(tab)),
     onActivateCostumesTab: () => dispatch(activateTab(COSTUMES_TAB_INDEX)),
     onActivateSoundsTab: () => dispatch(activateTab(SOUNDS_TAB_INDEX)),

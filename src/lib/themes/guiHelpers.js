@@ -131,18 +131,32 @@ const applyWallpaper = wallpaper => {
     }
 
     if (wallpaper.url) {
-        target.style.backgroundImage = `url("${wallpaper.url}")`;
+        // Apply opacity by creating a semi-transparent overlay
+        const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
+        const overlayOpacity = 1 - opacity;
+        
+        // Apply darkness tinting with black overlay
+        const darkness = Math.max(0, Math.min(0.8, wallpaper.darkness || 0));
+        
+        // Create a composite background with the image and darkness overlay
+        // The darkness overlay is applied as a black semi-transparent layer over the image
+        if (darkness > 0) {
+            target.style.backgroundImage = `
+                linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})),
+                url("${wallpaper.url}")
+            `;
+        } else {
+            target.style.backgroundImage = `url("${wallpaper.url}")`;
+        }
+        
         target.style.backgroundSize = 'cover';
         target.style.backgroundPosition = 'center';
         target.style.backgroundRepeat = 'no-repeat';
         target.style.backgroundAttachment = 'fixed';
         
-        // Apply opacity by creating a semi-transparent overlay
-        const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
-        const overlayOpacity = 1 - opacity;
-        
-        // Use CSS custom property for overlay
+        // Use CSS custom properties for overlay and darkness
         document.documentElement.style.setProperty('--wallpaper-overlay-opacity', overlayOpacity.toString());
+        document.documentElement.style.setProperty('--wallpaper-darkness', darkness.toString());
         
         // Apply JavaScript-based transparency to blocks workspace
         applyBlocksWorkspaceTransparency(true, opacity);
@@ -174,6 +188,7 @@ const applyWallpaper = wallpaper => {
         target.style.backgroundRepeat = '';
         target.style.backgroundAttachment = '';
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
+        document.documentElement.style.removeProperty('--wallpaper-darkness');
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);
