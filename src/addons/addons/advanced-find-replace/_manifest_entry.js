@@ -5,7 +5,8 @@ const manifest = {
   "description": "Enhanced find and replace functionality with global search across all sprites, regular expressions, batch operations, and advanced filtering. Includes search in comments, custom blocks, and cross-sprite dependency analysis.",
   "credits": [
     {
-      "name": "GitHub Copilot"
+      "name": "Mistium",
+      "url": "https://mistium.com"
     }
   ],
   "dynamicDisable": true,
