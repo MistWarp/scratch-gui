@@ -10,12 +10,23 @@ export default async function ({ addon, msg, console }) {
       this.utils = new Utils(addon);
 
       this.prevValue = "";
+      this.searchHistory = JSON.parse(localStorage.getItem('sa-find-history') || '[]');
+      this.currentHistoryIndex = -1;
+      this.currentResults = [];
+      this.currentResultIndex = -1;
+      this.isRegexMode = false;
+      this.isCaseSensitive = addon.settings.get("caseSensitive");
+      this.searchAllSprites = addon.settings.get("searchAllSprites");
 
       this.findBarOuter = null;
       this.findWrapper = null;
       this.findInput = null;
       this.dropdownOut = null;
       this.dropdown = new Dropdown(this.utils);
+      this.searchControls = null;
+      this.searchStats = null;
+      this.prevButton = null;
+      this.nextButton = null;
 
       document.addEventListener("keydown", (e) => this.eventKeyDown(e), true);
     }
@@ -48,6 +59,48 @@ export default async function ({ addon, msg, console }) {
 
       this.dropdownOut.appendChild(this.dropdown.createDom());
 
+      // Create search controls container
+      this.searchControls = this.findBarOuter.appendChild(document.createElement("div"));
+      this.searchControls.className = "sa-find-controls";
+
+      // Case sensitive toggle
+      const caseToggle = this.searchControls.appendChild(document.createElement("button"));
+      caseToggle.className = "sa-find-toggle" + (this.isCaseSensitive ? " sa-find-toggle-active" : "");
+      caseToggle.textContent = "Aa";
+      caseToggle.title = msg("case-sensitive");
+      caseToggle.addEventListener("click", () => this.toggleCaseSensitive());
+
+      // Regex toggle
+      const regexToggle = this.searchControls.appendChild(document.createElement("button"));
+      regexToggle.className = "sa-find-toggle" + (this.isRegexMode ? " sa-find-toggle-active" : "");
+      regexToggle.textContent = ".*";
+      regexToggle.title = msg("regex-mode");
+      regexToggle.addEventListener("click", () => this.toggleRegexMode());
+
+      // All sprites toggle
+      const allSpritesToggle = this.searchControls.appendChild(document.createElement("button"));
+      allSpritesToggle.className = "sa-find-toggle" + (this.searchAllSprites ? " sa-find-toggle-active" : "");
+      allSpritesToggle.textContent = "🌐";
+      allSpritesToggle.title = msg("search-all-sprites");
+      allSpritesToggle.addEventListener("click", () => this.toggleSearchAllSprites());
+
+      // Navigation controls
+      this.prevButton = this.searchControls.appendChild(document.createElement("button"));
+      this.prevButton.className = "sa-find-nav";
+      this.prevButton.textContent = "↑";
+      this.prevButton.title = msg("previous-result");
+      this.prevButton.addEventListener("click", () => this.navigateResults(-1));
+
+      this.nextButton = this.searchControls.appendChild(document.createElement("button"));
+      this.nextButton.className = "sa-find-nav";
+      this.nextButton.textContent = "↓";
+      this.nextButton.title = msg("next-result");
+      this.nextButton.addEventListener("click", () => this.navigateResults(1));
+
+      // Search stats
+      this.searchStats = this.searchControls.appendChild(document.createElement("span"));
+      this.searchStats.className = "sa-find-stats";
+
       this.bindEvents();
       this.tabChanged();
     }
@@ -69,45 +122,116 @@ export default async function ({ addon, msg, console }) {
     }
 
     inputChange() {
+      if (!this.findInput.value) {
+        this.hideDropDown();
+        this.updateSearchStats(0, 0);
+        return;
+      }
+
       this.showDropDown();
 
-      // Filter the list...
-      let val = (this.findInput.value || "").toLowerCase();
-      if (val === this.prevValue) {
+      // Get search value and apply case sensitivity
+      let val = this.findInput.value;
+      let searchVal = this.isCaseSensitive ? val : val.toLowerCase();
+      
+      if (searchVal === this.prevValue) {
         // No change so don't re-filter
         return;
       }
-      this.prevValue = val;
+      this.prevValue = searchVal;
+
+      // Add to search history
+      this.addToHistory(val);
 
       this.dropdown.blocks = null;
 
+      // Create regex if regex mode is enabled
+      let regex = null;
+      if (this.isRegexMode) {
+        try {
+          regex = new RegExp(val, this.isCaseSensitive ? 'g' : 'gi');
+        } catch (e) {
+          // Invalid regex, fall back to string search
+          regex = null;
+        }
+      }
+
       // Hide items in list that do not contain filter text
       let listLI = this.dropdown.items;
+      let visibleCount = 0;
+      
       for (const li of listLI) {
         let procCode = li.data.procCode;
-        let i = li.data.lower.indexOf(val);
-        if (i >= 0) {
+        let searchText = this.isCaseSensitive ? procCode : procCode.toLowerCase();
+        let matchIndex = -1;
+        let matchLength = 0;
+
+        if (regex) {
+          let match = regex.exec(procCode);
+          if (match) {
+            matchIndex = match.index;
+            matchLength = match[0].length;
+          }
+          regex.lastIndex = 0; // Reset regex for next iteration
+        } else {
+          matchIndex = searchText.indexOf(searchVal);
+          matchLength = searchVal.length;
+        }
+
+        if (matchIndex >= 0) {
           li.style.display = "block";
+          visibleCount++;
+          
+          // Clear and rebuild the content with highlighting
           while (li.firstChild) {
             li.removeChild(li.firstChild);
           }
-          if (i > 0) {
-            li.appendChild(document.createTextNode(procCode.substring(0, i)));
+          
+          if (matchIndex > 0) {
+            li.appendChild(document.createTextNode(procCode.substring(0, matchIndex)));
           }
+          
           let bText = document.createElement("b");
-          bText.appendChild(document.createTextNode(procCode.substr(i, val.length)));
+          bText.appendChild(document.createTextNode(procCode.substr(matchIndex, matchLength)));
           li.appendChild(bText);
-          if (i + val.length < procCode.length) {
-            li.appendChild(document.createTextNode(procCode.substr(i + val.length)));
+          
+          if (matchIndex + matchLength < procCode.length) {
+            li.appendChild(document.createTextNode(procCode.substr(matchIndex + matchLength)));
           }
         } else {
           li.style.display = "none";
         }
       }
+      
+      this.updateSearchStats(visibleCount, listLI.length);
     }
 
     inputKeyDown(e) {
       this.dropdown.inputKeyDown(e);
+
+      // Search history navigation with Ctrl+Up/Down
+      if ((e.key === "ArrowUp" || e.key === "ArrowDown") && (e.ctrlKey || e.metaKey)) {
+        if (this.searchHistory.length > 0) {
+          const direction = e.key === "ArrowUp" ? -1 : 1;
+          this.currentHistoryIndex = Math.max(-1, Math.min(this.searchHistory.length - 1, this.currentHistoryIndex + direction));
+          
+          if (this.currentHistoryIndex >= 0) {
+            this.findInput.value = this.searchHistory[this.currentHistoryIndex];
+          } else {
+            this.findInput.value = "";
+          }
+          this.inputChange();
+        }
+        e.preventDefault();
+        return;
+      }
+
+      // F3 for next result, Shift+F3 for previous result
+      if (e.key === "F3") {
+        this.navigateResults(e.shiftKey ? -1 : 1);
+        e.preventDefault();
+        return;
+      }
 
       // Enter
       if (e.key === "Enter") {
@@ -126,6 +250,82 @@ export default async function ({ addon, msg, console }) {
         e.preventDefault();
         return;
       }
+    }
+
+    // New methods for enhanced search functionality
+    toggleCaseSensitive() {
+      this.isCaseSensitive = !this.isCaseSensitive;
+      const toggle = this.searchControls.querySelector('.sa-find-toggle');
+      toggle.classList.toggle('sa-find-toggle-active', this.isCaseSensitive);
+      this.prevValue = null; // Force re-filter
+      this.inputChange();
+    }
+
+    toggleRegexMode() {
+      this.isRegexMode = !this.isRegexMode;
+      const toggles = this.searchControls.querySelectorAll('.sa-find-toggle');
+      toggles[1].classList.toggle('sa-find-toggle-active', this.isRegexMode);
+      this.prevValue = null; // Force re-filter
+      this.inputChange();
+    }
+
+    toggleSearchAllSprites() {
+      this.searchAllSprites = !this.searchAllSprites;
+      const toggles = this.searchControls.querySelectorAll('.sa-find-toggle');
+      toggles[2].classList.toggle('sa-find-toggle-active', this.searchAllSprites);
+      this.prevValue = null; // Force re-filter
+      this.inputChange();
+    }
+
+    navigateResults(direction) {
+      const visibleItems = this.dropdown.items.filter(item => item.style.display !== 'none');
+      if (visibleItems.length === 0) return;
+
+      let currentIndex = visibleItems.indexOf(this.dropdown.selected);
+      if (currentIndex === -1) {
+        currentIndex = direction > 0 ? -1 : 0;
+      }
+
+      const newIndex = (currentIndex + direction + visibleItems.length) % visibleItems.length;
+      this.dropdown.onItemClick(visibleItems[newIndex]);
+      visibleItems[newIndex].scrollIntoView({ block: 'nearest' });
+    }
+
+    updateSearchStats(visible, total) {
+      if (this.searchStats) {
+        if (total === 0) {
+          this.searchStats.textContent = '';
+        } else {
+          this.searchStats.textContent = `${visible}/${total}`;
+        }
+      }
+      
+      // Update navigation button states
+      if (this.prevButton && this.nextButton) {
+        const hasResults = visible > 0;
+        this.prevButton.disabled = !hasResults;
+        this.nextButton.disabled = !hasResults;
+      }
+    }
+
+    addToHistory(searchTerm) {
+      if (!searchTerm || searchTerm === this.searchHistory[0]) return;
+      
+      // Remove existing occurrence
+      const existing = this.searchHistory.indexOf(searchTerm);
+      if (existing !== -1) {
+        this.searchHistory.splice(existing, 1);
+      }
+      
+      // Add to beginning
+      this.searchHistory.unshift(searchTerm);
+      
+      // Trim to max size
+      const maxHistory = addon.settings.get("maxHistory");
+      this.searchHistory = this.searchHistory.slice(0, maxHistory);
+      
+      // Save to localStorage
+      localStorage.setItem('sa-find-history', JSON.stringify(this.searchHistory));
     }
 
     eventKeyDown(e) {
@@ -219,7 +419,48 @@ export default async function ({ addon, msg, console }) {
       let myBlocks = [];
       let myBlocksByProcCode = {};
 
-      let topBlocks = this.workspace.getTopBlocks();
+      // Get current sprite's workspace or all sprites if searchAllSprites is enabled
+      const currentTarget = this.utils.getEditingTarget();
+      const targets = this.searchAllSprites ? 
+        addon.tab.traps.vm.runtime.targets.filter(target => target.isOriginal) : 
+        [currentTarget];
+
+      for (const target of targets) {
+        const workspace = target === currentTarget ? this.workspace : target.blocks;
+        const spriteName = target.sprite.name;
+        const isCurrentSprite = target === currentTarget;
+
+        // For cross-sprite search, we need to work with the block data differently
+        if (!isCurrentSprite && workspace._blocks) {
+          // Search in other sprites using VM block data
+          this.addBlocksFromTarget(target, myBlocks, myBlocksByProcCode, spriteName);
+        } else if (isCurrentSprite) {
+          // Use the regular Blockly workspace for current sprite
+          this.addBlocksFromWorkspace(this.workspace, myBlocks, myBlocksByProcCode, spriteName, isCurrentSprite);
+        }
+      }
+
+      const clsOrder = { flag: 0, receive: 1, event: 2, define: 3, var: 4, VAR: 5, list: 6, LIST: 7 };
+
+      myBlocks.sort((a, b) => {
+        let t = clsOrder[a.cls] - clsOrder[b.cls];
+        if (t !== 0) {
+          return t;
+        }
+        if (a.lower < b.lower) {
+          return -1;
+        }
+        if (a.lower > b.lower) {
+          return 1;
+        }
+        return a.y - b.y;
+      });
+
+      return myBlocks;
+    }
+
+    addBlocksFromWorkspace(workspace, myBlocks, myBlocksByProcCode, spriteName, isCurrentSprite) {
+      let topBlocks = workspace.getTopBlocks();
 
       /**
        * @param cls
@@ -229,7 +470,11 @@ export default async function ({ addon, msg, console }) {
        */
       function addBlock(cls, txt, root) {
         let id = root.id ? root.id : root.getId ? root.getId() : null;
-        let clone = myBlocksByProcCode[txt];
+        
+        // Add sprite name prefix for cross-sprite search
+        const displayText = isCurrentSprite || !spriteName ? txt : `[${spriteName}] ${txt}`;
+        
+        let clone = myBlocksByProcCode[displayText];
         if (clone) {
           if (!clone.clones) {
             clone.clones = [];
@@ -237,10 +482,12 @@ export default async function ({ addon, msg, console }) {
           clone.clones.push(id);
           return clone;
         }
-        let items = new BlockItem(cls, txt, id, 0);
+        let items = new BlockItem(cls, displayText, id, 0);
         items.y = root.getRelativeToSurfaceXY ? root.getRelativeToSurfaceXY().y : null;
+        items.spriteName = spriteName;
+        items.isCurrentSprite = isCurrentSprite;
         myBlocks.push(items);
-        myBlocksByProcCode[txt] = items;
+        myBlocksByProcCode[displayText] = items;
         return items;
       }
 
@@ -348,6 +595,63 @@ export default async function ({ addon, msg, console }) {
       });
 
       return myBlocks;
+    }
+
+    addBlocksFromTarget(target, myBlocks, myBlocksByProcCode, spriteName) {
+      // Helper method to add blocks from other sprites using VM block data
+      const blocks = target.blocks;
+      if (!blocks._blocks) return;
+
+      function addBlock(cls, txt, blockId) {
+        const displayText = `[${spriteName}] ${txt}`;
+        let clone = myBlocksByProcCode[displayText];
+        if (clone) {
+          if (!clone.clones) {
+            clone.clones = [];
+          }
+          clone.clones.push(blockId);
+          return clone;
+        }
+        let items = new BlockItem(cls, displayText, blockId, 0);
+        items.spriteName = spriteName;
+        items.isCurrentSprite = false;
+        items.targetId = target.id;
+        myBlocks.push(items);
+        myBlocksByProcCode[displayText] = items;
+        return items;
+      }
+
+      // Process blocks from the target
+      for (const blockId of Object.keys(blocks._blocks)) {
+        const block = blocks._blocks[blockId];
+        
+        if (block.topLevel) {
+          if (block.opcode === "procedures_definition") {
+            const procCode = block.mutation?.proccode || "custom block";
+            addBlock("define", `define ${procCode}`, blockId);
+          } else if (block.opcode === "event_whenflagclicked") {
+            addBlock("flag", "when flag clicked", blockId);
+          } else if (block.opcode === "event_whenbroadcastreceived") {
+            const eventName = block.fields?.BROADCAST_OPTION?.value || "message";
+            addBlock("receive", `when I receive ${eventName}`, blockId).eventName = eventName;
+          } else if (block.opcode.startsWith("event_when")) {
+            addBlock("event", block.opcode.replace("event_when", "when "), blockId);
+          }
+        }
+      }
+
+      // Add variables from this target
+      const variables = target.variables;
+      if (variables) {
+        for (const varId of Object.keys(variables)) {
+          const variable = variables[varId];
+          if (variable.type === "") {
+            addBlock("var", `var ${variable.name}`, varId);
+          } else if (variable.type === "list") {
+            addBlock("list", `list ${variable.name}`, varId);
+          }
+        }
+      }
     }
 
     getScratchCostumes() {
@@ -538,6 +842,25 @@ export default async function ({ addon, msg, console }) {
         this.selected = item;
       }
 
+      // Handle cross-sprite navigation
+      if (item.data.targetId && item.data.targetId !== this.utils.getEditingTarget().id) {
+        // Switch to the target sprite first
+        const vm = addon.tab.traps.vm;
+        const target = vm.runtime.getTargetById(item.data.targetId);
+        if (target) {
+          vm.setEditingTarget(target.id);
+          // Wait a moment for the sprite to switch, then try to navigate to the block
+          setTimeout(() => {
+            this.navigateToBlock(item, instanceBlock);
+          }, 100);
+          return;
+        }
+      }
+
+      this.navigateToBlock(item, instanceBlock);
+    }
+
+    navigateToBlock(item, instanceBlock) {
       let cls = item.data.cls;
       if (cls === "costume" || cls === "sound") {
         // Viewing costumes/sounds - jump to selected costume/sound
