@@ -79,7 +79,7 @@ const detectTheme = () => {
             parsed.gui || systemPreferences.gui,
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
-            parsed.wallpaper || { url: '', opacity: 0.3, history: [] },
+            parsed.wallpaper || { url: '', opacity: 0.3, darkness: 0, history: [] },
             parsed.fonts || { system: [], google: [], history: [] }
         );
     } catch (e) {

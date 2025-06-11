@@ -1,0 +1,125 @@
+.loaded-extensions-list {
+    padding: 16px;
+    background-color: var(--ui-white);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.title::before {
+    content: "🧩";
+    font-size: 16px;
+}
+
+.extension-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background-color: var(--ui-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--ui-black-10percent);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.extension-item:hover {
+    background-color: var(--ui-tertiary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.extension-item:last-child {
+    margin-bottom: 0;
+}
+
+.extension-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.extension-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 2px;
+    word-break: break-word;
+}
+
+.extension-url {
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    word-break: break-all;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.block-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--ui-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.block-count::before {
+    content: "📦";
+    font-size: 10px;
+}
+
+.no-extensions {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.no-extensions::before {
+    content: "💡";
+    display: block;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+/* Dark theme support */
+[theme="dark"] .loaded-extensions-list {
+    background-color: var(--ui-secondary-dark, #2d3748);
+    border: 1px solid var(--ui-black-20percent, #4a5568);
+}
+
+[theme="dark"] .extension-item {
+    background-color: var(--ui-tertiary-dark, #374151);
+    border-color: var(--ui-black-20percent, #4a5568);
+}
+
+[theme="dark"] .extension-item:hover {
+    background-color: var(--ui-quaternary-dark, #4a5568);
+}
+
+[theme="dark"] .extension-name {
+    color: var(--text-primary-dark, #f7fafc);
+}
+
+[theme="dark"] .extension-url {
+    color: var(--text-secondary-dark, #a0aec0);
+}

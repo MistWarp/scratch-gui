@@ -63,33 +63,39 @@ WallpaperMenuItem.propTypes = {
     onClick: PropTypes.func
 };
 
-const WallpaperInputForm = ({onSubmit, onOpacityChange, currentOpacity}) => {
+const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, currentOpacity, currentDarkness}) => {
     const [url, setUrl] = React.useState('');
     const [opacity, setOpacity] = React.useState(currentOpacity);
+    const [darkness, setDarkness] = React.useState(currentDarkness);
 
     // Sync local opacity state with currentOpacity prop
     React.useEffect(() => {
         setOpacity(currentOpacity);
     }, [currentOpacity]);
 
+    // Sync local darkness state with currentDarkness prop
+    React.useEffect(() => {
+        setDarkness(currentDarkness);
+    }, [currentDarkness]);
+
     const handleSubmit = e => {
         e.preventDefault();
         if (url.trim()) {
-            onSubmit(url.trim(), opacity);
+            onSubmit(url.trim(), opacity, darkness);
             setUrl('');
         }
     };
 
     const handleOpacityChange = e => {
         const newOpacity = parseFloat(e.target.value);
-        console.log('🎚️ Slider Debug - handleOpacityChange:', {
-            rawValue: e.target.value,
-            parsedOpacity: newOpacity,
-            currentLocalOpacity: opacity,
-            currentPropOpacity: currentOpacity
-        });
         setOpacity(newOpacity);
         onOpacityChange(newOpacity);
+    };
+
+    const handleDarknessChange = e => {
+        const newDarkness = parseFloat(e.target.value);
+        setDarkness(newDarkness);
+        onDarknessChange(newDarkness);
     };
 
     return (
@@ -143,6 +149,33 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, currentOpacity}) => {
                 />
                 <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(opacity * 100)}%</span>
             </div>
+            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
+                <label htmlFor="wallpaper-darkness" onClick={e => e.stopPropagation()}>
+                    <FormattedMessage
+                        defaultMessage="Darkness:"
+                        description="Label for wallpaper darkness slider"
+                        id="tw.wallpaper.darkness"
+                    />
+                </label>
+                <input
+                    id="wallpaper-darkness"
+                    type="range"
+                    min="0"
+                    max="0.8"
+                    step="0.1"
+                    value={darkness}
+                    onChange={handleDarknessChange}
+                    onClick={e => e.stopPropagation()}
+                    onMouseDown={e => e.stopPropagation()}
+                    onMouseUp={e => e.stopPropagation()}
+                    onMouseMove={e => e.stopPropagation()}
+                    onTouchStart={e => e.stopPropagation()}
+                    onTouchMove={e => e.stopPropagation()}
+                    onTouchEnd={e => e.stopPropagation()}
+                    className={styles.opacitySlider}
+                />
+                <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(darkness * 100)}%</span>
+            </div>
         </div>
     );
 };
@@ -150,7 +183,9 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, currentOpacity}) => {
 WallpaperInputForm.propTypes = {
     onSubmit: PropTypes.func,
     onOpacityChange: PropTypes.func,
-    currentOpacity: PropTypes.number
+    onDarknessChange: PropTypes.func,
+    currentOpacity: PropTypes.number,
+    currentDarkness: PropTypes.number
 };
 
 const WallpaperMenu = ({
@@ -160,7 +195,7 @@ const WallpaperMenu = ({
     onOpen,
     theme
 }) => {
-    const handleWallpaperSubmit = (url, opacity) => {
+    const handleWallpaperSubmit = (url, opacity, darkness) => {
         const history = [...theme.wallpaper.history];
         if (!history.includes(url)) {
             history.unshift(url);
@@ -172,6 +207,7 @@ const WallpaperMenu = ({
         const newWallpaper = {
             url,
             opacity,
+            darkness,
             history
         };
         
@@ -179,16 +215,18 @@ const WallpaperMenu = ({
     };
 
     const handleOpacityChange = opacity => {
-        console.log('🔄 WallpaperMenu Debug - handleOpacityChange:', {
-            newOpacity: opacity,
-            currentWallpaperOpacity: theme.wallpaper.opacity,
-            fullWallpaperObject: theme.wallpaper
-        });
         const newWallpaper = {
             ...theme.wallpaper,
             opacity
         };
-        console.log('🔄 Created new wallpaper object:', newWallpaper);
+        onChangeTheme(theme.set('wallpaper', newWallpaper));
+    };
+
+    const handleDarknessChange = darkness => {
+        const newWallpaper = {
+            ...theme.wallpaper,
+            darkness
+        };
         onChangeTheme(theme.set('wallpaper', newWallpaper));
     };
 
@@ -234,7 +272,9 @@ const WallpaperMenu = ({
                 <WallpaperInputForm
                     onSubmit={handleWallpaperSubmit}
                     onOpacityChange={handleOpacityChange}
+                    onDarknessChange={handleDarknessChange}
                     currentOpacity={theme.wallpaper.opacity}
+                    currentDarkness={theme.wallpaper.darkness || 0}
                 />
                 <div className={styles.menuSeparator} />
                 <WallpaperMenuItem
@@ -271,11 +311,6 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
-        console.log('🚀 Redux Debug - dispatching setTheme:', {
-            newTheme: theme,
-            wallpaperOpacity: theme.wallpaper.opacity,
-            themeId: theme.id
-        });
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
         persistTheme(theme);
