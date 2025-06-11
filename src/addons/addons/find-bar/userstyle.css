@@ -2,12 +2,14 @@
 
 .sa-find-bar {
   display: flex;
+  flex-direction: row; /* Keep horizontal layout */
   align-items: center;
   white-space: nowrap;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   width: 100%;
-  height: 100%;
-  margin: 5px 12px; /* Match workspace tabs margins for consistent positioning */
+  margin: 5px 12px;
+  margin-top: 7px; /* Fine-tune vertical position */
+  gap: 8px; /* Space between search input and controls */
 }
 .sa-find-bar[hidden] {
   /* !important to override displayNoneWhileDisabled */
@@ -17,29 +19,63 @@
 .sa-find-wrapper {
   overflow: visible;
   position: relative;
-  height: 2.2rem; /* Match 80% of tab container height (2.75rem) */
-  width: 100%;
-  max-width: 16em;
+  flex: 1; /* Take up available space */
+  max-width: 20em; /* Reasonable max width */
+  height: 2.2rem; /* Fixed height to prevent layout shifts */
 }
 
 .sa-find-dropdown-out {
   display: block;
-  top: -5px;
-  z-index: 100;
   width: 100%;
-  max-width: 16em;
   position: relative;
-  padding: 4px;
-  border: none;
-  border-radius: 10px; /* Match main tab rounding */
-  margin-top: 6px;
+  height: 2.2rem; /* Match input height exactly */
 }
 
-.sa-find-dropdown-out.visible {
+.sa-find-input {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box !important;
+  /* !important required for extension, because CSS injection method (and hence order) differs from addon */
+  
+  /* Match main tab styling */
+  border-radius: 10px;
+  font-size: 0.75rem;
+  padding: 0 0.8rem;
+  background: var(--ui-tertiary, #e6f3ff);
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
+  transition: all 0.2s ease;
+}
+
+.sa-find-input:focus {
+  background: var(--ui-white, #ffffff);
+  color: var(--text-primary, #575e75);
+  border-color: var(--looks-secondary, #4c97ff);
+  box-shadow: 0 0 0 2px var(--looks-transparent, rgba(76, 151, 255, 0.25));
+  outline: none;
+}
+
+.sa-find-input:hover {
+  border-color: var(--looks-secondary, #4c97ff);
+}
+
+.sa-find-dropdown {
+  display: none;
   position: absolute;
-  width: 16em;
-  box-shadow: 0px 0px 8px 1px rgba(0, 0, 0, 0.3);
+  top: calc(100% + 4px); /* Position below the wrapper with gap */
+  left: 0;
+  width: 100%; /* Match the search input width */
+  padding: 0.2em 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  overflow-y: auto;
+  min-height: 128px;
+  max-height: 65vh;
+  user-select: none;
   background-color: var(--ui-modal-background);
+  box-shadow: 0px 4px 8px 1px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  z-index: 1000;
   outline: 1px solid var(--ui-black-transparent);
 }
 
@@ -50,50 +86,6 @@
 }
 [class*="gui_tab_"] {
   flex-grow: 0;
-}
-
-.sa-find-input {
-  width: 100%;
-  box-sizing: border-box !important;
-  /* !important required for extension, because CSS injection method (and hence order) differs from addon */
-  height: 2.2rem; /* Match the wrapper height and main tabs height */
-
-  /* Match main tab styling */
-  border-radius: 10px; /* Match Code/Costumes/Sounds tab rounding */
-  font-size: 0.75rem;
-  padding: 0 0.8rem; /* Increased padding to match main tabs */
-  background: var(--ui-tertiary, #e6f3ff); /* Match main tab background */
-  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); /* Match main tab border */
-  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6)); /* Match main tab text color */
-  transition: all 0.2s ease; /* Match workspace tabs transition */
-}
-
-.sa-find-input:focus {
-  /* Match main tab focus styles */
-  background: var(--ui-white, #ffffff); /* Match selected tab background */
-  color: var(--text-primary, #575e75); /* Match main tab selected text color */
-  border-color: var(--looks-secondary, #4c97ff); /* Match hover border color */
-  box-shadow: 0 0 0 2px var(--looks-transparent, rgba(76, 151, 255, 0.25)); /* Match workspace tabs focus */
-  outline: none;
-}
-
-.sa-find-input:hover {
-  border-color: var(--looks-secondary, #4c97ff); /* Match main tab hover border */
-}
-
-.sa-find-dropdown {
-  display: none;
-  position: relative;
-  padding: 0.2em 0;
-  font-size: 0.75rem;
-  line-height: 1;
-  overflow-y: auto;
-  min-height: 128px;
-  max-height: 65vh;
-  user-select: none;
-  max-width: 100%;
-  margin-top: 6px;
-  border: none;
 }
 
 .sa-find-dropdown-out.visible > .sa-find-dropdown {
@@ -160,4 +152,155 @@
 
 .sa-find-carousel-control:hover {
   color: #ffff80;
+}
+
+/* Enhanced search controls - horizontal layout */
+.sa-find-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0; /* Don't shrink controls */
+}
+
+.sa-find-toggle {
+  min-width: 28px;
+  height: 28px;
+  padding: 4px 6px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 6px;
+  background: var(--ui-secondary);
+  color: var(--text-primary-transparent);
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-find-toggle:hover {
+  background: var(--ui-tertiary);
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-toggle-active {
+  background: var(--looks-secondary);
+  color: white;
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-nav {
+  min-width: 28px;
+  height: 28px;
+  padding: 4px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 6px;
+  background: var(--ui-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-find-nav:hover:not(:disabled) {
+  background: var(--ui-tertiary);
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-find-stats {
+  font-size: 11px;
+  color: var(--text-primary-transparent);
+  padding: 0 4px;
+  white-space: nowrap;
+  min-width: 40px; /* Prevent layout jumping */
+}
+
+/* Compact layout for smaller screens */
+@media (max-width: 1200px) {
+  .sa-find-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .sa-find-wrapper {
+    min-width: 200px;
+  }
+  
+  .sa-find-controls {
+    gap: 2px;
+  }
+  
+  .sa-find-toggle,
+  .sa-find-nav {
+    min-width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+}
+
+.sa-find-toggle:hover {
+  background: var(--ui-tertiary);
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-toggle-active {
+  background: var(--looks-secondary);
+  color: white;
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-nav {
+  min-width: 24px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
+  background: var(--ui-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-find-nav:hover:not(:disabled) {
+  background: var(--ui-tertiary);
+  border-color: var(--looks-secondary);
+}
+
+.sa-find-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-find-stats {
+  font-size: 11px;
+  color: var(--text-primary-transparent);
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sa-find-controls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  .sa-find-toggle,
+  .sa-find-nav {
+    min-width: 32px;
+    height: 28px;
+  }
 }
