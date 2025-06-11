@@ -14,7 +14,19 @@ const FontLoaderHOC = function (WrappedComponent) {
         componentDidMount () {
             if (this.props.fontsLoaded) return;
 
-            loadFonts().then(() => this.props.onSetFontsLoaded());
+            // Load fonts asynchronously without blocking the UI
+            const startTime = performance.now();
+            loadFonts()
+                .then(() => {
+                    const loadTime = performance.now() - startTime;
+                    console.log(`🔤 Fonts loaded in ${loadTime.toFixed(2)}ms`);
+                    this.props.onSetFontsLoaded();
+                })
+                .catch(() => {
+                    // Don't block loading if fonts fail - continue without custom fonts
+                    console.warn('⚠️ Font loading failed, continuing with system fonts');
+                    this.props.onSetFontsLoaded();
+                });
         }
         render () {
             const componentProps = omit(this.props, ['onSetFontsLoaded']);
