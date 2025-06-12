@@ -1,126 +1,534 @@
-/* Change z-indexes to allow more than 3 tabs */
-[class*="gui_tab_"][class*="gui_is-selected_"] {
-  z-index: 10 !important;
-}
-[class*="gui_tab_"]:nth-of-type(1) {
-  z-index: 9;
-}
-[class*="gui_tab_"]:nth-of-type(2) {
-  z-index: 8;
-}
-[class*="gui_tab_"]:nth-of-type(3) {
-  z-index: 7;
-}
-[class*="gui_tab_"]:nth-of-type(4) {
-  z-index: 6;
+/* Main container with modern design */
+.sa-var-manager {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ui-primary);
+  border-radius: 8px;
+  margin: 0;
 }
 
-.sa-var-manager {
-  display: block;
-  padding: 18px;
-  /* weird hack to fix scrolling??? */
-  height: 50px;
-  overflow-y: auto;
+/* Header section */
+.sa-var-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ui-black-transparent);
+}
+
+/* Search container with enhanced styling */
+.sa-var-manager-search-container {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
 }
 
 .sa-var-manager-searchbox {
   background-image: url("search.svg");
-  width: 25%;
-  margin-bottom: 4px;
-  padding: 8px;
-  padding-right: 32px; /* for the text to not overlap the image */
-  border-radius: 4px;
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 2px solid var(--ui-black-transparent);
+  border-radius: 8px;
   background-repeat: no-repeat;
-  background-size: 18px 18px;
-  background-position: calc(100% - 7px) center;
-  font-size: 0.75rem;
+  background-size: 16px 16px;
+  background-position: calc(100% - 12px) center;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sa-var-manager-searchbox:focus {
+  outline: none;
+  border-color: var(--looks-secondary);
+  box-shadow: 0 0 0 2px var(--looks-secondary-transparent);
+}
+
+.sa-var-manager-clear-search {
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ui-black-transparent);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.sa-var-manager-clear-search:hover {
+  background-color: var(--ui-black-transparent);
+  color: var(--ui-white);
 }
 
 [dir="rtl"] .sa-var-manager-searchbox {
-  padding-right: 8px;
-  padding-left: 32px;
-  background-position: 7px center;
+  padding-left: 40px;
+  padding-right: 12px;
+  background-position: 12px center;
 }
 
-.sa-var-manager.freeze .sa-var-manager-value *,
-.sa-var-manager.freeze .sa-var-manager-name * {
-  opacity: 0.5;
+[dir="rtl"] .sa-var-manager-clear-search {
+  right: auto;
+  left: 32px;
+}
+
+/* Stats display */
+.sa-var-manager-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ui-black-transparent);
+  align-items: center;
+}
+
+.sa-var-manager-stats span {
+  background: var(--ui-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Content area with scrolling */
+.sa-var-manager-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Section styling */
+.sa-var-manager-section {
+  margin-bottom: 20px;
+}
+
+/* Enhanced heading with count display */
+.sa-var-manager-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--ui-secondary);
+  border-radius: 6px;
+  border-left: 4px solid var(--motion-primary);
+}
+
+.sa-var-manager-count {
+  background: var(--motion-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Table styling */
+.sa-var-manager-table {
+  border-radius: 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  box-shadow: 0 2px 4px var(--ui-black-transparent);
+  overflow: hidden;
+}
+
+/* Row styling with hover effects */
+.sa-var-manager-row {
+  transition: background-color 0.2s;
+}
+
+.sa-var-manager-row:hover {
+  background-color: var(--ui-secondary);
+}
+
+.sa-var-manager-row:nth-child(even) {
+  background-color: var(--ui-primary-dark);
+}
+
+.sa-var-manager-row[data-variable-type="list"] {
+  border-left: 3px solid var(--data-primary);
+}
+
+.sa-var-manager-row[data-is-cloud="true"] {
+  border-left: 3px solid var(--extensions-primary);
+}
+
+/* Cell styling */
+.sa-var-manager td {
+  border: 1px solid var(--ui-black-transparent);
+  padding: 8px;
+  vertical-align: top;
+}
+
+.sa-var-manager-name {
+  width: 30%;
+  min-width: 120px;
+}
+
+.sa-var-manager-value {
+  width: 70%;
+}
+
+/* Label container with icons */
+.sa-var-manager-label-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-var-manager-type-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sa-var-manager-name-input {
+  background: none;
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  width: 100%;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.sa-var-manager-name-input:focus {
+  outline: none;
+  border-color: var(--looks-secondary);
+  background-color: var(--ui-white);
+}
+
+.sa-var-manager-name-input.sa-var-manager-error {
+  border-color: var(--error-primary);
+  background-color: var(--error-transparent);
+  animation: shake 0.3s ease-in-out;
+}
+
+/* Input styling */
+.sa-var-manager-value-input {
+  background: none;
+  border: 1px solid transparent;
+  padding: 8px;
+  width: 100%;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 36px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.sa-var-manager-value-input:focus {
+  outline: none;
+  border-color: var(--looks-secondary);
+  background-color: var(--ui-white);
+}
+
+.sa-var-manager-value-input.sa-var-manager-error {
+  border-color: var(--error-primary);
+  background-color: var(--error-transparent);
+  animation: shake 0.3s ease-in-out;
+}
+
+.sa-var-manager-value-input::placeholder {
+  color: var(--ui-black-transparent);
+  font-style: italic;
+}
+
+/* Tab styling */
+.sa-var-manager-tab-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+}
+
+.sa-var-manager-tab-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Freeze mode styling */
+.sa-var-manager.freeze .sa-var-manager-value *:not(:focus),
+.sa-var-manager.freeze .sa-var-manager-name *:not(:focus) {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .sa-var-manager.freeze input:focus,
 .sa-var-manager.freeze textarea:focus {
   opacity: 1;
+  pointer-events: all;
 }
 
-.sa-var-manager-heading {
-  display: block;
-  font-weight: bold;
-  font-size: large;
-  margin-top: 6px;
-  margin-bottom: 6px;
-}
-
-.sa-var-manager-name {
-  word-break: break-word;
-}
-
-.sa-var-manager .sa-var-manager-value {
-  width: 75%;
-}
-
-.sa-var-manager * > input {
-  background: none;
-  border: none;
-  padding: 8px;
-  width: 100%;
-  height: 100%;
-}
-
-.sa-var-manager-value > textarea {
-  background: none;
-  border: none;
-  padding: 8px;
-  width: 100%;
-  height: 100%;
-  line-height: 2em;
-  resize: none;
-}
-
+/* Too big button styling */
 .sa-var-manager-too-big {
   display: none;
   cursor: pointer;
   font: inherit;
   font-style: italic;
-  color: inherit;
-  background: none;
-  border: none;
+  color: var(--ui-black);
+  background: var(--ui-secondary);
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
   margin: 0;
-  padding: 8px;
-  opacity: 0.8;
+  padding: 8px 12px;
   width: 100%;
   text-align: left;
+  transition: background-color 0.2s;
 }
+
 .sa-var-manager-too-big:hover {
-  text-decoration: underline;
+  background-color: var(--ui-tertiary);
 }
+
 [data-too-big="true"] .sa-var-manager-too-big {
   display: block;
 }
+
 [data-too-big="true"] .sa-var-manager-value-input {
   display: none;
 }
 
-.sa-var-manager table {
-  border-radius: 5px;
-  border-collapse: collapse;
+/* Modal overlay styles - positioned mode */
+.sa-var-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 10000;
+  pointer-events: none;
 }
 
-.sa-var-manager td {
+.sa-var-manager-modal {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  background: var(--ui-primary);
   border: 1px solid var(--ui-black-transparent);
-  text-align: left;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  width: 400px;
+  height: 500px;
+  min-width: 300px;
+  min-height: 300px;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  resize: both;
+  animation: slideInRight 0.3s ease-out;
 }
 
-/* tr:nth-child(even) {
-    background-color: #dddddd;
-} */
+.sa-var-manager-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ui-black-transparent);
+  background: var(--looks-secondary, #4c97ff);
+  cursor: move;
+  user-select: none;
+}
+
+.sa-var-manager-modal-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-var-manager-modal-title::before {
+  content: "📝";
+  font-size: 16px;
+}
+
+.sa-var-manager-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sa-var-manager-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.sa-var-manager-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nw-resize;
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--ui-black-transparent) 30%, var(--ui-black-transparent) 32%, transparent 32%, transparent 62%, var(--ui-black-transparent) 62%, var(--ui-black-transparent) 64%, transparent 64%);
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Update main container for modal */
+.sa-var-manager-overlay .sa-var-manager {
+  height: calc(100% - 45px);
+  margin: 0;
+  border-radius: 0;
+  overflow: auto;
+  background: var(--ui-primary);
+  color: var(--text-primary);
+}
+
+/* Theme-aware text colors */
+.sa-var-manager-modal .sa-var-manager,
+.sa-var-manager-modal .sa-var-manager * {
+  color: var(--text-primary);
+}
+
+.sa-var-manager-modal .sa-var-manager-searchbox {
+  color: var(--text-primary);
+  background-color: var(--ui-tertiary);
+  border-color: var(--ui-black-transparent);
+}
+
+.sa-var-manager-modal .sa-var-manager-searchbox:focus {
+  background-color: var(--ui-white);
+  border-color: var(--looks-secondary);
+}
+
+.sa-var-manager-modal .sa-var-manager-name-input {
+  color: var(--text-primary);
+  background: var(--ui-tertiary);
+  border-color: var(--ui-black-transparent);
+}
+
+.sa-var-manager-modal .sa-var-manager-value-input {
+  color: var(--text-primary);
+  background: var(--ui-tertiary);
+  border-color: var(--ui-black-transparent);
+}
+
+.sa-var-manager-modal .sa-var-manager-heading {
+  color: var(--text-primary);
+}
+
+.sa-var-manager-modal .sa-var-manager-stats {
+  color: var(--text-primary-transparent);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sa-var-manager-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .sa-var-manager-search-container {
+    max-width: none;
+  }
+  
+  .sa-var-manager-name {
+    width: 40%;
+  }
+  
+  .sa-var-manager-value {
+    width: 60%;
+  }
+  
+  .sa-var-manager-modal {
+    width: 95%;
+    height: 95%;
+    max-width: none;
+    max-height: none;
+  }
+  
+  .sa-var-manager-modal-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .sa-var-manager-modal-title {
+    font-size: 16px;
+  }
+  
+  .sa-var-manager-search-container {
+    max-width: 250px;
+  }
+  
+  .sa-var-manager {
+    padding: 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .sa-var-manager-searchbox:focus {
+    box-shadow: 0 0 0 2px rgba(77, 151, 255, 0.3);
+  }
+}
+
+/* Variable Manager button styling */
+[dir="ltr"] .sa-variable-manager-container {
+  margin-right: 0.2rem;
+}
+
+[dir="rtl"] .sa-variable-manager-container {
+  margin-left: 0.2rem;
+}
+
+.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-variable-manager-container {
+  display: none !important;
+}

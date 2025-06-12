@@ -38,7 +38,8 @@ import {isTimeTravel2020} from '../reducers/time-travel';
 
 import {
     activateTab,
-    SOUNDS_TAB_INDEX
+    SOUNDS_TAB_INDEX,
+    BLOCKS_TAB_INDEX
 } from '../reducers/editor-tab';
 import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/tw-load-scratch-blocks-hoc.jsx';
@@ -281,6 +282,25 @@ class Blocks extends React.Component {
             // Set workspace visibility with performance optimization
             if (this.workspace) {
                 this.workspace.setVisible(true);
+                
+                // Check for pending procedure returns request
+                if (this.props.vm && this.props.vm._pendingProcedureReturns) {
+                    console.log('Blocks: Detected pending procedure returns request, enabling...');
+                    this.props.vm._pendingProcedureReturns = false;
+                    
+                    // Enable procedure returns after workspace is ready
+                    setTimeout(() => {
+                        this.handleEnableProcedureReturns();
+                        
+                        // Also handle pending category selection
+                        if (this.props.vm._pendingCategorySelection) {
+                            const categoryId = this.props.vm._pendingCategorySelection;
+                            this.props.vm._pendingCategorySelection = null;
+                            console.log('Blocks: Selecting pending category:', categoryId);
+                            this.handleCategorySelected(categoryId);
+                        }
+                    }, 100);
+                }
                 
                 // Defer expensive operations to next tick
                 setTimeout(() => {
@@ -682,8 +702,29 @@ class Blocks extends React.Component {
             });
     }
     handleEnableProcedureReturns () {
+        console.log('handleEnableProcedureReturns called');
         this.workspace.enableProcedureReturns();
         this.requestToolboxUpdate();
+        
+        // Force immediate toolbox refresh to show return blocks
+        setTimeout(() => {
+            console.log('Executing delayed toolbox refresh');
+            if (this.workspace.getFlyout) {
+                const flyout = this.workspace.getFlyout();
+                if (flyout && flyout.getWorkspace) {
+                    flyout.getWorkspace().refreshToolboxSelection();
+                }
+            }
+            this.workspace.refreshToolboxSelection();
+            
+            // Also trigger a specific refresh of the procedures category
+            if (this.workspace.getToolbox && this.workspace.getToolbox()) {
+                const toolbox = this.workspace.getToolbox();
+                if (toolbox.refreshSelection) {
+                    toolbox.refreshSelection();
+                }
+            }
+        }, 100);
     }
     render () {
         /* eslint-disable no-unused-vars */
@@ -705,6 +746,7 @@ class Blocks extends React.Component {
             reduxOnOpenCustomExtensionModal,
             updateToolboxState,
             onActivateCustomProcedures,
+            onActivateBlocksTab,
             onRequestCloseExtensionLibrary,
             onRequestCloseCustomProcedures,
             toolboxXML,
@@ -740,6 +782,7 @@ class Blocks extends React.Component {
                         vm={vm}
                         onCategorySelected={this.handleCategorySelected}
                         onEnableProcedureReturns={this.handleEnableProcedureReturns}
+                        onActivateBlocksTab={onActivateBlocksTab}
                         onRequestClose={onRequestCloseExtensionLibrary}
                         onOpenCustomExtensionModal={onOpenCustomExtensionModal || reduxOnOpenCustomExtensionModal}
                     />
@@ -773,6 +816,7 @@ Blocks.propTypes = {
     messages: PropTypes.objectOf(PropTypes.string),
     onActivateColorPicker: PropTypes.func,
     onActivateCustomProcedures: PropTypes.func,
+    onActivateBlocksTab: PropTypes.func,
     onOpenConnectionModal: PropTypes.func,
     onOpenSoundRecorder: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
@@ -856,6 +900,10 @@ const mapDispatchToProps = dispatch => ({
     },
     onRequestCloseCustomProcedures: data => {
         dispatch(deactivateCustomProcedures(data));
+    },
+    onActivateBlocksTab: () => {
+        console.log('onActivateBlocksTab called');
+        dispatch(activateTab(BLOCKS_TAB_INDEX));
     },
     updateToolboxState: toolboxXML => {
         dispatch(updateToolbox(toolboxXML));

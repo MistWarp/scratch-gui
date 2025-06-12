@@ -31,6 +31,8 @@ class ExtensionsTab extends React.Component {
         this.handleExtensionClick = this.handleExtensionClick.bind(this);
         this.updateLoadedExtensions = this.updateLoadedExtensions.bind(this);
         this.handleExtensionAdded = this.handleExtensionAdded.bind(this);
+        this.handleEnableProcedureReturns = this.handleEnableProcedureReturns.bind(this);
+        this.handleCategorySelected = this.handleCategorySelected.bind(this);
         this.state = {
             loadedExtensions: []
         };
@@ -182,6 +184,32 @@ class ExtensionsTab extends React.Component {
         console.log('✅ Extension block counts updated');
     }
 
+    /**
+     * Handle enabling procedure returns - set flag for blocks component to handle
+     */
+    handleEnableProcedureReturns () {
+        console.log('ExtensionsTab: handleEnableProcedureReturns called - setting pending flag');
+        
+        // Set a flag for the blocks component to handle when it becomes active
+        if (this.props.vm) {
+            this.props.vm._pendingProcedureReturns = true;
+            console.log('ExtensionsTab: Set _pendingProcedureReturns flag');
+        }
+    }
+
+    /**
+     * Handle category selection - set flag for blocks component to handle
+     */
+    handleCategorySelected (categoryId) {
+        console.log('ExtensionsTab: handleCategorySelected called with', categoryId, '- setting pending flag');
+        
+        // Set a flag for the blocks component to handle when it becomes active
+        if (this.props.vm) {
+            this.props.vm._pendingCategorySelection = categoryId;
+            console.log('ExtensionsTab: Set _pendingCategorySelection flag to', categoryId);
+        }
+    }
+
     render () {
         const {
             extensionLibraryVisible,
@@ -239,7 +267,9 @@ class ExtensionsTab extends React.Component {
                 {extensionLibraryVisible && (
                     <ExtensionLibrary
                         vm={vm}
-                        onCategorySelected={onCategorySelected}
+                        onCategorySelected={this.handleCategorySelected}
+                        onEnableProcedureReturns={this.handleEnableProcedureReturns}
+                        onActivateBlocksTab={this.props.onActivateBlocksTab}
                         onRequestClose={onRequestCloseExtensionLibrary}
                         onOpenCustomExtensionModal={this.props.onOpenCustomExtensionModal}
                     />
