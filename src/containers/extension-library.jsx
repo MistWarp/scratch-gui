@@ -184,9 +184,25 @@ class ExtensionLibrary extends React.PureComponent {
         }
 
         if (extensionId === 'procedures_enable_return') {
+            console.log('Custom Reporters extension clicked');
+            console.log('onEnableProcedureReturns:', typeof this.props.onEnableProcedureReturns);
+            console.log('onActivateBlocksTab:', typeof this.props.onActivateBlocksTab);
+            console.log('onCategorySelected:', typeof this.props.onCategorySelected);
+            
             this.props.onEnableProcedureReturns();
+            
+            // Switch to blocks tab after enabling returns
+            if (typeof this.props.onActivateBlocksTab === 'function') {
+                console.log('Activating blocks tab...');
+                this.props.onActivateBlocksTab();
+            } else {
+                console.log('onActivateBlocksTab is not a function');
+            }
+            
+            // Switch to My Blocks category after enabling returns (correct ID is "more")
             if (typeof this.props.onCategorySelected === 'function') {
-                this.props.onCategorySelected('myBlocks');
+                console.log('Selecting more category...');
+                this.props.onCategorySelected('more');
             }
             return;
         }
@@ -250,6 +266,7 @@ class ExtensionLibrary extends React.PureComponent {
 
 ExtensionLibrary.propTypes = {
     intl: intlShape.isRequired,
+    onActivateBlocksTab: PropTypes.func,
     onCategorySelected: PropTypes.func,
     onEnableProcedureReturns: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,

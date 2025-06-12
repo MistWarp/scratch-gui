@@ -2,7 +2,7 @@
 const manifest = {
   "editorOnly": true,
   "name": "Variable manager",
-  "description": "Adds a tab next to \"sounds\" in the editor for easily updating variables and lists.",
+  "description": "Enhanced variable and list manager with improved performance, modern UI, and better search capabilities.",
   "credits": [
     {
       "name": "Jeffalo"
@@ -22,7 +22,7 @@ const manifest = {
     }
   ],
   "dynamicDisable": true,
-  "tags": [],
-  "enabledByDefault": false
+  "tags": ["editor", "recommended"],
+  "enabledByDefault": true
 };
 export default manifest;
