@@ -1,3 +1,5 @@
+import icon from './icon.svg';
+
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
@@ -6,12 +8,18 @@ export default async function ({ addon, console, msg }) {
   let preventUpdate = false;
   let updateScheduled = false;
   let lastUpdateTime = 0;
-  const UPDATE_THROTTLE = 100; // ms
+  const UPDATE_THROTTLE = 50; // Reduced for better responsiveness
   let variableManagerVisible = false;
+  let currentFilter = '';
+  let selectedVariable = null; // For keyboard navigation
+  let variableGroups = new Map(); // For grouping variables by type
 
   // Create the Variable Manager interface
   const manager = document.createElement("div");
   manager.classList.add(addon.tab.scratchClass("asset-panel_wrapper"), "sa-var-manager");
+  manager.setAttribute('role', 'dialog');
+  manager.setAttribute('aria-label', 'Variable Manager');
+  manager.setAttribute('tabindex', '-1');
 
   // Create header with search and controls
   const header = document.createElement("div");
@@ -21,49 +29,120 @@ export default async function ({ addon, console, msg }) {
   searchContainer.className = "sa-var-manager-search-container";
 
   const searchBox = document.createElement("input");
-  searchBox.placeholder = msg("search");
+  searchBox.placeholder = msg("search") + " (Ctrl+F)";
   searchBox.className = addon.tab.scratchClass("input_input-form", { others: "sa-var-manager-searchbox" });
   searchBox.type = "text";
+  searchBox.setAttribute('aria-label', 'Search variables and lists');
 
   const clearSearchBtn = document.createElement("button");
   clearSearchBtn.className = "sa-var-manager-clear-search";
   clearSearchBtn.innerHTML = "×";
-  clearSearchBtn.title = "Clear search";
+  clearSearchBtn.title = "Clear search (Escape)";
   clearSearchBtn.style.display = "none";
+  clearSearchBtn.setAttribute('aria-label', 'Clear search');
 
-  // Improved search with debouncing
+  // Enhanced search with debouncing and better performance
   let searchTimeout;
   const performSearch = (searchTerm) => {
-    for (const variable of localVariables) {
-      variable.handleSearch(searchTerm);
-    }
-    for (const variable of globalVariables) {
-      variable.handleSearch(searchTerm);
-    }
-    updateHeadingVisibility();
-    clearSearchBtn.style.display = searchTerm ? "block" : "none";
+    currentFilter = searchTerm.toLowerCase();
+    
+    // Batch DOM updates
+    requestAnimationFrame(() => {
+      for (const variable of localVariables) {
+        variable.handleSearch(currentFilter);
+      }
+      for (const variable of globalVariables) {
+        variable.handleSearch(currentFilter);
+      }
+      updateHeadingVisibility();
+      clearSearchBtn.style.display = searchTerm ? "flex" : "none";
+      
+      // Update accessibility
+      const resultsCount = getVisibleVariableCount();
+      searchBox.setAttribute('aria-describedby', 'search-results');
+      if (!document.getElementById('search-results')) {
+        const resultsAnnouncer = document.createElement('div');
+        resultsAnnouncer.id = 'search-results';
+        resultsAnnouncer.setAttribute('aria-live', 'polite');
+        resultsAnnouncer.style.position = 'absolute';
+        resultsAnnouncer.style.left = '-10000px';
+        manager.appendChild(resultsAnnouncer);
+      }
+      document.getElementById('search-results').textContent = 
+        `Found ${resultsCount} variables matching "${searchTerm}"`;
+    });
   };
 
+  // Optimized search with better debouncing
   searchBox.addEventListener("input", (e) => {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => performSearch(e.target.value), 150);
+    searchTimeout = setTimeout(() => performSearch(e.target.value), 100);
   });
 
-  clearSearchBtn.addEventListener("click", () => {
+  clearSearchBtn.addEventListener("click", (e) => {
+    e.preventDefault();
     searchBox.value = "";
     performSearch("");
     searchBox.focus();
+  });
+
+  // Add keyboard shortcuts for search
+  searchBox.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (searchBox.value) {
+        clearSearchBtn.click();
+      } else {
+        hideVariableManager();
+      }
+      e.preventDefault();
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      focusFirstVisibleVariable();
+    }
   });
 
   searchContainer.appendChild(searchBox);
   searchContainer.appendChild(clearSearchBtn);
   header.appendChild(searchContainer);
 
+  // Enhanced stats display with better formatting
   const statsContainer = document.createElement("div");
   statsContainer.className = "sa-var-manager-stats";
+  statsContainer.setAttribute('aria-live', 'polite');
   header.appendChild(statsContainer);
 
   manager.appendChild(header);
+
+  // Helper functions for better UX
+  function getVisibleVariableCount() {
+    const visibleLocal = localVariables.filter(v => v.row.style.display !== "none");
+    const visibleGlobal = globalVariables.filter(v => v.row.style.display !== "none");
+    return visibleLocal.length + visibleGlobal.length;
+  }
+
+  function focusFirstVisibleVariable() {
+    const allVariables = [...localVariables, ...globalVariables];
+    const firstVisible = allVariables.find(v => v.row.style.display !== "none");
+    if (firstVisible && firstVisible.input) {
+      firstVisible.input.focus();
+      selectedVariable = firstVisible;
+    }
+  }
+
+  function announceVariableChange(variableName, oldValue, newValue) {
+    // Create accessible announcements for variable changes
+    if (!document.getElementById('variable-announcer')) {
+      const announcer = document.createElement('div');
+      announcer.id = 'variable-announcer';
+      announcer.setAttribute('aria-live', 'assertive');
+      announcer.style.position = 'absolute';
+      announcer.style.left = '-10000px';
+      manager.appendChild(announcer);
+    }
+    const announcer = document.getElementById('variable-announcer');
+    announcer.textContent = `${variableName} changed from ${oldValue} to ${newValue}`;
+  }
 
   const localVars = document.createElement("div");
   localVars.className = "sa-var-manager-section";
@@ -169,13 +248,61 @@ export default async function ({ addon, console, msg }) {
     const modal = document.createElement("div");
     modal.className = "sa-var-manager-modal";
     
-    // Position next to debugger if it exists
-    const debuggerEl = document.querySelector('.sa-debugger-interface, [class*="debugger"]');
-    if (debuggerEl) {
-      const debuggerRect = debuggerEl.getBoundingClientRect();
-      modal.style.top = debuggerRect.top + 'px';
-      modal.style.right = (window.innerWidth - debuggerRect.left + 10) + 'px';
-    }
+    // Enhanced positioning logic
+    const positionModal = () => {
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      
+      // Set consistent positioning mode
+      modal.style.position = "fixed";
+      modal.style.transform = "none";
+      modal.style.right = "auto";
+      modal.style.bottom = "auto";
+      
+      // Try to position next to debugger if it exists
+      const debuggerEl = document.querySelector('.sa-debugger-interface, [class*="debugger"]');
+      if (debuggerEl) {
+        const debuggerRect = debuggerEl.getBoundingClientRect();
+        const modalWidth = 450; // Default width
+        const modalHeight = 550; // Default height
+        
+        // Check if there's space to the left of debugger
+        if (debuggerRect.left > modalWidth + 20) {
+          modal.style.top = Math.max(10, debuggerRect.top) + 'px';
+          modal.style.left = Math.max(10, debuggerRect.left - modalWidth - 10) + 'px';
+        } else {
+          // Position to the right
+          modal.style.top = Math.max(10, debuggerRect.top) + 'px';
+          modal.style.left = Math.min(viewport.width - modalWidth - 20, debuggerRect.right + 10) + 'px';
+        }
+      } else {
+        // Position in top-right area if no debugger
+        const modalWidth = 450;
+        modal.style.top = '80px';
+        modal.style.left = Math.max(20, viewport.width - modalWidth - 20) + 'px';
+      }
+      
+      // Final bounds check to ensure it's fully visible
+      setTimeout(() => {
+        const modalRect = modal.getBoundingClientRect();
+        let newLeft = parseInt(modal.style.left);
+        let newTop = parseInt(modal.style.top);
+        
+        if (modalRect.right > viewport.width - 10) {
+          newLeft = viewport.width - modalRect.width - 10;
+        }
+        if (modalRect.bottom > viewport.height - 10) {
+          newTop = viewport.height - modalRect.height - 10;
+        }
+        if (newLeft < 10) newLeft = 10;
+        if (newTop < 10) newTop = 10;
+        
+        modal.style.left = newLeft + 'px';
+        modal.style.top = newTop + 'px';
+      }, 0);
+    };
     
     const header = document.createElement("div");
     header.className = "sa-var-manager-modal-header";
@@ -187,6 +314,7 @@ export default async function ({ addon, console, msg }) {
     const closeBtn = document.createElement("button");
     closeBtn.innerHTML = "×";
     closeBtn.className = "sa-var-manager-close-btn";
+    closeBtn.setAttribute('aria-label', 'Close Variable Manager');
     closeBtn.addEventListener("click", hideVariableManager);
     
     header.appendChild(title);
@@ -197,23 +325,51 @@ export default async function ({ addon, console, msg }) {
     // Add resize handle
     const resizeHandle = document.createElement("div");
     resizeHandle.className = "sa-var-manager-resize-handle";
+    resizeHandle.setAttribute('aria-label', 'Resize Variable Manager');
     modal.appendChild(resizeHandle);
     
     overlay.appendChild(modal);
     
-    // Make draggable
+    // Position the modal after adding to DOM
+    document.body.appendChild(overlay);
+    positionModal();
+    
+    // Reposition on window resize (but not during manual resize)
+    const handleWindowResize = () => {
+      if (!isResizing) {
+        positionModal();
+      }
+    };
+    window.addEventListener('resize', handleWindowResize);
+    
+    // Enhanced dragging functionality
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
     
     header.addEventListener("mousedown", (e) => {
       if (e.target === closeBtn) return;
       isDragging = true;
-      dragOffset.x = e.clientX - modal.offsetLeft;
-      dragOffset.y = e.clientY - modal.offsetTop;
+      
+      // Get current computed position
+      const rect = modal.getBoundingClientRect();
+      dragOffset.x = e.clientX - rect.left;
+      dragOffset.y = e.clientY - rect.top;
+      
+      // Ensure consistent positioning
       modal.style.position = "fixed";
+      modal.style.transform = "none";
+      modal.style.right = "auto";
+      modal.style.bottom = "auto";
+      modal.style.left = rect.left + 'px';
+      modal.style.top = rect.top + 'px';
+      
       document.addEventListener("mousemove", handleDrag);
       document.addEventListener("mouseup", stopDrag);
       e.preventDefault();
+      
+      // Add visual feedback
+      modal.style.cursor = "grabbing";
+      header.style.cursor = "grabbing";
     });
     
     function handleDrag(e) {
@@ -221,12 +377,13 @@ export default async function ({ addon, console, msg }) {
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
       
-      // Keep within viewport bounds
-      const maxX = window.innerWidth - modal.offsetWidth;
-      const maxY = window.innerHeight - modal.offsetHeight;
+      // Keep within viewport bounds with some padding
+      const padding = 10;
+      const maxX = window.innerWidth - modal.offsetWidth - padding;
+      const maxY = window.innerHeight - modal.offsetHeight - padding;
       
-      modal.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
-      modal.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+      modal.style.left = Math.max(padding, Math.min(newX, maxX)) + 'px';
+      modal.style.top = Math.max(padding, Math.min(newY, maxY)) + 'px';
       modal.style.right = 'auto';
     }
     
@@ -234,59 +391,234 @@ export default async function ({ addon, console, msg }) {
       isDragging = false;
       document.removeEventListener("mousemove", handleDrag);
       document.removeEventListener("mouseup", stopDrag);
+      
+      // Remove visual feedback
+      modal.style.cursor = "";
+      header.style.cursor = "grab";
     }
     
-    // Make resizable
+    // Enhanced resizing functionality with proper minimum width
     let isResizing = false;
     let startSize = { width: 0, height: 0 };
+    let startPosition = { left: 0, top: 0 };
     let startMouse = { x: 0, y: 0 };
     
     resizeHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       isResizing = true;
-      startSize.width = parseInt(window.getComputedStyle(modal).width);
-      startSize.height = parseInt(window.getComputedStyle(modal).height);
+      
+      // First ensure consistent positioning mode
+      modal.style.position = "fixed";
+      modal.style.transform = "none";
+      modal.style.right = "auto";
+      modal.style.bottom = "auto";
+      
+      // Capture the CURRENT actual position from computed styles
+      const computedStyle = window.getComputedStyle(modal);
+      const modalRect = modal.getBoundingClientRect();
+      
+      startSize.width = modalRect.width;
+      startSize.height = modalRect.height;
+      
+      // Use the current computed left/top values, or fallback to getBoundingClientRect
+      const currentLeft = parseInt(computedStyle.left) || modalRect.left;
+      const currentTop = parseInt(computedStyle.top) || modalRect.top;
+      
+      startPosition.left = currentLeft;
+      startPosition.top = currentTop;
       startMouse.x = e.clientX;
       startMouse.y = e.clientY;
+      
+      // Explicitly set the current position to lock it in place
+      modal.style.left = startPosition.left + 'px';
+      modal.style.top = startPosition.top + 'px';
+      
+      console.log('Resize start - Position:', startPosition.left, startPosition.top);
+      
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
-      e.preventDefault();
+      
+      // Add visual feedback
+      document.body.style.cursor = "nw-resize";
+      document.body.style.userSelect = "none";
+      resizeHandle.style.opacity = "1";
     });
     
     function handleResize(e) {
       if (!isResizing) return;
-      const newWidth = startSize.width + (e.clientX - startMouse.x);
-      const newHeight = startSize.height + (e.clientY - startMouse.y);
       
-      modal.style.width = Math.max(300, Math.min(newWidth, 800)) + 'px';
-      modal.style.height = Math.max(300, Math.min(newHeight, window.innerHeight * 0.8)) + 'px';
+      e.preventDefault();
+      
+      const deltaX = e.clientX - startMouse.x;
+      const deltaY = e.clientY - startMouse.y;
+      
+      const newWidth = startSize.width + deltaX;
+      const newHeight = startSize.height + deltaY;
+      
+      // Enhanced constraints with better minimum width
+      const minWidth = 380; // Increased minimum width for better usability
+      const minHeight = 320; // Slightly increased minimum height
+      const maxWidth = Math.min(1200, window.innerWidth - 40);
+      const maxHeight = Math.min(window.innerHeight - 40, 900);
+      
+      const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+      const constrainedHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
+      
+      // Apply size changes without moving the modal
+      modal.style.width = constrainedWidth + 'px';
+      modal.style.height = constrainedHeight + 'px';
+      
+      // Keep the exact starting position - don't move the modal during resize
+      modal.style.left = startPosition.left + 'px';
+      modal.style.top = startPosition.top + 'px';
+      
+      // Debug: log current position to see if something else is changing it
+      console.log('Resizing - Setting position to:', startPosition.left, startPosition.top, 'Actual position:', modal.style.left, modal.style.top);
+      
+      // Trigger a resize event for any internal components that need to adjust
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
     }
     
     function stopResize() {
       isResizing = false;
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
+      
+      // Final clamp to ensure size constraints are respected
+      const currentRect = modal.getBoundingClientRect();
+      const minWidth = 380;
+      const minHeight = 320;
+      const maxWidth = Math.min(1200, window.innerWidth - 40);
+      const maxHeight = Math.min(window.innerHeight - 40, 900);
+      
+      const finalWidth = Math.max(minWidth, Math.min(currentRect.width, maxWidth));
+      const finalHeight = Math.max(minHeight, Math.min(currentRect.height, maxHeight));
+      
+      // Apply final size constraints
+      modal.style.width = finalWidth + 'px';
+      modal.style.height = finalHeight + 'px';
+      
+      // Ensure position is still maintained after final size adjustment
+      modal.style.left = startPosition.left + 'px';
+      modal.style.top = startPosition.top + 'px';
+      
+      // Remove visual feedback
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      resizeHandle.style.opacity = "";
+      
+      console.log('Resize ended - Final size:', finalWidth, finalHeight, 'Position:', startPosition.left, startPosition.top);
     }
     
-    // Close on Escape key
+    // Enhanced escape key handling with better UX
     const escapeHandler = (e) => {
       if (e.key === "Escape") {
-        hideVariableManager();
+        // If search has content, clear it first
+        if (searchBox.value) {
+          searchBox.value = "";
+          performSearch("");
+          searchBox.focus();
+        } else {
+          hideVariableManager();
+        }
+        e.preventDefault();
         document.removeEventListener("keydown", escapeHandler);
       }
     };
-    document.addEventListener("keydown", escapeHandler);
     
-    document.body.appendChild(overlay);
+    // Add global keyboard shortcuts for better UX
+    const modalKeyHandler = (e) => {
+      // Ctrl/Cmd + F to focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        searchBox.focus();
+        searchBox.select();
+        return;
+      }
+      
+      // Arrow keys for navigation between variables
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.classList.contains('sa-var-manager-name-input') || 
+                             activeElement.classList.contains('sa-var-manager-value-input'))) {
+          e.preventDefault();
+          navigateVariables(e.key === 'ArrowDown' ? 1 : -1);
+        }
+      }
+      
+      // Tab for better navigation
+      if (e.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll(
+          'input, textarea, button, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    
+    function navigateVariables(direction) {
+      const allInputs = Array.from(modal.querySelectorAll('.sa-var-manager-name-input, .sa-var-manager-value-input'))
+        .filter(input => input.closest('.sa-var-manager-row').style.display !== 'none');
+      
+      const currentIndex = allInputs.indexOf(document.activeElement);
+      if (currentIndex !== -1) {
+        const nextIndex = Math.max(0, Math.min(allInputs.length - 1, currentIndex + direction));
+        allInputs[nextIndex].focus();
+        allInputs[nextIndex].select();
+      }
+    }
+    
+    document.addEventListener("keydown", escapeHandler);
+    document.addEventListener("keydown", modalKeyHandler);
+    
+    // Cleanup function for event listeners
+    const cleanup = () => {
+      document.removeEventListener("keydown", escapeHandler);
+      document.removeEventListener("keydown", modalKeyHandler);
+      window.removeEventListener('resize', positionModal);
+    };
+    
+    // Store cleanup function for later use
+    overlay.cleanup = cleanup;
+    
     variableManagerVisible = true;
-    fullReload();
+    
+    // Focus management - focus the search box initially
+    setTimeout(() => {
+      searchBox.focus();
+      fullReload();
+    }, 100);
   }
 
   function hideVariableManager() {
     const overlay = document.querySelector('.sa-var-manager-overlay');
     if (overlay) {
-      overlay.remove();
-      variableManagerVisible = false;
-      cleanup();
+      // Call cleanup function if it exists
+      if (overlay.cleanup) {
+        overlay.cleanup();
+      }
+      
+      // Add fade out animation
+      overlay.style.opacity = '0';
+      overlay.style.transform = 'scale(0.95)';
+      
+      setTimeout(() => {
+        overlay.remove();
+        variableManagerVisible = false;
+        cleanup();
+      }, 200);
     }
   }
 
@@ -735,7 +1067,7 @@ export default async function ({ addon, console, msg }) {
   const variableManagerButtonImage = document.createElement("img");
   variableManagerButtonImage.className = addon.tab.scratchClass("stage-header_stage-button-icon");
   variableManagerButtonImage.draggable = false;
-  variableManagerButtonImage.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNEgxN1Y2SDNWNFpNMyA5SDE3VjExSDNWOVpNMyAxNEgxN1YxNkgzVjE0WiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=";
+  variableManagerButtonImage.src = icon;
   variableManagerButtonContent.appendChild(variableManagerButtonImage);
   variableManagerButton.appendChild(variableManagerButtonContent);
   variableManagerButtonOuter.appendChild(variableManagerButton);

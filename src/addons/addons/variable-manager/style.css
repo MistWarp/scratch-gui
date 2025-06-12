@@ -1,23 +1,28 @@
+/* Variable Manager - CSS with Scratch GUI theme integration */
+
 /* Main container with modern design */
 .sa-var-manager {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 20px;
   height: 100%;
   overflow: hidden;
   background: var(--ui-primary);
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--text-primary);
 }
 
-/* Header section */
+/* Header section with improved spacing */
 .sa-var-manager-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--ui-black-transparent);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ui-black-transparent);
+  gap: 16px;
 }
 
 /* Search container with enhanced styling */
@@ -36,14 +41,16 @@
   background-repeat: no-repeat;
   background-size: 16px 16px;
   background-position: calc(100% - 12px) center;
+  background-color: var(--input-background);
   font-size: 14px;
+  color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .sa-var-manager-searchbox:focus {
   outline: none;
   border-color: var(--looks-secondary);
-  box-shadow: 0 0 0 2px var(--looks-secondary-transparent);
+  box-shadow: 0 0 0 2px var(--looks-transparent);
 }
 
 .sa-var-manager-clear-search {
@@ -55,7 +62,7 @@
   border: none;
   font-size: 18px;
   cursor: pointer;
-  color: var(--ui-black-transparent);
+  color: var(--text-primary-transparent);
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -67,7 +74,7 @@
 
 .sa-var-manager-clear-search:hover {
   background-color: var(--ui-black-transparent);
-  color: var(--ui-white);
+  color: var(--text-primary);
 }
 
 [dir="rtl"] .sa-var-manager-searchbox {
@@ -81,20 +88,29 @@
   left: 32px;
 }
 
-/* Stats display */
+/* Enhanced stats display with better visual hierarchy */
 .sa-var-manager-stats {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   font-size: 12px;
-  color: var(--ui-black-transparent);
+  color: var(--text-primary-transparent);
   align-items: center;
+  font-weight: 500;
 }
 
 .sa-var-manager-stats span {
-  background: var(--ui-secondary);
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-weight: 500;
+  background: var(--looks-light-transparent);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.sa-var-manager-stats span:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--shadow);
 }
 
 /* Content area with scrolling */
@@ -118,49 +134,67 @@
   font-size: 16px;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background: var(--ui-secondary);
+  background: var(--looks-light-transparent);
   border-radius: 6px;
-  border-left: 4px solid var(--motion-primary);
+  border-left: 4px solid var(--looks-secondary);
+  color: var(--text-primary);
 }
 
 .sa-var-manager-count {
-  background: var(--motion-primary);
-  color: white;
+  background: var(--looks-secondary);
+  color: var(--ui-white);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
 }
 
-/* Table styling */
+/* Table styling with enhanced visual hierarchy */
 .sa-var-manager-table {
   border-radius: 8px;
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  box-shadow: 0 2px 4px var(--ui-black-transparent);
+  box-shadow: 0 2px 8px var(--shadow);
   overflow: hidden;
+  background: var(--ui-white);
 }
 
-/* Row styling with hover effects */
+/* Row styling with improved hover effects */
 .sa-var-manager-row {
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  background: var(--ui-white);
 }
 
 .sa-var-manager-row:hover {
-  background-color: var(--ui-secondary);
+  background-color: var(--looks-light-transparent);
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px var(--shadow);
 }
 
 .sa-var-manager-row:nth-child(even) {
-  background-color: var(--ui-primary-dark);
+  background-color: var(--ui-secondary);
+}
+
+.sa-var-manager-row:nth-child(even):hover {
+  background-color: var(--looks-light-transparent);
 }
 
 .sa-var-manager-row[data-variable-type="list"] {
-  border-left: 3px solid var(--data-primary);
+  border-left-color: var(--data-primary);
+  background: linear-gradient(90deg, var(--error-transparent) 0%, transparent 10%);
 }
 
 .sa-var-manager-row[data-is-cloud="true"] {
-  border-left: 3px solid var(--extensions-primary);
+  border-left-color: var(--looks-secondary);
+  background: linear-gradient(90deg, var(--looks-transparent) 0%, transparent 10%);
+}
+
+.sa-var-manager-row:focus-within {
+  outline: 2px solid var(--looks-secondary);
+  outline-offset: -2px;
+  background-color: var(--looks-transparent);
 }
 
 /* Cell styling */
@@ -168,6 +202,7 @@
   border: 1px solid var(--ui-black-transparent);
   padding: 8px;
   vertical-align: top;
+  color: var(--text-primary);
 }
 
 .sa-var-manager-name {
@@ -179,32 +214,44 @@
   width: 70%;
 }
 
-/* Label container with icons */
+/* Enhanced label container with better icon styling */
 .sa-var-manager-label-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 2px;
 }
 
 .sa-var-manager-type-icon {
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px var(--shadow));
+  transition: transform 0.2s ease;
 }
 
+.sa-var-manager-row:hover .sa-var-manager-type-icon {
+  transform: scale(1.1);
+}
+
+/* Enhanced input styling with better visual feedback */
 .sa-var-manager-name-input {
-  background: none;
+  background: transparent;
   border: 1px solid transparent;
-  padding: 6px 8px;
+  padding: 8px 10px;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.2s, background-color 0.2s;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .sa-var-manager-name-input:focus {
   outline: none;
   border-color: var(--looks-secondary);
-  background-color: var(--ui-white);
+  background-color: var(--input-background);
+  box-shadow: 0 0 0 2px var(--looks-transparent);
+  transform: scale(1.02);
 }
 
 .sa-var-manager-name-input.sa-var-manager-error {
@@ -213,24 +260,27 @@
   animation: shake 0.3s ease-in-out;
 }
 
-/* Input styling */
+/* Enhanced value input styling */
 .sa-var-manager-value-input {
-  background: none;
+  background: transparent;
   border: 1px solid transparent;
-  padding: 8px;
+  padding: 10px 12px;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 14px;
   line-height: 1.4;
   resize: vertical;
-  min-height: 36px;
-  transition: border-color 0.2s, background-color 0.2s;
+  min-height: 40px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .sa-var-manager-value-input:focus {
   outline: none;
   border-color: var(--looks-secondary);
-  background-color: var(--ui-white);
+  background-color: var(--input-background);
+  box-shadow: 0 0 0 2px var(--looks-transparent);
+  transform: scale(1.01);
 }
 
 .sa-var-manager-value-input.sa-var-manager-error {
@@ -240,9 +290,9 @@
 }
 
 .sa-var-manager-value-input::placeholder {
-  color: var(--ui-black-transparent);
+  color: var(--text-primary-transparent);
   font-style: italic;
-}
+  }
 
 /* Tab styling */
 .sa-var-manager-tab-icon {
@@ -275,8 +325,8 @@
   cursor: pointer;
   font: inherit;
   font-style: italic;
-  color: var(--ui-black);
-  background: var(--ui-secondary);
+  color: var(--text-primary);
+  background: var(--looks-light-transparent);
   border: 1px solid var(--ui-black-transparent);
   border-radius: 4px;
   margin: 0;
@@ -287,7 +337,7 @@
 }
 
 .sa-var-manager-too-big:hover {
-  background-color: var(--ui-tertiary);
+  background-color: var(--looks-transparent);
 }
 
 [data-too-big="true"] .sa-var-manager-too-big {
@@ -308,46 +358,63 @@
   background: transparent;
   z-index: 10000;
   pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .sa-var-manager-modal {
   position: absolute;
   top: 80px;
   right: 20px;
-  background: var(--ui-primary);
+  background: var(--ui-modal-background);
   border: 1px solid var(--ui-black-transparent);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  width: 400px;
-  height: 500px;
-  min-width: 300px;
-  min-height: 300px;
-  max-width: 800px;
-  max-height: 80vh;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px var(--shadow), 0 2px 8px var(--shadow);
+  width: 450px;
+  height: 550px;
+  min-width: 380px; /* Enhanced minimum width for better usability */
+  min-height: 320px; /* Enhanced minimum height */
+  max-width: 1200px; /* Increased maximum width */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   pointer-events: auto;
-  resize: both;
-  animation: slideInRight 0.3s ease-out;
+  resize: none;
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--ui-black-transparent);
+}
+
+.sa-var-manager-modal:hover {
+  box-shadow: 0 16px 40px var(--shadow), 0 4px 12px var(--shadow);
 }
 
 .sa-var-manager-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--ui-black-transparent);
-  background: var(--looks-secondary, #4c97ff);
-  cursor: move;
+  padding: 16px 20px;
+  border-bottom: 2px solid var(--ui-black-transparent);
+  background: var(--ui-modal-header-background);
+  cursor: grab;
   user-select: none;
+  transition: all 0.2s ease;
+}
+
+.sa-var-manager-modal-header:active {
+  cursor: grabbing;
+}
+
+.sa-var-manager-modal-header:hover {
+  background: var(--looks-secondary);
+  filter: brightness(1.1);
 }
 
 .sa-var-manager-modal-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: white;
+  color: var(--ui-modal-header-foreground);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -355,49 +422,85 @@
 
 .sa-var-manager-modal-title::before {
   content: "📝";
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .sa-var-manager-close-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.8);
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  color: var(--ui-modal-header-foreground);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  font-weight: bold;
+  opacity: 0.9;
 }
 
 .sa-var-manager-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
+  background-color: var(--ui-black-transparent);
+  color: var(--ui-modal-header-foreground);
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .sa-var-manager-resize-handle {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 16px;
-  height: 16px;
+  width: 24px; /* Slightly larger for easier grabbing */
+  height: 24px;
   cursor: nw-resize;
-  background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--ui-black-transparent) 30%, var(--ui-black-transparent) 32%, transparent 32%, transparent 62%, var(--ui-black-transparent) 62%, var(--ui-black-transparent) 64%, transparent 64%);
+  background: linear-gradient(-45deg, 
+    transparent 0%, transparent 25%, 
+    var(--ui-black-transparent) 25%, var(--ui-black-transparent) 27%, 
+    transparent 27%, transparent 52%, 
+    var(--ui-black-transparent) 52%, var(--ui-black-transparent) 54%, 
+    transparent 54%, transparent 79%,
+    var(--ui-black-transparent) 79%, var(--ui-black-transparent) 81%,
+    transparent 81%
+  );
+  border-radius: 0 0 12px 0;
+  transition: all 0.2s ease;
+  opacity: 0.7; /* Slightly more visible by default */
+  z-index: 1;
 }
 
-/* Animations */
+.sa-var-manager-resize-handle:hover {
+  opacity: 1;
+  transform: scale(1.1); /* Slight scale effect on hover */
+  background: linear-gradient(-45deg, 
+    transparent 0%, transparent 25%, 
+    var(--looks-secondary) 25%, var(--looks-secondary) 27%, 
+    transparent 27%, transparent 52%, 
+    var(--looks-secondary) 52%, var(--looks-secondary) 54%, 
+    transparent 54%, transparent 79%,
+    var(--looks-secondary) 79%, var(--looks-secondary) 81%,
+    transparent 81%
+  );
+}
+
+/* Animations with improved easing */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { 
+    opacity: 0; 
+    transform: scale(0.9);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+  }
 }
 
 @keyframes slideIn {
@@ -414,11 +517,20 @@
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(100px);
+    transform: translateX(100px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.05); 
   }
 }
 
@@ -428,45 +540,8 @@
   margin: 0;
   border-radius: 0;
   overflow: auto;
-  background: var(--ui-primary);
-  color: var(--text-primary);
-}
-
-/* Theme-aware text colors */
-.sa-var-manager-modal .sa-var-manager,
-.sa-var-manager-modal .sa-var-manager * {
-  color: var(--text-primary);
-}
-
-.sa-var-manager-modal .sa-var-manager-searchbox {
-  color: var(--text-primary);
-  background-color: var(--ui-tertiary);
-  border-color: var(--ui-black-transparent);
-}
-
-.sa-var-manager-modal .sa-var-manager-searchbox:focus {
-  background-color: var(--ui-white);
-  border-color: var(--looks-secondary);
-}
-
-.sa-var-manager-modal .sa-var-manager-name-input {
-  color: var(--text-primary);
-  background: var(--ui-tertiary);
-  border-color: var(--ui-black-transparent);
-}
-
-.sa-var-manager-modal .sa-var-manager-value-input {
-  color: var(--text-primary);
-  background: var(--ui-tertiary);
-  border-color: var(--ui-black-transparent);
-}
-
-.sa-var-manager-modal .sa-var-manager-heading {
-  color: var(--text-primary);
-}
-
-.sa-var-manager-modal .sa-var-manager-stats {
-  color: var(--text-primary-transparent);
+  background: var(--ui-modal-background);
+  color: var(--ui-modal-foreground);
 }
 
 /* Responsive design */
@@ -513,10 +588,10 @@
   }
 }
 
-/* Dark mode support */
+/* Dark mode support - enhanced with theme variables */
 @media (prefers-color-scheme: dark) {
   .sa-var-manager-searchbox:focus {
-    box-shadow: 0 0 0 2px rgba(77, 151, 255, 0.3);
+    box-shadow: 0 0 0 2px var(--looks-transparent);
   }
 }
 

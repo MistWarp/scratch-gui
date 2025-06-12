@@ -2,7 +2,7 @@
 const manifest = {
   "editorOnly": true,
   "name": "Variable manager",
-  "description": "Enhanced variable and list manager with improved performance, modern UI, and better search capabilities.",
+  "description": "Enhanced variable and list manager with improved accessibility, modern UI design, better search capabilities, responsive positioning, and optimized performance for managing project variables.",
   "credits": [
     {
       "name": "Jeffalo"
