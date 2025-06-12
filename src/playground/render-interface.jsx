@@ -48,11 +48,92 @@ import styles from './interface.css';
 
 const isInvalidEmbed = window.parent !== window;
 
-const handleClickAddonSettings = addonId => {
-    // addonId might be a string of the addon to focus on, undefined, or an event (treat like undefined)
+// Import window manager dynamically
+let WindowManager = null;
+let settingsWindow = null;
+
+const loadWindowManager = async () => {
+    if (!WindowManager) {
+        try {
+            const module = await import('../addons/window-system/window-manager.js');
+            WindowManager = module.default;
+        } catch (e) {
+            console.warn('Window manager not available, falling back to new window:', e);
+            return null;
+        }
+    }
+    return WindowManager;
+};
+
+const handleClickAddonSettings = async addonId => {
+    const windowManager = await loadWindowManager();
+    
+    if (!windowManager) {
+        // Fall back to original behavior if window manager isn't available
+        const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
+        const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
+        window.open(url);
+        return;
+    }
+    
+    // If window already exists, focus it and navigate to addon if specified
+    if (settingsWindow && !settingsWindow.isClosed()) {
+        settingsWindow.focus();
+        if (typeof addonId === 'string') {
+            navigateToAddon(addonId);
+        }
+        return;
+    }
+    
+    // Create new settings window
+    settingsWindow = windowManager.createWindow({
+        title: 'Addon Settings',
+        width: 900,
+        height: 700,
+        minWidth: 600,
+        minHeight: 400,
+        x: Math.max(50, (window.innerWidth - 900) / 2),
+        y: Math.max(50, (window.innerHeight - 700) / 2),
+        onClose: () => {
+            settingsWindow = null;
+        }
+    });
+    
+    createSettingsContent(addonId);
+};
+
+const createSettingsContent = (addonId) => {
+    const container = settingsWindow.getContentElement();
+    container.style.padding = '0';
+    container.style.overflow = 'hidden';
+    
+    // Create iframe to load the settings page
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.borderRadius = '0 0 8px 8px'; // Match window border radius
+    
+    // Construct the settings URL
     const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
     const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    window.open(url);
+    
+    iframe.src = url;
+    container.appendChild(iframe);
+};
+
+const navigateToAddon = (addonId) => {
+    if (settingsWindow) {
+        const iframe = settingsWindow.getContentElement().querySelector('iframe');
+        if (iframe) {
+            try {
+                const newUrl = iframe.src.split('#')[0] + '#' + addonId;
+                iframe.src = newUrl;
+            } catch (e) {
+                console.warn('Could not navigate to addon:', e);
+            }
+        }
+    }
 };
 
 const messages = defineMessages({
