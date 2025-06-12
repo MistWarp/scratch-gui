@@ -5,7 +5,8 @@ const manifest = {
   "description": "Removes the text labels from block categories and expands the icon/bubble to fill the space. Includes settings to adjust the spacing between icons and their scale.",
   "tags": [
     "theme",
-    "toolbox"
+    "toolbox",
+    "MistWarp"
   ],
   "enabledByDefault": false,
   "dynamicDisable": true,

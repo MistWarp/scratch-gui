@@ -73,7 +73,8 @@ const manifest = {
     }
   ],
   "tags": [
-    "recommended"
+    "recommended",
+    "MistWarp"
   ],
   "enabledByDefault": true
 };

@@ -81,8 +81,15 @@ import {
     closeErrorsMenu
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
+import {
+    setAutosaveEnabled,
+    setAutosaveInterval,
+    setAutosaveNotifications
+} from '../../reducers/autosave.js';
 
 import collectMetadata from '../../lib/collect-metadata';
+import AutosaveService from '../../lib/autosave-service.js';
+import SettingsStore from '../../addons/settings-store-singleton.js';
 
 import styles from './menu-bar.css';
 
@@ -211,6 +218,11 @@ MenuItemLink.propTypes = {
 class MenuBar extends React.Component {
     constructor (props) {
         super(props);
+        this.state = {
+            autosaveTimeRemaining: 0,
+            autosavePaused: false
+        };
+        this.autosaveCountdownInterval = null;
         bindAll(this, [
             'handleClickSeeInside',
             'handleClickNew',
@@ -227,14 +239,28 @@ class MenuBar extends React.Component {
             'handleKeyPress',
             'handleRestoreOption',
             'getSaveToComputerHandler',
-            'restoreOptionMessage'
+            'restoreOptionMessage',
+            'handleToggleAutosave',
+            'getAutosaveEnabled',
+            'getAutosaveTimeRemaining'
         ]);
     }
     componentDidMount () {
         document.addEventListener('keydown', this.handleKeyPress);
+        this.startAutosaveCountdown();
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
+        if (this.autosaveCountdownInterval) {
+            clearInterval(this.autosaveCountdownInterval);
+        }
+    }
+    componentDidUpdate (prevProps) {
+        // Restart countdown if autosave settings changed
+        if (prevProps.autosaveEnabled !== this.props.autosaveEnabled ||
+            prevProps.autosaveInterval !== this.props.autosaveInterval) {
+            this.startAutosaveCountdown();
+        }
     }
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
@@ -352,6 +378,153 @@ class MenuBar extends React.Component {
                 this.props.onProjectTelemetryEvent('projectDidSave', metadata);
             }
         };
+    }
+    handleToggleAutosave () {
+        // Instead of enabling/disabling, just pause/resume the timer
+        this.setState(prevState => ({ autosavePaused: !prevState.autosavePaused }));
+        this.props.onRequestCloseFile();
+    }
+    getAutosaveEnabled () {
+        // Check if autosave addon is enabled and use its settings
+        const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
+        
+        if (isAutosaveAddonEnabled) {
+            return SettingsStore.getAddonSetting('autosave', 'enabled');
+        } else {
+            return this.props.autosaveEnabled;
+        }
+    }
+    getAutosaveTimeRemaining () {
+        return this.state.autosaveTimeRemaining;
+    }
+    startAutosaveCountdown () {
+        // Clear existing interval
+        if (this.autosaveCountdownInterval) {
+            clearInterval(this.autosaveCountdownInterval);
+        }
+        
+        // Don't start countdown if autosave is disabled
+        if (!this.getAutosaveEnabled()) {
+            this.setState({ autosaveTimeRemaining: 0 });
+            return;
+        }
+        
+        // Get interval from addon settings or Redux state
+        const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
+        let intervalMinutes;
+        
+        if (isAutosaveAddonEnabled) {
+            intervalMinutes = SettingsStore.getAddonSetting('autosave', 'interval') || 5;
+        } else {
+            intervalMinutes = this.props.autosaveInterval || 5;
+        }
+        
+        // Set initial time
+        const totalSeconds = intervalMinutes * 60;
+        this.setState({ autosaveTimeRemaining: totalSeconds });
+        
+        // Start countdown
+        this.autosaveCountdownInterval = setInterval(() => {
+            this.setState(prevState => {
+                // Don't countdown if paused
+                if (prevState.autosavePaused) {
+                    return prevState; // No change
+                }
+                
+                const newTime = prevState.autosaveTimeRemaining - 1;
+                
+                if (newTime <= 0) {
+                    // Time to autosave!
+                    this.performAutosave();
+                    return { autosaveTimeRemaining: totalSeconds }; // Reset timer
+                } else {
+                    return { autosaveTimeRemaining: newTime };
+                }
+            });
+        }, 1000);
+    }
+    performAutosave () {
+        // Save to the current file using the same method as manual save
+        if (this.props.handleSaveProject) {
+            this.props.handleSaveProject();
+            
+            // Show notification if enabled
+            const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
+            let showNotifications = true;
+            
+            if (isAutosaveAddonEnabled) {
+                showNotifications = SettingsStore.getAddonSetting('autosave', 'showNotifications');
+            }
+            
+            if (showNotifications) {
+                this.showAutosaveNotification('Project autosaved successfully!', 'success');
+            }
+        }
+    }
+    showAutosaveNotification (message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `autosave-notification autosave-${type}`;
+        notification.textContent = message;
+        
+        // Style the notification
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            backgroundColor: type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            zIndex: '10000',
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            maxWidth: '300px',
+            animation: 'slideInRight 0.3s ease-out'
+        });
+        
+        // Add CSS for animation if not already present
+        if (!document.getElementById('autosave-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'autosave-notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+    formatTimeRemaining (seconds) {
+        if (seconds <= 0) return '';
+        
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        
+        if (minutes > 0) {
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        } else {
+            return `${remainingSeconds}s`;
+        }
     }
     restoreOptionMessage (deletedItem) {
         switch (deletedItem) {
@@ -699,6 +872,35 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     </MenuSection>
+                                    {this.getAutosaveEnabled() && (
+                                        <MenuSection>
+                                            <MenuItem onClick={this.handleToggleAutosave}>
+                                                <span className={classNames({[styles.inactive]: this.state.autosavePaused})}>
+                                                    {this.state.autosavePaused ? '⏸' : '✓'}
+                                                </span>
+                                                {' '}
+                                                {this.state.autosavePaused ? (
+                                                    <FormattedMessage
+                                                        defaultMessage="Resume autosave"
+                                                        description="Menu bar item to resume autosave"
+                                                        id="tw.menuBar.resumeAutosave"
+                                                    />
+                                                ) : (
+                                                    <FormattedMessage
+                                                        defaultMessage="Pause autosave"
+                                                        description="Menu bar item to pause autosave"
+                                                        id="tw.menuBar.pauseAutosave"
+                                                    />
+                                                )}
+                                                {this.getAutosaveTimeRemaining() > 0 && (
+                                                    <span style={{marginLeft: '8px', fontSize: '0.9em', opacity: this.state.autosavePaused ? 0.5 : 0.7}}>
+                                                        ({this.formatTimeRemaining(this.getAutosaveTimeRemaining())})
+                                                        {this.state.autosavePaused && ' ⏸'}
+                                                    </span>
+                                                )}
+                                            </MenuItem>
+                                        </MenuSection>
+                                    )}
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
@@ -1022,6 +1224,8 @@ MenuBar.propTypes = {
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     autoUpdateProject: PropTypes.func,
+    autosaveEnabled: PropTypes.bool,
+    autosaveInterval: PropTypes.number,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     canCreateCopy: PropTypes.bool,
@@ -1087,6 +1291,7 @@ MenuBar.propTypes = {
     onClickSaveAsCopy: PropTypes.func,
     onClickSettings: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
+    onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onOpenTipLibrary: PropTypes.func,
@@ -1100,6 +1305,9 @@ MenuBar.propTypes = {
     onRequestCloseSettings: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
+    onSetAutosaveEnabled: PropTypes.func,
+    onSetAutosaveInterval: PropTypes.func,
+    onSetAutosaveNotifications: PropTypes.func,
     onSetTimeTravelMode: PropTypes.func,
     onShare: PropTypes.func,
     onStartSelectingFileUpload: PropTypes.func,
@@ -1120,6 +1328,10 @@ MenuBar.propTypes = {
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
+MenuBar.contextTypes = {
+    store: PropTypes.object
+};
+
 MenuBar.defaultProps = {
     onShare: () => {}
 };
@@ -1133,6 +1345,8 @@ const mapStateToProps = (state, ownProps) => {
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
+        autosaveEnabled: state.scratchGui.autosave.enabled,
+        autosaveInterval: state.scratchGui.autosave.interval,
         currentLocale: state.locales.locale,
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
@@ -1185,6 +1399,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openSettingsModal());
     },
+    onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
     onClickNew: needSave => {
         dispatch(requestNewProject(needSave));
@@ -1194,6 +1409,9 @@ const mapDispatchToProps = dispatch => ({
     onClickSave: () => dispatch(manualUpdateProject()),
     onClickSaveAsCopy: () => dispatch(saveProjectAsCopy()),
     onSeeCommunity: () => dispatch(setPlayer(true)),
+    onSetAutosaveEnabled: enabled => dispatch(setAutosaveEnabled(enabled)),
+    onSetAutosaveInterval: interval => dispatch(setAutosaveInterval(interval)),
+    onSetAutosaveNotifications: showNotifications => dispatch(setAutosaveNotifications(showNotifications)),
     onSetTimeTravelMode: mode => dispatch(setTimeTravel(mode))
 });
 

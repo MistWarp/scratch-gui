@@ -124,6 +124,17 @@ const groupAddons = () => {
 };
 const groupedAddons = groupAddons();
 
+const getAllTags = () => {
+    const tags = new Set();
+    for (const manifest of Object.values(supportedAddons)) {
+        for (const tag of manifest.tags) {
+            tags.add(tag);
+        }
+    }
+    return Array.from(tags).sort();
+};
+const allTags = getAllTags();
+
 const getInitialSearch = () => {
     const hash = location.hash.substring(1);
     
@@ -176,6 +187,47 @@ CreditList.propTypes = {
         name: PropTypes.string,
         link: PropTypes.string
     }))
+};
+
+const TagFilter = ({tags, selectedTags, onTagToggle, onClearAll}) => {
+    if (tags.length === 0) return null;
+    
+    return (
+        <div className={styles.tagFilter}>
+            <span className={styles.tagFilterLabel}>
+                {settingsTranslations.filterByTags || 'Filter by tags:'}
+            </span>
+            <div className={styles.tagList}>
+                {tags.map(tag => (
+                    <button
+                        key={tag}
+                        className={classNames(styles.tagButton, {
+                            [styles.tagButtonActive]: selectedTags.has(tag)
+                        })}
+                        onClick={() => onTagToggle(tag)}
+                        aria-pressed={selectedTags.has(tag)}
+                    >
+                        {settingsTranslations[`tags.${tag}`] || tag}
+                    </button>
+                ))}
+                {selectedTags.size > 0 && (
+                    <button
+                        className={styles.clearTagsButton}
+                        onClick={onClearAll}
+                        title={settingsTranslations.clearTagFilters || 'Clear filters'}
+                    >
+                        ×
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+TagFilter.propTypes = {
+    tags: PropTypes.arrayOf(PropTypes.string).isRequired,
+    selectedTags: PropTypes.instanceOf(Set).isRequired,
+    onTagToggle: PropTypes.func.isRequired,
+    onClearAll: PropTypes.func.isRequired
 };
 
 const Switch = ({onChange, value, ...props}) => (
@@ -854,11 +906,28 @@ class AddonList extends React.Component {
         this.search = new Search(this.props.addons.map(addonToSearchItem));
         this.groups = [];
     }
+    filterAddonsByTags (addons) {
+        if (this.props.selectedTags.size === 0) {
+            return addons;
+        }
+        return addons.filter(addon => {
+            return Array.from(this.props.selectedTags).some(tag => 
+                addon.manifest.tags.includes(tag)
+            );
+        });
+    }
     render () {
+        let filteredAddons = this.props.addons;
+        
+        // Apply tag filtering first
+        filteredAddons = this.filterAddonsByTags(filteredAddons);
+        
         if (this.props.search) {
-            const addons = this.search.search(this.props.search)
+            // Rebuild search index with filtered addons
+            const search = new Search(filteredAddons.map(addonToSearchItem));
+            const addons = search.search(this.props.search)
                 .slice(0, 20)
-                .map(({index}) => this.props.addons[index]);
+                .map(({index}) => filteredAddons[index]);
             if (addons.length === 0) {
                 return (
                     <div className={styles.noResults}>
@@ -875,16 +944,48 @@ class AddonList extends React.Component {
                 </div>
             );
         }
+        
+        // Group filtered addons
+        const groupedFilteredAddons = {
+            new: {
+                label: settingsTranslations.groupNew,
+                open: true,
+                addons: []
+            },
+            others: {
+                label: settingsTranslations.groupOthers,
+                open: true,
+                addons: []
+            },
+            danger: {
+                label: settingsTranslations.groupDanger,
+                open: false,
+                addons: []
+            }
+        };
+        
+        for (const addon of filteredAddons) {
+            if (addon.manifest.tags.includes('new')) {
+                groupedFilteredAddons.new.addons.push(addon);
+            } else if (addon.manifest.tags.includes('danger') || addon.manifest.noCompiler) {
+                groupedFilteredAddons.danger.addons.push(addon);
+            } else {
+                groupedFilteredAddons.others.addons.push(addon);
+            }
+        }
+        
         return (
             <div>
-                {Object.entries(groupedAddons).map(([id, {label, addons, open}]) => (
-                    <AddonGroup
-                        key={id}
-                        label={label}
-                        open={open}
-                        addons={addons.map(index => this.props.addons[index])}
-                        extended={this.props.extended}
-                    />
+                {Object.entries(groupedFilteredAddons).map(([id, {label, addons, open}]) => (
+                    addons.length > 0 && (
+                        <AddonGroup
+                            key={id}
+                            label={label}
+                            open={open}
+                            addons={addons}
+                            extended={this.props.extended}
+                        />
+                    )
                 ))}
             </div>
         );
@@ -897,6 +998,7 @@ AddonList.propTypes = {
         manifest: PropTypes.shape({}).isRequired
     })).isRequired,
     search: PropTypes.string.isRequired,
+    selectedTags: PropTypes.instanceOf(Set).isRequired,
     extended: PropTypes.bool.isRequired
 };
 
@@ -913,12 +1015,15 @@ class AddonSettingsComponent extends React.Component {
         this.handleClickSearchButton = this.handleClickSearchButton.bind(this);
         this.handleClickVersion = this.handleClickVersion.bind(this);
         this.searchRef = this.searchRef.bind(this);
+        this.handleTagFilter = this.handleTagFilter.bind(this);
+        this.clearTagFilters = this.clearTagFilters.bind(this);
         this.searchBar = null;
         this.state = {
             loading: false,
             dirty: false,
             search: getInitialSearch(),
             extended: false,
+            selectedTags: new Set(),
             ...this.readFullAddonState()
         };
         if (Channels.changeChannel) {
@@ -1072,6 +1177,24 @@ class AddonSettingsComponent extends React.Component {
             e.preventDefault();
         }
     }
+    handleTagFilter (tag) {
+        this.setState(state => {
+            const newSelectedTags = new Set(state.selectedTags);
+            if (newSelectedTags.has(tag)) {
+                newSelectedTags.delete(tag);
+            } else {
+                newSelectedTags.add(tag);
+            }
+            return {
+                selectedTags: newSelectedTags
+            };
+        });
+    }
+    clearTagFilters () {
+        this.setState({
+            selectedTags: new Set()
+        });
+    }
     render () {
         const addonState = Object.entries(supportedAddons).map(([id, manifest]) => ({
             id,
@@ -1121,9 +1244,16 @@ class AddonSettingsComponent extends React.Component {
                 <div className={styles.addons}>
                     {!this.state.loading && (
                         <div className={styles.section}>
+                            <TagFilter
+                                tags={allTags}
+                                selectedTags={this.state.selectedTags}
+                                onTagToggle={this.handleTagFilter}
+                                onClearAll={this.clearTagFilters}
+                            />
                             <AddonList
                                 addons={addonState}
                                 search={this.state.search}
+                                selectedTags={this.state.selectedTags}
                                 extended={this.state.extended}
                             />
                             <div className={styles.footerButtons}>

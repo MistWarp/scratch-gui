@@ -1,81 +1,66 @@
 /* Autosave addon styles */
 
-.sa-autosave-container {
+/* Menu item styles */
+.sa-autosave-menu-item {
+  cursor: pointer;
+}
+
+.sa-autosave-menu-content {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 8px;
 }
 
-.sa-autosave-indicator {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 2px solid white;
-  transition: all 0.3s ease;
+.sa-autosave-status-icon {
+  font-size: 14px;
+  line-height: 1;
 }
 
-.sa-autosave-indicator.sa-autosave-enabled {
-  background-color: #4caf50;
-  animation: sa-autosave-pulse 2s infinite;
+.sa-autosave-status-icon.enabled {
+  color: #4caf50;
 }
 
-.sa-autosave-indicator.sa-autosave-disabled {
-  background-color: #f44336;
+.sa-autosave-status-icon.disabled {
+  color: #f44336;
 }
 
-.sa-autosave-indicator.sa-autosave-saving {
-  background-color: #ff9800;
-  animation: sa-autosave-spin 1s linear infinite;
+.sa-autosave-menu-text {
+  flex: 1;
 }
 
+/* Notification styles */
 .sa-autosave-notification {
   position: fixed;
-  top: 20px;
+  top: 80px;
   right: 20px;
   background-color: #333;
   color: white;
   padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 10000;
   font-size: 14px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  max-width: 300px;
-  animation: sa-autosave-slide-in 0.3s ease-out;
+  max-width: 320px;
+  word-wrap: break-word;
+  border-left: 4px solid #4caf50;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(100%);
 }
 
-@keyframes sa-autosave-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
+.sa-autosave-notification.sa-autosave-success {
+  border-left-color: #4caf50;
 }
 
-@keyframes sa-autosave-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.sa-autosave-notification.sa-autosave-error {
+  border-left-color: #f44336;
+  background-color: #5d2f2f;
 }
 
-@keyframes sa-autosave-slide-in {
-  0% {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.sa-autosave-notification.sa-autosave-saving {
+  border-left-color: #ff9800;
+  background-color: #3d3d3d;
 }
 
 /* Dark theme support */
@@ -85,10 +70,6 @@
 }
 
 /* High contrast theme support */
-[theme="high-contrast"] .sa-autosave-indicator {
-  border: 3px solid #ffffff;
-}
-
 [theme="high-contrast"] .sa-autosave-notification {
   background-color: #000000;
   color: #ffffff;
