@@ -1,4 +1,5 @@
 import icon from './icon.svg';
+import WindowManager from '../../window-system/window-manager.js';
 
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
@@ -9,15 +10,15 @@ export default async function ({ addon, console, msg }) {
   let updateScheduled = false;
   let lastUpdateTime = 0;
   const UPDATE_THROTTLE = 50; // Reduced for better responsiveness
-  let variableManagerVisible = false;
+  let variableManagerWindow = null;
   let currentFilter = '';
   let selectedVariable = null; // For keyboard navigation
   let variableGroups = new Map(); // For grouping variables by type
 
   // Create the Variable Manager interface
   const manager = document.createElement("div");
-  manager.classList.add(addon.tab.scratchClass("asset-panel_wrapper"), "sa-var-manager");
-  manager.setAttribute('role', 'dialog');
+  manager.className = "sa-var-manager";
+  manager.setAttribute('role', 'main');
   manager.setAttribute('aria-label', 'Variable Manager');
   manager.setAttribute('tabindex', '-1');
 
@@ -231,7 +232,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function toggleVariableManager() {
-    if (variableManagerVisible) {
+    if (variableManagerWindow && variableManagerWindow.isVisible) {
       hideVariableManager();
     } else {
       showVariableManager();
@@ -239,14 +240,59 @@ export default async function ({ addon, console, msg }) {
   }
 
   function showVariableManager() {
-    // Create modal-like overlay
-    if (document.querySelector('.sa-var-manager-overlay')) return;
+    if (variableManagerWindow) {
+      variableManagerWindow.show().bringToFront();
+      return;
+    }
     
-    const overlay = document.createElement("div");
-    overlay.className = "sa-var-manager-overlay";
+    // Create window using window system
+    variableManagerWindow = WindowManager.createWindow({
+      id: 'variable-manager',
+      title: msg("variables"),
+      width: 450,
+      height: 550,
+      minWidth: 380,
+      minHeight: 320,
+      maxWidth: 1200,
+      maxHeight: 900,
+      className: 'sa-variable-manager-window',
+      onClose: () => {
+        variableManagerWindow = null;
+        cleanup();
+      },
+      onResize: () => {
+        // Trigger resize event for internal components
+        requestAnimationFrame(() => {
+          window.dispatchEvent(new Event('resize'));
+        });
+      }
+    });
     
-    const modal = document.createElement("div");
-    modal.className = "sa-var-manager-modal";
+    // Position near debugger if it exists
+    const debuggerEl = document.querySelector('.sa-debugger-interface, [class*="debugger"]');
+    if (debuggerEl) {
+      const debuggerRect = debuggerEl.getBoundingClientRect();
+      const modalWidth = 450;
+      
+      // Check if there's space to the left of debugger
+      if (debuggerRect.left > modalWidth + 20) {
+        variableManagerWindow.x = Math.max(10, debuggerRect.left - modalWidth - 10);
+        variableManagerWindow.y = Math.max(10, debuggerRect.top);
+      } else {
+        // Position to the right
+        variableManagerWindow.x = Math.min(window.innerWidth - modalWidth - 20, debuggerRect.right + 10);
+        variableManagerWindow.y = Math.max(10, debuggerRect.top);
+      }
+      
+      variableManagerWindow.element.style.left = `${variableManagerWindow.x}px`;
+      variableManagerWindow.element.style.top = `${variableManagerWindow.y}px`;
+    }
+    
+    // Set the content to our manager element
+    variableManagerWindow.setContent(manager);
+    
+    // Show the window
+    variableManagerWindow.show();
     
     // Enhanced positioning logic
     const positionModal = () => {
@@ -593,33 +639,26 @@ export default async function ({ addon, console, msg }) {
     // Store cleanup function for later use
     overlay.cleanup = cleanup;
     
-    variableManagerVisible = true;
-    
     // Focus management - focus the search box initially
     setTimeout(() => {
-      searchBox.focus();
+      const searchBox = manager.querySelector('.sa-var-manager-searchbox');
+      if (searchBox) {
+        searchBox.focus();
+      }
       fullReload();
     }, 100);
   }
 
   function hideVariableManager() {
-    const overlay = document.querySelector('.sa-var-manager-overlay');
-    if (overlay) {
-      // Call cleanup function if it exists
-      if (overlay.cleanup) {
-        overlay.cleanup();
-      }
-      
-      // Add fade out animation
-      overlay.style.opacity = '0';
-      overlay.style.transform = 'scale(0.95)';
-      
-      setTimeout(() => {
-        overlay.remove();
-        variableManagerVisible = false;
-        cleanup();
-      }, 200);
+    if (variableManagerWindow) {
+      variableManagerWindow.close();
     }
+  }
+
+  // Cleanup function for event listeners
+  function cleanup() {
+    // Remove any global event listeners if needed
+    // This will be called when the window is closed
   }
 
   class WrappedVariable {
@@ -886,7 +925,7 @@ export default async function ({ addon, console, msg }) {
   // Improved performance with throttling and batch updates
   function scheduleUpdate() {
     if (updateScheduled) return;
-    if (!variableManagerVisible || preventUpdate) return;
+    if (!variableManagerWindow || preventUpdate) return;
     
     updateScheduled = true;
     requestAnimationFrame(() => {
@@ -906,7 +945,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function fullReload() {
-    if (!variableManagerVisible || preventUpdate) return;
+    if (!variableManagerWindow || preventUpdate) return;
 
     const editingTarget = vm.runtime.getEditingTarget();
     const stage = vm.runtime.getTargetForStage();
@@ -952,7 +991,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function quickReload() {
-    if (!variableManagerVisible || preventUpdate) return;
+    if (!variableManagerWindow || preventUpdate) return;
 
     for (const variable of localVariables) {
       variable.updateValue();
@@ -977,7 +1016,7 @@ export default async function ({ addon, console, msg }) {
   // Keyboard shortcuts
   const handleKeyboardShortcuts = (e) => {
     // Only handle shortcuts when variable manager is visible
-    if (!variableManagerVisible) return;
+    if (!variableManagerWindow) return;
     
     // Ctrl/Cmd + F to focus search
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -1011,7 +1050,7 @@ export default async function ({ addon, console, msg }) {
   // Improved event handling with throttling
   vm.runtime.on("PROJECT_LOADED", () => {
     try {
-      if (variableManagerVisible) fullReload();
+      if (variableManagerWindow) fullReload();
     } catch (e) {
       console.error(e);
     }
@@ -1019,7 +1058,7 @@ export default async function ({ addon, console, msg }) {
   
   vm.runtime.on("TOOLBOX_EXTENSIONS_NEED_UPDATE", () => {
     try {
-      if (variableManagerVisible) fullReload();
+      if (variableManagerWindow) fullReload();
     } catch (e) {
       console.error(e);
     }

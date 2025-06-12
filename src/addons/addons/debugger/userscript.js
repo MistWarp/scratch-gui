@@ -5,6 +5,7 @@ import createPerformanceTab from "./performance.js";
 import createMemoryTab from "./memory.js";
 import Utils from "../find-bar/blockly/Utils.js";
 import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import WindowManager from '../../window-system/window-manager.js';
 
 const removeAllChildren = (element) => {
   while (element.firstChild) {
@@ -84,150 +85,120 @@ export default async function ({ addon, console, msg }) {
   debuggerButtonContent.appendChild(debuggerButtonImage);
   debuggerButton.appendChild(debuggerButtonContent);
   debuggerButtonOuter.appendChild(debuggerButton);
-  debuggerButton.addEventListener("click", () => setInterfaceVisible(true));
+  debuggerButton.addEventListener("click", () => toggleDebuggerInterface());
+
+  let debuggerWindow = null;
 
   const setHasUnreadMessage = (unreadMessage) => {
     debuggerButtonContent.classList.toggle("sa-debugger-unread", unreadMessage);
   };
 
-  const interfaceContainer = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_card", { others: "sa-debugger-interface" }),
-  });
-  const interfaceHeader = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons"),
-  });
-  const tabListElement = Object.assign(document.createElement("ul"), {
-    className: "sa-debugger-tabs",
-  });
-  const buttonContainerElement = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons-right", { others: "sa-debugger-header-buttons" }),
-  });
-  const tabContentContainer = Object.assign(document.createElement("div"), {
-    className: "sa-debugger-tab-content",
-  });
-
-  const compilerWarning = document.createElement("a");
-  compilerWarning.addEventListener("click", () => {
-    addon.tab.redux.dispatch({
-      type: "scratch-gui/modals/OPEN_MODAL",
-      modal: "settingsModal"
-    });
-  });
-  compilerWarning.className = "sa-debugger-log sa-debugger-compiler-warning";
-  compilerWarning.textContent = "The debugger works best when the compiler is disabled.";
-  const updateCompilerWarningVisibility = () => {
-    compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
+  const toggleDebuggerInterface = () => {
+    if (debuggerWindow && debuggerWindow.isVisible) {
+      setInterfaceVisible(false);
+    } else {
+      setInterfaceVisible(true);
+    }
   };
-  vm.on("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
-  updateCompilerWarningVisibility();
 
   let isInterfaceVisible = false;
   const setInterfaceVisible = (_isVisible) => {
     isInterfaceVisible = _isVisible;
-    interfaceContainer.style.display = isInterfaceVisible ? "flex" : "";
-    if (isInterfaceVisible) {
+    
+    if (_isVisible) {
+      if (!debuggerWindow) {
+        createDebuggerWindow();
+      }
+      debuggerWindow.show().bringToFront();
       activeTab.show();
     } else {
-      activeTab.hide();
+      if (debuggerWindow) {
+        debuggerWindow.hide();
+        activeTab.hide();
+      }
     }
   };
 
-  let mouseOffsetX = 0;
-  let mouseOffsetY = 0;
-  let lastX = 0;
-  let lastY = 0;
-  
-  // Resize variables
-  let isResizing = false;
-  let resizeStartX = 0;
-  let resizeStartY = 0;
-  let startWidth = 0;
-  let startHeight = 0;
-  
-  const handleStartDrag = (e) => {
-    // Don't start dragging if we're on the resize handle or already resizing
-    if (isResizing || e.target.classList.contains("sa-debugger-resize-handle")) {
-      return;
-    }
-    e.preventDefault();
-    mouseOffsetX = e.clientX - interfaceContainer.offsetLeft;
-    mouseOffsetY = e.clientY - interfaceContainer.offsetTop;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    document.addEventListener("mouseup", handleStopDrag);
-    document.addEventListener("mousemove", handleDragInterface);
-  };
-  const handleStopDrag = () => {
-    document.removeEventListener("mouseup", handleStopDrag);
-    document.removeEventListener("mousemove", handleDragInterface);
-  };
-  const moveInterface = (x, y) => {
-    lastX = x;
-    lastY = y;
-    const width = (document.documentElement.clientWidth || document.body.clientWidth) - 1;
-    const height = (document.documentElement.clientHeight || document.body.clientHeight) - 1;
-    const clampedX = Math.max(0, Math.min(x - mouseOffsetX, width - interfaceContainer.offsetWidth));
-    const clampedY = Math.max(0, Math.min(y - mouseOffsetY, height - interfaceContainer.offsetHeight));
-    interfaceContainer.style.left = clampedX + "px";
-    interfaceContainer.style.top = clampedY + "px";
-  };
-  const handleDragInterface = (e) => {
-    e.preventDefault();
-    moveInterface(e.clientX, e.clientY);
-  };
-  window.addEventListener("resize", () => {
-    moveInterface(lastX, lastY);
-  });
-  interfaceHeader.addEventListener("mousedown", handleStartDrag);
+  // Variables to store interface elements
+  let interfaceContainer;
+  let tabListElement;
+  let buttonContainerElement;
+  let tabContentContainer;
 
-  interfaceHeader.append(tabListElement, buttonContainerElement);
-  
-  // Add resize handle
-  const resizeHandle = Object.assign(document.createElement("div"), {
-    className: "sa-debugger-resize-handle",
-  });
-  
-  const handleStartResize = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    isResizing = true;
-    resizeStartX = e.clientX;
-    resizeStartY = e.clientY;
-    startWidth = interfaceContainer.offsetWidth;
-    startHeight = interfaceContainer.offsetHeight;
-    document.addEventListener("mouseup", handleStopResize);
-    document.addEventListener("mousemove", handleResizeInterface);
-    document.body.style.userSelect = "none";
+  const createDebuggerWindow = () => {
+    debuggerWindow = WindowManager.createWindow({
+      id: 'debugger',
+      title: msg('debugger'),
+      width: 500,
+      height: 400,
+      minWidth: 300,
+      minHeight: 200,
+      maxWidth: Math.min(window.innerWidth * 0.9, 1200),
+      maxHeight: Math.min(window.innerHeight * 0.9, 900),
+      className: 'sa-debugger-window',
+      x: 50,
+      y: 50,
+      onClose: () => {
+        debuggerWindow = null;
+        isInterfaceVisible = false;
+        if (activeTab && activeTab.hide) {
+          activeTab.hide();
+        }
+      },
+      onResize: () => {
+        // Handle any resize logic for tabs if needed
+        if (activeTab && activeTab.resize) {
+          activeTab.resize();
+        }
+      }
+    });
+
+    // Create the interface content
+    interfaceContainer = createDebuggerInterface();
+    
+    // Set the content
+    debuggerWindow.setContent(interfaceContainer);
   };
-  
-  const handleStopResize = () => {
-    isResizing = false;
-    document.removeEventListener("mouseup", handleStopResize);
-    document.removeEventListener("mousemove", handleResizeInterface);
-    document.body.style.userSelect = "";
+
+  const createDebuggerInterface = () => {
+    interfaceContainer = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-interface-content",
+    });
+    
+    tabListElement = Object.assign(document.createElement("ul"), {
+      className: "sa-debugger-tabs",
+    });
+    buttonContainerElement = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-header-buttons",
+    });
+    tabContentContainer = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-tab-content",
+    });
+
+    const interfaceHeader = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-header",
+    });
+
+    const compilerWarning = document.createElement("a");
+    compilerWarning.addEventListener("click", () => {
+      addon.tab.redux.dispatch({
+        type: "scratch-gui/modals/OPEN_MODAL",
+        modal: "settingsModal"
+      });
+    });
+    compilerWarning.className = "sa-debugger-log sa-debugger-compiler-warning";
+    compilerWarning.textContent = "The debugger works best when the compiler is disabled.";
+    const updateCompilerWarningVisibility = () => {
+      compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
+    };
+    vm.on("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
+    updateCompilerWarningVisibility();
+
+    interfaceHeader.append(tabListElement, buttonContainerElement);
+    interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
+
+    return interfaceContainer;
   };
-  
-  const handleResizeInterface = (e) => {
-    if (!isResizing) return;
-    e.preventDefault();
-    
-    const deltaX = e.clientX - resizeStartX;
-    const deltaY = e.clientY - resizeStartY;
-    
-    const newWidth = Math.max(300, Math.min(startWidth + deltaX, window.innerWidth * 0.9));
-    const newHeight = Math.max(200, Math.min(startHeight + deltaY, window.innerHeight * 0.9));
-    
-    interfaceContainer.style.width = newWidth + "px";
-    interfaceContainer.style.height = newHeight + "px";
-    
-    // Ensure the window doesn't go off-screen when resizing
-    moveInterface(lastX, lastY);
-  };
-  
-  resizeHandle.addEventListener("mousedown", handleStartResize);
-  
-  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer, resizeHandle);
-  document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
     const button = Object.assign(document.createElement("div"), {
