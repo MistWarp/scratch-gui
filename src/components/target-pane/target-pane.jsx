@@ -45,6 +45,7 @@ const TargetPane = ({
     stageSize,
     sprites,
     vm,
+    getWorkspaceMetrics, // eslint-disable-line no-unused-vars
     ...componentProps
 }) => (
     <div

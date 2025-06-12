@@ -3,7 +3,7 @@ const manifest = {
   "editorOnly": true,
   "name": "Canvas Screenshot",
   "description": "Adds a screenshot button next to the debugger that captures the stage canvas and copies it to clipboard with a customizable sound effect.",
-  "tags": ["editor"],
+  "tags": ["editor", "MistWarp"],
   "credits": [
     {
       "name": "Mistium"

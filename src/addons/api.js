@@ -930,8 +930,16 @@ class AddonRunner {
                     SettingsStore.evaluateCondition(this.id, userstyle.if)
                 );
 
-                for (const [moduleId, cssText] of this.resources[userstyle.url]) {
-                    const sheet = conditionalStyles.create(moduleId, cssText);
+                const cssResource = this.resources[userstyle.url];
+                if (cssResource && typeof cssResource[Symbol.iterator] === 'function') {
+                    for (const [moduleId, cssText] of cssResource) {
+                        const sheet = conditionalStyles.create(moduleId, cssText);
+                        sheet.addDependent(this.id, userstylePrecedence, userstyleCondition);
+                    }
+                } else if (cssResource && typeof cssResource === 'object' && cssResource.toString) {
+                    // Fallback for css-loader that returns a string or has a toString method
+                    const cssText = cssResource.toString();
+                    const sheet = conditionalStyles.create(userstyle.url, cssText);
                     sheet.addDependent(this.id, userstylePrecedence, userstyleCondition);
                 }
             }

@@ -50,7 +50,7 @@ const manifest = {
       "default": true
     }
   ],
-  "tags": ["editor", "featured"],
+  "tags": ["editor", "featured", "MistWarp"],
   "enabledByDefault": false
 };
 

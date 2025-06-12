@@ -40,7 +40,7 @@
   /* Match main tab styling */
   border-radius: 10px;
   font-size: 0.75rem;
-  padding: 0 0.8rem;
+  padding: 0 60px 0 0.8rem; /* Add right padding for stats */
   background: var(--ui-tertiary, #e6f3ff);
   border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
   color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
@@ -53,6 +53,11 @@
   border-color: var(--looks-secondary, #4c97ff);
   box-shadow: 0 0 0 2px var(--looks-transparent, rgba(76, 151, 255, 0.25));
   outline: none;
+}
+
+/* Update stats background when input is focused */
+.sa-find-dropdown-out:focus-within .sa-find-stats {
+  background: var(--ui-white, #ffffff);
 }
 
 .sa-find-input:hover {
@@ -217,11 +222,19 @@
 }
 
 .sa-find-stats {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 11px;
   color: var(--text-primary-transparent);
-  padding: 0 4px;
   white-space: nowrap;
   min-width: 40px; /* Prevent layout jumping */
+  text-align: right;
+  pointer-events: none; /* Don't interfere with input clicks */
+  background: var(--ui-tertiary, #e6f3ff);
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 /* Compact layout for smaller screens */
@@ -302,5 +315,14 @@
   .sa-find-nav {
     min-width: 32px;
     height: 28px;
+  }
+  
+  .sa-find-input {
+    padding-right: 50px; /* Reduce padding on smaller screens */
+  }
+  
+  .sa-find-stats {
+    min-width: 35px;
+    font-size: 10px;
   }
 }

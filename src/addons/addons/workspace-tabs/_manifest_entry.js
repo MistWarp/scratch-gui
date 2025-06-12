@@ -3,7 +3,7 @@ const manifest = {
   "editorOnly": true,
   "name": "Workspace Bookmarks",
   "description": "Enhanced workspace bookmark system with categories, search, and import/export. Easily navigate between different parts of your project with advanced organization features.",
-  "tags": ["editor", "workflow"],
+  "tags": ["editor", "workflow", "MistWarp"],
   "credits": [
     {
       "name": "Mistium",

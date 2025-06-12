@@ -97,8 +97,8 @@ export default async function ({ addon, msg, console }) {
       this.nextButton.title = msg("next-result");
       this.nextButton.addEventListener("click", () => this.navigateResults(1));
 
-      // Search stats
-      this.searchStats = this.searchControls.appendChild(document.createElement("span"));
+      // Search stats - moved inside the input wrapper
+      this.searchStats = this.findWrapper.appendChild(document.createElement("span"));
       this.searchStats.className = "sa-find-stats";
 
       this.bindEvents();
@@ -106,7 +106,15 @@ export default async function ({ addon, msg, console }) {
     }
 
     bindEvents() {
-      this.findInput.addEventListener("focus", () => this.inputChange());
+      this.findInput.addEventListener("focus", () => {
+        // Show all searchable items when focusing on empty search
+        if (!this.findInput.value) {
+          this.showDropDown();
+          this.showAllItems();
+        } else {
+          this.inputChange();
+        }
+      });
       this.findInput.addEventListener("keydown", (e) => this.inputKeyDown(e));
       this.findInput.addEventListener("keyup", () => this.inputChange());
       this.findInput.addEventListener("focusout", () => this.hideDropDown());
@@ -123,8 +131,9 @@ export default async function ({ addon, msg, console }) {
 
     inputChange() {
       if (!this.findInput.value) {
-        this.hideDropDown();
-        this.updateSearchStats(0, 0);
+        // Show all available items when search is empty
+        this.showDropDown();
+        this.showAllItems();
         return;
       }
 
@@ -201,6 +210,26 @@ export default async function ({ addon, msg, console }) {
         } else {
           li.style.display = "none";
         }
+      }
+      
+      this.updateSearchStats(visibleCount, listLI.length);
+    }
+
+    showAllItems() {
+      // Show all items without filtering when search is empty
+      let listLI = this.dropdown.items;
+      let visibleCount = 0;
+      
+      for (const li of listLI) {
+        li.style.display = "block";
+        visibleCount++;
+        
+        // Clear highlighting and show plain text
+        let procCode = li.data.procCode;
+        while (li.firstChild) {
+          li.removeChild(li.firstChild);
+        }
+        li.appendChild(document.createTextNode(procCode));
       }
       
       this.updateSearchStats(visibleCount, listLI.length);
@@ -372,7 +401,8 @@ export default async function ({ addon, msg, console }) {
     }
 
     showDropDown(focusID, instanceBlock) {
-      if (!focusID && this.dropdownOut.classList.contains("visible")) {
+      // Allow refreshing the dropdown even if already visible (for empty search)
+      if (!focusID && this.dropdownOut.classList.contains("visible") && this.findInput.value) {
         return;
       }
 
