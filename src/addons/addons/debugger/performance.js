@@ -127,6 +127,12 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
     if (isPaused()) {
       return;
     }
+    
+    // Only run chart updates when the performance tab is visible
+    if (!isVisible) {
+      return;
+    }
+    
     const time = now();
 
     // Remove all frame times older than 1 second in renderTimes
@@ -147,10 +153,8 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
       clonesData.shift();
       clonesData.push(vm.runtime._cloneCounter);
 
-      if (isVisible) {
-        fpsChart.update();
-        performanceClonesChart.update();
-      }
+      fpsChart.update();
+      performanceClonesChart.update();
     }
   });
 
