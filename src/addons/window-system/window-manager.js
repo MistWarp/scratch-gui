@@ -61,46 +61,95 @@ class AddonWindow {
             width: ${this.width}px;
             height: ${this.height}px;
             z-index: ${this.zIndex};
-            background: var(--ui-modal-background, #ffffff);
-            border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, 
+                var(--ui-modal-background, #ffffff) 0%, 
+                var(--ui-primary, #f8f9fa) 100%);
+            border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 
+                        0 15px 12px rgba(0, 0, 0, 0.05),
+                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
             display: none;
             flex-direction: column;
             overflow: hidden;
+            backdrop-filter: blur(20px);
         `;
         
         this.element.addEventListener('mousedown', () => this.bringToFront());
+        
+        // Add focus enhancement when window becomes active
+        this.element.addEventListener('mouseenter', () => {
+            if (this.isVisible) {
+                this.element.style.boxShadow = `
+                    0 25px 50px rgba(0, 0, 0, 0.15), 
+                    0 20px 20px rgba(0, 0, 0, 0.08),
+                    0 0 0 1px rgba(255, 255, 255, 0.3) inset
+                `;
+            }
+        });
+        
+        this.element.addEventListener('mouseleave', () => {
+            if (this.isVisible && !this.isDragging && !this.isResizing) {
+                this.element.style.boxShadow = `
+                    0 20px 40px rgba(0, 0, 0, 0.1), 
+                    0 15px 12px rgba(0, 0, 0, 0.05),
+                    0 0 0 1px rgba(255, 255, 255, 0.2) inset
+                `;
+            }
+        });
         
         // Create header
         this.headerElement = document.createElement('div');
         this.headerElement.className = 'addon-window-header';
         this.headerElement.style.cssText = `
-            background: var(--ui-secondary, #f2f2f2);
-            border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-            padding: 8px 12px;
+            background: linear-gradient(135deg, 
+                var(--ui-secondary, #f8f9fa) 0%, 
+                var(--ui-primary, #ffffff) 100%);
+            border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+            padding: 8px 16px;
             cursor: move;
             user-select: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 32px;
+            min-height: 44px;
             box-sizing: border-box;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         `;
+        
+        // Add subtle header gradient overlay
+        const headerOverlay = document.createElement('div');
+        headerOverlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.5) 50%, 
+                transparent 100%);
+            pointer-events: none;
+        `;
+        this.headerElement.appendChild(headerOverlay);
         
         // Title
         const titleElement = document.createElement('div');
         titleElement.className = 'addon-window-title';
         titleElement.textContent = this.title;
         titleElement.style.cssText = `
-            font-weight: bold;
+            font-weight: 600;
             font-size: 14px;
-            color: var(--text-primary, #575e75);
+            color: var(--text-primary, #2d3748);
             flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            z-index: 1;
         `;
         
         // Controls
@@ -108,24 +157,20 @@ class AddonWindow {
         controlsElement.className = 'addon-window-controls';
         controlsElement.style.cssText = `
             display: flex;
-            gap: 4px;
+            gap: 6px;
             align-items: center;
+            z-index: 1;
         `;
         
         // Control buttons
-        if (this.minimizable) {
-            const minimizeBtn = this.createControlButton('−', 'Minimize', () => this.minimize());
-            controlsElement.appendChild(minimizeBtn);
-        }
-        
         if (this.maximizable) {
-            const maximizeBtn = this.createControlButton('□', 'Maximize', () => this.toggleMaximize());
+            const maximizeBtn = this.createControlButton('maximize', 'Maximize', () => this.toggleMaximize());
+            this.maximizeBtn = maximizeBtn; // Store reference to update icon when maximized
             controlsElement.appendChild(maximizeBtn);
         }
         
         if (this.closable) {
-            const closeBtn = this.createControlButton('×', 'Close', () => this.close());
-            closeBtn.style.color = '#ff4444';
+            const closeBtn = this.createControlButton('close', 'Minimize', () => this.minimize());
             controlsElement.appendChild(closeBtn);
         }
         
@@ -138,9 +183,16 @@ class AddonWindow {
         this.contentElement.style.cssText = `
             flex: 1;
             overflow: auto;
-            padding: 12px;
+            padding: 0;
             box-sizing: border-box;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.02) 0%, 
+                transparent 100%);
+            border-radius: 0 0 12px 12px;
         `;
+        
+        // Add custom scrollbar styling
+        this.addScrollbarStyling(this.contentElement);
         
         this.element.appendChild(this.headerElement);
         this.element.appendChild(this.contentElement);
@@ -157,32 +209,102 @@ class AddonWindow {
         document.body.appendChild(this.element);
     }
     
-    createControlButton(text, title, onClick) {
+    createControlButton(type, title, onClick) {
         const button = document.createElement('button');
-        button.textContent = text;
         button.title = title;
+        button.className = `addon-window-btn addon-window-btn-${type}`;
+        
+        // Create SVG icon based on button type
+        let svgIcon = '';
+        switch (type) {
+            case 'maximize':
+                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
+                </svg>`;
+                break;
+            case 'restore':
+                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
+                    <path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                </svg>`;
+                break;
+            case 'close':
+                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>`;
+                break;
+        }
+        
+        button.innerHTML = svgIcon;
+        
+        // Modern button styling
         button.style.cssText = `
             background: transparent;
             border: none;
             cursor: pointer;
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: bold;
-            color: var(--text-primary, #575e75);
-            transition: background-color 0.2s;
+            border-radius: 6px;
+            color: var(--text-primary, #666);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-size: 0;
+            margin: 0;
+            padding: 0;
         `;
         
+        // Add shimmer effect
+        const shimmer = document.createElement('div');
+        shimmer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent 100%);
+            transition: left 0.5s ease;
+            pointer-events: none;
+        `;
+        button.appendChild(shimmer);
+        
+        // Hover effects
         button.addEventListener('mouseenter', () => {
-            button.style.backgroundColor = 'var(--ui-black-transparent, rgba(0, 0, 0, 0.1))';
+            if (type === 'close') {
+                button.style.background = 'linear-gradient(135deg, #ffbd2e 0%, #ffa500 100%)';
+                button.style.color = 'white';
+                button.style.transform = 'scale(1.05)';
+                button.style.boxShadow = '0 4px 12px rgba(255, 189, 46, 0.4)';
+            } else {
+                button.style.background = 'linear-gradient(135deg, #28ca42 0%, #20a935 100%)';
+                button.style.color = 'white';
+                button.style.transform = 'scale(1.05)';
+                button.style.boxShadow = '0 4px 12px rgba(40, 202, 66, 0.4)';
+            }
+            shimmer.style.left = '100%';
         });
         
         button.addEventListener('mouseleave', () => {
-            button.style.backgroundColor = 'transparent';
+            button.style.background = 'transparent';
+            button.style.color = 'var(--text-primary, #666)';
+            button.style.transform = 'scale(1)';
+            button.style.boxShadow = 'none';
+            shimmer.style.left = '-100%';
+        });
+        
+        button.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            button.style.transform = 'scale(0.95)';
+        });
+        
+        button.addEventListener('mouseup', () => {
+            button.style.transform = 'scale(1.05)';
         });
         
         button.addEventListener('click', (e) => {
@@ -190,9 +312,34 @@ class AddonWindow {
             onClick();
         });
         
+        // Focus handling for accessibility
+        button.addEventListener('focus', () => {
+            button.style.outline = '2px solid var(--looks-secondary, #4C97FF)';
+            button.style.outlineOffset = '2px';
+        });
+        
+        button.addEventListener('blur', () => {
+            button.style.outline = 'none';
+        });
+        
         return button;
     }
     
+    updateMaximizeButton() {
+        if (this.maximizeBtn) {
+            const svgIcon = this.isMaximized ? 
+                `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
+                    <path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                </svg>` :
+                `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
+                </svg>`;
+            this.maximizeBtn.innerHTML = svgIcon;
+            this.maximizeBtn.title = this.isMaximized ? 'Restore' : 'Maximize';
+        }
+    }
+
     addDragFunctionality() {
         this.headerElement.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON') return;
@@ -201,40 +348,46 @@ class AddonWindow {
             this.bringToFront();
             
             const rect = this.element.getBoundingClientRect();
-            this.dragOffset.x = e.clientX - rect.left;
-            this.dragOffset.y = e.clientY - rect.top;
+            this.dragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
             
             document.addEventListener('mousemove', this.handleDrag);
             document.addEventListener('mouseup', this.handleDragEnd);
             
             e.preventDefault();
         });
-        
-        this.handleDrag = (e) => {
-            if (!this.isDragging) return;
-            
-            const newX = e.clientX - this.dragOffset.x;
-            const newY = e.clientY - this.dragOffset.y;
-            
-            // Keep window within viewport
-            const maxX = window.innerWidth - this.element.offsetWidth;
-            const maxY = window.innerHeight - this.element.offsetHeight;
-            
-            this.x = Math.max(0, Math.min(maxX, newX));
-            this.y = Math.max(0, Math.min(maxY, newY));
-            
-            this.element.style.left = `${this.x}px`;
-            this.element.style.top = `${this.y}px`;
-            
-            this.onMove(this.x, this.y);
-        };
-        
-        this.handleDragEnd = () => {
-            this.isDragging = false;
-            document.removeEventListener('mousemove', this.handleDrag);
-            document.removeEventListener('mouseup', this.handleDragEnd);
-        };
     }
+    
+    handleDrag = (e) => {
+        if (!this.isDragging) return;
+        
+        const newX = e.clientX - this.dragOffset.x;
+        const newY = e.clientY - this.dragOffset.y;
+        
+        // Allow window to move mostly off-screen but keep 50px visible
+        // Don't allow the top of the window to go above the top of the page
+        const minVisiblePixels = 50;
+        const minX = -(this.width - minVisiblePixels);
+        const maxX = window.innerWidth - minVisiblePixels;
+        const minY = 0; // Don't allow window top to go above page top
+        const maxY = window.innerHeight - minVisiblePixels;
+        
+        this.x = Math.max(minX, Math.min(newX, maxX));
+        this.y = Math.max(minY, Math.min(newY, maxY));
+        
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+        
+        this.onMove(this.x, this.y);
+    };
+    
+    handleDragEnd = () => {
+        this.isDragging = false;
+        document.removeEventListener('mousemove', this.handleDrag);
+        document.removeEventListener('mouseup', this.handleDragEnd);
+    };
     
     addResizeHandles() {
         const handles = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
@@ -342,8 +495,8 @@ class AddonWindow {
         
         let newWidth = this.resizeStart.width;
         let newHeight = this.resizeStart.height;
-        let newX = this.x;
-        let newY = this.y;
+        let newX = this.resizeStart.left;
+        let newY = this.resizeStart.top;
         
         // Calculate new dimensions based on resize direction
         if (direction.includes('e')) newWidth += deltaX;
@@ -358,11 +511,22 @@ class AddonWindow {
         }
         
         // Apply constraints
+        const originalNewWidth = newWidth;
+        const originalNewHeight = newHeight;
+        
         newWidth = Math.max(this.minWidth, newWidth);
         newHeight = Math.max(this.minHeight, newHeight);
         
         if (this.maxWidth) newWidth = Math.min(this.maxWidth, newWidth);
         if (this.maxHeight) newHeight = Math.min(this.maxHeight, newHeight);
+        
+        // Adjust position if size was constrained and we're resizing from west or north
+        if (direction.includes('w') && newWidth !== originalNewWidth) {
+            newX = this.resizeStart.left + (this.resizeStart.width - newWidth);
+        }
+        if (direction.includes('n') && newHeight !== originalNewHeight) {
+            newY = this.resizeStart.top + (this.resizeStart.height - newHeight);
+        }
         
         // Update dimensions
         this.width = newWidth;
@@ -383,6 +547,45 @@ class AddonWindow {
         document.removeEventListener('mousemove', this.handleResize);
         document.removeEventListener('mouseup', this.handleResizeEnd);
     };
+    
+    addScrollbarStyling(element) {
+        // Create a style element for custom scrollbars
+        const style = document.createElement('style');
+        const scrollbarId = `addon-window-scrollbar-${this.id}`;
+        
+        style.textContent = `
+            .addon-window-content::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            
+            .addon-window-content::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 4px;
+            }
+            
+            .addon-window-content::-webkit-scrollbar-thumb {
+                background: linear-gradient(135deg, 
+                    rgba(0, 0, 0, 0.15) 0%, 
+                    rgba(0, 0, 0, 0.1) 100%);
+                border-radius: 4px;
+                transition: background 0.3s ease;
+            }
+            
+            .addon-window-content::-webkit-scrollbar-thumb:hover {
+                background: linear-gradient(135deg, 
+                    rgba(0, 0, 0, 0.25) 0%, 
+                    rgba(0, 0, 0, 0.15) 100%);
+            }
+            
+            .addon-window-content::-webkit-scrollbar-corner {
+                background: transparent;
+            }
+        `;
+        
+        document.head.appendChild(style);
+        this.scrollbarStyle = style; // Store reference for cleanup
+    }
     
     bringToFront() {
         this.zIndex = ++nextZIndex;
@@ -433,6 +636,7 @@ class AddonWindow {
                 this.element.style.width = `${this.width}px`;
                 this.element.style.height = `${this.height}px`;
             }
+            this.updateMaximizeButton();
         }
         
         if (this.isMinimized) {
@@ -466,6 +670,7 @@ class AddonWindow {
         this.element.style.width = '100vw';
         this.element.style.height = '100vh';
         
+        this.updateMaximizeButton();
         this.onMaximize();
         return this;
     }
@@ -475,15 +680,6 @@ class AddonWindow {
             this.restore();
         } else {
             this.maximize();
-        }
-        return this;
-    }
-    
-    setTitle(title) {
-        this.title = title;
-        const titleElement = this.headerElement.querySelector('.addon-window-title');
-        if (titleElement) {
-            titleElement.textContent = title;
         }
         return this;
     }
@@ -508,6 +704,16 @@ class AddonWindow {
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         return this;
+    }
+    
+    // Compatibility methods for external code
+    focus() {
+        this.bringToFront();
+        return this;
+    }
+    
+    isClosed() {
+        return !this.isVisible;
     }
 }
 

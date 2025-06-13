@@ -77,8 +77,8 @@ const handleClickAddonSettings = async addonId => {
     }
     
     // If window already exists, focus it and navigate to addon if specified
-    if (settingsWindow && !settingsWindow.isClosed()) {
-        settingsWindow.focus();
+    if (settingsWindow && settingsWindow.isVisible) {
+        settingsWindow.bringToFront();
         if (typeof addonId === 'string') {
             navigateToAddon(addonId);
         }
@@ -100,7 +100,13 @@ const handleClickAddonSettings = async addonId => {
     });
     
     createSettingsContent(addonId);
+    settingsWindow.show();
 };
+
+// Make the function available globally for addon integration
+if (typeof window !== 'undefined') {
+    window.handleClickAddonSettings = handleClickAddonSettings;
+}
 
 const createSettingsContent = (addonId) => {
     const container = settingsWindow.getContentElement();
