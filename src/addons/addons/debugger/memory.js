@@ -273,6 +273,12 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
     if (isPaused()) {
       return;
     }
+    
+    // Only run expensive operations when the memory tab is visible
+    if (!isVisible) {
+      return;
+    }
+    
     const time = now();
 
     if (time - lastMemoryTime > 1000) {
@@ -297,10 +303,8 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
       const maxListItems = Math.max(...listItemsData.filter(x => x >= 0));
       listItemsChart.options.scales.y.suggestedMax = Math.max(1000, maxListItems * 1.2);
 
-      if (isVisible) {
-        variableDataChart.update();
-        listItemsChart.update();
-      }
+      variableDataChart.update();
+      listItemsChart.update();
     } else {
       // Still update the info cards more frequently for real-time feedback
       updateMemoryInfo();
