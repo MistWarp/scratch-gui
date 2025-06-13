@@ -8,6 +8,7 @@ import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
 import WindowManager from '../../window-system/window-manager.js';
 
 const removeAllChildren = (element) => {
+  if (!element) return;
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
@@ -94,55 +95,135 @@ export default async function ({ addon, console, msg }) {
   };
 
   const toggleDebuggerInterface = () => {
-    if (debuggerWindow && debuggerWindow.isVisible) {
-      setInterfaceVisible(false);
-    } else {
-      setInterfaceVisible(true);
+    try {
+      // Check if window exists and is actually visible
+      if (debuggerWindow && debuggerWindow.isVisible) {
+        setInterfaceVisible(false);
+      } else {
+        setInterfaceVisible(true);
+      }
+      
+      // Ensure state consistency - if window was somehow destroyed but we think it's visible
+      if (!debuggerWindow && isInterfaceVisible) {
+        isInterfaceVisible = false;
+      }
+      
+      // Additional safety check: if window element was removed from DOM
+      if (debuggerWindow && !document.contains(debuggerWindow.element)) {
+        debuggerWindow = null;
+        isInterfaceVisible = false;
+      }
+    } catch (error) {
+      console.error('Error toggling debugger interface:', error);
+      // Reset state on error
+      debuggerWindow = null;
+      isInterfaceVisible = false;
+      debuggerButtonContent.classList.remove("sa-debugger-active", "sa-debugger-unread");
     }
   };
 
   let isInterfaceVisible = false;
   const setInterfaceVisible = (_isVisible) => {
-    isInterfaceVisible = _isVisible;
-    
-    if (_isVisible) {
-      if (!debuggerWindow) {
-        createDebuggerWindow();
+    try {
+      isInterfaceVisible = _isVisible;
+
+      if (_isVisible) {
+        if (!debuggerWindow) {
+          createDebuggerWindow();
+        }
+        
+        // If window is minimized, restore it instead of just showing
+        if (debuggerWindow.isMinimized) {
+          debuggerWindow.restore();
+        } else {
+          debuggerWindow.show().bringToFront();
+        }
+        
+        if (activeTab && activeTab.show) {
+          activeTab.show();
+        }
+        
+        // Update button state to show debugger is active
+        debuggerButtonContent.classList.add("sa-debugger-active");
+      } else {
+        if (debuggerWindow) {
+          debuggerWindow.hide();
+          if (activeTab && activeTab.hide) {
+            activeTab.hide();
+          }
+        }
+        
+        // Clear unread message indicator when closing debugger
+        setHasUnreadMessage(false);
+        
+        // Update button visual state to reflect debugger is closed
+        debuggerButtonContent.classList.remove("sa-debugger-active");
       }
-      debuggerWindow.show().bringToFront();
-      activeTab.show();
-    } else {
-      if (debuggerWindow) {
-        debuggerWindow.hide();
-        activeTab.hide();
+      
+      // If the debugger is being hidden and the window was destroyed externally,
+      // ensure our state stays consistent
+      if (!_isVisible && debuggerWindow && !debuggerWindow.element) {
+        debuggerWindow = null;
       }
+    } catch (error) {
+      console.error('Error setting debugger interface visibility:', error);
+      // Reset state on error
+      isInterfaceVisible = false;
+      debuggerButtonContent.classList.remove("sa-debugger-active", "sa-debugger-unread");
     }
   };
 
-  // Variables to store interface elements
+  // Variables to store interface elements and cleanup functions
   let interfaceContainer;
   let tabListElement;
   let buttonContainerElement;
   let tabContentContainer;
+  let updateCompilerWarningVisibility;
+  let cleanupFunctions = [];
 
   const createDebuggerWindow = () => {
     debuggerWindow = WindowManager.createWindow({
       id: 'debugger',
-      title: msg('debugger'),
-      width: 500,
+      title: 'Debugger',
+      width: 600,
       height: 400,
-      minWidth: 300,
-      minHeight: 200,
-      maxWidth: Math.min(window.innerWidth * 0.9, 1200),
-      maxHeight: Math.min(window.innerHeight * 0.9, 900),
+      minWidth: 600,
+      minHeight: 400,
+      maxWidth: Math.min(window.innerWidth * 0.9, 800),
+      maxHeight: Math.min(window.innerHeight * 0.9, 600),
       className: 'sa-debugger-window',
       x: 50,
       y: 50,
       onClose: () => {
+        // Comprehensive cleanup when window is closed
         debuggerWindow = null;
         isInterfaceVisible = false;
+        
+        // Hide active tab properly
         if (activeTab && activeTab.hide) {
           activeTab.hide();
+        }
+        
+        // Update button state to reflect that debugger is closed
+        debuggerButtonContent.classList.remove("sa-debugger-unread");
+        
+        // Clear any pending messages or timers if they exist
+        setHasUnreadMessage(false);
+        
+        // Run all cleanup functions (e.g., removing VM event listeners)
+        for (const cleanup of cleanupFunctions) {
+          try {
+            cleanup();
+          } catch (error) {
+            console.warn('Error during debugger cleanup:', error);
+          }
+        }
+        cleanupFunctions.length = 0;
+        
+        // Optional: pause the program if it's running when debugger closes
+        // This provides better UX as users expect debugger closure to stop debugging
+        if (isPaused()) {
+          setPaused(false);
         }
       },
       onResize: () => {
@@ -155,24 +236,45 @@ export default async function ({ addon, console, msg }) {
 
     // Create the interface content
     interfaceContainer = createDebuggerInterface();
-    
+
     // Set the content
     debuggerWindow.setContent(interfaceContainer);
+    
+    // Add keyboard shortcut support
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isInterfaceVisible) {
+        e.preventDefault();
+        setInterfaceVisible(false);
+      }
+    };
+    
+    // Add global escape key listener when debugger is open
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Track keyboard listener for cleanup
+    cleanupFunctions.push(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+    });
   };
 
   const createDebuggerInterface = () => {
     interfaceContainer = Object.assign(document.createElement("div"), {
       className: "sa-debugger-interface-content",
     });
-    
+
     tabListElement = Object.assign(document.createElement("ul"), {
       className: "sa-debugger-tabs",
+      role: "tablist",
+      "aria-label": "Debugger tabs",
     });
     buttonContainerElement = Object.assign(document.createElement("div"), {
       className: "sa-debugger-header-buttons",
+      role: "toolbar",
+      "aria-label": "Debugger controls",
     });
     tabContentContainer = Object.assign(document.createElement("div"), {
       className: "sa-debugger-tab-content",
+      role: "tabpanel",
     });
 
     const interfaceHeader = Object.assign(document.createElement("div"), {
@@ -188,11 +290,16 @@ export default async function ({ addon, console, msg }) {
     });
     compilerWarning.className = "sa-debugger-log sa-debugger-compiler-warning";
     compilerWarning.textContent = "The debugger works best when the compiler is disabled.";
-    const updateCompilerWarningVisibility = () => {
+    updateCompilerWarningVisibility = () => {
       compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
     };
     vm.on("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
     updateCompilerWarningVisibility();
+    
+    // Track this VM event listener for cleanup
+    cleanupFunctions.push(() => {
+      vm.off("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
+    });
 
     interfaceHeader.append(tabListElement, buttonContainerElement);
     interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
@@ -204,6 +311,9 @@ export default async function ({ addon, console, msg }) {
     const button = Object.assign(document.createElement("div"), {
       className: addon.tab.scratchClass("card_shrink-expand-button"),
       draggable: false,
+      role: "button",
+      tabIndex: 0,
+      "aria-label": description || text || "Button",
     });
     if (description) {
       button.title = description;
@@ -211,12 +321,23 @@ export default async function ({ addon, console, msg }) {
     const imageElement = Object.assign(document.createElement("img"), {
       src: icon,
       draggable: false,
+      alt: "",
+      "aria-hidden": "true",
     });
     const textElement = Object.assign(document.createElement("span"), {
-      textContent: text,
+      textContent: text || "Button",
     });
     button.appendChild(imageElement);
     button.appendChild(textElement);
+    
+    // Add keyboard support
+    button.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        button.click();
+      }
+    });
+    
     return {
       element: button,
       image: imageElement,
@@ -226,15 +347,30 @@ export default async function ({ addon, console, msg }) {
 
   const createHeaderTab = ({ text, icon }) => {
     const tab = document.createElement("li");
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("tabindex", "0");
+    tab.setAttribute("aria-label", text || "Tab");
+    
     const imageElement = Object.assign(addon.tab.recolorable(), {
       src: icon,
       draggable: false,
+      alt: "",
+      "aria-hidden": "true",
     });
     const textElement = Object.assign(document.createElement("span"), {
-      textContent: text,
+      textContent: text || "Tab",
     });
     tab.appendChild(imageElement);
     tab.appendChild(textElement);
+    
+    // Add keyboard support for tabs
+    tab.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        tab.click();
+      }
+    });
+    
     return {
       element: tab,
       image: imageElement,
@@ -254,11 +390,7 @@ export default async function ({ addon, console, msg }) {
   updateUnpauseVisibility(isPaused());
   onPauseChanged(updateUnpauseVisibility);
 
-  const closeButton = createHeaderButton({
-    text: msg("close"),
-    icon: addon.self.getResource("/icons/close.svg") /* rewritten by pull.js */,
-  });
-  closeButton.element.addEventListener("click", () => setInterfaceVisible(false));
+  // Close button removed for better UX - users can use the window's native close button or ESC key
 
   const originalStep = vm.runtime._step;
   const afterStepCallbacks = [];
@@ -272,6 +404,13 @@ export default async function ({ addon, console, msg }) {
   const addAfterStepCallback = (cb) => {
     afterStepCallbacks.push(cb);
   };
+  
+  // Track runtime override for cleanup
+  cleanupFunctions.push(() => {
+    if (vm && vm.runtime && originalStep) {
+      vm.runtime._step = originalStep;
+    }
+  });
 
   const getBlock = (target, id) => target.blocks.getBlock(id) || vm.runtime.flyoutBlocks.getBlock(id);
 
@@ -550,7 +689,7 @@ export default async function ({ addon, console, msg }) {
   const threadsTab = await createThreadsTab(api);
   const performanceTab = await createPerformanceTab(api);
   const memoryTab = await createMemoryTab(api);
-  const allTabs = [logsTab, threadsTab, performanceTab, memoryTab];
+  const allTabs = [logsTab, threadsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
 
   for (const message of messagesLoggedBeforeLogsTabLoaded) {
     logsTab.addLog(...message);
@@ -564,8 +703,12 @@ export default async function ({ addon, console, msg }) {
     if (activeTab) {
       activeTab.hide();
       activeTab.tab.element.classList.remove(selectedClass);
+      activeTab.tab.element.setAttribute("aria-selected", "false");
+      activeTab.tab.element.setAttribute("tabindex", "-1");
     }
     tab.tab.element.classList.add(selectedClass);
+    tab.tab.element.setAttribute("aria-selected", "true");
+    tab.tab.element.setAttribute("tabindex", "0");
     activeTab = tab;
 
     removeAllChildren(tabContentContainer);
@@ -576,19 +719,65 @@ export default async function ({ addon, console, msg }) {
     for (const button of tab.buttons) {
       buttonContainerElement.appendChild(button.element);
     }
-    buttonContainerElement.appendChild(closeButton.element);
+
+    // Close button no longer needed here - removed for cleaner UX
 
     if (isInterfaceVisible) {
       activeTab.show();
     }
   };
+  // Initialize the debugger window and interface now that all tabs are created
+  createDebuggerWindow();
+  
   for (const tab of allTabs) {
     tab.tab.element.addEventListener("click", () => {
       setActiveTab(tab);
     });
-    tabListElement.appendChild(tab.tab.element);
+    if (tabListElement) {
+      tabListElement.appendChild(tab.tab.element);
+    }
   }
-  setActiveTab(allTabs[0]);
+  
+  // Add keyboard navigation for tabs
+  if (tabListElement) {
+    tabListElement.addEventListener("keydown", (e) => {
+      const tabs = Array.from(tabListElement.children);
+      const currentIndex = tabs.indexOf(e.target);
+      let nextIndex = currentIndex;
+      
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          nextIndex = (currentIndex + 1) % tabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          break;
+        case "Home":
+          nextIndex = 0;
+          break;
+        case "End":
+          nextIndex = tabs.length - 1;
+          break;
+        default:
+          return;
+      }
+      
+      if (nextIndex !== currentIndex) {
+        e.preventDefault();
+        tabs[nextIndex].focus();
+        const correspondingTab = allTabs.find(tab => tab.tab.element === tabs[nextIndex]);
+        if (correspondingTab) {
+          setActiveTab(correspondingTab);
+        }
+      }
+    });
+  }
+  
+  if (allTabs.length > 0) {
+    setActiveTab(allTabs[0]);
+  }
 
   addSmallStageClass();
 
@@ -602,6 +791,13 @@ export default async function ({ addon, console, msg }) {
     }
     return ogGreenFlag.call(this, ...args);
   };
+
+  // Track greenFlag override for cleanup
+  cleanupFunctions.push(() => {
+    if (ogGreenFlag && vm && vm.runtime) {
+      vm.runtime.greenFlag = ogGreenFlag;
+    }
+  });
 
   const ogMakeClone = vm.runtime.targets[0].constructor.prototype.makeClone;
   vm.runtime.targets[0].constructor.prototype.makeClone = function (...args) {
@@ -623,6 +819,13 @@ export default async function ({ addon, console, msg }) {
     return clone;
   };
 
+  // Track makeClone override for cleanup
+  cleanupFunctions.push(() => {
+    if (ogMakeClone && vm && vm.runtime && vm.runtime.targets && vm.runtime.targets[0]) {
+      vm.runtime.targets[0].constructor.prototype.makeClone = ogMakeClone;
+    }
+  });
+
   const ogStartHats = vm.runtime.startHats;
   vm.runtime.startHats = function (hat, optMatchFields, ...args) {
     if (addon.settings.get("log_broadcasts") && hat === "event_whenbroadcastreceived") {
@@ -633,6 +836,59 @@ export default async function ({ addon, console, msg }) {
       );
     }
     return ogStartHats.call(this, hat, optMatchFields, ...args);
+  };
+
+  // Track startHats override for cleanup
+  cleanupFunctions.push(() => {
+    if (ogStartHats && vm && vm.runtime) {
+      vm.runtime.startHats = ogStartHats;
+    }
+  });
+
+  // Add page unload cleanup to handle browser close/navigation
+  const handlePageUnload = () => {
+    performGlobalCleanup();
+  };
+  
+  window.addEventListener('beforeunload', handlePageUnload);
+  
+  // Track page unload listener for cleanup
+  cleanupFunctions.push(() => {
+    window.removeEventListener('beforeunload', handlePageUnload);
+  });
+
+  // Global cleanup function for when addon is disabled or removed
+  const performGlobalCleanup = () => {
+    try {
+      // Close debugger window
+      if (debuggerWindow) {
+        debuggerWindow.close();
+        debuggerWindow = null;
+      }
+      
+      // Reset interface state
+      isInterfaceVisible = false;
+      
+      // Run all registered cleanup functions (VM event listeners, overrides, etc.)
+      for (const cleanup of cleanupFunctions) {
+        try {
+          cleanup();
+        } catch (error) {
+          console.warn('Error during global debugger cleanup:', error);
+        }
+      }
+      cleanupFunctions.length = 0;
+      
+      // Clear button state
+      if (debuggerButtonContent) {
+        debuggerButtonContent.classList.remove("sa-debugger-unread", "sa-debugger-active");
+      }
+      
+      console.log('Debugger addon cleanup completed successfully');
+      
+    } catch (error) {
+      console.error('Error during global debugger cleanup:', error);
+    }
   };
 
   while (true) {

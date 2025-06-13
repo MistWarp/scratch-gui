@@ -28,165 +28,372 @@
   border-radius: 50%;
 }
 
+.sa-debugger-active {
+  background-color: var(--looks-secondary, #4C97FF) !important;
+  border-color: var(--looks-secondary, #4C97FF) !important;
+}
+
+.sa-debugger-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(76, 151, 255, 0.1) 0%, 
+    rgba(76, 151, 255, 0.05) 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Enhanced debugger window styling with gradient backgrounds */
 .sa-debugger-interface {
   display: none;
   position: absolute;
   z-index: 492;
-  background-color: var(--ui-modal-background);
+  background: linear-gradient(135deg, 
+    var(--ui-modal-background, #2d3748) 0%, 
+    var(--ui-secondary, #1a202c) 100%);
   color: var(--ui-modal-foreground);
-  width: 565px;
-  height: 25rem;
-  min-width: 300px;
+  width: 480px;
+  height: 350px;
+  min-width: 280px;
   min-height: 200px;
   max-width: 90vw;
   max-height: 90vh;
   border: 1px solid var(--ui-black-transparent);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 
+              0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Enhanced resize handle with modern styling */
 .sa-debugger-resize-handle {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   cursor: nw-resize;
   z-index: 1000;
   background: linear-gradient(
     -45deg,
     transparent 0px,
-    transparent 4px,
-    var(--ui-black-transparent) 4px,
-    var(--ui-black-transparent) 6px,
     transparent 6px,
+    rgba(255, 255, 255, 0.3) 6px,
+    rgba(255, 255, 255, 0.3) 8px,
     transparent 8px,
-    var(--ui-black-transparent) 8px,
-    var(--ui-black-transparent) 10px,
     transparent 10px,
+    rgba(255, 255, 255, 0.3) 10px,
+    rgba(255, 255, 255, 0.3) 12px,
     transparent 12px,
-    var(--ui-black-transparent) 12px,
-    var(--ui-black-transparent) 14px,
-    transparent 14px
+    transparent 14px,
+    rgba(255, 255, 255, 0.3) 14px,
+    rgba(255, 255, 255, 0.3) 16px,
+    transparent 16px
   );
+  border-radius: 0 0 12px 0;
 }
 
 .sa-debugger-resize-handle:hover {
   background: linear-gradient(
     -45deg,
     transparent 0px,
-    transparent 4px,
-    var(--looks-secondary) 4px,
-    var(--looks-secondary) 6px,
     transparent 6px,
+    var(--looks-secondary, #4C97FF) 6px,
+    var(--looks-secondary, #4C97FF) 8px,
     transparent 8px,
-    var(--looks-secondary) 8px,
-    var(--looks-secondary) 10px,
     transparent 10px,
+    var(--looks-secondary, #4C97FF) 10px,
+    var(--looks-secondary, #4C97FF) 12px,
     transparent 12px,
-    var(--looks-secondary) 12px,
-    var(--looks-secondary) 14px,
-    transparent 14px
+    transparent 14px,
+    var(--looks-secondary, #4C97FF) 14px,
+    var(--looks-secondary, #4C97FF) 16px,
+    transparent 16px
   );
+  transform: scale(1.1);
+}
+
+/* Enhanced header styling */
+.sa-debugger-interface h1 {
+  padding: 16px 20px;
+  z-index: 10;
+  width: calc(100% - 40px);
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .sa-debugger-interface [class*="card_header-buttons_"] {
-  background-color: var(--looks-secondary);
-  border-color: var(--looks-secondary-dark);
+  background: linear-gradient(135deg, 
+    var(--looks-secondary, #4C97FF) 0%, 
+    var(--looks-secondary-dark, #4280D7) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.sa-debugger-interface h1 {
-  padding: 10px;
-  z-index: 10;
-  width: calc(100% - 20px);
-  font-size: 20px;
+/* Enhanced header layout with compact spacing */
+.sa-debugger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  min-height: 44px;
 }
 
 .sa-debugger-tabs {
   margin: 0;
   display: flex;
   align-items: center;
-  padding: 0 15px;
-  font-size: 0.75rem;
+  padding: 0;
+  font-size: 0.7rem;
+  gap: 4px;
 }
+
 .sa-debugger-tabs li {
   margin: 0;
   display: flex;
   align-items: center;
-  padding: 0.5em 1em;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 1rem;
-  color: white;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
 }
-.sa-debugger-tabs li + li {
-  margin-inline-start: 10px;
+
+.sa-debugger-tabs li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  transition: left 0.5s ease;
 }
+
+.sa-debugger-tabs li:hover::before {
+  left: 100%;
+}
+
 .sa-debugger-tabs li:hover {
-  background-color: rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.15) 0%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: white;
 }
+
 .sa-debugger-tabs li.sa-debugger-tab-selected {
-  background-color: white;
+  background: linear-gradient(135deg, 
+    var(--looks-secondary, #4C97FF) 0%, 
+    var(--looks-secondary-dark, #4280D7) 100%);
   background-clip: padding-box;
-  border-color: rgba(0, 0, 0, 0.25);
-  color: var(--looks-secondary);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 151, 255, 0.3), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 600;
 }
+
 .sa-debugger-tabs li img {
   margin: 0;
-  margin-right: 0.25rem;
-  width: 1rem;
+  margin-right: 6px;
+  width: 14px;
+  height: 14px;
   filter: brightness(0) invert(1);
+  transition: filter 0.3s ease;
+  opacity: 0.85;
 }
+
+.sa-debugger-tabs li:hover img {
+  opacity: 1;
+}
+
 .sa-debugger-tabs li.sa-debugger-tab-selected img {
-  filter: none;
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+/* Enhanced header buttons with compact grid layout */
+.sa-debugger-header-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, 
+    var(--looks-secondary, #4C97FF) 0%, 
+    var(--looks-secondary-dark, #4280D7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  min-height: 28px;
+  white-space: nowrap;
+}
+
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover::before {
+  left: 100%;
+}
+
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, 
+    var(--looks-secondary-dark, #4280D7) 0%, 
+    var(--looks-secondary, #4C97FF) 100%);
+}
+
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sa-debugger-header-buttons img {
-  width: 20px;
-  height: 20px;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  filter: brightness(0) invert(1);
 }
 
+.sa-debugger-header-buttons span {
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced unpause button with pulsing animation */
 .sa-debugger-unpause {
+  background: linear-gradient(135deg, 
+    #00D4AA 0%, 
+    #00A693 100%) !important;
   animation: saDebuggerUnpause 2s infinite alternate;
 }
 
 @keyframes saDebuggerUnpause {
   0% {
-    background-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3), 
+                0 0 0 0 rgba(0, 212, 170, 0.7);
   }
   100% {
-    background-color: rgba(0, 0, 0, 0);
+    box-shadow: 0 6px 16px rgba(0, 212, 170, 0.4), 
+                0 0 0 8px rgba(0, 212, 170, 0);
   }
 }
 
-.sa-debugger-tab-content {
-  width: 100%;
+/* Enhanced tab content area with flex layout for better space utilization */
+.sa-debugger-interface-content {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  width: 100%;
+}
+
+.sa-debugger-tab-content {
+  flex: 1;
   overflow: auto;
   cursor: auto;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.015) 0%, 
+    rgba(255, 255, 255, 0.005) 100%);
+  border-radius: 0 0 8px 8px;
+  box-sizing: border-box;
+  min-height: 0; /* Important for flex child to shrink */
 }
 
 .sa-debugger-chart {
   width: 100%;
   height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.03) 0%, 
+    rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(8px);
 }
 
-.sa-performance-tab-content {
-  padding: 15px;
+/* Enhanced performance and memory tabs with full height utilization */
+.sa-performance-tab-content,
+.sa-memory-tab-content {
+  height: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.015) 0%, 
+    transparent 100%);
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
+/* Enhanced log styling with full height utilization */
 .sa-debugger-log-outer {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.01) 0%, 
+    transparent 100%);
 }
 
 .sa-debugger-log-inner {
+  flex: 1;
   position: relative;
   overflow-y: auto;
-  font-size: 12px;
-  line-height: 1.2;
-  height: 100%;
+  font-size: 11px;
+  line-height: 1.3;
   contain: strict;
+  border-radius: 6px;
+  padding: 4px;
+  min-height: 0; /* Important for flex child to shrink */
 }
 
 .sa-debugger-log-empty {
@@ -195,8 +402,13 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 20px;
+  font-size: 14px;
   font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.02) 0%, 
+    rgba(255, 255, 255, 0.005) 100%);
+  border-radius: 6px;
 }
 
 .sa-debugger-log-end {
@@ -207,209 +419,668 @@
   height: 1px;
 }
 
+/* Enhanced compact log entries */
 .sa-debugger-log {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 20px;
+  height: 18px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--ui-black-transparent);
-  padding-left: 4px;
-  font-family: monospace;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0 6px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  transition: background-color 0.2s ease;
+  font-size: 10px;
 }
+
+.sa-debugger-log:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
 .sa-debugger-log[data-type="warn"] {
-  border-color: hsla(56deg, 100%, 69%, 0.5);
-  background-color: hsla(56deg, 100%, 69%, 0.3);
+  border-color: rgba(255, 193, 7, 0.5);
+  background: linear-gradient(90deg, 
+    rgba(255, 193, 7, 0.1) 0%, 
+    rgba(255, 193, 7, 0.05) 100%);
 }
+
 .sa-debugger-log[data-type="error"] {
-  border-color: hsla(0deg, 100%, 69%, 0.5);
-  color: red;
-  background-color: hsla(0deg, 100%, 69%, 0.3);
+  border-color: rgba(255, 107, 107, 0.5);
+  color: #ff6b6b;
+  background: linear-gradient(90deg, 
+    rgba(255, 107, 107, 0.1) 0%, 
+    rgba(255, 107, 107, 0.05) 100%);
 }
 
 .sa-debugger-log-repeats {
-  background-color: var(--extensions-primary);
+  background: linear-gradient(135deg, 
+    var(--extensions-primary, #9966FF) 0%, 
+    var(--extensions-primary-dark, #7A52CC) 100%);
   color: white;
-  border-radius: 100px;
+  border-radius: 8px;
   padding: 1px 6px;
   margin-right: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
+/* Enhanced compact log icons */
 .sa-debugger-log-icon {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   margin-right: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
+
 [data-type="warn"] .sa-debugger-log-icon {
   background-image: url(./icons/warning.svg);
-}
-[data-type="error"] .sa-debugger-log-icon {
-  background-image: url(./icons/error.svg);
-}
-.sa-debugger-threads .sa-debugger-log-icon {
-  background-image: url(./icons/subthread.svg);
+  background-color: rgba(255, 193, 7, 0.15);
+  background-size: 8px;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
+[data-type="error"] .sa-debugger-log-icon {
+  background-image: url(./icons/error.svg);
+  background-color: rgba(255, 107, 107, 0.15);
+  background-size: 8px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.sa-debugger-threads .sa-debugger-log-icon {
+  background-image: url(./icons/subthread.svg);
+  background-color: rgba(76, 151, 255, 0.15);
+  background-size: 8px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Enhanced compact log link styling */
 .sa-debugger-log-link {
   color: inherit;
   cursor: pointer;
-  opacity: 0.5;
+  opacity: 0.7;
   text-decoration: underline;
   float: right;
   text-align: right;
-  max-width: 100%;
+  max-width: 30%;
   padding-left: 4px;
   margin-right: 4px;
   margin-left: auto;
+  font-size: 9px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
+
 .sa-debugger-log-link:hover {
   text-decoration: underline;
-  color: var(--looks-secondary);
+  color: var(--looks-secondary, #4C97FF);
   opacity: 1;
+  background: linear-gradient(135deg, 
+    rgba(76, 151, 255, 0.2) 0%, 
+    rgba(76, 151, 255, 0.1) 100%);
+  transform: translateY(-1px);
 }
+
 .sa-debugger-log-link-unknown {
   pointer-events: none;
+  opacity: 0.4;
 }
 
 .sa-debugger-log-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: pre;
-}
-.sa-debugger-log-text-empty {
-  font-style: italic;
-}
-.sa-debugger-log-internal .sa-debugger-log-text {
-  font-style: italic;
+  flex: 1;
+  font-size: 10px;
+  line-height: 1.4;
+  padding-right: 4px;
 }
 
-.sa-debugger-thread-indent {
-  width: calc(16px * var(--level));
-  margin-right: 4px;
+.sa-debugger-log-text-empty {
+  font-style: italic;
+  opacity: 0.5;
+  color: rgba(255, 255, 255, 0.4);
 }
+
+.sa-debugger-log-internal {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.sa-debugger-log-internal .sa-debugger-log-text {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Enhanced thread styling */
+.sa-debugger-thread-indent {
+  width: calc(20px * var(--level));
+  margin-right: 6px;
+  position: relative;
+}
+
+.sa-debugger-thread-indent::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.2) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  transform: translateX(-50%);
+}
+
 .sa-debugger-thread-title .sa-debugger-thread-indent {
   margin: 0;
 }
-.sa-debugger-thread-target-name {
-  font-weight: bold;
-  margin-right: 8px;
+
+.sa-debugger-thread-title .sa-debugger-thread-indent::before {
+  display: none;
 }
+
+.sa-debugger-thread-id {
+  font-size: 9px;
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+.sa-debugger-thread-target-name {
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--looks-secondary, #4C97FF);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+}
+
 .sa-debugger-thread-running {
-  background-color: rgba(255, 187, 0, 0.233);
-  font-weight: bold;
+  background: linear-gradient(90deg, 
+    rgba(255, 193, 7, 0.12) 0%, 
+    rgba(255, 193, 7, 0.06) 100%);
+  font-weight: 600;
+  border-left: 2px solid #FFC107;
+  box-shadow: 0 1px 4px rgba(255, 193, 7, 0.15);
 }
 
 .sa-debugger-block-preview {
-  padding: 1px 6px;
+  padding: 2px 6px;
   margin-right: 4px;
-  background-color: var(--sa-block-colored-background);
-  color: var(--sa-block-text);
+  background: linear-gradient(135deg, 
+    var(--sa-block-colored-background, #4C97FF) 0%, 
+    rgba(76, 151, 255, 0.8) 100%);
+  color: var(--sa-block-text, white);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
 }
+
+.sa-debugger-block-preview:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .sa-debugger-block-preview[data-shape="round"] {
-  border-radius: 100px;
+  border-radius: 16px;
 }
+
 .sa-debugger-block-preview[data-shape="stacked"] {
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
-.sa-debugger-thread-compiled {
-  font-style: italic;
-}
-
+/* Enhanced compact compiler warning */
 .sa-debugger-compiler-warning {
   position: relative;
   display: block;
   text-align: center;
   height: 24px;
-  color: var(--link-color);
+  line-height: 24px;
+  color: var(--link-color, #4C97FF);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.08) 0%, 
+    rgba(255, 193, 7, 0.04) 100%);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  border-radius: 4px;
+  margin: 6px 12px;
+  padding: 0 12px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  font-size: 11px;
 }
+
+.sa-debugger-compiler-warning:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.15) 0%, 
+    rgba(255, 193, 7, 0.08) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+}
+
 .sa-debugger-compiler-warning[hidden] {
   display: none;
 }
 
-/* Memory tab specific styles */
+.sa-debugger-thread-compiled {
+  font-style: italic;
+  opacity: 0.7;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+/* Enhanced memory tab with compact grid layout */
 .sa-memory-tab-content {
-  padding: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.015) 0%, 
+    transparent 100%);
 }
 
 .sa-memory-info-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 10px;
-  background-color: var(--ui-secondary);
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.025) 100%);
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
 }
 
 .sa-memory-info-card {
-  background-color: var(--ui-primary);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
   border-radius: 6px;
-  padding: 12px;
+  padding: 10px;
   text-align: center;
-  border: 1px solid var(--ui-black-transparent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sa-memory-info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.sa-memory-info-card:hover::before {
+  left: 100%;
+}
+
+.sa-memory-info-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.06) 100%);
 }
 
 .sa-memory-info-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ui-modal-foreground);
-  margin: 0 0 6px 0;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 4px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .sa-memory-info-value {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--ui-modal-foreground);
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-clones .sa-memory-info-value {
-  color: var(--looks-secondary);
+  color: var(--looks-secondary, #4C97FF);
 }
 
 .sa-memory-variables .sa-memory-info-value {
-  color: var(--data-primary);
+  color: var(--data-primary, #FF8C1A);
 }
 
 .sa-memory-lists .sa-memory-info-value {
-  color: var(--data-lists-primary);
+  color: var(--data-lists-primary, #FF661A);
 }
 
 .sa-memory-list-items .sa-memory-info-value {
-  color: var(--operators-primary);
+  color: var(--operators-primary, #40BF4A);
 }
 
 .sa-memory-info-card.sa-memory-warning {
-  border-color: var(--orange-primary, #ff8c1a);
-  background-color: var(--orange-transparent, rgba(255, 140, 26, 0.1));
+  border-color: rgba(255, 193, 7, 0.6);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.15) 0%, 
+    rgba(255, 193, 7, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
 }
 
 .sa-memory-info-card.sa-memory-critical {
-  border-color: var(--red-primary, #ff4c4c);
-  background-color: var(--red-transparent, rgba(255, 76, 76, 0.1));
+  border-color: rgba(255, 107, 107, 0.6);
+  background: linear-gradient(135deg, 
+    rgba(255, 107, 107, 0.15) 0%, 
+    rgba(255, 107, 107, 0.08) 100%);
   animation: sa-memory-pulse 2s infinite;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
 @keyframes sa-memory-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
 }
 
 .sa-memory-tab-content h2 {
   font-size: 14px;
   font-weight: 600;
-  margin: 20px 0 10px 0;
+  margin: 16px 0 8px 0;
   color: var(--ui-modal-foreground);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-tab-content .sa-debugger-chart {
-  margin-bottom: 15px;
-  background-color: var(--ui-primary);
-  border-radius: 4px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.025) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Enhanced compact memory clear button styling */
+.sa-memory-clear-button {
+  background: linear-gradient(135deg, 
+    #FF6B6B 0%, 
+    #EE5A52 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-weight: 600 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  font-size: 11px !important;
+}
+
+.sa-memory-clear-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.sa-memory-clear-button:hover::before {
+  left: 100%;
+}
+
+.sa-memory-clear-button:hover {
+  background: linear-gradient(135deg, 
+    #EE5A52 0%, 
+    #FF6B6B 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.35) !important;
+}
+
+.sa-memory-clear-button:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25) !important;
+}
+
+.sa-memory-clear-button img {
+  filter: brightness(0) invert(1) !important;
+  width: 12px !important;
+  height: 12px !important;
+  margin-right: 4px !important;
+}
+
+/* Enhanced responsive design for better space efficiency */
+@media (max-width: 768px) {
+  .sa-debugger-header-buttons {
+    gap: 4px;
+  }
+  
+  .sa-debugger-tabs {
+    gap: 3px;
+  }
+  
+  .sa-debugger-tabs li {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
+  .sa-memory-info-section {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
+  
+  .sa-memory-info-card {
+    padding: 8px;
+    min-height: 50px;
+  }
+  
+  .sa-memory-info-value {
+    font-size: 14px;
+  }
+  
+  .sa-memory-info-title {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-debugger-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 6px 8px;
+  }
+  
+  .sa-debugger-tabs {
+    justify-content: center;
+    gap: 2px;
+  }
+  
+  .sa-debugger-header-buttons {
+    justify-content: center;
+  }
+  
+  .sa-memory-info-section {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+}
+
+/* Accessibility improvements */
+.sa-debugger-tabs li:focus-visible,
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:focus-visible {
+  outline: 2px solid var(--looks-secondary, #4C97FF);
+  outline-offset: 2px;
+}
+
+.sa-memory-info-card:focus-within {
+  outline: 2px solid var(--looks-secondary, #4C97FF);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .sa-debugger-interface {
+    border-width: 2px;
+  }
+  
+  .sa-debugger-tabs li,
+  .sa-debugger-header-buttons [class*="card_shrink-expand-button"],
+  .sa-memory-info-card {
+    border-width: 2px;
+  }
+  
+  .sa-debugger-log {
+    border-bottom-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sa-debugger-tabs li,
+  .sa-debugger-header-buttons [class*="card_shrink-expand-button"],
+  .sa-memory-info-card,
+  .sa-debugger-log,
+  .sa-debugger-block-preview,
+  .sa-debugger-log-link {
+    transition: none;
+    animation: none;
+  }
+  
+  .sa-debugger-tabs li::before,
+  .sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before,
+  .sa-memory-info-card::before,
+  .sa-memory-clear-button::before {
+    display: none;
+  }
+  
+  .sa-debugger-unpause {
+    animation: none;
+  }
+  
+  .sa-memory-info-card.sa-memory-critical {
+    animation: none;
+  }
+}
+
+/* Dark theme enhancements */
+@media (prefers-color-scheme: dark) {
+  .sa-debugger-interface {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
+                0 15px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sa-debugger-header {
+    backdrop-filter: blur(20px);
+  }
+  
+  .sa-debugger-tabs li {
+    backdrop-filter: blur(15px);
+  }
+}
+
+/* Print styles */
+@media print {
+  .sa-debugger-interface {
+    box-shadow: none;
+    border: 2px solid #000;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .sa-debugger-header-buttons,
+  .sa-debugger-resize-handle {
+    display: none;
+  }
+  
+  .sa-debugger-tabs li {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #000;
+  }
+}
+
+/* Custom compact scrollbar styling for webkit browsers */
+.sa-debugger-log-inner::-webkit-scrollbar,
+.sa-debugger-tab-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.sa-debugger-log-inner::-webkit-scrollbar-track,
+.sa-debugger-tab-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.sa-debugger-log-inner::-webkit-scrollbar-thumb,
+.sa-debugger-tab-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.25) 0%, 
+    rgba(255, 255, 255, 0.15) 100%);
+  border-radius: 3px;
+  transition: all 0.25s ease;
+}
+
+.sa-debugger-log-inner::-webkit-scrollbar-thumb:hover,
+.sa-debugger-tab-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.35) 0%, 
+    rgba(255, 255, 255, 0.25) 100%);
+}
+
+/* Performance optimizations */
+.sa-debugger-interface,
+.sa-debugger-header,
+.sa-debugger-tabs li,
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"],
+.sa-memory-info_card {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Enhanced focus indicators for better accessibility */
+.sa-debugger-tabs li[tabindex="0"]:focus,
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:focus {
+  outline: 3px solid var(--looks-secondary, #4C97FF);
+  outline-offset: 3px;
+  z-index: 1000;
 }

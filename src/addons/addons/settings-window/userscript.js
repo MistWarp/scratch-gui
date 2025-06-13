@@ -1,84 +1,26 @@
 export default async function ({ addon, console, msg }) {
-  const WindowManager = (await import('../../window-system/window-manager.js')).default;
+  // The settings window functionality is now handled in render-interface.jsx
+  // This addon just ensures the feature is available and can be customized if needed
   
-  let settingsWindow = null;
-  let settingsComponent = null;
+  console.log('Settings window addon loaded - addon settings will open in a draggable window');
   
-  // Override the global addon settings handler
-  const originalHandleClickAddonSettings = window.handleClickAddonSettings;
-  
-  window.handleClickAddonSettings = function(addonId) {
-    showSettingsWindow(addonId);
+  // Optional: Add any custom styling or behavior for the settings window here
+  const addCustomStyling = () => {
+    // Add custom CSS for settings window if needed
+    const style = document.createElement('style');
+    style.textContent = `
+      .addon-window.sa-settings-window {
+        /* Custom styling for settings window */
+      }
+    `;
+    document.head.appendChild(style);
   };
   
-  function showSettingsWindow(addonId) {
-    if (settingsWindow) {
-      // If window already exists, just focus it and optionally navigate to addon
-      settingsWindow.focus();
-      if (typeof addonId === 'string') {
-        // Navigate to specific addon (we'll implement this later)
-        navigateToAddon(addonId);
-      }
-      return;
-    }
-    
-    // Create the settings window
-    settingsWindow = WindowManager.createWindow({
-      title: 'Addon Settings',
-      width: 800,
-      height: 600,
-      minWidth: 600,
-      minHeight: 400,
-      x: 100,
-      y: 100,
-      onClose: () => {
-        settingsWindow = null;
-        settingsComponent = null;
-      }
-    });
-    
-    // Create settings content
-    createSettingsContent(addonId);
-  }
+  // Initialize custom styling
+  addCustomStyling();
   
-  function createSettingsContent(addonId) {
-    const container = settingsWindow.getContentElement();
-    container.style.padding = '0';
-    container.style.overflow = 'hidden';
-    
-    // Create iframe to load the settings page
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    
-    // Construct the settings URL
-    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    
-    iframe.src = url;
-    container.appendChild(iframe);
-    
-    settingsComponent = iframe;
-  }
-  
-  function navigateToAddon(addonId) {
-    if (settingsComponent && settingsComponent.contentWindow) {
-      // Try to navigate to the specific addon in the iframe
-      try {
-        const newUrl = settingsComponent.src.split('#')[0] + '#' + addonId;
-        settingsComponent.src = newUrl;
-      } catch (e) {
-        console.warn('Could not navigate to addon:', e);
-      }
-    }
-  }
-  
-  // Restore original handler when addon is disabled
+  // Cleanup when addon is disabled
   addon.self.addEventListener('disabled', () => {
-    if (settingsWindow) {
-      settingsWindow.close();
-    }
-    window.handleClickAddonSettings = originalHandleClickAddonSettings;
+    console.log('Settings window addon disabled');
   });
 }

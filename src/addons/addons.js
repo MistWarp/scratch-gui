@@ -1,6 +1,7 @@
 // This file is only used by pull.js to generate files. It is not used at runtime.
 
 const addons = [
+    'calculator',
     'cat-blocks',
     'editor-devtools',
     'find-bar',
@@ -88,6 +89,7 @@ const addons = [
 ];
 
 const newAddons = [
+    'calculator',
     'expanded-backpack',
     'autosave',
     'workspace-tabs',

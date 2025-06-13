@@ -20,7 +20,7 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
 
   const createChart = ({ title, unit = "" }) => {
     const titleElement = Object.assign(document.createElement("h2"), {
-      textContent: title,
+      textContent: title || "Chart",
     });
     const canvas = Object.assign(document.createElement("canvas"), {
       className: "sa-debugger-chart",
@@ -38,7 +38,7 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
     });
     
     const titleElement = Object.assign(document.createElement("h3"), {
-      textContent: title,
+      textContent: title || "Info",
       className: "sa-memory-info-title",
     });
     
@@ -316,6 +316,7 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
     text: msg("memory-clear-charts"),
     icon: addon.self.getResource("/icons/clear.svg") /* rewritten by pull.js */,
   });
+  clearButton.element.classList.add("sa-memory-clear-button");
   clearButton.element.addEventListener("click", () => {
     // Clear all chart data
     variableDataChart.data.datasets[0].data.fill(-1);

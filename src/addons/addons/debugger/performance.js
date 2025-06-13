@@ -20,7 +20,7 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
 
   const createChart = ({ title }) => {
     const titleElement = Object.assign(document.createElement("h2"), {
-      textContent: title,
+      textContent: title || "Chart",
     });
     const canvas = Object.assign(document.createElement("canvas"), {
       className: "sa-debugger-chart",
