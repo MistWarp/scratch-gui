@@ -116,6 +116,19 @@ const vmManagerHOC = function (WrappedComponent) {
                 // Fallback to standard loading
                 return this.props.vm.loadProject(this.props.projectData);
             }).then(() => {
+                // Restore normal runtime options after project loading is complete
+                // During loading we had reduced limits for performance, now restore them from Redux state
+                if (this.props.runtimeOptions) {
+                    this.props.vm.setRuntimeOptions(this.props.runtimeOptions);
+                } else {
+                    // Fallback to default values if Redux state is not available
+                    this.props.vm.setRuntimeOptions({
+                        fencing: true,        // Re-enable fencing
+                        miscLimits: true,     // Re-enable misc limits 
+                        maxClones: 300        // Restore normal clone limit
+                    });
+                }
+                
                 // Log project loading completion time
                 if (window.MISTWARP_LOAD_START_TIME) {
                     const projectLoadTime = Date.now() - window.MISTWARP_LOAD_START_TIME;
@@ -188,6 +201,7 @@ const vmManagerHOC = function (WrappedComponent) {
         onSetProjectUnchanged: PropTypes.func,
         projectData: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        runtimeOptions: PropTypes.object,
         username: PropTypes.string,
         vm: PropTypes.instanceOf(VM).isRequired
     };
@@ -203,7 +217,8 @@ const vmManagerHOC = function (WrappedComponent) {
             projectId: state.scratchGui.projectState.projectId,
             loadingState: loadingState,
             isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
-            isStarted: state.scratchGui.vmStatus.started
+            isStarted: state.scratchGui.vmStatus.started,
+            runtimeOptions: state.scratchGui.tw.runtimeOptions
         };
     };
 

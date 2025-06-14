@@ -125,7 +125,9 @@ class StageSelector extends React.Component {
         this.fileInput.click();
     }
     handleMouseEnter () {
-        this.props.dispatchSetHoveredSprite(this.props.id);
+        // Ensure id is a string before passing to dispatchSetHoveredSprite
+        const spriteId = typeof this.props.id === 'string' ? this.props.id : String(this.props.id);
+        this.props.dispatchSetHoveredSprite(spriteId);
     }
     handleMouseLeave () {
         this.props.dispatchSetHoveredSprite(null);

@@ -122,7 +122,6 @@ const groupAddons = () => {
     }
     return groups;
 };
-const groupedAddons = groupAddons();
 
 const getAllTags = () => {
     const tags = new Set();
@@ -216,7 +215,7 @@ const TagFilter = ({tags, selectedTags, onTagToggle, onClearAll}) => {
                         onClick={onClearAll}
                         title={settingsTranslations.clearTagFilters || 'Clear filters'}
                     >
-                        ×
+                        {'×'}
                     </button>
                 )}
             </div>
@@ -910,11 +909,11 @@ class AddonList extends React.Component {
         if (this.props.selectedTags.size === 0) {
             return addons;
         }
-        return addons.filter(addon => {
-            return Array.from(this.props.selectedTags).some(tag => 
+        return addons.filter(addon =>
+            Array.from(this.props.selectedTags).some(tag =>
                 addon.manifest.tags.includes(tag)
-            );
-        });
+            )
+        );
     }
     render () {
         let filteredAddons = this.props.addons;
@@ -1016,7 +1015,7 @@ class AddonSettingsComponent extends React.Component {
         this.handleClickVersion = this.handleClickVersion.bind(this);
         this.searchRef = this.searchRef.bind(this);
         this.handleTagFilter = this.handleTagFilter.bind(this);
-        this.clearTagFilters = this.clearTagFilters.bind(this);
+        this.handleClearAll = this.handleClearAll.bind(this);
         this.searchBar = null;
         this.state = {
             loading: false,
@@ -1190,7 +1189,7 @@ class AddonSettingsComponent extends React.Component {
             };
         });
     }
-    clearTagFilters () {
+    handleClearAll () {
         this.setState({
             selectedTags: new Set()
         });
@@ -1248,7 +1247,7 @@ class AddonSettingsComponent extends React.Component {
                                 tags={allTags}
                                 selectedTags={this.state.selectedTags}
                                 onTagToggle={this.handleTagFilter}
-                                onClearAll={this.clearTagFilters}
+                                onClearAll={this.handleClearAll}
                             />
                             <AddonList
                                 addons={addonState}

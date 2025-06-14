@@ -41,35 +41,37 @@ const getCategoryColor = (theme, category) => {
 };
 
 const MonitorComponent = props => (
-    <ContextMenuTrigger
-        // TW: if export is defined, we always show it, even outside of the editor
-        disable={!props.draggable && !props.onExport}
-        holdToDisplay={props.mode === 'slider' ? -1 : 1000}
-        id={`monitor-${props.label}`}
-    >
-        <Draggable
-            bounds=".monitor-overlay" // Class for monitor container
-            cancel=".no-drag" // Class used for slider input to prevent drag
-            defaultClassNameDragging={styles.dragging}
-            disabled={!props.draggable}
-            onStop={props.onDragEnd}
-
-            // https://github.com/TurboWarp/scratch-gui/issues/950
-            enableUserSelectHack={false}
+    <>
+        <ContextMenuTrigger
+            // TW: if export is defined, we always show it, even outside of the editor
+            disable={!props.draggable && !props.onExport}
+            holdToDisplay={props.mode === 'slider' ? -1 : 1000}
+            id={`monitor-${props.label}`}
         >
-            <Box
-                className={styles.monitorContainer}
-                componentRef={props.componentRef}
-                onDoubleClick={props.mode === 'list' || !props.draggable ? null : props.onNextMode}
-                data-id={props.id}
-                data-opcode={props.opcode}
+            <Draggable
+                bounds=".monitor-overlay" // Class for monitor container
+                cancel=".no-drag" // Class used for slider input to prevent drag
+                defaultClassNameDragging={styles.dragging}
+                disabled={!props.draggable}
+                onStop={props.onDragEnd}
+
+                // https://github.com/TurboWarp/scratch-gui/issues/950
+                enableUserSelectHack={false}
             >
-                {React.createElement(modes[props.mode], {
-                    categoryColor: getCategoryColor(props.theme, props.category),
-                    ...props
-                })}
-            </Box>
-        </Draggable>
+                <Box
+                    className={styles.monitorContainer}
+                    componentRef={props.componentRef}
+                    onDoubleClick={props.mode === 'list' || !props.draggable ? null : props.onNextMode}
+                    data-id={props.id}
+                    data-opcode={props.opcode}
+                >
+                    {React.createElement(modes[props.mode], {
+                        categoryColor: getCategoryColor(props.theme, props.category),
+                        ...props
+                    })}
+                </Box>
+            </Draggable>
+        </ContextMenuTrigger>
         {ReactDOM.createPortal((
             // Use a portal to render the context menu outside the flow to avoid
             // positioning conflicts between the monitors `transform: scale` and
@@ -134,8 +136,7 @@ const MonitorComponent = props => (
                     </BorderedMenuItem>}
             </ContextMenu>
         ), document.body)}
-    </ContextMenuTrigger>
-
+    </>
 );
 
 const monitorModes = Object.keys(modes);

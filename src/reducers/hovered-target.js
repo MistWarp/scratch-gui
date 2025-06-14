@@ -11,7 +11,7 @@ const reducer = function (state, action) {
     switch (action.type) {
     case SET_HOVERED_SPRITE:
         return {
-            sprite: action.spriteId,
+            sprite: action.spriteId === null ? null : String(action.spriteId),
             receivedBlocks: false
         };
     case SET_RECEIVED_BLOCKS:
@@ -27,7 +27,7 @@ const reducer = function (state, action) {
 const setHoveredSprite = function (spriteId) {
     return {
         type: SET_HOVERED_SPRITE,
-        spriteId: spriteId,
+        spriteId: spriteId === null ? null : String(spriteId),
         meta: {
             throttle: 30
         }

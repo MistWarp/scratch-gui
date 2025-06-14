@@ -1,6 +1,22 @@
-import ProgressiveLoader, { LoadPriority } from '../lib/progressive-loader.js';
+import ProgressiveLoader, {LoadPriority} from '../lib/progressive-loader.js';
 
 const progressiveLoader = new ProgressiveLoader();
+
+/**
+ * Helper function to determine if an addon is enabled by default
+ * @param {string} addonId - The ID of the addon to check
+ * @returns {boolean} Whether the addon is enabled by default
+ */
+const isDefaultAddon = (addonId) => {
+    const defaultAddons = [
+        'cat-blocks',
+        'editor-devtools',
+        'debugger',
+        'drag-drop',
+        'pause'
+    ];
+    return defaultAddons.includes(addonId);
+};
 
 const runAddons = () => {
     // Register core addons with different priorities
@@ -45,20 +61,8 @@ const runAddons = () => {
 
     // Start progressive loading
     progressiveLoader.startLoading();
-    
+
     return progressiveLoader;
 };
-
-// Helper function to determine if an addon is enabled by default
-function isDefaultAddon(addonId) {
-    const defaultAddons = [
-        'cat-blocks',
-        'editor-devtools', 
-        'debugger',
-        'drag-drop',
-        'pause'
-    ];
-    return defaultAddons.includes(addonId);
-}
 
 export default runAddons;

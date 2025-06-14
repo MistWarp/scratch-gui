@@ -801,6 +801,7 @@ export default async function ({ addon, console, msg }) {
 
   const ogMakeClone = vm.runtime.targets[0].constructor.prototype.makeClone;
   vm.runtime.targets[0].constructor.prototype.makeClone = function (...args) {
+    console.log("makeClone called", this, ...args, vm === addon.tab.traps.vm);
     if (addon.settings.get("log_failed_clone_creation") && !vm.runtime.clonesAvailable()) {
       logsTab.addLog(
         msg("log-msg-clone-cap", { sprite: this.getName() }),
