@@ -110,7 +110,9 @@ class SpriteSelectorItem extends React.PureComponent {
         this.props.dispatchSetHoveredSprite(null);
     }
     handleMouseEnter () {
-        this.props.dispatchSetHoveredSprite(this.props.id);
+        // Ensure id is a string before passing to dispatchSetHoveredSprite
+        const spriteId = typeof this.props.id === 'string' ? this.props.id : String(this.props.id);
+        this.props.dispatchSetHoveredSprite(spriteId);
     }
     setRef (component) {
         // Access the DOM node using .elem because it is going through ContextMenuTrigger

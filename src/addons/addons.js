@@ -85,7 +85,7 @@ const addons = [
     'editor-stepping',
     'autosave',
     'workspace-tabs',
-    'no-category-text',
+    'no-category-text'
 ];
 
 const newAddons = [
@@ -93,7 +93,7 @@ const newAddons = [
     'expanded-backpack',
     'autosave',
     'workspace-tabs',
-    'no-category-text',
+    'no-category-text'
 ];
 
 // eslint-disable-next-line import/no-commonjs

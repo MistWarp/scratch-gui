@@ -194,6 +194,9 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @param {string} manifest - The addon manifest
+     * @param {string} settingId - The ID of the setting
+     * @returns {Object|null} The setting object or null if not found
      */
     getAddonSettingObject (manifest, settingId) {
         if (!manifest.settings) {
@@ -207,6 +210,11 @@ class SettingsStore extends EventTargetShim {
         return null;
     }
 
+    /**
+     * Check if an addon is enabled
+     * @param {string} addonId - The ID of the addon
+     * @returns {boolean} Whether the addon is enabled
+     */
     getAddonEnabled (addonId) {
         const manifest = this.getAddonManifest(addonId);
         if (manifest.unsupported) {
@@ -219,6 +227,12 @@ class SettingsStore extends EventTargetShim {
         return !!manifest.enabledByDefault;
     }
 
+    /**
+     * Get a setting value for an addon
+     * @param {string} addonId - The ID of the addon
+     * @param {string} settingId - The ID of the setting
+     * @returns {*} The setting value
+     */
     getAddonSetting (addonId, settingId) {
         const storage = this.getAddonStorage(addonId);
         const manifest = this.getAddonManifest(addonId);
@@ -234,6 +248,8 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @param {string} addonId - The ID of the addon
+     * @returns {Object} Default settings for the addon
      */
     getDefaultSettings (addonId) {
         const manifest = this.getAddonManifest(addonId);

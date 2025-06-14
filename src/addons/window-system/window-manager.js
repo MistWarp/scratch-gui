@@ -17,8 +17,8 @@ class AddonWindow {
         this.minHeight = options.minHeight || 150;
         this.maxWidth = options.maxWidth || null;
         this.maxHeight = options.maxHeight || null;
-        this.x = options.x || Math.random() * 100 + 50;
-        this.y = options.y || Math.random() * 100 + 50;
+        this.x = options.x || (Math.random() * 100) + 50;
+        this.y = options.y || (Math.random() * 100) + 50;
         this.resizable = options.resizable !== false;
         this.modal = options.modal || false;
         this.closable = options.closable !== false;
@@ -43,14 +43,14 @@ class AddonWindow {
         this.contentElement = null;
         this.isDragging = false;
         this.isResizing = false;
-        this.dragOffset = { x: 0, y: 0 };
+        this.dragOffset = {x: 0, y: 0};
         this.savedState = null; // For maximize/restore
         
         this.createWindow();
         activeWindows.set(this.id, this);
     }
     
-    createWindow() {
+    createWindow () {
         // Create main window element
         this.element = document.createElement('div');
         this.element.className = `addon-window ${this.className}`;
