@@ -74,12 +74,19 @@ const detectTheme = () => {
         }
         
         // Any invalid values in storage will be handled by Theme itself
+        const wallpaper = parsed.wallpaper || { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] };
+        
+        // Add backward compatibility for gridVisible
+        if (typeof wallpaper.gridVisible === 'undefined') {
+            wallpaper.gridVisible = true;
+        }
+        
         return new Theme(
             parsed.accent || systemPreferences.accent,
             parsed.gui || systemPreferences.gui,
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
-            parsed.wallpaper || { url: '', opacity: 0.3, darkness: 0, history: [] },
+            wallpaper,
             parsed.fonts || { system: [], google: [], history: [] }
         );
     } catch (e) {

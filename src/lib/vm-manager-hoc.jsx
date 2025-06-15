@@ -39,11 +39,11 @@ const vmManagerHOC = function (WrappedComponent) {
                 this.props.vm.initialized = true;
                 this.props.vm.setLocale(this.props.locale, this.props.messages);
                 
-                // Enable optimizations for faster loading
+                // Set normal runtime options for the VM
                 this.props.vm.setRuntimeOptions({
-                    fencing: false,        // Disable fencing during load for speed
-                    miscLimits: false,     // Disable misc limits during load
-                    maxClones: 10          // Reduce clone limit during initial load
+                    fencing: false,
+                    miscLimits: false,
+                    maxClones: 300
                 });
                 
                 const initTime = performance.now() - initStartTime;

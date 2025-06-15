@@ -8,12 +8,14 @@ const BlocksComponent = props => {
     const {
         containerRef,
         dragOver,
+        gridVisible,
         ...componentProps
     } = props;
     return (
         <Box
             className={classNames(styles.blocks, {
-                [styles.dragOver]: dragOver
+                [styles.dragOver]: dragOver,
+                [styles['hide-grid']]: gridVisible === false
             })}
             {...componentProps}
             componentRef={containerRef}
@@ -22,6 +24,7 @@ const BlocksComponent = props => {
 };
 BlocksComponent.propTypes = {
     containerRef: PropTypes.func,
-    dragOver: PropTypes.bool
+    dragOver: PropTypes.bool,
+    gridVisible: PropTypes.bool
 };
 export default BlocksComponent;

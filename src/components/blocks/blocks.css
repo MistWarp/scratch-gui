@@ -101,3 +101,16 @@
     min-width: auto;
     min-height: auto;
 }
+
+/* Hide grid when gridVisible is false */
+.blocks.hide-grid :global(.blocklyMainBackground) {
+    fill: transparent !important;
+}
+
+.blocks.hide-grid :global([id*="gridPattern"]) {
+    opacity: 0 !important;
+}
+
+.blocks.hide-grid :global([id*="grid"]) {
+    opacity: 0 !important;
+}

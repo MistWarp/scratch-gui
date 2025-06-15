@@ -761,6 +761,7 @@ class Blocks extends React.Component {
                 <DroppableBlocks
                     componentRef={this.setBlocks}
                     onDrop={this.handleDrop}
+                    gridVisible={this.props.theme.wallpaper.gridVisible !== false}
                     {...props}
                 />
                 {this.state.prompt ? (

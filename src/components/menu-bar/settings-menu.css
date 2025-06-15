@@ -181,6 +181,13 @@
     text-align: right;
 }
 
+.grid-toggle {
+    width: 18px;
+    height: 18px;
+    accent-color: $looks-secondary;
+    cursor: pointer;
+}
+
 .wallpaper-preview {
     width: 24px;
     height: 24px;
