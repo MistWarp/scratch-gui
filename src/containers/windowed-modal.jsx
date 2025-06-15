@@ -160,6 +160,7 @@ class WindowedModal extends React.Component {
         this.contentContainer.className = 'modal-window-content windowed-modal-content';
         this.contentContainer.style.cssText = `
             height: 100%;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -260,6 +261,7 @@ class WindowedModal extends React.Component {
                         flex: 1,
                         overflow: 'hidden',
                         minHeight: 0,
+                        maxHeight: '100%',
                         padding: '0',
                         position: 'relative',
                         display: 'flex',
