@@ -2,7 +2,7 @@ import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-int
 import PropTypes from 'prop-types';
 import React from 'react';
 import {APP_NAME} from '../../lib/brand.js';
-import Modal from '../../containers/modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import styles from './unknown-platform-modal.css';
 
 const messages = defineMessages({

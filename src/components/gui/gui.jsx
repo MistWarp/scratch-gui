@@ -12,7 +12,7 @@ import VM from 'scratch-vm';
 import Blocks from '../../containers/blocks.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
 import SoundTab from '../../containers/sound-tab.jsx';
-import ExtensionsTab from '../../containers/extensions-tab.jsx';
+import ExtensionLibrary from '../../containers/extension-library.jsx';
 import TargetPane from '../../containers/target-pane.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
@@ -95,6 +95,7 @@ const GUIComponent = props => {
         costumesTabVisible,
         customStageSize,
         enableCommunity,
+        extensionLibraryVisible,
         intl,
         isCreating,
         isEmbedded,
@@ -116,6 +117,7 @@ const GUIComponent = props => {
         onClickNewWindow,
         onClickPackager,
         onLogOut,
+        onOpenExtensionLibrary,
         onOpenRegistration,
         onToggleLoginOpen,
         onActivateCostumesTab,
@@ -127,6 +129,7 @@ const GUIComponent = props => {
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
+        onRequestCloseExtensionLibrary,
         onRequestCloseTelemetryModal,
         onSeeCommunity,
         onShare,
@@ -180,7 +183,11 @@ const GUIComponent = props => {
                 <TWSecurityManager securityManager={securityManager} />
                 <TWRestorePointManager />
                 {usernameModalVisible && <TWUsernameModal />}
-                {settingsModalVisible && <TWSettingsModal />}
+                {settingsModalVisible && (
+                    <TWSettingsModal
+                        isRtl={isRtl}
+                    />
+                )}
                 {customExtensionModalVisible && <TWCustomExtensionModal />}
                 {fontsModalVisible && <TWFontsModal />}
                 {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
@@ -308,6 +315,7 @@ const GUIComponent = props => {
                     onClickLogo={onClickLogo}
                     onCloseAccountNav={onCloseAccountNav}
                     onLogOut={onLogOut}
+                    onOpenExtensionLibrary={onOpenExtensionLibrary}
                     onOpenRegistration={onOpenRegistration}
                     onProjectTelemetryEvent={onProjectTelemetryEvent}
                     onSeeCommunity={onSeeCommunity}
@@ -374,17 +382,6 @@ const GUIComponent = props => {
                                             id="gui.gui.soundsTab"
                                         />
                                     </Tab>
-                                    <Tab className={tabClassNames.tab}>
-                                        <img
-                                            draggable={false}
-                                            src={addExtensionIcon}
-                                        />
-                                        <FormattedMessage
-                                            defaultMessage="Extensions"
-                                            description="Button to get to the extensions panel"
-                                            id="gui.gui.extensionsTab"
-                                        />
-                                    </Tab>
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
@@ -414,17 +411,6 @@ const GUIComponent = props => {
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     {soundsTabVisible ? <SoundTab vm={vm} /> : null}
                                 </TabPanel>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    <ExtensionsTab
-                                        vm={vm}
-                                        onExtensionButtonClick={onExtensionButtonClick}
-                                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                                        isRtl={isRtl}
-                                        isTotallyNormal={isTotallyNormal}
-                                        isRendererSupported={isRendererSupported()}
-                                        isEmbedded={isEmbedded}
-                                    />
-                                </TabPanel>
                             </Tabs>
                             {backpackVisible ? (
                                 <Backpack host={backpackHost} />
@@ -448,6 +434,12 @@ const GUIComponent = props => {
                         </Box>
                     </Box>
                 </Box>
+                <ExtensionLibrary
+                    vm={vm}
+                    visible={extensionLibraryVisible}
+                    onRequestClose={onRequestCloseExtensionLibrary}
+                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                />
                 <DragLayer />
             </Box>
         );
@@ -485,6 +477,7 @@ GUIComponent.propTypes = {
         height: PropTypes.number
     }),
     enableCommunity: PropTypes.bool,
+    extensionLibraryVisible: PropTypes.bool,
     intl: intlShape.isRequired,
     isCreating: PropTypes.bool,
     isEmbedded: PropTypes.bool,
@@ -509,9 +502,11 @@ GUIComponent.propTypes = {
     onExtensionButtonClick: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
     onLogOut: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,
     onRequestCloseCostumeLibrary: PropTypes.func,
+    onRequestCloseExtensionLibrary: PropTypes.func,
     onRequestCloseTelemetryModal: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onShare: PropTypes.func,

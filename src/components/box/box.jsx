@@ -46,6 +46,10 @@ const Box = props => {
         wrap,
         shrink,
         style,
+        // Filter out non-DOM props that might be passed down
+        runtimeOptions,
+        vm,
+        onRuntimeOptionsChanged,
         ...componentProps
     } = props;
     return React.createElement(element, {

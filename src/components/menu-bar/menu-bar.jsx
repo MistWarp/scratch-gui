@@ -1034,6 +1034,13 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
+                                    <MenuItem onClick={this.props.onOpenExtensionLibrary}>
+                                        <FormattedMessage
+                                            defaultMessage="Extensions"
+                                            description="Menu bar item for extensions"
+                                            id="tw.menuBar.extensions"
+                                        />
+                                    </MenuItem>
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
@@ -1293,6 +1300,7 @@ MenuBar.propTypes = {
     onClickSettingsModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onOpenTipLibrary: PropTypes.func,
     onProjectTelemetryEvent: PropTypes.func,

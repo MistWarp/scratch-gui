@@ -1,0 +1,157 @@
+/* Windowed Modal Overrides */
+
+.windowed-modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: contain;
+}
+
+/* Override settings modal body styles for proper scrolling in windows */
+.windowed-modal-content .body {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Make the main library content container fill and scroll properly */
+.windowed-modal-content > div[dir] {
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Force library modal to use viewport dimensions instead of content dimensions */
+.windowed-modal-content #extensionLibrary {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* Ensure the library modal content stretches to full height */
+.windowed-modal-content .library-modal-content {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Fix library component scrolling in windowed modals */
+.windowed-modal-content .library-scroll-grid {
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: auto !important;
+}
+
+.windowed-modal-content .library-scroll-grid.withFilterBar {
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+}
+
+/* Ensure the main library container doesn't overflow */
+.windowed-modal-content .library-wrapper {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+/* Fix record modal specific styling */
+.windowed-modal-content .body .visualization-container {
+    flex-shrink: 0;
+}
+
+.windowed-modal-content .body .button-row {
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+/* Override any fixed heights that might prevent scrolling */
+.windowed-modal-content .filter-bar {
+    flex-shrink: 0;
+}
+
+/* Ensure extension library specifically handles scrolling properly */
+.windowed-modal-content .library-modal-content {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Make sure the scrollable grid container works in extension library */
+.windowed-modal-content .library-scroll-grid {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+}
+
+/* Ensure library wrapper doesn't interfere with scrolling */
+.windowed-modal-content .library-wrapper {
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+/* Additional fallback for any content areas that might not scroll */
+.windowed-modal-content [class*="library-scroll"] {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+
+/* Ensure any nested content areas in extensions are scrollable */
+.windowed-modal-content #extensionLibrary > * {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+/* Target the main content area of libraries specifically */
+.windowed-modal-content .library-modal-content > div:last-child {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+}

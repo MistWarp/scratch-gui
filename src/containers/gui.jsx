@@ -15,14 +15,15 @@ import {
     activateTab,
     BLOCKS_TAB_INDEX,
     COSTUMES_TAB_INDEX,
-    SOUNDS_TAB_INDEX,
-    EXTENSIONS_TAB_INDEX
+    SOUNDS_TAB_INDEX
 } from '../reducers/editor-tab';
 
 import {
     closeCostumeLibrary,
     closeBackdropLibrary,
-    closeTelemetryModal
+    closeTelemetryModal,
+    openExtensionLibrary,
+    closeExtensionLibrary
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/font-loader-hoc.jsx';
@@ -170,6 +171,7 @@ const mapStateToProps = state => {
         costumeLibraryVisible: state.scratchGui.modals.costumeLibrary,
         costumesTabVisible: state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX,
         error: state.scratchGui.projectState.error,
+        extensionLibraryVisible: state.scratchGui.modals.extensionLibrary,
         isError: getIsError(loadingState),
         isEmbedded: state.scratchGui.mode.isEmbedded,
         isFullScreen: state.scratchGui.mode.isFullScreen || state.scratchGui.mode.isEmbedded,
@@ -199,8 +201,10 @@ const mapDispatchToProps = dispatch => ({
     onActivateTab: tab => dispatch(activateTab(tab)),
     onActivateCostumesTab: () => dispatch(activateTab(COSTUMES_TAB_INDEX)),
     onActivateSoundsTab: () => dispatch(activateTab(SOUNDS_TAB_INDEX)),
+    onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
     onRequestCloseBackdropLibrary: () => dispatch(closeBackdropLibrary()),
     onRequestCloseCostumeLibrary: () => dispatch(closeCostumeLibrary()),
+    onRequestCloseExtensionLibrary: () => dispatch(closeExtensionLibrary()),
     onRequestCloseTelemetryModal: () => dispatch(closeTelemetryModal())
 });
 

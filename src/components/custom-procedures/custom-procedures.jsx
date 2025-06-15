@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import Modal from '../../containers/modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import ColorPicker from './color-picker.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';

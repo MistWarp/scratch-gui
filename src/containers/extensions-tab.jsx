@@ -5,7 +5,6 @@ import {defineMessages, intlShape, injectIntl} from 'react-intl';
 import VM from 'scratch-vm';
 
 import Box from '../components/box/box.jsx';
-import ExtensionLibrary from './extension-library.jsx';
 import {
     openExtensionLibrary,
     closeExtensionLibrary,
@@ -212,10 +211,8 @@ class ExtensionsTab extends React.Component {
 
     render () {
         const {
-            extensionLibraryVisible,
             intl,
             onCategorySelected,
-            onRequestCloseExtensionLibrary,
             vm
         } = this.props;
 
@@ -263,29 +260,16 @@ class ExtensionsTab extends React.Component {
                         </Box>
                     ))}
                 </Box>
-                
-                {extensionLibraryVisible && (
-                    <ExtensionLibrary
-                        vm={vm}
-                        onCategorySelected={this.handleCategorySelected}
-                        onEnableProcedureReturns={this.handleEnableProcedureReturns}
-                        onActivateBlocksTab={this.props.onActivateBlocksTab}
-                        onRequestClose={onRequestCloseExtensionLibrary}
-                        onOpenCustomExtensionModal={this.props.onOpenCustomExtensionModal}
-                    />
-                )}
             </Box>
         );
     }
 }
 
 ExtensionsTab.propTypes = {
-    extensionLibraryVisible: PropTypes.bool,
     activeTabIndex: PropTypes.number,
     intl: intlShape.isRequired,
     onCategorySelected: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
-    onRequestCloseExtensionLibrary: PropTypes.func,
     onActivateBlocksTab: PropTypes.func,
     onActivateExtensionsTab: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
@@ -293,13 +277,11 @@ ExtensionsTab.propTypes = {
 };
 
 const mapStateToProps = state => ({
-    extensionLibraryVisible: state.scratchGui.modals.extensionLibrary,
     activeTabIndex: state.scratchGui.editorTab.activeTabIndex
 });
 
 const mapDispatchToProps = dispatch => ({
     onExtensionButtonClick: () => dispatch(openExtensionLibrary()),
-    onRequestCloseExtensionLibrary: () => dispatch(closeExtensionLibrary()),
     onActivateBlocksTab: () => dispatch(activateTab(BLOCKS_TAB_INDEX)),
     onActivateExtensionsTab: () => dispatch(activateTab(EXTENSIONS_TAB_INDEX)),
     onOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal())
