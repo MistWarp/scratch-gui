@@ -623,7 +623,7 @@ class AddonWindow {
     
     minimize() {
         if (this.isMinimized) return this;
-        
+
         this.isMinimized = true;
         this.hide();
         this.onMinimize();
