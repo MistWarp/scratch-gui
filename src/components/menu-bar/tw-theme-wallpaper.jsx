@@ -63,7 +63,7 @@ WallpaperMenuItem.propTypes = {
     onClick: PropTypes.func
 };
 
-const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, currentOpacity, currentDarkness}) => {
+const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
     const [url, setUrl] = React.useState('');
     const [opacity, setOpacity] = React.useState(currentOpacity);
     const [darkness, setDarkness] = React.useState(currentDarkness);
@@ -176,6 +176,23 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, curren
                 />
                 <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(darkness * 100)}%</span>
             </div>
+            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
+                <label htmlFor="wallpaper-grid-visible" onClick={e => e.stopPropagation()}>
+                    <FormattedMessage
+                        defaultMessage="Show Grid:"
+                        description="Label for wallpaper grid visibility toggle"
+                        id="tw.wallpaper.showGrid"
+                    />
+                </label>
+                <input
+                    id="wallpaper-grid-visible"
+                    type="checkbox"
+                    checked={currentGridVisible}
+                    onChange={e => onGridVisibilityChange(e.target.checked)}
+                    onClick={e => e.stopPropagation()}
+                    className={styles.gridToggle}
+                />
+            </div>
         </div>
     );
 };
@@ -184,8 +201,10 @@ WallpaperInputForm.propTypes = {
     onSubmit: PropTypes.func,
     onOpacityChange: PropTypes.func,
     onDarknessChange: PropTypes.func,
+    onGridVisibilityChange: PropTypes.func,
     currentOpacity: PropTypes.number,
-    currentDarkness: PropTypes.number
+    currentDarkness: PropTypes.number,
+    currentGridVisible: PropTypes.bool
 };
 
 const WallpaperMenu = ({
@@ -208,6 +227,7 @@ const WallpaperMenu = ({
             url,
             opacity,
             darkness,
+            gridVisible: theme.wallpaper.gridVisible !== false,
             history
         };
         
@@ -226,6 +246,14 @@ const WallpaperMenu = ({
         const newWallpaper = {
             ...theme.wallpaper,
             darkness
+        };
+        onChangeTheme(theme.set('wallpaper', newWallpaper));
+    };
+
+    const handleGridVisibilityChange = gridVisible => {
+        const newWallpaper = {
+            ...theme.wallpaper,
+            gridVisible
         };
         onChangeTheme(theme.set('wallpaper', newWallpaper));
     };
@@ -273,8 +301,10 @@ const WallpaperMenu = ({
                     onSubmit={handleWallpaperSubmit}
                     onOpacityChange={handleOpacityChange}
                     onDarknessChange={handleDarknessChange}
+                    onGridVisibilityChange={handleGridVisibilityChange}
                     currentOpacity={theme.wallpaper.opacity}
                     currentDarkness={theme.wallpaper.darkness || 0}
+                    currentGridVisible={theme.wallpaper.gridVisible !== false}
                 />
                 <div className={styles.menuSeparator} />
                 <WallpaperMenuItem

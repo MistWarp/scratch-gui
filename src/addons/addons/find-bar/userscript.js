@@ -578,8 +578,14 @@ export default async function ({ addon, msg, console }) {
 
       const blocks = this.workspace.getAllBlocks().filter(v => !v.isShadow_);
       for (const block of blocks) {
-        if (!block.type.startsWith("data_")) {
-          addBlock(block.type, block.type, block);
+        const blockType = block.type;
+        if (!blockType.startsWith("data_") &&
+          !blockType.startsWith("event_") &&
+          !blockType.startsWith("procedures_") &&
+          blockType !== "control_start_as_clone" &&
+          blockType !== "event_broadcast" &&
+          blockType !== "event_broadcastandwait") {
+          addBlock(blockType, blockType, block);
         }
       }
 
@@ -843,6 +849,7 @@ export default async function ({ addon, msg, console }) {
               "extensions",
               "other"].includes(code)) {
             colorId = code;
+            if (colorId === "sound") colorId = "sounds"; // special case for sound
           } else if (code === "operator") {
             colorId = "operators";
           } else {
