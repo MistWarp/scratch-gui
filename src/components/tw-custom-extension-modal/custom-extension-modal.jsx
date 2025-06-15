@@ -164,7 +164,7 @@ const CustomExtensionModal = props => (
                     <p className={styles.trustedExtension}>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="This extension will be loaded without the sandbox because it is from a trusted source."
+                            defaultMessage="Ensure you trust this source with your computer and all your user's computers, this will be loaded unsandboxed"
                             description="Message that appears in custom extension prompt"
                             id="tw.customExtensionModal.trusted"
                         />

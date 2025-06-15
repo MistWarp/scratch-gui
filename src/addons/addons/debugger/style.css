@@ -8,6 +8,39 @@
   margin-left: 0.2rem;
 }
 
+/* Prevent text selection on debugger button */
+.sa-debugger-container,
+.sa-debugger-container * {
+  user-select: none;
+}
+
+/* Prevent highlighting/focus states on debugger button */
+.sa-debugger-container button,
+.sa-debugger-container [class*="button_"],
+.sa-debugger-container [class*="stage-button"] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+.sa-debugger-container button:focus,
+.sa-debugger-container [class*="button_"]:focus,
+.sa-debugger-container [class*="stage-button"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sa-debugger-container button:active,
+.sa-debugger-container [class*="button_"]:active,
+.sa-debugger-container [class*="stage-button"]:active {
+  background-color: inherit !important;
+  transform: none !important;
+}
+
 .sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-debugger-container {
   display: none !important;
 }
@@ -28,12 +61,13 @@
   border-radius: 50%;
 }
 
-.sa-debugger-active {
-  background-color: var(--looks-secondary, #4C97FF) !important;
-  border-color: var(--looks-secondary, #4C97FF) !important;
+.sa-debugger-container .sa-debugger-active {
+  background-color: var(--ui-primary, #e9e9e9) !important;
+  border-color: var(--ui-primary, #cccccc) !important;
+  opacity: 0.8;
 }
 
-.sa-debugger-active::before {
+.sa-debugger-container .sa-debugger-active::before {
   content: "";
   position: absolute;
   top: 0;
@@ -41,8 +75,8 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, 
-    rgba(76, 151, 255, 0.1) 0%, 
-    rgba(76, 151, 255, 0.05) 100%);
+    rgba(76, 151, 255, 0.05) 0%, 
+    rgba(76, 151, 255, 0.02) 100%);
   border-radius: inherit;
   pointer-events: none;
 }

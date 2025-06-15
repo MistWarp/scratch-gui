@@ -19,6 +19,10 @@ const manifest = {
     },
     {
       "name": "retronbv"
+    },
+    {
+      "name": "Mistium",
+      "link": "https://mistium.com"
     }
   ],
   "userscripts": [
@@ -85,6 +89,6 @@ const manifest = {
       "default": false
     }
   ],
-  "tags": []
+  "tags": ["MistWarp"]
 };
 export default manifest;
