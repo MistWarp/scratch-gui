@@ -34,7 +34,6 @@ export default {
   "custom-block-shape": () => import(/* webpackChunkName: "addon-entry-custom-block-shape" */ "../addons/custom-block-shape/_runtime_entry.js"),
   "editor-square-inputs": () => import(/* webpackChunkName: "addon-entry-editor-square-inputs" */ "../addons/editor-square-inputs/_runtime_entry.js"),
   "zebra-striping": () => import(/* webpackChunkName: "addon-entry-zebra-striping" */ "../addons/zebra-striping/_runtime_entry.js"),
-  "editor-compact": () => import(/* webpackChunkName: "addon-entry-editor-compact" */ "../addons/editor-compact/_runtime_entry.js"),
   "custom-menu-bar": () => import(/* webpackChunkName: "addon-entry-custom-menu-bar" */ "../addons/custom-menu-bar/_runtime_entry.js"),
   "editor-theme3": () => import(/* webpackChunkName: "addon-entry-editor-theme3" */ "../addons/editor-theme3/_runtime_entry.js"),
   "custom-block-text": () => import(/* webpackChunkName: "addon-entry-custom-block-text" */ "../addons/custom-block-text/_runtime_entry.js"),

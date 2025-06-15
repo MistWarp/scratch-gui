@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactModal from 'react-modal';
 import Box from '../box/box.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
+import Modal from '../../containers/windowed-modal.jsx';
 
 import styles from './webgl-modal.css';
 
@@ -15,12 +15,11 @@ const messages = defineMessages({
 });
 
 const WebGlModal = ({intl, ...props}) => (
-    <ReactModal
-        isOpen
-        className={styles.modalContent}
+    <Modal
+        id="webgl-modal"
         contentLabel={intl.formatMessage({...messages.label})}
-        overlayClassName={styles.modalOverlay}
         onRequestClose={props.onBack}
+        className="webgl-modal"
     >
         <div dir={props.isRtl ? 'rtl' : 'ltr'}>
             <Box className={styles.illustration} />
@@ -89,7 +88,7 @@ const WebGlModal = ({intl, ...props}) => (
                 </div>
             </Box>
         </div>
-    </ReactModal>
+    </Modal>
 );
 
 WebGlModal.propTypes = {

@@ -2,7 +2,7 @@ import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-int
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import Modal from '../../containers/modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import ManageFont from './manage-font.jsx';
 import AddSystemFont from './add-system-font.jsx';
 import AddCustomFont, {FONT_FORMATS} from './add-custom-font.jsx';

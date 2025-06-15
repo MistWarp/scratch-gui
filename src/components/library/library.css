@@ -1,22 +1,40 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
 
+.library-modal-content {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
 .library-scroll-grid {
     display: flex;
     justify-content: flex-start;
     align-content: flex-start;
     align-items: flex-start;
     background: $ui-secondary;
-    flex-grow: 1;
+    flex: 1;
     flex-wrap: wrap;
     overflow-y: auto;
-    height: auto;
     padding: 0.5rem;
-    height: calc(100% - $library-header-height);
+    min-height: 0;
+    max-height: 100%;
 }
 
 .library-scroll-grid.withFilterBar {
-    height: calc(100% - $library-header-height - $library-filter-bar-height - 2rem);
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+}
+
+/* Ensure the wrapper constrains the content properly */
+.library-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .filter-bar {
@@ -28,6 +46,7 @@
     background-color: $looks-transparent;
     padding: 0 1rem;
     font-size: .875rem;
+    flex-shrink: 0;
 }
 
 .filter-bar-item {

@@ -1,15 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactModal from 'react-modal';
 import Box from '../box/box.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
+import Modal from '../../containers/windowed-modal.jsx';
 import {
     isRendererSupported,
     isNewFunctionSupported,
     findIncompatibleUserscripts
 } from '../../lib/tw-environment-support-prober.js';
 
-import styles from './browser-modal.css';
 import unhappyBrowser from './unsupported-browser.svg';
 
 const messages = defineMessages({
@@ -20,18 +19,15 @@ const messages = defineMessages({
     }
 });
 
-const noop = () => {};
-
 const BrowserModal = ({intl, ...props}) => {
     const label = messages.label;
     const incompatibleUserscripts = findIncompatibleUserscripts();
     return (
-        <ReactModal
-            isOpen
-            className={styles.modalContent}
+        <Modal
+            id="browser-modal"
             contentLabel={intl.formatMessage({...messages.label})}
-            overlayClassName={styles.modalOverlay}
-            onRequestClose={noop}
+            onRequestClose={() => {}} // Prevent closing this critical modal
+            className="browser-modal"
         >
             <div dir={props.isRtl ? 'rtl' : 'ltr'} >
                 <Box className={styles.illustration}>
@@ -113,7 +109,7 @@ const BrowserModal = ({intl, ...props}) => {
                     )}
                 </Box>
             </div>
-        </ReactModal>
+        </Modal>
     );
 };
 
@@ -123,7 +119,5 @@ BrowserModal.propTypes = {
 };
 
 const WrappedBrowserModal = injectIntl(BrowserModal);
-
-WrappedBrowserModal.setAppElement = ReactModal.setAppElement;
 
 export default WrappedBrowserModal;

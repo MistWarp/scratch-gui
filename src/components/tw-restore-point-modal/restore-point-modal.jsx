@@ -1,7 +1,7 @@
 import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
-import Modal from '../../containers/modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import RestorePoint from './restore-point.jsx';
 import styles from './restore-point-modal.css';
 import classNames from 'classnames';

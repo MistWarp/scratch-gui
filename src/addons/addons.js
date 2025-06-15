@@ -35,7 +35,6 @@ const addons = [
     'custom-block-shape',
     'editor-square-inputs',
     'zebra-striping',
-    'editor-compact',
     'custom-menu-bar',
     'editor-theme3',
     'custom-block-text',

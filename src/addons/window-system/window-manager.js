@@ -182,13 +182,18 @@ class AddonWindow {
         this.contentElement.className = 'addon-window-content';
         this.contentElement.style.cssText = `
             flex: 1;
-            overflow: auto;
+            overflow: hidden;
             padding: 0;
             box-sizing: border-box;
             background: linear-gradient(135deg, 
                 rgba(255, 255, 255, 0.02) 0%, 
                 transparent 100%);
             border-radius: 0 0 12px 12px;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
         `;
         
         // Add custom scrollbar styling
@@ -690,6 +695,15 @@ class AddonWindow {
             this.contentElement.innerHTML = content;
         } else if (content instanceof HTMLElement) {
             this.contentElement.appendChild(content);
+        }
+        return this;
+    }
+    
+    setTitle(newTitle) {
+        this.title = newTitle;
+        const titleElement = this.headerElement.querySelector('.addon-window-title');
+        if (titleElement) {
+            titleElement.textContent = newTitle;
         }
         return this;
     }
