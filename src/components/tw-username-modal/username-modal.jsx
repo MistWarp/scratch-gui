@@ -2,7 +2,7 @@ import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-int
 import PropTypes from 'prop-types';
 import React from 'react';
 import Box from '../box/box.jsx';
-import Modal from '../../containers/modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import classNames from 'classnames';
 
 import styles from './username-modal.css';

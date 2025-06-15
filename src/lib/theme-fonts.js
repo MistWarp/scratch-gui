@@ -14,7 +14,6 @@ let currentFontStyleElement = null;
  */
 const applyThemeFonts = async (fonts) => {
     // Debug logging
-    console.log('applyThemeFonts called with:', fonts);
     
     // Remove existing font styles
     if (currentFontStyleElement) {
@@ -23,13 +22,11 @@ const applyThemeFonts = async (fonts) => {
     }
 
     if (!fonts || (!fonts.google?.length && !fonts.system?.length)) {
-        console.log('No fonts to apply, returning early');
         return;
     }
 
     // Load Google Fonts first
     if (fonts.google?.length) {
-        console.log('Loading Google Fonts:', fonts.google);
         await Promise.all(fonts.google.map(fontName => loadGoogleFont(fontName)));
     }
 
@@ -50,8 +47,6 @@ const applyThemeFonts = async (fonts) => {
     fontStack.push('system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif');
     
     const fontFamily = fontStack.join(', ');
-    
-    console.log('Generated font family string:', fontFamily);
     
     // Create style element
     currentFontStyleElement = document.createElement('style');
@@ -82,7 +77,6 @@ const applyThemeFonts = async (fonts) => {
         }
     `;
     
-    console.log('Adding style element to document head');
     document.head.appendChild(currentFontStyleElement);
 };
 

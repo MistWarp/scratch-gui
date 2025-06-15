@@ -88,6 +88,22 @@ export default async function ({ addon, console, msg }) {
   debuggerButtonOuter.appendChild(debuggerButton);
   debuggerButton.addEventListener("click", () => toggleDebuggerInterface());
 
+  // Prevent text selection and highlighting on debugger button
+  debuggerButtonOuter.style.userSelect = "none";
+  debuggerButton.style.userSelect = "none";
+  debuggerButtonContent.style.userSelect = "none";
+  debuggerButtonImage.style.userSelect = "none";
+  
+  // Prevent focus/active highlighting
+  debuggerButton.style.outline = "none";
+  debuggerButton.style.webkitTapHighlightColor = "transparent";
+  debuggerButton.addEventListener("mousedown", (e) => {
+    e.preventDefault(); // Prevent default selection behavior
+  });
+  debuggerButton.addEventListener("selectstart", (e) => {
+    e.preventDefault(); // Prevent text selection
+  });
+
   let debuggerWindow = null;
 
   const setHasUnreadMessage = (unreadMessage) => {

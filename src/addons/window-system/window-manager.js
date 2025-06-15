@@ -74,6 +74,7 @@ class AddonWindow {
             flex-direction: column;
             overflow: hidden;
             backdrop-filter: blur(20px);
+            transition: none !important;
         `;
         
         this.element.addEventListener('mousedown', () => this.bringToFront());
@@ -180,7 +181,6 @@ class AddonWindow {
         // Create content area
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'addon-window-content';
-        console.log(this.contentElement);
         this.contentElement.style.cssText = `
             flex: 1;
             overflow: hidden;
@@ -354,10 +354,14 @@ class AddonWindow {
             this.isDragging = true;
             this.bringToFront();
             
-            const rect = this.element.getBoundingClientRect();
+            // Get the current position of the window
+            const currentX = parseInt(this.element.style.left) || this.x;
+            const currentY = parseInt(this.element.style.top) || this.y;
+            
+            // Calculate offset relative to current window position
             this.dragOffset = {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
+                x: e.clientX - currentX,
+                y: e.clientY - currentY
             };
             
             document.addEventListener('mousemove', this.handleDrag);

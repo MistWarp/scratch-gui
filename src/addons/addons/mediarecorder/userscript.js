@@ -49,27 +49,6 @@ export default async ({ addon, console, msg }) => {
       return new Promise(async (resolve) => {
         // Initialize window manager
         const WM = await initWindowManager();
-        
-        // If WindowManager is not available, fall back to the old modal system
-        if (!WM) {
-          const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg("option-title"), {
-            isOpen: true,
-            useEditorClasses: true,
-          });
-          container.classList.add("mediaRecorderPopup");
-          content.classList.add("mediaRecorderPopupContent");
-          // ... rest of old modal code would go here
-          // For now, return default options
-          resolve({
-            secs: 30,
-            delay: 0,
-            audioEnabled: true,
-            micEnabled: false,
-            waitUntilFlag: true,
-            useStopSign: true,
-          });
-          return;
-        }
 
         // Create a window using the window manager
         optionsWindow = WM.createWindow({

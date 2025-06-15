@@ -95,7 +95,7 @@ class WindowedModal extends React.Component {
             this.window = existingWindow;
             this.contentContainer = this.window.contentElement;
             this.createdWindow = false;
-            // Don't auto-show here, let componentDidUpdate handle visibility
+            this.forceUpdate(); // Force re-render now that container is available
             return;
         }
         
@@ -133,8 +133,8 @@ class WindowedModal extends React.Component {
             resizable = false;
         } else if (id === 'usernameModal') {
             // Specific styling for username modal
-            width = 450;
-            height = 350;
+            width = 550;
+            height = 400;
             resizable = false;
             maximizable = false;
         }
@@ -171,6 +171,7 @@ class WindowedModal extends React.Component {
         `;
         
         this.window.setContent(this.contentContainer);
+        this.forceUpdate(); // Force re-render now that container is available
         // Don't auto-show here, let componentDidUpdate handle visibility
     }
     

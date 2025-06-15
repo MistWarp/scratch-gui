@@ -1,8 +1,10 @@
 import GamepadLib from "./gamepadlib.js";
 import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import WindowManager from "../../window-system/window-manager.js";
 
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
+  let gamepadWindow = null;
 
   // Wait for the project to finish loading. Renderer and scripts will not be fully available until this happens.
   await new Promise((resolve) => {
@@ -201,7 +203,16 @@ export default async function ({ addon, console, msg }) {
     document.body.classList.toggle("sa-gamepad-has-controller", editor.hasControllerSelected());
     handleGamepadMappingChanged();
   };
+  const handleGamepadWindowClosed = () => {
+    gamepadWindow = null;
+  };
+
   buttonContainer.addEventListener("click", () => {
+    if (gamepadWindow) {
+      gamepadWindow.show().bringToFront();
+      return;
+    }
+
     if (!editor) {
       editor = gamepad.editor();
       editor.msg = msg;
@@ -211,33 +222,47 @@ export default async function ({ addon, console, msg }) {
     const editorEl = editor.generateEditor();
     handleEditorControllerChanged();
 
-    const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg("settings"), {
-      isOpen: true,
-      useEditorClasses: true,
+    // Create window using window system
+    gamepadWindow = WindowManager.createWindow({
+      id: 'gamepad-settings',
+      title: msg("settings"),
+      width: 480,
+      height: 560,
+      minWidth: 400,
+      minHeight: 450,
+      maxWidth: 800,
+      maxHeight: 700,
+      className: 'sa-gamepad-window',
+      onClose: () => {
+        handleGamepadWindowClosed();
+      },
+      onResize: () => {
+        // Handle any resize-specific logic if needed
+      }
     });
 
+    // Create content container
+    const content = document.createElement("div");
+    content.classList.add("sa-gamepad-popup-content");
+
+    // Handle ESC key to close window
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && !e.target.closest("[data-accepting-input]")) {
-        remove();
+        gamepadWindow.close();
       }
     };
-    backdrop.addEventListener("click", remove);
     window.addEventListener("keydown", handleKeyDown);
-    addon.self.addEventListener("disabled", remove);
-
-    backdrop.classList.add("sa-gamepad-popup-outer");
-    container.classList.add("sa-gamepad-popup");
-
-    closeButton.tabIndex = "0";
-    closeButton.setAttribute("role", "button");
-    closeButton.addEventListener("click", remove);
-    closeButton.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        remove();
+    
+    // Close window when addon is disabled
+    const handleAddonDisabled = () => {
+      if (gamepadWindow) {
+        gamepadWindow.close();
       }
-    });
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+    addon.self.addEventListener("disabled", handleAddonDisabled);
 
-    content.classList.add("sa-gamepad-popup-content");
+    // Add browser support warning if needed
     if (GamepadLib.browserHasBrokenGamepadAPI()) {
       const warning = document.createElement("div");
       warning.textContent = msg("browser-support");
@@ -284,6 +309,11 @@ export default async function ({ addon, console, msg }) {
     storeSettingsLabel.prepend(storeSettingsCheckbox);
     extraOptionsContainer.appendChild(storeSettingsLabel);
 
+    // Set the content in the window
+    gamepadWindow.setContent(content);
+    
+    // Show the window and focus the editor
+    gamepadWindow.show();
     editor.focus();
   });
 

@@ -317,7 +317,7 @@ class Blocks extends React.Component {
                 // Defer workspace refresh to next tick for better performance
                 setTimeout(() => {
                     if (this.workspace && !this.unmounted) {
-                        this.workspace.refreshToolboxSelection();
+                        this.workspace.refreshToolboxSelection_();
                         this.workspace.resize();
                     }
                 }, 0);
@@ -712,10 +712,10 @@ class Blocks extends React.Component {
             if (this.workspace.getFlyout) {
                 const flyout = this.workspace.getFlyout();
                 if (flyout && flyout.getWorkspace) {
-                    flyout.getWorkspace().refreshToolboxSelection();
+                    flyout.getWorkspace().refreshToolboxSelection_();
                 }
             }
-            this.workspace.refreshToolboxSelection();
+            this.workspace.refreshToolboxSelection_();
             
             // Also trigger a specific refresh of the procedures category
             if (this.workspace.getToolbox && this.workspace.getToolbox()) {
