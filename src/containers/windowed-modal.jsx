@@ -23,25 +23,29 @@ class WindowedModal extends React.Component {
         this.window = null;
         this.contentContainer = null;
         this.createdWindow = false;
+        this.windowId = this.props.id || 'modal-window';
         this.addEventListeners();
     }
     
     componentDidMount () {
-        // Only create window if visible prop is not false
-        if (this.props.visible !== false) {
-            this.createWindow();
-            // Add a history event only if it's not currently for our modal. This
-            // avoids polluting the history with many entries. We only need one.
-            this.pushHistory(this.id, (history.state === null || history.state !== this.id));
+        // Always create window, visibility will be handled separately
+        this.createWindow();
+        // Add a history event only if it's not currently for our modal. This
+        // avoids polluting the history with many entries. We only need one.
+        this.pushHistory(this.id, (history.state === null || history.state !== this.id));
+        
+        // Handle initial visibility
+        if (this.window) {
+            if (this.props.visible !== false) {
+                this.window.show();
+            } else {
+                this.window.hide();
+            }
         }
     }
     
     componentWillUnmount () {
         this.removeEventListeners();
-        // Unmount React content before closing
-        if (this.contentContainer && this.contentContainer.hasChildNodes()) {
-            ReactDOM.unmountComponentAtNode(this.contentContainer);
-        }
         // Only close the window if we created it, not if we reused an existing one
         if (this.window && this.createdWindow) {
             this.window.close();
@@ -56,16 +60,18 @@ class WindowedModal extends React.Component {
                 this.createWindow();
                 this.pushHistory(this.id, (history.state === null || history.state !== this.id));
             } else if (!this.props.visible && this.window) {
-                // Modal should be hidden but window exists - close it only if we created it
-                if (this.createdWindow) {
-                    this.window.close();
-                } else {
-                    this.window.hide();
-                }
-                this.window = null;
-                this.contentContainer = null;
-                this.createdWindow = false;
+                // Modal should be hidden but window exists - hide it
+                this.window.hide();
                 return;
+            }
+        }
+        
+        // Show/hide window based on visibility
+        if (this.window) {
+            if (this.props.visible !== false) {
+                this.window.show();
+            } else {
+                this.window.hide();
             }
         }
         
@@ -89,7 +95,7 @@ class WindowedModal extends React.Component {
             this.window = existingWindow;
             this.contentContainer = this.window.contentElement;
             this.createdWindow = false;
-            this.window.show();
+            // Don't auto-show here, let componentDidUpdate handle visibility
             return;
         }
         
@@ -125,6 +131,12 @@ class WindowedModal extends React.Component {
             width = 500;
             height = 400;
             resizable = false;
+        } else if (id === 'usernameModal') {
+            // Specific styling for username modal
+            width = 450;
+            height = 350;
+            resizable = false;
+            maximizable = false;
         }
         
         this.window = WindowManager.createWindow({
@@ -158,7 +170,7 @@ class WindowedModal extends React.Component {
         `;
         
         this.window.setContent(this.contentContainer);
-        this.window.show();
+        // Don't auto-show here, let componentDidUpdate handle visibility
     }
     
     renderContent() {
@@ -279,11 +291,10 @@ class WindowedModal extends React.Component {
     }
     
     handleWindowClose = () => {
-        // Clean up window state
-        this.window = null;
-        this.contentContainer = null;
-        this.windowId = null;
-        this.createdWindow = false;
+        // Don't clean up window state, just hide it for reuse
+        if (this.window) {
+            this.window.hide();
+        }
         
         if (this.props.onRequestClose) {
             this.props.onRequestClose();
@@ -320,8 +331,8 @@ class WindowedModal extends React.Component {
     }
     
     render () {
-        // Return the portal to render content in the window
-        if (this.windowId && this.contentContainer) {
+        // Always try to render content if we have a container
+        if (this.contentContainer) {
             return this.renderContent();
         }
         return null;

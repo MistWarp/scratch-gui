@@ -180,6 +180,7 @@ class AddonWindow {
         // Create content area
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'addon-window-content';
+        console.log(this.contentElement);
         this.contentElement.style.cssText = `
             flex: 1;
             overflow: hidden;
@@ -192,6 +193,7 @@ class AddonWindow {
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
             min-height: 0;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
         `;
@@ -256,7 +258,7 @@ class AddonWindow {
             color: var(--text-primary, #666);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            overflow: hidden;
+            overflow: scroll;
             font-size: 0;
             margin: 0;
             padding: 0;
