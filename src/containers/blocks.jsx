@@ -168,8 +168,8 @@ class Blocks extends React.Component {
                     test: 10  // Reduce test block instances for faster initial load
                 },
                 oneBasedIndex: true,
-                comments: false,  // Disable comments initially for speed
-                sounds: false     // Disable sounds initially for speed
+                comments: true,
+                sounds: true
             },
             Blocks.defaultOptions
         );
@@ -778,16 +778,7 @@ class Blocks extends React.Component {
                         onOk={this.handlePromptCallback}
                     />
                 ) : null}
-                {extensionLibraryVisible ? (
-                    <ExtensionLibrary
-                        vm={vm}
-                        onCategorySelected={this.handleCategorySelected}
-                        onEnableProcedureReturns={this.handleEnableProcedureReturns}
-                        onActivateBlocksTab={onActivateBlocksTab}
-                        onRequestClose={onRequestCloseExtensionLibrary}
-                        onOpenCustomExtensionModal={onOpenCustomExtensionModal || reduxOnOpenCustomExtensionModal}
-                    />
-                ) : null}
+
                 {customProceduresVisible ? (
                     <CustomProcedures
                         options={{
