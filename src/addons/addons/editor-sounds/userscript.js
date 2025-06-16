@@ -1,27 +1,37 @@
 export default async function ({ addon, console }) {
   const ScratchBlocks = await addon.tab.traps.getBlockly();
+  
   const injectCurrent = () => {
     const workspace = Blockly.getMainWorkspace();
-    const pathToMedia = workspace.options.pathToMedia;
-    ScratchBlocks.inject.loadSounds_(pathToMedia, workspace);
+    if (workspace && workspace.options) {
+      workspace.options.hasSounds = true;
+      const pathToMedia = workspace.options.pathToMedia;
+      if (pathToMedia) {
+        ScratchBlocks.inject.loadSounds_(pathToMedia, workspace);
+      }
+    }
   };
 
-  // Add sounds to the current workspace
+  const removeSoundsFromCurrent = () => {
+    const workspace = Blockly.getMainWorkspace();
+    if (workspace) {
+      workspace.options.hasSounds = false;
+      const audio = workspace.getAudioManager();
+      if (audio && audio.SOUNDS_) {
+        delete audio.SOUNDS_.click;
+        delete audio.SOUNDS_.delete;
+      }
+    }
+  };
+
+  // Add sounds to the current workspace when addon loads
   injectCurrent();
 
-  // Add sounds to all future workspaces
-  const originalInit = ScratchBlocks.init_;
-  ScratchBlocks.init_ = function (...args) {
-    const wksp = args[0];
-    wksp.options.hasSounds = true;
-    return originalInit.call(this, ...args);
-  };
-
   addon.self.addEventListener("disabled", () => {
-    const workspace = Blockly.getMainWorkspace();
-    const audio = workspace.getAudioManager();
-    delete audio.SOUNDS_.click;
-    delete audio.SOUNDS_.delete;
+    removeSoundsFromCurrent();
   });
-  addon.self.addEventListener("reenabled", injectCurrent);
+  
+  addon.self.addEventListener("reenabled", () => {
+    injectCurrent();
+  });
 }
