@@ -2,6 +2,7 @@
 import _calculator from "../addons/calculator/_manifest_entry.js";
 import _cat_blocks from "../addons/cat-blocks/_manifest_entry.js";
 import _dev_inspector from "../addons/dev-inspector/_manifest_entry.js";
+import _frame_stepper from "../addons/frame-stepper/_manifest_entry.js";
 import _editor_devtools from "../addons/editor-devtools/_manifest_entry.js";
 import _find_bar from "../addons/find-bar/_manifest_entry.js";
 import _middle_click_popup from "../addons/middle-click-popup/_manifest_entry.js";
@@ -88,6 +89,7 @@ export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
   "dev-inspector": _dev_inspector,
+  "frame-stepper": _frame_stepper,
   "editor-devtools": _editor_devtools,
   "find-bar": _find_bar,
   "middle-click-popup": _middle_click_popup,
