@@ -29,6 +29,9 @@ class CustomProcedures extends React.Component {
         if (this.workspace) {
             this.workspace.dispose();
         }
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
     }
     setBlocks (blocksRef) {
         if (!blocksRef) return;
@@ -131,6 +134,45 @@ class CustomProcedures extends React.Component {
         setTimeout(() => {
             this.mutationRoot.focusLastEditor_();
         });
+        
+        // Add resize observer to handle workspace resizing
+        if (window.ResizeObserver && this.blocks) {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.workspace && this.workspace.svgBlockCanvas_) {
+                    // Force Blockly to recalculate its size and metrics
+                    this.workspace.resize();
+                    
+                    // Update the workspace's scrollable area and content bounds
+                    this.workspace.resizeContents();
+                    
+                    // Force a complete metrics update
+                    setTimeout(() => {
+                        if (this.workspace && this.mutationRoot) {
+                            // Update scroll boundaries to allow movement in expanded area
+                            if (this.workspace.scrollbar) {
+                                this.workspace.scrollbar.resize();
+                            }
+                            
+                            // Re-center the block with updated metrics
+                            const metrics = this.workspace.getMetrics();
+                            const {x, y} = this.mutationRoot.getRelativeToSurfaceXY();
+                            const dy = (metrics.viewHeight / 2) - (this.mutationRoot.height / 2) - y;
+                            const dx = (metrics.viewWidth / 2) - (this.mutationRoot.width / 2) - x;
+                            
+                            // Only move if significantly off-center
+                            if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+                                this.mutationRoot.moveBy(dx, dy);
+                            }
+                            
+                            // Force workspace to recognize new content bounds
+                            this.workspace.setResizesEnabled(true);
+                            this.workspace.resizeContents();
+                        }
+                    }, 100);
+                }
+            });
+            this.resizeObserver.observe(this.blocks);
+        }
     }
     handleCancel () {
         this.props.onRequestClose();
@@ -215,7 +257,12 @@ CustomProcedures.defaultOptions = {
     },
     comments: false,
     collapse: false,
-    scrollbars: true
+    scrollbars: true,
+    move: {
+        scrollbars: true,
+        drag: true,
+        wheel: true
+    }
 };
 
 CustomProcedures.defaultProps = {

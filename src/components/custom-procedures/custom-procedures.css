@@ -2,13 +2,22 @@
 @import "../../css/units.css";
 
 .modal-content {
-    width: 700px;
+    width: min(700px, 90vw);
+    max-width: 900px;
+    min-width: 400px;
+    max-height: 90vh;
     margin: 50px auto; /* This modal is taller than most, reduce top margin */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .body {
     background: $ui-modal-background;
     padding: 1.5rem 2.25rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .body input[type="checkbox"],
@@ -19,7 +28,15 @@
 /* Blocks workspace for custom procedure declaration editor */
 .workspace {
     min-height: 200px;
+    height: 300px;
+    max-height: 50vh;
     position: relative;
+    border: 1px solid $ui-black-transparent;
+    border-radius: $space;
+    overflow: hidden;
+    resize: vertical;
+    margin-bottom: 1rem;
+    background-color: $ui-primary;
 }
 
 .workspace :global(.injectionDiv){
@@ -28,16 +45,67 @@
     right: 0;
     bottom: 0;
     left: 0;
+    overflow: hidden;
 }
 
 .workspace :global(.blocklySvg) {
     background-color: $ui-primary;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    overflow: visible;
+}
+
+.workspace :global(.blocklyBlockCanvas) {
+    overflow: visible;
+}
+
+.workspace :global(.blocklyScrollbarHorizontal),
+.workspace :global(.blocklyScrollbarVertical) {
+    opacity: 0.8;
+    z-index: 10;
+}
+
+.workspace :global(.blocklyScrollbarVertical) {
+    right: 1px !important;
+    top: 0 !important;
+    height: calc(100% - 15px) !important;
+}
+
+.workspace :global(.blocklyScrollbarHorizontal) {
+    bottom: 1px !important;
+    left: 0 !important;
+    width: calc(100% - 15px) !important;
+}
+
+.workspace :global(.blocklyScrollbarCorner) {
+    right: 1px !important;
+    bottom: 1px !important;
+}
+
+.workspace :global(.blocklyMainBackground) {
+    stroke-width: 0;
+}
+
+.workspace :global(.blocklyWorkspace) {
+    overflow: visible;
+}
+
+.workspace :global(.blocklyFlyoutBackground) {
+    fill-opacity: 0.8;
+}
+
+/* Ensure blockly toolbox and workspace use full space */
+.workspace :global(.blocklyToolboxDiv) {
+    background: transparent;
 }
 
 /* Row of "card" buttons for modifying custom procedures */
 .options-row {
     display: flex;
     justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .option-card {
@@ -46,10 +114,10 @@
     border-radius: $space;
     padding: calc($space * 2);
     text-align: center;
-    flex-grow: 1;
+    flex: 1 1 160px;
     cursor: pointer;
     transition: all 0.2s;
-    flex-basis: 100px;
+    min-width: 140px;
 }
 
 .option-card:hover {
@@ -58,7 +126,7 @@
 }
 
 .option-card + .option-card {
-    margin-left: 1rem;
+    margin-left: 0;
 }
 
 .option-icon {
@@ -194,4 +262,51 @@
 
 [dir="rtl"] .button-row button + button {
     margin-right: 0.5rem;
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95vw;
+        max-height: 95vh;
+        margin: 10px auto;
+    }
+    
+    .body {
+        padding: 1rem;
+    }
+    
+    .options-row {
+        flex-direction: column;
+    }
+    
+    .option-card {
+        min-width: unset;
+        margin-bottom: 0.5rem;
+    }
+    
+    .workspace {
+        min-height: 150px;
+        height: 200px;
+        max-height: 40vh;
+    }
+}
+
+@media (max-width: 400px) {
+    .modal-content {
+        width: 98vw;
+        max-height: 98vh;
+        min-width: 320px;
+        margin: 5px auto;
+    }
+    
+    .body {
+        padding: 0.75rem;
+    }
+    
+    .workspace {
+        min-height: 120px;
+        height: 150px;
+        max-height: 35vh;
+    }
 }
