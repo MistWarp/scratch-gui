@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -38,6 +38,7 @@ import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
+import AddonHooks from '../../addons/hooks.js';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
@@ -65,6 +66,23 @@ const getFullscreenBackgroundColor = () => {
 const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
 const GUIComponent = props => {
+    const handleEnableProcedureReturns = useCallback(() => {
+        try {
+            const workspace = AddonHooks.blocklyWorkspace;
+            
+            if (workspace && workspace.enableProcedureReturns) {
+                workspace.enableProcedureReturns();
+                
+                // Force toolbox refresh
+                if (workspace.refreshToolboxSelection_) {
+                    workspace.refreshToolboxSelection_();
+                }
+            }
+        } catch (error) {
+            console.error('Error enabling procedure returns:', error);
+        }
+    }, []);
+
     const {
         accountNavOpen,
         activeTabIndex,
@@ -440,6 +458,7 @@ const GUIComponent = props => {
                     visible={extensionLibraryVisible}
                     onRequestClose={onRequestCloseExtensionLibrary}
                     onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                    onEnableProcedureReturns={handleEnableProcedureReturns}
                 />
                 <DragLayer />
             </Box>
