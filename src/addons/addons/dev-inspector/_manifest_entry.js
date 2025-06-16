@@ -5,7 +5,8 @@ const manifest = {
   "description": "Adds a right-click option to inspect blocks and view their JSON representation with useful debugging information.",
   "credits": [
     {
-      "name": "Sophie"
+        "name": "Mistium",
+        "url": "https://mistium.com"
     }
   ],
   "userscripts": [
@@ -14,7 +15,8 @@ const manifest = {
     }
   ],
   "tags": [
-    "developer"
+    "developer",
+    "MistWarp"
   ],
   "enabledByDefault": true
 };
