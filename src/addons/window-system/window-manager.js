@@ -161,6 +161,7 @@ class AddonWindow {
             gap: 6px;
             align-items: center;
             z-index: 1;
+            overflow: hidden;
         `;
         
         // Control buttons
@@ -183,7 +184,7 @@ class AddonWindow {
         this.contentElement.className = 'addon-window-content';
         this.contentElement.style.cssText = `
             flex: 1;
-            overflow: hidden;
+            overflow: auto;
             padding: 0;
             box-sizing: border-box;
             background: linear-gradient(135deg, 
@@ -196,6 +197,8 @@ class AddonWindow {
             max-height: 100%;
             display: flex;
             flex-direction: column;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
         `;
         
         // Add custom scrollbar styling
@@ -258,7 +261,7 @@ class AddonWindow {
             color: var(--text-primary, #666);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            overflow: scroll;
+            overflow: hidden;
             font-size: 0;
             margin: 0;
             padding: 0;
@@ -565,28 +568,45 @@ class AddonWindow {
         const scrollbarId = `addon-window-scrollbar-${this.id}`;
         
         style.textContent = `
+            .addon-window-content {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+            }
+            
             .addon-window-content::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
+                width: 12px;
+                height: 12px;
             }
             
             .addon-window-content::-webkit-scrollbar-track {
-                background: rgba(0, 0, 0, 0.05);
-                border-radius: 4px;
+                background: rgba(0, 0, 0, 0.03);
+                border-radius: 6px;
+                margin: 2px;
             }
             
             .addon-window-content::-webkit-scrollbar-thumb {
                 background: linear-gradient(135deg, 
-                    rgba(0, 0, 0, 0.15) 0%, 
-                    rgba(0, 0, 0, 0.1) 100%);
-                border-radius: 4px;
-                transition: background 0.3s ease;
+                    rgba(0, 0, 0, 0.2) 0%, 
+                    rgba(0, 0, 0, 0.15) 100%);
+                border-radius: 6px;
+                border: 2px solid transparent;
+                background-clip: content-box;
+                transition: all 0.3s ease;
+                min-height: 20px;
             }
             
             .addon-window-content::-webkit-scrollbar-thumb:hover {
                 background: linear-gradient(135deg, 
-                    rgba(0, 0, 0, 0.25) 0%, 
-                    rgba(0, 0, 0, 0.15) 100%);
+                    rgba(0, 0, 0, 0.35) 0%, 
+                    rgba(0, 0, 0, 0.25) 100%);
+                background-clip: content-box;
+            }
+            
+            .addon-window-content::-webkit-scrollbar-thumb:active {
+                background: linear-gradient(135deg, 
+                    rgba(0, 0, 0, 0.45) 0%, 
+                    rgba(0, 0, 0, 0.35) 100%);
+                background-clip: content-box;
             }
             
             .addon-window-content::-webkit-scrollbar-corner {
