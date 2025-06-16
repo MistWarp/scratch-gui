@@ -18,6 +18,7 @@ import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import {BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES} from '../lib/layout-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 import DragConstants from '../lib/drag-constants';
+import SettingsStore from '../addons/settings-store-singleton';
 import defineDynamicBlock from '../lib/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
@@ -169,7 +170,7 @@ class Blocks extends React.Component {
                 },
                 oneBasedIndex: true,
                 comments: true,
-                sounds: true
+                sounds: SettingsStore.getAddonEnabled('editor-sounds')
             },
             Blocks.defaultOptions
         );
