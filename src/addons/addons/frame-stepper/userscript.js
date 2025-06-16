@@ -79,7 +79,6 @@ export default async function ({ addon, console, msg }) {
     if (!stepButton) return;
     
     const shouldShow = isPaused();
-    console.log('Frame stepper: isPaused =', shouldShow); // Debug log
     stepButton.style.display = shouldShow ? 'flex' : 'none';
   }
 
