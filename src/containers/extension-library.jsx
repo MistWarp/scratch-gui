@@ -184,7 +184,9 @@ class ExtensionLibrary extends React.PureComponent {
         }
 
         if (extensionId === 'procedures_enable_return') {
-            this.props.onEnableProcedureReturns();
+            if (this.props.onEnableProcedureReturns) {
+                this.props.onEnableProcedureReturns();
+            }
             
             // Switch to blocks tab after enabling returns
             if (typeof this.props.onActivateBlocksTab === 'function') {
