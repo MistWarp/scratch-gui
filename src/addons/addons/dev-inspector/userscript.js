@@ -96,11 +96,13 @@ export default async function ({ addon, console, msg }) {
       box-sizing: border-box;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      min-height: 0;
     `;
     
     // Style the info section
     const infoSection = container.querySelector('.dev-inspector-info');
     infoSection.style.cssText = `
+      flex: 0 0 auto;
       margin-bottom: 16px;
       padding-bottom: 12px;
       border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
@@ -110,10 +112,42 @@ export default async function ({ addon, console, msg }) {
     const infoGrid = container.querySelector('.dev-inspector-info-grid');
     infoGrid.style.cssText = `
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
       margin-top: 12px;
     `;
+    
+    // Add responsive behavior for the grid
+    const updateGridColumns = () => {
+      const containerWidth = container.offsetWidth - 32; // Account for padding
+      if (containerWidth < 400) {
+        infoGrid.style.gridTemplateColumns = '1fr';
+        // Smaller font sizes for narrow windows
+        container.style.fontSize = '12px';
+        jsonContent.style.fontSize = '10px';
+      } else if (containerWidth < 600) {
+        infoGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        container.style.fontSize = '13px';
+        jsonContent.style.fontSize = '11px';
+      } else if (containerWidth < 800) {
+        infoGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        container.style.fontSize = '14px';
+        jsonContent.style.fontSize = '11px';
+      } else {
+        infoGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        container.style.fontSize = '14px';
+        jsonContent.style.fontSize = '12px';
+      }
+    };
+    
+    // Set up resize observer for responsive grid
+    if (window.ResizeObserver) {
+      const resizeObserver = new ResizeObserver(updateGridColumns);
+      resizeObserver.observe(container);
+    }
+    
+    // Initial grid setup
+    setTimeout(updateGridColumns, 0);
     
     // Style info items
     const infoItems = container.querySelectorAll('.dev-inspector-info-item');
@@ -148,6 +182,9 @@ export default async function ({ addon, console, msg }) {
           font-size: 12px;
           color: var(--text-primary, #575e75);
           word-break: break-all;
+          overflow-wrap: anywhere;
+          min-height: 20px;
+          box-sizing: border-box;
         `;
       }
     });
@@ -155,10 +192,14 @@ export default async function ({ addon, console, msg }) {
     // Style the JSON section
     const jsonSection = container.querySelector('.dev-inspector-json');
     jsonSection.style.cssText = `
-      flex: 2;
+      flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 200px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     `;
     
     // Style action buttons
@@ -167,6 +208,7 @@ export default async function ({ addon, console, msg }) {
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
     `;
     
     const buttons = container.querySelectorAll('button');
@@ -210,9 +252,15 @@ export default async function ({ addon, console, msg }) {
       line-height: 1.5;
       overflow: auto;
       white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
       color: var(--text-primary, #575e75);
       margin: 0;
       resize: none;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      max-width: 100%;
     `;
     
     // Style headings
@@ -364,12 +412,12 @@ export default async function ({ addon, console, msg }) {
       inspectorWindow = WindowManager.createWindow({
         id: 'dev-inspector',
         title: 'Block Inspector',
-        width: 600,
-        height: 800,
-        minWidth: 400,
-        minHeight: 400,
-        maxWidth: 1000,
-        maxHeight: 1200,
+        width: 650,
+        height: 750,
+        minWidth: 350,
+        minHeight: 300,
+        maxWidth: 1400,
+        maxHeight: 1000,
         className: 'dev-inspector-window',
         onClose: () => {
           inspectorWindow = null;
