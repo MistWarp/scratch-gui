@@ -2,6 +2,7 @@
 export default {
   "calculator": () => import(/* webpackChunkName: "addon-entry-calculator" */ "../addons/calculator/_runtime_entry.js"),
   "cat-blocks": () => import(/* webpackChunkName: "addon-entry-cat-blocks" */ "../addons/cat-blocks/_runtime_entry.js"),
+  "dev-inspector": () => import(/* webpackChunkName: "addon-entry-dev-inspector" */ "../addons/dev-inspector/_runtime_entry.js"),
   "editor-devtools": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/editor-devtools/_runtime_entry.js"),
   "find-bar": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/find-bar/_runtime_entry.js"),
   "middle-click-popup": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/middle-click-popup/_runtime_entry.js"),
