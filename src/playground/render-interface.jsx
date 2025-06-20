@@ -222,29 +222,25 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://desktop.turbowarp.org/">
-                        {/* Do not translate */}
-                        {'TurboWarp Desktop'}
-                    </a>
-                    <a href="https://packager.turbowarp.org/">
+                    <a href="https://packager.warp.mistium.com/">
                         {/* Do not translate */}
                         {'TurboWarp Packager'}
                     </a>
-                    <a href="https://docs.turbowarp.org/embedding">
+                    <a href="https://docs.warp.mistium.com/embedding">
                         <FormattedMessage
                             defaultMessage="Embedding"
                             description="Link in footer to embedding documentation for embedding link"
                             id="tw.footer.embed"
                         />
                     </a>
-                    <a href="https://docs.turbowarp.org/url-parameters">
+                    <a href="https://docs.warp.mistium.com/url-parameters">
                         <FormattedMessage
                             defaultMessage="URL Parameters"
                             description="Link in footer to URL parameters documentation"
                             id="tw.footer.parameters"
                         />
                     </a>
-                    <a href="https://docs.turbowarp.org/">
+                    <a href="https://docs.warp.mistium.com">
                         <FormattedMessage
                             defaultMessage="Documentation"
                             description="Link in footer to additional documentation"
