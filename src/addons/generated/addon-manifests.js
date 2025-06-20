@@ -85,6 +85,7 @@ import _editor_stepping from "../addons/editor-stepping/_manifest_entry.js";
 import _autosave from "../addons/autosave/_manifest_entry.js";
 import _workspace_tabs from "../addons/workspace-tabs/_manifest_entry.js";
 import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
+import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -171,5 +172,6 @@ export default {
   "editor-stepping": _editor_stepping,
   "autosave": _autosave,
   "workspace-tabs": _workspace_tabs,
-  "no-category-text": _no_category_text
+  "no-category-text": _no_category_text,
+  "green-flag-order": _green_flag_order
 };
