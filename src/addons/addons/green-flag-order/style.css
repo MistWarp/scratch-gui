@@ -1,0 +1,29 @@
+/* Green flag execution order addon styles */
+
+.sa-green-flag-order-badge {
+  /* Ensure badge appears above other elements */
+  z-index: 10;
+  pointer-events: none;
+  
+  /* Smooth transitions when badges update */
+  transition: opacity 0.2s ease;
+}
+
+.sa-green-flag-order-badge:hover {
+  opacity: 0.9;
+}
+
+/* Style for the badge background shapes */
+.sa-green-flag-order-badge circle,
+.sa-green-flag-order-badge rect {
+  /* Add subtle shadow effect */
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Ensure text is always readable */
+.sa-green-flag-order-badge text {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
