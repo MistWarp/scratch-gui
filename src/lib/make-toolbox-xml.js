@@ -458,11 +458,42 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
         <block type="control_if_else"/>
         <block id="wait_until" type="control_wait_until"/>
         <block id="repeat_until" type="control_repeat_until"/>
-        <block id="while" type="control_while"/>
+        <block id="for_each" type="control_for_each">
+            <value name="VARIABLE">
+                <shadow type="variables_get">
+                    <field name="VAR">i</field>
+                </shadow>
+            </value>
+            <value name="VALUE">
+                <shadow type="math_whole_number">
+                    <field name="NUM">10</field>
+                </shadow>
+            </value>
+        </block>
         ${blockSeparator}
-        <block type="control_incr_counter" id="control_incr_counter"/>
-        <block type="control_get_counter" id="control_get_counter"/>
-        <block type="control_clear_counter" id="control_clear_counter"/>
+        <block type="control_switch">
+            <value name="VALUE">
+                <shadow type="text">
+                    <field name="TEXT">value</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="control_case">
+            <value name="VALUE">
+                <shadow type="text">
+                    <field name="TEXT">case</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="control_case_fallthrough">
+            <value name="VALUE">
+                <shadow type="text">
+                    <field name="TEXT">case</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="control_default"/>
+        <block type="control_break"/>
         ${blockSeparator}
         <block type="control_stop"/>
         ${blockSeparator}
