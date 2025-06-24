@@ -30,12 +30,13 @@ import TurboMode from '../../containers/turbo-mode.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
 import SettingsMenu from './settings-menu.jsx';
 
-import FramerateChanger from '../../containers/tw-framerate-changer.jsx';
 import ChangeUsername from '../../containers/tw-change-username.jsx';
 import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
+import CollaborationContainer from '../../containers/collaboration-container.jsx';
 
 import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
+import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -103,6 +104,7 @@ import fileIcon from './icon--file.svg';
 import editIcon from './icon--edit.svg';
 import errorIcon from './tw-error.svg';
 import advancedIcon from './tw-advanced.svg';
+import collaborationIcon from '../collaboration-modal/collaboration-icon.svg';
 
 import ninetiesLogo from './nineties_logo.svg';
 import catLogo from './cat_logo.svg';
@@ -235,6 +237,7 @@ class MenuBar extends React.Component {
             'handleClickRestorePoints',
             'handleClickSeeCommunity',
             'handleClickShare',
+            'handleClickCollaboration',
             'handleSetMode',
             'handleKeyPress',
             'handleRestoreOption',
@@ -325,6 +328,9 @@ class MenuBar extends React.Component {
                 waitForUpdate(false); // immediately transition to project page
             }
         }
+    }
+    handleClickCollaboration () {
+        this.props.onClickCollaboration();
     }
     handleSetMode (mode) {
         return () => {
@@ -961,23 +967,6 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuItem>
                                     )}</TurboMode>
-                                    <FramerateChanger>{(changeFramerate, {framerate}) => (
-                                        <MenuItem onClick={changeFramerate}>
-                                            {framerate === 60 ? (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn off 60 FPS Mode"
-                                                    description="Menu bar item for turning off 60 FPS mode"
-                                                    id="tw.menuBar.60off"
-                                                />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn on 60 FPS Mode"
-                                                    description="Menu bar item for turning on 60 FPS mode"
-                                                    id="tw.menuBar.60on"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</FramerateChanger>
                                     <ChangeUsername>{changeUsername => (
                                         <MenuItem onClick={changeUsername}>
                                             <FormattedMessage
@@ -1020,8 +1009,8 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem onClick={this.props.onClickSettingsModal}>
                                         <FormattedMessage
-                                            defaultMessage="Advanced Settings"
-                                            description="Menu bar item for advanced settings"
+                                            defaultMessage="Settings"
+                                            description="Menu bar item for settings"
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>
@@ -1039,6 +1028,13 @@ class MenuBar extends React.Component {
                                             defaultMessage="Extensions"
                                             description="Menu bar item for extensions"
                                             id="tw.menuBar.extensions"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.props.onClickCollaboration}>
+                                        <FormattedMessage
+                                            defaultMessage="Live Collaboration"
+                                            description="Menu bar item for live collaboration"
+                                            id="tw.menuBar.collaboration"
                                         />
                                     </MenuItem>
                                 </MenuSection>
@@ -1284,6 +1280,7 @@ MenuBar.propTypes = {
     ]),
     onClickAccount: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
+    onClickCollaboration: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
@@ -1389,6 +1386,7 @@ const mapDispatchToProps = dispatch => ({
     onOpenTipLibrary: () => dispatch(openTipsLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
+    onClickCollaboration: () => dispatch(openCollaborationModal()),
     onClickFile: () => dispatch(openFileMenu()),
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onClickEdit: () => dispatch(openEditMenu()),
