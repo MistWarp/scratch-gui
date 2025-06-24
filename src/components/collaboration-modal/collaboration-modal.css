@@ -376,3 +376,109 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* Privacy selector styles */
+.privacySelector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.radioLabel {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.radioLabel:hover {
+    background: $ui-black-transparent;
+}
+
+.radioLabel .checkbox {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.radioText {
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+/* Join requests styles */
+.requestsSection {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.requestsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.requestItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: $ui-white;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+}
+
+.requesterInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.requestActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.approveButton {
+    background: $looks-secondary;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: inherit;
+    font-size: 0.75rem;
+}
+
+.approveButton:hover:not(:disabled) {
+    background: $looks-secondary-dark;
+}
+
+.denyButton {
+    background: $red-primary;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: inherit;
+    font-size: 0.75rem;
+}
+
+.denyButton:hover:not(:disabled) {
+    background: $red-tertiary;
+}
+
+/* Room privacy settings */
+.privacySection {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid $ui-black-transparent;
+}

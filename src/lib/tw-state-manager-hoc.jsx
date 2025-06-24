@@ -17,6 +17,11 @@ import {
     setPlayer,
     setFullScreen
 } from '../reducers/mode';
+import {
+    setCollaborationRoomId,
+    setCollaborationConnected,
+    openCollaborationModal
+} from '../reducers/collaboration';
 import {generateRandomUsername} from './tw-username';
 import {setSearchParams} from './tw-navigation-utils';
 import {defaultStageSize} from '../reducers/custom-stage-size';
@@ -279,7 +284,8 @@ const TWStateManager = function (WrappedComponent) {
                 'handlePopState',
                 'onSetProjectId',
                 'onSetIsPlayerOnly',
-                'onSetIsFullScreen'
+                'onSetIsFullScreen',
+                'handleRoomCode'
             ]);
         }
         componentDidMount () {
@@ -365,6 +371,25 @@ const TWStateManager = function (WrappedComponent) {
                 this.props.vm.extensionManager.loadExtensionURL(extension);
             }
 
+            // Handle room codes for automatic collaboration
+            if (urlParams.has('room')) {
+                const roomCode = urlParams.get('room');
+                console.log(`[STATE MANAGER] Found room parameter: ${roomCode}`);
+                console.log(`[STATE MANAGER] Current username: ${this.props.username}`);
+                
+                // Store the room code to handle after username is ready
+                this.pendingRoomCode = roomCode;
+                
+                // If username is already available, handle immediately
+                if (this.props.username) {
+                    this.handleRoomCode(roomCode);
+                } else {
+                    console.log(`[STATE MANAGER] Username not ready, will handle room code when username is set`);
+                }
+            } else {
+                console.log(`[STATE MANAGER] No room parameter found in URL: ${location.search}`);
+            }
+
             const routerCallbacks = {
                 onSetProjectId: this.onSetProjectId,
                 onSetIsPlayerOnly: this.onSetIsPlayerOnly,
@@ -379,6 +404,26 @@ const TWStateManager = function (WrappedComponent) {
             if (this.props.username !== prevProps.username && this.props.username !== this.doNotPersistUsername) {
                 // TODO: this always restores the current username once at startup, which is unnecessary
                 setLocalStorage(USERNAME_KEY, this.props.username);
+                
+                // Sync username with collaboration service if connected
+                if (typeof window !== 'undefined' && window.CollaborationService && prevProps.username && this.props.username) {
+                    try {
+                        const service = window.CollaborationService.getInstance();
+                        if (service && service.isConnectedToHostPeer()) {
+                            console.log(`[STATE MANAGER] Syncing username change to collaboration: ${prevProps.username} -> ${this.props.username}`);
+                            service.changeUsername(this.props.username);
+                        }
+                    } catch (error) {
+                        console.warn('Could not sync username with collaboration service:', error);
+                    }
+                }
+                
+                // Check if we have a pending room code to handle now that username is available
+                if (this.pendingRoomCode && this.props.username && !prevProps.username) {
+                    console.log(`[STATE MANAGER] Username now available: ${this.props.username}, handling pending room code: ${this.pendingRoomCode}`);
+                    this.handleRoomCode(this.pendingRoomCode);
+                    this.pendingRoomCode = null; // Clear the pending room code
+                }
             }
 
             if (
@@ -495,7 +540,7 @@ const TWStateManager = function (WrappedComponent) {
                 return true;
             }
             if (this.props.projectChanged) {
-                if (!confirm('Are you sure you want to switch project?')) {
+                if (!window.confirm('Are you sure you want to switch project?')) {
                     return false;
                 }
             }
@@ -507,6 +552,41 @@ const TWStateManager = function (WrappedComponent) {
         }
         onSetIsFullScreen (isFullScreen) {
             this.props.onSetIsFullScreen(isFullScreen);
+        }
+        handleRoomCode (roomCode) {
+            // Auto-join collaboration room using the current saved/generated username
+            const username = this.props.username;
+            if (username && roomCode) {
+                console.log(`[STATE MANAGER] Setting room ID: ${roomCode}, username: ${username}`);
+                
+                // Set the room ID in Redux state
+                this.props.onSetCollaborationRoomId(roomCode);
+                
+                // Update URL to include just the room parameter for sharing
+                const currentUrl = new URL(location.href);
+                currentUrl.searchParams.set('room', roomCode);
+                // Remove username from URL - we use the stored one
+                currentUrl.searchParams.delete('username');
+                
+                // Update URL without triggering a page reload
+                history.replaceState(null, null, currentUrl.toString());
+                
+                console.log(`[STATE MANAGER] Room ID set in Redux, waiting before opening modal...`);
+                
+                // Open the collaboration modal after setting the room ID
+                // Increase delay to ensure Redux state is updated
+                setTimeout(() => {
+                    console.log(`[STATE MANAGER] Opening collaboration modal with room ID: ${roomCode}`);
+                    if (this.props.onOpenCollaborationModal) {
+                        this.props.onOpenCollaborationModal();
+                        console.log(`[STATE MANAGER] Collaboration modal opened`);
+                    } else {
+                        console.error(`[STATE MANAGER] onOpenCollaborationModal function not available`);
+                    }
+                }, 300);
+            } else {
+                console.error(`[STATE MANAGER] Missing username (${username}) or roomCode (${roomCode})`);
+            }
         }
         render () {
             const {
@@ -527,6 +607,8 @@ const TWStateManager = function (WrappedComponent) {
                 onSetIsPlayerOnly,
                 onSetProjectId,
                 onSetUsername,
+                onSetCollaborationRoomId,
+                onOpenCollaborationModal,
                 reduxProjectId,
                 routingStyle,
                 username,
@@ -569,6 +651,8 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsPlayerOnly: PropTypes.func,
         onSetProjectId: PropTypes.func,
         onSetUsername: PropTypes.func,
+        onSetCollaborationRoomId: PropTypes.func,
+        onOpenCollaborationModal: PropTypes.func,
         reduxProjectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         routingStyle: PropTypes.oneOf(Object.keys(routers)),
         username: PropTypes.string,
@@ -597,7 +681,9 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsFullScreen: isFullScreen => dispatch(setFullScreen(isFullScreen)),
         onSetIsPlayerOnly: isPlayerOnly => dispatch(setPlayer(isPlayerOnly)),
         onSetProjectId: projectId => dispatch(setProjectId(projectId)),
-        onSetUsername: username => dispatch(setUsername(username))
+        onSetUsername: username => dispatch(setUsername(username)),
+        onSetCollaborationRoomId: roomId => dispatch(setCollaborationRoomId(roomId)),
+        onOpenCollaborationModal: () => dispatch(openCollaborationModal())
     });
     return injectIntl(connect(
         mapStateToProps,

@@ -12,8 +12,13 @@ import {
     setCollaborationConnected,
     setCollaborationUsers,
     setCollaborationError,
-    setCollaborationRoomId
+    setCollaborationRoomId,
+    setCollaborationRoomPrivacy
 } from '../reducers/collaboration';
+
+import {
+    setUsername
+} from '../reducers/tw';
 
 class CollaborationContainer extends Component {
     constructor(props) {
@@ -36,6 +41,15 @@ class CollaborationContainer extends Component {
         this.handleUsersUpdated = this.handleUsersUpdated.bind(this);
         this.handleConnectionFailed = this.handleConnectionFailed.bind(this);
         this.handleCancelConnection = this.handleCancelConnection.bind(this);
+        this.handleApproveJoinRequest = this.handleApproveJoinRequest.bind(this);
+        this.handleDenyJoinRequest = this.handleDenyJoinRequest.bind(this);
+        this.handleCancelJoinRequest = this.handleCancelJoinRequest.bind(this);
+        this.handleJoinRequestReceived = this.handleJoinRequestReceived.bind(this);
+        this.handleJoinApproved = this.handleJoinApproved.bind(this);
+        this.handleJoinDenied = this.handleJoinDenied.bind(this);
+        this.handleChangeRoomPrivacy = this.handleChangeRoomPrivacy.bind(this);
+        this.handleRoomPrivacyChanged = this.handleRoomPrivacyChanged.bind(this);
+        this.handleWorkspaceReattach = this.handleWorkspaceReattach.bind(this);
     }
 
     componentDidMount() {
@@ -54,6 +68,11 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('connected-to-host', this.handleConnectedToHost);
         this.collaborationService.on('disconnected', this.handleDisconnected);
         this.collaborationService.on('connection-failed', this.handleConnectionFailed);
+        this.collaborationService.on('join-request-received', this.handleJoinRequestReceived);
+        this.collaborationService.on('join-approved', this.handleJoinApproved);
+        this.collaborationService.on('join-denied', this.handleJoinDenied);
+        this.collaborationService.on('room-privacy-changed', this.handleRoomPrivacyChanged);
+        this.collaborationService.on('request-workspace-reattach', this.handleWorkspaceReattach);
     }
 
     componentWillUnmount() {
@@ -67,6 +86,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('connected-to-host', this.handleConnectedToHost);
         this.collaborationService.off('disconnected', this.handleDisconnected);
         this.collaborationService.off('connection-failed', this.handleConnectionFailed);
+        this.collaborationService.off('room-privacy-changed', this.handleRoomPrivacyChanged);
+        this.collaborationService.off('request-workspace-reattach', this.handleWorkspaceReattach);
         
         // Disconnect if connected
         if (this.collaborationService.isConnected) {
@@ -93,15 +114,19 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom(roomId, username) {
+    async handleCreateRoom(roomId, username, privacy = 'public') {
+        
+        if (!roomId) throw new Error('Room ID is required to create a room');
+        
         try {
             this.props.onSetError(null);
             
-            await this.collaborationService.connectToRoom(roomId, username, true);
+            await this.collaborationService.connectToRoom(roomId, username, true, privacy);
             
             // For hosts, set connected immediately since they're always connected
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
+            this.props.onSetRoomPrivacy(privacy);
             this.updateUsersList();
             
             // Try to attach to workspace if it exists
@@ -130,10 +155,16 @@ class CollaborationContainer extends Component {
         }
     }
 
+    handleWorkspaceReattach() {
+        console.log('🔄 Handling workspace reattach request');
+        this.tryAttachToWorkspace();
+    }
+
     handleLeaveRoom() {
         this.collaborationService.disconnect();
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
+        this.props.onSetRoomPrivacy('public');
         this.props.onSetUsers([]);
         this.props.onSetError(null);
     }
@@ -175,6 +206,13 @@ class CollaborationContainer extends Component {
 
     handleUsernameChanged(user) {
         console.log('Username changed:', user);
+        
+        // If this is our own username change from another client, update local state
+        if (
+            user.id === this.getCurrentUserId() &&
+            user.username !== this.props.currentUsername
+        ) this.props.onSetUsername(user.username);
+        
         this.updateUsersList();
     }
 
@@ -194,12 +232,6 @@ class CollaborationContainer extends Component {
     }
 
     handleHostLeft() {
-        console.log('Host has left the room');
-        
-        // Disconnect from the collaboration service
-        this.collaborationService.disconnect();
-        
-        // Set connection state to false and clear room/users
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
@@ -213,6 +245,18 @@ class CollaborationContainer extends Component {
         
         // Now we're actually connected and can show the connected UI
         this.props.onSetConnected(true);
+        
+        // Sync username with collaboration service
+        const serviceUsername = this.collaborationService.username;
+        if (
+            serviceUsername &&
+            serviceUsername !== this.props.currentUsername
+        ) this.props.onSetUsername(serviceUsername);
+        
+        // Sync room privacy from service
+        const roomPrivacy = this.collaborationService.getRoomPrivacy();
+        this.props.onSetRoomPrivacy(roomPrivacy);
+        
         this.updateUsersList();
     }
 
@@ -220,6 +264,7 @@ class CollaborationContainer extends Component {
         console.log('Disconnected from collaboration');
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
+        this.props.onSetRoomPrivacy('public');
         this.props.onSetUsers([]);
     }
 
@@ -232,8 +277,72 @@ class CollaborationContainer extends Component {
         // Clear any connection state
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
+        this.props.onSetRoomPrivacy('public');
         this.props.onSetUsers([]);
         this.props.onSetError(null);
+    }
+
+    async handleApproveJoinRequest(requesterId, requesterUsername) {
+        try {
+            await this.collaborationService.approveJoinRequest(requesterId, requesterUsername);
+        } catch (error) {
+            console.error('Failed to approve join request:', error);
+            this.props.onSetError(error.message || 'Failed to approve join request');
+            throw error;
+        }
+    }
+
+    async handleDenyJoinRequest(requesterId) {
+        try {
+            await this.collaborationService.denyJoinRequest(requesterId);
+        } catch (error) {
+            console.error('Failed to deny join request:', error);
+            this.props.onSetError(error.message || 'Failed to deny join request');
+            throw error;
+        }
+    }
+
+    handleCancelJoinRequest() {
+        // Cancel any pending join request
+        if (this.collaborationService.cancelJoinRequest) {
+            this.collaborationService.cancelJoinRequest();
+        }
+        this.handleCancelConnection();
+    }
+
+    handleJoinRequestReceived(data) {
+        console.log('Join request received:', data);
+        // The modal will handle this event directly from the collaboration service
+    }
+
+    handleJoinApproved() {
+        console.log('Join request approved');
+        // The user has been approved to join the room
+        this.props.onSetConnected(true);
+        this.updateUsersList();
+    }
+
+    handleJoinDenied(data) {
+        console.log('Join request denied:', data);
+        this.props.onSetError(data || 'Your join request was denied');
+        this.props.onSetConnected(false);
+        this.props.onSetRoomId(null);
+    }
+
+    async handleChangeRoomPrivacy(newPrivacy) {
+        try {
+            await this.collaborationService.changeRoomPrivacy(newPrivacy);
+            this.props.onSetRoomPrivacy(newPrivacy);
+        } catch (error) {
+            console.error('Failed to change room privacy:', error);
+            this.props.onSetError(error.message || 'Failed to change room privacy');
+            throw error;
+        }
+    }
+
+    handleRoomPrivacyChanged(privacy) {
+        console.log('Room privacy changed to:', privacy);
+        this.props.onSetRoomPrivacy(privacy);
     }
 
     updateUsersList() {
@@ -249,10 +358,11 @@ class CollaborationContainer extends Component {
         return (
             <CollaborationModal
                 visible={this.props.isVisible}
-                currentUsername={this.props.username}
+                currentUsername={this.props.currentUsername}
                 currentUserId={this.getCurrentUserId()}
                 isConnected={this.props.isConnected}
                 roomId={this.props.roomId}
+                roomPrivacy={this.props.roomPrivacy}
                 connectedUsers={this.props.connectedUsers}
                 connectionError={this.props.connectionError}
                 onRequestClose={this.props.onRequestClose}
@@ -262,6 +372,10 @@ class CollaborationContainer extends Component {
                 onKickUser={this.handleKickUser}
                 onChangeUsername={this.handleChangeUsername}
                 onCancelConnection={this.handleCancelConnection}
+                onApproveJoinRequest={this.handleApproveJoinRequest}
+                onDenyJoinRequest={this.handleDenyJoinRequest}
+                onCancelJoinRequest={this.handleCancelJoinRequest}
+                onChangeRoomPrivacy={this.handleChangeRoomPrivacy}
             />
         );
     }
@@ -271,24 +385,28 @@ CollaborationContainer.propTypes = {
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
     roomId: PropTypes.string,
+    roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
     connectionError: PropTypes.string,
-    username: PropTypes.string,
+    currentUsername: PropTypes.string,
     vm: PropTypes.object.isRequired,
     onRequestClose: PropTypes.func.isRequired,
     onSetConnected: PropTypes.func.isRequired,
     onSetUsers: PropTypes.func.isRequired,
     onSetError: PropTypes.func.isRequired,
-    onSetRoomId: PropTypes.func.isRequired
+    onSetRoomId: PropTypes.func.isRequired,
+    onSetRoomPrivacy: PropTypes.func.isRequired,
+    onSetUsername: PropTypes.func.isRequired
 };
 
 const mapStateToProps = state => ({
     isVisible: state.scratchGui.collaboration.modalVisible,
     isConnected: state.scratchGui.collaboration.isConnected,
     roomId: state.scratchGui.collaboration.roomId,
+    roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     connectionError: state.scratchGui.collaboration.connectionError,
-    username: state.scratchGui.tw.username,
+    currentUsername: state.scratchGui.tw.username,
     vm: state.scratchGui.vm
 });
 
@@ -297,7 +415,9 @@ const mapDispatchToProps = dispatch => ({
     onSetConnected: (connected) => dispatch(setCollaborationConnected(connected)),
     onSetUsers: (users) => dispatch(setCollaborationUsers(users)),
     onSetError: (error) => dispatch(setCollaborationError(error)),
-    onSetRoomId: (roomId) => dispatch(setCollaborationRoomId(roomId))
+    onSetRoomId: (roomId) => dispatch(setCollaborationRoomId(roomId)),
+    onSetRoomPrivacy: (privacy) => dispatch(setCollaborationRoomPrivacy(privacy)),
+    onSetUsername: (username) => dispatch(setUsername(username))
 });
 
 export default compose(

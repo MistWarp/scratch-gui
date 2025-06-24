@@ -4,11 +4,13 @@ const SET_COLLABORATION_CONNECTED = 'scratch-gui/collaboration/SET_COLLABORATION
 const SET_COLLABORATION_USERS = 'scratch-gui/collaboration/SET_COLLABORATION_USERS';
 const SET_COLLABORATION_ERROR = 'scratch-gui/collaboration/SET_COLLABORATION_ERROR';
 const SET_COLLABORATION_ROOM_ID = 'scratch-gui/collaboration/SET_COLLABORATION_ROOM_ID';
+const SET_COLLABORATION_ROOM_PRIVACY = 'scratch-gui/collaboration/SET_COLLABORATION_ROOM_PRIVACY';
 
 const initialState = {
     modalVisible: false,
     isConnected: false,
     roomId: null,
+    roomPrivacy: 'public',
     connectedUsers: [],
     connectionError: null
 };
@@ -47,6 +49,11 @@ const reducer = function (state, action) {
     case SET_COLLABORATION_ROOM_ID:
         return Object.assign({}, state, {
             roomId: action.roomId
+        });
+    
+    case SET_COLLABORATION_ROOM_PRIVACY:
+        return Object.assign({}, state, {
+            roomPrivacy: action.privacy
         });
     
     default:
@@ -94,6 +101,13 @@ const setCollaborationRoomId = function (roomId) {
     };
 };
 
+const setCollaborationRoomPrivacy = function (privacy) {
+    return {
+        type: SET_COLLABORATION_ROOM_PRIVACY,
+        privacy
+    };
+};
+
 export {
     reducer as default,
     initialState as collaborationInitialState,
@@ -102,5 +116,6 @@ export {
     setCollaborationConnected,
     setCollaborationUsers,
     setCollaborationError,
-    setCollaborationRoomId
+    setCollaborationRoomId,
+    setCollaborationRoomPrivacy
 };

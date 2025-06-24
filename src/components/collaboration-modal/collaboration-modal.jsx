@@ -8,6 +8,7 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
+import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -24,29 +25,95 @@ class CollaborationModal extends Component {
         
         this.state = {
             roomId: '',
-            username: props.currentUsername || '',
             isConnecting: false,
-            connectionStep: 'join', // 'join', 'connecting', 'connected'
-            showCreateRoom: false,
-            newRoomId: '',
-            error: null
+            connectionStep: 'join', // 'join', 'connecting', 'connected', 'pending-approval'
+            error: null,
+            pendingRequests: [], // Array of join requests for private rooms
+            showJoinRequest: false // Show join request dialog for private rooms
         };
         
+        // Track whether we've attempted auto-join for specific room IDs to prevent loops
+        this.autoJoinAttempted = new Set();
+        
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
-        this.handleUsernameChange = this.handleUsernameChange.bind(this);
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
         this.handleLeaveRoom = this.handleLeaveRoom.bind(this);
         this.handleKickUser = this.handleKickUser.bind(this);
-        this.handleChangeUsername = this.handleChangeUsername.bind(this);
-        this.toggleCreateRoom = this.toggleCreateRoom.bind(this);
-        this.handleNewRoomIdChange = this.handleNewRoomIdChange.bind(this);
+        this.handleCopyRoomUrl = this.handleCopyRoomUrl.bind(this);
+        this.fallbackCopyToClipboard = this.fallbackCopyToClipboard.bind(this);
+        this.showUrlPrompt = this.showUrlPrompt.bind(this);
+        this.generateRoomCode = this.generateRoomCode.bind(this);
+        this.attemptAutoJoin = this.attemptAutoJoin.bind(this);
+        this.handleApproveRequest = this.handleApproveRequest.bind(this);
+        this.handleDenyRequest = this.handleDenyRequest.bind(this);
+        this.handleCancelJoinRequest = this.handleCancelJoinRequest.bind(this);
+        this.handleChangeCurrentRoomPrivacy = this.handleChangeCurrentRoomPrivacy.bind(this);
+        this.handleJoinRequestEvent = this.handleJoinRequestEvent.bind(this);
+        this.handleAwaitingApproval = this.handleAwaitingApproval.bind(this);
+        this.handleApprovalResolved = this.handleApprovalResolved.bind(this);
+        this.handleJoinDenied = this.handleJoinDenied.bind(this);
     }
 
     componentDidMount() {
+        console.log('[COLLAB MODAL] ComponentDidMount - props:', {
+            roomId: this.props.roomId,
+            isConnected: this.props.isConnected,
+            currentUsername: this.props.currentUsername
+        });
+        
         if (this.props.isConnected) {
             this.setState({ connectionStep: 'connected' });
         }
+        
+        // Check if there's already a room ID set (from URL parameter handling)
+        if (this.props.roomId && !this.props.isConnected) {
+            console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
+            this.setState({ 
+                roomId: this.props.roomId,
+                username: this.props.currentUsername || this.state.username
+            });
+            
+            // Automatically attempt to join the room without confirmation
+            setTimeout(() => {
+                this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
+            }, 100);
+        }
+        
+        // Set up collaboration service event listeners
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service) {
+                    service.on('join-request-received', this.handleJoinRequestEvent);
+                    service.on('awaiting-approval', this.handleAwaitingApproval);
+                    service.on('approval-resolved', this.handleApprovalResolved);
+                    service.on('join-denied', this.handleJoinDenied);
+                }
+            } catch (error) {
+                console.warn('Could not set up collaboration service event listeners:', error);
+            }
+        }
+    }
+
+    componentWillUnmount() {
+        // Clean up collaboration service event listeners
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service) {
+                    service.off('join-request-received', this.handleJoinRequestEvent);
+                    service.off('awaiting-approval', this.handleAwaitingApproval);
+                    service.off('approval-resolved', this.handleApprovalResolved);
+                    service.off('join-denied', this.handleJoinDenied);
+                }
+            } catch (error) {
+                console.warn('Could not clean up collaboration service event listeners:', error);
+            }
+        }
+        
+        // Clear auto-join tracking
+        this.autoJoinAttempted.clear();
     }
 
     componentDidUpdate(prevProps) {
@@ -56,6 +123,11 @@ class CollaborationModal extends Component {
                 isConnecting: false,
                 error: null
             });
+            
+            // Clear auto-join tracking when disconnected
+            if (!this.props.isConnected) {
+                this.autoJoinAttempted.clear();
+            }
         }
 
         if (prevProps.connectionError !== this.props.connectionError && this.props.connectionError) {
@@ -65,23 +137,50 @@ class CollaborationModal extends Component {
                 connectionStep: 'join'
             });
         }
+
+        // Handle room ID prop changes (e.g., when set from URL after component mounts)
+        if (prevProps.roomId !== this.props.roomId && this.props.roomId && !this.props.isConnected) {
+            console.log('Room ID prop changed, updating local state:', this.props.roomId);
+            this.setState({ 
+                roomId: this.props.roomId 
+            });
+            
+            // Only attempt auto-join if we haven't already tried this room ID AND
+            // this is a transition from no room ID to having a room ID (indicating URL param processing)
+            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
+            if (!prevProps.roomId && this.props.roomId && this.props.currentUsername && 
+                !this.autoJoinAttempted.has(roomIdKey)) {
+                console.log('Auto-joining room after prop update:', this.props.roomId);
+                this.autoJoinAttempted.add(roomIdKey);
+                setTimeout(() => {
+                    this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
+                }, 100);
+            }
+        }
+
+        // Update pending requests from collaboration service
+        if (this.props.visible && typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service && service.getPendingJoinRequests) {
+                    const pendingRequests = service.getPendingJoinRequests();
+                    if (JSON.stringify(pendingRequests) !== JSON.stringify(this.state.pendingRequests)) {
+                        this.setState({ pendingRequests });
+                    }
+                }
+            } catch (error) {
+                // Ignore errors accessing collaboration service
+            }
+        }
     }
 
     handleRoomIdChange(roomId) {
         this.setState({ roomId });
     }
 
-    handleUsernameChange(username) {
-        this.setState({ username });
-    }
-
-    handleNewRoomIdChange(newRoomId) {
-        this.setState({ newRoomId });
-    }
-
     async handleJoinRoom() {
-        if (!this.state.roomId.trim() || !this.state.username.trim()) {
-            this.setState({ error: 'Please enter both room ID and username' });
+        if (!this.state.roomId.trim()) {
+            this.setState({ error: 'Please enter a room ID' });
             return;
         }
 
@@ -92,7 +191,7 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onJoinRoom(this.state.roomId.trim(), this.state.username.trim());
+            await this.props.onJoinRoom(this.state.roomId.trim(), this.props.currentUsername);
         } catch (error) {
             this.setState({ 
                 error: error.message || 'Failed to join room',
@@ -103,11 +202,8 @@ class CollaborationModal extends Component {
     }
 
     async handleCreateRoom() {
-        if (!this.state.newRoomId.trim() || !this.state.username.trim()) {
-            this.setState({ error: 'Please enter both room ID and username' });
-            return;
-        }
-
+        const roomCode = this.generateRoomCode();
+        
         this.setState({ 
             isConnecting: true, 
             connectionStep: 'connecting',
@@ -115,8 +211,17 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onCreateRoom(this.state.newRoomId.trim(), this.state.username.trim());
-            this.setState({ showCreateRoom: false });
+            await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+            
+            // Update URL to include room code for easy sharing (no username)
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('room', roomCode);
+            // Remove username from URL - we use the stored one
+            currentUrl.searchParams.delete('username');
+            window.history.replaceState(null, null, currentUrl.toString());
+            
+            this.setState({ roomId: roomCode });
+            
         } catch (error) {
             this.setState({ 
                 error: error.message || 'Failed to create room',
@@ -139,18 +244,244 @@ class CollaborationModal extends Component {
         this.props.onKickUser(userId);
     }
 
-    handleChangeUsername() {
-        if (this.state.username.trim()) {
-            this.props.onChangeUsername(this.state.username.trim());
+    handleCopyRoomUrl() {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('room', this.props.roomId);
+        // Remove username from URL - we use the stored one
+        currentUrl.searchParams.delete('username');
+        const roomUrl = currentUrl.toString();
+        
+        // Check if clipboard API is available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(roomUrl).then(() => {
+                console.log('Room URL copied to clipboard');
+                alert('Room URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy room URL:', err);
+                this.fallbackCopyToClipboard(roomUrl);
+            });
+        } else {
+            // Fallback for older browsers or insecure contexts
+            this.fallbackCopyToClipboard(roomUrl);
         }
     }
 
-    toggleCreateRoom() {
+    fallbackCopyToClipboard(text) {
+        // Create a temporary textarea element
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        
+        try {
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            if (successful) {
+                console.log('Room URL copied to clipboard (fallback)');
+                alert('Room URL copied to clipboard!');
+            } else {
+                console.warn('Fallback copy failed');
+                this.showUrlPrompt(text);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            this.showUrlPrompt(text);
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    }
+
+    showUrlPrompt(text) {
+        // Last resort: show the URL in a prompt for manual copying
+        prompt('Copy this room URL to share:', text);
+    }
+
+    generateRoomCode() {
+        // Generate a random room code
+        const adjectives = ['cool', 'fun', 'epic', 'wild', 'neat', 'rad', 'hot', 'ice', 'big', 'tiny'];
+        const nouns = ['cat', 'dog', 'owl', 'fox', 'bee', 'ant', 'fish', 'bird', 'frog', 'duck'];
+        
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        
+        return `${randomAdjective}-${randomNoun}-${randomNum}`;
+    }
+
+    async attemptAutoJoin(roomCode, username) {
+        console.log(`Attempting to auto-join room "${roomCode}" as "${username}"`);
+        
+        if (!roomCode) {
+            console.error('attemptAutoJoin called with null/undefined roomCode');
+            this.setState({ 
+                error: 'No room code provided',
+                isConnecting: false,
+                connectionStep: 'join'
+            });
+            return;
+        }
+        
+        if (!username) {
+            console.error('attemptAutoJoin called with null/undefined username');
+            this.setState({ 
+                error: 'Username not available',
+                isConnecting: false,
+                connectionStep: 'join'
+            });
+            return;
+        }
+        
         this.setState({ 
-            showCreateRoom: !this.state.showCreateRoom,
-            error: null,
-            newRoomId: ''
+            isConnecting: true, 
+            connectionStep: 'connecting',
+            error: null 
         });
+
+        try {
+            // First, try to join the existing room
+            await this.props.onJoinRoom(roomCode, username);
+            console.log(`Successfully joined room "${roomCode}"`);
+        } catch (error) {
+            console.log(`Failed to join room "${roomCode}":`, error.message);
+            
+            // For auto-join from URL, automatically try to create the room
+            // if it doesn't exist, without asking for confirmation
+            try {
+                console.log(`Auto-creating room "${roomCode}" since it doesn't exist`);
+                await this.props.onCreateRoom(roomCode, username);
+                console.log(`Successfully created room "${roomCode}"`);
+            } catch (createError) {
+                console.error(`Failed to create room "${roomCode}":`, createError.message);
+                
+                // Clear the auto-join attempt tracking for this room since it failed
+                const roomIdKey = `${roomCode}-${username}`;
+                this.autoJoinAttempted.delete(roomIdKey);
+                
+                this.setState({ 
+                    error: `Room "${roomCode}" doesn't exist and couldn't be created: ${createError.message || 'Unknown error'}`,
+                    isConnecting: false,
+                    connectionStep: 'join'
+                });
+            }
+        }
+    }
+
+
+    async handleApproveRequest(requesterId, requesterUsername) {
+        try {
+            await this.props.onApproveJoinRequest(requesterId, requesterUsername);
+            // Remove the request from pending list
+            this.setState(prevState => ({
+                pendingRequests: prevState.pendingRequests.filter(req => req.id !== requesterId)
+            }));
+        } catch (error) {
+            console.error('Failed to approve join request:', error);
+            this.setState({ error: 'Failed to approve join request' });
+        }
+    }
+
+    async handleDenyRequest(requesterId) {
+        try {
+            await this.props.onDenyJoinRequest(requesterId);
+            // Remove the request from pending list
+            this.setState(prevState => ({
+                pendingRequests: prevState.pendingRequests.filter(req => req.id !== requesterId)
+            }));
+        } catch (error) {
+            console.error('Failed to deny join request:', error);
+            this.setState({ error: 'Failed to deny join request' });
+        }
+    }
+
+    handleCancelJoinRequest() {
+        if (this.props.onCancelJoinRequest) {
+            this.props.onCancelJoinRequest();
+        }
+        
+        // Disconnect from the collaboration service
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service) {
+                    service.disconnect();
+                }
+            } catch (error) {
+                console.warn('Could not disconnect from collaboration service:', error);
+            }
+        }
+        
+        this.setState({ 
+            connectionStep: 'join',
+            isConnecting: false,
+            error: null
+        });
+    }
+
+    handleAwaitingApproval() {
+        console.log('[COLLAB MODAL] Awaiting approval from host', { 
+            isConnected: this.props.isConnected, 
+            connectionStep: this.state.connectionStep 
+        });
+        
+        // Always show pending approval screen when this event is emitted
+        // This event is only emitted when we actually need approval
+        // The collaboration service will emit approval-resolved quickly for public rooms
+        this.setState({ 
+            connectionStep: 'pending-approval',
+            isConnecting: false,
+            error: null
+        });
+    }
+
+    handleApprovalResolved() {
+        console.log('[COLLAB MODAL] Approval resolved', { 
+            isConnected: this.props.isConnected, 
+            connectionStep: this.state.connectionStep 
+        });
+        
+        // Clear the pending approval state - let the componentDidUpdate handle the connected state
+        this.setState({ 
+            connectionStep: this.props.isConnected ? 'connected' : 'connecting',
+            error: null
+        });
+    }
+
+    handleJoinDenied(reason) {
+        console.log('[COLLAB MODAL] Join request denied:', reason);
+        this.setState({ 
+            connectionStep: 'join',
+            isConnecting: false,
+            error: `Join request denied: ${reason}`
+        });
+    }
+
+    async handleChangeCurrentRoomPrivacy(newPrivacy) {
+        try {
+            await this.props.onChangeRoomPrivacy(newPrivacy);
+        } catch (error) {
+            console.error('Failed to change room privacy:', error);
+            this.setState({ error: 'Failed to change room privacy' });
+        }
+    }
+
+    handleJoinRequestEvent(data) {
+        console.log('[COLLAB MODAL] Join request event received:', data);
+        // Update the pending requests from the service
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service && service.getPendingJoinRequests) {
+                    const pendingRequests = service.getPendingJoinRequests();
+                    console.log('[COLLAB MODAL] Updated pending requests:', pendingRequests);
+                    this.setState({ pendingRequests });
+                }
+            } catch (error) {
+                console.warn('Could not get pending requests:', error);
+            }
+        }
     }
 
     renderJoinStep() {
@@ -173,131 +504,58 @@ class CollaborationModal extends Component {
                 
                 <div className={styles.description}>
                     <FormattedMessage
-                        defaultMessage="Collaborate with others in real-time! Join an existing room or create a new one."
-                        description="Description for collaboration feature"
-                        id="gui.collaboration.description"
+                        defaultMessage="You will be known as: {username}"
+                        description="Shows current username"
+                        id="gui.collaboration.currentUsername"
+                        values={{username: this.props.currentUsername}}
                     />
                 </div>
 
-                {!this.state.showCreateRoom ? (
-                    <div className={styles.form}>
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>
-                                <FormattedMessage
-                                    defaultMessage="Room ID"
-                                    description="Label for room ID input"
-                                    id="gui.collaboration.roomId"
-                                />
-                            </label>
-                            <BufferedInput
-                                className={styles.input}
-                                placeholder="Enter room ID..."
-                                value={this.state.roomId}
-                                onSubmit={this.handleRoomIdChange}
+                <div className={styles.form}>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Room ID"
+                                description="Label for room ID input"
+                                id="gui.collaboration.roomId"
                             />
-                        </div>
-
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>
-                                <FormattedMessage
-                                    defaultMessage="Your Username"
-                                    description="Label for username input"
-                                    id="gui.collaboration.username"
-                                />
-                            </label>
-                            <BufferedInput
-                                className={styles.input}
-                                placeholder="Enter your username..."
-                                value={this.state.username}
-                                onSubmit={this.handleUsernameChange}
-                            />
-                        </div>
-
-                        <div className={styles.buttonGroup}>
-                            <Button
-                                className={styles.primaryButton}
-                                onClick={this.handleJoinRoom}
-                                disabled={this.state.isConnecting}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Join Room"
-                                    description="Button to join collaboration room"
-                                    id="gui.collaboration.joinRoom"
-                                />
-                            </Button>
-                            
-                            <Button
-                                className={styles.secondaryButton}
-                                onClick={this.toggleCreateRoom}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Create New Room"
-                                    description="Button to create new collaboration room"
-                                    id="gui.collaboration.createRoom"
-                                />
-                            </Button>
-                        </div>
+                        </label>
+                        <BufferedInput
+                            className={styles.input}
+                            placeholder="Enter room ID..."
+                            value={this.state.roomId}
+                            onSubmit={this.handleRoomIdChange}
+                        />
                     </div>
-                ) : (
-                    <div className={styles.form}>
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>
-                                <FormattedMessage
-                                    defaultMessage="New Room ID"
-                                    description="Label for new room ID input"
-                                    id="gui.collaboration.newRoomId"
-                                />
-                            </label>
-                            <BufferedInput
-                                className={styles.input}
-                                placeholder="Enter new room ID..."
-                                value={this.state.newRoomId}
-                                onSubmit={this.handleNewRoomIdChange}
-                            />
-                        </div>
 
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>
-                                <FormattedMessage
-                                    defaultMessage="Your Username"
-                                    description="Label for username input"
-                                    id="gui.collaboration.username"
-                                />
-                            </label>
-                            <BufferedInput
-                                className={styles.input}
-                                placeholder="Enter your username..."
-                                value={this.state.username}
-                                onSubmit={this.handleUsernameChange}
-                            />
-                        </div>
 
-                        <div className={styles.buttonGroup}>
-                            <Button
-                                className={styles.primaryButton}
-                                onClick={this.handleCreateRoom}
-                                disabled={this.state.isConnecting}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Create & Join"
-                                    description="Button to create and join collaboration room"
-                                    id="gui.collaboration.createAndJoin"
-                                />
-                            </Button>
-                            
-                            <Button
-                                className={styles.secondaryButton}
-                                onClick={this.toggleCreateRoom}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Back to Join"
-                                    description="Button to go back to join room"
-                                    id="gui.collaboration.backToJoin"
-                                />
-                            </Button>
-                        </div>
+
+                    <div className={styles.buttonGroup}>
+                        <Button
+                            className={styles.primaryButton}
+                            onClick={this.handleJoinRoom}
+                            disabled={this.state.isConnecting}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Join Room"
+                                description="Button to join collaboration room"
+                                id="gui.collaboration.joinRoom"
+                            />
+                        </Button>
+                        
+                        <Button
+                            className={styles.secondaryButton}
+                            onClick={this.handleCreateRoom}
+                            disabled={this.state.isConnecting}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Create New Room"
+                                description="Button to create new collaboration room"
+                                id="gui.collaboration.createRoom"
+                            />
+                        </Button>
                     </div>
-                )}
+                </div>
 
                 {this.state.error && (
                     <div className={styles.error}>
@@ -433,37 +691,123 @@ class CollaborationModal extends Component {
                     </div>
                 </div>
 
-                <div className={styles.usernameSection}>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>
+                {/* Room Privacy Settings for Host */}
+                {isHost && (
+                    <div className={styles.privacySection}>
+                        <h3 className={styles.sectionTitle}>
                             <FormattedMessage
-                                defaultMessage="Change Username"
-                                description="Label for username change"
-                                id="gui.collaboration.changeUsername"
+                                defaultMessage="Room Privacy"
+                                description="Room privacy section title"
+                                id="gui.collaboration.roomPrivacySettings"
                             />
-                        </label>
-                        <div className={styles.usernameChange}>
-                            <BufferedInput
-                                className={styles.input}
-                                value={this.state.username}
-                                onSubmit={this.handleUsernameChange}
-                            />
-                            <Button
-                                className={styles.changeUsernameButton}
-                                onClick={this.handleChangeUsername}
-                                disabled={!this.state.username.trim() || this.state.username === currentUser?.username}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Update"
-                                    description="Update username button"
-                                    id="gui.collaboration.update"
+                        </h3>
+
+                        <div className={styles.privacySelector}>
+                            <label className={styles.radioLabel}>
+                                <FancyCheckbox
+                                    className={styles.checkbox}
+                                    checked={this.props.roomPrivacy === 'public'}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            this.handleChangeCurrentRoomPrivacy('public');
+                                        }
+                                    }}
                                 />
-                            </Button>
+                                <span className={styles.radioText}>
+                                    <FormattedMessage
+                                        defaultMessage="Public - Anyone can join"
+                                        description="Public room privacy option"
+                                        id="gui.collaboration.publicRoom"
+                                    />
+                                </span>
+                            </label>
+                            <label className={styles.radioLabel}>
+                                <FancyCheckbox
+                                    className={styles.checkbox}
+                                    checked={this.props.roomPrivacy === 'private'}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            this.handleChangeCurrentRoomPrivacy('private');
+                                        }
+                                    }}
+                                />
+                                <span className={styles.radioText}>
+                                    <FormattedMessage
+                                        defaultMessage="Private - Requires host approval"
+                                        description="Private room privacy option"
+                                        id="gui.collaboration.privateRoom"
+                                    />
+                                </span>
+                            </label>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* Show pending join requests for hosts */}
+                {isHost && this.state.pendingRequests.length > 0 && (
+                    <div className={styles.requestsSection}>
+                        <h3 className={styles.sectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Pending Join Requests"
+                                description="Pending requests section title"
+                                id="gui.collaboration.pendingRequests"
+                            />
+                        </h3>
+
+                        <div className={styles.requestsList}>
+                            {this.state.pendingRequests.map(request => (
+                                <div key={request.id} className={styles.requestItem}>
+                                    <div className={styles.requesterInfo}>
+                                        <img 
+                                            src={userIcon} 
+                                            className={styles.userIcon}
+                                            draggable={false}
+                                        />
+                                        <span className={styles.username}>
+                                            {request.username}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className={styles.requestActions}>
+                                        <Button
+                                            className={styles.approveButton}
+                                            onClick={() => this.handleApproveRequest(request.id, request.username)}
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Approve"
+                                                description="Approve join request button"
+                                                id="gui.collaboration.approve"
+                                            />
+                                        </Button>
+                                        <Button
+                                            className={styles.denyButton}
+                                            onClick={() => this.handleDenyRequest(request.id)}
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Deny"
+                                                description="Deny join request button"
+                                                id="gui.collaboration.deny"
+                                            />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className={styles.buttonGroup}>
+                    <Button
+                        className={styles.primaryButton}
+                        onClick={this.handleCopyRoomUrl}
+                    >
+                        <FormattedMessage
+                            defaultMessage="📋 Copy Room URL"
+                            description="Button to copy room URL for sharing"
+                            id="gui.collaboration.copyRoomUrl"
+                        />
+                    </Button>
+                    
                     <Button
                         className={styles.dangerButton}
                         onClick={this.handleLeaveRoom}
@@ -479,6 +823,54 @@ class CollaborationModal extends Component {
         );
     }
 
+    renderPendingApprovalStep() {
+        return (
+            <Box className={styles.content}>
+                <div className={styles.header}>
+                    <img 
+                        src={collaborationIcon} 
+                        className={styles.headerIcon}
+                        draggable={false}
+                    />
+                    <div className={styles.headerText}>
+                        <FormattedMessage
+                            defaultMessage="Waiting for Host Approval"
+                            description="Title for pending approval state"
+                            id="gui.collaboration.waitingApproval"
+                        />
+                    </div>
+                </div>
+                
+                <div className={styles.description}>
+                    <FormattedMessage
+                        defaultMessage="Your request to join this private room has been sent to the host. Please wait for approval."
+                        description="Description for pending approval"
+                        id="gui.collaboration.pendingApprovalDescription"
+                    />
+                </div>
+
+                <div className={styles.buttonGroup}>
+                    <Button
+                        className={styles.secondaryButton}
+                        onClick={this.handleCancelJoinRequest}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Cancel Request"
+                            description="Button to cancel join request"
+                            id="gui.collaboration.cancelRequest"
+                        />
+                    </Button>
+                </div>
+
+                {this.state.error && (
+                    <div className={styles.error}>
+                        {this.state.error}
+                    </div>
+                )}
+            </Box>
+        );
+    }
+
     render() {
         let content;
         switch (this.state.connectionStep) {
@@ -490,6 +882,9 @@ class CollaborationModal extends Component {
                 break;
             case 'connected':
                 content = this.renderConnectedStep();
+                break;
+            case 'pending-approval':
+                content = this.renderPendingApprovalStep();
                 break;
             default:
                 content = this.renderJoinStep();
@@ -517,6 +912,7 @@ CollaborationModal.propTypes = {
     currentUserId: PropTypes.string,
     isConnected: PropTypes.bool,
     roomId: PropTypes.string,
+    roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
         username: PropTypes.string.isRequired,
@@ -530,6 +926,10 @@ CollaborationModal.propTypes = {
     onKickUser: PropTypes.func.isRequired,
     onChangeUsername: PropTypes.func.isRequired,
     onCancelConnection: PropTypes.func.isRequired,
+    onApproveJoinRequest: PropTypes.func,
+    onDenyJoinRequest: PropTypes.func,
+    onCancelJoinRequest: PropTypes.func,
+    onChangeRoomPrivacy: PropTypes.func,
     intl: intlShape.isRequired
 };
 

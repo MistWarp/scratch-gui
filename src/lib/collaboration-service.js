@@ -27,6 +27,10 @@ class CollaborationService {
         this.targetMapping = {}; // Mapping between host target IDs and our target IDs
         this.lastSyncTime = 0; // Track when we last performed a sync operation
         this.isSyncOperation = false; // Flag to mark events as sync-originated
+        this.roomPrivacy = 'public'; // Room privacy setting: 'public' or 'private'
+        this.pendingJoinRequests = new Map(); // Map of pending join requests (peer ID -> user info)
+        this.isDisconnecting = false; // Flag to prevent multiple disconnect calls
+        this.connectionTimeout = null; // Store connection timeout reference
 
         // Configure PeerJS with public servers
         this.peerConfig = {
@@ -59,7 +63,12 @@ class CollaborationService {
             'sync-request': this.handleSyncRequest.bind(this),
             'project-sync': this.handleProjectSync.bind(this),
             'targets-update': this.handleTargetsUpdate.bind(this),
-            'block-event': this.handleBlockEvent.bind(this)
+            'block-event': this.handleBlockEvent.bind(this),
+            'join-request': this.handleJoinRequest.bind(this),
+            'join-approved': this.handleJoinApproved.bind(this),
+            'join-denied': this.handleJoinDenied.bind(this),
+            'join-cancelled': this.handleJoinCancelled.bind(this),
+            'room-privacy': this.handleRoomPrivacy.bind(this)
         };
     }
 
@@ -85,10 +94,13 @@ class CollaborationService {
      * This should be called when the blocks component mounts or when collaboration starts
      */
     attachToWorkspace(workspace) {
-        if (workspace && this.isConnected) {
-            console.log('📎 Attaching collaboration listener to workspace');
+        if (workspace) {
+            console.log('📎 Attaching collaboration listener to workspace:', !!workspace, 'isHost:', this.isHost);
             this.workspace = workspace;
             workspace.addChangeListener(this.collaborationBlockListener);
+            console.log('✅ Collaboration listener attached to workspace', 'isHost:', this.isHost);
+        } else {
+            console.warn('⚠️ Cannot attach to null/undefined workspace', 'isHost:', this.isHost);
         }
     }
 
@@ -108,33 +120,40 @@ class CollaborationService {
      * This runs alongside the VM's main blockListener but only syncs meaningful code changes
      */
     collaborationBlockListener(event) {
+        console.log("block listener", event);
         // Skip if we're not connected or if we're applying a remote change
         if (!this.isConnected || this.isApplyingRemoteChange) {
             // Add extra debugging during remote changes to see what events are being filtered
             if (this.isApplyingRemoteChange) {
                 console.log('🔇 Filtered event during remote change:', event.type, event.blockId);
             }
+            if (!this.isConnected) {
+                console.log('🔇 Filtered event - not connected:', event.type, event.blockId);
+            }
             return;
         }
+        
+        // Skip if we're the host and this is a host-only event
+        // This prevents the host from syncing its own events unnecessarily
+        // Host-only events are typically UI changes or internal state updates
+        if (this.isHost) return;
 
         // Skip events that are part of programmatic changes (no group ID usually means programmatic)
         // User-initiated events typically have a group ID
-        if (!event.group) {
-            console.log('🔇 Filtered event without group:', event.type, event.blockId);
-            return;
-        }
+        if (!event.group) return;
 
         // Skip events that are marked as originating from sync operations
-        if (this.isSyncOperation || event._syncOriginated) {
-            console.log('🔇 Filtered sync-originated event:', event.type, event.blockId);
+        // This prevents infinite loops when syncing events that originated from a project sync
+        if (this.isSyncOperation || event._syncOriginated) return;
+
+        // Skip non-meaningful events that should not be synced
+        if (!this.shouldSyncEvent(event)) {
+            console.log('🔇 Skipped event - not syncable:', event.type, event.blockId);
             return;
         }
 
-        // Skip non-meaningful events that should not be synced
-        if (!this.shouldSyncEvent(event)) return;
+        console.log('🔄 Syncing block event:', event.type, 'blockId:', event.blockId, 'group:', event.group, 'isHost:', this.isHost);
 
-        console.log('🔄 Syncing block event:', event.type, 'blockId:', event.blockId, 'group:', event.group);
-        
         // For move events, log the parent/input information for debugging
         if (event.type === 'move') {
             console.log('📤 Original move event:', {
@@ -145,7 +164,7 @@ class CollaborationService {
                 newInput: event.newInput
             });
         }
-        
+
         // For delete events, log the IDs being deleted
         if (event.type === 'delete') {
             console.log('📤 Original delete event:', {
@@ -153,20 +172,22 @@ class CollaborationService {
                 ids: event.ids
             });
         }
-        
+
         // Serialize the event
         const serializedEvent = this.serializeEvent(event);
-        console.log('📤 Serialized event:', serializedEvent);
-        
+        console.log('📤 Serialized event:', serializedEvent, 'isHost:', this.isHost);
+
         // Get the current editing target to include in the sync
         const editingTarget = this.vm && this.vm.editingTarget ? this.vm.editingTarget.id : null;
-        
+
         // Send the block event to other collaborators
         this.sendMessage('block-event', {
             event: serializedEvent,
             targetId: editingTarget,
             timestamp: Date.now()
         });
+        
+        console.log('📡 Sent block event to collaborators:', this.connections.size, 'connections', 'isHost:', this.isHost);
     }
 
     /**
@@ -175,7 +196,7 @@ class CollaborationService {
      */
     shouldSyncEvent(event) {
         console.log('🤔 Checking if should sync event:', event.type, event);
-        
+
         if (!event || !event.type) {
             console.log('❌ No event or event type');
             return false;
@@ -192,7 +213,8 @@ class CollaborationService {
             'var_rename', // Variable renaming
             'comment_create', // Comment creation
             'comment_delete', // Comment deletion
-            'comment_change'  // Comment changes
+            'comment_change',  // Comment changes
+            'comment_move'    // Comment movement
         ];
 
         if (!syncableEvents.includes(event.type)) {
@@ -277,7 +299,7 @@ class CollaborationService {
                 if (event.x !== undefined) serialized.x = safeSerialize(event.x);
                 if (event.y !== undefined) serialized.y = safeSerialize(event.y);
                 break;
-            
+
             case 'delete':
                 serialized.ids = safeSerialize(event.ids);
                 // Also include blockId for single block deletes
@@ -285,14 +307,14 @@ class CollaborationService {
                     serialized.blockId = safeSerialize(event.blockId);
                 }
                 break;
-            
+
             case 'change':
                 serialized.element = safeSerialize(event.element);
                 serialized.name = safeSerialize(event.name);
                 serialized.oldValue = safeSerialize(event.oldValue);
                 serialized.newValue = safeSerialize(event.newValue);
                 break;
-            
+
             case 'move':
                 serialized.oldParentId = safeSerialize(event.oldParent);
                 serialized.newParentId = safeSerialize(event.newParent);
@@ -303,10 +325,10 @@ class CollaborationService {
 
                 if (event.x !== undefined) serialized.x = safeSerialize(event.x);
                 if (event.y !== undefined) serialized.y = safeSerialize(event.y);
-                
+
                 if (event.reason !== undefined) serialized.reason = safeSerialize(event.reason);
                 break;
-                
+
             case 'var_create':
             case 'var_delete':
             case 'var_rename':
@@ -315,7 +337,7 @@ class CollaborationService {
                 serialized.varType = safeSerialize(event.varType);
                 if (event.newName) serialized.newName = safeSerialize(event.newName);
                 break;
-                
+
             case 'comment_create':
             case 'comment_delete':
             case 'comment_change':
@@ -335,6 +357,10 @@ class CollaborationService {
      * Generate a unique peer ID for a room to prevent collisions
      */
     generatePeerId(roomId, isHost = false) {
+        if (!roomId) {
+            throw new Error('roomId is required for generatePeerId');
+        }
+
         const sanitizedRoomId = roomId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
         if (isHost) {
@@ -351,9 +377,13 @@ class CollaborationService {
     /**
      * Create or join a collaboration room
      */
-    async connectToRoom(roomId, username, isHost = false) {
-        console.log('🚀 connectToRoom called with roomId:', roomId, 'username:', username, 'isHost:', isHost);
-        
+    async connectToRoom(roomId, username, isHost = false, privacy = 'public') {
+        console.log('🚀 connectToRoom called with roomId:', roomId, 'username:', username, 'isHost:', isHost, 'privacy:', privacy);
+
+        if (!roomId) {
+            throw new Error('roomId is required to connect to a room');
+        }
+
         try {
             // Clean up any existing connection first
             if (this.peer) {
@@ -362,11 +392,12 @@ class CollaborationService {
                 // Wait a bit for cleanup to complete
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
-            
+
             this.roomId = roomId;
             console.log('🏷️ Set roomId to:', this.roomId);
             this.username = username || `User${Math.floor(Math.random() * 1000)}`;
             this.isHost = isHost;
+            this.roomPrivacy = privacy;
 
             // Import PeerJS dynamically
             const { Peer } = await import('peerjs');
@@ -392,17 +423,32 @@ class CollaborationService {
 
                 this.peer.on('error', (error) => {
                     console.error('Peer connection error:', error);
+
+                    // Prevent handling if already disconnecting
+                    if (this.isDisconnecting) {
+                        console.log('🔄 Already disconnecting, ignoring peer error');
+                        return;
+                    }
+
                     // Store room ID before cleanup since disconnect() will clear it
                     const roomIdForError = this.roomId;
-                    
-                    // If we have a connection failure handler (during host connection), use it
-                    if (this.currentConnectionFailureHandler) {
+
+                    // If we have a connection failure handler (during host connection) AND we're not the host, use it
+                    // Host errors from incoming connections should not trigger the connection failure handler
+                    if (this.currentConnectionFailureHandler && !this.isHost) {
                         console.log('🔗 Calling connection failure handler from peer error');
                         this.currentConnectionFailureHandler(`Could not connect to host. Room "${roomIdForError}" may not exist or host may be offline.`);
                         return;
                     }
-                    
-                    // Otherwise handle as a general peer error
+
+                    // If we're the host, log the error but don't disconnect the entire room
+                    // This is likely a failed incoming connection (e.g., kicked user trying to reconnect)
+                    if (this.isHost) {
+                        console.log('Host: Peer connection error from incoming connection, ignoring:', error.message);
+                        return;
+                    }
+
+                    // Otherwise handle as a general peer error for non-hosts
                     // Clean up state when peer fails to initialize
                     this.disconnect();
                     reject(error);
@@ -427,6 +473,8 @@ class CollaborationService {
         console.log('Setting up as host for room:', this.roomId);
         this.hostId = this.peer.id; // Set this peer as the host
         this.isConnectedToHost = true; // Host is automatically connected
+        this.currentConnectionFailureHandler = null;
+
         const hostUser = {
             id: this.peer.id,
             username: this.username,
@@ -434,11 +482,47 @@ class CollaborationService {
         };
         this.users.set(this.peer.id, hostUser);
 
+        // For hosts, initialize target mapping with current targets
+        // This ensures the host can properly handle events from peers
+        if (this.vm && this.vm.runtime && this.vm.runtime.targets) {
+            console.log('🎯 Host: Initializing target mapping with current targets');
+            this.targetMapping = {};
+            this.vm.runtime.targets.forEach(target => {
+                this.targetMapping[target.id] = target.id;
+            });
+        }
+
+        // Try to attach to workspace if available - with multiple attempts
+        this.attemptWorkspaceAttachment('Host setup');
+
         // Emit room created event
         this.emit('room-created', { roomId: this.roomId, hostId: this.peer.id });
 
         // Emit initial user joined event for the host
         this.emit('user-joined', hostUser);
+    }
+
+    /**
+     * Helper method to attempt workspace attachment with multiple strategies
+     */
+    attemptWorkspaceAttachment(context) {
+        if (this.workspace) return;
+
+        if (
+            window.Blockly &&
+            window.Blockly.getMainWorkspace &&
+            window.Blockly.getMainWorkspace()
+        ) {
+            console.log(`🎯 ${context}: Found workspace via Blockly.getMainWorkspace`);
+            this.attachToWorkspace(window.Blockly.getMainWorkspace());
+            return;
+        }
+
+        // Wait and retry
+        console.log(`⏳ ${context}: Workspace not found, will retry in 1 second`);
+        setTimeout(() => {
+            this.attemptWorkspaceAttachment(`${context} (retry)`);
+        }, 1000);
     }
 
     /**
@@ -450,19 +534,11 @@ class CollaborationService {
         this.hostId = hostId; // Set the host ID
         console.log('🔌 Connecting to host:', hostId);
 
-        // Add ourselves to the users list when joining
-        const ourUser = {
-            id: this.peer.id,
-            username: this.username,
-            isHost: false
-        };
-        this.users.set(this.peer.id, ourUser);
-        this.emit('user-joined', ourUser);
+        // Don't add ourselves to the users list immediately - wait for approval in private rooms
 
         // Store room ID before any cleanup operations
         const roomIdForError = this.roomId;
         let errorHandled = false;
-        let connectionTimeout = null;
         let conn = null;
 
         // Function to handle connection failure (called by both timeout and error handlers)
@@ -473,9 +549,9 @@ class CollaborationService {
             }
             errorHandled = true;
             console.error('💥 Connection failed:', errorMessage);
-            if (connectionTimeout) {
-                clearTimeout(connectionTimeout);
-                connectionTimeout = null;
+            if (this.connectionTimeout) {
+                clearTimeout(this.connectionTimeout);
+                this.connectionTimeout = null;
             }
             // Close the connection if it exists
             if (conn) {
@@ -504,8 +580,8 @@ class CollaborationService {
             console.log('🚀 Connection attempt initiated to:', hostId);
 
             // Set a longer timeout for connection
-            connectionTimeout = setTimeout(() => {
-                if (!conn.open) {
+            this.connectionTimeout = setTimeout(() => {
+                if (!conn.open && !errorHandled) {
                     console.error('⏱️ Connection to host timed out after 15 seconds');
                     handleConnectionFailure(`Connection to room "${roomIdForError}" timed out. Host may not be available.`);
                 }
@@ -513,9 +589,10 @@ class CollaborationService {
 
             conn.on('open', () => {
                 if (!errorHandled) {
-                    if (connectionTimeout) {
-                        clearTimeout(connectionTimeout);
-                        connectionTimeout = null;
+                    errorHandled = true; // Mark as handled to prevent timeout
+                    if (this.connectionTimeout) {
+                        clearTimeout(this.connectionTimeout);
+                        this.connectionTimeout = null;
                     }
                     // Clear the failure handler since we succeeded
                     this.currentConnectionFailureHandler = null;
@@ -525,8 +602,15 @@ class CollaborationService {
 
             // Add error handling for connection attempt
             conn.on('error', (error) => {
-                console.log('🚨 Connection error event fired:', error);
-                handleConnectionFailure(`Could not connect to host. Room "${roomIdForError}" may not exist or host may be offline.`);
+                if (!errorHandled) {
+                    errorHandled = true; // Mark as handled
+                    if (this.connectionTimeout) {
+                        clearTimeout(this.connectionTimeout);
+                        this.connectionTimeout = null;
+                    }
+                    console.log('🚨 Connection error event fired:', error);
+                    handleConnectionFailure(`Could not connect to host. Room "${roomIdForError}" may not exist or host may be offline.`);
+                }
             });
 
             // Add ICE connection state monitoring
@@ -579,12 +663,16 @@ class CollaborationService {
             if (!this.isHost && conn.peer === this.hostId) {
                 this.isConnectedToHost = true;
                 console.log('🎉 Successfully connected to host!');
+
+                // Try to attach to workspace if not already attached
+                this.attemptWorkspaceAttachment('Client connected');
+
                 this.emit('connected-to-host');
             }
 
             // Only send user join message if we initiated the connection (we're the client)
             if (!this.isHost) {
-                // Client: Send user join message
+                // Client: Send user join message (this will trigger approval process for private rooms)
                 const userInfo = {
                     id: this.peer.id,
                     username: this.username,
@@ -594,20 +682,17 @@ class CollaborationService {
                 console.log('Client: Sending user-join message:', userInfo);
                 this.sendMessage('user-join', userInfo, conn);
 
-                // Request sync from host
-                this.sendMessage('sync-request', {}, conn);
-                
-                // Debug targets before sync
-                this.debugTargetStates('Before requesting sync');
-            } else {
-                // Host: Wait for user-join message, but send project state
-                console.log('Host: Connection ready, waiting for user-join message');
+                // Emit event to indicate we're waiting for approval (applies to both public and private rooms initially)
+                // For public rooms, this will be quickly resolved by receiving a user-join response
+                // For private rooms, this will persist until join-approved/join-denied
+                this.emit('awaiting-approval');
 
-                // Send current project state to new client
-                if (this.vm) {
-                    this.debugTargetStates('Host sending project sync');
-                    this.sendProjectSync(conn);
-                }
+                // For public rooms, add ourselves to user list and request sync immediately
+                // For private rooms, this will happen after approval
+                // We'll determine this based on whether we get a join-approved message or a user-join response
+            } else {
+                // Host: Wait for user-join message, but don't send project state until user is approved
+                console.log('Host: Connection ready, waiting for user-join message');
             }
         });
 
@@ -620,14 +705,20 @@ class CollaborationService {
             console.log('❌ Connection closed with:', conn.peer);
             this.connections.delete(conn.peer);
             this.users.delete(conn.peer);
-            
+
             // Check if the host left
             if (conn.peer === this.hostId && !this.isHost) {
                 console.log('🏠 Host has left the room, closing collaboration');
                 this.emit('host-left');
+                // Disconnect after emitting the event so UI can respond
+                setTimeout(() => {
+                    if (!this.isDisconnecting) {
+                        this.disconnect();
+                    }
+                }, 100);
                 return;
             }
-            
+
             // Only emit user-left if we weren't kicked and it's not the host
             if (!this.wasKicked) {
                 this.emit('user-left', { id: conn.peer });
@@ -687,12 +778,47 @@ class CollaborationService {
     handleUserJoin(payload, conn) {
         console.log('User joined:', payload);
 
-        // Don't add ourselves again if we're already in the list
-        if (payload.id === this.peer.id) {
-            console.log('Ignoring self join message');
+        // If this is our own user-join message coming back from the host, it means we were accepted to a public room
+        if (payload.id === this.peer.id && !this.isHost) {
+            // Clear the awaiting approval state since we're now accepted
+            this.emit('approval-resolved');
+
+            // Add ourselves to the user list
+            this.users.set(this.peer.id, payload);
+            this.emit('user-joined', payload);
+
+            // Request sync from host now that we're accepted
+            this.sendMessage('sync-request', {}, conn);
+
+            // Debug targets before sync
+            this.debugTargetStates('Client requesting sync after join acceptance');
+
             return;
         }
 
+        // Don't add ourselves again if we're already in the list
+        if (payload.id === this.peer.id) return;
+
+        // Store the join request
+        this.pendingJoinRequests.set(payload.id, {
+            id: payload.id,
+            username: payload.username,
+            connection: conn
+        });
+
+        // Send join request notification to the modal
+        this.emit('join-request-received', {
+            requesterId: payload.id,
+            requesterUsername: payload.username
+        });
+
+        // Don't actually add the user yet - wait for approval
+        if (this.isHost) {
+            if (this.roomPrivacy === 'private') return;
+            if (this.roomPrivacy === 'public') this.approveJoinRequest(payload.id, payload.username, conn);
+        }
+
+        // For public rooms or approved users, proceed normally
         this.users.set(payload.id, payload);
         this.emit('user-joined', payload);
 
@@ -702,6 +828,13 @@ class CollaborationService {
             // Send current users to the new connection
             const currentUsers = Array.from(this.users.values());
             this.sendMessage('users-list', { users: currentUsers }, conn);
+
+            // Send project sync to the new user
+            if (this.vm) {
+                console.log('Host: Sending project sync to new user');
+                this.debugTargetStates('Host sending project sync to new user');
+                this.sendProjectSync(conn);
+            }
 
             // Broadcast to all other peers that a new user joined
             this.connections.forEach((connection) => {
@@ -785,7 +918,7 @@ class CollaborationService {
             console.log('📥 Applying initial project sync from host');
             console.log('📥 Project contains targets:', payload.targetInfo);
             console.log('📥 Host editing target:', payload.currentEditingTarget);
-            
+
             // DEBUG: Log some block IDs from the received project data before loading
             if (payload.projectData.targets && payload.projectData.targets.length > 0) {
                 for (const target of payload.projectData.targets) {
@@ -795,18 +928,18 @@ class CollaborationService {
                     }
                 }
             }
-            
+
             // Set both flags to prevent ANY events during sync from being transmitted
             this.isApplyingRemoteChange = true;
             this.isSyncOperation = true;
-            
+
             // Also temporarily detach from workspace to prevent event capture during load
             const wasAttachedToWorkspace = !!this.workspace;
             if (wasAttachedToWorkspace) {
                 console.log('🔇 Temporarily detaching from workspace during project sync');
                 this.detachFromWorkspace();
             }
-            
+
             // IMPORTANT: Modify the project data to include the correct target IDs BEFORE loading
             // This prevents the VM from creating new targets with different IDs
             if (payload.projectData.targets && payload.targetInfo) {
@@ -818,11 +951,11 @@ class CollaborationService {
                     }
                 });
             }
-            
+
             // Load the project and wait for it to complete
             this.vm.loadProject(payload.projectData).then(() => {
                 console.log('📥 Project loaded successfully');
-                
+
                 // DEBUG: Log block IDs after loading to see if they changed
                 this.vm.runtime.targets.forEach((target, i) => {
                     if (target.blocks && target.blocks._blocks) {
@@ -830,7 +963,7 @@ class CollaborationService {
                         console.log(`📥 After loading ${target.getName()} block IDs (sample):`, blockIds);
                     }
                 });
-                
+
                 // CRITICAL: Force target IDs to match host after loading if they don't match
                 // Sometimes VM.loadProject doesn't preserve the IDs we set
                 if (payload.targetInfo) {
@@ -839,10 +972,10 @@ class CollaborationService {
                         if (actualTarget && actualTarget.id !== expectedTarget.id) {
                             console.warn(`⚠️ Target ID mismatch at index ${i}: expected ${expectedTarget.id}, got ${actualTarget.id}`);
                             console.log(`🔧 Force-setting target ${i} ID from ${actualTarget.id} to ${expectedTarget.id}`);
-                            
+
                             // Force the target ID to match the host
                             actualTarget.id = expectedTarget.id;
-                            
+
                             // Also update the runtime's target lookup if it exists
                             if (this.vm.runtime._targets) {
                                 // Remove old ID mapping
@@ -853,7 +986,7 @@ class CollaborationService {
                         }
                     });
                 }
-                
+
                 // Verify that target IDs match what we expect (should be correct now)
                 const ourTargets = this.vm.runtime.targets.map(target => ({
                     id: target.id,
@@ -861,7 +994,7 @@ class CollaborationService {
                     isOriginal: target.isOriginal
                 }));
                 console.log('📥 Our targets after sync (should match host exactly):', ourTargets);
-                
+
                 // Final verification of target IDs
                 let allTargetsMatch = true;
                 if (payload.targetInfo) {
@@ -873,13 +1006,13 @@ class CollaborationService {
                         }
                     });
                 }
-                
+
                 if (allTargetsMatch) {
                     console.log('✅ All target IDs match host expectations');
                 } else {
                     console.error('❌ CRITICAL: Target ID mismatch persists - collaboration may not work properly');
                 }
-                
+
                 // Create a mapping for quick target ID lookups during block events
                 this.targetMapping = {};
                 if (payload.targetInfo) {
@@ -887,12 +1020,10 @@ class CollaborationService {
                         const actualTarget = this.vm.runtime.targets[i];
                         if (actualTarget) {
                             this.targetMapping[targetInfo.id] = actualTarget.id;
-                            // Since we've forced the IDs to match, they should be the same
-                            console.log(`📍 Target mapping: ${targetInfo.id} -> ${actualTarget.id}`);
                         }
                     });
                 }
-                
+
                 // Set the editing target directly since IDs should match now
                 if (payload.currentEditingTarget) {
                     const targetExists = this.vm.runtime.getTargetById(payload.currentEditingTarget);
@@ -902,7 +1033,7 @@ class CollaborationService {
                     } else {
                         console.warn('⚠️ Host editing target not found:', payload.currentEditingTarget);
                         console.log('🔍 Available targets:', this.vm.runtime.targets.map(t => ({ id: t.id, name: t.getName() })));
-                        
+
                         // Fallback to first non-stage target
                         const fallbackTarget = ourTargets.find(t => !t.isOriginal);
                         if (fallbackTarget) {
@@ -911,7 +1042,7 @@ class CollaborationService {
                         }
                     }
                 }
-                
+
                 // Re-attach to workspace if we were attached before
                 if (wasAttachedToWorkspace) {
                     // Wait a bit before re-attaching to ensure all project load events have settled
@@ -920,20 +1051,20 @@ class CollaborationService {
                         this.emit('request-workspace-reattach');
                     }, 500);
                 }
-                
+
                 // Clear the sync operation flag first, then the remote change flag
                 setTimeout(() => {
                     this.isSyncOperation = false;
                     console.log('🔓 Clearing sync operation flag');
                 }, 1000);
-                
+
                 setTimeout(() => {
                     this.isApplyingRemoteChange = false;
                     console.log('🔓 Clearing remote change flag after project sync');
-                    
+
                     // Debug targets after sync completion
                     const finalState = this.debugTargetStates('After project sync complete');
-                    
+
                     // Emit event to notify that sync is complete
                     this.emit('project-synced', {
                         targets: finalState.targets,
@@ -944,14 +1075,14 @@ class CollaborationService {
                 console.error('❌ Failed to load project during sync:', error);
                 this.isApplyingRemoteChange = false;
                 this.isSyncOperation = false;
-                
+
                 // Re-attach to workspace even on error
                 if (wasAttachedToWorkspace) {
                     setTimeout(() => {
                         this.emit('request-workspace-reattach');
                     }, 500);
                 }
-                
+
                 this.emit('sync-failed', { error });
             });
         }
@@ -983,44 +1114,61 @@ class CollaborationService {
     }
 
     handleBlockEvent(payload, conn, isRetry = false) {
+        console.log("block event", payload);
         // Don't apply our own events back to ourselves
-        if (payload.sender === this.peer.id) {
-            return;
-        }
-
-        console.log('📥 Received block event:', payload);
+        if (payload.sender === this.peer.id) return;
 
         // Apply the block event to the local workspace
         if (this.vm && payload.event) {
             this.isApplyingRemoteChange = true;
-            
+
             try {
                 // Reconstruct the event for the VM
                 const reconstructedEvent = this.reconstructEvent(payload.event);
                 console.log('📥 Reconstructed event:', reconstructedEvent);
-                
+
                 // Mark this event as sync-originated to prevent re-transmission
                 reconstructedEvent._syncOriginated = true;
-                
+
                 // General safety check before applying any event
-                if (!this.vm || !this.vm.blockListener) return;
-                
+                if (!this.vm || !this.vm.blockListener) {
+                    console.warn('⚠️ VM or blockListener not available');
+                    return;
+                }
+
                 // Light safety check for create events - just need VM runtime
-                if (reconstructedEvent.type === 'create' && !this.vm.runtime) return;
+                if (reconstructedEvent.type === 'create' && !this.vm.runtime) {
+                    console.warn('⚠️ VM runtime not available for create event');
+                    return;
+                }
 
                 // Use target mapping to translate target IDs if needed
                 let targetIdToUse = payload.targetId;
-                if (this.targetMapping[payload.targetId]) {
-                    targetIdToUse = this.targetMapping[payload.targetId];
-                    console.log(`📍 Mapped target ID ${payload.targetId} -> ${targetIdToUse}`);
-                } else if (!this.vm.runtime.getTargetById(payload.targetId)) {
-                    console.warn(`⚠️ Target ${payload.targetId} not found, searching for alternatives`);
-                    // Try to find target by name as fallback
-                    for (const target of this.vm.runtime.targets) {
-                        if (target.getName() === (reconstructedEvent.targetName || '')) {
-                            targetIdToUse = target.id;
-                            console.log(`📍 Found target by name: ${targetIdToUse}`);
-                            break;
+                
+                // For hosts, targetMapping might be empty since they don't receive project sync
+                // In this case, just use the target ID directly if it exists
+                if (this.isHost) {
+                    if (this.vm.runtime.getTargetById(payload.targetId)) {
+                        targetIdToUse = payload.targetId;
+                        console.log(`📍 Host: Using target ID directly: ${targetIdToUse}`);
+                    } else {
+                        console.warn(`⚠️ Host: Target ${payload.targetId} not found in runtime`);
+                        console.log('🔍 Available targets:', this.vm.runtime.targets.map(t => ({ id: t.id, name: t.getName() })));
+                    }
+                } else {
+                    // For clients, use the mapping if available
+                    if (this.targetMapping[payload.targetId]) {
+                        targetIdToUse = this.targetMapping[payload.targetId];
+                        console.log(`📍 Client: Mapped target ID ${payload.targetId} -> ${targetIdToUse}`);
+                    } else if (!this.vm.runtime.getTargetById(payload.targetId)) {
+                        console.warn(`⚠️ Client: Target ${payload.targetId} not found, searching for alternatives`);
+                        // Try to find target by name as fallback
+                        for (const target of this.vm.runtime.targets) {
+                            if (target.getName() === (reconstructedEvent.targetName || '')) {
+                                targetIdToUse = target.id;
+                                console.log(`📍 Found target by name: ${targetIdToUse}`);
+                                break;
+                            }
                         }
                     }
                 }
@@ -1028,10 +1176,10 @@ class CollaborationService {
                 // Additional safety checks for events that access existing blocks
                 if (['delete', 'move', 'change'].includes(reconstructedEvent.type)) {
                     if (!this.vm.runtime) return;
-                    
+
                     // Find the target that contains the blocks
                     let targetBlocks = null;
-                    
+
                     if (targetIdToUse) {
                         // Try to find the specific target
                         const target = this.vm.runtime.getTargetById(targetIdToUse);
@@ -1042,7 +1190,7 @@ class CollaborationService {
                             console.warn('⚠️ Target not found or has no blocks:', targetIdToUse);
                         }
                     }
-                    
+
                     // Fallback: search all targets for the block
                     if (!targetBlocks) {
                         console.log('🔍 Searching all targets for block:', reconstructedEvent.id);
@@ -1055,22 +1203,22 @@ class CollaborationService {
                             }
                         }
                     }
-                    
+
                     if (!targetBlocks) {
                         if (isRetry) return;
                         console.warn('⚠️ No target found containing the required blocks, queueing event');
                         this.queuePendingEvent(payload);
                         return;
                     }
-                    
+
                     // Specific safety check for move events
                     if (reconstructedEvent.type === 'move') {
-                        console.log('🔗 Processing move event - block:', reconstructedEvent.id, 
-                                   'oldParent:', reconstructedEvent.oldParent, 
-                                   'newParent:', reconstructedEvent.newParent,
-                                   'oldInput:', reconstructedEvent.oldInput,
-                                   'newInput:', reconstructedEvent.newInput);
-                        
+                        console.log('🔗 Processing move event - block:', reconstructedEvent.id,
+                            'oldParent:', reconstructedEvent.oldParent,
+                            'newParent:', reconstructedEvent.newParent,
+                            'oldInput:', reconstructedEvent.oldInput,
+                            'newInput:', reconstructedEvent.newInput);
+
                         if (!targetBlocks[reconstructedEvent.id]) {
                             if (isRetry) return;
                             console.warn('⚠️ Queueing move event for non-existent block:', reconstructedEvent.id);
@@ -1092,25 +1240,25 @@ class CollaborationService {
                             return;
                         }
                     }
-                    
+
                     // Safety check for delete events - be more lenient since blocks might already be deleted
                     if (reconstructedEvent.type === 'delete' && reconstructedEvent.ids) {
                         // For delete events, we're more lenient - if the blocks don't exist, they're already deleted
                         // which is fine. We only queue if there's a structural issue.
                         console.log('🗑️ Processing delete event for blocks:', reconstructedEvent.ids);
-                        
+
                         // Check if ANY of the blocks exist - if none exist, they might already be deleted
-                        const someBlockExists = Array.isArray(reconstructedEvent.ids) 
+                        const someBlockExists = Array.isArray(reconstructedEvent.ids)
                             ? reconstructedEvent.ids.some(id => targetBlocks[id])
                             : targetBlocks[reconstructedEvent.ids];
-                        
+
                         if (!someBlockExists) {
                             console.log('ℹ️ Delete event for already deleted blocks, skipping:', reconstructedEvent.ids);
                             // Don't queue this - just skip it since blocks are already deleted
                             return;
                         }
                     }
-                    
+
                     // Safety check for change events - make sure block exists
                     if (reconstructedEvent.type === 'change' && reconstructedEvent.blockId) {
                         if (!targetBlocks[reconstructedEvent.blockId]) {
@@ -1121,37 +1269,49 @@ class CollaborationService {
                         }
                     }
                 }
-                
+
                 // Apply the event through the VM's block listener
                 console.log('📍 Applying event to target:', targetIdToUse);
                 const targetForEvent = this.vm.runtime.getTargetById(targetIdToUse);
-                
+
                 if (!targetForEvent) {
                     console.warn('⚠️ Target not found for event:', targetIdToUse);
                     if (isRetry) return;
                     this.queuePendingEvent(payload);
                     return;
                 }
-                
+
                 // Remember current editing target to restore later
                 const originalTarget = this.vm.editingTarget;
-                
+
                 // Switch to the target that should receive the event if needed
                 if (originalTarget && originalTarget.id !== payload.targetId) {
                     console.log('🔄 Switching from target', originalTarget.id, 'to', payload.targetId, 'for event');
                     this.vm.setEditingTarget(payload.targetId);
                 }
-                
+
                 // Apply the event - extend the remote change flag to cover any cascading events
                 const originalFlag = this.isApplyingRemoteChange;
                 this.isApplyingRemoteChange = true;
-                
-                try {
-                    console.log('🔧 Applying event to target blocks');
-                    targetForEvent.blocks.blocklyListen(reconstructedEvent);
 
-                    if (['move','delete'].includes(reconstructedEvent.type)) {
-                        if (this.workspace && this.workspace.render) this.workspace.render();
+                try {
+                    console.log('🔧 Applying event to target blocks for target:', targetForEvent.id);
+                    console.log('🔧 Event details:', {
+                        type: reconstructedEvent.type,
+                        blockId: reconstructedEvent.id,
+                        hasBlocks: !!targetForEvent.blocks,
+                        hasBlocklyListen: !!targetForEvent.blocks.blocklyListen
+                    });
+
+                    targetForEvent.blocks.blocklyListen(reconstructedEvent);
+                    console.log('✅ Event applied successfully');
+
+                    if (['move', 'delete'].includes(reconstructedEvent.type)) {
+                        if (this.workspace && this.workspace.render) {
+                            console.log('🎨 Rendering workspace after', reconstructedEvent.type, 'event');
+                            this.workspace.render();
+                        }
+                        console.log('📢 Emitting workspace update after', reconstructedEvent.type, 'event');
                         this.vm.emitWorkspaceUpdate();
                     }
                 } finally {
@@ -1161,34 +1321,34 @@ class CollaborationService {
                         console.log('🔓 Cleared extended remote change flag after block application');
                     }, 25); // Reduced from 50ms
                 }
-                
+
                 // Restore original target if we switched
                 if (originalTarget) {
                     console.log('🔄 Restoring original editing target:', originalTarget.id);
                     this.vm.setEditingTarget(originalTarget.id);
                 }
-                
+
                 // If this was a create event, trigger processing of pending events
                 // since new blocks might satisfy dependencies for queued events
                 if (reconstructedEvent.type === 'create' && this.pendingEvents.length > 0) {
                     console.log('🔄 Triggering pending events processing after block creation');
                     setTimeout(() => this.processPendingEvents(), 100);
                 }
-                
+
                 // Force additional UI updates for all events with more aggressive rendering
                 setTimeout(() => {
                     console.log('🔄 Triggering comprehensive workspace refresh');
                     this.vm.emitWorkspaceUpdate();
-                    
+
                     // For move events, also trigger comprehensive workspace rendering
                     if (reconstructedEvent.type === 'move' && this.workspace) {
                         console.log('🎨 Triggering comprehensive workspace refresh for move event');
-                        
+
                         // Multiple approaches to force UI refresh
                         if (this.workspace.render) {
                             this.workspace.render();
                         }
-                        
+
                         // Force all blocks to re-render
                         if (this.workspace.getAllBlocks) {
                             const allBlocks = this.workspace.getAllBlocks();
@@ -1198,12 +1358,12 @@ class CollaborationService {
                                 }
                             });
                         }
-                        
+
                         // Force workspace resize (this often triggers proper rendering)
                         if (this.workspace.resizeContents) {
                             this.workspace.resizeContents();
                         }
-                        
+
                         // Try to get the specific moved block and force its rendering
                         if (this.workspace.getBlockById) {
                             const block = this.workspace.getBlockById(reconstructedEvent.id);
@@ -1228,7 +1388,7 @@ class CollaborationService {
                         }
                     }
                 }, 100); // Longer delay for comprehensive refresh
-                
+
             } catch (error) {
                 console.error('❌ Error applying remote block event:', error);
             } finally {
@@ -1381,13 +1541,13 @@ class CollaborationService {
     sendProjectSync(conn) {
         if (this.vm) {
             console.log('📤 Sending project sync to new client');
-            
+
             // Mark that we're performing a sync operation
             this.isSyncOperation = true;
             this.lastSyncTime = Date.now();
-            
+
             const projectData = this.vm.toJSON();
-            
+
             // Include detailed metadata about targets for better sync and mapping
             const targetInfo = this.vm.runtime.targets.map(target => ({
                 id: target.id,
@@ -1404,19 +1564,16 @@ class CollaborationService {
                 size: target.size,
                 currentCostume: target.currentCostume
             }));
-            
+
             const currentEditingTarget = this.vm.editingTarget ? this.vm.editingTarget.id : null;
-            
-            this.sendMessage('project-sync', { 
+
+            this.sendMessage('project-sync', {
                 projectData,
                 targetInfo,
                 currentEditingTarget,
                 syncTimestamp: this.lastSyncTime // Include sync timestamp
             }, conn);
-            
-            console.log('📤 Sent project with', targetInfo.length, 'targets, editing target:', currentEditingTarget);
-            console.log('📤 Target details:', targetInfo);
-            
+
             // Clear the sync operation flag after a short delay
             setTimeout(() => {
                 this.isSyncOperation = false;
@@ -1426,6 +1583,7 @@ class CollaborationService {
     }
 
     changeUsername(newUsername) {
+        console.log(`[COLLABORATION] Changing username from "${this.username}" to "${newUsername}"`);
         this.username = newUsername;
         this.sendMessage('username-change', {
             id: this.peer.id,
@@ -1435,6 +1593,8 @@ class CollaborationService {
         if (this.users.has(this.peer.id)) {
             this.users.get(this.peer.id).username = newUsername;
         }
+
+        console.log(`[COLLABORATION] Username change broadcasted to all clients`);
     }
 
     kickUser(userId) {
@@ -1465,10 +1625,44 @@ class CollaborationService {
 
     disconnect() {
         console.log('🧹 Disconnecting, roomId before clear:', this.roomId);
-        
+
+        // Prevent multiple disconnect calls
+        if (this.isDisconnecting) {
+            console.log('🔄 Already disconnecting, skipping');
+            return;
+        }
+
+        if (!this.peer && !this.isConnected && !this.isConnectedToHost) {
+            console.log('🔄 Already disconnected, skipping');
+            return;
+        }
+
+        // Mark as disconnecting to prevent duplicate calls
+        this.isDisconnecting = true;
+
+        // Clear any pending timeouts
+        if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+        }
+
         if (this.peer) {
-            this.connections.forEach(conn => conn.close());
-            this.peer.destroy();
+            try {
+                this.connections.forEach(conn => {
+                    try {
+                        if (conn && !conn.destroyed) {
+                            conn.close();
+                        }
+                    } catch (e) {
+                        console.warn('Error closing connection:', e);
+                    }
+                });
+                if (!this.peer.destroyed) {
+                    this.peer.destroy();
+                }
+            } catch (e) {
+                console.warn('Error destroying peer:', e);
+            }
             this.peer = null;
         }
 
@@ -1480,15 +1674,20 @@ class CollaborationService {
 
         this.connections.clear();
         this.users.clear();
+        this.pendingJoinRequests.clear(); // Clear pending join requests
         this.isConnected = false;
         this.isConnectedToHost = false; // Reset host connection flag
         this.isHost = false;
         this.roomId = null;
+        this.roomPrivacy = 'public'; // Reset room privacy
         this.hostId = null; // Clear host ID
         this.wasKicked = false; // Reset kick flag
         this.currentConnectionFailureHandler = null; // Clear connection failure handler
         this.targetMapping = {}; // Clear target mapping
         this.isSyncOperation = false; // Clear sync operation flag
+
+        // Reset disconnecting flag after cleanup
+        this.isDisconnecting = false;
 
         this.emit('disconnected');
     }
@@ -1534,13 +1733,13 @@ class CollaborationService {
             ...payload,
             queuedAt: Date.now()
         };
-        
+
         this.pendingEvents.push(eventWithTimestamp);
         console.log('📝 Queued pending event, total pending:', this.pendingEvents.length);
-        
+
         // Start retry timer if not already running
         this.startRetryTimer();
-        
+
         // Limit queue size to prevent memory leaks
         if (this.pendingEvents.length > 100) {
             console.warn('⚠️ Pending events queue is getting large, removing oldest events');
@@ -1555,11 +1754,11 @@ class CollaborationService {
         if (this.retryTimer) {
             return; // Timer already running
         }
-        
+
         this.retryTimer = setTimeout(() => {
             this.retryTimer = null;
             this.processPendingEvents();
-            
+
             // Continue retrying if there are still pending events
             if (this.pendingEvents.length > 0) {
                 this.startRetryTimer();
@@ -1574,13 +1773,13 @@ class CollaborationService {
         if (this.pendingEvents.length === 0) {
             return;
         }
-        
+
         console.log('🔄 Processing', this.pendingEvents.length, 'pending events');
-        
+
         const currentTime = Date.now();
         const eventsToRetry = [];
         const expiredEvents = [];
-        
+
         // Separate events that should be retried vs. those that have expired
         for (const event of this.pendingEvents) {
             const age = currentTime - event.queuedAt;
@@ -1590,22 +1789,22 @@ class CollaborationService {
                 eventsToRetry.push(event);
             }
         }
-        
+
         // Remove expired events
         if (expiredEvents.length > 0) {
             console.warn('⚠️ Removing', expiredEvents.length, 'expired pending events');
         }
-        
+
         // Clear the pending events array
         this.pendingEvents = [];
-        
+
         // Try to apply the non-expired events
         for (const payload of eventsToRetry) {
             try {
                 // Remove the queuedAt timestamp before processing
                 const cleanPayload = { ...payload };
                 delete cleanPayload.queuedAt;
-                
+
                 // Try to apply the event again
                 this.handleBlockEvent(cleanPayload, null, true); // Pass true to indicate this is a retry
             } catch (error) {
@@ -1641,21 +1840,284 @@ class CollaborationService {
             isOriginal: target.isOriginal,
             visible: target.visible
         }));
-        
+
         const editingTarget = this.vm.editingTarget ? {
             id: this.vm.editingTarget.id,
             name: this.vm.editingTarget.getName()
         } : null;
-        
+
         console.log(`🐛 [${context}] Current targets:`, targets);
         console.log(`🐛 [${context}] Editing target:`, editingTarget);
-        
+
         return { targets, editingTarget };
+    }
+
+    /**
+     * Handle join request from a potential collaborator
+     */
+    handleJoinRequest(data, connection) {
+        if (!this.isHost) return;
+
+        if (this.roomPrivacy === 'public') {
+            // Auto-approve for public rooms
+            this.approveJoinRequest(connection.peer, data.requester.username);
+        } else {
+            // Store pending request for private rooms
+            this.pendingJoinRequests.set(connection.peer, {
+                id: connection.peer,
+                username: data.requester.username,
+                connection: connection
+            });
+
+            // Emit event to update UI with pending requests
+            this.emit('join-request-received', {
+                requesterId: connection.peer,
+                requesterUsername: data.requester.username
+            });
+        }
+    }
+
+    /**
+     * Handle join approval response
+     */
+    handleJoinApproved(data, connection) {
+        console.log('✅ Join request approved');
+
+        // Clear the awaiting approval state since we're now approved
+        this.emit('approval-resolved');
+
+        // Now that we're approved, add ourselves to the user list
+        const ourUser = {
+            id: this.peer.id,
+            username: this.username,
+            isHost: false
+        };
+        this.users.set(this.peer.id, ourUser);
+        this.emit('user-joined', ourUser);
+
+        // Request sync from host now that we're approved
+        this.sendMessage('sync-request', {}, connection);
+
+        // Debug targets before sync
+        this.debugTargetStates('Client requesting sync after approval');
+
+        this.emit('join-approved');
+    }
+
+    /**
+     * Handle join denial response
+     */
+    handleJoinDenied(data, connection) {
+        console.log('❌ Join request denied');
+
+        // Clear the awaiting approval state since we got a response
+        this.emit('approval-resolved');
+
+        this.emit('join-denied', data.reason || 'Join request was denied');
+    }
+
+    /**
+     * Handle room privacy information
+     */
+    handleRoomPrivacy(data, connection) {
+        console.log('🔒 Room privacy:', data.privacy);
+        this.roomPrivacy = data.privacy;
+
+        // Emit room privacy change event
+        this.emit('room-privacy-changed', data.privacy);
+    }
+
+    /**
+     * Approve a join request (host only)
+     */
+    async approveJoinRequest(requesterId, requesterUsername) {
+        if (!this.isHost) return;
+
+        const request = this.pendingJoinRequests.get(requesterId);
+        if (!request) return;
+
+        console.log('✅ Approving join request from:', requesterUsername);
+
+        // Send approval message
+        request.connection.send({
+            type: 'join-approved',
+            data: {
+                roomId: this.roomId,
+                hostUsername: this.username
+            }
+        });
+
+        // Add user to the room (now that they're approved)
+        const userPayload = {
+            id: requesterId,
+            username: requesterUsername,
+            isHost: false
+        };
+
+        this.users.set(requesterId, userPayload);
+        this.emit('user-joined', userPayload);
+
+        // Send current user list to the newly approved user
+        const currentUsers = Array.from(this.users.values());
+        this.sendMessage('users-list', { users: currentUsers }, request.connection);
+
+        // Send project sync to the newly approved user
+        if (this.vm) {
+            console.log('Host: Sending project sync to approved user');
+            this.debugTargetStates('Host sending project sync to approved user');
+            this.sendProjectSync(request.connection);
+        }
+
+        // Broadcast to all other peers that a new user joined
+        this.connections.forEach((connection) => {
+            if (connection !== request.connection && connection.open) {
+                console.log('Host: Broadcasting approved user to existing peers');
+                connection.send({
+                    type: 'user-join',
+                    payload: userPayload,
+                    sender: this.peer.id,
+                    timestamp: Date.now()
+                });
+            }
+        });
+
+        // Emit users updated event for host UI
+        this.emit('users-updated', { users: currentUsers });
+
+        // Remove from pending requests
+        this.pendingJoinRequests.delete(requesterId);
+    }
+
+    /**
+     * Deny a join request (host only)
+     */
+    async denyJoinRequest(requesterId, reason = 'Host denied your request') {
+        if (!this.isHost) return;
+
+        const request = this.pendingJoinRequests.get(requesterId);
+        if (!request) return;
+
+        console.log('❌ Denying join request from:', request.username);
+
+        // Send denial message
+        request.connection.send({
+            type: 'join-denied',
+            data: {
+                reason: reason
+            }
+        });
+
+        // Close connection
+        request.connection.close();
+
+        // Remove from pending requests
+        this.pendingJoinRequests.delete(requesterId);
+    }
+
+    /**
+     * Cancel a pending join request (for clients waiting for approval)
+     */
+    cancelJoinRequest() {
+        console.log('🚫 Cancelling join request');
+
+        // If we're connected to a host but waiting for approval, disconnect
+        if (this.connections.has(this.hostId)) {
+            const conn = this.connections.get(this.hostId);
+            if (conn) {
+                // Send cancellation message to host
+                this.sendMessage('join-cancelled', {
+                    id: this.peer.id,
+                    username: this.username
+                }, conn);
+            }
+        }
+
+        // Disconnect completely
+        this.disconnect();
+    }
+
+    /**
+     * Handle join cancellation from a client
+     */
+    handleJoinCancelled(data, connection) {
+        if (!this.isHost) return;
+
+        console.log('🚫 Client cancelled join request:', data.username);
+
+        // Remove from pending requests if present
+        if (this.pendingJoinRequests.has(data.id)) {
+            this.pendingJoinRequests.delete(data.id);
+
+            // Emit event to update UI
+            this.emit('join-request-cancelled', {
+                requesterId: data.id,
+                requesterUsername: data.username
+            });
+        }
+
+        // Close the connection
+        if (connection && !connection.destroyed) {
+            connection.close();
+        }
+
+        // Remove from connections
+        this.connections.delete(data.id);
+    }
+
+    /**
+     * Get pending join requests (host only)
+     */
+    getPendingJoinRequests() {
+        if (!this.isHost || !this.isConnected || this.isDisconnecting) {
+            // Don't log when disconnecting to reduce noise
+            if (!this.isDisconnecting) {
+                console.log('[SERVICE] getPendingJoinRequests called but not host/connected');
+            }
+            return [];
+        }
+
+        const requests = Array.from(this.pendingJoinRequests.values()).map(request => ({
+            id: request.id,
+            username: request.username
+        }));
+
+        return requests;
+    }
+
+    /**
+     * Get current room privacy setting
+     */
+    getRoomPrivacy() {
+        return this.roomPrivacy;
+    }
+
+    /**
+     * Change room privacy setting (host only)
+     */
+    async changeRoomPrivacy(newPrivacy) {
+        if (!this.isHost) throw new Error('Only the host can change room privacy');
+
+        if (newPrivacy !== 'public' && newPrivacy !== 'private') 
+            throw new Error('Privacy must be either "public" or "private"');
+
+        this.roomPrivacy = newPrivacy;
+
+        // Broadcast privacy change to all connected peers
+        const message = {
+            type: 'room-privacy',
+            data: {
+                privacy: newPrivacy
+            }
+        };
+
+        this.connections.forEach(connection => {
+            if (connection.readyState === 'open') connection.send(message);
+        });
     }
 }
 
 // Export singleton instance
-export default {
+const CollaborationServiceExport = {
     getInstance() {
         if (!collaborationServiceInstance) {
             collaborationServiceInstance = new CollaborationService();
@@ -1663,3 +2125,10 @@ export default {
         return collaborationServiceInstance;
     }
 };
+
+// Make it available globally for easier access from components
+if (typeof window !== 'undefined') {
+    window.CollaborationService = CollaborationServiceExport;
+}
+
+export default CollaborationServiceExport;
