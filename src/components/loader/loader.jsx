@@ -47,7 +47,6 @@ const messages = defineMessages({
 
 // Array of random loading messages
 const randomMessages = [
-  "I'm bald - Mistium",
   "MistWarp's anniversary is less than a year away! - Nameless",
   "ur gay - Flufi",
   "that is making my braincells consider dying as their next action - JustNoone",
@@ -66,7 +65,6 @@ const randomMessages = [
   "CSS is a turing complete scripting language - Mistium",
   "I want to be Poland - Andrew",
   "BOO - The invisible man",
-  "THERES A FUCKING TOILET MARKED ON THE MAP - Andrew",
   "Programer socks are part of the official MistWarp uniform - Nameless"
 ];
 
