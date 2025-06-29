@@ -44,16 +44,12 @@ let cachedGallery = null;
 const fetchLibrary = async () => {
     // Fetch from TurboWarp extensions
     const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
-    if (!twRes.ok) {
-        throw new Error(`TurboWarp extensions: HTTP status ${twRes.status}`);
-    }
+    if (!twRes.ok) throw new Error(`TurboWarp extensions: HTTP status ${twRes.status}`);
     const twData = await twRes.json();
     
     // Fetch from Mistium extensions
     const mistiumRes = await fetch('https://extensions.mistium.com/generated-metadata/extensions-v0.json');
-    if (!mistiumRes.ok) {
-        throw new Error(`Mistium extensions: HTTP status ${mistiumRes.status}`);
-    }
+    if (!mistiumRes.ok) throw new Error(`Mistium extensions: HTTP status ${mistiumRes.status}`);
     const mistiumData = await mistiumRes.json();
     
     // Process TurboWarp extensions
