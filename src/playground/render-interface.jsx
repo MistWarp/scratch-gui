@@ -42,7 +42,7 @@ import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
-import {APP_NAME} from '../lib/brand.js';
+import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/brand.js';
 
 import styles from './interface.css';
 
@@ -249,14 +249,14 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://scratch.mit.edu/users/M1stium/#comments">
+                    <a href={FEEDBACK_URL}>
                         <FormattedMessage
                             defaultMessage="Feedback & Bugs"
                             description="Link to feedback/bugs page"
                             id="tw.feedback"
                         />
                     </a>
-                    <a href="https://github.com/TurboWarp/">
+                    <a href={GITHUB_URL}>
                         <FormattedMessage
                             defaultMessage="Source Code"
                             description="Link to source code"
