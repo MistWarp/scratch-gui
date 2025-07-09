@@ -8,7 +8,7 @@ let windowCount = 0;
 const activeWindows = new Map();
 
 class AddonWindow {
-    constructor(options = {}) {
+    constructor (options = {}) {
         this.id = options.id || `addon-window-${++windowCount}`;
         this.title = options.title || 'Addon Window';
         this.width = options.width || 400;
@@ -219,7 +219,7 @@ class AddonWindow {
         document.body.appendChild(this.element);
     }
     
-    createControlButton(type, title, onClick) {
+    createControlButton (type, title, onClick) {
         const button = document.createElement('button');
         button.title = title;
         button.className = `addon-window-btn addon-window-btn-${type}`;
@@ -227,22 +227,22 @@ class AddonWindow {
         // Create SVG icon based on button type
         let svgIcon = '';
         switch (type) {
-            case 'maximize':
-                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        case 'maximize':
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
                 </svg>`;
-                break;
-            case 'restore':
-                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
-                    <path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            break;
+        case 'restore':
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
+<path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
                 </svg>`;
-                break;
-            case 'close':
-                svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            break;
+        case 'close':
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>`;
-                break;
+            break;
         }
         
         button.innerHTML = svgIcon;
@@ -308,7 +308,7 @@ class AddonWindow {
             shimmer.style.left = '-100%';
         });
         
-        button.addEventListener('mousedown', (e) => {
+        button.addEventListener('mousedown', e => {
             e.stopPropagation();
             button.style.transform = 'scale(0.95)';
         });
@@ -317,7 +317,7 @@ class AddonWindow {
             button.style.transform = 'scale(1.05)';
         });
         
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', e => {
             e.stopPropagation();
             onClick();
         });
@@ -335,12 +335,12 @@ class AddonWindow {
         return button;
     }
     
-    updateMaximizeButton() {
+    updateMaximizeButton () {
         if (this.maximizeBtn) {
-            const svgIcon = this.isMaximized ? 
+            const svgIcon = this.isMaximized ?
                 `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
-                    <path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
+<path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
                 </svg>` :
                 `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
@@ -350,16 +350,16 @@ class AddonWindow {
         }
     }
 
-    addDragFunctionality() {
-        this.headerElement.addEventListener('mousedown', (e) => {
+    addDragFunctionality () {
+        this.headerElement.addEventListener('mousedown', e => {
             if (e.target.tagName === 'BUTTON') return;
             
             this.isDragging = true;
             this.bringToFront();
             
             // Get the current position of the window
-            const currentX = parseInt(this.element.style.left) || this.x;
-            const currentY = parseInt(this.element.style.top) || this.y;
+            const currentX = parseInt(this.element.style.left, 10) || this.x;
+            const currentY = parseInt(this.element.style.top, 10) || this.y;
             
             // Calculate offset relative to current window position
             this.dragOffset = {
@@ -374,7 +374,7 @@ class AddonWindow {
         });
     }
     
-    handleDrag = (e) => {
+    handleDrag = e => {
         if (!this.isDragging) return;
         
         const newX = e.clientX - this.dragOffset.x;
@@ -403,7 +403,7 @@ class AddonWindow {
         document.removeEventListener('mouseup', this.handleDragEnd);
     };
     
-    addResizeHandles() {
+    addResizeHandles () {
         const handles = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
         
         handles.forEach(direction => {
@@ -418,59 +418,83 @@ class AddonWindow {
             
             // Set position and cursor for each handle
             switch (direction) {
-                case 'n':
-                    Object.assign(styles, {
-                        top: '0', left: '8px', right: '8px', height: '4px',
-                        cursor: 'n-resize'
-                    });
-                    break;
-                case 'ne':
-                    Object.assign(styles, {
-                        top: '0', right: '0', width: '8px', height: '8px',
-                        cursor: 'ne-resize'
-                    });
-                    break;
-                case 'e':
-                    Object.assign(styles, {
-                        right: '0', top: '8px', bottom: '8px', width: '4px',
-                        cursor: 'e-resize'
-                    });
-                    break;
-                case 'se':
-                    Object.assign(styles, {
-                        bottom: '0', right: '0', width: '8px', height: '8px',
-                        cursor: 'se-resize'
-                    });
-                    break;
-                case 's':
-                    Object.assign(styles, {
-                        bottom: '0', left: '8px', right: '8px', height: '4px',
-                        cursor: 's-resize'
-                    });
-                    break;
-                case 'sw':
-                    Object.assign(styles, {
-                        bottom: '0', left: '0', width: '8px', height: '8px',
-                        cursor: 'sw-resize'
-                    });
-                    break;
-                case 'w':
-                    Object.assign(styles, {
-                        left: '0', top: '8px', bottom: '8px', width: '4px',
-                        cursor: 'w-resize'
-                    });
-                    break;
-                case 'nw':
-                    Object.assign(styles, {
-                        top: '0', left: '0', width: '8px', height: '8px',
-                        cursor: 'nw-resize'
-                    });
-                    break;
+            case 'n':
+                Object.assign(styles, {
+                    top: '0',
+                    left: '8px',
+                    right: '8px',
+                    height: '4px',
+                    cursor: 'n-resize'
+                });
+                break;
+            case 'ne':
+                Object.assign(styles, {
+                    top: '0',
+                    right: '0',
+                    width: '8px',
+                    height: '8px',
+                    cursor: 'ne-resize'
+                });
+                break;
+            case 'e':
+                Object.assign(styles, {
+                    right: '0',
+                    top: '8px',
+                    bottom: '8px',
+                    width: '4px',
+                    cursor: 'e-resize'
+                });
+                break;
+            case 'se':
+                Object.assign(styles, {
+                    bottom: '0',
+                    right: '0',
+                    width: '8px',
+                    height: '8px',
+                    cursor: 'se-resize'
+                });
+                break;
+            case 's':
+                Object.assign(styles, {
+                    bottom: '0',
+                    left: '8px',
+                    right: '8px',
+                    height: '4px',
+                    cursor: 's-resize'
+                });
+                break;
+            case 'sw':
+                Object.assign(styles, {
+                    bottom: '0',
+                    left: '0',
+                    width: '8px',
+                    height: '8px',
+                    cursor: 'sw-resize'
+                });
+                break;
+            case 'w':
+                Object.assign(styles, {
+                    left: '0',
+                    top: '8px',
+                    bottom: '8px',
+                    width: '4px',
+                    cursor: 'w-resize'
+                });
+                break;
+            case 'nw':
+                Object.assign(styles, {
+                    top: '0',
+                    left: '0',
+                    width: '8px',
+                    height: '8px',
+                    cursor: 'nw-resize'
+                });
+                break;
             }
             
             Object.assign(handle.style, styles);
             
-            handle.addEventListener('mousedown', (e) => {
+            handle.addEventListener('mousedown', e => {
                 e.stopPropagation();
                 this.startResize(e, direction);
             });
@@ -479,7 +503,7 @@ class AddonWindow {
         });
     }
     
-    startResize(e, direction) {
+    startResize (e, direction) {
         this.isResizing = true;
         this.resizeDirection = direction;
         this.bringToFront();
@@ -500,7 +524,7 @@ class AddonWindow {
         e.preventDefault();
     }
     
-    handleResize = (e) => {
+    handleResize = e => {
         if (!this.isResizing) return;
         
         const deltaX = e.clientX - this.resizeStart.x;
@@ -562,10 +586,9 @@ class AddonWindow {
         document.removeEventListener('mouseup', this.handleResizeEnd);
     };
     
-    addScrollbarStyling(element) {
+    addScrollbarStyling () {
         // Create a style element for custom scrollbars
         const style = document.createElement('style');
-        const scrollbarId = `addon-window-scrollbar-${this.id}`;
         
         style.textContent = `
             .addon-window-content {
@@ -618,25 +641,25 @@ class AddonWindow {
         this.scrollbarStyle = style; // Store reference for cleanup
     }
     
-    bringToFront() {
+    bringToFront () {
         this.zIndex = ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
     }
     
-    show() {
+    show () {
         this.isVisible = true;
         this.element.style.display = 'flex';
         this.bringToFront();
         return this;
     }
     
-    hide() {
+    hide () {
         this.isVisible = false;
         this.element.style.display = 'none';
         return this;
     }
     
-    close() {
+    close () {
         this.hide();
         this.onClose();
         activeWindows.delete(this.id);
@@ -645,16 +668,15 @@ class AddonWindow {
         }
     }
     
-    minimize() {
-        if (this.isMinimized) return this;
-
-        this.isMinimized = true;
+    minimize () {
         this.hide();
+        this.isMinimized = true;
         this.onMinimize();
+        this.updateMaximizeButton();
         return this;
     }
     
-    restore() {
+    restore () {
         if (this.isMaximized) {
             this.isMaximized = false;
             if (this.savedState) {
@@ -679,7 +701,7 @@ class AddonWindow {
         return this;
     }
     
-    maximize() {
+    maximize () {
         if (this.isMaximized) return this;
         
         // Save current state
@@ -706,7 +728,7 @@ class AddonWindow {
         return this;
     }
     
-    toggleMaximize() {
+    toggleMaximize () {
         if (this.isMaximized) {
             this.restore();
         } else {
@@ -715,7 +737,7 @@ class AddonWindow {
         return this;
     }
     
-    setContent(content) {
+    setContent (content) {
         this.contentElement.innerHTML = '';
         if (typeof content === 'string') {
             this.contentElement.innerHTML = content;
@@ -725,7 +747,7 @@ class AddonWindow {
         return this;
     }
     
-    setTitle(newTitle) {
+    setTitle (newTitle) {
         this.title = newTitle;
         const titleElement = this.headerElement.querySelector('.addon-window-title');
         if (titleElement) {
@@ -734,11 +756,11 @@ class AddonWindow {
         return this;
     }
     
-    getContentElement() {
+    getContentElement () {
         return this.contentElement;
     }
     
-    center() {
+    center () {
         this.x = (window.innerWidth - this.width) / 2;
         this.y = (window.innerHeight - this.height) / 2;
         this.element.style.left = `${this.x}px`;
@@ -747,44 +769,44 @@ class AddonWindow {
     }
     
     // Compatibility methods for external code
-    focus() {
+    focus () {
         this.bringToFront();
         return this;
     }
     
-    isClosed() {
+    isClosed () {
         return !this.isVisible;
     }
 }
 
 // Window Manager API
 const WindowManager = {
-    createWindow(options) {
+    createWindow (options) {
         return new AddonWindow(options);
     },
     
-    getWindow(id) {
+    getWindow (id) {
         return activeWindows.get(id);
     },
     
-    getAllWindows() {
+    getAllWindows () {
         return Array.from(activeWindows.values());
     },
     
-    closeWindow(id) {
+    closeWindow (id) {
         const window = activeWindows.get(id);
         if (window) {
             window.close();
         }
     },
     
-    closeAllWindows() {
+    closeAllWindows () {
         for (const window of activeWindows.values()) {
             window.close();
         }
     },
     
-    bringToFront(id) {
+    bringToFront (id) {
         const window = activeWindows.get(id);
         if (window) {
             window.bringToFront();
