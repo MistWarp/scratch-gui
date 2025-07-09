@@ -295,6 +295,7 @@ class WindowedModal extends React.Component {
     
     handleWindowClose = () => {
         // Don't clean up window state, just hide it for reuse
+        console.log('WindowedModal: handleWindowClose');
         if (this.window) {
             this.window.hide();
         }
