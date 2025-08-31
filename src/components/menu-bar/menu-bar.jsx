@@ -1022,8 +1022,8 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem onClick={this.props.onClickSettingsModal}>
                                         <FormattedMessage
-                                            defaultMessage="Advanced Settings"
-                                            description="Menu bar item for advanced settings"
+                                            defaultMessage="Settings"
+                                            description="Menu bar item for settings"
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>

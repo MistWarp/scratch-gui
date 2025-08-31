@@ -120,7 +120,6 @@ class UsernameModal extends React.Component {
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}
                 onCaseSensitiveListsChange={this.handleCaseSensitiveListsChange}
-                onUnsafeOptimisationsChange={this.handleUnsafeOptimisationsChange}
                 stageWidth={this.props.customStageSize.width}
                 stageHeight={this.props.customStageSize.height}
                 customStageSizeEnabled={
