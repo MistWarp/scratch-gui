@@ -268,6 +268,7 @@ Monitor.propTypes = {
     value: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.number,
+        PropTypes.object,
         PropTypes.arrayOf(PropTypes.oneOfType([
             PropTypes.string,
             PropTypes.number

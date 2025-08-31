@@ -67,9 +67,11 @@ ListMonitor.propTypes = {
     value: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.number,
+        PropTypes.object,
         PropTypes.arrayOf(PropTypes.oneOfType([
             PropTypes.string,
-            PropTypes.number
+            PropTypes.number,
+            PropTypes.object
         ]))
     ]),
     width: PropTypes.number
