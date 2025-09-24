@@ -32,6 +32,7 @@ class UsernameModal extends React.Component {
             'handleDisableCompilerChange',
             'handleCaseSensitiveListsChange',
             'handleUnsafeOptimisationsChange',
+            'handleRealLayerIndexesChange',
             'handleStoreProjectOptions'
         ]);
     }
@@ -88,6 +89,12 @@ class UsernameModal extends React.Component {
             unsafeOptimisations: e.target.checked
         });
     }
+    handleRealLayerIndexesChange (e) {
+        this.props.vm.renderer.useRealLayerIndexes = e.target.checked;
+        this.props.vm.setRuntimeOptions({
+            realLayerIndexes: e.target.checked
+        });
+    }
     handleStageWidthChange (value) {
         this.props.vm.setStageSize(value, this.props.customStageSize.height);
     }
@@ -120,6 +127,7 @@ class UsernameModal extends React.Component {
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}
                 onCaseSensitiveListsChange={this.handleCaseSensitiveListsChange}
+                onRealLayerIndexesChange={this.handleRealLayerIndexesChange}
                 stageWidth={this.props.customStageSize.width}
                 stageHeight={this.props.customStageSize.height}
                 customStageSizeEnabled={
@@ -161,7 +169,8 @@ UsernameModal.propTypes = {
     }),
     disableCompiler: PropTypes.bool,
     caseSensitiveLists: PropTypes.bool,
-    unsafeOptimisations: PropTypes.bool
+    unsafeOptimisations: PropTypes.bool,
+    realLayerIndexes: PropTypes.bool
 };
 
 const mapStateToProps = state => ({
@@ -178,7 +187,8 @@ const mapStateToProps = state => ({
     disableCompiler: !state.scratchGui.tw.compilerOptions.enabled,
     // Handle possible undefined value for caseSensitiveLists
     caseSensitiveLists: !!state.scratchGui.tw.runtimeOptions.caseSensitiveLists,
-    unsafeOptimisations: !!state.scratchGui.tw.runtimeOptions.unsafeOptimisations
+    unsafeOptimisations: !!state.scratchGui.tw.runtimeOptions.unsafeOptimisations,
+    realLayerIndexes: !!state.scratchGui.tw.runtimeOptions.realLayerIndexes
 });
 
 const mapDispatchToProps = dispatch => ({
