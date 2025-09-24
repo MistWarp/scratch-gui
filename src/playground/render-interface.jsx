@@ -172,8 +172,8 @@ const Footer = () => (
             <div className={styles.footerText}>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage="{APP_NAME} is not affiliated with Scratch, the Scratch Team, or the Scratch Foundation."
-                    description="Disclaimer that TurboWarp is not connected to Scratch"
+                    defaultMessage="{APP_NAME} is not affiliated with TurboWarp, Scratch, the Scratch Team, or the Scratch Foundation."
+                    description="Disclaimer that {APP_NAME} is not connected to Scratch"
                     id="tw.footer.disclaimer"
                     values={{
                         APP_NAME
@@ -367,11 +367,11 @@ class Interface extends React.Component {
                                             values={{
                                                 link: (
                                                     <a
-                                                        href="https://docs.turbowarp.org/unshared-projects"
+                                                        href="https://docs.warp.mistium.com/unshared-projects"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     >
-                                                        {'https://docs.turbowarp.org/unshared-projects'}
+                                                        {'https://docs.warp.mistium.com/unshared-projects'}
                                                     </a>
                                                 )
                                             }}
