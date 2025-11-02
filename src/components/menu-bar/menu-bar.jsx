@@ -307,6 +307,11 @@ class MenuBar extends React.Component {
         this.props.onClickRestorePoints();
         this.props.onRequestCloseFile();
     }
+    handleClickAddRestorePoint = () => {
+        if (this.props.vm) {
+            this.props.vm.emit("TRIGGER_MANUAL_RESTORE_POINT");
+        }
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -873,6 +878,13 @@ class MenuBar extends React.Component {
                                                 id="tw.menuBar.restorePoints"
                                             />
                                         </MenuItem>
+                                        <MenuItem onClick={this.handleClickAddRestorePoint}>
+                                            <FormattedMessage
+                                                defaultMessage="Create restore point"
+                                                description="Menu bar item to create a manual restore point immediately"
+                                                id="tw.menuBar.createRestorePoint"
+                                            />
+                                        </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
                                         <MenuSection>
@@ -1289,6 +1301,7 @@ MenuBar.propTypes = {
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
+    onClickAddRestorePoint: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickFile: PropTypes.func,
     onClickLogin: PropTypes.func,
