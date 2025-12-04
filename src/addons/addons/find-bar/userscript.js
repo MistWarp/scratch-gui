@@ -6,12 +6,19 @@ import Utils from "./blockly/Utils.js";
 export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
-  console.log(addon, msg)
-  function getMessages(addon) {
-    return {
-      ...Object.fromEntries(addon.tab.traps.vm.runtime.getBlocksJSON().flatMap(b => b ? [[b.type.toUpperCase(), b.type.split("_", 1)[0] + ": " +  b.message0]] : [])),
-      ...Blockly.Msg
-    };
+  function getMessages(blockJson) {
+    return [
+      Blockly.Msg,
+      Object.fromEntries(blockJson.flatMap(b => b ? [
+        [ b.type.toUpperCase(), b.type.split("_", 1)[0] + ": " +  b.message0 ]
+      ] : [])),
+    ];
+  }
+
+  function getColours(blockJson) {
+    return Object.fromEntries(blockJson.flatMap(b => b ? [
+      [ b.type.toUpperCase(), b.colour ]
+    ] : []));
   }
 
   class FindBar {
@@ -420,10 +427,13 @@ export default async function ({ addon, msg, console }) {
 
       this.dropdown.empty();
 
-      const messages = getMessages(addon);
+      const blockJson = addon.tab.traps.vm.runtime.getBlocksJSON();
+
+      const colours = getColours(blockJson);
+      const messages = getMessages(blockJson);
       
       for (const proc of scratchBlocks) {
-        let item = this.dropdown.addItem(proc, messages);
+        let item = this.dropdown.addItem(proc, messages, colours);
 
         if (focusID) {
           if (proc.matchesID(focusID)) {
@@ -776,12 +786,12 @@ export default async function ({ addon, msg, console }) {
       }
     }
 
-    addItem(proc, messages) {
+    addItem(proc, messages, colours) {
       const item = document.createElement("li");
       item.innerText = proc.procCode;
       item.data = proc;
       const name = proc.procCode.toUpperCase()
-      item.displayName = messages[name] || proc.procCode;
+      item.displayName = messages[0][name] || messages[1][name] || proc.procCode;
       const colorIds = {
         receive: "events",
         event: "events",
@@ -819,7 +829,12 @@ export default async function ({ addon, msg, console }) {
             colorId = "more";
           }
         }
-        item.className = `sa-block-color sa-block-color-${colorId}`;
+        if (colorId === "more") {
+          item.className = "sa-block-color sa-block-color-more";
+          item.style.color = colours[name];
+        } else {
+          item.className = `sa-block-color sa-block-color-${colorId}`;
+        }
       }
       item.addEventListener("mousedown", (e) => {
         this.onItemClick(item);
