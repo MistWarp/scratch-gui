@@ -11,20 +11,14 @@ const circularReplacer = () => {
     };
 };
 
-const sanitize = input => {
+/**
+ * Safely stringify, properly handling circular relations.
+ * @param {unknown} input Any value
+ * @returns {string} A stringified version of the input.
+ */
+export const safeStringify = input => {
     if (typeof input === 'object' && input !== null) {
         return JSON.stringify(input, circularReplacer());
     }
-    return input;
-    
+    return `${input}`;
 };
-
-const sanitizeVariableType = (input, type) => {
-    if (type === 'list') {
-        return input.map(item => sanitize(item));
-    }
-    return sanitize(input);
-  
-};
-
-export {sanitizeVariableType};
