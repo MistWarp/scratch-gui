@@ -41,12 +41,9 @@ import {isBrowserSupported} from '../lib/tw-environment-support-prober';
 import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
-import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
-import {APP_NAME} from '../lib/brand.js';
+import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/brand.js';
 
 import styles from './interface.css';
-
-const isInvalidEmbed = window.parent !== window;
 
 // Import window manager dynamically
 let WindowManager = null;
@@ -175,8 +172,8 @@ const Footer = () => (
             <div className={styles.footerText}>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage="{APP_NAME} is not affiliated with Scratch, the Scratch Team, or the Scratch Foundation."
-                    description="Disclaimer that TurboWarp is not connected to Scratch"
+                    defaultMessage="{APP_NAME} is not affiliated with TurboWarp, Scratch, the Scratch Team, or the Scratch Foundation."
+                    description="Disclaimer that {APP_NAME} is not connected to Scratch"
                     id="tw.footer.disclaimer"
                     values={{
                         APP_NAME
@@ -249,14 +246,14 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://scratch.mit.edu/users/M1stium/#comments">
+                    <a href={FEEDBACK_URL}>
                         <FormattedMessage
                             defaultMessage="Feedback & Bugs"
                             description="Link to feedback/bugs page"
                             id="tw.feedback"
                         />
                     </a>
-                    <a href="https://github.com/TurboWarp/">
+                    <a href={GITHUB_URL}>
                         <FormattedMessage
                             defaultMessage="Source Code"
                             description="Link to source code"
@@ -294,10 +291,6 @@ class Interface extends React.Component {
         }
     }
     render () {
-        if (isInvalidEmbed) {
-            return <InvalidEmbed />;
-        }
-
         const {
             /* eslint-disable no-unused-vars */
             intl,
@@ -374,11 +367,11 @@ class Interface extends React.Component {
                                             values={{
                                                 link: (
                                                     <a
-                                                        href="https://docs.turbowarp.org/unshared-projects"
+                                                        href="https://docs.warp.mistium.com/unshared-projects"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     >
-                                                        {'https://docs.turbowarp.org/unshared-projects'}
+                                                        {'https://docs.warp.mistium.com/unshared-projects'}
                                                     </a>
                                                 )
                                             }}
@@ -430,7 +423,7 @@ class Interface extends React.Component {
                                 </p>
                             </div>
                             <div className={styles.section}>
-                                <FeaturedProjects studio="27205657" />
+                                <FeaturedProjects studio="50866201" />
                             </div>
                         </React.Fragment>
                     ) : null}

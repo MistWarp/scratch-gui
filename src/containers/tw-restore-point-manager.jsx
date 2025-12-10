@@ -72,9 +72,10 @@ class TWRestorePointManager extends React.Component {
 
         RestorePointAPI.deleteLegacyRestorePoint();
         this.props.vm.on('PROJECT_CHANGED', this.handleProjectChanged);
+        this.props.vm.on("TRIGGER_MANUAL_RESTORE_POINT", this.handleClickCreate);
     }
 
-    componentWillReceiveProps (nextProps) {
+    UNSAFE_componentWillReceiveProps (nextProps) {
         if (nextProps.isModalVisible && !this.props.isModalVisible) {
             this.refreshState();
         } else if (!nextProps.isModalVisible && this.props.isModalVisible) {
@@ -87,6 +88,7 @@ class TWRestorePointManager extends React.Component {
     componentWillUnmount () {
         this.cancelQueuedRestorePoint();
         this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
+        this.props.vm.off("TRIGGER_MANUAL_RESTORE_POINT", this.handleClickCreate);
     }
 
     handleProjectChanged () {

@@ -80,7 +80,7 @@ export default async function ({ addon, console, msg }) {
         stage.comments[bookmarkCommentId].text = commentText;
       } else {
         // Create new comment for bookmark storage
-        const newComment = stage.createComment(
+        void stage.createComment(
           null, // Let it generate an ID
           null, // Not attached to a block
           commentText,
@@ -959,32 +959,11 @@ export default async function ({ addon, console, msg }) {
     // Add the menu wrapper to the menu bar
     addon.tab.displayNoneWhileDisabled(menuWrapper, { display: "flex" });
     
-    // Find the main menu area to insert the dropdown
-    const mainMenu = menuBar.querySelector('[class*="menu-bar_main-menu"]');
-    const fileGroup = menuBar.querySelector('[class*="menu-bar_file-group"]');
     const divider = menuBar.querySelector('[class*="menu-bar_divider"]');
     
     let success = false;
     
-    if (mainMenu) {
-      // Try to insert after the file group or as first item in main menu
-      if (fileGroup && fileGroup.parentNode === mainMenu) {
-        // Insert after the file group
-        const insertPoint = fileGroup.nextSibling;
-        if (insertPoint) {
-          mainMenu.insertBefore(menuWrapper, insertPoint);
-        } else {
-          mainMenu.appendChild(menuWrapper);
-        }
-        success = true;
-      } else {
-        // Insert as first item in main menu
-        mainMenu.insertBefore(menuWrapper, mainMenu.firstChild);
-        success = true;
-      }
-    }
-    
-    if (!success && divider && divider.parentNode) {
+    if (divider && divider.parentNode) {
       // Insert before the divider if main menu approach failed
       divider.parentNode.insertBefore(menuWrapper, divider);
       success = true;

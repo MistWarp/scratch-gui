@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './invalid-embed.css';
-import {APP_NAME} from '../../lib/brand';
+import {APP_NAME, FEEDBACK_URL} from '../../lib/brand';
 
 // Note that when this component is used, the rest of scratch-gui is not being run, so don't
 // use redux, themes, translations, etc.
@@ -35,7 +35,7 @@ const InvalidEmbed = () => (
         <p>
             {'If you are seeing this page even though you aren\'t embedding anything, let us know on '}
             <a
-                href="https://scratch.mit.edu/users/M1stium/#comments"
+                href={FEEDBACK_URL}
                 target="_blank"
                 rel="noreferrer"
             >

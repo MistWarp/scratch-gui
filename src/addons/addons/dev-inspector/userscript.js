@@ -5,12 +5,41 @@ export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
   let inspectorWindow = null;
+  let projectJSONCache = null;
+  let projectJSONCacheString = null;
 
-  // Create the inspector content
+  function getProjectJSON() {
+    if (!vm || !vm.runtime) return null;
+    try {
+      return JSON.parse(vm.toJSON(undefined, {allowOptimization: false}));
+    } catch (e) {
+      console.error('Error getting project JSON:', e);
+      return null;
+    }
+  }
+
+  function findBlockInProjectJSON(projectJson, blockId) {
+    if (!projectJson || !projectJson.targets) return null;
+    
+    const targetKeys = Object.keys(projectJson.targets);
+    for (let i = 0; i < targetKeys.length; i++) {
+      const target = projectJson.targets[targetKeys[i]];
+      if (target && target.blocks && target.blocks[blockId]) {
+        return { block: target.blocks[blockId], target, targetId: targetKeys[i] };
+      }
+    }
+    return null;
+  }
+
   function createInspectorContent() {
     const container = document.createElement('div');
     container.className = 'dev-inspector-container';
     container.innerHTML = `
+      <div class="dev-inspector-tabs">
+        <button class="dev-inspector-tab dev-inspector-tab-active" data-tab="block">Block</button>
+        <button class="dev-inspector-tab" data-tab="project">Project</button>
+      </div>
+      <div class="dev-inspector-content-panel" data-panel="block">
       <div class="dev-inspector-info">
         <div class="dev-inspector-info-grid">
           <div class="dev-inspector-info-item">
@@ -48,22 +77,31 @@ export default async function ({ addon, console, msg }) {
         </div>
       </div>
       <div class="dev-inspector-json">
-        <h3>JSON Representation</h3>
         <div class="dev-inspector-actions">
           <button class="dev-inspector-copy">Copy JSON</button>
           <button class="dev-inspector-download">Download JSON</button>
+          <button class="dev-inspector-save">Save JSON</button>
         </div>
-        <pre class="dev-inspector-json-content"></pre>
+        <textarea class="dev-inspector-json-content" style="flex: 1; width: 100%; background: var(--ui-secondary, #f9f9f9); border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; padding: 12px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5; resize: none;"></textarea>
+        </div>
+      </div>
+      <div class="dev-inspector-content-panel" data-panel="project" style="display: none;">
+        <div class="dev-inspector-actions">
+          <button class="dev-inspector-project-refresh">Refresh JSON</button>
+          <button class="dev-inspector-project-copy">Copy JSON</button>
+          <button class="dev-inspector-project-download">Download JSON</button>
+          <button class="dev-inspector-project-reload">Reload Project</button>
+        </div>
+        <textarea class="dev-inspector-project-content" style="flex: 1; width: 100%; background: var(--ui-secondary, #f9f9f9); border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; padding: 12px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5; resize: none;"></textarea>
       </div>
     `;
     
-    // Add event listeners
     const copyBtn = container.querySelector('.dev-inspector-copy');
     const downloadBtn = container.querySelector('.dev-inspector-download');
+    const jsonContent = container.querySelector('.dev-inspector-json-content');
     
     copyBtn.addEventListener('click', () => {
-      const jsonContent = container.querySelector('.dev-inspector-json-content').textContent;
-      navigator.clipboard.writeText(jsonContent).then(() => {
+      navigator.clipboard.writeText(jsonContent.value).then(() => {
         copyBtn.textContent = 'Copied!';
         setTimeout(() => {
           copyBtn.textContent = 'Copy JSON';
@@ -72,9 +110,8 @@ export default async function ({ addon, console, msg }) {
     });
     
     downloadBtn.addEventListener('click', () => {
-      const jsonContent = container.querySelector('.dev-inspector-json-content').textContent;
       const blockId = container.querySelector('.dev-inspector-block-id').textContent;
-      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const blob = new Blob([jsonContent.value], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -83,7 +120,228 @@ export default async function ({ addon, console, msg }) {
       URL.revokeObjectURL(url);
     });
     
-    // Add theming and proper styles
+    const saveBtn = container.querySelector('.dev-inspector-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        const textarea = container.querySelector('.dev-inspector-json-content');
+        const blockIdSpan = container.querySelector('.dev-inspector-block-id');
+        try {
+          const newBlockData = JSON.parse(textarea.value);
+          
+          if (!vm || !vm.runtime || !blockIdSpan.textContent) {
+            saveBtn.textContent = 'VM not available!';
+            setTimeout(() => {
+              saveBtn.textContent = 'Save JSON';
+            }, 2000);
+            return;
+          }
+
+          const blockId = blockIdSpan.textContent;
+          let projectJson = getProjectJSON();
+          
+          if (!projectJson) {
+            saveBtn.textContent = 'Failed to get project JSON!';
+            setTimeout(() => {
+              saveBtn.textContent = 'Save JSON';
+            }, 2000);
+            return;
+          }
+
+          const blockResult = findBlockInProjectJSON(projectJson, blockId);
+          if (!blockResult) {
+            saveBtn.textContent = 'Block not found in project!';
+            setTimeout(() => {
+              saveBtn.textContent = 'Save JSON';
+            }, 2000);
+            return;
+          }
+
+          const currentBlockData = blockResult.block;
+          const currentDataStr = JSON.stringify(currentBlockData);
+          const newDataStr = JSON.stringify(newBlockData);
+          
+          if (currentDataStr === newDataStr) {
+            saveBtn.textContent = 'No changes detected!';
+            setTimeout(() => {
+              saveBtn.textContent = 'Save JSON';
+            }, 2000);
+            return;
+          }
+
+          blockResult.target.blocks[blockId] = newBlockData;
+
+          saveBtn.textContent = 'Reloading...';
+          saveBtn.disabled = true;
+          
+          projectJSONCache = null;
+          projectJSONCacheString = null;
+          
+          await vm.runtime.stopAll();
+          await vm.loadProject(projectJson);
+          
+          saveBtn.textContent = 'Saved & Reloaded!';
+          setTimeout(() => {
+            saveBtn.textContent = 'Save JSON';
+            saveBtn.disabled = false;
+          }, 2000);
+        } catch (e) {
+          saveBtn.textContent = 'Invalid JSON!';
+          setTimeout(() => {
+            saveBtn.textContent = 'Save JSON';
+          }, 2000);
+          console.error('Error saving block JSON:', e);
+        }
+      });
+    }
+    
+    const tabs = container.querySelectorAll('.dev-inspector-tab');
+    const panels = container.querySelectorAll('.dev-inspector-content-panel');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.getAttribute('data-tab');
+        
+        tabs.forEach(t => {
+          t.classList.remove('dev-inspector-tab-active');
+        });
+        tab.classList.add('dev-inspector-tab-active');
+        
+        panels.forEach(panel => {
+          const panelType = panel.getAttribute('data-panel');
+          panel.style.display = panelType === targetTab ? 'flex' : 'none';
+        });
+        
+        if (targetTab === 'project') {
+          const projectContent = container.querySelector('.dev-inspector-project-content');
+          if (projectContent && (!projectContent.value || projectContent.dataset.loaded !== 'true')) {
+            loadProjectJSONAsync(projectContent);
+          }
+        }
+      });
+    });
+    
+    const projectRefreshBtn = container.querySelector('.dev-inspector-project-refresh');
+    const projectCopyBtn = container.querySelector('.dev-inspector-project-copy');
+    const projectDownloadBtn = container.querySelector('.dev-inspector-project-download');
+    const projectReloadBtn = container.querySelector('.dev-inspector-project-reload');
+    const projectContent = container.querySelector('.dev-inspector-project-content');
+    
+    function loadProjectJSONAsync(textarea) {
+      if (!vm || !vm.runtime) {
+        textarea.value = 'VM not available';
+        return;
+      }
+      
+      textarea.disabled = true;
+      textarea.value = 'Loading project JSON...';
+      
+      requestAnimationFrame(() => {
+        try {
+          const projectJson = vm.toJSON();
+          projectJSONCache = projectJson;
+          
+          requestAnimationFrame(() => {
+            try {
+              const parsed = JSON.parse(projectJson);
+              projectJSONCacheString = JSON.stringify(parsed, null, 2);
+              
+              requestAnimationFrame(() => {
+                textarea.value = projectJSONCacheString;
+                textarea.disabled = false;
+                textarea.dataset.loaded = 'true';
+              });
+            } catch (e) {
+              textarea.value = 'Error parsing project JSON: ' + e.message;
+              textarea.disabled = false;
+              console.error('Error parsing project JSON:', e);
+            }
+          });
+        } catch (e) {
+          textarea.value = 'Error loading project JSON: ' + e.message;
+          textarea.disabled = false;
+          console.error('Error loading project JSON:', e);
+        }
+      });
+    }
+    
+    projectRefreshBtn.addEventListener('click', () => {
+      projectRefreshBtn.textContent = 'Refreshing...';
+      projectRefreshBtn.disabled = true;
+      projectJSONCache = null;
+      projectJSONCacheString = null;
+      
+      loadProjectJSONAsync(projectContent);
+      
+      setTimeout(() => {
+        if (projectContent.dataset.loaded === 'true') {
+          projectRefreshBtn.textContent = 'Refreshed!';
+        } else {
+          projectRefreshBtn.textContent = 'Refresh Failed!';
+        }
+        setTimeout(() => {
+          projectRefreshBtn.textContent = 'Refresh JSON';
+          projectRefreshBtn.disabled = false;
+        }, 1000);
+      }, 100);
+    });
+    
+    projectCopyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(projectContent.value).then(() => {
+        projectCopyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          projectCopyBtn.textContent = 'Copy JSON';
+        }, 2000);
+      });
+    });
+    
+    projectDownloadBtn.addEventListener('click', () => {
+      const blob = new Blob([projectContent.value], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'project.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    
+    projectReloadBtn.addEventListener('click', async () => {
+      try {
+        const newProjectData = JSON.parse(projectContent.value);
+        
+        if (!vm || !vm.runtime) {
+          projectReloadBtn.textContent = 'VM not available!';
+          setTimeout(() => {
+            projectReloadBtn.textContent = 'Reload Project';
+          }, 2000);
+          return;
+        }
+        
+        projectReloadBtn.textContent = 'Reloading...';
+        projectReloadBtn.disabled = true;
+        
+        projectJSONCache = null;
+        projectJSONCacheString = null;
+        
+        await vm.runtime.stopAll();
+        await vm.loadProject(newProjectData);
+        
+        projectReloadBtn.textContent = 'Project Reloaded!';
+        projectContent.dataset.loaded = 'false';
+        
+        setTimeout(() => {
+          projectReloadBtn.textContent = 'Reload Project';
+          projectReloadBtn.disabled = false;
+        }, 2000);
+      } catch (e) {
+        projectReloadBtn.textContent = 'Invalid JSON!';
+        setTimeout(() => {
+          projectReloadBtn.textContent = 'Reload Project';
+          projectReloadBtn.disabled = false;
+        }, 2000);
+        console.error('Error reloading project:', e);
+      }
+    });
+    
     container.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -99,16 +357,6 @@ export default async function ({ addon, console, msg }) {
       min-height: 0;
     `;
     
-    // Style the info section
-    const infoSection = container.querySelector('.dev-inspector-info');
-    infoSection.style.cssText = `
-      flex: 0 0 auto;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-    `;
-    
-    // Style the info grid
     const infoGrid = container.querySelector('.dev-inspector-info-grid');
     infoGrid.style.cssText = `
       display: grid;
@@ -117,39 +365,42 @@ export default async function ({ addon, console, msg }) {
       margin-top: 12px;
     `;
     
-    // Add responsive behavior for the grid
     const updateGridColumns = () => {
-      const containerWidth = container.offsetWidth - 32; // Account for padding
+      const jsonContentElement = container.querySelector('.dev-inspector-json-content');
+      const projectContentElement = container.querySelector('.dev-inspector-project-content');
+      if (!jsonContentElement && !projectContentElement) return;
+      
+      const containerWidth = container.offsetWidth - 32;
+      let fontSize;
       if (containerWidth < 400) {
         infoGrid.style.gridTemplateColumns = '1fr';
-        // Smaller font sizes for narrow windows
         container.style.fontSize = '12px';
-        jsonContent.style.fontSize = '10px';
+        fontSize = '10px';
       } else if (containerWidth < 600) {
         infoGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
         container.style.fontSize = '13px';
-        jsonContent.style.fontSize = '11px';
+        fontSize = '11px';
       } else if (containerWidth < 800) {
         infoGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
         container.style.fontSize = '14px';
-        jsonContent.style.fontSize = '11px';
+        fontSize = '11px';
       } else {
         infoGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
         container.style.fontSize = '14px';
-        jsonContent.style.fontSize = '12px';
+        fontSize = '12px';
       }
+      
+      if (jsonContentElement) jsonContentElement.style.fontSize = fontSize;
+      if (projectContentElement) projectContentElement.style.fontSize = fontSize;
     };
     
-    // Set up resize observer for responsive grid
     if (window.ResizeObserver) {
       const resizeObserver = new ResizeObserver(updateGridColumns);
       resizeObserver.observe(container);
     }
     
-    // Initial grid setup
     setTimeout(updateGridColumns, 0);
     
-    // Style info items
     const infoItems = container.querySelectorAll('.dev-inspector-info-item');
     infoItems.forEach(item => {
       item.style.cssText = `
@@ -189,8 +440,85 @@ export default async function ({ addon, console, msg }) {
       }
     });
     
-    // Style the JSON section
+    const tabsContainer = container.querySelector('.dev-inspector-tabs');
+    tabsContainer.style.cssText = `
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    `;
+    
+    const tabButtons = container.querySelectorAll('.dev-inspector-tab');
+    tabButtons.forEach(tab => {
+      tab.style.cssText = `
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        margin-bottom: -1px;
+      `;
+      
+      if (tab.classList.contains('dev-inspector-tab-active')) {
+        tab.style.color = 'var(--ui-blue, #4c97ff)';
+        tab.style.borderBottomColor = 'var(--ui-blue, #4c97ff)';
+      }
+      
+      tab.addEventListener('mouseenter', () => {
+        if (!tab.classList.contains('dev-inspector-tab-active')) {
+          tab.style.color = 'var(--text-primary, #575e75)';
+        }
+      });
+      
+      tab.addEventListener('mouseleave', () => {
+        if (!tab.classList.contains('dev-inspector-tab-active')) {
+          tab.style.color = 'var(--text-primary-transparent, rgba(87, 94, 117, 0.6))';
+        }
+      });
+    });
+    
+    tabButtons.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabButtons.forEach(t => {
+          t.style.color = 'var(--text-primary-transparent, rgba(87, 94, 117, 0.6))';
+          t.style.borderBottomColor = 'transparent';
+        });
+        tab.style.color = 'var(--ui-blue, #4c97ff)';
+        tab.style.borderBottomColor = 'var(--ui-blue, #4c97ff)';
+      });
+    });
+    
+    const contentPanels = container.querySelectorAll('.dev-inspector-content-panel');
+    const activeTab = container.querySelector('.dev-inspector-tab-active')?.getAttribute('data-tab') || 'block';
+    contentPanels.forEach(panel => {
+      const panelType = panel.getAttribute('data-panel');
+      const isVisible = panelType === activeTab;
+      panel.style.cssText = `
+        flex: 1;
+        display: ${isVisible ? 'flex' : 'none'};
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+        gap: 16px;
+      `;
+    });
+    
+    const infoSection = container.querySelector('.dev-inspector-info');
+    if (infoSection) {
+      infoSection.style.cssText = `
+        flex: 0 0 auto;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+      `;
+    }
+    
     const jsonSection = container.querySelector('.dev-inspector-json');
+    if (jsonSection) {
     jsonSection.style.cssText = `
       flex: 1;
       display: flex;
@@ -201,22 +529,26 @@ export default async function ({ addon, console, msg }) {
       width: 100%;
       box-sizing: border-box;
     `;
+    }
     
-    // Style action buttons
-    const actionsDiv = container.querySelector('.dev-inspector-actions');
+    const actionDivs = container.querySelectorAll('.dev-inspector-actions');
+    actionDivs.forEach(actionsDiv => {
     actionsDiv.style.cssText = `
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
       flex-wrap: wrap;
     `;
+    });
     
-    const buttons = container.querySelectorAll('button');
+    const buttons = container.querySelectorAll('button:not(.dev-inspector-tab)');
     buttons.forEach((button, index) => {
       const isDownload = button.textContent.includes('Download');
+      const isReload = button.textContent.includes('Reload');
+      const isRefresh = button.textContent.includes('Refresh');
       button.style.cssText = `
         padding: 8px 16px;
-        background: ${isDownload ? 'var(--ui-green, #0fbd8c)' : 'var(--ui-blue, #4c97ff)'};
+        background: ${isDownload ? 'var(--ui-green, #0fbd8c)' : isReload ? 'var(--ui-orange, #ff8c42)' : isRefresh ? 'var(--ui-gray, #8e8e93)' : 'var(--ui-blue, #4c97ff)'};
         color: white;
         border: none;
         border-radius: 6px;
@@ -227,7 +559,6 @@ export default async function ({ addon, console, msg }) {
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       `;
       
-      // Add hover effects
       button.addEventListener('mouseenter', () => {
         button.style.transform = 'translateY(-1px)';
         button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
@@ -239,31 +570,6 @@ export default async function ({ addon, console, msg }) {
       });
     });
     
-    // Style JSON content area
-    const jsonContent = container.querySelector('.dev-inspector-json-content');
-    jsonContent.style.cssText = `
-      flex: 1;
-      background: var(--ui-secondary, #f9f9f9);
-      border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-      border-radius: 6px;
-      padding: 12px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 11px;
-      line-height: 1.5;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      color: var(--text-primary, #575e75);
-      margin: 0;
-      resize: none;
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      max-width: 100%;
-    `;
-    
-    // Style headings
     const headings = container.querySelectorAll('h3');
     headings.forEach(h => {
       h.style.cssText = `
@@ -278,24 +584,20 @@ export default async function ({ addon, console, msg }) {
     return container;
   }
 
-  // Function to get comprehensive block information
   function getBlockInfo(block) {
     if (!block) return null;
 
     const blockInfo = {
-      // Basic block information
       id: block.id,
       type: block.type,
       opcode: block.opcode || block.type,
       category: block.category_ || 'unknown',
       
-      // Position and dimensions
       position: {
         x: block.getRelativeToSurfaceXY().x,
         y: block.getRelativeToSurfaceXY().y
       },
       
-      // Hierarchy information
       parentBlock: block.getParent() ? block.getParent().id : null,
       childBlocks: block.getChildren().map(child => ({
         id: child.id,
@@ -303,7 +605,6 @@ export default async function ({ addon, console, msg }) {
         connection: child.getParent() === block ? 'direct' : 'unknown'
       })),
       
-      // Block properties
       isShadow: block.isShadow(),
       isInsertionMarker: block.isInsertionMarker_ || false,
       isCollapsed: block.isCollapsed(),
@@ -311,11 +612,9 @@ export default async function ({ addon, console, msg }) {
       isDeletable: block.isDeletable(),
       isEditable: block.isEditable(),
       
-      // Input and field information
       inputs: {},
       fields: {},
       
-      // Connection information
       connections: {
         output: block.outputConnection ? {
           connected: !!block.outputConnection.targetConnection,
@@ -334,11 +633,9 @@ export default async function ({ addon, console, msg }) {
         } : null
       },
       
-      // Raw block data
       rawData: {}
     };
 
-    // Get input information
     for (const inputName of block.inputList.map(input => input.name)) {
       const input = block.getInput(inputName);
       if (input) {
@@ -354,7 +651,6 @@ export default async function ({ addon, console, msg }) {
       }
     }
 
-    // Get field information
     for (const fieldName of Object.keys(block.fieldRow || {})) {
       const field = block.getField(fieldName);
       if (field) {
@@ -366,7 +662,6 @@ export default async function ({ addon, console, msg }) {
       }
     }
 
-    // Try to get Scratch VM block data if available
     try {
       if (vm && vm.runtime && vm.editingTarget) {
         const target = vm.editingTarget;
@@ -389,7 +684,6 @@ export default async function ({ addon, console, msg }) {
       console.warn('Could not get Scratch VM data:', e);
     }
 
-    // Get raw block data (try to serialize to get full structure)
     try {
       const xmlBlock = Blockly.Xml.blockToDom(block);
       blockInfo.rawData.xml = Blockly.Xml.domToText(xmlBlock);
@@ -400,12 +694,10 @@ export default async function ({ addon, console, msg }) {
     return blockInfo;
   }
 
-  // Function to show the inspector
   function showInspector(block) {
     const blockInfo = getBlockInfo(block);
     if (!blockInfo) return;
 
-    // Create or update the window
     if (inspectorWindow) {
       inspectorWindow.show().bringToFront();
     } else {
@@ -421,21 +713,19 @@ export default async function ({ addon, console, msg }) {
         className: 'dev-inspector-window',
         onClose: () => {
           inspectorWindow = null;
+          projectJSONCache = null;
+          projectJSONCacheString = null;
         }
       });
       
-      // Set the content
       const content = createInspectorContent();
       inspectorWindow.setContent(content);
       
-      // Show the window
       inspectorWindow.show();
     }
 
-    // Update the content with block info
     const container = inspectorWindow.element.querySelector('.dev-inspector-container');
     
-    // Populate the information fields
     container.querySelector('.dev-inspector-block-id').textContent = blockInfo.id;
     container.querySelector('.dev-inspector-block-type').textContent = blockInfo.type;
     container.querySelector('.dev-inspector-block-category').textContent = blockInfo.category;
@@ -449,12 +739,20 @@ export default async function ({ addon, console, msg }) {
     container.querySelector('.dev-inspector-block-shadow').textContent = 
       blockInfo.isShadow ? 'Yes' : 'No';
     
-    // Populate the JSON content
     const jsonContent = container.querySelector('.dev-inspector-json-content');
-    jsonContent.textContent = JSON.stringify(blockInfo, null, 2);
+    
+    const projectJson = getProjectJSON();
+    const blockResult = findBlockInProjectJSON(projectJson, blockInfo.id);
+    
+    if (blockResult && blockResult.block) {
+      jsonContent.value = JSON.stringify(blockResult.block, null, 2);
+    } else {
+      jsonContent.value = JSON.stringify(blockInfo.scratchData || blockInfo, null, 2);
+    }
+    
+    container.currentBlock = block;
   }
-
-  // Add context menu item
+  
   addon.tab.createBlockContextMenu(
     (items, block) => {
       if (addon.self.disabled) return items;
