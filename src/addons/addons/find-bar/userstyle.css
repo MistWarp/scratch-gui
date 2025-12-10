@@ -31,6 +31,10 @@
   height: 2.2rem; /* Match input height exactly */
 }
 
+.sa-hidden-modifiers {
+  display: none;
+}
+
 .sa-find-input {
   width: 100%;
   height: 100%;

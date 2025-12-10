@@ -300,27 +300,6 @@ const WarpTimer = props => (
     />
 );
 
-const UnsafeOptimisations = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Unsafe Optimisations"
-                description="Unsafe Optimisations setting"
-                id="tw.settingsModal.unsafeOptimisations"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Enables optimisations that may break some projects. Use with caution!"
-                description="Unsafe Optimisations setting help"
-                id="tw.settingsModal.unsafeOptimisationsHelp"
-            />
-        }
-    />
-);
-
 const CaseSensitiveLists = props => (
     <BooleanSetting
         value={props.value !== undefined ? props.value : false}
@@ -343,28 +322,25 @@ const CaseSensitiveLists = props => (
     />
 );
 
-const DisableCompiler = props => (
+const RealLayerIndexes = props => (
     <BooleanSetting
-        {...props}
+        value={props.value !== undefined ? props.value : false}
+        onChange={props.onChange}
         label={
             <FormattedMessage
-                defaultMessage="Disable Compiler"
-                description="Disable Compiler setting"
-                id="tw.settingsModal.disableCompiler"
+                defaultMessage="Real Layer Indexes"
+                description="Real Layer Indexes label"
+                id="tw.settingsModal.realLayerIndexes"
             />
         }
         help={
             <FormattedMessage
                 // eslint-disable-next-line max-len
-                defaultMessage="Disables the {APP_NAME} compiler. You may want to enable this while editing projects so that scripts update immediately. Otherwise, you should never enable this."
-                description="Disable Compiler help"
-                id="tw.settingsModal.disableCompilerHelp"
-                values={{
-                    APP_NAME
-                }}
+                defaultMessage="Changes layer indexes to change the position in the render order array without limiting the number of layers to the number of drawables."
+                description="Real Layer Indexes help"
+                id="tw.settingsModal.realLayerIndexesHelp"
             />
         }
-        slug="disable-compiler"
     />
 );
 
@@ -453,9 +429,12 @@ const StoreProjectOptions = ({onStoreProjectOptions}) => (
             <p>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage="Stores the selected settings in the project so they will be automatically applied when TurboWarp loads this project. Warp timer and disable compiler will not be saved."
+                    defaultMessage="Stores the selected settings in the project so they will be automatically applied when {APP_NAME} loads this project. Warp timer and disable compiler will not be saved."
                     description="Help text for the store settings in project button"
                     id="tw.settingsModal.storeProjectOptionsHelp"
+                    values={{
+                        APP_NAME
+                    }}
                 />
             </p>
         </div>
@@ -538,13 +517,13 @@ const SettingsModalComponent = props => (
                     {...props}
                 />
             )}
-            <UnsafeOptimisations
-                value={props.unsafeOptimisations}
-                onChange={props.onUnsafeOptimisationsChange}
+            <CaseSensitiveLists
+                value={props.caseSensitiveLists}
+                onChange={props.onCaseSensitiveListsChange}
             />
-            <DisableCompiler
-                value={props.disableCompiler}
-                onChange={props.onDisableCompilerChange}
+            <RealLayerIndexes
+                value={props.realLayerIndexes}
+                onChange={props.onRealLayerIndexesChange}
             />
             {!props.isEmbedded && (
                 <StoreProjectOptions
@@ -578,8 +557,8 @@ SettingsModalComponent.propTypes = {
     onDisableCompilerChange: PropTypes.func,
     caseSensitiveLists: PropTypes.bool,
     onCaseSensitiveListsChange: PropTypes.func,
-    unsafeOptimisations: PropTypes.bool,
-    onUnsafeOptimisationsChange: PropTypes.func,
+    realLayerIndexes: PropTypes.bool,
+    onRealLayerIndexesChange: PropTypes.func,
     customStageSizeEnabled: PropTypes.bool,
     stageWidth: PropTypes.number,
     onStageWidthChange: PropTypes.func,

@@ -56,6 +56,51 @@ export default [
     {
         name: (
             <FormattedMessage
+                defaultMessage="{APP_NAME} Blocks"
+                description="Name of the strange 'TurboWarp Blocks' extension"
+                id="tw.twExtension.name"
+                values={{
+                    APP_NAME
+                }}
+            />
+        ),
+        extensionId: 'tw',
+        iconURL: twIcon,
+        description: (
+            <FormattedMessage
+                defaultMessage="Weird new blocks."
+                description="Description of the strange 'TurboWarp Blocks' extension"
+                id="tw.twExtension.description"
+            />
+        ),
+        incompatibleWithScratch: true,
+        tags: ['tw'],
+        featured: true
+    },
+    {
+        name: (
+            <FormattedMessage
+                defaultMessage="Custom Extension"
+                description="Name of library item to load a custom extension from a remote source"
+                id="tw.customExtension.name"
+            />
+        ),
+        extensionId: 'custom_extension',
+        iconURL: customExtensionIcon,
+        description: (
+            <FormattedMessage
+                defaultMessage="Load custom extensions from URLs, files, or JavaScript source code."
+                description="Description of library item to load a custom extension from a custom source"
+                id="tw.customExtension.description"
+            />
+        ),
+        tags: ['tw'],
+        featured: true
+        // Not marked as incompatible with Scratch so that clicking on it doesn't show a prompt
+    },
+    {
+        name: (
+            <FormattedMessage
                 defaultMessage="Music"
                 description="Name for the 'Music' extension"
                 id="gui.extension.music.name"
@@ -334,80 +379,13 @@ export default [
             />
         ),
         helpLink: 'https://scratch.mit.edu/vernier'
-    },
-    {
-        // not really an extension, but it's easiest to present it as one
-        name: (
-            <FormattedMessage
-                defaultMessage="Custom Reporters"
-                description="Name of custom reporters extension"
-                id="tw.customReporters.name"
-            />
-        ),
-        extensionId: 'procedures_enable_return',
-        iconURL: returnIcon,
-        description: (
-            <FormattedMessage
-                defaultMessage="Allow custom blocks to output values and be used as inputs."
-                description="Description of custom reporters extension"
-                id="tw.customReporters.description"
-            />
-        ),
-        tags: ['tw'],
-        incompatibleWithScratch: true,
-        featured: true
-    },
-    {
-        name: (
-            <FormattedMessage
-                defaultMessage="{APP_NAME} Blocks"
-                description="Name of the strange 'TurboWarp Blocks' extension"
-                id="tw.twExtension.name"
-                values={{
-                    APP_NAME
-                }}
-            />
-        ),
-        extensionId: 'tw',
-        iconURL: twIcon,
-        description: (
-            <FormattedMessage
-                defaultMessage="Weird new blocks."
-                description="Description of the strange 'TurboWarp Blocks' extension"
-                id="tw.twExtension.description"
-            />
-        ),
-        incompatibleWithScratch: true,
-        tags: ['tw'],
-        featured: true
-    },
-    {
-        name: (
-            <FormattedMessage
-                defaultMessage="Custom Extension"
-                description="Name of library item to load a custom extension from a remote source"
-                id="tw.customExtension.name"
-            />
-        ),
-        extensionId: 'custom_extension',
-        iconURL: customExtensionIcon,
-        description: (
-            <FormattedMessage
-                defaultMessage="Load custom extensions from URLs, files, or JavaScript source code."
-                description="Description of library item to load a custom extension from a custom source"
-                id="tw.customExtension.description"
-            />
-        ),
-        tags: ['tw'],
-        featured: true
-        // Not marked as incompatible with Scratch so that clicking on it doesn't show a prompt
     }
 ];
 
 export const galleryLoading = {
     name: (
         <FormattedMessage
-            defaultMessage="{APP_NAME} Extension Gallery"
+            defaultMessage="TurboWarp Extension Gallery"
             description="Name of extensions.turbowarp.org in extension library"
             id="tw.extensionGallery.name"
             values={{
@@ -433,7 +411,7 @@ export const galleryLoading = {
 export const galleryMore = {
     name: (
         <FormattedMessage
-            defaultMessage="{APP_NAME} Extension Gallery"
+            defaultMessage="TurboWarp Extension Gallery"
             description="Name of extensions.turbowarp.org in extension library"
             id="tw.extensionGallery.name"
             values={{
@@ -459,7 +437,7 @@ export const galleryMore = {
 export const galleryError = {
     name: (
         <FormattedMessage
-            defaultMessage="{APP_NAME} Extension Gallery"
+            defaultMessage="TurboWarp Extension Gallery"
             description="Name of extensions.turbowarp.org in extension library"
             id="tw.extensionGallery.name"
             values={{

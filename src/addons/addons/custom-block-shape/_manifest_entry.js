@@ -18,7 +18,7 @@ const manifest = {
     },
     {
       "name": "GarboMuffin",
-      "link": "https://scratch.mit.edu/users/M1stium/"
+      "link": "https://scratch.mit.edu/users/GarboMuffin/"
     }
   ],
   "enabledByDefault": false,

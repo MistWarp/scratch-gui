@@ -18,7 +18,7 @@ const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Advanced Settings',
+        defaultMessage: 'Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
     },
@@ -342,6 +342,28 @@ const CaseSensitiveLists = props => (
     />
 );
 
+const RealLayerIndexes = props => (
+    <BooleanSetting
+        value={props.value !== undefined ? props.value : false}
+        onChange={props.onChange}
+        label={
+            <FormattedMessage
+                defaultMessage="Real Layer Indexes"
+                description="Real Layer Indexes label"
+                id="tw.settingsModal.realLayerIndexes"
+            />
+        }
+        help={
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Changes layer indexes to change the position in the render order array without limiting the number of layers to the number of drawables."
+                description="Real Layer Indexes help"
+                id="tw.settingsModal.realLayerIndexesHelp"
+            />
+        }
+    />
+);
+
 const DisableCompiler = props => (
     <BooleanSetting
         {...props}
@@ -544,6 +566,10 @@ const SettingsContent = props => (
             value={props.caseSensitiveLists}
             onChange={props.onCaseSensitiveListsChange}
         />
+        <RealLayerIndexes
+            value={props.realLayerIndexes}
+            onChange={props.onRealLayerIndexesChange}
+        />
         {!props.isEmbedded && (
             <StoreProjectOptions
                 {...props}
@@ -573,6 +599,8 @@ SettingsContent.propTypes = {
     onDisableCompilerChange: PropTypes.func,
     caseSensitiveLists: PropTypes.bool,
     onCaseSensitiveListsChange: PropTypes.func,
+    realLayerIndexes: PropTypes.bool,
+    onRealLayerIndexesChange: PropTypes.func,
     unsafeOptimisations: PropTypes.bool,
     onUnsafeOptimisationsChange: PropTypes.func,
     customStageSizeEnabled: PropTypes.bool,

@@ -35,6 +35,8 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 
+import {FEEDBACK_URL} from '../../lib/brand.js';
+
 import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
@@ -308,6 +310,11 @@ class MenuBar extends React.Component {
         this.props.onClickRestorePoints();
         this.props.onRequestCloseFile();
     }
+    handleClickAddRestorePoint = () => {
+        if (this.props.vm) {
+            this.props.vm.emit("TRIGGER_MANUAL_RESTORE_POINT");
+        }
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -697,14 +704,14 @@ class MenuBar extends React.Component {
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
                                     <MenuSection>
-                                        <MenuItemLink href="https://scratch.mit.edu/users/M1stium/#comments">
+                                        <MenuItemLink href={FEEDBACK_URL}>
                                             <FormattedMessage
                                                 defaultMessage="Some scripts encountered errors."
                                                 description="Link in error menu"
                                                 id="tw.menuBar.reportError1"
                                             />
                                         </MenuItemLink>
-                                        <MenuItemLink href="https://scratch.mit.edu/users/M1stium/#comments">
+                                        <MenuItemLink href={FEEDBACK_URL}>
                                             <FormattedMessage
                                                 defaultMessage="This is a bug. Please report it."
                                                 description="Link in error menu"
@@ -875,6 +882,13 @@ class MenuBar extends React.Component {
                                                 defaultMessage="Restore points"
                                                 description="Menu bar item to manage restore points"
                                                 id="tw.menuBar.restorePoints"
+                                            />
+                                        </MenuItem>
+                                        <MenuItem onClick={this.handleClickAddRestorePoint}>
+                                            <FormattedMessage
+                                                defaultMessage="Create restore point"
+                                                description="Menu bar item to create a manual restore point immediately"
+                                                id="tw.menuBar.createRestorePoint"
                                             />
                                         </MenuItem>
                                     </MenuSection>
@@ -1187,7 +1201,7 @@ class MenuBar extends React.Component {
                     <div className={styles.menuBarItem}>
                         <a
                             className={styles.feedbackLink}
-                            href="https://scratch.mit.edu/users/M1stium/#comments"
+                            href={FEEDBACK_URL}
                             rel="noopener noreferrer"
                             target="_blank"
                         >
@@ -1284,6 +1298,7 @@ MenuBar.propTypes = {
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
+    onClickAddRestorePoint: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickFile: PropTypes.func,
     onClickLogin: PropTypes.func,
