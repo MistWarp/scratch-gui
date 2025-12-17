@@ -129,6 +129,15 @@ class CollaborationModal extends Component {
                 this.autoJoinAttempted.clear();
             }
         }
+        
+        // Reset to join screen when connection is cancelled (roomId becomes null and not connected)
+        if (prevProps.roomId !== this.props.roomId && !this.props.roomId && !this.props.isConnected) {
+            this.setState({
+                connectionStep: 'join',
+                isConnecting: false,
+                error: null
+            });
+        }
 
         if (prevProps.connectionError !== this.props.connectionError && this.props.connectionError) {
             this.setState({
@@ -579,7 +588,16 @@ class CollaborationModal extends Component {
                     <div className={styles.buttonGroup}>
                         <Button
                             className={styles.secondaryButton}
-                            onClick={this.props.onCancelConnection}
+                            onClick={() => {
+                                // Reset modal state immediately
+                                this.setState({
+                                    connectionStep: 'join',
+                                    isConnecting: false,
+                                    error: null
+                                });
+                                // Then call the cancel handler
+                                this.props.onCancelConnection();
+                            }}
                         >
                             <FormattedMessage
                                 defaultMessage="Cancel"

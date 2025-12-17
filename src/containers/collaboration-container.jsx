@@ -5,6 +5,7 @@ import { compose } from 'redux';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import CollaborationService from '../lib/collaboration-service.js';
+import ToastSystem from '../lib/toast-system.js';
 
 import {
     openCollaborationModal,
@@ -50,6 +51,10 @@ class CollaborationContainer extends Component {
         this.handleChangeRoomPrivacy = this.handleChangeRoomPrivacy.bind(this);
         this.handleRoomPrivacyChanged = this.handleRoomPrivacyChanged.bind(this);
         this.handleWorkspaceReattach = this.handleWorkspaceReattach.bind(this);
+        this.handleProjectSyncDownloadStart = this.handleProjectSyncDownloadStart.bind(this);
+        this.handleProjectSyncDownloadProgress = this.handleProjectSyncDownloadProgress.bind(this);
+        this.handleProjectSyncDownloadComplete = this.handleProjectSyncDownloadComplete.bind(this);
+        this.handleProjectSyncDownloadError = this.handleProjectSyncDownloadError.bind(this);
     }
 
     componentDidMount() {
@@ -73,6 +78,14 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('join-denied', this.handleJoinDenied);
         this.collaborationService.on('room-privacy-changed', this.handleRoomPrivacyChanged);
         this.collaborationService.on('request-workspace-reattach', this.handleWorkspaceReattach);
+        this.collaborationService.on('project-sync-download-start', this.handleProjectSyncDownloadStart);
+        this.collaborationService.on('project-sync-download-progress', this.handleProjectSyncDownloadProgress);
+        this.collaborationService.on('project-sync-download-complete', this.handleProjectSyncDownloadComplete);
+        this.collaborationService.on('project-sync-download-error', this.handleProjectSyncDownloadError);
+        
+        // Track download progress state
+        this.projectSyncProgress = 0;
+        this.projectSyncLoadingBar = null;
     }
 
     componentWillUnmount() {
@@ -88,6 +101,10 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('connection-failed', this.handleConnectionFailed);
         this.collaborationService.off('room-privacy-changed', this.handleRoomPrivacyChanged);
         this.collaborationService.off('request-workspace-reattach', this.handleWorkspaceReattach);
+        this.collaborationService.off('project-sync-download-start', this.handleProjectSyncDownloadStart);
+        this.collaborationService.off('project-sync-download-progress', this.handleProjectSyncDownloadProgress);
+        this.collaborationService.off('project-sync-download-complete', this.handleProjectSyncDownloadComplete);
+        this.collaborationService.off('project-sync-download-error', this.handleProjectSyncDownloadError);
         
         // Disconnect if connected
         if (this.collaborationService.isConnected) {
@@ -186,6 +203,8 @@ class CollaborationContainer extends Component {
 
     handleUserLeft(user) {
         console.log('User left:', user);
+        const username = user.username || user.id || 'A user';
+        ToastSystem.info(`${username} disconnected`, 3000);
         this.updateUsersList();
     }
 
@@ -236,6 +255,9 @@ class CollaborationContainer extends Component {
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
         
+        // Show toast notification
+        ToastSystem.warning('The host has left the collaboration room. The room has been closed.', 5000);
+        
         // Set a specific message for host leaving
         this.props.onSetError('The host has left the collaboration room. The room has been closed.');
     }
@@ -262,6 +284,10 @@ class CollaborationContainer extends Component {
 
     handleDisconnected() {
         console.log('Disconnected from collaboration');
+        
+        // Show toast notification
+        ToastSystem.info('Disconnected from collaboration room', 3000);
+        
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetRoomPrivacy('public');
@@ -352,6 +378,129 @@ class CollaborationContainer extends Component {
 
     getCurrentUserId() {
         return this.collaborationService.peer ? this.collaborationService.peer.id : null;
+    }
+
+    handleProjectSyncDownloadStart(data) {
+        // Create loading bar overlay
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'project-sync-download-overlay';
+        loadingOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        `;
+        
+        const container = document.createElement('div');
+        container.style.cssText = `
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+        `;
+        
+        const title = document.createElement('div');
+        title.textContent = 'Downloading project from host...';
+        title.style.cssText = `
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        `;
+        
+        const progressContainer = document.createElement('div');
+        progressContainer.style.cssText = `
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        `;
+        
+        const progressBar = document.createElement('div');
+        progressBar.className = 'project-sync-progress-bar';
+        progressBar.style.cssText = `
+            height: 100%;
+            width: 0%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        `;
+        
+        const progressText = document.createElement('div');
+        progressText.className = 'project-sync-progress-text';
+        progressText.textContent = '0%';
+        progressText.style.cssText = `
+            font-size: 14px;
+            opacity: 0.9;
+        `;
+        
+        progressContainer.appendChild(progressBar);
+        container.appendChild(title);
+        container.appendChild(progressContainer);
+        container.appendChild(progressText);
+        loadingOverlay.appendChild(container);
+        document.body.appendChild(loadingOverlay);
+        
+        this.projectSyncLoadingBar = {
+            overlay: loadingOverlay,
+            bar: progressBar,
+            text: progressText
+        };
+        this.projectSyncProgress = 0;
+    }
+
+    handleProjectSyncDownloadProgress(data) {
+        if (this.projectSyncLoadingBar) {
+            const progress = Math.min(100, Math.max(0, data.progress || 0));
+            this.projectSyncProgress = progress;
+            this.projectSyncLoadingBar.bar.style.width = `${progress}%`;
+            this.projectSyncLoadingBar.text.textContent = `${Math.round(progress)}%`;
+        }
+    }
+
+    handleProjectSyncDownloadComplete() {
+        // Clear progress state immediately
+        this.projectSyncProgress = null;
+        
+        if (this.projectSyncLoadingBar) {
+            // Show 100% briefly, then remove overlay
+            // The normal project loading will take over
+            setTimeout(() => {
+                if (this.projectSyncLoadingBar && this.projectSyncLoadingBar.overlay.parentNode) {
+                    this.projectSyncLoadingBar.overlay.style.opacity = '0';
+                    this.projectSyncLoadingBar.overlay.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => {
+                        if (this.projectSyncLoadingBar && this.projectSyncLoadingBar.overlay.parentNode) {
+                            this.projectSyncLoadingBar.overlay.parentNode.removeChild(this.projectSyncLoadingBar.overlay);
+                        }
+                        this.projectSyncLoadingBar = null;
+                        this.projectSyncProgress = null;
+                    }, 300);
+                } else {
+                    this.projectSyncLoadingBar = null;
+                    this.projectSyncProgress = null;
+                }
+            }, 500);
+        }
+    }
+
+    handleProjectSyncDownloadError(data) {
+        if (this.projectSyncLoadingBar) {
+            if (this.projectSyncLoadingBar.overlay.parentNode) {
+                this.projectSyncLoadingBar.overlay.parentNode.removeChild(this.projectSyncLoadingBar.overlay);
+            }
+            this.projectSyncLoadingBar = null;
+        }
+        ToastSystem.error('Failed to download project from host', 5000);
     }
 
     render() {
