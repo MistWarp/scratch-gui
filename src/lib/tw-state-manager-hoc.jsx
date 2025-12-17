@@ -376,11 +376,14 @@ const TWStateManager = function (WrappedComponent) {
                 const roomCode = urlParams.get('room');
                 console.log(`[STATE MANAGER] Found room parameter: ${roomCode}`);
                 console.log(`[STATE MANAGER] Current username: ${this.props.username}`);
-                
-                // Store the room code to handle after username is ready
+
                 this.pendingRoomCode = roomCode;
-                
-                // If username is already available, handle immediately
+
+                const currentUrl = new URL(location.href);
+                currentUrl.searchParams.delete('room');
+                currentUrl.searchParams.delete('username');
+                history.replaceState(null, null, currentUrl.toString());
+
                 if (this.props.username) {
                     this.handleRoomCode(roomCode);
                 } else {
@@ -554,34 +557,12 @@ const TWStateManager = function (WrappedComponent) {
             this.props.onSetIsFullScreen(isFullScreen);
         }
         handleRoomCode (roomCode) {
-            // Auto-join collaboration room using the current saved/generated username
             const username = this.props.username;
             if (username && roomCode) {
-                console.log(`[STATE MANAGER] Setting room ID: ${roomCode}, username: ${username}`);
-                
-                // Set the room ID in Redux state
                 this.props.onSetCollaborationRoomId(roomCode);
-                
-                // Update URL to include just the room parameter for sharing
-                const currentUrl = new URL(location.href);
-                currentUrl.searchParams.set('room', roomCode);
-                // Remove username from URL - we use the stored one
-                currentUrl.searchParams.delete('username');
-                
-                // Update URL without triggering a page reload
-                history.replaceState(null, null, currentUrl.toString());
-                
-                console.log(`[STATE MANAGER] Room ID set in Redux, waiting before opening modal...`);
-                
-                // Open the collaboration modal after setting the room ID
-                // Increase delay to ensure Redux state is updated
                 setTimeout(() => {
-                    console.log(`[STATE MANAGER] Opening collaboration modal with room ID: ${roomCode}`);
                     if (this.props.onOpenCollaborationModal) {
                         this.props.onOpenCollaborationModal();
-                        console.log(`[STATE MANAGER] Collaboration modal opened`);
-                    } else {
-                        console.error(`[STATE MANAGER] onOpenCollaborationModal function not available`);
                     }
                 }, 300);
             } else {
