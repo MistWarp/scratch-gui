@@ -123,7 +123,7 @@ class WindowedModal extends React.Component {
         // Adjust size for specific modal types
         if (className.includes('settings')) {
             width = 800;
-            height = 600;
+            height = 900;
         } else if (className.includes('library')) {
             width = 1000;
             height = 750;
@@ -131,6 +131,11 @@ class WindowedModal extends React.Component {
             width = 500;
             height = 400;
             resizable = false;
+        } else if (id === 'customProceduresModal') {
+            width = 800;
+            height = 830;
+            resizable = false;
+            maximizable = false;
         } else if (id === 'usernameModal') {
             // Specific styling for username modal
             width = 550;

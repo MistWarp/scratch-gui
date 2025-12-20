@@ -8,12 +8,24 @@
   position: absolute;
   min-width: 100px;
   background-color: var(--ui-modal-background);
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow:
-    rgba(0, 0, 0, 0.3) 0 0 3px,
-    rgba(0, 0, 0, 0.2) 0 3px 10px;
+    rgba(0, 0, 0, 0.3) 0 0 5px,
+    rgba(0, 0, 0, 0.25) 0 5px 20px;
 
   z-index: 999;
+  animation: sa-mcp-fade-in 0.15s ease-out;
+}
+
+@keyframes sa-mcp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .sa-mcp-container {
@@ -22,35 +34,39 @@
   top: -6px;
   z-index: 100;
   position: absolute;
-  box-shadow: 0px 0px 8px 1px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 0px 12px 2px rgba(0, 0, 0, 0.25);
   background-color: var(--ui-modal-background);
   outline: 1px solid var(--ui-black-transparent);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .sa-mcp-input-wrapper {
   position: relative;
-  margin: 4px;
+  margin: 8px;
   /* !important required for extension, because CSS injection method (and hence order) differs from addon */
   box-sizing: border-box !important;
-  height: 1.5rem;
-  min-height: 1.5rem;
+  height: 2rem;
+  min-height: 2rem;
 
   /* Change Scratch default styles */
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  padding-left: 0.2rem;
-  padding-right: 0.2rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  transition: all 0.2s ease;
 }
 
-.sa-mcp-input-wrapper:focus {
+.sa-mcp-input-wrapper:focus-within {
   /* Change Scratch default styles */
-  box-shadow: none;
+  box-shadow: 0 0 0 3px rgba(77, 151, 255, 0.3);
+  border-color: rgba(77, 151, 255, 0.8);
 }
 
 .sa-mcp-input-wrapper[data-error="true"] {
-  border-color: red;
+  border-color: #ff6680;
+  box-shadow: 0 0 0 3px rgba(255, 102, 128, 0.2);
 }
 
 .sa-mcp-input-wrapper > input {
@@ -65,21 +81,70 @@
 }
 
 .sa-mcp-input-suggestion {
-  color: hsla(225, 15%, 40%, 0.65);
+  color: hsla(225, 15%, 40%, 0.5);
+  pointer-events: none;
+}
+
+.sa-mcp-result-box {
+  margin: 0 8px 8px 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(76, 209, 55, 0.1) 0%, rgba(76, 209, 55, 0.05) 100%);
+  border: 2px solid rgba(76, 209, 55, 0.3);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #71cc5d;
+  text-align: center;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  letter-spacing: 0.5px;
+  animation: sa-mcp-result-appear 0.2s ease-out;
+  box-shadow: 0 2px 8px rgba(76, 209, 55, 0.15);
+}
+
+.sa-mcp-result-box.sa-mcp-result-conversion {
+  background: linear-gradient(135deg, rgba(77, 151, 255, 0.1) 0%, rgba(77, 151, 255, 0.05) 100%);
+  border-color: rgba(77, 151, 255, 0.3);
+  color: #7ba5dc;
+  box-shadow: 0 2px 8px rgba(77, 151, 255, 0.15);
+}
+
+@keyframes sa-mcp-result-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .sa-mcp-preview-container {
   flex: auto;
   overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 .sa-mcp-root /* <-- specificity */ .sa-mcp-preview-container {
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
 
 .sa-mcp-preview-container::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 8px;
+}
+
+.sa-mcp-preview-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sa-mcp-preview-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.sa-mcp-preview-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .sa-mcp-preview-blocks {
@@ -100,17 +165,63 @@
   width: 100%;
   fill: transparent;
   cursor: grab;
+  transition: fill 0.15s ease;
 }
 
 .sa-mcp-preview-block {
   filter: brightness(95%);
   cursor: grab;
+  transition: filter 0.15s ease;
+}
+
+.sa-mcp-preview-block:hover {
+  filter: brightness(100%);
 }
 
 .sa-mcp-preview-block-selection {
-  filter: brightness(103%);
+  filter: brightness(108%) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .sa-mcp-preview-block-bg-selection {
-  fill: #7774;
+  fill: rgba(77, 151, 255, 0.15);
+}
+
+.sa-mcp-status-bar {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  color: hsla(225, 15%, 40%, 0.8);
+  background: rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: center;
+  font-family: monospace;
+}
+
+.sa-mcp-sprite-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sa-mcp-sprite-item:hover {
+  background-color: rgba(77, 151, 255, 0.1);
+}
+
+.sa-mcp-sprite-item img {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sa-mcp-sprite-item span {
+  font-size: 25px;
+  color: var(--text-primary);
+  font-weight: 500;
 }

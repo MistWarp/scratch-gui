@@ -1178,12 +1178,12 @@ export default class WorkspaceQuerier {
   /**
    * The maximum number of results to find before we give up searching sub-blocks.
    */
-  static MAX_RESULTS = 2000;
+  static MAX_RESULTS = 5000; // Increased from 2000
 
   /**
    * The maximum number of tokens to find before giving up.
    */
-  static MAX_TOKENS = 10000;
+  static MAX_TOKENS = 20000; // Increased from 10000
   
   /**
    * The maximum number of combinations per block type.
@@ -1217,10 +1217,13 @@ export default class WorkspaceQuerier {
     
     // Set a start time to prevent hanging
     const startTime = Date.now();
-    const MAX_EXECUTION_TIME = 2000; // 2 seconds max
+    const MAX_EXECUTION_TIME = 3000; // Increased to 3 seconds for better results
 
     let bestIllegalResult = null;
     let bestIllegalResultText = "";
+    
+    // Use a Set to track unique results and prevent duplicates
+    const seenResults = new Set();
 
     for (const option of this.tokenGroupBlocks.parseTokens(query, 0, 0)) {
       // Check if we're exceeding time limit
@@ -1232,10 +1235,15 @@ export default class WorkspaceQuerier {
       
       if (option.end >= queryStr.length) {
         if (option.isLegal) {
-          results.push(new QueryResult(query, option));
+          const text = option.type.createText(option, query, true);
+          // Skip duplicate results
+          if (!seenResults.has(text)) {
+            seenResults.add(text);
+            results.push(new QueryResult(query, option));
+          }
         } else {
           const text = option.type.createText(option, query, true);
-          if (!bestIllegalResult || text.length < text) {
+          if (!bestIllegalResult || text.length < bestIllegalResultText.length) {
             bestIllegalResult = new QueryResult(query, option);
             bestIllegalResultText = text;
           }

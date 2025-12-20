@@ -25,6 +25,8 @@ const CustomProcedures = props => (
         contentLabel={props.intl.formatMessage(messages.myblockModalTitle)}
         onRequestClose={props.onCancel}
         id="customProceduresModal"
+        width={800}
+        height={600}
     >
         <Box
             className={styles.workspace}
