@@ -28,6 +28,10 @@ const renderCustomBlock = (customBlockData, svgBlock, Blockly, vm) => {
             const blocklyBlock = workspace.getBlockById(customBlockData.blockId);
             if (blocklyBlock) {
                 const blockXml = Blockly.Xml.blockToDom(blocklyBlock);
+
+                const nextEl = blockXml.querySelector('next');
+                if (nextEl) nextEl.remove();
+
                 const tempBlock = Blockly.Xml.domToBlock(blockXml, workspace);
                 
                 if (tempBlock && tempBlock.getSvgRoot()) {
