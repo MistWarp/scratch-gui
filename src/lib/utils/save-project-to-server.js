@@ -1,6 +1,6 @@
 import queryString from 'query-string';
 import xhr from 'xhr';
-import storage from './persistence/storage';
+import storage from '../persistence/storage';
 
 /**
  * Save a project JSON to the project server.

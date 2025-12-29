@@ -7,7 +7,7 @@ import monitorAdapter from '../lib/utils/monitor-adapter.js';
 import MonitorComponent, {monitorModes} from '../components/monitor/monitor.jsx';
 import {addMonitorRect, getInitialPosition, resizeMonitorRect, removeMonitorRect} from '../reducers/monitor-layout';
 import {getVariable, setVariableValue} from '../lib/utils/variables';
-import importCSV from '../lib/import-csv';
+import importCSV from '../lib/utils/import-csv.js';
 import downloadBlob from '../lib/utils/download-blob';
 import {Theme} from '../lib/themes';
 import SliderPrompt from './slider-prompt.jsx';

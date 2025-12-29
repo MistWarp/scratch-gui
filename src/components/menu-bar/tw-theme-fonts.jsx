@@ -9,7 +9,7 @@ import {Theme} from '../../lib/themes/index.js';
 import {openFontsMenu, fontsMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {persistTheme} from '../../lib/themes/themePersistance.js';
-import {loadGoogleFont, searchGoogleFonts, getPopularGoogleFonts} from '../../lib/google-fonts.js';
+import {loadGoogleFont, searchGoogleFonts, getPopularGoogleFonts} from '../../lib/themes/google-fonts.js';
 
 import dropdownCaret from './dropdown-caret.svg';
 import fontIcon from './icon--font.svg';

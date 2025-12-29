@@ -2,7 +2,7 @@
  * Font management utility for applying theme fonts to the document
  */
 
-import {loadGoogleFont} from '../google-fonts';
+import {loadGoogleFont} from './google-fonts';
 
 let currentFontStyleElement = null;
 

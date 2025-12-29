@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import AudioTrimmerComponent from '../components/audio-trimmer/audio-trimmer.jsx';
-import DragRecognizer from '../lib/drag-recognizer';
+import DragRecognizer from '../lib/utils/drag-recognizer.js';
 
 const MIN_LENGTH = 0.01; // Used to stop sounds being trimmed smaller than 1%
 

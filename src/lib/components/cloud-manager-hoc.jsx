@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 
 import VM from 'scratch-vm';
-import CloudProvider from '../cloud-provider';
+import CloudProvider from '../api/cloud-provider';
 
 import {
     getIsShowingWithId

@@ -1,5 +1,5 @@
 import bindAll from 'lodash.bindall';
-import {getEventXY} from '../lib/utils/touch';
+import {getEventXY} from './touch';
 
 class DragRecognizer {
     /* Gesture states */
