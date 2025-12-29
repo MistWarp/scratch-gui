@@ -241,7 +241,7 @@ const generateManifestEntry = (id, manifest) => {
         result += 'if (!mediaRecorderSupported) manifest.unsupported = true;\n';
     }
     if (id === 'tw-disable-cloud-variables') {
-        result += 'import {isScratchDesktop} from "../../../lib/isScratchDesktop";\n';
+        result += 'import {isScratchDesktop} from "../../../lib/utils/isScratchDesktop";\n';
         result += 'if (isScratchDesktop()) manifest.unsupported = true;\n';
     }
     result += 'export default manifest;\n';

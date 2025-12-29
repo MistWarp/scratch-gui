@@ -27,13 +27,25 @@ class FontsThemeMenu extends React.Component {
         };
         
         this.searchTimeout = null;
+        this._isMounted = false;
     }
 
     componentDidMount() {
         // Load popular fonts on mount
-        this.setState({
-            popularFonts: getPopularGoogleFonts()
-        });
+        this._isMounted = true;
+        if (this._isMounted) {
+            this.setState({
+                popularFonts: getPopularGoogleFonts()
+            });
+        }
+    }
+
+    componentWillUnmount() {
+        this._isMounted = false;
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = null;
+        }
     }
 
     handleGoogleFontInputChange = (e) => {
@@ -53,19 +65,19 @@ class FontsThemeMenu extends React.Component {
 
     searchGoogleFonts = async (query) => {
         if (!query.trim()) {
-            this.setState({ searchResults: [] });
+            if (this._isMounted) this.setState({ searchResults: [] });
             return;
         }
 
-        this.setState({ loading: true });
+        if (this._isMounted) this.setState({ loading: true });
         try {
             const results = await searchGoogleFonts(query);
-            this.setState({ searchResults: results });
+            if (this._isMounted) this.setState({ searchResults: results });
         } catch (error) {
             console.error('Error searching Google Fonts:', error);
-            this.setState({ searchResults: [] });
+            if (this._isMounted) this.setState({ searchResults: [] });
         } finally {
-            this.setState({ loading: false });
+            if (this._isMounted) this.setState({ loading: false });
         }
     }
 
@@ -81,7 +93,7 @@ class FontsThemeMenu extends React.Component {
             };
 
             this.props.onChangeTheme(this.props.theme.set('fonts', newFonts));
-            this.setState({ googleFontInput: '' });
+            if (this._isMounted) this.setState({ googleFontInput: '' });
         } catch (error) {
             console.error('Error loading Google Font:', error);
             // Could show error message to user

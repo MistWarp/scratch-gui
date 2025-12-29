@@ -1,4 +1,4 @@
-import log from '../lib/log';
+import log from '../lib/utils/log';
 
 const ADD_MONITOR_RECT = 'scratch-gui/monitors/ADD_MONITOR_RECT';
 const MOVE_MONITOR_RECT = 'scratch-gui/monitors/MOVE_MONITOR_RECT';

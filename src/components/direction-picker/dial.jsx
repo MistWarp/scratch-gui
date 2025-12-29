@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import React from 'react';
-import {getEventXY} from '../../lib/touch-utils';
+import {getEventXY} from '../../lib/utils/touch';
 
 import styles from './dial.css';
 

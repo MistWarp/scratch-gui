@@ -1,4 +1,4 @@
-import {STAGE_DISPLAY_SIZES} from '../lib/layout-constants.js';
+import {STAGE_DISPLAY_SIZES} from '../lib/constants/layout-constants.js';
 
 const SET_STAGE_SIZE = 'scratch-gui/StageSize/SET_STAGE_SIZE';
 

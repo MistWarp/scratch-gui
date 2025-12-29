@@ -6,9 +6,9 @@ import {connect} from 'react-redux';
 import {setHoveredSprite} from '../reducers/hovered-target';
 import {updateAssetDrag} from '../reducers/asset-drag';
 import VM from 'scratch-vm';
-import getCostumeUrl from '../lib/get-costume-url';
+import getCostumeUrl from '../lib/utils/get-costume-url';
 import DragRecognizer from '../lib/drag-recognizer';
-import {getEventXY} from '../lib/touch-utils';
+import {getEventXY} from '../lib/utils/touch';
 
 import SpriteSelectorItemComponent from '../components/sprite-selector-item/sprite-selector-item.jsx';
 

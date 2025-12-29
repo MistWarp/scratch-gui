@@ -1,5 +1,3 @@
-import analytics from '../lib/analytics';
-
 import decks from '../lib/libraries/decks/index.jsx';
 
 const CLOSE_CARDS = 'scratch-gui/cards/CLOSE_CARDS';
@@ -49,11 +47,6 @@ const reducer = function (state, action) {
         });
     case NEXT_STEP:
         if (state.activeDeckId !== null) {
-            analytics.event({
-                category: 'how-to',
-                action: 'next step',
-                label: `${state.activeDeckId} - ${state.step}`
-            });
             return Object.assign({}, state, {
                 step: state.step + 1
             });

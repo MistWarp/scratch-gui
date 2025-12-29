@@ -12,7 +12,7 @@ const postcssVars = require('postcss-simple-vars');
 const postcssImport = require('postcss-import');
 
 const STATIC_PATH = process.env.STATIC_PATH || '/static';
-const {APP_NAME} = require('./src/lib/brand');
+const {APP_NAME} = require('./src/lib/constants/brand');
 
 const root = process.env.ROOT || '';
 if (root.length > 0 && !root.endsWith('/')) {

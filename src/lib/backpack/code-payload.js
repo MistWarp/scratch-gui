@@ -1,6 +1,6 @@
 import blockToImage from './block-to-image';
 import createThumbnail from './thumbnail';
-import {BLOCKS_DEFAULT_SCALE} from '../layout-constants';
+import {BLOCKS_DEFAULT_SCALE} from '../constants/layout-constants';
 import {Base64} from 'js-base64';
 
 const codePayload = ({blockObjects, topBlockId}) => {

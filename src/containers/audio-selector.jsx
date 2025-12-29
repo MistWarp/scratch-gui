@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import AudioSelectorComponent from '../components/audio-trimmer/audio-selector.jsx';
-import {getEventXY} from '../lib/touch-utils';
+import {getEventXY} from '../lib/utils/touch';
 import DragRecognizer from '../lib/drag-recognizer';
 
 const MIN_LENGTH = 0.01;

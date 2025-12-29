@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import {FormattedMessage, FormattedDate, FormattedTime, FormattedRelative} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import styles from './restore-point-modal.css';
-import {formatBytes} from '../../lib/tw-bytes-utils';
-import RestorePointAPI from '../../lib/tw-restore-point-api';
-import log from '../../lib/log';
+import {formatBytes} from '../../lib/utils/bytes';
+import RestorePointAPI from '../../lib/api/restore-points';
+import log from '../../lib/utils/log';
 import deleteIcon from './delete.svg';
 
 // Browser support is not perfect yet

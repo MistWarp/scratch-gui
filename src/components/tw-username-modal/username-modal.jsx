@@ -6,7 +6,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import classNames from 'classnames';
 
 import styles from './username-modal.css';
-import isScratchDesktop from '../../lib/isScratchDesktop.js';
+import isScratchDesktop from '../../lib/utils/isScratchDesktop.js';
 
 const messages = defineMessages({
     title: {

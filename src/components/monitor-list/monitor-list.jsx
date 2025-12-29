@@ -4,7 +4,7 @@ import Box from '../box/box.jsx';
 import Monitor from '../../containers/monitor.jsx';
 import PropTypes from 'prop-types';
 import {OrderedMap} from 'immutable';
-import {stageSizeToTransform} from '../../lib/screen-utils';
+import {stageSizeToTransform} from '../../lib/utils/screen';
 
 import styles from './monitor-list.css';
 

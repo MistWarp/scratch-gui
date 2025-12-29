@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 
-import ThrottledPropertyHOC from '../lib/throttled-property-hoc.jsx';
+import ThrottledPropertyHOC from '../lib/components/throttled-property-hoc.jsx';
 
 import VM from 'scratch-vm';
-import storage from '../lib/storage';
-import getCostumeUrl from '../lib/get-costume-url';
+import storage from '../lib/persistence/storage';
+import getCostumeUrl from '../lib/utils/get-costume-url';
 
 import WatermarkComponent from '../components/watermark/watermark.jsx';
 

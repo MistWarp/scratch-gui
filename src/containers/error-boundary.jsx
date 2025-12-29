@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CrashMessageComponent from '../components/crash-message/crash-message.jsx';
-import log from '../lib/log.js';
+import log from '../lib/utils/log.js';
 
 class ErrorBoundary extends React.Component {
     constructor (props) {

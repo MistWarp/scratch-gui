@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
-import {APP_NAME} from '../../lib/brand';
+import {APP_NAME} from '../../lib/constants/brand';
 import URL from './url.jsx';
 
 const RedirectModal = props => (

@@ -16,7 +16,7 @@
 
 import IntlMessageFormat from 'intl-messageformat';
 import SettingsStore from './settings-store-singleton';
-import dataURLToBlob from '../lib/data-uri-to-blob';
+import dataURLToBlob from '../lib/utils/data-uri-to-blob';
 import EventTargetShim from './event-target';
 import AddonHooks from './hooks';
 import addons from './generated/addon-manifests';

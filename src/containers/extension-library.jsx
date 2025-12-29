@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import VM from 'scratch-vm';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import log from '../lib/log';
+import log from '../lib/utils/log';
 
 import extensionLibraryContent, {
     galleryError,

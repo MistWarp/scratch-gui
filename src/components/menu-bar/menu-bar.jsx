@@ -35,7 +35,7 @@ import ChangeUsername from '../../containers/tw-change-username.jsx';
 import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 
-import {FEEDBACK_URL} from '../../lib/brand.js';
+import {FEEDBACK_URL} from '../../lib/constants/brand.js';
 
 import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
 import {setPlayer} from '../../reducers/mode';
@@ -90,7 +90,6 @@ import {
 } from '../../reducers/autosave.js';
 
 import collectMetadata from '../../lib/collect-metadata';
-import AutosaveService from '../../lib/autosave-service.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 
 import styles from './menu-bar.css';
@@ -111,11 +110,11 @@ import catLogo from './cat_logo.svg';
 import prehistoricLogo from './prehistoric-logo.svg';
 import oldtimeyLogo from './oldtimey-logo.svg';
 
-import sharedMessages from '../../lib/shared-messages';
+import sharedMessages from '../../lib/constants/shared-messages';
 
 import SeeInsideButton from './tw-see-inside.jsx';
-import {notScratchDesktop} from '../../lib/isScratchDesktop.js';
-import {APP_NAME} from '../../lib/brand.js';
+import {notScratchDesktop} from '../../lib/utils/isScratchDesktop.js';
+import {APP_NAME} from '../../lib/constants/brand.js';
 
 /* const ariaMessages = defineMessages({
     tutorials: {

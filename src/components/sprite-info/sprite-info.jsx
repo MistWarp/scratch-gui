@@ -10,8 +10,8 @@ import DirectionPicker from '../../containers/direction-picker.jsx';
 
 import {injectIntl, intlShape, defineMessages, FormattedMessage} from 'react-intl';
 
-import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants.js';
-import {isWideLocale} from '../../lib/locale-utils.js';
+import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants.js';
+import {isWideLocale} from '../../lib/utils/locale.js';
 
 import styles from './sprite-info.css';
 

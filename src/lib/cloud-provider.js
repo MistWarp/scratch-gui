@@ -1,4 +1,4 @@
-import log from './log.js';
+import log from './utils/log.js';
 import throttle from 'lodash.throttle';
 
 const anonymizeUsername = username => {

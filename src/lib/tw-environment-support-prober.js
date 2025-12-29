@@ -1,5 +1,5 @@
 import Renderer from 'scratch-render';
-import log from './log';
+import log from './utils/log';
 
 let cachedRendererSupport = null;
 export const isRendererSupported = () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './invalid-embed.css';
-import {APP_NAME, FEEDBACK_URL} from '../../lib/brand';
+import {APP_NAME, FEEDBACK_URL} from '../../lib/constants/brand';
 
 // Note that when this component is used, the rest of scratch-gui is not being run, so don't
 // use redux, themes, translations, etc.

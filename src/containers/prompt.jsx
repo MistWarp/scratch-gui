@@ -3,7 +3,7 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import PromptComponent from '../components/prompt/prompt.jsx';
 import VM from 'scratch-vm';
-import {SCRATCH_MAX_CLOUD_VARIABLES} from '../lib/tw-cloud-limits.js';
+import {SCRATCH_MAX_CLOUD_VARIABLES} from '../lib/constants/tw-cloud-limits.js';
 
 class Prompt extends React.Component {
     constructor (props) {

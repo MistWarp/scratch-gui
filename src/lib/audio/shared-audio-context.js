@@ -1,6 +1,6 @@
 import StartAudioContext from '@turbowarp/startaudiocontext';
 import bowser from 'bowser';
-import log from '../log';
+import log from '../utils/log';
 
 let AUDIO_CONTEXT;
 

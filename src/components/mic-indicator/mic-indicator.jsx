@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styles from './mic-indicator.css';
 import micIcon from './mic-indicator.svg';
-import {stageSizeToTransform} from '../../lib/screen-utils';
+import {stageSizeToTransform} from '../../lib/utils/screen';
 
 const MicIndicatorComponent = props => (
     <div

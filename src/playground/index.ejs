@@ -138,12 +138,7 @@
         var splash = document.querySelector('.spash-waiting-for-js');
         splash.setAttribute('data-theme', theme);
         if (theme !== 'dark') {
-          if (<%= JSON.stringify(htmlWebpackPlugin.options.isEditor) %>) {
-            splash.style.backgroundColor = accent;
-            splash.style.color = 'white';
-          } else {
-            splash.style.color = accent;
-          }
+          splash.style.color = accent;
         }
         splash.hidden = false;
 

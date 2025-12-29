@@ -12,7 +12,7 @@ import TagButton from '../../containers/tag-button.jsx';
 import Spinner from '../spinner/spinner.jsx';
 import Separator from '../tw-extension-separator/separator.jsx';
 import RemovedTrademarks from '../tw-removed-trademarks/removed-trademarks.jsx';
-import {APP_NAME} from '../../lib/brand.js';
+import {APP_NAME} from '../../lib/constants/brand.js';
 
 import styles from './library.css';
 

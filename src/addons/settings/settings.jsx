@@ -24,7 +24,7 @@ import messagesByLocale from '../generated/l10n-settings-entries';
 import settingsTranslationsEnglish from './en.json';
 import settingsTranslationsOther from './translations.json';
 import upstreamMeta from '../generated/upstream-meta.json';
-import {detectLocale} from '../../lib/detect-locale';
+import {detectLocale} from '../../lib/utils/detect-locale';
 import SettingsStore from '../settings-store-singleton';
 import Channels from '../channels';
 import extensionImage from './icons/extension.svg';
@@ -36,7 +36,7 @@ import TWFancyCheckbox from '../../components/tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
 import {applyGuiColors} from '../../lib/themes/guiHelpers.js';
-import {APP_NAME, FEEDBACK_URL} from '../../lib/brand.js';
+import {APP_NAME, FEEDBACK_URL} from '../../lib/constants/brand.js';
 import '../../lib/normalize.css';
 
 /* eslint-disable no-alert */

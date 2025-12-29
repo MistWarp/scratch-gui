@@ -19,7 +19,7 @@ import {
 
 import CardsComponent from '../components/cards/cards.jsx';
 import {loadImageData} from '../lib/libraries/decks/translate-image.js';
-import {notScratchDesktop} from '../lib/isScratchDesktop';
+import {notScratchDesktop} from '../lib/utils/isScratchDesktop';
 
 class Cards extends React.Component {
     componentDidMount () {
