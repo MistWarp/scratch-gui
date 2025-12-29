@@ -13,12 +13,12 @@ import {
     spritePayload,
     codePayload,
     LOCAL_API
-} from '../lib/backpack-api';
-import DragConstants from '../lib/drag-constants';
-import DropAreaHOC from '../lib/drop-area-hoc.jsx';
+} from '../lib/api/backpack';
+import DragConstants from '../lib/constants/drag-constants';
+import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 
 import {connect} from 'react-redux';
-import storage from '../lib/storage';
+import storage from '../lib/persistence/storage';
 import VM from 'scratch-vm';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];

@@ -4,7 +4,7 @@ import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import PaintEditor from '../lib/tw-scratch-paint';
 import {inlineSvgFonts} from '@turbowarp/scratch-svg-renderer';
-import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
+import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import {openFontsModal} from '../reducers/modals';
 
 import {connect} from 'react-redux';

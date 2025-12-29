@@ -1,6 +1,6 @@
 import VM from 'scratch-vm';
-import storage from '../lib/storage';
-import {MAXIMUM_CLOUD_VARIABLES} from '../lib/tw-cloud-limits';
+import storage from '../lib/persistence/storage';
+import {MAXIMUM_CLOUD_VARIABLES} from '../lib/constants/tw-cloud-limits';
 
 const SET_VM = 'scratch-gui/vm/SET_VM';
 const defaultVM = new VM();

@@ -9,8 +9,8 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 import Controls from '../../containers/controls.jsx';
-import {getStageDimensions} from '../../lib/screen-utils';
-import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/layout-constants';
+import {getStageDimensions} from '../../lib/utils/screen';
+import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 
 import fullScreenIcon from './icon--fullscreen.svg';
 import unFullScreenIcon from './icon--unfullscreen.svg';
@@ -21,7 +21,7 @@ import settingsIcon from './icon--settings.svg';
 
 import styles from './stage-header.css';
 
-import FullscreenAPI from '../../lib/tw-fullscreen-api';
+import FullscreenAPI from '../../lib/api/fullscreen';
 
 const messages = defineMessages({
     largeStageSizeMessage: {

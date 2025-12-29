@@ -6,7 +6,7 @@ import ReactModal from 'react-modal';
 import VM from 'scratch-vm';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 
-import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
+import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import {
     getIsError,
     getIsShowingProject
@@ -27,21 +27,21 @@ import {
     openCustomExtensionModal
 } from '../reducers/modals';
 
-import FontLoaderHOC from '../lib/font-loader-hoc.jsx';
-import LocalizationHOC from '../lib/localization-hoc.jsx';
-import SBFileUploaderHOC from '../lib/sb-file-uploader-hoc.jsx';
-import SB3PostMessageHOC from '../lib/sb3-postmessage-hoc.jsx';
-import ProjectFetcherHOC from '../lib/project-fetcher-hoc.jsx';
-import TitledHOC from '../lib/titled-hoc.jsx';
-import ProjectSaverHOC from '../lib/project-saver-hoc.jsx';
-import storage from '../lib/storage';
-import vmListenerHOC from '../lib/vm-listener-hoc.jsx';
-import vmManagerHOC from '../lib/vm-manager-hoc.jsx';
-import cloudManagerHOC from '../lib/cloud-manager-hoc.jsx';
+import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
+import LocalizationHOC from '../lib/components/localization-hoc.jsx';
+import SBFileUploaderHOC from '../lib/components/sb-file-uploader-hoc.jsx';
+import SB3PostMessageHOC from '../lib/components/sb3-postmessage-hoc.jsx';
+import ProjectFetcherHOC from '../lib/components/project-fetcher-hoc.jsx';
+import TitledHOC from '../lib/components/titled-hoc.jsx';
+import ProjectSaverHOC from '../lib/components/project-saver-hoc.jsx';
+import storage from '../lib/persistence/storage';
+import vmListenerHOC from '../lib/components/vm-listener-hoc.jsx';
+import vmManagerHOC from '../lib/components/vm-manager-hoc.jsx';
+import cloudManagerHOC from '../lib/components/cloud-manager-hoc.jsx';
 
 import GUIComponent from '../components/gui/gui.jsx';
-import {setIsScratchDesktop} from '../lib/isScratchDesktop.js';
-import TWFullScreenResizerHOC from '../lib/tw-fullscreen-resizer-hoc.jsx';
+import {setIsScratchDesktop} from '../lib/utils/isScratchDesktop.js';
+import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.jsx';
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;

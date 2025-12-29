@@ -8,18 +8,18 @@ import {intlShape, injectIntl, defineMessages} from 'react-intl';
 import VMScratchBlocks from '../lib/blocks';
 import VM from 'scratch-vm';
 
-import log from '../lib/log.js';
+import log from '../lib/utils/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
 import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
-import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
-import {BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES} from '../lib/layout-constants';
-import DropAreaHOC from '../lib/drop-area-hoc.jsx';
-import DragConstants from '../lib/drag-constants';
+import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
+import {BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES} from '../lib/constants/layout-constants';
+import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
+import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
-import defineDynamicBlock from '../lib/define-dynamic-block';
+import defineDynamicBlock from '../lib/utils/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
 
@@ -43,9 +43,9 @@ import {
     BLOCKS_TAB_INDEX
 } from '../reducers/editor-tab';
 import AddonHooks from '../addons/hooks.js';
-import LoadScratchBlocksHOC from '../lib/tw-load-scratch-blocks-hoc.jsx';
+import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
-import {gentlyRequestPersistentStorage} from '../lib/tw-persistent-storage.js';
+import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({

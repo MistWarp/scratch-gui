@@ -2,9 +2,9 @@ import './import-first';
 
 import React from 'react';
 import {compose} from 'redux';
-import AppStateHOC from '../lib/app-state-hoc.jsx';
-import TWEmbedFullScreenHOC from '../lib/tw-embed-fullscreen-hoc.jsx';
-import TWStateManagerHOC from '../lib/tw-state-manager-hoc.jsx';
+import AppStateHOC from '../lib/components/app-state-hoc.jsx';
+import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx';
+import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import runAddons from '../addons/entry';
 import {Theme} from '../lib/themes/index.js';
 

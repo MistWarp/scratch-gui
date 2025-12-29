@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import downloadBlob from '../lib/download-blob.js';
+import downloadBlob from '../lib/utils/download-blob.js';
 import Settings from '../addons/settings/settings.jsx';
 import render from './app-target';
 

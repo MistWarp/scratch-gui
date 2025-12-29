@@ -5,8 +5,8 @@ import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
 import Box from '../box/box.jsx';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import SortableAsset from './sortable-asset.jsx';
-import SortableHOC from '../../lib/sortable-hoc.jsx';
-import DragConstants from '../../lib/drag-constants';
+import SortableHOC from '../../lib/components/sortable-hoc.jsx';
+import DragConstants from '../../lib/constants/drag-constants';
 
 import styles from './selector.css';
 

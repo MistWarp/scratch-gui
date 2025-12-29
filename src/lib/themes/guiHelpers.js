@@ -1,6 +1,6 @@
 import {Theme} from '.';
 import AddonHooks from '../../addons/hooks';
-import {applyThemeFonts} from '../theme-fonts';
+import {applyThemeFonts} from '../themes/fonts';
 import './global-styles.css';
 
 const BLOCK_COLOR_NAMES = [

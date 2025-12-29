@@ -4,7 +4,7 @@ import React from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import {setCloud} from '../reducers/tw';
-import isScratchDesktop from '../lib/isScratchDesktop';
+import isScratchDesktop from '../lib/utils/isScratchDesktop';
 
 const messages = defineMessages({
     cloudUnavailableAlert: {

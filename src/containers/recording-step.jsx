@@ -4,7 +4,7 @@ import bindAll from 'lodash.bindall';
 import RecordingStepComponent from '../components/record-modal/recording-step.jsx';
 import AudioRecorder from '../lib/audio/audio-recorder.js';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import log from '../lib/log';
+import log from '../lib/utils/log';
 
 const messages = defineMessages({
     alertMsg: {

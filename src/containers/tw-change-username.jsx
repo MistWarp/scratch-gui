@@ -5,7 +5,7 @@ import {connect} from 'react-redux';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {openUsernameModal} from '../reducers/modals';
 import {closeEditMenu} from '../reducers/menus';
-import isScratchDesktop from '../lib/isScratchDesktop';
+import isScratchDesktop from '../lib/utils/isScratchDesktop';
 
 const messages = defineMessages({
     cannotChangeWhileRunning: {

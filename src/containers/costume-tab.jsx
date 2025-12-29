@@ -8,11 +8,11 @@ import AssetPanel from '../components/asset-panel/asset-panel.jsx';
 import PaintEditorWrapper from './paint-editor-wrapper.jsx';
 import {connect} from 'react-redux';
 import {handleFileUpload, costumeUpload} from '../lib/file-uploader.js';
-import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
-import DragConstants from '../lib/drag-constants';
-import {emptyCostume} from '../lib/empty-assets';
-import sharedMessages from '../lib/shared-messages';
-import downloadBlob from '../lib/download-blob';
+import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
+import DragConstants from '../lib/constants/drag-constants';
+import {emptyCostume} from '../lib/utils/empty-assets';
+import sharedMessages from '../lib/constants/shared-messages';
+import downloadBlob from '../lib/utils/download-blob';
 
 import {
     openCostumeLibrary,

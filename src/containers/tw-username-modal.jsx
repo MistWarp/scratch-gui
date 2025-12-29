@@ -5,8 +5,8 @@ import {connect} from 'react-redux';
 import {setUsername, setUsernameInvalid} from '../reducers/tw';
 import UsernameModalComponent from '../components/tw-username-modal/username-modal.jsx';
 import {closeUsernameModal} from '../reducers/modals';
-import {generateRandomUsername} from '../lib/tw-username';
-import isScratchDesktop from '../lib/isScratchDesktop';
+import {generateRandomUsername} from '../lib/utils/tw-username';
+import isScratchDesktop from '../lib/utils/isScratchDesktop';
 
 class UsernameModal extends React.Component {
     constructor (props) {

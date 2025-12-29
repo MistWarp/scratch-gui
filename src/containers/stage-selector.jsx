@@ -9,13 +9,13 @@ import {openBackdropLibrary} from '../reducers/modals';
 import {activateTab, COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
 import {setHoveredSprite} from '../reducers/hovered-target';
-import DragConstants from '../lib/drag-constants';
-import DropAreaHOC from '../lib/drop-area-hoc.jsx';
-import ThrottledPropertyHOC from '../lib/throttled-property-hoc.jsx';
-import {emptyCostume} from '../lib/empty-assets';
-import sharedMessages from '../lib/shared-messages';
-import {fetchCode} from '../lib/backpack-api';
-import {getEventXY} from '../lib/touch-utils';
+import DragConstants from '../lib/constants/drag-constants';
+import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
+import ThrottledPropertyHOC from '../lib/components/throttled-property-hoc.jsx';
+import {emptyCostume} from '../lib/utils/empty-assets';
+import sharedMessages from '../lib/constants/shared-messages';
+import {fetchCode} from '../lib/api/backpack';
+import {getEventXY} from '../lib/utils/touch';
 
 import StageSelectorComponent from '../components/stage-selector/stage-selector.jsx';
 

@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import VM from 'scratch-vm';
 import {connect} from 'react-redux';
-import {getEventXY} from '../lib/touch-utils';
-import {getVariableValue, setVariableValue} from '../lib/variable-utils';
+import {getEventXY} from '../lib/utils/touch';
+import {getVariableValue, setVariableValue} from '../lib/utils/variables';
 import ListMonitorComponent from '../components/monitor/list-monitor.jsx';
 import {Map} from 'immutable';
 

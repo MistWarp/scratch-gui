@@ -1,5 +1,5 @@
 import {defineMessages} from 'react-intl';
-import sharedMessages from '../shared-messages';
+import sharedMessages from '../constants/shared-messages';
 
 let messages = defineMessages({
     variable: {

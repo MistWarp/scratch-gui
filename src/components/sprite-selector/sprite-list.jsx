@@ -2,13 +2,13 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 
-import DragConstants from '../../lib/drag-constants';
+import DragConstants from '../../lib/constants/drag-constants';
 
 import Box from '../box/box.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
-import SortableHOC from '../../lib/sortable-hoc.jsx';
+import SortableHOC from '../../lib/components/sortable-hoc.jsx';
 import SortableAsset from '../asset-panel/sortable-asset.jsx';
-import ThrottledPropertyHOC from '../../lib/throttled-property-hoc.jsx';
+import ThrottledPropertyHOC from '../../lib/components/throttled-property-hoc.jsx';
 
 import styles from './sprite-selector.css';
 

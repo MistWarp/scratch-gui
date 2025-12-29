@@ -5,7 +5,7 @@ import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import StudioView from '../tw-studioview/studioview.jsx';
 import styles from './featured-projects.css';
-import {setProjectId} from '../../lib/tw-navigation-utils.js';
+import {setProjectId} from '../../lib/utils/navigation.js';
 import classNames from 'classnames';
 
 class FeaturedProjects extends React.Component {

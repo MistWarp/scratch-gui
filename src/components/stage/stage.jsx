@@ -10,8 +10,8 @@ import TargetHighlight from '../../containers/target-highlight.jsx';
 import GreenFlagOverlay from '../../containers/green-flag-overlay.jsx';
 import Question from '../../containers/question.jsx';
 import MicIndicator from '../mic-indicator/mic-indicator.jsx';
-import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants.js';
-import {getStageDimensions, getMinWidth} from '../../lib/screen-utils.js';
+import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants.js';
+import {getStageDimensions, getMinWidth} from '../../lib/utils/screen.js';
 import styles from './stage.css';
 
 const StageComponent = props => {

@@ -20,9 +20,9 @@ import SoundEditorNotSupported from '../components/tw-sound-editor-not-supported
 
 import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
 import {handleFileUpload, soundUpload} from '../lib/file-uploader.js';
-import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
-import DragConstants from '../lib/drag-constants';
-import downloadBlob from '../lib/download-blob';
+import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
+import DragConstants from '../lib/constants/drag-constants';
+import downloadBlob from '../lib/utils/download-blob';
 import SharedAudioContext from '../lib/audio/shared-audio-context.js';
 
 import {connect} from 'react-redux';

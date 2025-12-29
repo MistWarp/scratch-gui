@@ -8,8 +8,8 @@ import {closeLoadingProject, closeRestorePointModal, openLoadingProject} from '.
 import {LoadingStates, getIsShowingProject, onLoadedProject, requestProjectUpload} from '../reducers/project-state';
 import {setFileHandle} from '../reducers/tw';
 import TWRestorePointModal from '../components/tw-restore-point-modal/restore-point-modal.jsx';
-import RestorePointAPI from '../lib/tw-restore-point-api';
-import log from '../lib/log';
+import RestorePointAPI from '../lib/api/restore-points';
+import log from '../lib/utils/log';
 
 /* eslint-disable no-alert */
 

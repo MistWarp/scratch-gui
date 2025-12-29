@@ -11,7 +11,7 @@ import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
-import {APP_NAME} from '../../lib/brand.js';
+import {APP_NAME} from '../../lib/constants/brand.js';
 
 /* eslint-disable react/no-multi-comp */
 

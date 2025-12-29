@@ -6,7 +6,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import FileInput from './file-input.jsx';
 import styles from './custom-extension-modal.css';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import { APP_NAME } from '../../lib/brand';
+import { APP_NAME } from '../../lib/constants/brand';
 
 const messages = defineMessages({
     title: {

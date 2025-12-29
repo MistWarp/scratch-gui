@@ -5,7 +5,7 @@ import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import VM from 'scratch-vm';
 
 import {getSpriteLibrary} from '../lib/libraries/tw-async-libraries';
-import randomizeSpritePosition from '../lib/randomize-sprite-position';
+import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
 import spriteTags from '../lib/libraries/sprite-tags';
 
 import LibraryComponent from '../components/library/library.jsx';

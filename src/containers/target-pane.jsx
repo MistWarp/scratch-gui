@@ -12,17 +12,17 @@ import {activateTab, COSTUMES_TAB_INDEX, BLOCKS_TAB_INDEX} from '../reducers/edi
 import {setReceivedBlocks} from '../reducers/hovered-target';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
 import {setRestore} from '../reducers/restore-deletion';
-import DragConstants from '../lib/drag-constants';
+import DragConstants from '../lib/constants/drag-constants';
 import TargetPaneComponent from '../components/target-pane/target-pane.jsx';
 import {getSpriteLibrary} from '../lib/libraries/tw-async-libraries';
 import {handleFileUpload, spriteUpload} from '../lib/file-uploader.js';
-import sharedMessages from '../lib/shared-messages';
-import {emptySprite} from '../lib/empty-assets';
+import sharedMessages from '../lib/constants/shared-messages';
+import {emptySprite} from '../lib/utils/empty-assets';
 import {highlightTarget} from '../reducers/targets';
-import {fetchSprite, fetchCode} from '../lib/backpack-api';
-import randomizeSpritePosition from '../lib/randomize-sprite-position';
-import downloadBlob from '../lib/download-blob';
-import log from '../lib/log';
+import {fetchSprite, fetchCode} from '../lib/api/backpack';
+import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
+import downloadBlob from '../lib/utils/download-blob';
+import log from '../lib/utils/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
 
 class TargetPane extends React.Component {

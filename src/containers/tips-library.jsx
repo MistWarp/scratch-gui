@@ -6,8 +6,7 @@ import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import decksLibraryContent from '../lib/libraries/decks/index.jsx';
 import tutorialTags from '../lib/libraries/tutorial-tags';
 
-import analytics from '../lib/analytics';
-import {notScratchDesktop} from '../lib/isScratchDesktop';
+import {notScratchDesktop} from '../lib/utils/isScratchDesktop';
 
 import LibraryComponent from '../components/library/library.jsx';
 
@@ -37,12 +36,6 @@ class TipsLibrary extends React.PureComponent {
         ]);
     }
     handleItemSelect (item) {
-        analytics.event({
-            category: 'library',
-            action: 'Select How-to',
-            label: item.id
-        });
-
         /*
             Support tutorials that require specific starter projects.
             If a tutorial declares "requiredProjectId", check that the URL contains

@@ -1,7 +1,7 @@
 import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {APP_NAME} from '../../lib/brand.js';
+import {APP_NAME} from '../../lib/constants/brand.js';
 import Modal from '../../containers/windowed-modal.jsx';
 import styles from './unknown-platform-modal.css';
 

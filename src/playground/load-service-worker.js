@@ -1,4 +1,4 @@
-import log from '../lib/log';
+import log from '../lib/utils/log';
 import serviceWorker from '!!file-loader?name=sw.js!./service-worker.js';
 
 let loaded = false;

@@ -2,7 +2,7 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
 import VM from 'scratch-vm';
-import {setVariableValue} from '../lib/variable-utils';
+import {setVariableValue} from '../lib/utils/variables';
 import {connect} from 'react-redux';
 
 import SliderMonitorComponent from '../components/monitor/slider-monitor.jsx';

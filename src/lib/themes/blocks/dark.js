@@ -1,4 +1,4 @@
-import {hex2hsv, hsv2hex} from '../../tw-color-utils';
+import {hex2hsv, hsv2hex} from '../../utils/color';
 
 const blockColors = {
     motion: {

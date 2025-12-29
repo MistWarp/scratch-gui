@@ -1,9 +1,9 @@
 import {BitmapAdapter, sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
-import randomizeSpritePosition from './randomize-sprite-position.js';
-import bmpConverter from './bmp-converter';
+import randomizeSpritePosition from './utils/randomize-sprite-position.js';
+import bmpConverter from './utils/bmp-converter';
 import gifDecoder from './gif-decoder';
-import convertAudioToWav from './tw-convert-audio-wav.js';
-import log from './log.js';
+import convertAudioToWav from './utils/convert-audio-wav.js';
+import log from './utils/log.js';
 
 /**
  * Extract the file name given a string of the form fileName + ext
