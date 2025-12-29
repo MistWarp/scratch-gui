@@ -17,12 +17,12 @@ const guiColors = {
 
     'menu-bar-background-image':
         'linear-gradient(90deg, ' +
-        'oklab(0.72 0.10 -0.14 / 0.8) 0%, ' +   // deep lavender
-        'oklab(0.75 0.08 -0.12 / 0.8) 20%, ' +  // lavender
-        'oklab(0.78 0.06 -0.08 / 0.8) 40%, ' +  // light lavender
-        'oklab(0.80 0.08 -0.04 / 0.8) 60%, ' +  // lavender pink
-        'oklab(0.82 0.10 0.00 / 0.8) 80%, ' +   // soft pink
-        'oklab(0.85 0.08 0.04 / 0.8) 100%)'     // pale pink
+        'oklab(0.72 0.10 -0.14 / 0.8) 0%, ' + // deep lavender
+        'oklab(0.75 0.08 -0.12 / 0.8) 20%, ' + // lavender
+        'oklab(0.78 0.06 -0.08 / 0.8) 40%, ' + // light lavender
+        'oklab(0.80 0.08 -0.04 / 0.8) 60%, ' + // lavender pink
+        'oklab(0.82 0.10 0.00 / 0.8) 80%, ' + // soft pink
+        'oklab(0.85 0.08 0.04 / 0.8) 100%)' // pale pink
 };
 
 const blockColors = {

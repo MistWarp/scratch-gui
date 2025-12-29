@@ -36,37 +36,35 @@ let loadingPromise = null;
  * Load a Google Font by adding a link tag to the document head
  * @param {string} fontFamily - The font family name
  * @param {string[]} weights - Array of font weights (e.g., ['400', '700'])
- * @returns {Promise<void>}
+ * @returns {undefined}
  */
-const loadGoogleFont = (fontFamily, weights = ['400']) => {
-    return new Promise((resolve, reject) => {
-        const fontName = fontFamily.replace(/\s+/g, '+');
-        const weightStr = weights.join(',');
-        const url = `https://fonts.googleapis.com/css2?family=${fontName}:wght@${weightStr}&display=swap`;
+const loadGoogleFont = (fontFamily, weights = ['400']) => new Promise((resolve, reject) => {
+    const fontName = fontFamily.replace(/\s+/g, '+');
+    const weightStr = weights.join(',');
+    const url = `https://fonts.googleapis.com/css2?family=${fontName}:wght@${weightStr}&display=swap`;
         
-        // Check if already loaded
-        const existingLink = document.querySelector(`link[href*="${fontName}"]`);
-        if (existingLink) {
-            resolve();
-            return;
-        }
+    // Check if already loaded
+    const existingLink = document.querySelector(`link[href*="${fontName}"]`);
+    if (existingLink) {
+        resolve();
+        return;
+    }
 
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
         
-        link.onload = () => resolve();
-        link.onerror = () => reject(new Error(`Failed to load font: ${fontFamily}`));
+    link.onload = () => resolve();
+    link.onerror = () => reject(new Error(`Failed to load font: ${fontFamily}`));
         
-        document.head.appendChild(link);
-    });
-};
+    document.head.appendChild(link);
+});
 
 /**
  * Get list of available Google Fonts
  * @returns {Promise<Array>} Array of font objects with family, category, variants
  */
-const getGoogleFontsList = async () => {
+const getGoogleFontsList = () => {
     if (fontsCache) {
         return fontsCache;
     }
@@ -116,11 +114,11 @@ const getGoogleFontsList = async () => {
  * @param {string} query - Search query
  * @returns {Promise<Array>} Filtered array of font objects
  */
-const searchGoogleFonts = async (query) => {
+const searchGoogleFonts = async query => {
     const fonts = await getGoogleFontsList();
     const lowercaseQuery = query.toLowerCase();
     
-    return fonts.filter(font => 
+    return fonts.filter(font =>
         font.family.toLowerCase().includes(lowercaseQuery)
     ).slice(0, 10); // Limit results
 };
@@ -128,9 +126,9 @@ const searchGoogleFonts = async (query) => {
 /**
  * Check if a font is a Google Font
  * @param {string} fontFamily - Font family name
- * @returns {Promise<boolean>}
+ * @returns {boolean} if a font family is on google fonts
  */
-const isGoogleFont = async (fontFamily) => {
+const isGoogleFont = async fontFamily => {
     const fonts = await getGoogleFontsList();
     return fonts.some(font => font.family.toLowerCase() === fontFamily.toLowerCase());
 };
@@ -139,15 +137,13 @@ const isGoogleFont = async (fontFamily) => {
  * Get popular Google Fonts for quick selection
  * @returns {Array<string>} Array of popular font family names
  */
-const getPopularGoogleFonts = () => {
-    return [...POPULAR_GOOGLE_FONTS];
-};
+const getPopularGoogleFonts = () => [...POPULAR_GOOGLE_FONTS];
 
 /**
  * Remove a Google Font from the document
  * @param {string} fontFamily - The font family name to remove
  */
-const removeGoogleFont = (fontFamily) => {
+const removeGoogleFont = fontFamily => {
     const fontName = fontFamily.replace(/\s+/g, '+');
     const existingLink = document.querySelector(`link[href*="${fontName}"]`);
     if (existingLink) {

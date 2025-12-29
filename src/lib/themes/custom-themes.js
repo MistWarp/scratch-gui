@@ -3,8 +3,7 @@
  * Handles creation, storage, and management of user-defined themes including custom gradients and accents
  */
 
-import { Theme } from './index.js';
-import { persistTheme } from './themePersistance.js';
+import {Theme} from './index.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
@@ -19,7 +18,7 @@ class GradientUtils {
      * @param {number} direction - Gradient direction in degrees (default: 90 for horizontal)
      * @returns {string} CSS linear-gradient string
      */
-    static createLinearGradient(colorStops, direction = 90) {
+    static createLinearGradient (colorStops, direction = 90) {
         if (!Array.isArray(colorStops) || colorStops.length < 2) {
             throw new Error('At least 2 color stops are required');
         }
@@ -37,7 +36,7 @@ class GradientUtils {
      * @param {number} opacity - Opacity value (0-1)
      * @returns {string} RGBA color string
      */
-    static hexToRgba(hex, opacity = 1) {
+    static hexToRgba (hex, opacity = 1) {
         const cleanHex = hex.replace('#', '');
         const r = parseInt(cleanHex.substr(0, 2), 16);
         const g = parseInt(cleanHex.substr(2, 2), 16);
@@ -48,16 +47,16 @@ class GradientUtils {
     /**
      * Convert hex to HSL
      * @param {string} hex - Hex color string
-     * @returns {Object} HSL object {h, s, l}
+     * @returns {object} HSL object {h, s, l}
      */
-    static hexToHsl(hex) {
+    static hexToHsl (hex) {
         const r = parseInt(hex.slice(1, 3), 16) / 255;
         const g = parseInt(hex.slice(3, 5), 16) / 255;
         const b = parseInt(hex.slice(5, 7), 16) / 255;
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-        let h, s, l = (max + min) / 2;
+        let h; let s; const l = (max + min) / 2;
 
         if (max === min) {
             h = s = 0; // achromatic
@@ -65,9 +64,9 @@ class GradientUtils {
             const d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
             switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
+            case r: h = ((g - b) / d) + (g < b ? 6 : 0); break;
+            case g: h = ((b - r) / d) + 2; break;
+            case b: h = ((r - g) / d) + 4; break;
             }
             h /= 6;
         }
@@ -86,7 +85,7 @@ class GradientUtils {
      * @param {number} l - Lightness (0-100)
      * @returns {string} Hex color string
      */
-    static hslToHex(h, s, l) {
+    static hslToHex (h, s, l) {
         h /= 360;
         s /= 100;
         l /= 100;
@@ -94,29 +93,29 @@ class GradientUtils {
         const hue2rgb = (p, q, t) => {
             if (t < 0) t += 1;
             if (t > 1) t -= 1;
-            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 6) return p + (((q - p) * 6) * t);
             if (t < 1 / 2) return q;
-            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            if (t < 2 / 3) return p + (((q - p) * ((2 / 3) - t)) * 6);
             return p;
         };
 
-        let r, g, b;
+        let r; let g; let b;
         if (s === 0) {
             r = g = b = l; // achromatic
         } else {
-            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            const p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
+            const q = l < 0.5 ? l * (1 + s) : l + s - (l * s);
+            const p = (2 * l) - q;
+            r = hue2rgb(p, q, h + (1 / 3));
             g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
+            b = hue2rgb(p, q, h - (1 / 3));
         }
 
-        const toHex = (c) => {
+        const toHex = c => {
             const hex = Math.round(c * 255).toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
+            return hex.length === 1 ? `0${hex}` : hex;
         };
 
-        return '#' + toHex(r) + toHex(g) + toHex(b);
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
     /**
@@ -125,7 +124,7 @@ class GradientUtils {
      * @param {number} percent - Percentage to lighten (0-100)
      * @returns {string} Lightened hex color
      */
-    static lightenColor(hex, percent) {
+    static lightenColor (hex, percent) {
         const hsl = this.hexToHsl(hex);
         hsl.l = Math.min(100, hsl.l + percent);
         return this.hslToHex(hsl.h, hsl.s, hsl.l);
@@ -137,7 +136,7 @@ class GradientUtils {
      * @param {number} percent - Percentage to darken (0-100)
      * @returns {string} Darkened hex color
      */
-    static darkenColor(hex, percent) {
+    static darkenColor (hex, percent) {
         const hsl = this.hexToHsl(hex);
         hsl.l = Math.max(0, hsl.l - percent);
         return this.hslToHex(hsl.h, hsl.s, hsl.l);
@@ -146,9 +145,9 @@ class GradientUtils {
     /**
      * Generate color variations for an accent theme
      * @param {string} baseColor - Base hex color
-     * @returns {Object} Color variations
+     * @returns {object} Color variations
      */
-    static generateColorVariations(baseColor) {
+    static generateColorVariations (baseColor) {
         return {
             primary: baseColor,
             light: this.lightenColor(baseColor, 15),
@@ -164,10 +163,10 @@ class GradientUtils {
     /**
      * Generate accent theme colors from a primary color
      * @param {string} primaryColor - Primary color (hex, rgb, hsl, etc.)
-     * @param {Object} options - Options for color generation
-     * @returns {Object} Generated accent colors
+     * @param {object} options - Options for color generation
+     * @returns {object} Generated accent colors
      */
-    static generateAccentColors(primaryColor, options = {}) {
+    static generateAccentColors (primaryColor) {
         const variations = this.generateColorVariations(primaryColor);
 
         return {
@@ -193,12 +192,11 @@ class GradientUtils {
      * Create a custom gradient accent theme
      * @param {Array} colorStops - Gradient color stops
      * @param {string} primaryColor - Primary accent color
-     * @param {Object} options - Additional options
-     * @returns {Object} Custom accent theme object
+     * @param {object} options - Additional options
+     * @returns {object} Custom accent theme object
      */
-    static createGradientAccent(colorStops, primaryColor, options = {}) {
+    static createGradientAccent (colorStops, primaryColor, options = {}) {
         const baseColors = this.generateAccentColors(primaryColor, options);
-        const gradient = this.createLinearGradient(colorStops, options.direction || 90);
 
         // Create a version with reduced opacity for menu bar background
         const gradientStopsWithOpacity = colorStops.map(stop => ({
@@ -222,9 +220,9 @@ class GradientUtils {
     /**
      * Generate complementary colors for color harmonies
      * @param {string} baseColor - Base hex color
-     * @returns {Object} Complementary color schemes
+     * @returns {object} Complementary color schemes
      */
-    static generateColorHarmonies(baseColor) {
+    static generateColorHarmonies (baseColor) {
         const hsl = this.hexToHsl(baseColor);
 
         const complementary = this.hslToHex((hsl.h + 180) % 360, hsl.s, hsl.l);
@@ -249,7 +247,7 @@ class GradientUtils {
      * Generate gradient presets
      * @returns {Array} Array of gradient presets
      */
-    static getGradientPresets() {
+    static getGradientPresets () {
         return [
             {
                 name: 'Sunset',
@@ -298,9 +296,9 @@ class GradientUtils {
      * Create gradient from preset
      * @param {string} presetName - Name of the preset
      * @param {string} primaryColor - Primary color override (optional)
-     * @returns {Object} Gradient accent theme
+     * @returns {object} Gradient accent theme
      */
-    static createPresetGradient(presetName, primaryColor = null) {
+    static createPresetGradient (presetName, primaryColor = null) {
         const preset = this.getGradientPresets().find(p => p.name === presetName);
         if (!preset) {
             throw new Error(`Gradient preset "${presetName}" not found`);
@@ -323,8 +321,9 @@ class GradientUtils {
  * CustomTheme class extends Theme with additional metadata
  */
 class CustomTheme extends Theme {
-    constructor(name, description, accent, gui, blocks, menuBarAlign, wallpaper, fonts, author = 'User', isCustom = true) {
-        // If accent is an object (custom gradient), pass a default string to parent and store the custom accent separately
+    constructor (name, description, accent, gui, blocks, menuBarAlign, wallpaper, fonts, author = 'User') {
+        // If accent is an object (custom gradient),
+        // pass a default string to parent and store the custom accent separately
         const accentKey = typeof accent === 'object' ? 'red' : accent; // Default to 'red' as fallback
         super(accentKey, gui, blocks, menuBarAlign, wallpaper, fonts);
 
@@ -335,8 +334,6 @@ class CustomTheme extends Theme {
         /** @readonly */
         this.author = author;
         /** @readonly */
-        this.isCustom = isCustom;
-        /** @readonly */
         this.createdAt = new Date().toISOString();
         /** @readonly */
         this.uuid = this.generateUUID();
@@ -346,15 +343,16 @@ class CustomTheme extends Theme {
         this.originalAccent = accent; // Store the original accent for export
     }
 
-    generateUUID() {
-        return 'custom-theme-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    generateUUID () {
+        return `custom-theme-${Date.now()}-${Math.random().toString(36)
+            .substr(2, 9)}`;
     }
 
     /**
      * Override getGuiColors to handle custom accent objects
-     * @returns {Object} GUI colors
+     * @returns {object} GUI colors
      */
-    getGuiColors() {
+    getGuiColors () {
         if (this.customAccent) {
             // Use dynamic imports to avoid circular dependency issues
             const defaultsDeep = require('lodash.defaultsdeep');
@@ -405,9 +403,9 @@ class CustomTheme extends Theme {
 
     /**
      * Override getBlockColors to handle custom accent objects
-     * @returns {Object} Block colors
+     * @returns {object} Block colors
      */
-    getBlockColors() {
+    getBlockColors () {
         if (this.customAccent) {
             // Use dynamic imports to avoid circular dependency issues
             const defaultsDeep = require('lodash.defaultsdeep');
@@ -445,8 +443,8 @@ class CustomTheme extends Theme {
                 console.warn('Failed to load block theme modules:', e);
                 // Fallback to basic block colors if import fails
                 baseBlockColors = {
-                    motion: { primary: '#4C97FF', secondary: '#4280D7', tertiary: '#3373CC' },
-                    looks: { primary: '#9966FF', secondary: '#855CD6', tertiary: '#774DCB' }
+                    motion: {primary: '#4C97FF', secondary: '#4280D7', tertiary: '#3373CC'},
+                    looks: {primary: '#9966FF', secondary: '#855CD6', tertiary: '#774DCB'}
                 };
             }
 
@@ -467,9 +465,9 @@ class CustomTheme extends Theme {
 
     /**
      * Export theme to JSON format
-     * @returns {Object} Theme data
+     * @returns {object} Theme data
      */
-    export() {
+    export () {
         return {
             uuid: this.uuid,
             name: this.name,
@@ -489,10 +487,10 @@ class CustomTheme extends Theme {
 
     /**
      * Create CustomTheme from exported data
-     * @param {Object} data 
-     * @returns {CustomTheme}
+     * @param {object} data the inputted custom theme data
+     * @returns {CustomTheme} the finished custom theme object
      */
-    static import(data) {
+    static import (data) {
         if (!data || typeof data !== 'object') {
             throw new Error('Invalid theme data');
         }
@@ -518,10 +516,10 @@ class CustomTheme extends Theme {
 
         // Preserve original UUID and creation date if available
         if (data.uuid) {
-            Object.defineProperty(theme, 'uuid', { value: data.uuid, writable: false });
+            Object.defineProperty(theme, 'uuid', {value: data.uuid, writable: false});
         }
         if (data.createdAt) {
-            Object.defineProperty(theme, 'createdAt', { value: data.createdAt, writable: false });
+            Object.defineProperty(theme, 'createdAt', {value: data.createdAt, writable: false});
         }
 
         return theme;
@@ -532,7 +530,7 @@ class CustomTheme extends Theme {
  * CustomThemeManager handles storage and management of custom themes
  */
 class CustomThemeManager {
-    constructor() {
+    constructor () {
         this.themes = new Map();
         this.loadCustomThemes();
     }
@@ -540,7 +538,7 @@ class CustomThemeManager {
     /**
      * Load custom themes from localStorage
      */
-    loadCustomThemes() {
+    loadCustomThemes () {
         try {
             const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
             if (stored) {
@@ -562,21 +560,21 @@ class CustomThemeManager {
     /**
      * Save custom themes to localStorage
      */
-    saveCustomThemes() {
+    saveCustomThemes () {
         try {
             const themesData = Array.from(this.themes.values()).map(theme => theme.export());
             localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, JSON.stringify(themesData));
         } catch (e) {
             console.warn('Failed to save custom themes to storage:', e);
-            throw new Error('Failed to save themes: ' + e.message);
+            throw new Error(`Failed to save themes: ${e.message}`);
         }
     }
 
     /**
      * Add a new custom theme
-     * @param {CustomTheme} theme 
+     * @param {CustomTheme} theme a custom theme
      */
-    addTheme(theme) {
+    addTheme (theme) {
         if (!(theme instanceof CustomTheme)) {
             throw new Error('Theme must be an instance of CustomTheme');
         }
@@ -598,9 +596,10 @@ class CustomThemeManager {
 
     /**
      * Remove a custom theme
-     * @param {string} uuid 
+     * @param {string} uuid the uuid of a custom theme
+     * @returns {boolean} whether the deletion was successful
      */
-    removeTheme(uuid) {
+    removeTheme (uuid) {
         if (this.themes.has(uuid)) {
             this.themes.delete(uuid);
             this.saveCustomThemes();
@@ -611,27 +610,29 @@ class CustomThemeManager {
 
     /**
      * Get a custom theme by UUID
-     * @param {string} uuid 
-     * @returns {CustomTheme|null}
+     * @param {string} uuid a custom theme uuid
+     * @returns {CustomTheme|null} a custom theme
      */
-    getTheme(uuid) {
+    getTheme (uuid) {
         return this.themes.get(uuid) || null;
     }
 
     /**
      * Get all custom themes
-     * @returns {CustomTheme[]}
+     * @returns {CustomTheme[]} all custom themes
      */
-    getAllThemes() {
+    getAllThemes () {
         return Array.from(this.themes.values()).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     /**
      * Update an existing theme
-     * @param {string} uuid 
-     * @param {Object} updates 
+     * @param {string} uuid a custom theme uuid
+     * @param {object} updates an object of key value pairs to edit
+     * @throws when the theme doesnt exist
+     * @returns {CustomTheme} the updated custom theme
      */
-    updateTheme(uuid, updates) {
+    updateTheme (uuid, updates) {
         const existingTheme = this.themes.get(uuid);
         if (!existingTheme) {
             throw new Error('Theme not found');
@@ -640,7 +641,7 @@ class CustomThemeManager {
         // Create new theme with updates
         const updatedTheme = new CustomTheme(
             updates.name || existingTheme.name,
-            updates.description !== undefined ? updates.description : existingTheme.description,
+            typeof updates.description === 'undefined' ? existingTheme.description : updates.description,
             updates.accent || existingTheme.accent,
             updates.gui || existingTheme.gui,
             updates.blocks || existingTheme.blocks,
@@ -651,8 +652,8 @@ class CustomThemeManager {
         );
 
         // Preserve original UUID and creation date
-        Object.defineProperty(updatedTheme, 'uuid', { value: uuid, writable: false });
-        Object.defineProperty(updatedTheme, 'createdAt', { value: existingTheme.createdAt, writable: false });
+        Object.defineProperty(updatedTheme, 'uuid', {value: uuid, writable: false});
+        Object.defineProperty(updatedTheme, 'createdAt', {value: existingTheme.createdAt, writable: false});
 
         this.themes.set(uuid, updatedTheme);
         this.saveCustomThemes();
@@ -665,10 +666,10 @@ class CustomThemeManager {
      * @param {string} uuid - Theme UUID
      * @param {Array} colorStops - New gradient color stops
      * @param {string} primaryColor - New primary accent color
-     * @param {Object} options - Additional options
+     * @param {object} options - Additional options
      * @returns {CustomTheme} Updated theme
      */
-    updateThemeGradient(uuid, colorStops, primaryColor, options = {}) {
+    updateThemeGradient (uuid, colorStops, primaryColor, options = {}) {
         const existingTheme = this.themes.get(uuid);
         if (!existingTheme) {
             throw new Error('Theme not found');
@@ -691,8 +692,8 @@ class CustomThemeManager {
         );
 
         // Preserve original UUID and creation date
-        Object.defineProperty(updatedTheme, 'uuid', { value: uuid, writable: false });
-        Object.defineProperty(updatedTheme, 'createdAt', { value: existingTheme.createdAt, writable: false });
+        Object.defineProperty(updatedTheme, 'uuid', {value: uuid, writable: false});
+        Object.defineProperty(updatedTheme, 'createdAt', {value: existingTheme.createdAt, writable: false});
 
         this.themes.set(uuid, updatedTheme);
         this.saveCustomThemes();
@@ -705,7 +706,7 @@ class CustomThemeManager {
      * @param {string} uuid - Theme UUID
      * @returns {boolean} True if theme has custom gradient
      */
-    hasCustomGradient(uuid) {
+    hasCustomGradient (uuid) {
         const theme = this.themes.get(uuid);
         return theme && theme.customAccent && theme.customAccent.guiColors &&
             theme.customAccent.guiColors['menu-bar-background-image'];
@@ -716,28 +717,28 @@ class CustomThemeManager {
      * @param {string} rgba - RGBA color string like "rgba(255, 107, 107, 0.8)"
      * @returns {string} Hex color string
      */
-    rgbaToHex(rgba) {
+    rgbaToHex (rgba) {
         const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
         if (!match) return rgba; // Return original if not RGBA format
 
-        const r = parseInt(match[1]);
-        const g = parseInt(match[2]);
-        const b = parseInt(match[3]);
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
 
-        const toHex = (n) => {
+        const toHex = n => {
             const hex = n.toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
+            return hex.length === 1 ? `0${hex}` : hex;
         };
 
-        return '#' + toHex(r) + toHex(g) + toHex(b);
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
     /**
      * Extract gradient information from a custom theme
      * @param {string} uuid - Theme UUID
-     * @returns {Object|null} Gradient information or null if not a gradient theme
+     * @returns {object|null} Gradient information or null if not a gradient theme
      */
-    getThemeGradientInfo(uuid) {
+    getThemeGradientInfo (uuid) {
         const theme = this.themes.get(uuid);
         if (!theme || !this.hasCustomGradient(uuid)) {
             return null;
@@ -751,7 +752,7 @@ class CustomThemeManager {
             return null;
         }
 
-        const direction = parseInt(gradientMatch[1]);
+        const direction = parseInt(gradientMatch[1], 10);
         const colorString = gradientMatch[2];
 
         // Parse color stops using a more sophisticated approach
@@ -777,9 +778,12 @@ class CustomThemeManager {
             const rgbaMatch = stopString.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)\s*([\d.]+)%?/);
             if (rgbaMatch) {
                 const [, r, g, b, pos] = rgbaMatch;
-                const rHex = parseInt(r).toString(16).padStart(2, '0');
-                const gHex = parseInt(g).toString(16).padStart(2, '0');
-                const bHex = parseInt(b).toString(16).padStart(2, '0');
+                const rHex = parseInt(r, 10).toString(16)
+                    .padStart(2, '0');
+                const gHex = parseInt(g, 10).toString(16)
+                    .padStart(2, '0');
+                const bHex = parseInt(b, 10).toString(16)
+                    .padStart(2, '0');
                 color = `#${rHex}${gHex}${bHex}`;
                 position = pos ? parseFloat(pos) : (index / (stopMatches.length - 1)) * 100;
             } else {
@@ -791,7 +795,7 @@ class CustomThemeManager {
                     color = hexMatch[0];
                     // Ensure 6-digit hex
                     if (color.length === 4) {
-                        color = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+                        color = `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
                     }
                 } else {
                     color = '#000000'; // fallback
@@ -800,7 +804,7 @@ class CustomThemeManager {
                 position = posMatch ? parseFloat(posMatch[1]) : (index / (stopMatches.length - 1)) * 100;
             }
 
-            colorStops.push({ color, position });
+            colorStops.push({color, position});
         });
 
         // Sort color stops by position
@@ -827,9 +831,9 @@ class CustomThemeManager {
 
     /**
      * Export all custom themes
-     * @returns {Object}
+     * @returns {object} all your custom themes
      */
-    exportAllThemes() {
+    exportAllThemes () {
         const themes = this.getAllThemes().map(theme => theme.export());
         return {
             version: '1.0',
@@ -841,11 +845,11 @@ class CustomThemeManager {
 
     /**
      * Import themes from exported data
-     * @param {Object} data 
+     * @param {object} data your custom theme json file
      * @param {boolean} overwrite Whether to overwrite existing themes with same name
-     * @returns {Object} Import results
+     * @returns {object} Import results
      */
-    importThemes(data, overwrite = false) {
+    importThemes (data, overwrite = false) {
         if (!data || !Array.isArray(data.themes)) {
             throw new Error('Invalid import data format');
         }
@@ -886,7 +890,7 @@ class CustomThemeManager {
     /**
      * Clear all custom themes
      */
-    clearAllThemes() {
+    clearAllThemes () {
         this.themes.clear();
         try {
             localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
@@ -897,12 +901,12 @@ class CustomThemeManager {
 
     /**
      * Create a custom theme from current theme
-     * @param {Theme} currentTheme 
-     * @param {string} name 
-     * @param {string} description 
-     * @returns {CustomTheme}
+     * @param {Theme} currentTheme the current theme
+     * @param {string} name the name for the new theme
+     * @param {string} description the description for the new theme
+     * @returns {CustomTheme} the new custom theme
      */
-    createFromCurrentTheme(currentTheme, name, description = '') {
+    createFromCurrentTheme (currentTheme, name, description = '') {
         if (!name || typeof name !== 'string') {
             throw new Error('Theme name is required');
         }
@@ -928,11 +932,11 @@ class CustomThemeManager {
      * @param {string} description - Theme description
      * @param {Array} colorStops - Gradient color stops
      * @param {string} primaryColor - Primary accent color
-     * @param {Object} options - Additional options
+     * @param {object} options - Additional options
      * @param {Theme} baseTheme - Base theme for GUI and block settings
-     * @returns {CustomTheme}
+     * @returns {CustomTheme} the new theme
      */
-    createGradientTheme(name, description, colorStops, primaryColor, options = {}, baseTheme) {
+    createGradientTheme (name, description, colorStops, primaryColor, options = {}, baseTheme) {
         if (!name || typeof name !== 'string') {
             throw new Error('Theme name is required');
         }

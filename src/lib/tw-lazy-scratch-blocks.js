@@ -19,8 +19,7 @@ const load = () => {
             
             // Patch VerticalFlyout.createRect_ to handle race conditions
             if (_ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype.createRect_) {
-                const originalCreateRect = _ScratchBlocks.VerticalFlyout.prototype.createRect_;
-                _ScratchBlocks.VerticalFlyout.prototype.createRect_ = function(block, x, y, blockHW, index) {
+                _ScratchBlocks.VerticalFlyout.prototype.createRect_ = function (block, x, y, blockHW, index) {
                     // Create an invisible rectangle under the block to act as a button
                     const rect = _ScratchBlocks.utils.createSvgElement('rect', {
                         'fill-opacity': 0,
@@ -38,9 +37,9 @@ const load = () => {
                     const canvas = this.workspace_.getCanvas();
                     
                     // Enhanced safety check with additional validation
-                    if (blockSvgRoot && 
-                        blockSvgRoot.parentNode === canvas && 
-                        canvas.contains && 
+                    if (blockSvgRoot &&
+                        blockSvgRoot.parentNode === canvas &&
+                        canvas.contains &&
                         canvas.contains(blockSvgRoot)) {
                         try {
                             canvas.insertBefore(rect, blockSvgRoot);

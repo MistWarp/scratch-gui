@@ -74,7 +74,7 @@ const detectTheme = () => {
         }
         
         // Any invalid values in storage will be handled by Theme itself
-        const wallpaper = parsed.wallpaper || { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] };
+        const wallpaper = parsed.wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
         
         // Add backward compatibility for gridVisible
         if (typeof wallpaper.gridVisible === 'undefined') {
@@ -87,7 +87,7 @@ const detectTheme = () => {
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
             wallpaper,
-            parsed.fonts || { system: [], google: [], history: [] }
+            parsed.fonts || {system: [], google: [], history: []}
         );
     } catch (e) {
         // ignore
@@ -127,7 +127,10 @@ const persistTheme = theme => {
         }
 
         // Always save fonts settings if they exist
-        if (theme.fonts && (theme.fonts.system.length > 0 || theme.fonts.google.length > 0 || theme.fonts.history.length > 0)) {
+        if (theme.fonts &&
+            (theme.fonts.system.length > 0 ||
+             theme.fonts.google.length > 0 ||
+             theme.fonts.history.length > 0)) {
             nonDefaultSettings.fonts = theme.fonts;
         }
     }
