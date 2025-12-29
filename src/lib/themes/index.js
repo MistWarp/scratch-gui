@@ -221,7 +221,7 @@ const MENUBAR_ALIGN = {
         icon: alignRightIcon
     }
 };
-const MENUBAR_ALIGN_DEFAULT =  'center';
+const MENUBAR_ALIGN_DEFAULT = 'center';
 
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
@@ -275,18 +275,34 @@ class Theme {
         /** @readonly */
         this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
         /** @readonly */
-        this.menuBarAlign = ['left', 'center', 'right'].includes(menuBarAlign) ? 
+        this.menuBarAlign = ['left', 'center', 'right'].includes(menuBarAlign) ?
             menuBarAlign : MENUBAR_ALIGN_DEFAULT;
         /** @readonly */
-        this.wallpaper = wallpaper || { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] };
+        this.wallpaper = wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
         /** @readonly */
-        this.fonts = fonts || { system: [], google: [], history: [] };
+        this.fonts = fonts || {system: [], google: [], history: []};
     }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] }, { system: [], google: [], history: [] });
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] }, { system: [], google: [], history: [] });
-    static midnight = new Theme(ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] }, { system: [], google: [], history: [] });
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT, { url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: [] }, { system: [], google: [], history: [] });
+    static light = new Theme(
+        ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT,
+        {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
+        {system: [], google: [], history: []}
+    );
+    static dark = new Theme(
+        ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT,
+        {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
+        {system: [], google: [], history: []}
+    );
+    static midnight = new Theme(
+        ACCENT_DEFAULT, GUI_MIDNIGHT, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT,
+        {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
+        {system: [], google: [], history: []}
+    );
+    static highContrast = new Theme(
+        ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT,
+        {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
+        {system: [], google: [], history: []}
+    );
 
     set (what, to) {
         if (what === 'accent') {

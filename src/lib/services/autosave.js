@@ -2,7 +2,7 @@
  * Autosave service for automatically saving projects at regular intervals
  */
 
-import SettingsStore from '../addons/settings-store-singleton.js';
+import SettingsStore from '../../addons/settings-store-singleton.js';
 
 class AutosaveService {
     constructor () {
@@ -59,7 +59,7 @@ class AutosaveService {
         });
         
         // Listen for addon settings changes
-        this.addonSettingsListener = (e) => {
+        this.addonSettingsListener = e => {
             if (e.detail.addonId === 'autosave') {
                 this.updateFromAddonSettings();
             }
@@ -232,7 +232,9 @@ class AutosaveService {
      */
     generateAutosaveFilename () {
         const now = new Date();
-        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const timestamp = now.toISOString()
+            .replace(/[:.]/g, '-')
+            .slice(0, 19);
         
         try {
             const state = this.store.getState();
@@ -313,7 +315,7 @@ class AutosaveService {
      * Manually trigger an autosave
      * @returns {Promise<boolean>} True if save was successful
      */
-    async saveNow () {
+    saveNow () {
         if (!this.enabled) {
             if (this.showNotifications) {
                 this.showNotification('Autosave is disabled. Enable it in File menu first.', 'error');
@@ -321,7 +323,7 @@ class AutosaveService {
             return false;
         }
         
-        return await this.performAutosave();
+        return this.performAutosave();
     }
 
     /**

@@ -17,11 +17,11 @@ const guiColors = {
 
     'menu-bar-background-image':
         'linear-gradient(90deg, ' +
-        'oklab(0.55 0.20 0.16 / 0.8) 0%, ' +    // deep red
-        'oklab(0.65 0.18 0.14 / 0.8) 25%, ' +   // red-orange
-        'oklab(0.72 0.15 0.12 / 0.8) 50%, ' +   // orange
-        'oklab(0.78 0.12 0.10 / 0.8) 75%, ' +   // yellow-orange
-        'oklab(0.85 0.08 0.08 / 0.8) 100%)'     // bright yellow
+        'oklab(0.55 0.20 0.16 / 0.8) 0%, ' + // deep red
+        'oklab(0.65 0.18 0.14 / 0.8) 25%, ' + // red-orange
+        'oklab(0.72 0.15 0.12 / 0.8) 50%, ' + // orange
+        'oklab(0.78 0.12 0.10 / 0.8) 75%, ' + // yellow-orange
+        'oklab(0.85 0.08 0.08 / 0.8) 100%)' // bright yellow
 };
 
 const blockColors = {

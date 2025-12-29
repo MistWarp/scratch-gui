@@ -116,11 +116,12 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @returns {object} the new empty store
      */
     createEmptyStore () {
-        const result = {};
+        const result = Object.create(null);
         for (const addonId of Object.keys(addons)) {
-            result[addonId] = {};
+            result[addonId] = Object.create(null);
         }
         return result;
     }
@@ -174,6 +175,8 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @param {string} addonId the id of the addon to get the store of
+     * @returns {object} the addon store
      */
     getAddonStorage (addonId) {
         if (this.store[addonId]) {
@@ -184,6 +187,8 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @param {string} addonId the id of the addon to get the manifest of
+     * @returns {object} the addon manifest
      */
     getAddonManifest (addonId) {
         if (addons[addonId]) {
@@ -196,7 +201,7 @@ class SettingsStore extends EventTargetShim {
      * @private
      * @param {string} manifest - The addon manifest
      * @param {string} settingId - The ID of the setting
-     * @returns {Object|null} The setting object or null if not found
+     * @returns {object|null} The setting object or null if not found
      */
     getAddonSettingObject (manifest, settingId) {
         if (!manifest.settings) {
@@ -249,7 +254,7 @@ class SettingsStore extends EventTargetShim {
     /**
      * @private
      * @param {string} addonId - The ID of the addon
-     * @returns {Object} Default settings for the addon
+     * @returns {object} Default settings for the addon
      */
     getDefaultSettings (addonId) {
         const manifest = this.getAddonManifest(addonId);
