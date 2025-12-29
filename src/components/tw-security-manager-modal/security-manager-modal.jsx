@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
-import SecurityModals from '../../lib/tw-security-manager-constants';
+import SecurityModals from '../../lib/constants/security-manager.js';
 import LoadExtensionModal from './load-extension.jsx';
 import FetchModal from './fetch.jsx';
 import OpenWindowModal from './open-window.jsx';

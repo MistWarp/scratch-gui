@@ -8,7 +8,7 @@ import collectMetadata from '../collect-metadata';
 import log from '../utils/log';
 import storage from '../persistence/storage';
 import dataURItoBlob from '../utils/data-uri-to-blob';
-import saveProjectToServer from '../save-project-to-server';
+import saveProjectToServer from '../utils/save-project-to-server';
 
 import {
     showAlertWithTimeout,

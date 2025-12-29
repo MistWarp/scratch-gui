@@ -44,7 +44,7 @@ import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../.
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
-import {isRendererSupported, isBrowserSupported} from '../../lib/tw-environment-support-prober';
+import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
 import addExtensionIcon from './icon--extensions.svg';

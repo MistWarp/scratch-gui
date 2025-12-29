@@ -7,7 +7,7 @@ import {
     isRendererSupported,
     isNewFunctionSupported,
     findIncompatibleUserscripts
-} from '../../lib/tw-environment-support-prober.js';
+} from '../../lib/utils/tw-environment-support-prober.js';
 
 import unhappyBrowser from './unsupported-browser.svg';
 

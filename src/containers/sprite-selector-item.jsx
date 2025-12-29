@@ -7,7 +7,7 @@ import {setHoveredSprite} from '../reducers/hovered-target';
 import {updateAssetDrag} from '../reducers/asset-drag';
 import VM from 'scratch-vm';
 import getCostumeUrl from '../lib/utils/get-costume-url';
-import DragRecognizer from '../lib/drag-recognizer';
+import DragRecognizer from '../lib/utils/drag-recognizer.js';
 import {getEventXY} from '../lib/utils/touch';
 
 import SpriteSelectorItemComponent from '../components/sprite-selector-item/sprite-selector-item.jsx';
