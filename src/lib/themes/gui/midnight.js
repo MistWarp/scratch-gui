@@ -1,5 +1,7 @@
+import icon from '../icons/midnight.svg';
+
 /**
- * Midnight theme - a pure black theme for better OLED display efficiency and contrast.
+ * Midnight theme, a pure black theme for better OLED display efficiency and contrast.
  * This theme is darker than the regular dark theme, using true black (#000000) for backgrounds
  * and maintaining high contrast for text and UI elements.
  */
@@ -78,6 +80,7 @@ const blockColors = {
 };
 
 export {
+    icon,
     guiColors,
     blockColors
 };

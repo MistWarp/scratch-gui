@@ -270,7 +270,7 @@ const applyWallpaper = wallpaper => {
 const applyGuiColors = theme => {
     const doc = document.documentElement;
 
-    const defaultGuiColors = Theme.light.getGuiColors();
+    const defaultGuiColors = Theme.defaults.light.getGuiColors();
     for (const [name, value] of Object.entries(defaultGuiColors)) {
         doc.style.setProperty(`--${name}-default`, value);
     }

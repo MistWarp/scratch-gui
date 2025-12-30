@@ -1,3 +1,5 @@
+import icon from '../icons/dark.svg';
+
 const guiColors = {
     'color-scheme': 'dark',
 
@@ -73,6 +75,7 @@ const blockColors = {
 };
 
 export {
+    icon,
     guiColors,
     blockColors
 };

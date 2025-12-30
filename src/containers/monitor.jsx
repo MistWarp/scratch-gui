@@ -280,7 +280,7 @@ Monitor.propTypes = {
     y: PropTypes.number
 };
 Monitor.defaultProps = {
-    theme: Theme.light
+    theme: Theme.defaults.light
 };
 const mapStateToProps = state => ({
     monitorLayout: state.scratchGui.monitorLayout,

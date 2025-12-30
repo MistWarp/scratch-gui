@@ -7,26 +7,17 @@ import {connect} from 'react-redux';
 import check from './check.svg';
 import dropdownCaret from './dropdown-caret.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {GUI_DARK, GUI_LIGHT, GUI_MIDNIGHT, Theme} from '../../lib/themes/index.js';
+import {Theme, GUI_MAP} from '../../lib/themes/index.js';
 import {closeSettingsMenu, guiMenuOpen, openGuiMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {persistTheme} from '../../lib/themes/themePersistance.js';
-import lightModeIcon from './tw-sun.svg';
-import darkModeIcon from './tw-moon.svg';
-import midnightModeIcon from './tw-star.svg';
 import styles from './settings-menu.css';
 
 const ThemeIcon = ({id}) => {
-    const icons = {
-        [GUI_LIGHT]: lightModeIcon,
-        [GUI_DARK]: darkModeIcon,
-        [GUI_MIDNIGHT]: midnightModeIcon
-    };
-    
     return (
         <img
             className={styles.accentIconOuter}
-            src={icons[id]}
+            src={GUI_MAP[id].icon}
             draggable={false}
             width={24}
             height={24}
@@ -52,27 +43,14 @@ const ThemeMenuItem = props => (
             />
             <ThemeIcon id={props.id} />
             <span className={styles.themeName}>
-                {props.id === GUI_LIGHT && (
-                    <FormattedMessage
-                        defaultMessage="Light"
-                        description="Label for light theme option"
-                        id="tw.theme.light"
-                    />
-                )}
-                {props.id === GUI_DARK && (
-                    <FormattedMessage
-                        defaultMessage="Dark"
-                        description="Label for dark theme option"
-                        id="tw.theme.dark"
-                    />
-                )}
-                {props.id === GUI_MIDNIGHT && (
-                    <FormattedMessage
-                        defaultMessage="Midnight"
-                        description="Label for midnight (pure black) theme option"
-                        id="tw.theme.midnight"
-                    />
-                )}
+                <FormattedMessage
+                    defaultMessage="{theme}"
+                    description="Label for theme option"
+                    id="tw.theme.option"
+                    values={{
+                        theme: props.id
+                    }}
+                />
             </span>
         </div>
     </MenuItem>
@@ -100,7 +78,7 @@ const GuiThemeMenu = ({
             <span className={styles.submenuLabel}>
                 <FormattedMessage
                     defaultMessage="Theme"
-                    description="Label for menu to choose theme (light, dark, midnight)"
+                    description="Label for menu to choose theme"
                     id="tw.menuBar.theme"
                 />
             </span>
@@ -114,27 +92,20 @@ const GuiThemeMenu = ({
             place={isRtl ? 'left' : 'right'}
             className={styles.submenu}
         >
-            <ThemeMenuItem
-                id={GUI_LIGHT}
-                isSelected={theme.gui === GUI_LIGHT}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeTheme(theme.set('gui', GUI_LIGHT))}
-            />
-            <ThemeMenuItem
-                id={GUI_DARK}
-                isSelected={theme.gui === GUI_DARK}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeTheme(theme.set('gui', GUI_DARK))}
-            />
-            <ThemeMenuItem
-                id={GUI_MIDNIGHT}
-                isSelected={theme.gui === GUI_MIDNIGHT}
-                // eslint-disable-next-line react/jsx-no-bind
-                onClick={() => onChangeTheme(theme.set('gui', GUI_MIDNIGHT))}
-            />
+            {Object.entries(Theme.defaults).map(([themeId, t]) => (
+                <ThemeMenuItem
+                    key={themeId}
+                    id={themeId}
+                    name={t.name}
+                    isSelected={theme.gui === themeId}
+                    onClick={() => onChangeTheme(theme.set('gui', themeId))}
+                />
+            ))}
         </Submenu>
     </MenuItem>
 );
+
+console.log(Theme.defaults);
 
 GuiThemeMenu.propTypes = {
     isOpen: PropTypes.bool,
