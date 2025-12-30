@@ -47,9 +47,12 @@ import {Theme} from '../../lib/themes';
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
-import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
-import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
-import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
+
+import {
+    Blocks as BlocksIcon,
+    PaintbrushVertical as CostumesIcon,
+    Volume2 as SoundsIcon
+} from 'lucide-react';
 
 const getFullscreenBackgroundColor = () => {
     const params = new URLSearchParams(location.search);
@@ -354,10 +357,7 @@ const GUIComponent = props => {
                             >
                                 <TabList className={tabClassNames.tabList}>
                                     <Tab className={tabClassNames.tab}>
-                                        <img
-                                            draggable={false}
-                                            src={codeIcon()}
-                                        />
+                                        <BlocksIcon size={20} />
                                         <FormattedMessage
                                             defaultMessage="Code"
                                             description="Button to get to the code panel"
@@ -368,10 +368,7 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateCostumesTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={costumesIcon()}
-                                        />
+                                        <CostumesIcon size={20} />
                                         {targetIsStage ? (
                                             <FormattedMessage
                                                 defaultMessage="Backdrops"
@@ -390,10 +387,7 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateSoundsTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={soundsIcon()}
-                                        />
+                                        <SoundsIcon size={20} />
                                         <FormattedMessage
                                             defaultMessage="Sounds"
                                             description="Button to get to the sounds panel"

@@ -4,13 +4,13 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
+import {Check} from 'lucide-react';
+import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 // Keep the original accent messages for FormattedMessage component
@@ -58,13 +58,7 @@ ColorIcon.propTypes = {
 const AccentMenuItem = props => (
     <MenuItem onClick={props.onClick}>
         <div className={styles.option}>
-            <img
-                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                width={15}
-                height={12}
-                src={check}
-                draggable={false}
-            />
+            <Check size={20} className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
             <ColorIcon id={props.id} />
             <FormattedMessage {...ACCENT_MESSAGES[props.id]} />
         </div>
@@ -97,11 +91,7 @@ const AccentThemeMenu = ({
                     id="tw.menuBar.accent"
                 />
             </span>
-            <img
-                className={styles.expandCaret}
-                src={dropdownCaret}
-                draggable={false}
-            />
+            <ChevronDown className={styles.expandCaret} />
         </div>
         <Submenu 
             place={isRtl ? 'left' : 'right'}
@@ -138,7 +128,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+        applyTheme(theme);
     },
     onOpen: () => dispatch(openAccentMenu())
 });

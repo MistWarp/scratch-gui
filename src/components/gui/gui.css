@@ -71,18 +71,17 @@
     border-bottom: 0 !important;
 
     color: $text-primary;
+    gap: 0.8rem;
 }
 
 .tab {
     flex-grow: 1;
     height: 80%;
     top: -4px;
-    margin-right: 12px;
 
     border-radius: 10px;
     border: 1px solid $ui-black-transparent;
 
-    padding: 15px;
     font-size: 0.75rem;
 
     background-color: $ui-tertiary;
@@ -94,6 +93,11 @@
 
     user-select: none;
     white-space: nowrap;
+}
+
+.tab svg {
+    margin-right: .5rem;
+    vertical-align: middle;
 }
 
 [dir="ltr"] .tab {

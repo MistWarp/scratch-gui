@@ -6,6 +6,8 @@ import Button from '../button/button.jsx';
 
 import styles from './share-button.css';
 
+import {Share} from 'lucide-react';
+
 const ShareButton = ({
     className,
     isShared,
@@ -18,6 +20,7 @@ const ShareButton = ({
             {[styles.shareButtonIsShared]: isShared}
         )}
         onClick={onClick}
+        iconElem={Share}
     >
         {isShared ? (
             <FormattedMessage

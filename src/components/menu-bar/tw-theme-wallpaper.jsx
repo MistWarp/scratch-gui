@@ -4,25 +4,22 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
-import wallpaperIcon from './tw-wallpaper.svg';
+import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {openWallpaperMenu, wallpaperMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
+
+import {Check, Wallpaper} from 'lucide-react';
 
 const WallpaperMenuItem = ({url, isSelected, onClick}) => (
     <MenuItem onClick={onClick}>
         <div className={styles.option}>
-            <img
+            <Check
                 className={classNames(styles.check, {[styles.selected]: isSelected})}
-                width={15}
-                height={12}
-                src={check}
-                draggable={false}
+                size={15}
             />
             <div className={styles.wallpaperPreview}>
                 {url ? (
@@ -272,14 +269,7 @@ const WallpaperMenu = ({
                 className={styles.option}
                 onClick={onOpen}
             >
-                <img
-                    className={styles.accentIconOuter}
-                    src={wallpaperIcon}
-                    draggable={false}
-                    width={24}
-                    height={24}
-                    alt=""
-                />
+                <Wallpaper className={styles.icon} />
                 <span className={styles.submenuLabel}>
                     <FormattedMessage
                         defaultMessage="Wallpaper"
@@ -287,11 +277,7 @@ const WallpaperMenu = ({
                         id="tw.menuBar.wallpaper"
                     />
                 </span>
-                <img
-                    className={styles.expandCaret}
-                    src={dropdownCaret}
-                    draggable={false}
-                />
+                <ChevronDown className={styles.expandCaret} />
             </div>
             <Submenu
                 place={isRtl ? 'left' : 'right'}
@@ -343,7 +329,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+           applyTheme(theme);
     },
     onOpen: () => dispatch(openWallpaperMenu())
 });

@@ -16,6 +16,7 @@ const MENU_MENUBAR_ALIGN = 'menubarAlignMenu';
 const MENU_WALLPAPER = 'wallpaperMenu';
 const MENU_FONTS = 'fontsMenu';
 const MENU_ERRORS = 'errorsMenu';
+const MENU_CUSTOM_THEMES = 'customThemesMenu';
 
 class Menu {
     constructor (id) {
@@ -58,6 +59,7 @@ const rootMenu = new Menu('root')
     .addChild(
         new Menu(MENU_SETTINGS)
             .addChild(new Menu(MENU_LANGUAGE))
+            .addChild(new Menu(MENU_CUSTOM_THEMES))
             .addChild(new Menu(MENU_ACCENT))
             .addChild(new Menu(MENU_GUI))
             .addChild(new Menu(MENU_MENUBAR_ALIGN))
@@ -88,6 +90,7 @@ const initialState = {
     [MENU_WALLPAPER]: false,
     [MENU_FONTS]: false,
     [MENU_BLOCKS_THEME]: false,
+    [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false
 };
 
@@ -188,6 +191,10 @@ const openErrorsMenu = () => openMenu(MENU_ERRORS);
 const closeErrorsMenu = () => closeMenu(MENU_ERRORS);
 const errorsMenuOpen = state => state.scratchGui.menus[MENU_ERRORS];
 
+const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
+const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
+const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
+
 export {
     reducer as default,
     initialState as menuInitialState,
@@ -235,5 +242,8 @@ export {
     fontsMenuOpen,
     openErrorsMenu,
     closeErrorsMenu,
-    errorsMenuOpen
+    errorsMenuOpen,
+    openCustomThemes,
+    closeCustomThemes,
+    customThemesOpen
 };

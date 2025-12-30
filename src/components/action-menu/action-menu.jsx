@@ -127,11 +127,15 @@ class ActionMenu extends React.Component {
                     ref={this.setButtonRef}
                     onClick={this.clickDelayer(onClick)}
                 >
-                    <img
-                        className={styles.mainIcon}
-                        draggable={false}
-                        src={mainImg}
-                    />
+                    {typeof mainImg === 'string' ? (
+                        <img
+                            className={styles.mainIcon}
+                            draggable={false}
+                            src={mainImg}
+                        />
+                    ) : mainImg ? (
+                        React.createElement(mainImg, {className: styles.mainIcon, size: 28})
+                    ) : null}
                 </button>
                 <ReactTooltip
                     className={styles.tooltip}
@@ -157,11 +161,15 @@ class ActionMenu extends React.Component {
                                         data-tip={title}
                                         onClick={hasFileInput ? handleClick : this.clickDelayer(handleClick)}
                                     >
-                                        <img
-                                            className={styles.moreIcon}
-                                            draggable={false}
-                                            src={img}
-                                        />
+                                        {typeof img === 'string' ? (
+                                            <img
+                                                className={styles.moreIcon}
+                                                draggable={false}
+                                                src={img}
+                                            />
+                                        ) : img ? (
+                                            React.createElement(img, {className: styles.moreIcon, size: 20})
+                                        ) : null}
                                         {hasFileInput ? (
                                             <input
                                                 accept={fileAccept}

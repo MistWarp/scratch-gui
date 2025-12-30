@@ -10,6 +10,11 @@
   margin-right: auto;
 }
 
+.sa-record svg {
+    margin-right: .5rem;
+    vertical-align: middle;
+}
+
 .mediaRecorderPopupContent {
   padding: 1.5rem 2.25rem;
 }

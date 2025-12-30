@@ -43,6 +43,7 @@
 
 .expand-caret {
     transform: rotate(-90deg);
+    vertical-align: middle;
 }
 
 [dir="rtl"] .expand-caret {
@@ -78,6 +79,7 @@
     box-sizing: border-box;
     transform-origin: center;
     transform: scale(90%);
+    color: $text-primary;
 }
 
 .disabled {
@@ -94,7 +96,6 @@
 /* Wallpaper menu styles */
 .wallpaper-form {
     padding: 0.75rem;
-    border-bottom: 1px solid $ui-black-transparent;
     margin-bottom: 0.25rem;
 }
 

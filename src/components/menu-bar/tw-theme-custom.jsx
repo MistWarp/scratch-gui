@@ -7,19 +7,19 @@ import {connect} from 'react-redux';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
-import {closeSettingsMenu} from '../../reducers/menus.js';
+import {closeSettingsMenu, openCustomThemes, customThemesOpen} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
-import customThemeIcon from './tw-custom-theme.svg';
+import ChevronDown from './ChevronDown.jsx';
 import addIcon from './tw-add.svg';
 import exportIcon from './tw-export.svg';
 import importIcon from './tw-import.svg';
 import deleteIcon from './tw-delete.svg';
 import editIcon from './icon--edit.svg';
 import styles from './settings-menu.css';
+
+import {Check, Palette} from 'lucide-react';
 
 class CustomThemeMenu extends React.Component {
     constructor(props) {
@@ -393,23 +393,16 @@ class CustomThemeMenu extends React.Component {
     };
 
     render() {
-        const {isRtl, theme} = this.props;
+        const { isOpen, isRtl, theme, onOpen } = this.props;
         const {customThemes, showCreateDialog, createName, createDescription} = this.state;
 
         return (
-            <MenuItem expanded={false}>
+            <MenuItem expanded={isOpen}>
                 <div
                     className={styles.option}
-                    onClick={() => {}} // Menu always shows submenu on hover
+                    onClick={onOpen}
                 >
-                    <img
-                        className={styles.accentIconOuter}
-                        src={customThemeIcon}
-                        draggable={false}
-                        width={24}
-                        height={24}
-                        alt=""
-                    />
+                    <Palette className={styles.icon} />
                     <span className={styles.submenuLabel}>
                         <FormattedMessage
                             defaultMessage="Custom Themes"
@@ -417,11 +410,7 @@ class CustomThemeMenu extends React.Component {
                             id="tw.menuBar.customThemes"
                         />
                     </span>
-                    <img
-                        className={styles.expandCaret}
-                        src={dropdownCaret}
-                        draggable={false}
-                    />
+                    <ChevronDown className={styles.expandCaret} />
                 </div>
                 <Submenu place={isRtl ? 'left' : 'right'} className={styles.customThemeSubmenu}>
                     {/* Create new theme */}
@@ -496,12 +485,9 @@ class CustomThemeMenu extends React.Component {
                             onClick={() => this.props.onChangeTheme(customTheme)}
                         >
                             <div className={styles.option}>
-                                <img
+                                <Check
                                     className={classNames(styles.check, {[styles.selected]: theme instanceof CustomTheme && theme.uuid === customTheme.uuid})}
-                                    width={15}
-                                    height={12}
-                                    src={check}
-                                    draggable={false}
+                                    size={15}
                                 />
                                 <div className={styles.customThemeItemInfo}>
                                     <div className={styles.customThemeItemName}>
@@ -1097,10 +1083,13 @@ class CustomThemeMenu extends React.Component {
 CustomThemeMenu.propTypes = {
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
-    theme: PropTypes.instanceOf(Theme)
+    theme: PropTypes.instanceOf(Theme),
+    onOpen: PropTypes.func,
+    isOpen: PropTypes.bool
 };
 
 const mapStateToProps = state => ({
+    isOpen: customThemesOpen(state),
     isRtl: state.locales.isRtl,
     theme: state.scratchGui.theme.theme
 });
@@ -1109,11 +1098,10 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+        applyTheme(theme);
     },
     onOpen: () => {
-        // Custom themes menu doesn't need a separate open state
-        // It's always available when the parent settings menu is open
+        dispatch(openCustomThemes());
     }
 });
 

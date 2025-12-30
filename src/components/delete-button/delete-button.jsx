@@ -5,6 +5,8 @@ import classNames from 'classnames';
 import styles from './delete-button.css';
 import deleteIcon from './icon--delete.svg';
 
+import {Trash} from 'lucide-react';
+
 const DeleteButton = props => (
     <div
         aria-label="Delete"
@@ -17,11 +19,7 @@ const DeleteButton = props => (
         onClick={props.onClick}
     >
         <div className={styles.deleteButtonVisible}>
-            <img
-                className={styles.deleteIcon}
-                src={deleteIcon}
-                draggable={false}
-            />
+            <Trash size={15} />
         </div>
     </div>
 

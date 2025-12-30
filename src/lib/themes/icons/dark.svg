@@ -1,13 +1,1 @@
-<!-- Dark mode theme icon -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24px" height="24px">
-  <!-- Circular background -->
-  <circle cx="12" cy="12" r="11" fill="#6C5CE7" stroke="#5A4FCF" stroke-width="1"/>
-  
-  <!-- Moon crescent -->
-  <path d="M9 3c-1.05 0-2.05.16-3 .46 4.06 1.27 7 5.06 7 9.54 0 4.48-2.94 8.27-7 9.54.95.3 1.95.46 3 .46 5.52 0 10-4.48 10-10S14.52 3 9 3z" fill="white"/>
-  
-  <!-- Small stars -->
-  <circle cx="16" cy="7" r="0.8" fill="white" opacity="0.8"/>
-  <circle cx="18" cy="10" r="0.5" fill="white" opacity="0.6"/>
-  <circle cx="17" cy="15" r="0.6" fill="white" opacity="0.7"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>

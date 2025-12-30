@@ -13,7 +13,7 @@ import MenuBarMenu from './menu-bar-menu.jsx';
 import {MenuSection} from '../menu/menu.jsx';
 import MenuItemContainer from '../../containers/menu-item.jsx';
 import UserAvatar from './user-avatar.jsx';
-import dropdownCaret from './dropdown-caret.svg';
+import ChevronDown from './ChevronDown.jsx';
 
 import styles from './account-nav.css';
 
@@ -50,10 +50,9 @@ const AccountNavComponent = ({
                 {username}
             </span>
             <div className={styles.dropdownCaretPosition}>
-                <img
-                    className={styles.dropdownCaretIcon}
-                    src={dropdownCaret}
-                    draggable={false}
+                <ChevronDown
+                    className={styles.dropdownCaret}
+                    size={20}
                 />
             </div>
         </div>

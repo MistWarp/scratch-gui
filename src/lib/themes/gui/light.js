@@ -1,4 +1,4 @@
-import icon from '../icons/light.svg';
+import icon from '!!raw-loader!../icons/light.svg';
 
 const guiColors = {
     'color-scheme': 'light',

@@ -110,7 +110,7 @@
 .menu-bar-menu {
     margin-top: $menu-bar-height;
     z-index: $z-index-menu-bar;
-    border-rounding: 10px;
+    border-radius: 10px;
 }
 
 .feedback-link {
@@ -217,10 +217,6 @@
 }
 .mystuff > a:hover {
   background-size: 50%;
-}
-
-.mystuff > a {
-  /* background-image: url("/images/mystuff.png"); */
 }
 
 .about-icon {

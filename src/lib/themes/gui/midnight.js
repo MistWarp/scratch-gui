@@ -1,4 +1,4 @@
-import icon from '../icons/midnight.svg';
+import icon from '!!raw-loader!../icons/midnight.svg';
 
 /**
  * Midnight theme, a pure black theme for better OLED display efficiency and contrast.

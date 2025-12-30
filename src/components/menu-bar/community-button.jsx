@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Button from '../button/button.jsx';
 
-import communityIcon from './icon--see-community.svg';
+import {Binoculars} from 'lucide-react';
+
 import styles from './community-button.css';
 
 const CommunityButton = ({
@@ -17,9 +18,7 @@ const CommunityButton = ({
             styles.communityButton
         )}
         iconClassName={styles.communityButtonIcon}
-        iconSrc={communityIcon}
-        iconWidth={20}
-        iconHeight={20}
+        iconElem={Binoculars}
         onClick={onClick}
     >
         <FormattedMessage

@@ -14,8 +14,14 @@ export default async function ({ addon, msg, console }) {
     let waitingForOperand = false;
     let memory = 0;
     
-    // Calculator functions
-    function calculate(firstValue, secondValue, operation) {
+    /**
+     * 
+     * @param {number} firstValue 
+     * @param {number} secondValue 
+     * @param {string} operation 
+     * @returns {number}
+     */
+    const calculate = (firstValue, secondValue, operation) => {
         switch (operation) {
             case '+':
                 return firstValue + secondValue;
@@ -380,7 +386,7 @@ export default async function ({ addon, msg, console }) {
         return calculatorButtonOuter;
     }
     
-    function toggleCalculator() {
+    const toggleCalculator = () => {
         if (calculatorWindow && calculatorWindow.isVisible) {
             calculatorWindow.close();
         } else {

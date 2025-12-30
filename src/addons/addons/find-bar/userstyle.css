@@ -24,6 +24,17 @@
   height: 2.2rem; /* Fixed height to prevent layout shifts */
 }
 
+/* Place the search icon to the left of the input (outside the input field) */
+.sa-find-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-find-dropdown-out {
+  flex: 1; /* let the dropdown/input take remaining width */
+}
+
 .sa-find-dropdown-out {
   display: block;
   width: 100%;
@@ -42,9 +53,10 @@
   /* !important required for extension, because CSS injection method (and hence order) differs from addon */
   
   /* Match main tab styling */
+  /* left padding increased so the icon can sit inside on the left */
   border-radius: 10px;
   font-size: 0.75rem;
-  padding: 0 60px 0 0.8rem; /* Add right padding for stats */
+  padding: 0 60px 0 2.4rem;
   background: var(--ui-tertiary, #e6f3ff);
   border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
   color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
@@ -127,16 +139,33 @@
   content: "\25CF "; /* ● */
 }
 
-.sa-find-flag {
-  color: #4cbf56;
-}
-/* .sa-find-dropdown added for specificity */
-.sa-find-dropdown > .sa-find-flag:hover,
-.sa-find-dropdown > .sa-find-flag.sel {
-  background-color: #4cbf56;
-  color: white;
+.sa-find-icon {
+  /* position the icon inside the input on the left */
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5; /* Ensure icon sits above the input */
 }
 
+.sa-find-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  display: block;
+}
+
+.sa-find-input {
+  position: relative;
+  z-index: 1; /* keep input below the icon */
+}
 .sa-find-dropdown .sa-block-color {
   color: var(--sa-block-colored-text);
 }
