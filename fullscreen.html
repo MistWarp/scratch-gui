@@ -77,14 +77,8 @@
         } else if (themeSetting) {
           try {
             var parsed = JSON.parse(themeSetting);
-            if (parsed.accent === 'purple') {
-              accent = '#855cd6';
-            } else if (parsed.accent === 'blue') {
-              accent = '#4c97ff';
-            }
-            if (parsed.gui === 'dark' || parsed.gui === 'light') {
-              theme = parsed.gui;
-            }
+            theme = parsed.gui || 'light';
+            accent = parsed.accent || accent;
           } catch (e) {
             // ignore
           }
@@ -96,9 +90,7 @@
 
         var splash = document.querySelector('.spash-waiting-for-js');
         splash.setAttribute('data-theme', theme);
-        if (theme !== 'dark') {
-          splash.style.color = accent;
-        }
+        splash.style.color = accent;
         splash.hidden = false;
 
         var splashErrorTitle = document.querySelector('.splash-error-title');
@@ -139,4 +131,4 @@
           splash.hidden = true;
           window.onerror = null;
         };
-      })();</script><div id="app"></div><script src="js/gleba/vendors~addon-settings~credits~editor~embed~fullscreen~player.5fe30e3ae00e780fb392.js"></script><script src="js/gleba/vendors~editor~embed~fullscreen~player.0d9c60c39572b7039bb6.js"></script><script src="js/gleba/addon-settings~credits~editor~embed~fullscreen~player.38f9503d68a9b3adb1ec.js"></script><script src="js/gleba/addon-settings~editor~embed~fullscreen~player.a71abae31b19442f9676.js"></script><script src="js/gleba/fullscreen.4530780650ac2fc68bd5.js"></script></body></html>
+      })();</script><div id="app"></div><script src="js/gleba/vendors~addon-settings~credits~editor~embed~fullscreen~player.b184e17f16e8224f2257.js"></script><script src="js/gleba/vendors~editor~embed~fullscreen~player.ddc1cb8a1642680e166d.js"></script><script src="js/gleba/addon-settings~credits~editor~embed~fullscreen~player.76d89ba3f66420512da1.js"></script><script src="js/gleba/addon-settings~editor~embed~fullscreen~player.ecd0b244331f77cf6d2f.js"></script><script src="js/gleba/fullscreen.b2986510fe991f1d521e.js"></script></body></html>
