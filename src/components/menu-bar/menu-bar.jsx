@@ -800,7 +800,7 @@ class MenuBar extends React.Component {
                                                             {extended.name !== null && (
                                                                 // eslint-disable-next-line max-len
                                                                 <MenuItem onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}>
-                                                                    <Save />
+                                                                    <FileInput />
                                                                     <FormattedMessage
                                                                         defaultMessage="Save to {file}"
                                                                         // eslint-disable-next-line max-len
@@ -813,7 +813,6 @@ class MenuBar extends React.Component {
                                                                 </MenuItem>
                                                             )}
                                                             {/* eslint-disable-next-line max-len */}
-                                                            <FileInput />
                                                             <MenuItem onClick={this.getSaveToComputerHandler(extended.saveAsNew)}>
                                                                 <Save />
                                                                 <FormattedMessage
