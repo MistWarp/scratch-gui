@@ -15,11 +15,12 @@ import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 
+import {Palette} from 'lucide-react';
+
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
 
-import dropdownCaret from './dropdown-caret.svg';
-import settingsIcon from './icon--settings.svg';
+import ChevronDown from './ChevronDown.jsx';
 
 const SettingsMenu = ({
     canChangeLanguage,
@@ -36,12 +37,7 @@ const SettingsMenu = ({
         onOpen={onRequestOpen}
         onClose={onRequestClose}
     >
-        <img
-            src={settingsIcon}
-            draggable={false}
-            width={20}
-            height={20}
-        />
+        <Palette size={20} />
         <span className={styles.dropdownLabel}>
             <FormattedMessage
                 defaultMessage="Theme"
@@ -49,12 +45,7 @@ const SettingsMenu = ({
                 id="gui.menuBar.theme"
             />
         </span>
-        <img
-            src={dropdownCaret}
-            draggable={false}
-            width={8}
-            height={5}
-        />
+        <ChevronDown />
         <MenuBarMenu
             className={menuBarStyles.menuBarMenu}
             open={settingsMenuOpen}
@@ -64,19 +55,22 @@ const SettingsMenu = ({
                 {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
                 {canChangeTheme && (
                     <React.Fragment>
+                        <TWCustomThemeMenu />
                         <TWGuiThemeMenu />
-                        <TWMenuBarAlignMenu />
                         <TWWallpaperMenu />
                         <TWFontsThemeMenu />
-                        <TWBlocksThemeMenu
-                            onOpenCustomSettings={onOpenCustomSettings}
-                        />
-                        <TWAccentThemeMenu />
-                        <TWCustomThemeMenu />
                     </React.Fragment>
                 )}
                 {onClickDesktopSettings && <TWDesktopSettings onClick={onClickDesktopSettings} />}
             </MenuSection>
+            <div className={styles.menuSeparator} />
+            {canChangeTheme && (
+                <MenuSection>
+                    <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
+                    <TWMenuBarAlignMenu />
+                    <TWAccentThemeMenu />
+                </MenuSection>
+            )}
         </MenuBarMenu>
     </MenuLabel>
 );

@@ -4,25 +4,24 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
+import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme, GUI_MAP} from '../../lib/themes/index.js';
 import {closeSettingsMenu, guiMenuOpen, openGuiMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
+
+import {Check} from 'lucide-react';
 
 const ThemeIcon = ({id}) => {
     return (
-        <img
-            className={styles.accentIconOuter}
-            src={GUI_MAP[id].icon}
-            draggable={false}
-            width={24}
-            height={24}
-            // Image is decorative
-            alt=""
+        <svg
+            className={classNames(styles.icon, "lucide")}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            dangerouslySetInnerHTML={{ __html: GUI_MAP[id].icon }}
         />
     );
 };
@@ -34,12 +33,9 @@ ThemeIcon.propTypes = {
 const ThemeMenuItem = props => (
     <MenuItem onClick={props.onClick}>
         <div className={styles.option}>
-            <img
+            <Check
                 className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                width={15}
-                height={12}
-                src={check}
-                draggable={false}
+                size={15}
             />
             <ThemeIcon id={props.id} />
             <span className={styles.themeName}>
@@ -82,11 +78,7 @@ const GuiThemeMenu = ({
                     id="tw.menuBar.theme"
                 />
             </span>
-            <img
-                className={styles.expandCaret}
-                src={dropdownCaret}
-                draggable={false}
-            />
+            <ChevronDown className={styles.expandCaret} />
         </div>
         <Submenu
             place={isRtl ? 'left' : 'right'}
@@ -104,8 +96,6 @@ const GuiThemeMenu = ({
         </Submenu>
     </MenuItem>
 );
-
-console.log(Theme.defaults);
 
 GuiThemeMenu.propTypes = {
     isOpen: PropTypes.bool,
@@ -125,7 +115,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+        applyTheme(theme);
     },
     onOpen: () => {
         dispatch(openGuiMenu());

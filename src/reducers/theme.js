@@ -1,10 +1,17 @@
 import {detectTheme} from '../lib/themes/themePersistance';
+import {applyGuiColors} from '../lib/themes/guiHelpers';
 
 const SET_THEME = 'scratch-gui/theme/SET_THEME';
 
 const initialState = {
     theme: detectTheme()
 };
+
+try {
+    applyGuiColors(initialState.theme);
+} catch (e) {
+    console.error('Failed to apply initial GUI colors for theme:', e);
+}
 
 const reducer = (state = initialState, action) => {
     switch (action.type) {
@@ -15,10 +22,13 @@ const reducer = (state = initialState, action) => {
     }
 };
 
-const setTheme = theme => ({
-    type: SET_THEME,
-    theme
-});
+const setTheme = theme => {
+    console.log('setTheme', theme);
+    return {
+        type: SET_THEME,
+        theme
+    };
+};
 
 export {
     reducer as default,

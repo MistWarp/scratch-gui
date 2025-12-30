@@ -8,9 +8,8 @@ const ButtonComponent = ({
     className,
     disabled,
     iconClassName,
+    iconElem,
     iconSrc,
-    iconWidth,
-    iconHeight,
     onClick,
     children,
     ...props
@@ -20,15 +19,8 @@ const ButtonComponent = ({
         onClick = function () {};
     }
 
-    const icon = iconSrc && (
-        <img
-            className={classNames(iconClassName, styles.icon)}
-            draggable={false}
-            src={iconSrc}
-            height={iconHeight}
-            width={iconWidth}
-        />
-    );
+    const Icon = iconElem;
+    const iconClass = classNames(iconClassName, styles.icon);
 
     return (
         <span
@@ -40,7 +32,9 @@ const ButtonComponent = ({
             onClick={onClick}
             {...props}
         >
-            {icon}
+            {Icon ? <Icon className={iconClass} size={20} /> : (
+                iconSrc ? <img className={iconClass} src={iconSrc} alt="" /> : null
+            )}
             <div className={styles.content}>{children}</div>
         </span>
     );
@@ -54,6 +48,7 @@ ButtonComponent.propTypes = {
     iconSrc: PropTypes.string,
     iconHeight: PropTypes.number,
     iconWidth: PropTypes.number,
+    iconElem: PropTypes.elementType,
     onClick: PropTypes.func
 };
 

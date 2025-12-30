@@ -3,6 +3,8 @@ import BlockItem from "./blockly/BlockItem.js";
 import BlockInstance from "./blockly/BlockInstance.js";
 import Utils from "./blockly/Utils.js";
 
+// Using a simple inline SVG for the search icon (avoid depending on React here)
+
 export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
@@ -58,10 +60,25 @@ export default async function ({ addon, msg, console }) {
       this.findWrapper = this.findBarOuter.appendChild(document.createElement("span"));
       this.findWrapper.className = "sa-find-wrapper";
 
+      // Add a small magnifying glass icon before the dropdown so it appears left/outside the input
+      this.searchIcon = this.findWrapper.appendChild(document.createElement("span"));
+      this.searchIcon.className = "sa-find-icon";
+      this.searchIcon.setAttribute('aria-hidden', 'true');
+      this.searchIcon.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      `;
+
       this.dropdownOut = this.findWrapper.appendChild(document.createElement("label"));
       this.dropdownOut.className = "sa-find-dropdown-out";
 
-      this.findInput = this.dropdownOut.appendChild(document.createElement("input"));
+      // Create an input wrapper so the input remains inside the dropdown label
+      const inputWrap = this.dropdownOut.appendChild(document.createElement("span"));
+      inputWrap.className = "sa-find-input-wrap";
+
+      this.findInput = inputWrap.appendChild(document.createElement("input"));
       this.findInput.className = addon.tab.scratchClass("input_input-form", {
         others: "sa-find-input",
       });

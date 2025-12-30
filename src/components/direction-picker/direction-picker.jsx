@@ -11,9 +11,11 @@ import Dial from './dial.jsx';
 
 import styles from './direction-picker.css';
 
-import allAroundIcon from '!../../lib/tw-recolor/build!./icon--all-around.svg';
-import leftRightIcon from '!../../lib/tw-recolor/build!./icon--left-right.svg';
-import dontRotateIcon from '!../../lib/tw-recolor/build!./icon--dont-rotate.svg';
+import {
+    ArrowLeftRight as LeftRightIcon,
+    Lock as DontRotateIcon,
+    RotateCw as AllAroundIcon
+} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -67,19 +69,19 @@ const DirectionPicker = props => (
                         buttons={[
                             {
                                 handleClick: props.onClickAllAround,
-                                icon: allAroundIcon,
+                                icon: AllAroundIcon,
                                 isSelected: props.rotationStyle === RotationStyles.ALL_AROUND,
                                 title: props.intl.formatMessage(messages.allAround)
                             },
                             {
                                 handleClick: props.onClickLeftRight,
-                                icon: leftRightIcon,
+                                icon: LeftRightIcon,
                                 isSelected: props.rotationStyle === RotationStyles.LEFT_RIGHT,
                                 title: props.intl.formatMessage(messages.leftRight)
                             },
                             {
                                 handleClick: props.onClickDontRotate,
-                                icon: dontRotateIcon,
+                                icon: DontRotateIcon,
                                 isSelected: props.rotationStyle === RotationStyles.DONT_ROTATE,
                                 title: props.intl.formatMessage(messages.dontRotate)
                             }

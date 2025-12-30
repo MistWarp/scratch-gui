@@ -15,24 +15,32 @@ const ToggleButtons = ({buttons, className, disabled}) => (
             }
         )}
     >
-        {buttons.map((button, index) => (
-            <button
-                key={`toggle-${index}`}
-                className={styles.button}
-                title={button.title}
-                aria-label={button.title}
-                aria-pressed={button.isSelected}
-                onClick={button.handleClick}
-                disabled={disabled}
-            >
-                <TWRenderRecoloredImage
-                    src={button.icon}
-                    aria-hidden="true"
-                    className={button.iconClassName}
-                    draggable={false}
-                />
-            </button>
-        ))}
+        {buttons.map((button, index) => {
+            const Icon = button.icon;
+            return (
+                <button
+                    key={`toggle-${index}`}
+                    className={styles.button}
+                    title={button.title}
+                    aria-label={button.title}
+                    aria-pressed={button.isSelected}
+                    onClick={button.handleClick}
+                    disabled={disabled}
+                >
+                    {typeof Icon === 'function' ? (
+                        <img
+                            src={Icon()}
+                            className={button.iconClassName}
+                            draggable={false}
+                            width={20}
+                            height={20}
+                        />
+                    ) : Icon ? (
+                        <Icon className={button.iconClassName} size={20} />
+                    ) : null}
+                </button>
+            );
+        })}
     </div>
 );
 

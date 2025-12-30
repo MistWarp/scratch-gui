@@ -1,4 +1,4 @@
-import {Theme} from '.';
+import {Theme, GUI_MAP} from './index.js';
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
 import './global-styles.css';
@@ -270,7 +270,10 @@ const applyWallpaper = wallpaper => {
 const applyGuiColors = theme => {
     const doc = document.documentElement;
 
-    const defaultGuiColors = Theme.defaults.light.getGuiColors();
+    const defaultGuiColors = (Theme.defaults && Theme.defaults.light &&
+                              typeof Theme.defaults.light.getGuiColors === 'function') ?
+        Theme.defaults.light.getGuiColors() :
+        (GUI_MAP && GUI_MAP.light && GUI_MAP.light.guiColors) || {};
     for (const [name, value] of Object.entries(defaultGuiColors)) {
         doc.style.setProperty(`--${name}-default`, value);
     }

@@ -118,14 +118,8 @@
         } else if (themeSetting) {
           try {
             var parsed = JSON.parse(themeSetting);
-            if (parsed.accent === 'purple') {
-              accent = '#855cd6';
-            } else if (parsed.accent === 'blue') {
-              accent = '#4c97ff';
-            }
-            if (parsed.gui === 'dark' || parsed.gui === 'light') {
-              theme = parsed.gui;
-            }
+            theme = parsed.gui || 'light';
+            accent = parsed.accent || accent;
           } catch (e) {
             // ignore
           }
@@ -137,9 +131,7 @@
 
         var splash = document.querySelector('.spash-waiting-for-js');
         splash.setAttribute('data-theme', theme);
-        if (theme !== 'dark') {
-          splash.style.color = accent;
-        }
+        splash.style.color = accent;
         splash.hidden = false;
 
         var splashErrorTitle = document.querySelector('.splash-error-title');

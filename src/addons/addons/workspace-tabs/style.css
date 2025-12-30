@@ -188,6 +188,13 @@
   border-color: rgba(0, 0, 0, 0.5);
 }
 
+.sa-workspace-tabs-control-button svg {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  margin-left: 0.3rem;
+}
+
 /* Category selector in bookmark editor */
 .sa-workspace-tabs-category-select {
   width: 100%;
@@ -234,6 +241,10 @@
   align-items: center;
   gap: 0.25rem;
   flex-shrink: 0;
+}
+
+.sa-workspace-tabs-menu-container svg {
+  vertical-align: middle;
 }
 
 .sa-workspace-tabs-menu-item:hover {

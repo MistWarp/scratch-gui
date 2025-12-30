@@ -8,12 +8,13 @@ import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {openFontsMenu, fontsMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {loadGoogleFont, searchGoogleFonts, getPopularGoogleFonts} from '../../lib/themes/google-fonts.js';
 
-import dropdownCaret from './dropdown-caret.svg';
-import fontIcon from './icon--font.svg';
+import ChevronDown from './ChevronDown.jsx';
 import styles from './settings-menu.css';
+
+import {BookType} from 'lucide-react'
 
 class FontsThemeMenu extends React.Component {
     constructor(props) {
@@ -155,13 +156,7 @@ class FontsThemeMenu extends React.Component {
                     className={styles.option}
                     onClick={onOpen}
                 >
-                    <img
-                        className={styles.icon}
-                        src={fontIcon}
-                        draggable={false}
-                        width={20}
-                        height={20}
-                    />
+                    <BookType className={styles.icon} />
                     <span className={styles.submenuLabel}>
                         <FormattedMessage
                             defaultMessage="Fonts"
@@ -169,11 +164,7 @@ class FontsThemeMenu extends React.Component {
                             id="tw.menuBar.fonts"
                         />
                     </span>
-                    <img
-                        className={styles.expandCaret}
-                        src={dropdownCaret}
-                        draggable={false}
-                    />
+                    <ChevronDown className={styles.expandCaret} />
                 </div>
                 <Submenu 
                     place={isRtl ? 'left' : 'right'}
@@ -347,7 +338,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+        applyTheme(theme);
     },
     onOpen: () => dispatch(openFontsMenu())
 });

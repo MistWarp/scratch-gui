@@ -1,4 +1,4 @@
-import icon from '../icons/dark.svg';
+import icon from '!!raw-loader!../icons/dark.svg';
 
 const guiColors = {
     'color-scheme': 'dark',

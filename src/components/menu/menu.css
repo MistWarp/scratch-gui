@@ -2,15 +2,41 @@
 
 .menu {
     position: absolute;
-    border: 2px solid $looks-secondary;
-    border-radius: 10px;
+    border-bottom: 2px solid $looks-secondary;
+    border-radius: 0 0 10px 10px;
     background-color: $ui-secondary;
     color: $text-primary;
     padding: 0;
+    padding-bottom: 5px;
     margin: 0;
     min-width: 186px;
     overflow: visible;
-    box-shadow: 0 8px 8px 0 $shadow;
+    border: 2px solid transparent;
+}
+
+.menu:not(.submenu)::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: linear-gradient(to top, $looks-secondary, $ui-secondary);
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+
+    pointer-events: none;
+}
+
+.submenu .menu::before {
+  content: none;
 }
 
 .menu.left {
@@ -30,6 +56,19 @@
     margin: 0;
     font-weight: bold;
     position: relative;
+}
+
+.menu-item img {
+    color: $text-primary;
+}
+
+.menu-item svg {
+    color: $text-primary;
+    vertical-align: middle;
+}
+
+.menu-item :global(svg.lucide) {
+    margin-right: 0.5rem;
 }
 
 .menu-item.active,
@@ -64,33 +103,34 @@
     right: 100%;
 }
 
-.submenu > .menu {
+.submenu>.menu {
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-color: $menu-bar-foreground $menu-bar-background;
     border-radius: 8px;
+    border: 2px solid $looks-secondary;
 }
 
-.menu-item.expanded > .submenu {
+.menu-item.expanded>.submenu {
     display: block;
 }
 
-:not(:has(> .menu-item.expanded)) > .menu-item:hover > .submenu {
+:not(:has(> .menu-item.expanded))>.menu-item:hover>.submenu {
     display: block;
 }
 
 /* Fallback styling for webkit browsers that don't support scrollbar-color */
 
-.submenu > .menu::-webkit-scrollbar {
+.submenu>.menu::-webkit-scrollbar {
     width: 12px;
 }
 
-.submenu > .menu::-webkit-scrollbar-track {
+.submenu>.menu::-webkit-scrollbar-track {
     background: $menu-bar-background;
 }
 
-.submenu > .menu::-webkit-scrollbar-thumb {
+.submenu>.menu::-webkit-scrollbar-thumb {
     background-color: $menu-bar-foreground;
     border-radius: 12px;
     border: 3px solid $menu-bar-background;

@@ -1,16 +1,17 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
+// we need this import for other packages to work here
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
+import {Check} from 'lucide-react';
+import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {MENUBAR_ALIGN, Theme} from '../../lib/themes/index.js';
 import {closeSettingsMenu, menubarAlignMenuOpen, openMenubarAlignMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
-import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 const AlignIcon = ({id}) => {
@@ -39,13 +40,7 @@ AlignIcon.propTypes = {
 const AlignMenuItem = props => (
     <MenuItem onClick={props.onClick}>
         <div className={styles.option}>
-            <img
-                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                width={15}
-                height={12}
-                src={check}
-                draggable={false}
-            />
+            <Check size={15} className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
             <AlignIcon id={props.id} />
             <span className={styles.themeName}>
                 <FormattedMessage
@@ -87,11 +82,7 @@ const MenubarAlignMenu = ({
                     id="tw.menuBar.menuBarAlign"
                 />
             </span>
-            <img
-                className={styles.expandCaret}
-                src={dropdownCaret}
-                draggable={false}
-            />
+            <ChevronDown className={styles.expandCaret} />
         </div>
         <Submenu
             place={isRtl ? 'left' : 'right'}
@@ -127,7 +118,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeMenuBarAlign: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-        persistTheme(theme);
+        applyTheme(theme);
     },
     onOpen: () => {
         dispatch(openMenubarAlignMenu());

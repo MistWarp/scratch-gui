@@ -1,5 +1,6 @@
-import {BLOCKS_CUSTOM, Theme} from '.';
+import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
+import {applyGuiColors} from './guiHelpers.js';
 
 const matchMedia = query => (window.matchMedia ? window.matchMedia(query) : null);
 const PREFERS_HIGH_CONTRAST_QUERY = matchMedia('(prefers-contrast: more)');
@@ -11,13 +12,25 @@ const STORAGE_KEY = 'tw:theme';
  * @returns {Theme} detected theme
  */
 const systemPreferencesTheme = () => {
+    const defaultsAvailable = Theme && Theme.defaults && Theme.defaults.light;
+    if (defaultsAvailable) {
+        if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
+            return Theme.defaults.highContrast;
+        }
+        if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
+            return Theme.defaults.dark;
+        }
+        return Theme.defaults.light;
+    }
+
+    // Fallback: construct a minimal Theme if Theme.defaults isn't initialized yet
     if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-        return Theme.defaults.highContrast;
+        return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-        return Theme.defaults.dark;
+        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
     }
-    return Theme.defaults.light;
+    return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
 };
 
 /**
@@ -80,7 +93,7 @@ const detectTheme = () => {
         if (typeof wallpaper.gridVisible === 'undefined') {
             wallpaper.gridVisible = true;
         }
-        
+
         return new Theme(
             parsed.accent || systemPreferences.accent,
             parsed.gui || systemPreferences.gui,
@@ -150,8 +163,31 @@ const persistTheme = theme => {
     }
 };
 
+/**
+ * Apply a theme to the GUI pipeline and persist settings.
+ * This centralizes application so loading and manual changes behave the same.
+ * @param {Theme} theme the theme
+ */
+const applyTheme = theme => {
+    try {
+        applyGuiColors(theme);
+    } catch (e) {
+        // Don't let GUI application failures block persistence
+        console.error('Failed to apply GUI colors for theme:', e);
+    }
+
+    persistTheme(theme);
+};
+
+try {
+    applyTheme(detectTheme());
+} catch (e) {
+    console.error('Failed to apply theme:', e);
+}
+
 export {
     onSystemPreferenceChange,
     detectTheme,
-    persistTheme
+    persistTheme,
+    applyTheme
 };

@@ -6,15 +6,15 @@ import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import locales from '@turbowarp/scratch-l10n';
 
-import check from './check.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import languageIcon from '../language-selector/language-icon.svg';
 import {languageMenuOpen, openLanguageMenu} from '../../reducers/menus.js';
 import {selectLocale} from '../../reducers/locales.js';
 
 import styles from './settings-menu.css';
 
-import dropdownCaret from './dropdown-caret.svg';
+import ChevronDown from './ChevronDown.jsx';
+
+import {Check, Globe} from 'lucide-react';
 
 class LanguageMenu extends React.PureComponent {
     constructor (props) {
@@ -68,11 +68,7 @@ class LanguageMenu extends React.PureComponent {
                     onClick={this.props.onRequestOpen}
                     onMouseOver={this.handleMouseOver}
                 >
-                    <img
-                        className={styles.icon}
-                        src={languageIcon}
-                        draggable={false}
-                    />
+                    <Globe className={styles.icon} />
                     <span className={styles.submenuLabel}>
                         <FormattedMessage
                             defaultMessage="Language"
@@ -80,11 +76,7 @@ class LanguageMenu extends React.PureComponent {
                             id="gui.menuBar.language"
                         />
                     </span>
-                    <img
-                        className={styles.expandCaret}
-                        src={dropdownCaret}
-                        draggable={false}
-                    />
+                    <ChevronDown className={styles.expandCaret} />
                 </div>
                 <Submenu
                     className={styles.languageSubmenu}
@@ -99,12 +91,11 @@ class LanguageMenu extends React.PureComponent {
                                     // eslint-disable-next-line react/jsx-no-bind
                                     onClick={() => this.props.onChangeLanguage(locale)}
                                 >
-                                    <img
+                                    <Check
                                         className={classNames(styles.check, {
                                             [styles.selected]: this.props.currentLocale === locale
                                         })}
-                                        src={check}
-                                        draggable={false}
+                                        size={15}
                                         {...(this.props.currentLocale === locale && {ref: this.setRef})}
                                     />
                                     {locales[locale].name}

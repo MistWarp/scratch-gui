@@ -7,9 +7,7 @@ import {FormattedMessage} from 'react-intl';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import CloseButton from '../close-button/close-button.jsx';
-
-import backIcon from '../../lib/assets/icon--back.svg';
-import helpIcon from '../../lib/assets/icon--help.svg';
+import {ArrowLeft, HelpCircle} from 'lucide-react';
 
 import styles from './modal.css';
 
@@ -38,7 +36,7 @@ const ModalComponent = props => (
                     >
                         <Button
                             className={styles.helpButton}
-                            iconSrc={helpIcon}
+                            iconElem={HelpCircle}
                             onClick={props.onHelp}
                         >
                             <FormattedMessage
@@ -73,7 +71,7 @@ const ModalComponent = props => (
                     {props.fullScreen ? (
                         <Button
                             className={styles.backButton}
-                            iconSrc={backIcon}
+                            iconElem={ArrowLeft}
                             onClick={props.onRequestClose}
                         >
                             <FormattedMessage

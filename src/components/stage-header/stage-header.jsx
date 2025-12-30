@@ -12,12 +12,15 @@ import Controls from '../../containers/controls.jsx';
 import {getStageDimensions} from '../../lib/utils/screen';
 import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 
-import fullScreenIcon from './icon--fullscreen.svg';
-import unFullScreenIcon from './icon--unfullscreen.svg';
 import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
 import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
 import fullStageIcon from '!../../lib/tw-recolor/build!./icon--full-stage.svg';
 import settingsIcon from './icon--settings.svg';
+
+import {
+    Minimize,
+    Maximize
+} from 'lucide-react';
 
 import styles from './stage-header.css';
 
@@ -110,11 +113,9 @@ const StageHeaderComponent = function (props) {
                     onClick={onSetStageUnFullScreen}
                     onKeyPress={onKeyPress}
                 >
-                    <img
+                    <Minimize
                         alt={props.intl.formatMessage(messages.unFullScreenMessage)}
-                        className={styles.stageButtonIcon}
-                        draggable={false}
-                        src={unFullScreenIcon}
+                        className={styles.icon}
                         title={props.intl.formatMessage(messages.fullscreenControl)}
                     />
                 </Button>
@@ -125,11 +126,9 @@ const StageHeaderComponent = function (props) {
                     className={styles.stageButton}
                     onClick={onSetStageFullScreen}
                 >
-                    <img
+                    <Maximize
                         alt={props.intl.formatMessage(messages.fullScreenMessage)}
                         className={styles.stageButtonIcon}
-                        draggable={false}
-                        src={fullScreenIcon}
                         title={props.intl.formatMessage(messages.fullscreenControl)}
                     />
                 </Button>
@@ -212,11 +211,9 @@ const StageHeaderComponent = function (props) {
                                 className={styles.stageButton}
                                 onClick={onSetStageFullScreen}
                             >
-                                <img
+                                <Maximize
                                     alt={props.intl.formatMessage(messages.fullStageSizeMessage)}
-                                    className={styles.stageButtonIcon}
-                                    draggable={false}
-                                    src={fullScreenIcon}
+                                    className={styles.icon}
                                     title={props.intl.formatMessage(messages.fullscreenControl)}
                                 />
                             </Button>
