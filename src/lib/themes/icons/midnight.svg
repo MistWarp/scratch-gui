@@ -1,0 +1,12 @@
+<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular background -->
+  <circle cx="12" cy="12" r="11" fill="#2D3748" stroke="#1A202C" stroke-width="1"/>
+  
+  <!-- Star shape in white -->
+  <path d="M12 4l2.45 5.33L20 10.8l-4.05 3.7 1.1 5.8-5.05-2.9-5.05 2.9 1.1-5.8L4 10.8l5.55-1.47z" fill="white"/>
+  
+  <!-- Small decorative stars -->
+  <circle cx="17" cy="6" r="0.8" fill="white" opacity="0.6"/>
+  <circle cx="7" cy="18" r="0.6" fill="white" opacity="0.5"/>
+  <circle cx="19" cy="17" r="0.5" fill="white" opacity="0.4"/>
+</svg>

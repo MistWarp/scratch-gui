@@ -12,12 +12,12 @@ const STORAGE_KEY = 'tw:theme';
  */
 const systemPreferencesTheme = () => {
     if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-        return Theme.highContrast;
+        return Theme.defaults.highContrast;
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-        return Theme.dark;
+        return Theme.defaults.dark;
     }
-    return Theme.light;
+    return Theme.defaults.light;
 };
 
 /**
@@ -55,10 +55,10 @@ const detectTheme = () => {
 
         // Migrate legacy preferences
         if (local === 'dark') {
-            return Theme.dark;
+            return Theme.defaults.dark;
         }
         if (local === 'light') {
-            return Theme.light;
+            return Theme.defaults.light;
         }
 
         const parsed = JSON.parse(local);

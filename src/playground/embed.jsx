@@ -55,7 +55,7 @@ render(<WrappedGUI
     onVmInit={onVmInit}
     onProjectLoaded={onProjectLoaded}
     routingStyle="none"
-    theme={Theme.light}
+    theme={Theme.defaults.light}
 />);
 
 if (urlParams.has('addons')) {

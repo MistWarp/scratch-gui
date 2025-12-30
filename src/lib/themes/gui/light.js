@@ -1,3 +1,5 @@
+import icon from '../icons/light.svg';
+
 const guiColors = {
     'color-scheme': 'light',
 
@@ -20,15 +22,6 @@ const guiColors = {
 
     'text-primary': 'hsla(225, 15%, 40%, 1)', /* #575E75 */
     'text-primary-transparent': 'hsla(225, 15%, 40%, 0.75)',
-
-    'motion-primary': 'hsla(215, 100%, 65%, 1)', /* #4C97FF */
-    'motion-primary-transparent': 'hsla(215, 100%, 65%, 0.9)', /* 90% transparent version of motion-primary */
-    'motion-tertiary': 'hsla(215, 60%, 50%, 1)', /* #3373CC */
-
-    'looks-secondary': 'hsla(260, 60%, 60%, 1)', /* #855CD6 */
-    'looks-transparent': 'hsla(260, 60%, 60%, 0.35)', /* 35% transparent version of looks-tertiary */
-    'looks-light-transparent': 'hsla(260, 60%, 60%, 0.15)', /* 15% transparent version of looks-tertiary */
-    'looks-secondary-dark': 'hsla(260, 42%, 51%, 1)', /* #714EB6 */
 
     'red-primary': 'hsla(20, 100%, 55%, 1)', /* #FF661A */
     'red-tertiary': 'hsla(20, 100%, 45%, 1)', /* #E64D00 */
@@ -98,6 +91,7 @@ const guiColors = {
 const blockColors = {};
 
 export {
+    icon,
     guiColors,
     blockColors
 };

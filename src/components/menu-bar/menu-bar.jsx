@@ -103,7 +103,6 @@ import aboutIcon from './icon--about.svg';
 import fileIcon from './icon--file.svg';
 import editIcon from './icon--edit.svg';
 import errorIcon from './tw-error.svg';
-import advancedIcon from './tw-advanced.svg';
 
 import ninetiesLogo from './nineties_logo.svg';
 import catLogo from './cat_logo.svg';
@@ -667,9 +666,7 @@ class MenuBar extends React.Component {
                 <div className={classNames(
                     styles.mainMenu,
                     {
-                        [styles['main-menu-align-left']]: this.props.theme.menuBarAlign === 'left',
-                        [styles['main-menu-align-center']]: this.props.theme.menuBarAlign === 'center',
-                        [styles['main-menu-align-right']]: this.props.theme.menuBarAlign === 'right'
+                        [styles['main-menu-align-' + (this.props.theme.menuBarAlign || 'center')]]: true
                     }
                 )}>
                     <div className={styles.fileGroup}>

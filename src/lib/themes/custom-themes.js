@@ -3,7 +3,7 @@
  * Handles creation, storage, and management of user-defined themes including custom gradients and accents
  */
 
-import {Theme} from './index.js';
+import {Theme, GUI_MAP} from './index.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
@@ -359,23 +359,9 @@ class CustomTheme extends Theme {
 
             // Get the base GUI colors directly without importing from index.js
             let baseGuiColors = {};
-            let guiLightColors = {};
 
             try {
-                // Import GUI theme modules directly
-                const guiLight = require('./gui/light.js');
-                guiLightColors = guiLight.guiColors || {};
-
-                // Try to get GUI colors for the current GUI theme
-                if (this.gui === 'dark') {
-                    const guiDark = require('./gui/dark.js');
-                    baseGuiColors = guiDark.guiColors || {};
-                } else if (this.gui === 'midnight') {
-                    const guiMidnight = require('./gui/midnight.js');
-                    baseGuiColors = guiMidnight.guiColors || {};
-                } else {
-                    baseGuiColors = guiLightColors;
-                }
+                baseGuiColors = GUI_MAP[this.gui].guiColors || {};
             } catch (e) {
                 console.warn('Failed to load GUI theme modules:', e);
                 // Fallback to basic colors if import fails
@@ -390,8 +376,7 @@ class CustomTheme extends Theme {
             const mergedColors = defaultsDeep(
                 {},
                 this.customAccent.guiColors || {},
-                baseGuiColors,
-                guiLightColors
+                baseGuiColors
             );
 
             return mergedColors;
@@ -423,22 +408,11 @@ class CustomTheme extends Theme {
                     const blocksDark = require('./blocks/dark.js');
                     baseBlockColors = blocksDark.blockColors || {};
                 } else {
-                    // Default to 'three' theme
                     const blocksThree = require('./blocks/three.js');
                     baseBlockColors = blocksThree.blockColors || {};
                 }
-
-                // Get GUI colors for block themes
-                if (this.gui === 'dark') {
-                    const guiDark = require('./gui/dark.js');
-                    baseGuiColors = guiDark.blockColors || {};
-                } else if (this.gui === 'midnight') {
-                    const guiMidnight = require('./gui/midnight.js');
-                    baseGuiColors = guiMidnight.blockColors || {};
-                } else {
-                    const guiLight = require('./gui/light.js');
-                    baseGuiColors = guiLight.blockColors || {};
-                }
+ 
+                baseGuiColors = GUI_MAP[this.gui].blockColors || {};
             } catch (e) {
                 console.warn('Failed to load block theme modules:', e);
                 // Fallback to basic block colors if import fails

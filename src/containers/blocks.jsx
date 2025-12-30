@@ -857,7 +857,7 @@ Blocks.defaultOptions = {
 Blocks.defaultProps = {
     isVisible: true,
     options: Blocks.defaultOptions,
-    theme: Theme.light
+    theme: Theme.defaults.light
 };
 
 const mapStateToProps = state => ({
