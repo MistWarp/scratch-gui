@@ -1,5 +1,7 @@
 import icon from '!!raw-loader!../icons/light.svg';
 
+const name = 'Light';
+
 const guiColors = {
     'color-scheme': 'light',
 
@@ -91,6 +93,7 @@ const guiColors = {
 const blockColors = {};
 
 export {
+    name,
     icon,
     guiColors,
     blockColors
