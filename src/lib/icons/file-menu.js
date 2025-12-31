@@ -1,8 +1,6 @@
-import { FilePen } from 'lucide-react';
+import {FilePen} from 'lucide-react';
 
 // Usage
-const File = () => {
-  return <FilePen />
-};
+const File = () => <FilePen />;
 
 export default File;

@@ -1,8 +1,8 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
-import {connect} from 'react-redux';
+import {FormattedMessage, IntlProvider} from 'react-intl';
+import {connect, Provider} from 'react-redux';
 
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
@@ -12,17 +12,486 @@ import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 import ChevronDown from './ChevronDown.jsx';
-import addIcon from './tw-add.svg';
 import exportIcon from './tw-export.svg';
-import importIcon from './tw-import.svg';
-import deleteIcon from './tw-delete.svg';
-import editIcon from './icon--edit.svg';
 import styles from './settings-menu.css';
 
-import {Check, Palette} from 'lucide-react';
+import {Check, Palette, CirclePlus, Download, FolderInput, Edit, Trash} from 'lucide-react';
+import WindowManager from '../../addons/window-system/window-manager';
+import showAlert from '../../addons/window-system/alert';
+import ReactDOM from 'react-dom';
+
+const startDrag = (index, e, dragging, setGradientColors, previewRef) => {
+    e.preventDefault();
+    const rect = previewRef.current && previewRef.current.getBoundingClientRect();
+    dragging.current = {index, rect};
+
+    const move = ev => {
+        const clientX = typeof ev.clientX === 'number' ?
+            ev.clientX : (ev.touches && ev.touches[0] && ev.touches[0].clientX);
+        if (!clientX || !dragging.current.rect) return;
+
+        const val = ((clientX - dragging.current.rect.left) / dragging.current.rect.width);
+        const pct = Math.max(0, Math.min(100, val * 100));
+        setGradientColors(prev => {
+            const next = prev.slice();
+            next[dragging.current.index] = {...next[dragging.current.index], position: pct};
+            return next;
+        });
+    };
+
+    const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', up);
+        setGradientColors(prev => prev.slice().sort((a, b) => a.position - b.position));
+        dragging.current = {index: null, rect: null};
+    };
+
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive: false});
+    document.addEventListener('touchend', up);
+};
+
+// Self-contained gradient creator/editor components so dialogs continue to
+// function independently of the parent menu component's mounted state.
+const GradientCreatorApp = props => {
+    const [name, setName] = React.useState(props.initialName || '');
+    const [description, setDescription] = React.useState(props.initialDescription || '');
+    const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
+        {color: '#ff6b6b', position: 0},
+        {color: '#4ecdc4', position: 100}
+    ]);
+    const [direction, setDirection] = React.useState(props.initialDirection || 90);
+    const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
+    const [selectedPreset, setSelectedPreset] = React.useState('');
+
+    const handleAddColorStop = () => {
+        const newPosition = Math.round(
+            gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
+        );
+        const next = [...gradientColors, {color: '#ffffff', position: Math.max(0, Math.min(100, newPosition))}];
+        next.sort((a, b) => a.position - b.position);
+        setGradientColors(next);
+    };
+
+    const handleRemoveColorStop = index => {
+        if (gradientColors.length <= 2) return;
+        setGradientColors(gradientColors.filter((_, i) => i !== index));
+    };
+
+    const handleColorChange = (index, color) => {
+        const next = gradientColors.slice();
+        next[index] = {...next[index], color};
+        setGradientColors(next);
+        if (index === 0) setPrimaryColor(color);
+    };
+
+    const previewRef = React.useRef(null);
+    const dragging = React.useRef({index: null, rect: null});
+
+    const handlePresetSelect = presetName => {
+        const preset = GradientUtils.getGradientPresets().find(p => p.name === presetName);
+        if (preset) {
+            const colorStops = preset.colors.map(
+                (color, index) => ({color, position: (index / (preset.colors.length - 1)) * 100})
+            );
+            setGradientColors(colorStops);
+            setDirection(preset.direction);
+            setPrimaryColor(preset.colors[0]);
+            setSelectedPreset(presetName);
+        }
+    };
+
+    return (
+        <div
+            className={styles.customThemeDialogContent}
+            style={{width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'auto'}}
+        >
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Name"
+                    id="tw.customThemes.gradientDialog.name"
+                /></label>
+                <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="My Gradient Theme"
+                    maxLength={50}
+                />
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Description (optional)"
+                    id="tw.customThemes.createDialog.description"
+                /></label>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="A custom gradient theme"
+                    maxLength={200}
+                    rows={2}
+                />
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Preset"
+                    id="tw.customThemes.gradientCreator.preset"
+                /></label>
+                <select
+                    value={selectedPreset}
+                    onChange={e => handlePresetSelect(e.target.value)}
+                >
+                    <option value="">{'Custom Gradient'}</option>
+                    {GradientUtils.getGradientPresets().map(preset => (<option
+                        key={preset.name}
+                        value={preset.name}
+                    >{preset.name}</option>))}
+                </select>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Preview"
+                    id="tw.customThemes.gradientCreator.preview"
+                /></label>
+                <div
+                    ref={previewRef}
+                    style={{position: 'relative', width: '100%', height: 120}}
+                >
+                    <div
+                        className={styles.gradientPreview}
+                        style={{
+                            background: GradientUtils.createLinearGradient(gradientColors, direction),
+                            width: '100%',
+                            height: '100%'
+                        }}
+                    />
+                    {gradientColors.map((stop, index) => (
+                        <div
+                            key={index}
+                            style={{
+                                position: 'absolute',
+                                left: `${stop.position}%`,
+                                top: '50%',
+                                transform:
+                                'translate(-50%, -50%)',
+                                zIndex: 10
+                            }}
+                        >
+                            <div
+                                onMouseDown={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
+                                onTouchStart={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
+                                style={{
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: '50%',
+                                    background: stop.color,
+                                    border: '2px solid rgba(255,255,255,0.9)',
+                                    boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
+                                    cursor: 'ew-resize'
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Colors"
+                    id="tw.customThemes.gradientCreator.colors"
+                /></label>
+                <div className={styles.colorStops}>
+                    {gradientColors.map((stop, index) => (
+                        <div
+                            key={index}
+                            className={styles.colorStop}
+                        >
+                            <input
+                                type="color"
+                                value={stop.color}
+                                onChange={e => handleColorChange(index, e.target.value)}
+                                className={styles.colorPicker}
+                            />
+                            {gradientColors.length > 2 && (<button
+                                type="button"
+                                onClick={() => handleRemoveColorStop(index)}
+                                className={styles.removeColorButton}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Remove"
+                                    id="tw.customThemes.gradientCreator.removeColor"
+                                /></button>)}
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={handleAddColorStop}
+                        className={styles.addColorButton}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Add Color"
+                            id="tw.customThemes.gradientCreator.addColor"
+                        /></button>
+                </div>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Direction"
+                    id="tw.customThemes.gradientCreator.direction"
+                /></label>
+                <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    value={direction}
+                    onChange={e => setDirection(parseInt(e.target.value))}
+                    className={styles.directionSlider}
+                />
+                <span>{direction}{'°'}</span>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Primary Color"
+                    id="tw.customThemes.gradientCreator.primaryColor"
+                /></label>
+                <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={e => setPrimaryColor(e.target.value)}
+                    className={styles.colorPicker}
+                />
+            </div>
+            <div className={styles.customThemeDialogButtons}>
+                <button
+                    className={styles.customThemeDialogButton}
+                    onClick={() => {
+                        if (props.onCancel) props.onCancel();
+                    }}
+                >
+                    <FormattedMessage
+                        defaultMessage="Cancel"
+                        id="tw.customThemes.createDialog.cancel"
+                    /></button>
+                <button
+                    className={classNames(styles.customThemeDialogButton, styles.primary)}
+                    onClick={() => {
+                        if (props.onCreate) props.onCreate(name, description, gradientColors, primaryColor, direction);
+                    }}
+                >
+                    <FormattedMessage
+                        defaultMessage="Create"
+                        id="tw.customThemes.createDialog.create"
+                    /></button>
+            </div>
+        </div>
+    );
+};
+
+const GradientEditorApp = props => {
+    const [name, setName] = React.useState(props.initialName || '');
+    const [description, setDescription] = React.useState(props.initialDescription || '');
+    const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
+        {color: '#ff6b6b', position: 0},
+        {color: '#4ecdc4', position: 100}
+    ]);
+    const [direction, setDirection] = React.useState(props.initialDirection || 90);
+    const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
+
+    const previewRef = React.useRef(null);
+    const dragging = React.useRef({index: null, rect: null});
+
+    const handleAddColorStop = () => {
+        const newPosition = Math.round(
+            gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
+        );
+        const next = [...gradientColors, {color: '#ffffff', position: Math.max(0, Math.min(100, newPosition))}];
+        next.sort((a, b) => a.position - b.position);
+        setGradientColors(next);
+    };
+
+    const handleRemoveColorStop = index => {
+        if (gradientColors.length <= 2) return;
+        setGradientColors(gradientColors.filter((_, i) => i !== index));
+    };
+
+    const handleColorChange = (index, color) => {
+        const next = gradientColors.slice();
+        next[index] = {...next[index], color};
+        setGradientColors(next);
+        if (index === 0) setPrimaryColor(color);
+    };
+
+    return (
+        <div
+            className={styles.customThemeDialogContent}
+            style={{width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'auto'}}
+        >
+            <h3><FormattedMessage
+                defaultMessage="Edit Gradient Theme"
+                id="tw.customThemes.gradientEditor.title"
+            /></h3>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Name"
+                    id="tw.customThemes.editorDialog.name"
+                /></label>
+                <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="My Gradient Theme"
+                    maxLength={50}
+                />
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Description (optional)"
+                    id="tw.customThemes.createDialog.description"
+                /></label>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="A custom gradient theme"
+                    maxLength={200}
+                    rows={2}
+                />
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Preview"
+                    id="tw.customThemes.gradientCreator.preview"
+                /></label>
+                <div
+                    ref={previewRef}
+                    style={{position: 'relative', width: '100%', height: 120}}
+                >
+                    <div
+                        className={styles.gradientPreview}
+                        style={{
+                            background: GradientUtils.createLinearGradient(gradientColors, direction),
+                            width: '100%',
+                            height: '100%'
+                        }}
+                    />
+                    {gradientColors.map((stop, index) => (
+                        <div
+                            key={index}
+                            style={{
+                                position: 'absolute',
+                                left: `${stop.position}%`,
+                                top: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                zIndex: 10}}
+                        >
+                            <div
+                                onMouseDown={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
+                                onTouchStart={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
+                                style={{
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: '50%',
+                                    background: stop.color,
+                                    border: '2px solid rgba(255,255,255,0.9)',
+                                    boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
+                                    cursor: 'ew-resize'
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Colors"
+                    id="tw.customThemes.gradientCreator.colors"
+                /></label>
+                <div className={styles.colorStops}>
+                    {gradientColors.map((stop, index) => (
+                        <div
+                            key={index}
+                            className={styles.colorStop}
+                        >
+                            <input
+                                type="color"
+                                value={stop.color}
+                                onChange={e => handleColorChange(index, e.target.value)}
+                                className={styles.colorPicker}
+                            />
+                            {gradientColors.length > 2 && (<button
+                                type="button"
+                                onClick={() => handleRemoveColorStop(index)}
+                                className={styles.removeColorButton}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Remove"
+                                    id="tw.customThemes.gradientCreator.removeColor"
+                                />
+                            </button>)}
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={handleAddColorStop}
+                        className={styles.addColorButton}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Add Color"
+                            id="tw.customThemes.gradientCreator.addColor"
+                        />
+                    </button>
+                </div>
+            </div>
+            <div className={styles.customThemeDialogField}>
+                <label><FormattedMessage
+                    defaultMessage="Direction"
+                    id="tw.customThemes.gradientCreator.direction"
+                /></label>
+                <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    value={direction}
+                    onChange={e => setDirection(parseInt(e.target.value, 10))}
+                    className={styles.directionSlider}
+                />
+                <span>{direction}{'°'}</span>
+            </div>
+            <div className={styles.customThemeDialogButtons}>
+                <button
+                    className={styles.customThemeDialogButton}
+                    onClick={() => {
+                        if (props.onCancel) props.onCancel();
+                    }}
+                >
+                    <FormattedMessage
+                        defaultMessage="Cancel"
+                        id="tw.customThemes.createDialog.cancel"
+                    />
+                </button>
+                <button
+                    className={classNames(styles.customThemeDialogButton, styles.primary)}
+                    onClick={() => {
+                        if (props.onUpdate) props.onUpdate(name, description, gradientColors, primaryColor, direction);
+                    }}
+                >
+                    <FormattedMessage
+                        defaultMessage="Update"
+                        id="tw.customThemes.gradientEditor.update"
+                    />
+                </button>
+            </div>
+        </div>
+    );
+};
 
 class CustomThemeMenu extends React.Component {
-    constructor(props) {
+    static contextTypes = {
+        store: PropTypes.object
+    };
+
+    constructor (props) {
         super(props);
         this.state = {
             customThemes: customThemeManager.getAllThemes(),
@@ -36,8 +505,8 @@ class CustomThemeMenu extends React.Component {
             importData: '',
             // Gradient creation state
             gradientColors: [
-                { color: '#ff6b6b', position: 0 },
-                { color: '#4ecdc4', position: 100 }
+                {color: '#ff6b6b', position: 0},
+                {color: '#4ecdc4', position: 100}
             ],
             gradientDirection: 90,
             primaryColor: '#ff6b6b',
@@ -47,30 +516,324 @@ class CustomThemeMenu extends React.Component {
         };
         
         this.fileInputRef = React.createRef();
+        this.createThemeWindow = null;
+        this.gradientCreatorWindow = null;
+        this.gradientEditorWindow = null;
+        this.createThemeContainer = null;
+        this.gradientCreatorContainer = null;
+        this.gradientEditorContainer = null;
     }
 
-    componentDidMount() {
+    componentDidMount () {
+        this._isMounted = true;
         // Listen for custom theme changes
         this.themeUpdateInterval = setInterval(() => {
             const themes = customThemeManager.getAllThemes();
             if (themes.length !== this.state.customThemes.length) {
-                this.setState({ customThemes: themes });
+                if (this._isMounted) this.setState({customThemes: themes});
             }
         }, 1000);
     }
 
-    componentWillUnmount() {
+    componentDidUpdate () {
+        // Keep dialog contents in their windows in sync while this component
+        // is mounted by re-rendering the independent React trees into their
+        // containers whenever state/props change.
+        try {
+            if (this.createThemeContainer) {
+                ReactDOM.render(
+                    React.createElement(Provider, {store: this.context.store},
+                        React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                            this.renderCreateContent()
+                        )
+                    ),
+                    this.createThemeContainer
+                );
+            }
+        } catch (e) {
+            // Ignore render errors
+        }
+        try {
+            if (this.gradientCreatorContainer) {
+                ReactDOM.render(
+                    React.createElement(Provider, {store: this.context.store},
+                        React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                            React.createElement(GradientCreatorApp, {
+                                initialName: this.state.createName,
+                                initialDescription: this.state.createDescription,
+                                initialGradientColors: this.state.gradientColors,
+                                initialPrimaryColor: this.state.primaryColor,
+                                initialDirection: this.state.gradientDirection,
+                                onCreate: (name, description, colorStops, primary, dir) => {
+                                    this.handleCreateGradientTheme(name, description, colorStops, primary, dir);
+                                    if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                                },
+                                onCancel: () => {
+                                    if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                                }
+                            })
+                        )
+                    ),
+                    this.gradientCreatorContainer
+                );
+            }
+        } catch (e) {
+            // Ignore render errors
+        }
+        try {
+            if (this.gradientEditorContainer) {
+                ReactDOM.render(
+                    React.createElement(Provider, {store: this.context.store},
+                        React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                            React.createElement(GradientEditorApp, {
+                                initialName: this.state.createName,
+                                initialDescription: this.state.createDescription,
+                                initialGradientColors: this.state.gradientColors,
+                                initialPrimaryColor: this.state.primaryColor,
+                                initialDirection: this.state.gradientDirection,
+                                onUpdate: (name, description, colorStops, primary, dir) => {
+                                    this.handleUpdateGradientTheme(name, description, colorStops, primary, dir)
+                                        .then(success => {
+                                            if (this.gradientEditorWindow && success) {
+                                                this.gradientEditorWindow.close();
+                                            }
+                                        });
+                                },
+                                onCancel: () => {
+                                    if (this.gradientEditorWindow) this.gradientEditorWindow.close();
+                                }
+                            })
+                        )
+                    ),
+                    this.gradientEditorContainer
+                );
+            }
+        } catch (e) {
+            // Ignore render errors
+        }
+    }
+
+    componentWillUnmount () {
+        this._isMounted = false;
         if (this.themeUpdateInterval) {
             clearInterval(this.themeUpdateInterval);
         }
     }
 
-    handleCreateTheme = () => {
-        const {createName, createDescription} = this.state;
+    openCreateThemeWindow = () => {
+        if (this.createThemeWindow) {
+            this.createThemeWindow.show().bringToFront();
+            return;
+        }
+
+        this.createThemeContainer = document.createElement('div');
+
+        this.createThemeWindow = WindowManager.createWindow({
+            id: 'tw-create-theme-window',
+            title: 'Create Custom Theme',
+            width: 520,
+            height: 360,
+            minWidth: 420,
+            minHeight: 240,
+            className: 'tw-create-theme-window',
+            onClose: () => {
+                try {
+                    if (this.createThemeContainer) {
+                        try {
+                            ReactDOM.unmountComponentAtNode(this.createThemeContainer);
+                        } catch (e) {}
+                        this.createThemeContainer = null;
+                        if (this._isMounted) this.forceUpdate();
+                    }
+                } catch (e) {}
+                this.createThemeWindow = null;
+                this.createThemeContainer = null;
+            }
+        });
+
+        this.createThemeWindow.setContent(this.createThemeContainer);
+
+        // Ensure the window content accepts pointer events (some global layers
+        // may otherwise interfere). This makes inputs/buttons interactive.
+        try {
+            const contentEl = this.createThemeWindow.getContentElement();
+            if (contentEl) contentEl.style.pointerEvents = 'auto';
+        } catch (e) {
+            // Ignore if unavailable
+        }
+
+        try {
+            ReactDOM.render(
+                React.createElement(Provider, {store: this.context.store},
+                    React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                        this.renderCreateContent()
+                    )
+                ),
+                this.createThemeContainer
+            );
+        } catch (e) {
+            console.warn('Failed to render create theme content into container', e);
+        }
+
+        this.createThemeWindow.setContent(this.createThemeContainer);
+        this.forceUpdate();
+        this.createThemeWindow.show();
+    };
+
+    openGradientCreatorWindow = () => {
+        if (this.gradientCreatorWindow) {
+            this.gradientCreatorWindow.show().bringToFront();
+            return;
+        }
+
+        this.gradientCreatorContainer = document.createElement('div');
+
+        this.gradientCreatorWindow = WindowManager.createWindow({
+            id: 'tw-gradient-creator-window',
+            title: 'Create Gradient Theme',
+            width: 700,
+            height: 620,
+            minWidth: 520,
+            minHeight: 360,
+            className: 'tw-gradient-creator-window',
+            onClose: () => {
+                try {
+                    if (this.gradientCreatorContainer) {
+                        try {
+                            ReactDOM.unmountComponentAtNode(this.gradientCreatorContainer);
+                        } catch (e) {}
+                        this.gradientCreatorContainer = null;
+                        if (this._isMounted) this.forceUpdate();
+                    }
+                } catch (e) {}
+                this.gradientCreatorWindow = null;
+                this.gradientCreatorContainer = null;
+            }
+        });
+
+        this.gradientCreatorWindow.setContent(this.gradientCreatorContainer);
+
+        try {
+            const contentEl = this.gradientCreatorWindow.getContentElement();
+            if (contentEl) contentEl.style.pointerEvents = 'auto';
+        } catch (e) {
+            // Ignore if unavailable
+        }
+
+        try {
+            ReactDOM.render(
+                React.createElement(Provider, {store: this.context.store},
+                    React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                        React.createElement(GradientCreatorApp, {
+                            initialName: this.state.createName,
+                            initialDescription: this.state.createDescription,
+                            initialGradientColors: this.state.gradientColors,
+                            initialPrimaryColor: this.state.primaryColor,
+                            initialDirection: this.state.gradientDirection,
+                            onCreate: (name, description, colorStops, primary, dir) => {
+                                this.handleCreateGradientTheme(name, description, colorStops, primary, dir);
+                                if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                            },
+                            onCancel: () => {
+                                if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                            }
+                        })
+                    )
+                ),
+                this.gradientCreatorContainer
+            );
+        } catch (e) {
+            console.warn('Failed to render gradient creator content into container', e);
+        }
+
+        this.forceUpdate();
+        this.gradientCreatorWindow.show();
+    };
+
+    openGradientEditorWindow = themeUuid => {
+        if (this.gradientEditorWindow) {
+            this.gradientEditorWindow.show().bringToFront();
+            return;
+        }
+
+        this.gradientEditorContainer = document.createElement('div');
+
+        this.gradientEditorWindow = WindowManager.createWindow({
+            id: `tw-gradient-editor-${themeUuid}`,
+            title: 'Edit Gradient Theme',
+            width: 700,
+            height: 620,
+            minWidth: 520,
+            minHeight: 360,
+            className: 'tw-gradient-editor-window',
+            onClose: () => {
+                try {
+                    if (this.gradientEditorContainer) {
+                        try {
+                            ReactDOM.unmountComponentAtNode(this.gradientEditorContainer);
+                        } catch (e) {}
+                        this.gradientEditorContainer = null;
+                        if (this._isMounted) this.forceUpdate();
+                    }
+                } catch (e) {}
+                this.gradientEditorWindow = null;
+                this.gradientEditorContainer = null;
+            }
+        });
+
+        this.gradientEditorWindow.setContent(this.gradientEditorContainer);
+
+        try {
+            const contentEl = this.gradientEditorWindow.getContentElement();
+            if (contentEl) contentEl.style.pointerEvents = 'auto';
+        } catch (e) {
+            // Ignore if unavailable
+        }
+
+        try {
+            ReactDOM.render(
+                React.createElement(Provider, {store: this.context.store},
+                    React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                        React.createElement(GradientEditorApp, {
+                            initialName: this.state.createName,
+                            initialDescription: this.state.createDescription,
+                            initialGradientColors: this.state.gradientColors,
+                            initialPrimaryColor: this.state.primaryColor,
+                            initialDirection: this.state.gradientDirection,
+                            onUpdate: (name, description, colorStops, primary, dir) => {
+                                this.handleUpdateGradientTheme(name, description, colorStops, primary, dir)
+                                    .then(success => {
+                                        if (this.gradientEditorWindow && success) {
+                                            this.gradientEditorWindow.close();
+                                        }
+                                    });
+                            },
+                            onCancel: () => {
+                                if (this.gradientEditorWindow) this.gradientEditorWindow.close();
+                            }
+                        })
+                    )
+                ),
+                this.gradientEditorContainer
+            );
+        } catch (e) {
+            console.warn('Failed to render gradient editor content into container', e);
+        }
+
+        this.forceUpdate();
+        this.gradientEditorWindow.show();
+    };
+
+    handleCreateTheme = async (passedName, passedDescription) => {
+        const createName = typeof passedName === 'string' ? passedName : this.state.createName;
+        
+        const createDescription = typeof passedDescription === 'string' ?
+            passedDescription : this.state.createDescription;
+
         const {theme} = this.props;
         
         if (!createName.trim()) {
-            alert('Theme name is required');
+            await showAlert('Theme name is required');
             return;
         }
 
@@ -90,21 +853,24 @@ class CustomThemeMenu extends React.Component {
             
             // Switch to the new theme
             this.props.onChangeTheme(customTheme);
+            return true;
         } catch (error) {
-            alert(`Failed to create theme: ${error.message}`);
+            await showAlert(`Failed to create theme: ${error.message}`);
         }
     };
 
-    handleCreateGradientTheme = () => {
-        const {createName, createDescription, gradientColors, primaryColor, gradientDirection} = this.state;
-        const {theme} = this.props;
-        
+    handleCreateGradientTheme = async (name, description) => {
+        const createName = typeof name === 'string' ? name : (this.state.createName || '');
+        const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
+        const theme = this.props.theme;
+
         if (!createName.trim()) {
-            alert('Theme name is required');
+            await showAlert('Theme name is required');
             return;
         }
 
         try {
+            const {gradientColors, primaryColor, gradientDirection} = this.state;
             const colorStops = gradientColors.map(stop => ({
                 color: stop.color,
                 position: stop.position
@@ -115,33 +881,34 @@ class CustomThemeMenu extends React.Component {
                 createDescription.trim(),
                 colorStops,
                 primaryColor,
-                { direction: gradientDirection },
+                {direction: gradientDirection},
                 theme
             );
-            
+
             this.setState({
                 customThemes: customThemeManager.getAllThemes(),
                 showGradientCreator: false,
                 createName: '',
                 createDescription: '',
                 gradientColors: [
-                    { color: '#ff6b6b', position: 0 },
-                    { color: '#4ecdc4', position: 100 }
+                    {color: '#ff6b6b', position: 0},
+                    {color: '#4ecdc4', position: 100}
                 ],
                 primaryColor: '#ff6b6b',
                 gradientDirection: 90
             });
-            
-            // Switch to the new theme
+
             this.props.onChangeTheme(customTheme);
         } catch (error) {
-            alert(`Failed to create gradient theme: ${error.message}`);
+            await showAlert(`Failed to create gradient theme: ${error.message}`);
         }
     };
 
     handleAddColorStop = () => {
         const {gradientColors} = this.state;
-        const newPosition = Math.round(gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length);
+        const newPosition = Math.round(
+            gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
+        );
         
         this.setState({
             gradientColors: [...gradientColors, {
@@ -151,7 +918,7 @@ class CustomThemeMenu extends React.Component {
         });
     };
 
-    handleRemoveColorStop = (index) => {
+    handleRemoveColorStop = index => {
         const {gradientColors} = this.state;
         if (gradientColors.length <= 2) return; // Keep minimum 2 colors
         
@@ -174,7 +941,7 @@ class CustomThemeMenu extends React.Component {
     handlePositionChange = (index, position) => {
         const {gradientColors} = this.state;
         const newColors = [...gradientColors];
-        newColors[index].position = Math.max(0, Math.min(100, parseInt(position) || 0));
+        newColors[index].position = Math.max(0, Math.min(100, parseInt(position, 10) || 0));
         newColors.sort((a, b) => a.position - b.position);
         
         this.setState({
@@ -182,7 +949,7 @@ class CustomThemeMenu extends React.Component {
         });
     };
 
-    handlePresetSelect = (presetName) => {
+    handlePresetSelect = async presetName => {
         try {
             const preset = GradientUtils.getGradientPresets().find(p => p.name === presetName);
             if (preset) {
@@ -198,25 +965,24 @@ class CustomThemeMenu extends React.Component {
                     selectedPreset: presetName
                 });
             } else {
-                alert('Gradient preset not found');
+                await showAlert('Gradient preset not found');
             }
         } catch (error) {
             console.warn('Failed to load preset:', error);
         }
     };
 
-    handleEditGradientTheme = (themeUuid) => {
+    handleEditGradientTheme = async themeUuid => {
         try {
             const gradientInfo = customThemeManager.getThemeGradientInfo(themeUuid);
             const theme = customThemeManager.getTheme(themeUuid);
             
             if (!gradientInfo || !theme) {
-                alert('Could not load gradient information for this theme');
+                await showAlert('Could not load gradient information for this theme');
                 return;
             }
 
             this.setState({
-                showGradientEditor: true,
                 editingThemeUuid: themeUuid,
                 createName: theme.name,
                 createDescription: theme.description,
@@ -224,41 +990,42 @@ class CustomThemeMenu extends React.Component {
                 gradientDirection: gradientInfo.direction,
                 primaryColor: gradientInfo.primaryColor,
                 selectedPreset: ''
+            }, () => {
+                if (this._isMounted) this.openGradientEditorWindow(themeUuid);
             });
         } catch (error) {
-            alert(`Failed to load gradient theme: ${error.message}`);
+            await showAlert(`Failed to load gradient theme: ${error.message}`);
         }
     };
 
-    handleUpdateGradientTheme = () => {
-        const {editingThemeUuid, createName, createDescription, gradientColors, primaryColor, gradientDirection} = this.state;
-        
+    handleUpdateGradientTheme = async (name, description, colorStops, primary, dir) => {
+        const {editingThemeUuid} = this.state;
+        const createName = typeof name === 'string' ? name : (this.state.createName || '');
+        const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
+
         if (!editingThemeUuid) {
-            alert('No theme selected for editing');
+            await showAlert('No theme selected for editing');
             return;
         }
-        
+
         if (!createName.trim()) {
-            alert('Theme name is required');
+            await showAlert('Theme name is required');
             return;
         }
 
         try {
-            const colorStops = gradientColors.map(stop => ({
-                color: stop.color,
-                position: stop.position
-            }));
+            const stops = (Array.isArray(colorStops) ? colorStops : (this.state.gradientColors || []))
+                .map(stop => ({color: stop.color, position: stop.position}));
 
             const updatedTheme = customThemeManager.updateThemeGradient(
-                editingThemeUuid,
-                colorStops,
-                primaryColor,
-                { direction: gradientDirection }
+                editingThemeUuid, stops, primary || this.state.primaryColor,
+                {direction: typeof dir === 'number' ? dir : this.state.gradientDirection}
             );
 
             // Update name and description if changed
             if (updatedTheme.name !== createName.trim() || updatedTheme.description !== createDescription.trim()) {
-                // We need to create a new theme with updated metadata since name/description aren't part of gradient update
+                // We need to create a new theme with updated metadata since
+                // name/description aren't part of gradient update
                 const newTheme = new CustomTheme(
                     createName.trim(),
                     createDescription.trim(),
@@ -272,8 +1039,8 @@ class CustomThemeMenu extends React.Component {
                 );
                 
                 // Preserve UUID and creation date
-                Object.defineProperty(newTheme, 'uuid', { value: editingThemeUuid, writable: false });
-                Object.defineProperty(newTheme, 'createdAt', { value: updatedTheme.createdAt, writable: false });
+                Object.defineProperty(newTheme, 'uuid', {value: editingThemeUuid, writable: false});
+                Object.defineProperty(newTheme, 'createdAt', {value: updatedTheme.createdAt, writable: false});
                 
                 customThemeManager.themes.set(editingThemeUuid, newTheme);
                 customThemeManager.saveCustomThemes();
@@ -286,8 +1053,8 @@ class CustomThemeMenu extends React.Component {
                 createName: '',
                 createDescription: '',
                 gradientColors: [
-                    { color: '#ff6b6b', position: 0 },
-                    { color: '#4ecdc4', position: 100 }
+                    {color: '#ff6b6b', position: 0},
+                    {color: '#4ecdc4', position: 100}
                 ],
                 primaryColor: '#ff6b6b',
                 gradientDirection: 90
@@ -299,11 +1066,11 @@ class CustomThemeMenu extends React.Component {
                 this.props.onChangeTheme(customThemeManager.getTheme(editingThemeUuid));
             }
         } catch (error) {
-            alert(`Failed to update gradient theme: ${error.message}`);
+            await showAlert(`Failed to update gradient theme: ${error.message}`);
         }
     };
 
-    handleDeleteTheme = (themeUuid, themeName) => {
+    handleDeleteTheme = async (themeUuid, themeName) => {
         if (confirm(`Are you sure you want to delete the theme "${themeName}"?`)) {
             try {
                 customThemeManager.removeTheme(themeUuid);
@@ -311,12 +1078,12 @@ class CustomThemeMenu extends React.Component {
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
-                alert(`Failed to delete theme: ${error.message}`);
+                await showAlert(`Failed to delete theme: ${error.message}`);
             }
         }
     };
 
-    handleExportThemes = () => {
+    handleExportThemes = async () => {
         try {
             const exportData = customThemeManager.exportAllThemes();
             const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -325,17 +1092,18 @@ class CustomThemeMenu extends React.Component {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `mistwarp-themes-${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `mistwarp-themes-${new Date().toISOString()
+                .split('T')[0]}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (error) {
-            alert(`Failed to export themes: ${error.message}`);
+            await showAlert(`Failed to export themes: ${error.message}`);
         }
     };
 
-    handleExportSingleTheme = (theme) => {
+    handleExportSingleTheme = async theme => {
         try {
             const exportData = {
                 version: '1.0',
@@ -355,16 +1123,16 @@ class CustomThemeMenu extends React.Component {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (error) {
-            alert(`Failed to export theme: ${error.message}`);
+            await showAlert(`Failed to export theme: ${error.message}`);
         }
     };
 
-    handleImportFile = (event) => {
+    handleImportFile = event => {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async e => {
             try {
                 const data = JSON.parse(e.target.result);
                 const results = customThemeManager.importThemes(data, false);
@@ -378,12 +1146,12 @@ class CustomThemeMenu extends React.Component {
                     message += `Errors: ${results.errors.length}\n${results.errors.join('\n')}`;
                 }
                 
-                alert(message);
+                await showAlert(message);
                 this.setState({
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
-                alert(`Failed to import themes: ${error.message}`);
+                await showAlert(`Failed to import themes: ${error.message}`);
             }
         };
         reader.readAsText(file);
@@ -392,9 +1160,78 @@ class CustomThemeMenu extends React.Component {
         event.target.value = '';
     };
 
-    render() {
-        const { isOpen, isRtl, theme, onOpen } = this.props;
-        const {customThemes, showCreateDialog, createName, createDescription} = this.state;
+    renderCreateContent () {
+        return (
+            <div
+                className={styles.customThemeDialogContent}
+                style={{width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'auto'}}
+            >
+                <div className={styles.customThemeDialogField}>
+                    <label>
+                        <FormattedMessage
+                            defaultMessage="Name"
+                            id="tw.customThemes.createDialog.name"
+                        />
+                    </label>
+                    <input
+                        name="createName"
+                        type="text"
+                        defaultValue={this.state.createName}
+                        placeholder="My Custom Theme"
+                        maxLength={50}
+                    />
+                </div>
+                <div className={styles.customThemeDialogField}>
+                    <label>
+                        <FormattedMessage
+                            defaultMessage="Description (optional)"
+                            id="tw.customThemes.createDialog.description"
+                        />
+                    </label>
+                    <textarea
+                        name="createDescription"
+                        defaultValue={this.state.createDescription}
+                        placeholder="A custom theme based on current settings"
+                        maxLength={200}
+                        rows={3}
+                    />
+                </div>
+                <div className={styles.customThemeDialogButtons}>
+                    <button
+                        className={styles.customThemeDialogButton}
+                        onClick={() => {
+                            if (this.createThemeWindow) this.createThemeWindow.close();
+                        }}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Cancel"
+                            id="tw.customThemes.createDialog.cancel"
+                        />
+                    </button>
+                    <button
+                        className={classNames(styles.customThemeDialogButton, styles.primary)}
+                        onClick={() => {
+                            const name = this.createThemeContainer?.querySelector('input[name="createName"]')?.value || '';
+                            const desc = this.createThemeContainer?.querySelector('textarea[name="createDescription"]')?.value || '';
+                            this.handleCreateTheme(name, desc);
+                            if (this.createThemeWindow) this.createThemeWindow.close();
+                        }}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Create"
+                            id="tw.customThemes.createDialog.create"
+                        />
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    render () {
+        const {isOpen, isRtl, theme, onOpen} = this.props;
+        const {customThemes} = this.state;
+        // Dialogs are rendered directly into their window containers with
+        // `ReactDOM.render` so they survive this component unmounting.
 
         return (
             <MenuItem expanded={isOpen}>
@@ -412,14 +1249,17 @@ class CustomThemeMenu extends React.Component {
                     </span>
                     <ChevronDown className={styles.expandCaret} />
                 </div>
-                <Submenu place={isRtl ? 'left' : 'right'} className={styles.customThemeSubmenu}>
+                <Submenu
+                    place={isRtl ? 'left' : 'right'}
+                    className={styles.customThemeSubmenu}
+                >
                     {/* Create new theme */}
-                    <MenuItem 
+                    <MenuItem
                         className={styles.customThemeAction}
-                        onClick={() => this.setState({ showCreateDialog: true })}
+                        onClick={this.openCreateThemeWindow}
                     >
                         <div className={styles.option}>
-                            <img src={addIcon} className={styles.customThemeActionIcon} alt="" />
+                            <CirclePlus className={styles.customThemeActionIcon} />
                             <FormattedMessage
                                 defaultMessage="Create from Current"
                                 description="Create new custom theme from current theme"
@@ -429,12 +1269,12 @@ class CustomThemeMenu extends React.Component {
                     </MenuItem>
 
                     {/* Create gradient theme */}
-                    <MenuItem 
+                    <MenuItem
                         className={styles.customThemeAction}
-                        onClick={() => this.setState({ showGradientCreator: true })}
+                        onClick={this.openGradientCreatorWindow}
                     >
                         <div className={styles.option}>
-                            <img src={addIcon} className={styles.customThemeActionIcon} alt="" />
+                            <CirclePlus className={styles.customThemeActionIcon} />
                             <FormattedMessage
                                 defaultMessage="Create Gradient Theme"
                                 description="Create gradient theme menu item"
@@ -444,12 +1284,12 @@ class CustomThemeMenu extends React.Component {
                     </MenuItem>
 
                     {/* Export themes */}
-                    <MenuItem 
+                    <MenuItem
                         className={styles.customThemeAction}
                         onClick={this.handleExportThemes}
                     >
                         <div className={classNames(styles.option, {[styles.disabled]: customThemes.length === 0})}>
-                            <img src={exportIcon} className={styles.customThemeActionIcon} alt="" />
+                            <Download className={styles.customThemeActionIcon} />
                             <FormattedMessage
                                 defaultMessage="Export All"
                                 description="Export all custom themes"
@@ -459,12 +1299,12 @@ class CustomThemeMenu extends React.Component {
                     </MenuItem>
 
                     {/* Import themes */}
-                    <MenuItem 
+                    <MenuItem
                         className={styles.customThemeAction}
                         onClick={() => this.fileInputRef.current?.click()}
                     >
                         <div className={styles.option}>
-                            <img src={importIcon} className={styles.customThemeActionIcon} alt="" />
+                            <FolderInput className={styles.customThemeActionIcon} />
                             <FormattedMessage
                                 defaultMessage="Import"
                                 description="Import custom themes"
@@ -503,34 +1343,37 @@ class CustomThemeMenu extends React.Component {
                                     {customThemeManager.hasCustomGradient(customTheme.uuid) && (
                                         <button
                                             className={styles.customThemeEditButton}
-                                            onClick={(e) => {
+                                            onClick={e => {
                                                 e.stopPropagation();
                                                 this.handleEditGradientTheme(customTheme.uuid);
                                             }}
                                             title="Edit gradient"
                                         >
-                                            <img src={editIcon} alt="Edit" />
+                                            <Edit className={styles.customThemeActionIcon} />
                                         </button>
                                     )}
                                     <button
                                         className={styles.customThemeActionButton}
-                                        onClick={(e) => {
+                                        onClick={e => {
                                             e.stopPropagation();
                                             this.handleExportSingleTheme(customTheme);
                                         }}
                                         title="Export theme"
                                     >
-                                        <img src={exportIcon} alt="Export" />
+                                        <img
+                                            src={exportIcon}
+                                            alt="Export"
+                                        />
                                     </button>
                                     <button
                                         className={styles.customThemeDeleteButton}
-                                        onClick={(e) => {
+                                        onClick={e => {
                                             e.stopPropagation();
                                             this.handleDeleteTheme(customTheme.uuid, customTheme.name);
                                         }}
                                         title="Delete theme"
                                     >
-                                        <img src={deleteIcon} alt="Delete" />
+                                        <Trash className={styles.customThemeActionIcon} />
                                     </button>
                                 </div>
                             </div>
@@ -555,526 +1398,11 @@ class CustomThemeMenu extends React.Component {
                     ref={this.fileInputRef}
                     type="file"
                     accept=".json"
-                    style={{ display: 'none' }}
+                    style={{display: 'none'}}
                     onChange={this.handleImportFile}
                 />
 
-                {/* Create theme dialog */}
-                {showCreateDialog && (
-                    <div className={styles.customThemeDialog}>
-                        <div className={styles.customThemeDialogContent}>
-                            <h3>
-                                <FormattedMessage
-                                    defaultMessage="Create Custom Theme"
-                                    description="Title for create theme dialog"
-                                    id="tw.customThemes.createDialog.title"
-                                />
-                            </h3>
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Name"
-                                        description="Label for theme name input"
-                                        id="tw.customThemes.createDialog.name"
-                                    />
-                                </label>
-                                <input
-                                    type="text"
-                                    value={createName}
-                                    onChange={(e) => this.setState({ createName: e.target.value })}
-                                    placeholder="My Custom Theme"
-                                    maxLength={50}
-                                />
-                            </div>
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Description (optional)"
-                                        description="Label for theme description input"
-                                        id="tw.customThemes.createDialog.description"
-                                    />
-                                </label>
-                                <textarea
-                                    value={createDescription}
-                                    onChange={(e) => this.setState({ createDescription: e.target.value })}
-                                    placeholder="A custom theme based on current settings"
-                                    maxLength={200}
-                                    rows={3}
-                                />
-                            </div>
-                            <div className={styles.customThemeDialogButtons}>
-                                <button
-                                    className={styles.customThemeDialogButton}
-                                    onClick={() => this.setState({ 
-                                        showCreateDialog: false, 
-                                        createName: '', 
-                                        createDescription: '' 
-                                    })}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Cancel"
-                                        description="Cancel button"
-                                        id="tw.customThemes.createDialog.cancel"
-                                    />
-                                </button>
-                                <button
-                                    className={classNames(styles.customThemeDialogButton, styles.primary)}
-                                    onClick={this.handleCreateTheme}
-                                    disabled={!createName.trim()}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Create"
-                                        description="Create button"
-                                        id="tw.customThemes.createDialog.create"
-                                    />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Gradient creator dialog */}
-                {this.state.showGradientCreator && (
-                    <div className={styles.customThemeDialog}>
-                        <div className={styles.customThemeDialogContent}>
-                            <h3>
-                                <FormattedMessage
-                                    defaultMessage="Create Gradient Theme"
-                                    description="Title for gradient creator dialog"
-                                    id="tw.customThemes.gradientCreator.title"
-                                />
-                            </h3>
-                            
-                            {/* Theme name and description */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Name"
-                                        description="Label for theme name input"
-                                        id="tw.customThemes.createDialog.name"
-                                    />
-                                </label>
-                                <input
-                                    type="text"
-                                    value={this.state.createName}
-                                    onChange={(e) => this.setState({ createName: e.target.value })}
-                                    placeholder="My Gradient Theme"
-                                    maxLength={50}
-                                />
-                            </div>
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Description (optional)"
-                                        description="Label for theme description input"
-                                        id="tw.customThemes.createDialog.description"
-                                    />
-                                </label>
-                                <textarea
-                                    value={this.state.createDescription}
-                                    onChange={(e) => this.setState({ createDescription: e.target.value })}
-                                    placeholder="A custom gradient theme"
-                                    maxLength={200}
-                                    rows={2}
-                                />
-                            </div>
-
-                            {/* Preset selection */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Preset"
-                                        description="Label for gradient preset selection"
-                                        id="tw.customThemes.gradientCreator.preset"
-                                    />
-                                </label>
-                                <select
-                                    value={this.state.selectedPreset}
-                                    onChange={(e) => this.handlePresetSelect(e.target.value)}
-                                >
-                                    <option value="">
-                                        Custom Gradient
-                                    </option>
-                                    {GradientUtils.getGradientPresets().map(preset => (
-                                        <option key={preset.name} value={preset.name}>
-                                            {preset.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Gradient preview */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Preview"
-                                        description="Label for gradient preview"
-                                        id="tw.customThemes.gradientCreator.preview"
-                                    />
-                                </label>
-                                <div 
-                                    className={styles.gradientPreview}
-                                    style={{
-                                        background: GradientUtils.createLinearGradient(
-                                            this.state.gradientColors,
-                                            this.state.gradientDirection
-                                        )
-                                    }}
-                                />
-                            </div>
-
-                            {/* Color stops */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Colors"
-                                        description="Label for gradient colors section"
-                                        id="tw.customThemes.gradientCreator.colors"
-                                    />
-                                </label>
-                                <div className={styles.colorStops}>
-                                    {this.state.gradientColors.map((stop, index) => (
-                                        <div key={index} className={styles.colorStop}>
-                                            <input
-                                                type="color"
-                                                value={stop.color}
-                                                onChange={(e) => this.handleColorChange(index, e.target.value)}
-                                                className={styles.colorPicker}
-                                            />
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={stop.position}
-                                                onChange={(e) => this.handlePositionChange(index, e.target.value)}
-                                                className={styles.positionInput}
-                                            />
-                                            <span>%</span>
-                                            {this.state.gradientColors.length > 2 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => this.handleRemoveColorStop(index)}
-                                                    className={styles.removeColorButton}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="Remove"
-                                                        description="Button to remove color stop"
-                                                        id="tw.customThemes.gradientCreator.removeColor"
-                                                    />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={this.handleAddColorStop}
-                                        className={styles.addColorButton}
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="Add Color"
-                                            description="Button to add color stop"
-                                            id="tw.customThemes.gradientCreator.addColor"
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Gradient direction */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Direction"
-                                        description="Label for gradient direction"
-                                        id="tw.customThemes.gradientCreator.direction"
-                                    />
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="360"
-                                    value={this.state.gradientDirection}
-                                    onChange={(e) => this.setState({ gradientDirection: parseInt(e.target.value) })}
-                                    className={styles.directionSlider}
-                                />
-                                <span>{this.state.gradientDirection}°</span>
-                            </div>
-
-                            {/* Primary color */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Primary Color"
-                                        description="Label for primary accent color"
-                                        id="tw.customThemes.gradientCreator.primaryColor"
-                                    />
-                                </label>
-                                <input
-                                    type="color"
-                                    value={this.state.primaryColor}
-                                    onChange={(e) => this.setState({ primaryColor: e.target.value })}
-                                    className={styles.colorPicker}
-                                />
-                            </div>
-
-                            <div className={styles.customThemeDialogButtons}>
-                                <button
-                                    className={styles.customThemeDialogButton}
-                                    onClick={() => this.setState({ 
-                                        showGradientCreator: false, 
-                                        createName: '', 
-                                        createDescription: '',
-                                        gradientColors: [
-                                            { color: '#ff6b6b', position: 0 },
-                                            { color: '#4ecdc4', position: 100 }
-                                        ],
-                                        primaryColor: '#ff6b6b',
-                                        gradientDirection: 90,
-                                        selectedPreset: ''
-                                    })}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Cancel"
-                                        description="Cancel button"
-                                        id="tw.customThemes.createDialog.cancel"
-                                    />
-                                </button>
-                                <button
-                                    className={classNames(styles.customThemeDialogButton, styles.primary)}
-                                    onClick={this.handleCreateGradientTheme}
-                                    disabled={!this.state.createName.trim()}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Create"
-                                        description="Create button"
-                                        id="tw.customThemes.createDialog.create"
-                                    />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Gradient editor dialog */}
-                {this.state.showGradientEditor && (
-                    <div className={styles.customThemeDialog}>
-                        <div className={styles.customThemeDialogContent}>
-                            <h3>
-                                <FormattedMessage
-                                    defaultMessage="Edit Gradient Theme"
-                                    description="Title for gradient editor dialog"
-                                    id="tw.customThemes.gradientEditor.title"
-                                />
-                            </h3>
-                            
-                            {/* Theme name and description */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Name"
-                                        description="Label for theme name input"
-                                        id="tw.customThemes.createDialog.name"
-                                    />
-                                </label>
-                                <input
-                                    type="text"
-                                    value={this.state.createName}
-                                    onChange={(e) => this.setState({ createName: e.target.value })}
-                                    placeholder="My Gradient Theme"
-                                    maxLength={50}
-                                />
-                            </div>
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Description (optional)"
-                                        description="Label for theme description input"
-                                        id="tw.customThemes.createDialog.description"
-                                    />
-                                </label>
-                                <textarea
-                                    value={this.state.createDescription}
-                                    onChange={(e) => this.setState({ createDescription: e.target.value })}
-                                    placeholder="A custom gradient theme"
-                                    maxLength={200}
-                                    rows={2}
-                                />
-                            </div>
-
-                            {/* Preset selection */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Preset"
-                                        description="Label for gradient preset selection"
-                                        id="tw.customThemes.gradientCreator.preset"
-                                    />
-                                </label>
-                                <select
-                                    value={this.state.selectedPreset}
-                                    onChange={(e) => this.handlePresetSelect(e.target.value)}
-                                >
-                                    <option value="">
-                                        Custom Gradient
-                                    </option>
-                                    {GradientUtils.getGradientPresets().map(preset => (
-                                        <option key={preset.name} value={preset.name}>
-                                            {preset.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Gradient preview */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Preview"
-                                        description="Label for gradient preview"
-                                        id="tw.customThemes.gradientCreator.preview"
-                                    />
-                                </label>
-                                <div 
-                                    className={styles.gradientPreview}
-                                    style={{
-                                        background: GradientUtils.createLinearGradient(
-                                            this.state.gradientColors,
-                                            this.state.gradientDirection
-                                        )
-                                    }}
-                                />
-                            </div>
-
-                            {/* Color stops */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Colors"
-                                        description="Label for gradient colors section"
-                                        id="tw.customThemes.gradientCreator.colors"
-                                    />
-                                </label>
-                                <div className={styles.colorStops}>
-                                    {this.state.gradientColors.map((stop, index) => (
-                                        <div key={index} className={styles.colorStop}>
-                                            <input
-                                                type="color"
-                                                value={stop.color}
-                                                onChange={(e) => this.handleColorChange(index, e.target.value)}
-                                                className={styles.colorPicker}
-                                            />
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={stop.position}
-                                                onChange={(e) => this.handlePositionChange(index, e.target.value)}
-                                                className={styles.positionInput}
-                                            />
-                                            <span>%</span>
-                                            {this.state.gradientColors.length > 2 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => this.handleRemoveColorStop(index)}
-                                                    className={styles.removeColorButton}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="Remove"
-                                                        description="Button to remove color stop"
-                                                        id="tw.customThemes.gradientCreator.removeColor"
-                                                    />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={this.handleAddColorStop}
-                                        className={styles.addColorButton}
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="Add Color"
-                                            description="Button to add color stop"
-                                            id="tw.customThemes.gradientCreator.addColor"
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Gradient direction */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Direction"
-                                        description="Label for gradient direction"
-                                        id="tw.customThemes.gradientCreator.direction"
-                                    />
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="360"
-                                    value={this.state.gradientDirection}
-                                    onChange={(e) => this.setState({ gradientDirection: parseInt(e.target.value) })}
-                                    className={styles.directionSlider}
-                                />
-                                <span>{this.state.gradientDirection}°</span>
-                            </div>
-
-                            {/* Primary color */}
-                            <div className={styles.customThemeDialogField}>
-                                <label>
-                                    <FormattedMessage
-                                        defaultMessage="Primary Color"
-                                        description="Label for primary accent color"
-                                        id="tw.customThemes.gradientCreator.primaryColor"
-                                    />
-                                </label>
-                                <input
-                                    type="color"
-                                    value={this.state.primaryColor}
-                                    onChange={(e) => this.setState({ primaryColor: e.target.value })}
-                                    className={styles.colorPicker}
-                                />
-                            </div>
-
-                            <div className={styles.customThemeDialogButtons}>
-                                <button
-                                    className={styles.customThemeDialogButton}
-                                    onClick={() => this.setState({ 
-                                        showGradientEditor: false,
-                                        editingThemeUuid: null,
-                                        createName: '', 
-                                        createDescription: '',
-                                        gradientColors: [
-                                            { color: '#ff6b6b', position: 0 },
-                                            { color: '#4ecdc4', position: 100 }
-                                        ],
-                                        primaryColor: '#ff6b6b',
-                                        gradientDirection: 90,
-                                        selectedPreset: ''
-                                    })}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Cancel"
-                                        description="Cancel button"
-                                        id="tw.customThemes.createDialog.cancel"
-                                    />
-                                </button>
-                                <button
-                                    className={classNames(styles.customThemeDialogButton, styles.primary)}
-                                    onClick={this.handleUpdateGradientTheme}
-                                    disabled={!this.state.createName.trim()}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Update"
-                                        description="Update button for gradient editor"
-                                        id="tw.customThemes.gradientEditor.update"
-                                    />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                
             </MenuItem>
         );
     }
@@ -1091,7 +1419,9 @@ CustomThemeMenu.propTypes = {
 const mapStateToProps = state => ({
     isOpen: customThemesOpen(state),
     isRtl: state.locales.isRtl,
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme.theme,
+    locale: state.locales.locale,
+    messages: state.locales.messages
 });
 
 const mapDispatchToProps = dispatch => ({

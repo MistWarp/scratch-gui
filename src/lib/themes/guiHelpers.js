@@ -178,14 +178,14 @@ const updateWallpaperObserverState = (hasWallpaper, opacity = 0.3) => {
  * @param {object} wallpaper wallpaper configuration
  */
 const applyWallpaper = wallpaper => {
-    const target = document.querySelector("[class*='gui_body-wrapper_']");
+    const target = document.querySelector("[class*='blocks-wrapper_']");
 
     let checkCountTarget = 0;
     if (!target) {
         const maxChecks = 50;
         const checkInterval = setInterval(() => {
             checkCountTarget++;
-            const newTarget = document.querySelector("[class*='gui_body-wrapper_']");
+            const newTarget = document.querySelector("[class*='blocks-wrapper_']");
             if (newTarget) {
                 applyWallpaper(wallpaper);
                 clearInterval(checkInterval);

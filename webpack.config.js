@@ -59,6 +59,8 @@ const base = {
     resolve: {
         symlinks: false,
         alias: {
+            'react': require.resolve('react'),
+            'react-dom': require.resolve('react-dom'),
             'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts')
         }

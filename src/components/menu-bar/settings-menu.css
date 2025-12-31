@@ -509,7 +509,6 @@
     height: 16px;
     margin-right: 8px;
     flex-shrink: 0;
-    filter: $filter-icon-black;
 }
 
 .customThemeItem {
@@ -669,14 +668,11 @@
 }
 
 .customThemeDialogContent {
-    background: $ui-modal-background;
+    background: none;
     border-radius: 8px;
     padding: 24px;
     width: 400px;
-    max-width: 90vw;
-    max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .customThemeDialogContent h3 {
