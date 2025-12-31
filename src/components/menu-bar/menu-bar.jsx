@@ -824,27 +824,6 @@ class MenuBar extends React.Component {
                                                             </MenuItem>
                                                         </React.Fragment>
                                                     )}
-                                                    {notScratchDesktop() && (
-                                                        <MenuItem
-                                                            onClick={this.getSaveToComputerHandler(downloadProject)}
-                                                        >
-                                                            <Download />
-                                                            {extended.available ? (
-                                                                <FormattedMessage
-                                                                    defaultMessage="Save to separate file..."
-                                                                    // eslint-disable-next-line max-len
-                                                                    description="Download the project once, without being able to easily save to the same spot"
-                                                                    id="tw.oldDownload"
-                                                                />
-                                                            ) : (
-                                                                <FormattedMessage
-                                                                    defaultMessage="Save to your computer"
-                                                                    description="Menu bar item for downloading a project to your computer" // eslint-disable-line max-len
-                                                                    id="gui.menuBar.downloadToComputer"
-                                                                />
-                                                            )}
-                                                        </MenuItem>
-                                                    )}
                                                 </React.Fragment>
                                             )}
                                         </SB3Downloader>

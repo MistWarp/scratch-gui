@@ -33,6 +33,10 @@
     color: $menu-bar-foreground;
 }
 
+.menu-bar {
+    position: relative;
+}
+
 .main-menu {
     display: flex;
     flex-direction: row;
@@ -49,6 +53,12 @@
 }
 .main-menu-align-center {
     justify-content: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    height: 100%;
+    width: max-content
 }
 .main-menu-align-right {
     justify-content: flex-end;
@@ -154,6 +164,10 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    right: 0;
+    position: absolute;
+    top: 0;
+    height: 100%;
 }
 
 .account-info-group .menu-bar-item {
