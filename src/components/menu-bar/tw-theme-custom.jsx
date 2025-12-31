@@ -12,7 +12,6 @@ import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 import ChevronDown from './ChevronDown.jsx';
-import exportIcon from './tw-export.svg';
 import styles from './settings-menu.css';
 
 import {Check, Palette, CirclePlus, Download, FolderInput, Edit, Trash} from 'lucide-react';
@@ -565,8 +564,12 @@ class CustomThemeMenu extends React.Component {
                                 initialPrimaryColor: this.state.primaryColor,
                                 initialDirection: this.state.gradientDirection,
                                 onCreate: (name, description, colorStops, primary, dir) => {
-                                    this.handleCreateGradientTheme(name, description, colorStops, primary, dir);
-                                    if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                                    this.handleCreateGradientTheme(name, description, colorStops, primary, dir)
+                                        .then(success => {
+                                            if (this.gradientCreatorWindow && success) {
+                                                this.gradientCreatorWindow.close();
+                                            }
+                                        });
                                 },
                                 onCancel: () => {
                                     if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
@@ -731,8 +734,12 @@ class CustomThemeMenu extends React.Component {
                             initialPrimaryColor: this.state.primaryColor,
                             initialDirection: this.state.gradientDirection,
                             onCreate: (name, description, colorStops, primary, dir) => {
-                                this.handleCreateGradientTheme(name, description, colorStops, primary, dir);
-                                if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
+                                this.handleCreateGradientTheme(name, description, colorStops, primary, dir)
+                                    .then(success => {
+                                        if (this.gradientCreatorWindow && success) {
+                                            this.gradientCreatorWindow.close();
+                                        }
+                                    });
                             },
                             onCancel: () => {
                                 if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
@@ -859,7 +866,7 @@ class CustomThemeMenu extends React.Component {
         }
     };
 
-    handleCreateGradientTheme = async (name, description) => {
+    handleCreateGradientTheme = async (name, description, colorStopsArg, primaryArg, dirArg) => {
         const createName = typeof name === 'string' ? name : (this.state.createName || '');
         const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
         const theme = this.props.theme;
@@ -870,18 +877,19 @@ class CustomThemeMenu extends React.Component {
         }
 
         try {
-            const {gradientColors, primaryColor, gradientDirection} = this.state;
-            const colorStops = gradientColors.map(stop => ({
-                color: stop.color,
-                position: stop.position
-            }));
+            const stops = Array.isArray(colorStopsArg) ?
+                colorStopsArg.map(stop => ({color: stop.color, position: stop.position})) :
+                (this.state.gradientColors || []).map(stop => ({color: stop.color, position: stop.position}));
+
+            const primary = typeof primaryArg === 'string' ? primaryArg : this.state.primaryColor;
+            const direction = typeof dirArg === 'number' ? dirArg : this.state.gradientDirection;
 
             const customTheme = customThemeManager.createGradientTheme(
                 createName.trim(),
                 createDescription.trim(),
-                colorStops,
-                primaryColor,
-                {direction: gradientDirection},
+                stops,
+                primary,
+                {direction},
                 theme
             );
 
@@ -899,6 +907,7 @@ class CustomThemeMenu extends React.Component {
             });
 
             this.props.onChangeTheme(customTheme);
+            return true;
         } catch (error) {
             await showAlert(`Failed to create gradient theme: ${error.message}`);
         }
@@ -1360,10 +1369,7 @@ class CustomThemeMenu extends React.Component {
                                         }}
                                         title="Export theme"
                                     >
-                                        <img
-                                            src={exportIcon}
-                                            alt="Export"
-                                        />
+                                        <Download className={styles.customThemeActionIcon} />
                                     </button>
                                     <button
                                         className={styles.customThemeDeleteButton}

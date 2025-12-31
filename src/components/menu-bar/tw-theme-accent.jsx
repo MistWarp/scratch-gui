@@ -56,11 +56,17 @@ ColorIcon.propTypes = {
 };
 
 const AccentMenuItem = props => (
-    <MenuItem onClick={props.onClick}>
+    <MenuItem
+        onClick={props.onClick}
+        title={ACCENT_MESSAGES[props.id].defaultMessage}
+        aria-label={ACCENT_MESSAGES[props.id].defaultMessage}
+    >
         <div className={styles.option}>
-            <Check size={20} className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
+            <Check className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
             <ColorIcon id={props.id} />
-            <FormattedMessage {...ACCENT_MESSAGES[props.id]} />
+            <span className={styles.accentLabel}>
+                <FormattedMessage {...ACCENT_MESSAGES[props.id]} />
+            </span>
         </div>
     </MenuItem>
 );
