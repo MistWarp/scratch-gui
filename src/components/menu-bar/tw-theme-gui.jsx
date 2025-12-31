@@ -38,13 +38,13 @@ const ThemeMenuItem = props => (
                 size={15}
             />
             <ThemeIcon id={props.id} />
-            <span className={styles.themeName}>
+            <span className={props.name}>
                 <FormattedMessage
                     defaultMessage="{theme}"
                     description="Label for theme option"
                     id="tw.theme.option"
                     values={{
-                        theme: props.id
+                        theme: props.name
                     }}
                 />
             </span>
@@ -55,7 +55,8 @@ const ThemeMenuItem = props => (
 ThemeMenuItem.propTypes = {
     id: PropTypes.string,
     isSelected: PropTypes.bool,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    name: PropTypes.string
 };
 
 const GuiThemeMenu = ({
@@ -88,7 +89,7 @@ const GuiThemeMenu = ({
                 <ThemeMenuItem
                     key={themeId}
                     id={themeId}
-                    name={t.name}
+                    name={t.name || t.gui}
                     isSelected={theme.gui === themeId}
                     onClick={() => onChangeTheme(theme.set('gui', themeId))}
                 />

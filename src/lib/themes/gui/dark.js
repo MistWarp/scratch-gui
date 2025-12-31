@@ -1,5 +1,7 @@
 import icon from '!!raw-loader!../icons/dark.svg';
 
+const name = 'Dark';
+
 const guiColors = {
     'color-scheme': 'dark',
 
@@ -75,6 +77,7 @@ const blockColors = {
 };
 
 export {
+    name,
     icon,
     guiColors,
     blockColors
