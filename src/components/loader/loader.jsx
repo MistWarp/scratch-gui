@@ -72,7 +72,8 @@ const randomMessages = [
   "if only mistwarp was less mist and more warp - Mistium",
   "i just laughed so hard i died - Flufi",
   "I just laughed so hard that I just laughed so hard - ViMi",
-  "i own turbowarp and penguinmod - Andrew"
+  "i own turbowarp and penguinmod - Andrew",
+  "evil is bad, but good evil is bad good - volxten_"
 ];
 
 // Because progress events are fired so often during the very performance-critical loading

@@ -29,10 +29,18 @@ class MenuLabel extends React.Component {
     addListeners () {
         document.addEventListener('mousedown', this.handleMouseDown);
         document.addEventListener('mouseup', this.handleMouseUp);
+        document.addEventListener('pointerdown', this.handleMouseDown);
+        document.addEventListener('pointerup', this.handleMouseUp);
+        document.addEventListener('touchstart', this.handleMouseDown);
+        document.addEventListener('touchend', this.handleMouseUp);
     }
     removeListeners () {
         document.removeEventListener('mousedown', this.handleMouseDown);
         document.removeEventListener('mouseup', this.handleMouseUp);
+        document.removeEventListener('pointerdown', this.handleMouseDown);
+        document.removeEventListener('pointerup', this.handleMouseUp);
+        document.removeEventListener('touchstart', this.handleMouseDown);
+        document.removeEventListener('touchend', this.handleMouseUp);
     }
     handleClick (e) {
         // this is a bit sketchy, but we want to allow clicking on the menu itself and the images

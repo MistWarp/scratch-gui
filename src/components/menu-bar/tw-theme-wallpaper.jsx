@@ -12,9 +12,9 @@ import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
-import {Check, Wallpaper} from 'lucide-react';
+import {Check, Wallpaper, Trash} from 'lucide-react';
 
-const WallpaperMenuItem = ({url, isSelected, onClick}) => (
+const WallpaperMenuItem = ({url, isSelected, onClick, onRemove}) => (
     <MenuItem onClick={onClick}>
         <div className={styles.option}>
             <Check
@@ -50,6 +50,20 @@ const WallpaperMenuItem = ({url, isSelected, onClick}) => (
                     />
                 )}
             </span>
+            {onRemove ? (
+                <button
+                    type="button"
+                    className={styles.removeWallpaperButton}
+                    title="Remove wallpaper"
+                    aria-label="Remove wallpaper"
+                    onClick={e => {
+                        e.stopPropagation();
+                        onRemove(url);
+                    }}
+                >
+                    <Trash size={14} className={styles.removeWallpaperIcon} style={{margin: '0'}} size={20} />
+                </button>
+            ) : null}
         </div>
     </MenuItem>
 );
@@ -57,7 +71,8 @@ const WallpaperMenuItem = ({url, isSelected, onClick}) => (
 WallpaperMenuItem.propTypes = {
     url: PropTypes.string,
     isSelected: PropTypes.bool,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    onRemove: PropTypes.func
 };
 
 const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
@@ -65,12 +80,10 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
     const [opacity, setOpacity] = React.useState(currentOpacity);
     const [darkness, setDarkness] = React.useState(currentDarkness);
 
-    // Sync local opacity state with currentOpacity prop
     React.useEffect(() => {
         setOpacity(currentOpacity);
     }, [currentOpacity]);
 
-    // Sync local darkness state with currentDarkness prop
     React.useEffect(() => {
         setDarkness(currentDarkness);
     }, [currentDarkness]);
@@ -106,18 +119,20 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     onClick={e => e.stopPropagation()}
                     className={styles.wallpaperInput}
                 />
-                <button
-                    type="submit"
-                    className={styles.wallpaperButton}
-                    disabled={!url.trim()}
-                    onClick={e => e.stopPropagation()}
-                >
-                    <FormattedMessage
-                        defaultMessage="Add"
-                        description="Button to add wallpaper"
-                        id="tw.wallpaper.add"
-                    />
-                </button>
+                <div className={styles.wallpaperButtons}>
+                    <button
+                        type="submit"
+                        className={styles.wallpaperButton}
+                        disabled={!url.trim()}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Add"
+                            description="Button to add wallpaper"
+                            id="tw.wallpaper.add"
+                        />
+                    </button>
+                </div>
             </form>
             <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
                 <label htmlFor="wallpaper-opacity" onClick={e => e.stopPropagation()}>
@@ -136,12 +151,26 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     value={opacity}
                     onChange={handleOpacityChange}
                     onClick={e => e.stopPropagation()}
-                    onMouseDown={e => e.stopPropagation()}
-                    onMouseUp={e => e.stopPropagation()}
-                    onMouseMove={e => e.stopPropagation()}
-                    onTouchStart={e => e.stopPropagation()}
-                    onTouchMove={e => e.stopPropagation()}
-                    onTouchEnd={e => e.stopPropagation()}
+                    onPointerDown={e => {
+                        const target = e.currentTarget || e.target;
+                        if (target && e.pointerId && target.setPointerCapture) {
+                            try {
+                                target.setPointerCapture(e.pointerId);
+                            } catch (err) {}
+                        }
+                        e.stopPropagation();
+                    }}
+                    onPointerMove={e => e.stopPropagation()}
+                    onPointerUp={e => {
+                        const target = e.currentTarget || e.target;
+                        if (target && e.pointerId && target.releasePointerCapture) {
+                            try {
+                                target.releasePointerCapture(e.pointerId);
+                            } catch (err) {}
+                        }
+                        e.stopPropagation();
+                    }}
+                    onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
                 <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(opacity * 100)}%</span>
@@ -163,12 +192,26 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     value={darkness}
                     onChange={handleDarknessChange}
                     onClick={e => e.stopPropagation()}
-                    onMouseDown={e => e.stopPropagation()}
-                    onMouseUp={e => e.stopPropagation()}
-                    onMouseMove={e => e.stopPropagation()}
-                    onTouchStart={e => e.stopPropagation()}
-                    onTouchMove={e => e.stopPropagation()}
-                    onTouchEnd={e => e.stopPropagation()}
+                    onPointerDown={e => {
+                        const target = e.currentTarget || e.target;
+                        if (target && e.pointerId && target.setPointerCapture) {
+                            try {
+                                target.setPointerCapture(e.pointerId);
+                            } catch (err) {}
+                        }
+                        e.stopPropagation();
+                    }}
+                    onPointerMove={e => e.stopPropagation()}
+                    onPointerUp={e => {
+                        const target = e.currentTarget || e.target;
+                        if (target && e.pointerId && target.releasePointerCapture) {
+                            try {
+                                target.releasePointerCapture(e.pointerId);
+                            } catch (err) {}
+                        }
+                        e.stopPropagation();
+                    }}
+                    onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
                 <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(darkness * 100)}%</span>
@@ -209,26 +252,42 @@ const WallpaperMenu = ({
     isRtl,
     onChangeTheme,
     onOpen,
+    onPreviewTheme,
     theme
 }) => {
-    const handleWallpaperSubmit = (url, opacity, darkness) => {
-        const history = [...theme.wallpaper.history];
+    const prevIsOpen = React.useRef(isOpen);
+    React.useEffect(() => {
+        if (prevIsOpen.current && !isOpen) {
+            onChangeTheme(theme);
+        }
+        prevIsOpen.current = isOpen;
+    }, [isOpen, theme, onChangeTheme]);
+    const handleWallpaperAdd = (url, opacity, darkness) => {
+        const history = [...(theme.wallpaper.history || [])];
         if (!history.includes(url)) {
             history.unshift(url);
             if (history.length > 10) { // Keep last 10 wallpapers
                 history.pop();
             }
         }
-        
+
         const newWallpaper = {
-            url,
-            opacity,
-            darkness,
-            gridVisible: theme.wallpaper.gridVisible !== false,
+            ...theme.wallpaper,
             history
         };
-        
-        onChangeTheme(theme.set('wallpaper', newWallpaper));
+
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
+    };
+
+    
+
+    const handleRemoveWallpaper = urlToRemove => {
+        const history = (theme.wallpaper.history || []).filter(u => u !== urlToRemove);
+        const newWallpaper = {
+            ...theme.wallpaper,
+            history
+        };
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
 
     const handleOpacityChange = opacity => {
@@ -236,7 +295,7 @@ const WallpaperMenu = ({
             ...theme.wallpaper,
             opacity
         };
-        onChangeTheme(theme.set('wallpaper', newWallpaper));
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
 
     const handleDarknessChange = darkness => {
@@ -244,7 +303,7 @@ const WallpaperMenu = ({
             ...theme.wallpaper,
             darkness
         };
-        onChangeTheme(theme.set('wallpaper', newWallpaper));
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
 
     const handleGridVisibilityChange = gridVisible => {
@@ -252,7 +311,7 @@ const WallpaperMenu = ({
             ...theme.wallpaper,
             gridVisible
         };
-        onChangeTheme(theme.set('wallpaper', newWallpaper));
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
 
     const handleWallpaperSelect = url => {
@@ -260,7 +319,7 @@ const WallpaperMenu = ({
             ...theme.wallpaper,
             url
         };
-        onChangeTheme(theme.set('wallpaper', newWallpaper));
+        onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
 
     return (
@@ -284,7 +343,7 @@ const WallpaperMenu = ({
                 className={styles.submenu}
             >
                 <WallpaperInputForm
-                    onSubmit={handleWallpaperSubmit}
+                    onSubmit={handleWallpaperAdd}
                     onOpacityChange={handleOpacityChange}
                     onDarknessChange={handleDarknessChange}
                     onGridVisibilityChange={handleGridVisibilityChange}
@@ -304,6 +363,7 @@ const WallpaperMenu = ({
                         url={url}
                         isSelected={theme.wallpaper.url === url}
                         onClick={() => handleWallpaperSelect(url)}
+                        onRemove={handleRemoveWallpaper}
                     />
                 ))}
             </Submenu>
@@ -315,6 +375,7 @@ WallpaperMenu.propTypes = {
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
+    onPreviewTheme: PropTypes.func,
     onOpen: PropTypes.func,
     theme: PropTypes.instanceOf(Theme)
 };
@@ -329,7 +390,11 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-           applyTheme(theme);
+        applyTheme(theme);
+    },
+    onPreviewTheme: theme => {
+        dispatch(setTheme(theme));
+        applyTheme(theme);
     },
     onOpen: () => dispatch(openWallpaperMenu())
 });
