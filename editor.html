@@ -109,8 +109,12 @@
         splashReset.onclick = function () {
           splashReset.disabled = true;
           function hardRefresh() {
-            var search = location.search.replace(/[?&]nocache=\d+/, '');
-            location.replace(location.pathname + search + (search ? '&' : '?') + 'nocache=' + Math.floor(Math.random() * 100000));
+            var search = location.search.replace(/[?&]nocache=[\d.]+(?=$|&)/, '');
+            // This is a functional cookie used so that we respond with Clear-Site-Data just once. No tracking.
+            // Can't use nocache parameter to trigger this because people might accidentally bookmark that, and
+            // then we would be clearing their cache on every visit.
+            document.cookie = 'tw_clear_cache_once=1; max-age=60; path=/; samesite=strict; secure';
+            location.replace(location.pathname + search + (search ? '&' : '?') + 'nocache=' + Math.floor(Math.random() * 10000000));
           }
           if ('serviceWorker' in navigator) {
             setTimeout(hardRefresh, 5000);
@@ -131,4 +135,4 @@
           splash.hidden = true;
           window.onerror = null;
         };
-      })();</script><div id="app"></div><script src="js/gleba/vendors~addon-settings~credits~editor~embed~fullscreen~player.9fbce2ec81b00500ad55.js"></script><script src="js/gleba/vendors~editor~embed~fullscreen~player.19185f2fde61bb86b306.js"></script><script src="js/gleba/addon-settings~credits~editor~embed~fullscreen~player.2c7b2b7f8fa36fd4e335.js"></script><script src="js/gleba/addon-settings~editor~embed~fullscreen~player.4725dbf41adc8a9f76b7.js"></script><script src="js/gleba/editor.6aae76777d249e6bc18b.js"></script></body></html>
+      })();</script><div id="app"></div><script src="js/gleba/vendors~addon-settings~credits~editor~embed~fullscreen~player.7183b6f8bdea9919c161.js"></script><script src="js/gleba/vendors~editor~embed~fullscreen~player.0a6ec359555f115410a6.js"></script><script src="js/gleba/addon-settings~credits~editor~embed~fullscreen~player.d06467b1ea61732ab465.js"></script><script src="js/gleba/addon-settings~editor~embed~fullscreen~player.21541222e19adc3352f4.js"></script><script src="js/gleba/editor.180bee1f3e9c430feb88.js"></script></body></html>
