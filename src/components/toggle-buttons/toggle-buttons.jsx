@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
 import styles from './toggle-buttons.css';
 
 const ToggleButtons = ({buttons, className, disabled}) => (
@@ -35,8 +34,19 @@ const ToggleButtons = ({buttons, className, disabled}) => (
                             width={20}
                             height={20}
                         />
+                    ) : typeof Icon === 'string' ? (
+                        <img
+                            src={Icon}
+                            className={button.iconClassName}
+                            draggable={false}
+                            width={20}
+                            height={20}
+                        />
                     ) : Icon ? (
-                        <Icon className={button.iconClassName} size={20} />
+                        <Icon
+                            className={button.iconClassName}
+                            size={20}
+                        />
                     ) : null}
                 </button>
             );
@@ -48,7 +58,10 @@ ToggleButtons.propTypes = {
     buttons: PropTypes.arrayOf(PropTypes.shape({
         title: PropTypes.string.isRequired,
         handleClick: PropTypes.func.isRequired,
-        icon: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
+        // string: image URL
+        // function: returns image URL (legacy)
+        // object: React forwardRef/exotic components (e.g. lucide-react)
+        icon: PropTypes.oneOfType([PropTypes.string, PropTypes.func, PropTypes.object]),
         iconClassName: PropTypes.string,
         isSelected: PropTypes.bool
     })),

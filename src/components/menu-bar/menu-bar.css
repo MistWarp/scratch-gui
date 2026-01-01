@@ -144,6 +144,13 @@
     margin-right: .6875rem;
 }
 
+.view-counter {
+    margin: 0 .25rem;
+    padding: 0 .5rem;
+    font-weight: normal;
+    opacity: 0.8;
+}
+
 .menu-bar-button {
     height: $menu-bar-button-size;
 }
