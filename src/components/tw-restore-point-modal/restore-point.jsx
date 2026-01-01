@@ -6,8 +6,8 @@ import styles from './restore-point-modal.css';
 import {formatBytes} from '../../lib/utils/bytes';
 import RestorePointAPI from '../../lib/api/restore-points';
 import log from '../../lib/utils/log';
-import exportIcon from './export.svg';
-import deleteIcon from './delete.svg';
+
+import {Download, Trash} from 'lucide-react';
 
 // Browser support is not perfect yet
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
@@ -142,11 +142,7 @@ class RestorePoint extends React.Component {
                         onClick={this.handleClickExport}
                         disabled={this.props.isExporting}
                     >
-                        <img
-                            src={exportIcon}
-                            alt="Export"
-                            draggable={false}
-                        />
+                        <Download />
                     </button>
 
                     <button
@@ -154,11 +150,7 @@ class RestorePoint extends React.Component {
                         onClick={this.handleClickDelete}
                         disabled={this.props.isExporting}
                     >
-                        <img
-                            src={deleteIcon}
-                            alt="Delete"
-                            draggable={false}
-                        />
+                        <Trash />
                     </button>
                 </div>
             </div>
