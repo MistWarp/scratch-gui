@@ -1,4 +1,5 @@
 import WindowManager from '../../window-system/window-manager.js';
+import JSONEditor from 'jsoneditor';
 
 export default async function ({ addon, console, msg }) {
   const Blockly = await addon.tab.traps.getBlockly();
@@ -7,6 +8,33 @@ export default async function ({ addon, console, msg }) {
   let inspectorWindow = null;
   let projectJSONCache = null;
   let projectJSONCacheString = null;
+  let projectJSONEditor = null;
+  let blockJSONEditor = null;
+
+  const createTextJSONEditor = editorContainer => new JSONEditor(editorContainer, {
+    mode: 'text',
+    modes: ['text'],
+    search: true,
+    mainMenuBar: true,
+    navigationBar: false,
+    statusBar: true
+  });
+
+  const ensureProjectJSONEditor = editorContainer => {
+    if (projectJSONEditor) return;
+    projectJSONEditor = createTextJSONEditor(editorContainer);
+  };
+
+  const ensureBlockJSONEditor = editorContainer => {
+    if (blockJSONEditor) return;
+    blockJSONEditor = createTextJSONEditor(editorContainer);
+  };
+
+  const getEditorText = editor => {
+    if (!editor) return '';
+    if (typeof editor.getText === 'function') return editor.getText();
+    return JSON.stringify(editor.get(), null, 2);
+  };
 
   function getProjectJSON() {
     if (!vm || !vm.runtime) return null;
@@ -82,7 +110,7 @@ export default async function ({ addon, console, msg }) {
           <button class="dev-inspector-download">Download JSON</button>
           <button class="dev-inspector-save">Save JSON</button>
         </div>
-        <textarea class="dev-inspector-json-content" style="flex: 1; width: 100%; background: var(--ui-secondary, #f9f9f9); border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; padding: 12px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5; resize: none;"></textarea>
+        <div class="dev-inspector-json-editor" style="flex: 1; width: 100%; min-height: 300px; border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; overflow: hidden; background: var(--ui-secondary, #f9f9f9);"></div>
         </div>
       </div>
       <div class="dev-inspector-content-panel" data-panel="project" style="display: none;">
@@ -92,16 +120,17 @@ export default async function ({ addon, console, msg }) {
           <button class="dev-inspector-project-download">Download JSON</button>
           <button class="dev-inspector-project-reload">Reload Project</button>
         </div>
-        <textarea class="dev-inspector-project-content" style="flex: 1; width: 100%; background: var(--ui-secondary, #f9f9f9); border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; padding: 12px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5; resize: none;"></textarea>
+        <div class="dev-inspector-project-editor" style="flex: 1; width: 100%; min-height: 400px; border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; overflow: hidden; background: var(--ui-secondary, #f9f9f9);"></div>
       </div>
     `;
     
     const copyBtn = container.querySelector('.dev-inspector-copy');
     const downloadBtn = container.querySelector('.dev-inspector-download');
-    const jsonContent = container.querySelector('.dev-inspector-json-content');
+    const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
     
     copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(jsonContent.value).then(() => {
+      ensureBlockJSONEditor(blockEditorContainer);
+      navigator.clipboard.writeText(getEditorText(blockJSONEditor)).then(() => {
         copyBtn.textContent = 'Copied!';
         setTimeout(() => {
           copyBtn.textContent = 'Copy JSON';
@@ -111,7 +140,8 @@ export default async function ({ addon, console, msg }) {
     
     downloadBtn.addEventListener('click', () => {
       const blockId = container.querySelector('.dev-inspector-block-id').textContent;
-      const blob = new Blob([jsonContent.value], { type: 'application/json' });
+      ensureBlockJSONEditor(blockEditorContainer);
+      const blob = new Blob([getEditorText(blockJSONEditor)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -123,10 +153,10 @@ export default async function ({ addon, console, msg }) {
     const saveBtn = container.querySelector('.dev-inspector-save');
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
-        const textarea = container.querySelector('.dev-inspector-json-content');
+        ensureBlockJSONEditor(blockEditorContainer);
         const blockIdSpan = container.querySelector('.dev-inspector-block-id');
         try {
-          const newBlockData = JSON.parse(textarea.value);
+          const newBlockData = blockJSONEditor.get();
           
           if (!vm || !vm.runtime || !blockIdSpan.textContent) {
             saveBtn.textContent = 'VM not available!';
@@ -212,9 +242,10 @@ export default async function ({ addon, console, msg }) {
         });
         
         if (targetTab === 'project') {
-          const projectContent = container.querySelector('.dev-inspector-project-content');
-          if (projectContent && (!projectContent.value || projectContent.dataset.loaded !== 'true')) {
-            loadProjectJSONAsync(projectContent);
+          const projectEditorContainer = container.querySelector('.dev-inspector-project-editor');
+          if (projectEditorContainer && (!projectEditorContainer.dataset.loaded || projectEditorContainer.dataset.loaded !== 'true')) {
+            ensureProjectJSONEditor(projectEditorContainer);
+            loadProjectJSONAsync(projectEditorContainer);
           }
         }
       });
@@ -224,16 +255,25 @@ export default async function ({ addon, console, msg }) {
     const projectCopyBtn = container.querySelector('.dev-inspector-project-copy');
     const projectDownloadBtn = container.querySelector('.dev-inspector-project-download');
     const projectReloadBtn = container.querySelector('.dev-inspector-project-reload');
-    const projectContent = container.querySelector('.dev-inspector-project-content');
+    const projectEditorContainer = container.querySelector('.dev-inspector-project-editor');
     
-    function loadProjectJSONAsync(textarea) {
+    function loadProjectJSONAsync(editorContainer) {
       if (!vm || !vm.runtime) {
-        textarea.value = 'VM not available';
+        ensureProjectJSONEditor(editorContainer);
+        try {
+          projectJSONEditor.set({$error: 'VM not available'});
+        } catch (e) {
+          // ignore
+        }
         return;
       }
-      
-      textarea.disabled = true;
-      textarea.value = 'Loading project JSON...';
+
+      ensureProjectJSONEditor(editorContainer);
+      try {
+        projectJSONEditor.set({$status: 'Loading project JSON...'});
+      } catch (e) {
+        // ignore
+      }
       
       requestAnimationFrame(() => {
         try {
@@ -246,19 +286,28 @@ export default async function ({ addon, console, msg }) {
               projectJSONCacheString = JSON.stringify(parsed, null, 2);
               
               requestAnimationFrame(() => {
-                textarea.value = projectJSONCacheString;
-                textarea.disabled = false;
-                textarea.dataset.loaded = 'true';
+                try {
+                  projectJSONEditor.set(parsed);
+                } catch (e) {
+                  projectJSONEditor.set({$error: 'Error showing project JSON: ' + e.message});
+                }
+                editorContainer.dataset.loaded = 'true';
               });
             } catch (e) {
-              textarea.value = 'Error parsing project JSON: ' + e.message;
-              textarea.disabled = false;
+              try {
+                projectJSONEditor.set({$error: 'Error parsing project JSON: ' + e.message});
+              } catch (e2) {
+                // ignore
+              }
               console.error('Error parsing project JSON:', e);
             }
           });
         } catch (e) {
-          textarea.value = 'Error loading project JSON: ' + e.message;
-          textarea.disabled = false;
+          try {
+            projectJSONEditor.set({$error: 'Error loading project JSON: ' + e.message});
+          } catch (e2) {
+            // ignore
+          }
           console.error('Error loading project JSON:', e);
         }
       });
@@ -269,11 +318,12 @@ export default async function ({ addon, console, msg }) {
       projectRefreshBtn.disabled = true;
       projectJSONCache = null;
       projectJSONCacheString = null;
-      
-      loadProjectJSONAsync(projectContent);
+
+      ensureProjectJSONEditor(projectEditorContainer);
+      loadProjectJSONAsync(projectEditorContainer);
       
       setTimeout(() => {
-        if (projectContent.dataset.loaded === 'true') {
+        if (projectEditorContainer.dataset.loaded === 'true') {
           projectRefreshBtn.textContent = 'Refreshed!';
         } else {
           projectRefreshBtn.textContent = 'Refresh Failed!';
@@ -286,7 +336,8 @@ export default async function ({ addon, console, msg }) {
     });
     
     projectCopyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(projectContent.value).then(() => {
+      ensureProjectJSONEditor(projectEditorContainer);
+      navigator.clipboard.writeText(getEditorText(projectJSONEditor)).then(() => {
         projectCopyBtn.textContent = 'Copied!';
         setTimeout(() => {
           projectCopyBtn.textContent = 'Copy JSON';
@@ -295,7 +346,8 @@ export default async function ({ addon, console, msg }) {
     });
     
     projectDownloadBtn.addEventListener('click', () => {
-      const blob = new Blob([projectContent.value], { type: 'application/json' });
+      ensureProjectJSONEditor(projectEditorContainer);
+      const blob = new Blob([getEditorText(projectJSONEditor)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -306,7 +358,8 @@ export default async function ({ addon, console, msg }) {
     
     projectReloadBtn.addEventListener('click', async () => {
       try {
-        const newProjectData = JSON.parse(projectContent.value);
+        ensureProjectJSONEditor(projectEditorContainer);
+        const newProjectData = projectJSONEditor.get();
         
         if (!vm || !vm.runtime) {
           projectReloadBtn.textContent = 'VM not available!';
@@ -326,7 +379,7 @@ export default async function ({ addon, console, msg }) {
         await vm.loadProject(newProjectData);
         
         projectReloadBtn.textContent = 'Project Reloaded!';
-        projectContent.dataset.loaded = 'false';
+        projectEditorContainer.dataset.loaded = 'false';
         
         setTimeout(() => {
           projectReloadBtn.textContent = 'Reload Project';
@@ -366,9 +419,9 @@ export default async function ({ addon, console, msg }) {
     `;
     
     const updateGridColumns = () => {
-      const jsonContentElement = container.querySelector('.dev-inspector-json-content');
-      const projectContentElement = container.querySelector('.dev-inspector-project-content');
-      if (!jsonContentElement && !projectContentElement) return;
+      const blockEditorElement = container.querySelector('.dev-inspector-json-editor');
+      const projectEditorElement = container.querySelector('.dev-inspector-project-editor');
+      if (!blockEditorElement && !projectEditorElement) return;
       
       const containerWidth = container.offsetWidth - 32;
       let fontSize;
@@ -390,8 +443,8 @@ export default async function ({ addon, console, msg }) {
         fontSize = '12px';
       }
       
-      if (jsonContentElement) jsonContentElement.style.fontSize = fontSize;
-      if (projectContentElement) projectContentElement.style.fontSize = fontSize;
+      if (blockEditorElement) blockEditorElement.style.fontSize = fontSize;
+      if (projectEditorElement) projectEditorElement.style.fontSize = fontSize;
     };
     
     if (window.ResizeObserver) {
@@ -701,6 +754,29 @@ export default async function ({ addon, console, msg }) {
     if (inspectorWindow) {
       inspectorWindow.show().bringToFront();
     } else {
+      const cleanup = () => {
+        inspectorWindow = null;
+        projectJSONCache = null;
+        projectJSONCacheString = null;
+
+        if (projectJSONEditor) {
+          try {
+            projectJSONEditor.destroy();
+          } catch (e) {
+            // ignore
+          }
+          projectJSONEditor = null;
+        }
+        if (blockJSONEditor) {
+          try {
+            blockJSONEditor.destroy();
+          } catch (e) {
+            // ignore
+          }
+          blockJSONEditor = null;
+        }
+      };
+
       inspectorWindow = WindowManager.createWindow({
         id: 'dev-inspector',
         title: 'Block Inspector',
@@ -711,11 +787,9 @@ export default async function ({ addon, console, msg }) {
         maxWidth: 1400,
         maxHeight: 1000,
         className: 'dev-inspector-window',
-        onClose: () => {
-          inspectorWindow = null;
-          projectJSONCache = null;
-          projectJSONCacheString = null;
-        }
+        destroyOnMinimize: true,
+        onClose: cleanup,
+        onMinimize: cleanup
       });
       
       const content = createInspectorContent();
@@ -739,15 +813,24 @@ export default async function ({ addon, console, msg }) {
     container.querySelector('.dev-inspector-block-shadow').textContent = 
       blockInfo.isShadow ? 'Yes' : 'No';
     
-    const jsonContent = container.querySelector('.dev-inspector-json-content');
+    const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
+    ensureBlockJSONEditor(blockEditorContainer);
     
     const projectJson = getProjectJSON();
     const blockResult = findBlockInProjectJSON(projectJson, blockInfo.id);
     
     if (blockResult && blockResult.block) {
-      jsonContent.value = JSON.stringify(blockResult.block, null, 2);
+      try {
+        blockJSONEditor.set(blockResult.block);
+      } catch (e) {
+        blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+      }
     } else {
-      jsonContent.value = JSON.stringify(blockInfo.scratchData || blockInfo, null, 2);
+      try {
+        blockJSONEditor.set(blockInfo.scratchData || blockInfo);
+      } catch (e) {
+        blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+      }
     }
     
     container.currentBlock = block;

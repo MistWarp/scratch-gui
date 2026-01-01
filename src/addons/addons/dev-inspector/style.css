@@ -217,3 +217,110 @@
     flex-direction: column;
   }
 }
+
+.dev-inspector-container .dev-inspector-project-editor,
+.dev-inspector-container .dev-inspector-json-editor {
+  background: var(--ui-secondary, #f9f9f9);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-outer,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-outer {
+  border: none;
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu {
+  background: var(--ui-secondary, #f9f9f9);
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu a,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu button,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu input,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu select,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu a,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu button,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu input,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu select {
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-navigation-bar,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-navigation-bar {
+  background: var(--ui-primary, #ffffff);
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-statusbar,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-statusbar {
+  background: var(--ui-secondary, #f9f9f9);
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  color: var(--text-primary, #575e75);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-tree,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-tree,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text {
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-field,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-preview,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-field,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-preview {
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-field[contenteditable="true"],
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value[contenteditable="true"],
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text textarea,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-field[contenteditable="true"],
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value[contenteditable="true"],
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text textarea {
+  background: var(--input-background, var(--ui-secondary, #f9f9f9));
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text textarea,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  tab-size: 2;
+  letter-spacing: normal;
+  box-sizing: border-box;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text {
+  line-height: 1.5;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-search input,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-search input {
+  background: var(--input-background, var(--ui-secondary, #f9f9f9));
+  color: var(--text-primary, #575e75);
+  border-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-separator,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-separator {
+  border-left-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-treepath a,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-treepath a {
+  color: var(--link-color, var(--text-primary, #575e75));
+}
