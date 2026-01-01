@@ -25,17 +25,15 @@ const CloseButton = props => {
         >
             {props.buttonType === 'back' ?
                 <ArrowLeft size={20} /> :
-                (
-                    <X
-                        className={classNames(
-                            styles.closeIcon,
-                            {
-                                [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
-                            }
-                        )}
-                        size={iconSize}
-                    />
-                )
+                <X
+                    className={classNames(
+                        styles.closeIcon,
+                        {
+                            [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
+                        }
+                    )}
+                    size={iconSize}
+                />
             }
         </div>
     );
@@ -48,7 +46,6 @@ CloseButton.COLOR_NEUTRAL = 'neutral';
 CloseButton.COLOR_GREEN = 'green';
 CloseButton.COLOR_ORANGE = 'orange';
 // SVG assets replaced by lucide icons; color handled via CSS classes
-
 
 CloseButton.propTypes = {
     buttonType: PropTypes.oneOf(['back', 'close']),

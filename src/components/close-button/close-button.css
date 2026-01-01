@@ -48,11 +48,9 @@
     margin: 0.25rem;
     user-select: none;
     transform-origin: 50%;
-    transform: rotate(45deg);
 }
 
 .close-icon.orange {
-    transform: rotate(45deg);
     transform: scale(1.4);
 }
 
