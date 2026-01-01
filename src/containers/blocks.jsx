@@ -11,7 +11,6 @@ import VM from 'scratch-vm';
 import log from '../lib/utils/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
-import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
 import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
@@ -105,6 +104,7 @@ class Blocks extends React.Component {
             'handleCategorySelected',
             'handleConnectionModalStart',
             'handleDrop',
+            'handleExtensionsChanged',
             'handleStatusButtonUpdate',
             'handleOpenSoundRecorder',
             'handlePromptStart',
@@ -164,9 +164,8 @@ class Blocks extends React.Component {
                 grid: {
                     colour: this.props.theme.getBlockColors().gridColor
                 },
-                // Optimization: reduce initial render load
                 maxInstances: {
-                    test: 10  // Reduce test block instances for faster initial load
+                    test: 10
                 },
                 oneBasedIndex: true,
                 comments: true,
@@ -416,6 +415,8 @@ class Blocks extends React.Component {
         this.props.vm.addListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.addListener('EXTENSION_REMOVED', this.handleExtensionsChanged);
+        this.props.vm.addListener('EXTENSIONS_REORDERED', this.handleExtensionsChanged);
         this.props.vm.addListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
         this.props.vm.addListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
@@ -430,6 +431,8 @@ class Blocks extends React.Component {
         this.props.vm.removeListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.removeListener('EXTENSION_REMOVED', this.handleExtensionsChanged);
+        this.props.vm.removeListener('EXTENSIONS_REORDERED', this.handleExtensionsChanged);
         this.props.vm.removeListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
         this.props.vm.removeListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
@@ -619,6 +622,13 @@ class Blocks extends React.Component {
     handleBlocksInfoUpdate (categoryInfo) {
         // @todo Later we should replace this to avoid all the warnings from redefining blocks.
         this.handleExtensionAdded(categoryInfo);
+    }
+
+    handleExtensionsChanged () {
+        const toolboxXML = this.getToolboxXML();
+        if (toolboxXML) {
+            this.props.updateToolboxState(toolboxXML);
+        }
     }
     handleCategorySelected (categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);

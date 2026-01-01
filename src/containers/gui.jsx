@@ -4,7 +4,7 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import ReactModal from 'react-modal';
 import VM from 'scratch-vm';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {injectIntl, intlShape} from 'react-intl';
 
 import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import {
@@ -24,7 +24,8 @@ import {
     closeTelemetryModal,
     openExtensionLibrary,
     closeExtensionLibrary,
-    openCustomExtensionModal
+    openCustomExtensionModal,
+    openExtensionManagerModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -203,6 +204,7 @@ const mapDispatchToProps = dispatch => ({
     onActivateCostumesTab: () => dispatch(activateTab(COSTUMES_TAB_INDEX)),
     onActivateSoundsTab: () => dispatch(activateTab(SOUNDS_TAB_INDEX)),
     onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
+    onOpenExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
     onOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal()),
     onRequestCloseBackdropLibrary: () => dispatch(closeBackdropLibrary()),
     onRequestCloseCostumeLibrary: () => dispatch(closeCostumeLibrary()),

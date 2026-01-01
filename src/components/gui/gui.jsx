@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React, {useCallback} from 'react';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
@@ -38,6 +38,7 @@ import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
+import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
@@ -137,6 +138,7 @@ const GUIComponent = props => {
         onClickPackager,
         onLogOut,
         onOpenExtensionLibrary,
+        onOpenExtensionManagerModal,
         onOpenRegistration,
         onToggleLoginOpen,
         onActivateCostumesTab,
@@ -200,6 +202,7 @@ const GUIComponent = props => {
             <React.Fragment>
                 <TWSecurityManager securityManager={securityManager} />
                 <TWRestorePointManager />
+                <MWExtensionManagerModal />
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
                 {settingsModalVisible && (
                     <TWSettingsModal
@@ -338,6 +341,7 @@ const GUIComponent = props => {
                     onCloseAccountNav={onCloseAccountNav}
                     onLogOut={onLogOut}
                     onOpenExtensionLibrary={onOpenExtensionLibrary}
+                    onOpenExtensionManagerModal={onOpenExtensionManagerModal}
                     onOpenRegistration={onOpenRegistration}
                     onProjectTelemetryEvent={onProjectTelemetryEvent}
                     onSeeCommunity={onSeeCommunity}
@@ -517,6 +521,7 @@ GUIComponent.propTypes = {
     onOpenCustomExtensionModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
+    onOpenExtensionManagerModal: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,
     onRequestCloseCostumeLibrary: PropTypes.func,

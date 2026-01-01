@@ -3,7 +3,9 @@
  * Provides a unified API for creating and managing draggable, resizable windows
  */
 
-let nextZIndex = 1000;
+const WINDOW_Z_INDEX_BASE = 8000;
+const WINDOW_Z_INDEX_MAX = 8999;
+let nextZIndex = WINDOW_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
@@ -25,6 +27,7 @@ class AddonWindow {
         this.minimizable = options.minimizable !== false;
         this.maximizable = options.maximizable !== false;
         this.className = options.className || '';
+        this.destroyOnMinimize = options.destroyOnMinimize || false;
         
         this.isVisible = false;
         this.isMinimized = false;
@@ -642,6 +645,19 @@ class AddonWindow {
     }
     
     bringToFront () {
+        if (nextZIndex >= WINDOW_Z_INDEX_MAX) {
+            const windows = Array.from(activeWindows.values());
+            const index = windows.indexOf(this);
+            if (index !== -1) windows.splice(index, 1);
+            windows.sort((a, b) => a.zIndex - b.zIndex);
+
+            nextZIndex = WINDOW_Z_INDEX_BASE;
+            for (const window of windows) {
+                window.zIndex = ++nextZIndex;
+                window.element.style.zIndex = window.zIndex;
+            }
+        }
+
         this.zIndex = ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
     }
@@ -659,16 +675,31 @@ class AddonWindow {
         return this;
     }
     
-    close () {
+    destroy (callOnClose = true) {
         this.hide();
-        this.onClose();
+        if (callOnClose) {
+            this.onClose();
+        }
         activeWindows.delete(this.id);
+        if (this.scrollbarStyle && this.scrollbarStyle.parentNode) {
+            this.scrollbarStyle.parentNode.removeChild(this.scrollbarStyle);
+        }
         if (this.element && this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
     }
+
+    close () {
+        this.destroy(true);
+    }
     
     minimize () {
+        if (this.destroyOnMinimize) {
+            this.onMinimize();
+            this.destroy(false);
+            return this;
+        }
+
         this.hide();
         this.isMinimized = true;
         this.onMinimize();

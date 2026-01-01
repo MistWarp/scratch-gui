@@ -21,8 +21,7 @@
 .fullscreen {
     /* Break out of the layout using position: fixed to cover the whole screen */
     position: fixed;
-    /* Use the fullscreen stage z-index to allow covering full-screen mode */
-    z-index: $z-index-stage-wrapper-overlay;
+    z-index: $z-index-loader;
 }
 
 .block-animation {

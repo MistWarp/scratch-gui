@@ -152,6 +152,8 @@ class WindowedModal extends React.Component {
             maximizable,
             closable: true,
             className: `modal-window ${className}`,
+            modal: true,
+            destroyOnMinimize: true,
             onClose: this.handleWindowClose,
             onMinimize: this.handleWindowMinimize
         });
@@ -293,19 +295,20 @@ class WindowedModal extends React.Component {
     }
     
     handleWindowClose = () => {
-        // Don't clean up window state, just hide it for reuse
-        console.log('WindowedModal: handleWindowClose');
-        if (this.window) {
-            this.window.hide();
-        }
-        
+        this.window = null;
+        this.contentContainer = null;
+        this.createdWindow = false;
+
         if (this.props.onRequestClose) {
             this.props.onRequestClose();
         }
     };
     
     handleWindowMinimize = () => {
-        // When window is minimized, call onRequestClose to allow reopening
+        this.window = null;
+        this.contentContainer = null;
+        this.createdWindow = false;
+
         if (this.props.onRequestClose) {
             this.props.onRequestClose();
         }

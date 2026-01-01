@@ -7,7 +7,6 @@ import VM from 'scratch-vm';
 import Box from '../components/box/box.jsx';
 import {
     openExtensionLibrary,
-    closeExtensionLibrary,
     openCustomExtensionModal
 } from '../reducers/modals';
 import {activateTab, BLOCKS_TAB_INDEX, EXTENSIONS_TAB_INDEX} from '../reducers/editor-tab';
@@ -42,23 +41,27 @@ class ExtensionsTab extends React.Component {
         // Listen for extension loading changes
         if (this.props.vm) {
             this.props.vm.on('EXTENSION_ADDED', this.handleExtensionAdded);
+            this.props.vm.on('EXTENSION_REMOVED', this.updateLoadedExtensions);
+            this.props.vm.on('EXTENSIONS_REORDERED', this.updateLoadedExtensions);
             this.props.vm.runtime.on('PROJECT_LOADED', this.updateLoadedExtensions);
+        }
+    }
+
+    componentDidUpdate (prevProps) {
+        // Recalculate block counts every time the extensions tab becomes active
+        if (this.props.activeTabIndex === EXTENSIONS_TAB_INDEX &&
+            prevProps.activeTabIndex !== EXTENSIONS_TAB_INDEX) {
+            console.log('🏷️ Extensions tab became active - recalculating block counts');
+            this.updateLoadedExtensions();
         }
     }
 
     componentWillUnmount () {
         if (this.props.vm) {
             this.props.vm.off('EXTENSION_ADDED', this.handleExtensionAdded);
+            this.props.vm.off('EXTENSION_REMOVED', this.updateLoadedExtensions);
+            this.props.vm.off('EXTENSIONS_REORDERED', this.updateLoadedExtensions);
             this.props.vm.runtime.off('PROJECT_LOADED', this.updateLoadedExtensions);
-        }
-    }
-
-    componentDidUpdate (prevProps) {
-        // Recalculate block counts every time the extensions tab becomes active
-        if (this.props.activeTabIndex === EXTENSIONS_TAB_INDEX && 
-            prevProps.activeTabIndex !== EXTENSIONS_TAB_INDEX) {
-            console.log('🏷️ Extensions tab became active - recalculating block counts');
-            this.updateLoadedExtensions();
         }
     }
 
@@ -99,7 +102,7 @@ class ExtensionsTab extends React.Component {
             
             // Count blocks that belong to this extension
             Object.values(blocks).forEach(block => {
-                if (block && block.opcode && block.opcode.startsWith(extensionId + '_')) {
+                if (block && block.opcode && block.opcode.startsWith(`${extensionId}_`)) {
                     blockCount++;
                 }
             });
@@ -114,7 +117,7 @@ class ExtensionsTab extends React.Component {
      * @returns {object} - Extension information including name and URL
      */
     getExtensionInfo (extensionId) {
-        if (!this.props.vm || !this.props.vm.runtime) return { name: extensionId, url: null };
+        if (!this.props.vm || !this.props.vm.runtime) return {name: extensionId, url: null};
 
         // Try to get extension info from runtime block info
         const blockInfo = this.props.vm.runtime._blockInfo || [];
@@ -150,19 +153,15 @@ class ExtensionsTab extends React.Component {
      */
     updateLoadedExtensions () {
         if (!this.props.vm || !this.props.vm.extensionManager) {
-            this.setState({ loadedExtensions: [] });
+            this.setState({loadedExtensions: []});
             return;
         }
-
-        console.log('🔄 Recalculating extension block counts...');
         
         const loadedExtensionIds = Array.from(this.props.vm.extensionManager._loadedExtensions.keys());
         const extensionsWithCounts = loadedExtensionIds.map(extensionId => {
             const blockCount = this.countExtensionBlocks(extensionId);
             const info = this.getExtensionInfo(extensionId);
-            
-            console.log(`📦 Extension "${info.name}" (${extensionId}): ${blockCount} blocks`);
-            
+
             return {
                 id: extensionId,
                 name: info.name,
@@ -179,41 +178,35 @@ class ExtensionsTab extends React.Component {
             return a.name.localeCompare(b.name);
         });
 
-        this.setState({ loadedExtensions: extensionsWithCounts });
-        console.log('✅ Extension block counts updated');
+        this.setState({loadedExtensions: extensionsWithCounts});
     }
 
     /**
      * Handle enabling procedure returns - set flag for blocks component to handle
      */
     handleEnableProcedureReturns () {
-        console.log('ExtensionsTab: handleEnableProcedureReturns called - setting pending flag');
         
         // Set a flag for the blocks component to handle when it becomes active
         if (this.props.vm) {
             this.props.vm._pendingProcedureReturns = true;
-            console.log('ExtensionsTab: Set _pendingProcedureReturns flag');
         }
     }
 
     /**
      * Handle category selection - set flag for blocks component to handle
+     * @param {string} categoryId the id for the extension category
      */
     handleCategorySelected (categoryId) {
-        console.log('ExtensionsTab: handleCategorySelected called with', categoryId, '- setting pending flag');
         
         // Set a flag for the blocks component to handle when it becomes active
         if (this.props.vm) {
             this.props.vm._pendingCategorySelection = categoryId;
-            console.log('ExtensionsTab: Set _pendingCategorySelection flag to', categoryId);
         }
     }
 
     render () {
         const {
-            intl,
-            onCategorySelected,
-            vm
+            intl
         } = this.props;
 
         return (
@@ -268,11 +261,8 @@ class ExtensionsTab extends React.Component {
 ExtensionsTab.propTypes = {
     activeTabIndex: PropTypes.number,
     intl: intlShape.isRequired,
-    onCategorySelected: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
     onActivateBlocksTab: PropTypes.func,
-    onActivateExtensionsTab: PropTypes.func,
-    onOpenCustomExtensionModal: PropTypes.func,
     vm: PropTypes.instanceOf(VM)
 };
 
