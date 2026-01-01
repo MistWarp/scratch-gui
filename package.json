@@ -60,6 +60,7 @@
     "intl": "1.2.5",
     "intl-messageformat": "^2.2.0",
     "js-base64": "2.4.9",
+    "jsoneditor": "^10.4.2",
     "keymirror": "0.1.1",
     "lodash.bindall": "4.4.0",
     "lodash.debounce": "4.0.8",

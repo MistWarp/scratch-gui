@@ -14,6 +14,11 @@ const manifest = {
       "url": "userscript.js"
     }
   ],
+  "userstyles": [
+    {
+      "url": "style.css"
+    }
+  ],
   "tags": [
     "developer",
     "MistWarp"
