@@ -35,7 +35,7 @@
 
 .menu-bar {
     position: relative;
-    z-index: 9999;
+    z-index: $z-index-menu-bar;
 }
 
 .main-menu {
@@ -264,4 +264,24 @@
 .menu-item-link {
     color: inherit;
     text-decoration: none;
+}
+
+.submenu-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.submenu-row-label {
+    flex: 1;
+}
+
+.submenu-caret {
+    margin-left: 0.5rem;
+    opacity: 0.8;
+    transform: rotate(-90deg);
+}
+
+[dir="rtl"] .submenu-caret {
+    transform: rotate(90deg);
 }
