@@ -1,7 +1,7 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import log from '../lib/log';
+import log from '../lib/utils/log';
 
 const ENDPOINT = 'https://windchimes.turbowarp.org/api/chime';
 const OPT_OUT_KEY = 'tw:windchime_opt_out';
