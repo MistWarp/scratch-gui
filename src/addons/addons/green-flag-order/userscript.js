@@ -100,17 +100,17 @@ export default async function ({ addon, console, msg }) {
     try {
       const blockBounds = block.getBoundingRectangle();
       let badgeX = 50; // fallback position
-      let badgeY = 15;
+      let badgeY = -15;
       
       if (blockBounds && typeof blockBounds.width === 'number' && !isNaN(blockBounds.width)) {
-        badgeX = blockBounds.width - 15;
+        badgeX = 15;
       } else {
         // Try alternative method to get block width
         const blockSvg = block.getSvgRoot();
         if (blockSvg) {
           const bbox = blockSvg.getBBox();
           if (bbox && typeof bbox.width === 'number' && !isNaN(bbox.width)) {
-            badgeX = bbox.width - 15;
+            badgeX = 15;
           }
         }
       }
