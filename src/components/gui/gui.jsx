@@ -39,7 +39,6 @@ import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
-import TWWindChimeSubmitter from '../../containers/tw-windchime-submitter.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -117,7 +116,6 @@ const GUIComponent = props => {
         customStageSize,
         enableCommunity,
         extensionLibraryVisible,
-        intl,
         isCreating,
         isEmbedded,
         isFullScreen,
@@ -145,7 +143,6 @@ const GUIComponent = props => {
         onActivateSoundsTab,
         onActivateTab,
         onClickLogo,
-        onExtensionButtonClick,
         onOpenCustomExtensionModal,
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
@@ -203,7 +200,6 @@ const GUIComponent = props => {
             <React.Fragment>
                 <TWSecurityManager securityManager={securityManager} />
                 <TWRestorePointManager />
-                <TWWindChimeSubmitter isEmbedded={isEmbedded} />
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
                 {settingsModalVisible && (
                     <TWSettingsModal
