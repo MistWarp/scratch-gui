@@ -1,6 +1,5 @@
 import {isPaused, setPaused, onPauseChanged, setup} from './module.js';
 import createLogsTab from './logs.js';
-import createThreadsTab from './threads.js';
 import createPerformanceTab from './performance.js';
 import createMemoryTab from './memory.js';
 import Utils from '../find-bar/blockly/Utils.js';
@@ -405,7 +404,7 @@ export default async function ({addon, console, msg}) {
         compilerWarning.className = 'sa-debugger-log sa-debugger-compiler-warning';
         compilerWarning.textContent = 'The debugger works best when the compiler is disabled.';
         updateCompilerWarningVisibility = () => {
-            compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
+            compilerWarning.hidden = true; // the compiler cant be disabled in mw
         };
         vm.on('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
         updateCompilerWarningVisibility();
@@ -432,16 +431,25 @@ export default async function ({addon, console, msg}) {
         if (description) {
             button.title = description;
         }
-        const imageElement = Object.assign(document.createElement('img'), {
-            'src': icon,
-            'draggable': false,
-            'alt': '',
-            'aria-hidden': 'true'
+        const iconElement = Object.assign(document.createElement('span'), {
+            className: 'sa-debugger-icon'
         });
+        iconElement.setAttribute('aria-hidden', 'true');
+        if (icon) {
+            const url = `url("${icon}")`;
+            iconElement.style.webkitMaskImage = url;
+            iconElement.style.maskImage = url;
+            iconElement.style.webkitMaskRepeat = 'no-repeat';
+            iconElement.style.maskRepeat = 'no-repeat';
+            iconElement.style.webkitMaskPosition = 'center';
+            iconElement.style.maskPosition = 'center';
+            iconElement.style.webkitMaskSize = 'contain';
+            iconElement.style.maskSize = 'contain';
+        }
         const textElement = Object.assign(document.createElement('span'), {
             textContent: text || 'Button'
         });
-        button.appendChild(imageElement);
+        button.appendChild(iconElement);
         button.appendChild(textElement);
     
         // Add keyboard support
@@ -454,7 +462,7 @@ export default async function ({addon, console, msg}) {
     
         return {
             element: button,
-            image: imageElement,
+            image: iconElement,
             text: textElement
         };
     };
@@ -464,17 +472,26 @@ export default async function ({addon, console, msg}) {
         tab.setAttribute('role', 'tab');
         tab.setAttribute('tabindex', '0');
         tab.setAttribute('aria-label', text || 'Tab');
-    
-        const imageElement = Object.assign(addon.tab.recolorable(), {
-            'src': icon,
-            'draggable': false,
-            'alt': '',
-            'aria-hidden': 'true'
+
+        const iconElement = Object.assign(document.createElement('span'), {
+            className: 'sa-debugger-icon'
         });
+        iconElement.setAttribute('aria-hidden', 'true');
+        if (icon) {
+            const url = `url("${icon}")`;
+            iconElement.style.webkitMaskImage = url;
+            iconElement.style.maskImage = url;
+            iconElement.style.webkitMaskRepeat = 'no-repeat';
+            iconElement.style.maskRepeat = 'no-repeat';
+            iconElement.style.webkitMaskPosition = 'center';
+            iconElement.style.maskPosition = 'center';
+            iconElement.style.webkitMaskSize = 'contain';
+            iconElement.style.maskSize = 'contain';
+        }
         const textElement = Object.assign(document.createElement('span'), {
             textContent: text || 'Tab'
         });
-        tab.appendChild(imageElement);
+        tab.appendChild(iconElement);
         tab.appendChild(textElement);
     
         // Add keyboard support for tabs
@@ -487,7 +504,7 @@ export default async function ({addon, console, msg}) {
     
         return {
             element: tab,
-            image: imageElement,
+            image: iconElement,
             text: textElement
         };
     };
@@ -800,10 +817,9 @@ export default async function ({addon, console, msg}) {
         console
     };
     logsTab = await createLogsTab(api);
-    const threadsTab = await createThreadsTab(api);
     const performanceTab = await createPerformanceTab(api);
     const memoryTab = await createMemoryTab(api);
-    allTabs = [logsTab, threadsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
+    allTabs = [logsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
 
     for (const message of messagesLoggedBeforeLogsTabLoaded) {
         logsTab.addLog(...message);

@@ -18,20 +18,12 @@
 .sa-debugger-container button,
 .sa-debugger-container [class*="button_"],
 .sa-debugger-container [class*="stage-button"] {
-  outline: none !important;
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important;
-}
-
-.sa-debugger-container button:focus,
-.sa-debugger-container [class*="button_"]:focus,
-.sa-debugger-container [class*="stage-button"]:focus {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 .sa-debugger-container button:active,
@@ -57,13 +49,13 @@
   display: block;
   width: 6px;
   height: 6px;
-  background-color: var(--editorDarkMode-highlightText, #855cd6);
+  background-color: var(--looks-secondary);
   border-radius: 50%;
 }
 
 .sa-debugger-container .sa-debugger-active {
-  background-color: var(--ui-primary, #e9e9e9) !important;
-  border-color: var(--ui-primary, #cccccc) !important;
+  background-color: var(--ui-primary) !important;
+  border-color: var(--ui-primary) !important;
   opacity: 0.8;
 }
 
@@ -74,9 +66,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(76, 151, 255, 0.05) 0%, 
-    rgba(76, 151, 255, 0.02) 100%);
+  background: transparent;
   border-radius: inherit;
   pointer-events: none;
 }
@@ -86,9 +76,7 @@
   display: none;
   position: absolute;
   z-index: 492;
-  background: linear-gradient(135deg, 
-    var(--ui-modal-background, #2d3748) 0%, 
-    var(--ui-secondary, #1a202c) 100%);
+  background-color: var(--ui-modal-background);
   color: var(--ui-modal-foreground);
   width: 480px;
   height: 350px;
@@ -103,54 +91,6 @@
               0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Enhanced resize handle with modern styling */
-.sa-debugger-resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20px;
-  height: 20px;
-  cursor: nw-resize;
-  z-index: 1000;
-  background: linear-gradient(
-    -45deg,
-    transparent 0px,
-    transparent 6px,
-    rgba(255, 255, 255, 0.3) 6px,
-    rgba(255, 255, 255, 0.3) 8px,
-    transparent 8px,
-    transparent 10px,
-    rgba(255, 255, 255, 0.3) 10px,
-    rgba(255, 255, 255, 0.3) 12px,
-    transparent 12px,
-    transparent 14px,
-    rgba(255, 255, 255, 0.3) 14px,
-    rgba(255, 255, 255, 0.3) 16px,
-    transparent 16px
-  );
-  border-radius: 0 0 12px 0;
-}
-
-.sa-debugger-resize-handle:hover {
-  background: linear-gradient(
-    -45deg,
-    transparent 0px,
-    transparent 6px,
-    var(--looks-secondary, #4C97FF) 6px,
-    var(--looks-secondary, #4C97FF) 8px,
-    transparent 8px,
-    transparent 10px,
-    var(--looks-secondary, #4C97FF) 10px,
-    var(--looks-secondary, #4C97FF) 12px,
-    transparent 12px,
-    transparent 14px,
-    var(--looks-secondary, #4C97FF) 14px,
-    var(--looks-secondary, #4C97FF) 16px,
-    transparent 16px
-  );
-  transform: scale(1.1);
-}
-
 /* Enhanced header styling */
 .sa-debugger-interface h1 {
   padding: 16px 20px;
@@ -158,18 +98,15 @@
   width: calc(100% - 40px);
   font-size: 22px;
   font-weight: 700;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--ui-modal-header-background);
+  color: var(--ui-modal-header-foreground);
+  border-bottom: 1px solid var(--ui-black-transparent);
   margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
 }
 
 .sa-debugger-interface [class*="card_header-buttons_"] {
-  background: linear-gradient(135deg, 
-    var(--looks-secondary, #4C97FF) 0%, 
-    var(--looks-secondary-dark, #4280D7) 100%);
+  background-color: var(--looks-secondary);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -180,9 +117,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: var(--ui-modal-header-background, var(--ui-secondary, #f8f9fa));
-  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  min-height: 44px;
+  background-color: var(--ui-modal-background);
+  border-bottom: 1px solid var(--ui-black-transparent);
 }
 
 .sa-debugger-tabs {
@@ -199,10 +135,10 @@
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  background: var(--ui-white-transparent, rgba(255, 255, 255, 0.8));
-  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  border-radius: 6px;
-  color: var(--text-primary, #575e75);
+  background-color: var(--ui-secondary);
+  border: 1px solid var(--looks-secondary-dark);
+  border-radius: 16px;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -211,121 +147,119 @@
 }
 
 .sa-debugger-tabs li::before {
-  display: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: none;
+  transition: left 0.5s ease;
 }
 
 .sa-debugger-tabs li:hover::before {
-  /* no-op */
+  left: 100%;
 }
 
 .sa-debugger-tabs li:hover {
-  background: var(--ui-white, #ffffff);
-  border-color: var(--looks-transparent, rgba(76, 151, 255, 0.25));
-  transform: none;
-  box-shadow: none;
-  color: var(--text-primary, #575e75);
+  background-color: var(--ui-modal-background);
+  border-color: var(--looks-secondary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .sa-debugger-tabs li.sa-debugger-tab-selected {
-  background: var(--looks-secondary, #4C97FF);
-  border-color: var(--looks-secondary-dark, #4280D7);
-  color: white;
-  box-shadow: none;
+  background-color: var(--looks-secondary);
+  background-clip: padding-box;
+  border-color: var(--looks-secondary-dark);
+  box-shadow: 0 2px 8px rgba(76, 151, 255, 0.3), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
   font-weight: 600;
-  border-radius: 6px;
+  color: var(--ui-white);
 }
 
-.sa-debugger-tabs li img {
-  margin: 0;
-  margin-right: 6px;
+.sa-debugger-icon {
+  flex-shrink: 0;
   width: 14px;
   height: 14px;
-  filter: var(--editorDarkMode-accent-invertedFilter, brightness(0.4));
-  transition: filter 0.3s ease;
-  opacity: 0.85;
-}
-
-.sa-debugger-tabs li:hover img {
-  opacity: 1;
-}
-
-.sa-debugger-tabs li.sa-debugger-tab-selected img {
-  filter: brightness(0) invert(1);
-  opacity: 1;
+  margin: 0;
+  margin-right: 6px;
+  background-color: currentColor;
 }
 
 /* Enhanced header buttons with compact grid layout */
 .sa-debugger-header-buttons {
+  margin: 0;
   display: flex;
-  gap: 6px;
   align-items: center;
+  padding: 0;
+  font-size: 0.7rem;
+  gap: 4px;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"] {
+  margin: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  background: var(--looks-secondary, #4C97FF);
-  border: 1px solid var(--looks-secondary-dark, #4280D7);
-  border-radius: 6px;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 6px 12px;
+  background-color: var(--ui-secondary);
+  border: 1px solid var(--looks-secondary-dark);
+  border-radius: 16px;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: none;
   position: relative;
   overflow: hidden;
-  min-height: 28px;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before {
-  display: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: none;
+  transition: left 0.5s ease;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover::before {
-  /* no-op */
+  left: 100%;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover {
-  transform: none;
-  box-shadow: none;
-  background: var(--looks-secondary-dark, #4280D7);
+  background-color: var(--ui-modal-background);
+  border-color: var(--looks-secondary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:active {
-  transform: none;
-  box-shadow: none;
-}
-
-.sa-debugger-header-buttons img {
-  width: 12px;
-  height: 12px;
-  margin-right: 4px;
-  filter: brightness(0) invert(1);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sa-debugger-header-buttons span {
-  font-weight: 600;
+  font-weight: 500;
   text-shadow: none;
 }
 
 /* Enhanced unpause button with pulsing animation */
 .sa-debugger-unpause {
-  background: var(--pen-primary, #0fbd8c) !important;
+  background-color: var(--pen-primary) !important;
   animation: saDebuggerUnpause 2s infinite alternate;
 }
 
 @keyframes saDebuggerUnpause {
   0% {
-    box-shadow: 0 2px 8px var(--pen-transparent, rgba(15, 189, 140, 0.25)), 
-                0 0 0 0 var(--pen-transparent, rgba(15, 189, 140, 0.25));
+    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3), 
+                0 0 0 0 rgba(0, 212, 170, 0.7);
   }
   100% {
-    box-shadow: 0 6px 16px var(--pen-transparent, rgba(15, 189, 140, 0.25)), 
-                0 0 0 8px rgba(0, 0, 0, 0);
+    box-shadow: 0 6px 16px rgba(0, 212, 170, 0.4), 
+                0 0 0 8px rgba(0, 212, 170, 0);
   }
 }
 
@@ -341,9 +275,7 @@
   flex: 1;
   overflow: auto;
   cursor: auto;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.015) 0%, 
-    rgba(255, 255, 255, 0.005) 100%);
+  background-color: var(--ui-secondary);
   border-radius: 0 0 8px 8px;
   box-sizing: border-box;
   min-height: 0; /* Important for flex child to shrink */
@@ -353,10 +285,7 @@
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.03) 0%, 
-    rgba(255, 255, 255, 0.01) 100%);
-  backdrop-filter: blur(8px);
+  background-color: var(--ui-modal-background);
 }
 
 /* Enhanced performance and memory tabs with full height utilization */
@@ -364,9 +293,7 @@
 .sa-memory-tab-content {
   height: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.015) 0%, 
-    transparent 100%);
+  background-color: var(--ui-secondary);
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -376,9 +303,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.01) 0%, 
-    transparent 100%);
+  background-color: var(--ui-secondary);
 }
 
 .sa-debugger-log-inner {
@@ -401,10 +326,7 @@
   height: 100%;
   font-size: 14px;
   font-style: italic;
-  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.02) 0%, 
-    rgba(255, 255, 255, 0.005) 100%);
+  background-color: var(--ui-modal-background);
   border-radius: 6px;
 }
 
@@ -439,23 +361,17 @@
 
 .sa-debugger-log[data-type="warn"] {
   border-color: rgba(255, 193, 7, 0.5);
-  background: linear-gradient(90deg, 
-    rgba(255, 193, 7, 0.1) 0%, 
-    rgba(255, 193, 7, 0.05) 100%);
+  background-color: rgba(255, 193, 7, 0.1);
 }
 
 .sa-debugger-log[data-type="error"] {
   border-color: rgba(255, 107, 107, 0.5);
-  color: #ff6b6b;
-  background: linear-gradient(90deg, 
-    rgba(255, 107, 107, 0.1) 0%, 
-    rgba(255, 107, 107, 0.05) 100%);
+  color: var(--error-primary);
+  background-color: rgba(255, 107, 107, 0.1);
 }
 
 .sa-debugger-log-repeats {
-  background: linear-gradient(135deg, 
-    var(--extensions-primary, #9966FF) 0%, 
-    var(--extensions-primary-dark, #7A52CC) 100%);
+  background-color: var(--extensions-primary);
   color: white;
   border-radius: 8px;
   padding: 1px 6px;
@@ -492,6 +408,14 @@
   background-repeat: no-repeat;
 }
 
+[data-type="log"] .sa-debugger-log-icon {
+  background-image: url(./icons/info.svg);
+  background-color: var(--ui-black-transparent);
+  background-size: 8px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .sa-debugger-threads .sa-debugger-log-icon {
   background-image: url(./icons/subthread.svg);
   background-color: rgba(76, 151, 255, 0.15);
@@ -513,9 +437,7 @@
   margin-right: 4px;
   margin-left: auto;
   font-size: 9px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
+  background-color: var(--ui-secondary);
   padding: 1px 4px;
   border-radius: 3px;
   transition: all 0.2s ease;
@@ -524,11 +446,9 @@
 
 .sa-debugger-log-link:hover {
   text-decoration: underline;
-  color: var(--looks-secondary, #4C97FF);
+  color: var(--looks-secondary);
   opacity: 1;
-  background: linear-gradient(135deg, 
-    rgba(76, 151, 255, 0.2) 0%, 
-    rgba(76, 151, 255, 0.1) 100%);
+  background-color: var(--looks-transparent);
   transform: translateY(-1px);
 }
 
@@ -550,7 +470,6 @@
 .sa-debugger-log-text-empty {
   font-style: italic;
   opacity: 0.5;
-  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
 }
 
 .sa-debugger-log-internal {
@@ -577,9 +496,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(180deg, 
-    rgba(255, 255, 255, 0.2) 0%, 
-    rgba(255, 255, 255, 0.1) 100%);
+  background-color: var(--ui-black-transparent);
   transform: translateX(-50%);
 }
 
@@ -602,26 +519,22 @@
 .sa-debugger-thread-target-name {
   font-weight: 600;
   margin-right: 6px;
-  color: var(--looks-secondary, #4C97FF);
+  color: var(--looks-secondary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   font-size: 11px;
 }
 
 .sa-debugger-thread-running {
-  background: linear-gradient(90deg, 
-    rgba(255, 193, 7, 0.12) 0%, 
-    rgba(255, 193, 7, 0.06) 100%);
+  background-color: rgba(255, 193, 7, 0.12);
   font-weight: 600;
-  border-left: 2px solid #FFC107;
+  border-left: 2px solid var(--control-primary);
   box-shadow: 0 1px 4px rgba(255, 193, 7, 0.15);
 }
 
 .sa-debugger-block-preview {
   padding: 2px 6px;
   margin-right: 4px;
-  background: linear-gradient(135deg, 
-    var(--sa-block-colored-background, #4C97FF) 0%, 
-    rgba(76, 151, 255, 0.8) 100%);
+  background-color: var(--sa-block-colored-background, var(--looks-secondary));
   color: var(--sa-block-text, white);
   border-radius: 4px;
   font-size: 9px;
@@ -650,10 +563,8 @@
   text-align: center;
   height: 24px;
   line-height: 24px;
-  color: var(--link-color, #4C97FF);
-  background: linear-gradient(135deg, 
-    rgba(255, 193, 7, 0.08) 0%, 
-    rgba(255, 193, 7, 0.04) 100%);
+  color: var(--link-color);
+  background-color: rgba(255, 193, 7, 0.08);
   border: 1px solid rgba(255, 193, 7, 0.25);
   border-radius: 4px;
   margin: 6px 12px;
@@ -665,9 +576,7 @@
 }
 
 .sa-debugger-compiler-warning:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 193, 7, 0.15) 0%, 
-    rgba(255, 193, 7, 0.08) 100%);
+  background-color: rgba(255, 193, 7, 0.15);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
 }
@@ -688,9 +597,8 @@
 /* Enhanced memory tab with compact grid layout */
 .sa-memory-tab-content {
   padding: 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.015) 0%, 
-    transparent 100%);
+  color: var(--text-primary);
+  background: var(--ui-secondary);
 }
 
 .sa-memory-info-section {
@@ -699,22 +607,17 @@
   gap: 8px;
   margin-bottom: 16px;
   padding: 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.05) 0%, 
-    rgba(255, 255, 255, 0.025) 100%);
+  background: var(--ui-modal-background);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
+  border: 1px solid var(--ui-black-transparent);
 }
 
 .sa-memory-info-card {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
+  background: var(--ui-secondary);
   border-radius: 6px;
   padding: 10px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ui-black-transparent);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -731,10 +634,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.1) 50%, 
-    transparent 100%);
+  background: none;
   transition: left 0.5s ease;
 }
 
@@ -745,15 +645,13 @@
 .sa-memory-info-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.12) 0%, 
-    rgba(255, 255, 255, 0.06) 100%);
+  background: var(--ui-modal-background);
 }
 
 .sa-memory-info-title {
   font-size: 9px;
   font-weight: 700;
-  color: var(--text-secondary, var(--text-primary, #575e75));
+  color: var(--text-primary-transparent);
   margin: 0 0 4px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -762,40 +660,36 @@
 .sa-memory-info-value {
   font-size: 16px;
   font-weight: 700;
-  color: var(--ui-modal-foreground);
+  color: var(--text-primary);
   margin: 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-clones .sa-memory-info-value {
-  color: var(--looks-secondary, #4C97FF);
+  color: var(--looks-secondary);
 }
 
 .sa-memory-variables .sa-memory-info-value {
-  color: var(--data-primary, #FF8C1A);
+  color: var(--data-primary);
 }
 
 .sa-memory-lists .sa-memory-info-value {
-  color: var(--data-lists-primary, #FF661A);
+  color: var(--data-primary);
 }
 
 .sa-memory-list-items .sa-memory-info-value {
-  color: var(--operators-primary, #40BF4A);
+  color: var(--data-primary);
 }
 
 .sa-memory-info-card.sa-memory-warning {
-  border-color: rgba(255, 193, 7, 0.6);
-  background: linear-gradient(135deg, 
-    rgba(255, 193, 7, 0.15) 0%, 
-    rgba(255, 193, 7, 0.08) 100%);
+  border-color: var(--control-primary);
+  background-color: rgba(255, 193, 7, 0.15);
   box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
 }
 
 .sa-memory-info-card.sa-memory-critical {
-  border-color: rgba(255, 107, 107, 0.6);
-  background: linear-gradient(135deg, 
-    rgba(255, 107, 107, 0.15) 0%, 
-    rgba(255, 107, 107, 0.08) 100%);
+  border-color: var(--error-primary);
+  background-color: rgba(255, 107, 107, 0.15);
   animation: sa-memory-pulse 2s infinite;
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
@@ -815,58 +709,63 @@
   font-size: 14px;
   font-weight: 600;
   margin: 16px 0 8px 0;
-  color: var(--ui-modal-foreground);
+  color: var(--text-primary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-tab-content .sa-debugger-chart {
   margin-bottom: 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.05) 0%, 
-    rgba(255, 255, 255, 0.025) 100%);
+  background: var(--ui-modal-background);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ui-black-transparent);
 }
 
 /* Enhanced compact memory clear button styling */
 .sa-memory-clear-button {
-  background: var(--error-primary, #ff6b6b) !important;
+  background-color: var(--error-primary) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: white !important;
   border-radius: 6px !important;
   padding: 6px 10px !important;
   font-weight: 600 !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25) !important;
+  box-shadow: 0 2px 6px var(--error-transparent) !important;
   position: relative !important;
   overflow: hidden !important;
   font-size: 11px !important;
 }
 
 .sa-memory-clear-button::before {
-  display: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: none;
+  transition: left 0.5s ease;
 }
 
 .sa-memory-clear-button:hover::before {
-  /* no-op */
+  left: 100%;
 }
 
 .sa-memory-clear-button:hover {
-  background: var(--red-tertiary, #ee5a52) !important;
-  transform: none !important;
-  box-shadow: none !important;
+  background-color: var(--error-light) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px var(--error-transparent) !important;
 }
 
 .sa-memory-clear-button:active {
-  transform: none !important;
-  box-shadow: none !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px var(--error-transparent) !important;
 }
 
-.sa-memory-clear-button img {
-  filter: brightness(0) invert(1) !important;
+.sa-memory-clear-button .sa-debugger-icon {
   width: 12px !important;
   height: 12px !important;
   margin-right: 4px !important;
+  background-color: currentColor !important;
 }
 
 /* Enhanced responsive design for better space efficiency */
@@ -927,18 +826,6 @@
   }
 }
 
-/* Accessibility improvements */
-.sa-debugger-tabs li:focus-visible,
-.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:focus-visible {
-  outline: 2px solid var(--looks-secondary, #4C97FF);
-  outline-offset: 2px;
-}
-
-.sa-memory-info-card:focus-within {
-  outline: 2px solid var(--looks-secondary, #4C97FF);
-  outline-offset: 2px;
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .sa-debugger-interface {
@@ -990,14 +877,6 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
                 0 15px 12px rgba(0, 0, 0, 0.3);
   }
-  
-  .sa-debugger-header {
-    backdrop-filter: blur(20px);
-  }
-  
-  .sa-debugger-tabs li {
-    backdrop-filter: blur(15px);
-  }
 }
 
 /* Print styles */
@@ -1036,18 +915,14 @@
 
 .sa-debugger-log-inner::-webkit-scrollbar-thumb,
 .sa-debugger-tab-content::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.25) 0%, 
-    rgba(255, 255, 255, 0.15) 100%);
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
   transition: all 0.25s ease;
 }
 
 .sa-debugger-log-inner::-webkit-scrollbar-thumb:hover,
 .sa-debugger-tab-content::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.35) 0%, 
-    rgba(255, 255, 255, 0.25) 100%);
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Performance optimizations */
@@ -1058,12 +933,4 @@
 .sa-memory-info_card {
   will-change: transform;
   transform: translateZ(0);
-}
-
-/* Enhanced focus indicators for better accessibility */
-.sa-debugger-tabs li[tabindex="0"]:focus,
-.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:focus {
-  outline: 3px solid var(--looks-secondary, #4C97FF);
-  outline-offset: 3px;
-  z-index: 1000;
 }
