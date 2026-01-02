@@ -85,6 +85,14 @@ const detectTheme = () => {
             // Fall back to system preferences if custom theme not found
             console.warn(`Custom theme ${parsed.customThemeUuid} not found, falling back to system preferences`);
         }
+
+        if (parsed.inlineCustomTheme && typeof parsed.inlineCustomTheme === 'object') {
+            try {
+                return CustomTheme.import(parsed.inlineCustomTheme);
+            } catch (e) {
+                console.warn('Failed to import inline custom theme, falling back to system preferences', e);
+            }
+        }
         
         // Any invalid values in storage will be handled by Theme itself
         const wallpaper = parsed.wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
@@ -118,8 +126,14 @@ const persistTheme = theme => {
 
     // Handle custom themes differently
     if (theme instanceof CustomTheme) {
-        nonDefaultSettings.customThemeUuid = theme.uuid;
-        nonDefaultSettings.isCustom = true;
+        const isSavedCustomTheme = !!customThemeManager.getTheme(theme.uuid);
+        if (isSavedCustomTheme) {
+            nonDefaultSettings.customThemeUuid = theme.uuid;
+            nonDefaultSettings.isCustom = true;
+        } else {
+            // Modified/unselected custom theme: persist inline so it can be restored.
+            nonDefaultSettings.inlineCustomTheme = theme.export();
+        }
     } else {
         if (theme.accent !== systemPreferences.accent) {
             nonDefaultSettings.accent = theme.accent;

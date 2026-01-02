@@ -413,7 +413,11 @@ CustomStageSize.propTypes = {
     onStageHeightChange: PropTypes.func
 };
 
-const StoreProjectOptions = ({onStoreProjectOptions}) => (
+const StoreProjectOptions = ({
+    onStoreProjectOptions,
+    storeThemeInProject,
+    onStoreThemeInProjectChange
+}) => (
     <div className={styles.setting}>
         <div>
             <button
@@ -437,11 +441,34 @@ const StoreProjectOptions = ({onStoreProjectOptions}) => (
                     }}
                 />
             </p>
+
+            <label className={styles.label}>
+                <FancyCheckbox
+                    className={styles.checkbox}
+                    checked={storeThemeInProject}
+                    onChange={onStoreThemeInProjectChange}
+                />
+                <FormattedMessage
+                    defaultMessage="Store theme in project"
+                    description="Checkbox under the store settings in project button"
+                    id="mw.settingsModal.storeThemeInProject"
+                />
+            </label>
+            <p>
+                <FormattedMessage
+                    // eslint-disable-next-line max-len
+                    defaultMessage='When enabled, clicking "Store settings in project" will also store the current MistWarp theme so it can be applied when this project is loaded.'
+                    description="Help text for the store theme in project checkbox"
+                    id="mw.settingsModal.storeThemeInProjectHelp"
+                />
+            </p>
         </div>
     </div>
 );
 StoreProjectOptions.propTypes = {
-    onStoreProjectOptions: PropTypes.func
+    onStoreProjectOptions: PropTypes.func,
+    storeThemeInProject: PropTypes.bool,
+    onStoreThemeInProjectChange: PropTypes.func
 };
 
 const Header = props => (
@@ -564,7 +591,9 @@ SettingsModalComponent.propTypes = {
     onStageWidthChange: PropTypes.func,
     stageHeight: PropTypes.number,
     onStageHeightChange: PropTypes.func,
-    onStoreProjectOptions: PropTypes.func
+    onStoreProjectOptions: PropTypes.func,
+    storeThemeInProject: PropTypes.bool,
+    onStoreThemeInProjectChange: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);

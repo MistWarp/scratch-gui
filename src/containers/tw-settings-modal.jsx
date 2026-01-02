@@ -6,6 +6,7 @@ import {connect} from 'react-redux';
 import {closeSettingsModal} from '../reducers/modals';
 import SettingsModalComponent from '../components/tw-settings-modal/settings-modal.jsx';
 import {defaultStageSize} from '../reducers/custom-stage-size';
+import {CustomTheme} from '../lib/themes/custom-themes.js';
 
 const messages = defineMessages({
     newFramerate: {
@@ -18,6 +19,18 @@ const messages = defineMessages({
 class UsernameModal extends React.Component {
     constructor (props) {
         super(props);
+
+        let storeThemeInProject = false;
+        try {
+            storeThemeInProject = localStorage.getItem('mw:store-theme-in-project') === 'true';
+        } catch (e) {
+            // ignore
+        }
+
+        this.state = {
+            storeThemeInProject
+        };
+
         bindAll(this, [
             'handleFramerateChange',
             'handleCustomizeFramerate',
@@ -33,8 +46,19 @@ class UsernameModal extends React.Component {
             'handleCaseSensitiveListsChange',
             'handleUnsafeOptimisationsChange',
             'handleRealLayerIndexesChange',
-            'handleStoreProjectOptions'
+            'handleStoreProjectOptions',
+            'handleStoreThemeInProjectChange'
         ]);
+    }
+
+    handleStoreThemeInProjectChange (e) {
+        const enabled = e.target.checked;
+        this.setState({storeThemeInProject: enabled});
+        try {
+            localStorage.setItem('mw:store-theme-in-project', enabled ? 'true' : 'false');
+        } catch (err) {
+            // ignore
+        }
     }
     handleFramerateChange (e) {
         this.props.vm.setFramerate(e.target.checked ? 60 : 30);
@@ -102,7 +126,42 @@ class UsernameModal extends React.Component {
         this.props.vm.setStageSize(this.props.customStageSize.width, value);
     }
     handleStoreProjectOptions () {
-        this.props.vm.storeProjectOptions();
+        if (!this.state.storeThemeInProject) {
+            this.props.vm.storeProjectOptions();
+            return;
+        }
+
+        const theme = this.props.theme;
+        if (!theme) {
+            this.props.vm.storeProjectOptions();
+            return;
+        }
+
+        const mistwarpTheme = (() => {
+            if (theme instanceof CustomTheme) {
+                return {
+                    version: 1,
+                    kind: 'custom',
+                    data: theme.export()
+                };
+            }
+            return {
+                version: 1,
+                kind: 'standard',
+                data: {
+                    accent: theme.accent,
+                    gui: theme.gui,
+                    blocks: theme.blocks,
+                    menuBarAlign: theme.menuBarAlign,
+                    wallpaper: theme.wallpaper,
+                    fonts: theme.fonts
+                }
+            };
+        })();
+
+        this.props.vm.storeProjectOptions({
+            mistwarpTheme
+        });
     }
     render () {
         const {
@@ -135,6 +194,8 @@ class UsernameModal extends React.Component {
                     this.props.customStageSize.height !== defaultStageSize.height
                 }
                 onStoreProjectOptions={this.handleStoreProjectOptions}
+                storeThemeInProject={this.state.storeThemeInProject}
+                onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
                 {...props}
             />
         );
@@ -170,7 +231,8 @@ UsernameModal.propTypes = {
     disableCompiler: PropTypes.bool,
     caseSensitiveLists: PropTypes.bool,
     unsafeOptimisations: PropTypes.bool,
-    realLayerIndexes: PropTypes.bool
+    realLayerIndexes: PropTypes.bool,
+    theme: PropTypes.any
 };
 
 const mapStateToProps = state => ({
@@ -188,7 +250,8 @@ const mapStateToProps = state => ({
     // Handle possible undefined value for caseSensitiveLists
     caseSensitiveLists: !!state.scratchGui.tw.runtimeOptions.caseSensitiveLists,
     unsafeOptimisations: !!state.scratchGui.tw.runtimeOptions.unsafeOptimisations,
-    realLayerIndexes: !!state.scratchGui.tw.runtimeOptions.realLayerIndexes
+    realLayerIndexes: !!state.scratchGui.tw.runtimeOptions.realLayerIndexes,
+    theme: state.scratchGui.theme.theme
 });
 
 const mapDispatchToProps = dispatch => ({

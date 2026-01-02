@@ -26,6 +26,8 @@ const STAGE_DIMENSION_DEFAULTS = {
     menuHeightAdjustment: 44
 };
 
+import getMenuBarHeight from './menu-bar-height';
+
 /**
  * Resolve the current GUI and browser state to an actual stage size enum value.
  * @param {STAGE_SIZE_MODES} stageSizeMode - the state of the stage size toggle button.
@@ -56,8 +58,10 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
     };
 
     if (isFullScreen) {
+        const menuBarHeight = getMenuBarHeight();
         stageDimensions.height = window.innerHeight -
             STAGE_DIMENSION_DEFAULTS.menuHeightAdjustment -
+            menuBarHeight -
             STAGE_DIMENSION_DEFAULTS.fullScreenSpacingBorderAdjustment;
 
         stageDimensions.width = stageDimensions.height * (customStageSize.width / customStageSize.height);

@@ -17,13 +17,14 @@
 .stage-header-wrapper-overlay {
     position: fixed;
     background-color: $fullscreen-accent;
-    top: 0;
+    top: $menu-bar-height;
     left: 0;
     right: 0;
     z-index: $z-index-stage-header;
 }
 .stage-header-wrapper-overlay.embedded {
     background-color: transparent;
+    top: 0;
 }
 
 .stage-menu-wrapper {

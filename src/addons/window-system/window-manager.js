@@ -9,6 +9,8 @@ let nextZIndex = WINDOW_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
+import getMenuBarHeight from '../../lib/utils/menu-bar-height';
+
 class AddonWindow {
     constructor (options = {}) {
         this.id = options.id || `addon-window-${++windowCount}`;
@@ -744,15 +746,16 @@ class AddonWindow {
         };
         
         this.isMaximized = true;
+        const menuBarHeight = getMenuBarHeight();
         this.x = 0;
-        this.y = 0;
+        this.y = menuBarHeight;
         this.width = window.innerWidth;
-        this.height = window.innerHeight;
+        this.height = Math.max(0, window.innerHeight - menuBarHeight);
         
         this.element.style.left = '0px';
-        this.element.style.top = '0px';
+        this.element.style.top = `${menuBarHeight}px`;
         this.element.style.width = '100vw';
-        this.element.style.height = '100vh';
+        this.element.style.height = `${this.height}px`;
         
         this.updateMaximizeButton();
         this.onMaximize();

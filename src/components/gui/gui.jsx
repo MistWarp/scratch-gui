@@ -39,6 +39,7 @@ import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
+import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
@@ -203,6 +204,7 @@ const GUIComponent = props => {
                 <TWSecurityManager securityManager={securityManager} />
                 <TWRestorePointManager />
                 <MWExtensionManagerModal />
+                <MWProjectThemeModal />
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
                 {settingsModalVisible && (
                     <TWSettingsModal

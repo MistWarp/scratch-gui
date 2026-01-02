@@ -279,19 +279,26 @@ const applyGuiColors = theme => {
     }
 
     const guiColors = theme.getGuiColors();
-    for (const [name, value] of Object.entries(guiColors)) {
+    for (const [name, defaultValue] of Object.entries(defaultGuiColors)) {
+        const value = Object.prototype.hasOwnProperty.call(guiColors, name) ? guiColors[name] : defaultValue;
         doc.style.setProperty(`--${name}`, value);
-        
+
         // Convert hex colors to RGB values for overlay purposes
-        if (name === 'ui-primary' && value.startsWith('#')) {
+        if (name === 'ui-primary' && typeof value === 'string' && value.startsWith('#')) {
             const hex = value.replace('#', '');
             const r = parseInt(hex.substr(0, 2), 16);
             const g = parseInt(hex.substr(2, 2), 16);
             const b = parseInt(hex.substr(4, 2), 16);
             doc.style.setProperty('--ui-primary-rgb', `${r}, ${g}, ${b}`);
-        } else if (name === 'ui-primary' && value.startsWith('hsla')) {
+        } else if (name === 'ui-primary' && typeof value === 'string' && value.startsWith('hsla')) {
             // For HSLA values, set a default RGB fallback
             doc.style.setProperty('--ui-primary-rgb', '229, 240, 255');
+        }
+    }
+
+    for (const [name, value] of Object.entries(guiColors)) {
+        if (!Object.prototype.hasOwnProperty.call(defaultGuiColors, name)) {
+            doc.style.setProperty(`--${name}`, value);
         }
     }
 

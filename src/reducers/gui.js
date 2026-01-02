@@ -31,6 +31,7 @@ import customStageSizeReducer, {customStageSizeInitialState} from './custom-stag
 import vmReducer, {vmInitialState} from './vm';
 import vmStatusReducer, {vmStatusInitialState} from './vm-status';
 import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace-metrics';
+import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-theme';
 import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
@@ -63,6 +64,7 @@ const guiInitialState = {
     restoreDeletion: restoreDeletionInitialState,
     targets: targetsInitialState,
     theme: themeInitialState,
+    mwProjectTheme: mwProjectThemeInitialState,
     timeout: timeoutInitialState,
     timeTravel: timeTravelInitialState,
     toolbox: toolboxInitialState,
@@ -170,6 +172,7 @@ const guiReducer = combineReducers({
     restoreDeletion: restoreDeletionReducer,
     targets: targetReducer,
     theme: themeReducer,
+    mwProjectTheme: mwProjectThemeReducer,
     timeout: timeoutReducer,
     timeTravel: timeTravelReducer,
     toolbox: toolboxReducer,

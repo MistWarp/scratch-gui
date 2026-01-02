@@ -387,6 +387,53 @@ class CustomTheme extends Theme {
     }
 
     /**
+     * @param {string} what - The property to change (e.g., 'gui', 'blocks', 'accent')
+     * @param {*} to - The new value for the property
+     * @returns {Theme|CustomTheme} A new theme instance with the updated property
+     */
+    set (what, to) {
+        if (what === 'accent') {
+            return super.set(what, to);
+        }
+
+        if (this.customAccent) {
+            const next = {
+                name: this.name,
+                description: this.description,
+                author: this.author,
+                accent: this.customAccent,
+                gui: this.gui,
+                blocks: this.blocks,
+                menuBarAlign: this.menuBarAlign,
+                wallpaper: this.wallpaper,
+                fonts: this.fonts
+            };
+
+            if (Object.prototype.hasOwnProperty.call(next, what)) {
+                next[what] = to;
+            } else if (what === 'name') {
+                next.name = to;
+            } else {
+                return super.set(what, to);
+            }
+
+            return new CustomTheme(
+                next.name,
+                next.description,
+                next.accent,
+                next.gui,
+                next.blocks,
+                next.menuBarAlign,
+                next.wallpaper,
+                next.fonts,
+                next.author
+            );
+        }
+
+        return super.set(what, to);
+    }
+
+    /**
      * Override getBlockColors to handle custom accent objects
      * @returns {object} Block colors
      */
@@ -506,7 +553,28 @@ class CustomTheme extends Theme {
 class CustomThemeManager {
     constructor () {
         this.themes = new Map();
+        this._listeners = new Set();
         this.loadCustomThemes();
+    }
+
+    subscribe (listener) {
+        if (typeof listener !== 'function') {
+            throw new Error('Listener must be a function');
+        }
+        this._listeners.add(listener);
+        return () => {
+            this._listeners.delete(listener);
+        };
+    }
+
+    _emitChange () {
+        for (const listener of this._listeners) {
+            try {
+                listener();
+            } catch (e) {
+                // Ignore listener errors
+            }
+        }
     }
 
     /**
@@ -538,6 +606,7 @@ class CustomThemeManager {
         try {
             const themesData = Array.from(this.themes.values()).map(theme => theme.export());
             localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, JSON.stringify(themesData));
+            this._emitChange();
         } catch (e) {
             console.warn('Failed to save custom themes to storage:', e);
             throw new Error(`Failed to save themes: ${e.message}`);
@@ -824,7 +893,88 @@ class CustomThemeManager {
      * @returns {object} Import results
      */
     importThemes (data, overwrite = false) {
-        if (!data || !Array.isArray(data.themes)) {
+        const isPlainObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
+
+        const looksLikeNitroboltTheme = obj => isPlainObject(obj) &&
+            typeof obj.name === 'string' &&
+            (typeof obj.isGradient === 'boolean' || isPlainObject(obj.gradient) || obj.gradient === null) &&
+            (typeof obj.primaryColor === 'string' || typeof obj.secondaryColor === 'string' || typeof obj.tertiaryColor === 'string');
+
+        const toNumberOrNull = value => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string' && value.trim() !== '') {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) return parsed;
+            }
+            return null;
+        };
+
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+        const importNitroboltTheme = nitrobolt => {
+            const name = (nitrobolt.name || '').trim();
+            if (!name) throw new Error('Theme name is required');
+
+            const description = '';
+
+            // Nitrobolt format provides a few colors; treat primary as the accent base.
+            const primaryColor = typeof nitrobolt.primaryColor === 'string' ? nitrobolt.primaryColor : '#ff6b6b';
+
+            const gradient = nitrobolt.gradient;
+            const hasGradient = Boolean(nitrobolt.isGradient) && isPlainObject(gradient) && Array.isArray(gradient.colors);
+
+            let accent;
+            if (hasGradient) {
+                const directionRaw = toNumberOrNull(gradient.direction);
+                const direction = directionRaw === null ? 90 : directionRaw;
+
+                const colorStops = gradient.colors
+                    .filter(stop => stop && typeof stop.color === 'string')
+                    .map(stop => {
+                        const pos = toNumberOrNull(stop.position);
+                        return {
+                            color: stop.color,
+                            position: pos === null ? 0 : clamp(pos, 0, 100)
+                        };
+                    })
+                    .sort((a, b) => a.position - b.position);
+
+                if (colorStops.length < 2) {
+                    throw new Error('Gradient themes must have at least 2 color stops');
+                }
+
+                accent = GradientUtils.createGradientAccent(colorStops, primaryColor, {direction});
+            } else {
+                // No gradient (or gradient is null/missing): keep default GUI theme background.
+                accent = {
+                    guiColors: GradientUtils.generateAccentColors(primaryColor),
+                    blockColors: {
+                        checkboxActiveBackground: primaryColor,
+                        checkboxActiveBorder: GradientUtils.darkenColor(primaryColor, 10)
+                    }
+                };
+            }
+
+            return new CustomTheme(
+                name,
+                description,
+                accent,
+                'light',
+                'three',
+                'left',
+                null,
+                null
+            );
+        };
+
+        let themesToImport;
+        if (data && Array.isArray(data.themes)) {
+            themesToImport = data.themes.map(t => ({kind: 'mistwarp', data: t}));
+        } else if (Array.isArray(data) && data.every(looksLikeNitroboltTheme)) {
+            themesToImport = data.map(t => ({kind: 'nitrobolt', data: t}));
+        } else if (looksLikeNitroboltTheme(data)) {
+            themesToImport = [{kind: 'nitrobolt', data}];
+        } else {
             throw new Error('Invalid import data format');
         }
 
@@ -834,9 +984,11 @@ class CustomThemeManager {
             errors: []
         };
 
-        for (const themeData of data.themes) {
+        for (const entry of themesToImport) {
             try {
-                const theme = CustomTheme.import(themeData);
+                const theme = entry.kind === 'mistwarp' ?
+                    CustomTheme.import(entry.data) :
+                    importNitroboltTheme(entry.data);
 
                 // Check for existing theme with same name
                 const existingTheme = Array.from(this.themes.values())
@@ -854,7 +1006,8 @@ class CustomThemeManager {
                 this.addTheme(theme);
                 results.imported++;
             } catch (e) {
-                results.errors.push(`Failed to import theme "${themeData.name || 'Unknown'}": ${e.message}`);
+                const themeName = entry && entry.data && entry.data.name ? entry.data.name : 'Unknown';
+                results.errors.push(`Failed to import theme "${themeName}": ${e.message}`);
             }
         }
 

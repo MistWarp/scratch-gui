@@ -521,17 +521,17 @@ class CustomThemeMenu extends React.Component {
         this.createThemeContainer = null;
         this.gradientCreatorContainer = null;
         this.gradientEditorContainer = null;
+
+        this._isMounted = false;
+        this._activeFileReader = null;
     }
 
     componentDidMount () {
         this._isMounted = true;
         // Listen for custom theme changes
-        this.themeUpdateInterval = setInterval(() => {
-            const themes = customThemeManager.getAllThemes();
-            if (themes.length !== this.state.customThemes.length) {
-                if (this._isMounted) this.setState({customThemes: themes});
-            }
-        }, 1000);
+        this._unsubscribeCustomThemes = customThemeManager.subscribe(() => {
+            this.safeSetState({customThemes: customThemeManager.getAllThemes()});
+        });
     }
 
     componentDidUpdate () {
@@ -618,10 +618,35 @@ class CustomThemeMenu extends React.Component {
 
     componentWillUnmount () {
         this._isMounted = false;
-        if (this.themeUpdateInterval) {
-            clearInterval(this.themeUpdateInterval);
+
+        if (this._unsubscribeCustomThemes) {
+            try {
+                this._unsubscribeCustomThemes();
+            } catch (e) {
+                // Ignore unsubscribe errors
+            }
+            this._unsubscribeCustomThemes = null;
+        }
+
+        if (this._activeFileReader) {
+            try {
+                this._activeFileReader.abort();
+            } catch (e) {
+                // Ignore abort errors
+            }
+            this._activeFileReader = null;
         }
     }
+
+    safeForceUpdate = () => {
+        if (!this._isMounted) return;
+        this.forceUpdate();
+    };
+
+    safeSetState = (state, callback) => {
+        if (!this._isMounted) return;
+        this.setState(state, callback);
+    };
 
     openCreateThemeWindow = () => {
         if (this.createThemeWindow) {
@@ -646,7 +671,7 @@ class CustomThemeMenu extends React.Component {
                             ReactDOM.unmountComponentAtNode(this.createThemeContainer);
                         } catch (e) {}
                         this.createThemeContainer = null;
-                        if (this._isMounted) this.forceUpdate();
+                        this.safeForceUpdate();
                     }
                 } catch (e) {}
                 this.createThemeWindow = null;
@@ -679,7 +704,7 @@ class CustomThemeMenu extends React.Component {
         }
 
         this.createThemeWindow.setContent(this.createThemeContainer);
-        this.forceUpdate();
+        this.safeForceUpdate();
         this.createThemeWindow.show();
     };
 
@@ -706,7 +731,7 @@ class CustomThemeMenu extends React.Component {
                             ReactDOM.unmountComponentAtNode(this.gradientCreatorContainer);
                         } catch (e) {}
                         this.gradientCreatorContainer = null;
-                        if (this._isMounted) this.forceUpdate();
+                        this.safeForceUpdate();
                     }
                 } catch (e) {}
                 this.gradientCreatorWindow = null;
@@ -753,7 +778,7 @@ class CustomThemeMenu extends React.Component {
             console.warn('Failed to render gradient creator content into container', e);
         }
 
-        this.forceUpdate();
+        this.safeForceUpdate();
         this.gradientCreatorWindow.show();
     };
 
@@ -780,7 +805,7 @@ class CustomThemeMenu extends React.Component {
                             ReactDOM.unmountComponentAtNode(this.gradientEditorContainer);
                         } catch (e) {}
                         this.gradientEditorContainer = null;
-                        if (this._isMounted) this.forceUpdate();
+                        this.safeForceUpdate();
                     }
                 } catch (e) {}
                 this.gradientEditorWindow = null;
@@ -827,7 +852,7 @@ class CustomThemeMenu extends React.Component {
             console.warn('Failed to render gradient editor content into container', e);
         }
 
-        this.forceUpdate();
+        this.safeForceUpdate();
         this.gradientEditorWindow.show();
     };
 
@@ -851,7 +876,7 @@ class CustomThemeMenu extends React.Component {
                 createDescription.trim()
             );
             
-            this.setState({
+            this.safeSetState({
                 customThemes: customThemeManager.getAllThemes(),
                 showCreateDialog: false,
                 createName: '',
@@ -893,7 +918,7 @@ class CustomThemeMenu extends React.Component {
                 theme
             );
 
-            this.setState({
+            this.safeSetState({
                 customThemes: customThemeManager.getAllThemes(),
                 showGradientCreator: false,
                 createName: '',
@@ -919,7 +944,7 @@ class CustomThemeMenu extends React.Component {
             gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
         );
         
-        this.setState({
+        this.safeSetState({
             gradientColors: [...gradientColors, {
                 color: '#ffffff',
                 position: Math.max(0, Math.min(100, newPosition))
@@ -931,7 +956,7 @@ class CustomThemeMenu extends React.Component {
         const {gradientColors} = this.state;
         if (gradientColors.length <= 2) return; // Keep minimum 2 colors
         
-        this.setState({
+        this.safeSetState({
             gradientColors: gradientColors.filter((_, i) => i !== index)
         });
     };
@@ -941,7 +966,7 @@ class CustomThemeMenu extends React.Component {
         const newColors = [...gradientColors];
         newColors[index].color = color;
         
-        this.setState({
+        this.safeSetState({
             gradientColors: newColors,
             primaryColor: index === 0 ? color : this.state.primaryColor
         });
@@ -953,7 +978,7 @@ class CustomThemeMenu extends React.Component {
         newColors[index].position = Math.max(0, Math.min(100, parseInt(position, 10) || 0));
         newColors.sort((a, b) => a.position - b.position);
         
-        this.setState({
+        this.safeSetState({
             gradientColors: newColors
         });
     };
@@ -967,7 +992,7 @@ class CustomThemeMenu extends React.Component {
                     position: (index / (preset.colors.length - 1)) * 100
                 }));
                 
-                this.setState({
+                this.safeSetState({
                     gradientColors: colorStops,
                     gradientDirection: preset.direction,
                     primaryColor: preset.colors[0],
@@ -991,7 +1016,7 @@ class CustomThemeMenu extends React.Component {
                 return;
             }
 
-            this.setState({
+            this.safeSetState({
                 editingThemeUuid: themeUuid,
                 createName: theme.name,
                 createDescription: theme.description,
@@ -1055,7 +1080,7 @@ class CustomThemeMenu extends React.Component {
                 customThemeManager.saveCustomThemes();
             }
             
-            this.setState({
+            this.safeSetState({
                 customThemes: customThemeManager.getAllThemes(),
                 showGradientEditor: false,
                 editingThemeUuid: null,
@@ -1083,7 +1108,7 @@ class CustomThemeMenu extends React.Component {
         if (confirm(`Are you sure you want to delete the theme "${themeName}"?`)) {
             try {
                 customThemeManager.removeTheme(themeUuid);
-                this.setState({
+                this.safeSetState({
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
@@ -1141,6 +1166,7 @@ class CustomThemeMenu extends React.Component {
         if (!file) return;
 
         const reader = new FileReader();
+        this._activeFileReader = reader;
         reader.onload = async e => {
             try {
                 const data = JSON.parse(e.target.result);
@@ -1156,11 +1182,20 @@ class CustomThemeMenu extends React.Component {
                 }
                 
                 await showAlert(message);
-                this.setState({
+                this.safeSetState({
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
                 await showAlert(`Failed to import themes: ${error.message}`);
+            } finally {
+                if (this._activeFileReader === reader) {
+                    this._activeFileReader = null;
+                }
+            }
+        };
+        reader.onerror = () => {
+            if (this._activeFileReader === reader) {
+                this._activeFileReader = null;
             }
         };
         reader.readAsText(file);
@@ -1240,7 +1275,7 @@ class CustomThemeMenu extends React.Component {
         const {isOpen, isRtl, theme, onOpen} = this.props;
         const {customThemes} = this.state;
         // Dialogs are rendered directly into their window containers with
-        // `ReactDOM.render` so they survive this component unmounting.
+        // `ReactDOM.render` so they stay open when this menu unmounts.
 
         return (
             <MenuItem expanded={isOpen}>
