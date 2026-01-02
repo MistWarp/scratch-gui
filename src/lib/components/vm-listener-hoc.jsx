@@ -22,12 +22,43 @@ import {
     setHasCloudVariables,
     setPlatformMismatchDetails
 } from '../../reducers/tw';
+import {openProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {setCustomStageSize} from '../../reducers/custom-stage-size';
 import {openUnknownPlatformModal} from '../../reducers/modals';
 import implementGuiAPI from '../api/extension-gui';
 import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
 
 let compileErrorCounter = 0;
+
+const PROJECT_THEME_IGNORE_STORAGE_KEY = 'mw:ignore-project-theme-prompts';
+
+const readIgnoreMap = () => {
+    try {
+        const raw = localStorage.getItem(PROJECT_THEME_IGNORE_STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+};
+
+const hashString = str => {
+    // djb2
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(16);
+};
+
+const computePromptKey = mistwarpTheme => {
+    try {
+        return hashString(JSON.stringify(mistwarpTheme));
+    } catch (e) {
+        return null;
+    }
+};
 
 /*
  * Higher Order Component to manage events emitted by the VM
@@ -44,7 +75,8 @@ const vmListenerHOC = function (WrappedComponent) {
                 'handleProjectChanged',
                 'handleTargetsUpdate',
                 'handleCloudDataUpdate',
-                'handleCompileError'
+                'handleCompileError',
+                'handleProjectLoaded'
             ]);
             // We have to start listening to the vm here rather than in
             // componentDidMount because the HOC mounts the wrapped component,
@@ -77,6 +109,7 @@ const vmListenerHOC = function (WrappedComponent) {
             this.props.vm.on('STAGE_SIZE_CHANGED', this.props.onStageSizeChanged);
             this.props.vm.on('CREATE_UNSANDBOXED_EXTENSION_API', implementGuiAPI);
             this.props.vm.runtime.on('PLATFORM_MISMATCH', this.props.onPlatformMismatch);
+            this.props.vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
         }
         componentDidMount () {
             if (this.props.attachKeyboardEvents) {
@@ -126,6 +159,23 @@ const vmListenerHOC = function (WrappedComponent) {
             this.props.vm.off('STAGE_SIZE_CHANGED', this.props.onStageSizeChanged);
             this.props.vm.off('CREATE_UNSANDBOXED_EXTENSION_API', implementGuiAPI);
             this.props.vm.runtime.off('PLATFORM_MISMATCH', this.props.onPlatformMismatch);
+            this.props.vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
+        }
+
+        handleProjectLoaded () {
+            const runtime = this.props.vm && this.props.vm.runtime;
+            if (!runtime || typeof runtime.getStoredProjectOptions !== 'function') return;
+
+            const stored = runtime.getStoredProjectOptions();
+            if (!stored || !stored.mistwarpTheme) return;
+
+            const promptKey = computePromptKey(stored.mistwarpTheme);
+            if (!promptKey) return;
+
+            const ignored = readIgnoreMap();
+            if (ignored[promptKey]) return;
+
+            this.props.onOpenProjectThemePrompt(stored.mistwarpTheme, promptKey);
         }
         handleCloudDataUpdate (hasCloudVariables) {
             if (this.props.hasCloudVariables !== hasCloudVariables) {
@@ -223,6 +273,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 projectChanged,
                 shouldUpdateTargets,
                 shouldUpdateProjectChanged,
+                onOpenProjectThemePrompt,
                 onBlockDragUpdate,
                 onGreenFlag,
                 onKeyDown,
@@ -282,6 +333,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onCompilerOptionsChanged: PropTypes.func.isRequired,
         onPlatformMismatch: PropTypes.func.isRequired,
         onRuntimeOptionsChanged: PropTypes.func.isRequired,
+        onOpenProjectThemePrompt: PropTypes.func,
         onStageSizeChanged: PropTypes.func,
         onCompileError: PropTypes.func,
         onClearCompileErrors: PropTypes.func,
@@ -347,6 +399,9 @@ const vmListenerHOC = function (WrappedComponent) {
         onStageSizeChanged: (width, height) => dispatch(setCustomStageSize(width, height)),
         onCompileError: errors => dispatch(addCompileError(errors)),
         onClearCompileErrors: () => dispatch(clearCompileErrors()),
+        onOpenProjectThemePrompt: (mistwarpTheme, promptKey) => dispatch(
+            openProjectThemePrompt(mistwarpTheme, promptKey)
+        ),
         onShowExtensionAlert: data => {
             dispatch(showExtensionAlert(data));
         },
