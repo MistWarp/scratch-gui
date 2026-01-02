@@ -116,7 +116,7 @@ class CustomProcedures extends React.Component {
         }
         
         // Load custom color from mutation if available
-        var customColor = null;
+        let customColor = null;
         if (this.props.mutator && this.props.mutator.hasAttribute('customcolor')) {
             customColor = this.props.mutator.getAttribute('customcolor');
         } else if (this.props.mutator && this.props.mutator.hasAttribute('customColor')) {
@@ -201,7 +201,9 @@ class CustomProcedures extends React.Component {
         }
     }
     handleToggleWarp () {
-        if (this.mutationRoot && typeof this.mutationRoot.getWarp === 'function' && typeof this.mutationRoot.setWarp === 'function') {
+        if (this.mutationRoot &&
+            typeof this.mutationRoot.getWarp === 'function' &&
+            typeof this.mutationRoot.setWarp === 'function') {
             const newWarp = !this.mutationRoot.getWarp();
             this.mutationRoot.setWarp(newWarp);
             this.setState({warp: newWarp});
