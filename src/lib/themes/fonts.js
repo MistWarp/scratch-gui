@@ -17,8 +17,11 @@ const setCurrentFontStyleEl = element => {
  * @param {Array} fonts.system - Array of system font names
  */
 const applyThemeFonts = async fonts => {
-    // Debug logging
-    
+    const existingStyleEl = document.getElementById('theme-fonts');
+    if (existingStyleEl) {
+        existingStyleEl.remove();
+    }
+
     // Remove existing font styles
     if (currentFontStyleElement) {
         currentFontStyleElement.remove();
@@ -31,7 +34,7 @@ const applyThemeFonts = async fonts => {
 
     // Load Google Fonts first
     if (fonts.google?.length) {
-        await Promise.all(fonts.google.map(fontName => loadGoogleFont(fontName)));
+        await Promise.all(fonts.google.map(fontName => loadGoogleFont(fontName, ['400', '700'])));
     }
 
     // Create CSS for theme fonts
@@ -95,6 +98,10 @@ const applyThemeFonts = async fonts => {
  * Remove theme fonts from the document
  */
 const removeThemeFonts = () => {
+    const existingStyleEl = document.getElementById('theme-fonts');
+    if (existingStyleEl) {
+        existingStyleEl.remove();
+    }
     if (currentFontStyleElement) {
         currentFontStyleElement.remove();
         setCurrentFontStyleEl(null);

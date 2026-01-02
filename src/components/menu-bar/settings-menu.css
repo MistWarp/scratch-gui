@@ -363,9 +363,15 @@
     max-width: 400px;
 }
 
+.fonts-submenu > ul {
+    max-height: calc(100vh - 5rem);
+    max-height: calc(100dvh - 5rem);
+    overflow-y: auto;
+}
+
 .fonts-container {
     padding: 0.5rem;
-    overflow-y: auto;
+    overflow: visible;
 }
 
 .font-section {
@@ -386,6 +392,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.font-section-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.inlineIcon {
+    vertical-align: middle;
+    margin-right: 0.25rem;
 }
 
 .reset-button {
@@ -450,8 +468,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    max-height: 150px;
-    overflow-y: auto;
 }
 
 .font-item {
@@ -512,7 +528,8 @@
     background-color: rgba(255, 0, 0, 0.2);
 }
 
-.loading {
+.loading,
+.fontHint {
     font-size: 0.75rem;
     color: $text-primary;
     opacity: 0.7;
