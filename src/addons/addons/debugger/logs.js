@@ -124,13 +124,6 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     clearLogs();
   });
 
-  const areLogsEqual = (a, b) =>
-    a.text === b.text &&
-    a.type === b.type &&
-    a.internal === b.internal &&
-    a.blockId === b.blockId &&
-    a.targetId === b.targetId;
-
   const addLog = (text, thread, type) => {
     const log = {
       text,
@@ -154,13 +147,8 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
       log.type = "warn";
     }
 
-    const previousLog = logView.rows[logView.rows.length - 1];
-    if (previousLog && areLogsEqual(log, previousLog)) {
-      previousLog.count++;
-      logView.queueUpdateContent();
-    } else {
-      logView.append(log);
-    }
+    // Never group/merge logs: always append a new row.
+    logView.append(log);
 
     if (!logView.visible && !log.internal) {
       debug.setHasUnreadMessage(true);
