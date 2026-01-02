@@ -46,8 +46,32 @@ class Backpack extends React.Component {
             'handleMouseLeave',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
+            'handleResizePointerDown',
+            'handleResizePointerMove',
+            'handleResizePointerUp',
+            'handleGlobalPointerMove',
+            'setDropAreaRef',
+            'isPointerOverDropArea',
             'handleMore'
         ]);
+
+        this.dropAreaRef = null;
+        this.lastPointer = {x: null, y: null};
+        this.resizeSession = null;
+
+        const DEFAULT_HEIGHT = 5.5 * 16;
+        const MIN_HEIGHT = DEFAULT_HEIGHT;
+        let persistedHeight = null;
+        try {
+            const raw = localStorage.getItem('mw:backpackHeight');
+            const parsed = raw ? Number(raw) : null;
+            if (Number.isFinite(parsed) && parsed >= MIN_HEIGHT) {
+                persistedHeight = parsed;
+            }
+        } catch (e) {
+            // ignore
+        }
+
         this.state = {
             // While the DroppableHOC manages drop interactions for asset tiles,
             // we still need to micromanage drops coming from the block workspace.
@@ -59,7 +83,8 @@ class Backpack extends React.Component {
             moreToLoad: false,
             loading: false,
             expanded: false,
-            contents: []
+            contents: [],
+            height: persistedHeight || DEFAULT_HEIGHT
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -75,10 +100,47 @@ class Backpack extends React.Component {
     componentDidMount () {
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.addListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
+
+        document.addEventListener('pointermove', this.handleGlobalPointerMove);
+        document.addEventListener('mousemove', this.handleGlobalPointerMove);
     }
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.removeListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
+
+        document.removeEventListener('pointermove', this.handleGlobalPointerMove);
+        document.removeEventListener('mousemove', this.handleGlobalPointerMove);
+
+        window.removeEventListener('pointermove', this.handleResizePointerMove);
+        window.removeEventListener('pointerup', this.handleResizePointerUp);
+        window.removeEventListener('pointercancel', this.handleResizePointerUp);
+    }
+
+    setDropAreaRef (el) {
+        this.dropAreaRef = el;
+    }
+
+    handleGlobalPointerMove (e) {
+        if (!e) return;
+        if (typeof e.clientX === 'number' && typeof e.clientY === 'number') {
+            this.lastPointer = {x: e.clientX, y: e.clientY};
+        }
+
+        if (this.state.blockDragOutsideWorkspace) {
+            const over = this.isPointerOverDropArea();
+            if (over !== this.state.blockDragOverBackpack) {
+                this.setState({blockDragOverBackpack: over});
+            }
+        }
+    }
+
+    isPointerOverDropArea () {
+        if (!this.state.expanded) return false;
+        if (!this.dropAreaRef) return false;
+        const {x, y} = this.lastPointer;
+        if (x === null || y === null) return false;
+        const rect = this.dropAreaRef.getBoundingClientRect();
+        return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
     }
     getBackpackAssetURL (asset) {
         return `${this.props.host}/${asset.assetId}.${asset.dataFormat}`;
@@ -227,14 +289,13 @@ class Backpack extends React.Component {
     }
     handleBlockDragUpdate (isOutsideWorkspace) {
         this.setState({
-            blockDragOutsideWorkspace: isOutsideWorkspace
+            blockDragOutsideWorkspace: isOutsideWorkspace,
+            blockDragOverBackpack: isOutsideWorkspace ? this.isPointerOverDropArea() : false
         });
     }
     handleMouseEnter () {
         if (this.state.blockDragOutsideWorkspace) {
-            this.setState({
-                blockDragOverBackpack: true
-            });
+            this.setState({blockDragOverBackpack: true});
         }
     }
     handleMouseLeave () {
@@ -243,7 +304,8 @@ class Backpack extends React.Component {
         });
     }
     handleBlockDragEnd (blocks, topBlockId) {
-        if (this.state.blockDragOverBackpack) {
+        const shouldDrop = this.state.blockDragOverBackpack || this.isPointerOverDropArea();
+        if (shouldDrop) {
             this.handleDrop({
                 dragType: DragConstants.CODE,
                 payload: {
@@ -257,6 +319,47 @@ class Backpack extends React.Component {
             blockDragOutsideWorkspace: false
         });
     }
+
+    handleResizePointerDown (e) {
+        if (!e) return;
+        if (!this.state.expanded) return;
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+
+        this.resizeSession = {
+            startY: e.clientY,
+            startHeight: this.state.height
+        };
+
+        window.addEventListener('pointermove', this.handleResizePointerMove);
+        window.addEventListener('pointerup', this.handleResizePointerUp);
+        window.addEventListener('pointercancel', this.handleResizePointerUp);
+    }
+
+    handleResizePointerMove (e) {
+        if (!this.resizeSession) return;
+        const MIN_HEIGHT = 5.5 * 16;
+        const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
+        const delta = this.resizeSession.startY - e.clientY;
+        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta)));
+        if (next !== this.state.height) {
+            this.setState({height: next}, () => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        }
+    }
+
+    handleResizePointerUp () {
+        this.resizeSession = null;
+        window.removeEventListener('pointermove', this.handleResizePointerMove);
+        window.removeEventListener('pointerup', this.handleResizePointerUp);
+        window.removeEventListener('pointercancel', this.handleResizePointerUp);
+
+        try {
+            localStorage.setItem('mw:backpackHeight', String(this.state.height));
+        } catch (e) {
+            // ignore
+        }
+    }
     handleMore () {
         this.getContents();
     }
@@ -267,6 +370,7 @@ class Backpack extends React.Component {
                 contents={this.state.contents}
                 error={this.state.error}
                 expanded={this.state.expanded}
+                height={this.state.height}
                 loading={this.state.loading}
                 showMore={this.state.moreToLoad}
                 onDelete={this.handleDelete}
@@ -275,7 +379,9 @@ class Backpack extends React.Component {
                 onMore={this.handleMore}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
+                onResizePointerDown={this.handleResizePointerDown}
                 onToggle={this.props.host ? this.handleToggle : null}
+                componentRef={this.setDropAreaRef}
             />
         );
     }

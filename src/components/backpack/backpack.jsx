@@ -47,17 +47,25 @@ const Backpack = ({
     dragOver,
     error,
     expanded,
+    height,
     intl,
     loading,
     showMore,
     onToggle,
     onDelete,
     onRename,
+    onResizePointerDown,
     onMouseEnter,
     onMouseLeave,
     onMore
 }) => (
     <div className={styles.backpackContainer}>
+        {expanded ? (
+            <div
+                className={styles.resizeHandle}
+                onPointerDown={onResizePointerDown}
+            />
+        ) : null}
         <div
             className={styles.backpackHeader}
             onClick={onToggle}
@@ -89,6 +97,7 @@ const Backpack = ({
                 ref={containerRef}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
+                style={height ? {height: `${height}px`} : null}
             >
                 {/* eslint-disable-next-line no-negated-condition */}
                 {error !== false ? (
@@ -170,10 +179,12 @@ Backpack.propTypes = {
     dragOver: PropTypes.bool,
     error: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
     expanded: PropTypes.bool,
+    height: PropTypes.number,
     intl: intlShape,
     loading: PropTypes.bool,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
+    onResizePointerDown: PropTypes.func,
     onMore: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
@@ -186,9 +197,11 @@ Backpack.defaultProps = {
     contents: [],
     dragOver: false,
     expanded: false,
+    height: null,
     loading: false,
     showMore: false,
     onMore: null,
+    onResizePointerDown: null,
     onToggle: null
 };
 
