@@ -193,13 +193,95 @@ export default async function ({addon, console, msg}) {
         }
     };
 
-    // Variables to store interface elements and cleanup functions
+    // Variables to store interface elements
     let interfaceContainer;
     let tabListElement;
     let buttonContainerElement;
     let tabContentContainer;
     let updateCompilerWarningVisibility;
+
+    // Cleanup for listeners tied to a specific debugger window instance.
+    // (Do not put VM/runtime overrides here; closing the window should not disable debugging.)
+    const windowCleanupFunctions = [];
+
+    // Cleanup for when the addon is disabled/unloaded.
+    // This is where we restore VM/runtime overrides and remove global listeners.
     const cleanupFunctions = [];
+
+    // Tabs are created once, but the debugger window DOM can be recreated.
+    // These references allow us to remount tabs/content when the window is reopened.
+    let allTabs = [];
+    let activeTab = null;
+    let setActiveTab = null;
+    const boundTabClicks = new WeakSet();
+
+    const mountDebuggerInterface = () => {
+        if (!tabListElement || !buttonContainerElement || !tabContentContainer) return;
+        if (!setActiveTab || !allTabs || allTabs.length === 0) return;
+
+        // Reattach tab elements into the new window's tab list.
+        // Appending moves the existing nodes from any previous window.
+        removeAllChildren(tabListElement);
+        for (const tab of allTabs) {
+            if (tab?.tab?.element) {
+                tabListElement.appendChild(tab.tab.element);
+
+                // Ensure click handler is only bound once per tab element.
+                if (!boundTabClicks.has(tab.tab.element)) {
+                    tab.tab.element.addEventListener('click', () => {
+                        setActiveTab(tab);
+                    });
+                    boundTabClicks.add(tab.tab.element);
+                }
+            }
+        }
+
+        // Keyboard navigation for tabs (bind per-window, since tabListElement is recreated).
+        const handleTabListKeyDown = e => {
+            const tabs = Array.from(tabListElement.children);
+            const currentIndex = tabs.indexOf(e.target);
+            if (currentIndex === -1) return;
+
+            let nextIndex = currentIndex;
+            switch (e.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                nextIndex = (currentIndex + 1) % tabs.length;
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                break;
+            case 'Home':
+                nextIndex = 0;
+                break;
+            case 'End':
+                nextIndex = tabs.length - 1;
+                break;
+            default:
+                return;
+            }
+
+            if (nextIndex !== currentIndex) {
+                e.preventDefault();
+                tabs[nextIndex].focus();
+                const correspondingTab = allTabs.find(tab => tab?.tab?.element === tabs[nextIndex]);
+                if (correspondingTab) {
+                    setActiveTab(correspondingTab);
+                }
+            }
+        };
+        tabListElement.addEventListener('keydown', handleTabListKeyDown);
+        windowCleanupFunctions.push(() => {
+            tabListElement?.removeEventListener('keydown', handleTabListKeyDown);
+        });
+
+        // Restore previously active tab if possible; otherwise default to first.
+        const tabToSelect = (activeTab && allTabs.includes(activeTab)) ? activeTab : allTabs[0];
+        if (tabToSelect) {
+            setActiveTab(tabToSelect);
+        }
+    };
 
     const createDebuggerWindow = () => {
         debuggerWindow = WindowManager.createWindow({
@@ -215,9 +297,17 @@ export default async function ({addon, console, msg}) {
             x: 50,
             y: 50,
             onClose: () => {
-                // Comprehensive cleanup when window is closed
+                // Cleanup when window is closed. The debugger addon continues running;
+                // we only tear down listeners that were tied to this window instance.
                 debuggerWindow = null;
                 isInterfaceVisible = false;
+
+                // Clear references to DOM nodes that belonged to the closed window.
+                interfaceContainer = null;
+                tabListElement = null;
+                buttonContainerElement = null;
+                tabContentContainer = null;
+                updateCompilerWarningVisibility = null;
         
                 // Hide active tab properly
                 if (activeTab && activeTab.hide) {
@@ -226,19 +316,20 @@ export default async function ({addon, console, msg}) {
         
                 // Update button state to reflect that debugger is closed
                 debuggerButtonContent.classList.remove('sa-debugger-unread');
+                debuggerButtonContent.classList.remove('sa-debugger-active');
         
                 // Clear any pending messages or timers if they exist
                 setHasUnreadMessage(false);
         
-                // Run all cleanup functions (e.g., removing VM event listeners)
-                for (const cleanup of cleanupFunctions) {
+                // Run window-scoped cleanup functions
+                for (const cleanup of windowCleanupFunctions) {
                     try {
                         cleanup();
                     } catch (error) {
                         console.warn('Error during debugger cleanup:', error);
                     }
                 }
-                cleanupFunctions.length = 0;
+                windowCleanupFunctions.length = 0;
         
                 // Optional: pause the program if it's running when debugger closes
                 // This provides better UX as users expect debugger closure to stop debugging
@@ -259,6 +350,9 @@ export default async function ({addon, console, msg}) {
 
         // Set the content
         debuggerWindow.setContent(interfaceContainer);
+
+        // If tabs have already been created, mount them into this new window instance.
+        mountDebuggerInterface();
     
         // Add keyboard shortcut support
         const handleKeyDown = e => {
@@ -272,7 +366,7 @@ export default async function ({addon, console, msg}) {
         document.addEventListener('keydown', handleKeyDown);
     
         // Track keyboard listener for cleanup
-        cleanupFunctions.push(() => {
+        windowCleanupFunctions.push(() => {
             document.removeEventListener('keydown', handleKeyDown);
         });
     };
@@ -317,7 +411,7 @@ export default async function ({addon, console, msg}) {
         updateCompilerWarningVisibility();
     
         // Track this VM event listener for cleanup
-        cleanupFunctions.push(() => {
+        windowCleanupFunctions.push(() => {
             vm.off('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
         });
 
@@ -425,7 +519,7 @@ export default async function ({addon, console, msg}) {
         afterStepCallbacks.push(cb);
     };
   
-    // Track runtime override for cleanup
+    // Restore vm.runtime._step when the addon is disabled/unloaded.
     cleanupFunctions.push(() => {
         if (vm && vm.runtime && originalStep) {
             vm.runtime._step = originalStep;
@@ -709,15 +803,14 @@ export default async function ({addon, console, msg}) {
     const threadsTab = await createThreadsTab(api);
     const performanceTab = await createPerformanceTab(api);
     const memoryTab = await createMemoryTab(api);
-    const allTabs = [logsTab, threadsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
+    allTabs = [logsTab, threadsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
 
     for (const message of messagesLoggedBeforeLogsTabLoaded) {
         logsTab.addLog(...message);
     }
     messagesLoggedBeforeLogsTabLoaded.length = 0;
 
-    let activeTab;
-    const setActiveTab = tab => {
+    setActiveTab = tab => {
         if (tab === activeTab) return;
         const selectedClass = 'sa-debugger-tab-selected';
         if (activeTab) {
@@ -748,52 +841,9 @@ export default async function ({addon, console, msg}) {
     };
     // Initialize the debugger window and interface now that all tabs are created
     createDebuggerWindow();
-  
-    for (const tab of allTabs) {
-        tab.tab.element.addEventListener('click', () => {
-            setActiveTab(tab);
-        });
-        if (tabListElement) {
-            tabListElement.appendChild(tab.tab.element);
-        }
-    }
-  
-    // Add keyboard navigation for tabs
-    if (tabListElement) {
-        tabListElement.addEventListener('keydown', e => {
-            const tabs = Array.from(tabListElement.children);
-            const currentIndex = tabs.indexOf(e.target);
-            let nextIndex = currentIndex;
-      
-            switch (e.key) {
-            case 'ArrowRight':
-            case 'ArrowDown':
-                nextIndex = (currentIndex + 1) % tabs.length;
-                break;
-            case 'ArrowLeft':
-            case 'ArrowUp':
-                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-                break;
-            case 'Home':
-                nextIndex = 0;
-                break;
-            case 'End':
-                nextIndex = tabs.length - 1;
-                break;
-            default:
-                return;
-            }
-      
-            if (nextIndex !== currentIndex) {
-                e.preventDefault();
-                tabs[nextIndex].focus();
-                const correspondingTab = allTabs.find(tab => tab.tab.element === tabs[nextIndex]);
-                if (correspondingTab) {
-                    setActiveTab(correspondingTab);
-                }
-            }
-        });
-    }
+
+    // Now that tabs exist, mount them into the initially created window.
+    mountDebuggerInterface();
   
     if (allTabs.length > 0) {
         setActiveTab(allTabs[0]);
@@ -812,7 +862,7 @@ export default async function ({addon, console, msg}) {
         return ogGreenFlag.call(this, ...args);
     };
 
-    // Track greenFlag override for cleanup
+    // Restore VM overrides when the addon is disabled/unloaded.
     cleanupFunctions.push(() => {
         if (ogGreenFlag && vm && vm.runtime) {
             vm.runtime.greenFlag = ogGreenFlag;
@@ -839,7 +889,7 @@ export default async function ({addon, console, msg}) {
         return clone;
     };
 
-    // Track makeClone override for cleanup
+    // Restore VM overrides when the addon is disabled/unloaded.
     cleanupFunctions.push(() => {
         if (ogMakeClone && vm && vm.runtime && vm.runtime.targets && vm.runtime.targets[0]) {
             vm.runtime.targets[0].constructor.prototype.makeClone = ogMakeClone;
@@ -858,7 +908,7 @@ export default async function ({addon, console, msg}) {
         return ogStartHats.call(this, hat, optMatchFields, ...args);
     };
 
-    // Track startHats override for cleanup
+    // Restore VM overrides when the addon is disabled/unloaded.
     cleanupFunctions.push(() => {
         if (ogStartHats && vm && vm.runtime) {
             vm.runtime.startHats = ogStartHats;

@@ -180,11 +180,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: var(--ui-modal-header-background, var(--ui-secondary, #f8f9fa));
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
   min-height: 44px;
 }
 
@@ -202,58 +199,40 @@
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--ui-white-transparent, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  color: var(--text-primary, #575e75);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(8px);
   position: relative;
   overflow: hidden;
   font-weight: 500;
 }
 
 .sa-debugger-tabs li::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.1) 50%, 
-    transparent 100%);
-  transition: left 0.5s ease;
+  display: none;
 }
 
 .sa-debugger-tabs li:hover::before {
-  left: 100%;
+  /* no-op */
 }
 
 .sa-debugger-tabs li:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15) 0%, 
-    rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  color: white;
+  background: var(--ui-white, #ffffff);
+  border-color: var(--looks-transparent, rgba(76, 151, 255, 0.25));
+  transform: none;
+  box-shadow: none;
+  color: var(--text-primary, #575e75);
 }
 
 .sa-debugger-tabs li.sa-debugger-tab-selected {
-  background: linear-gradient(135deg, 
-    var(--looks-secondary, #4C97FF) 0%, 
-    var(--looks-secondary-dark, #4280D7) 100%);
-  background-clip: padding-box;
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--looks-secondary, #4C97FF);
+  border-color: var(--looks-secondary-dark, #4280D7);
   color: white;
-  box-shadow: 0 2px 8px rgba(76, 151, 255, 0.3), 
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: none;
   font-weight: 600;
+  border-radius: 6px;
 }
 
 .sa-debugger-tabs li img {
@@ -261,7 +240,7 @@
   margin-right: 6px;
   width: 14px;
   height: 14px;
-  filter: brightness(0) invert(1);
+  filter: var(--editorDarkMode-accent-invertedFilter, brightness(0.4));
   transition: filter 0.3s ease;
   opacity: 0.85;
 }
@@ -287,17 +266,15 @@
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  background: linear-gradient(135deg, 
-    var(--looks-secondary, #4C97FF) 0%, 
-    var(--looks-secondary-dark, #4280D7) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--looks-secondary, #4C97FF);
+  border: 1px solid var(--looks-secondary-dark, #4280D7);
   border-radius: 6px;
   color: white;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
   min-height: 28px;
@@ -305,34 +282,22 @@
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.2) 50%, 
-    transparent 100%);
-  transition: left 0.5s ease;
+  display: none;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover::before {
-  left: 100%;
+  /* no-op */
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, 
-    var(--looks-secondary-dark, #4280D7) 0%, 
-    var(--looks-secondary, #4C97FF) 100%);
+  transform: none;
+  box-shadow: none;
+  background: var(--looks-secondary-dark, #4280D7);
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transform: none;
+  box-shadow: none;
 }
 
 .sa-debugger-header-buttons img {
@@ -344,25 +309,23 @@
 
 .sa-debugger-header-buttons span {
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: none;
 }
 
 /* Enhanced unpause button with pulsing animation */
 .sa-debugger-unpause {
-  background: linear-gradient(135deg, 
-    #00D4AA 0%, 
-    #00A693 100%) !important;
+  background: var(--pen-primary, #0fbd8c) !important;
   animation: saDebuggerUnpause 2s infinite alternate;
 }
 
 @keyframes saDebuggerUnpause {
   0% {
-    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3), 
-                0 0 0 0 rgba(0, 212, 170, 0.7);
+    box-shadow: 0 2px 8px var(--pen-transparent, rgba(15, 189, 140, 0.25)), 
+                0 0 0 0 var(--pen-transparent, rgba(15, 189, 140, 0.25));
   }
   100% {
-    box-shadow: 0 6px 16px rgba(0, 212, 170, 0.4), 
-                0 0 0 8px rgba(0, 212, 170, 0);
+    box-shadow: 0 6px 16px var(--pen-transparent, rgba(15, 189, 140, 0.25)), 
+                0 0 0 8px rgba(0, 0, 0, 0);
   }
 }
 
@@ -438,7 +401,7 @@
   height: 100%;
   font-size: 14px;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.02) 0%, 
     rgba(255, 255, 255, 0.005) 100%);
@@ -587,7 +550,7 @@
 .sa-debugger-log-text-empty {
   font-style: italic;
   opacity: 0.5;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
 }
 
 .sa-debugger-log-internal {
@@ -790,7 +753,7 @@
 .sa-memory-info-title {
   font-size: 9px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary, var(--text-primary, #575e75));
   margin: 0 0 4px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -867,9 +830,7 @@
 
 /* Enhanced compact memory clear button styling */
 .sa-memory-clear-button {
-  background: linear-gradient(135deg, 
-    #FF6B6B 0%, 
-    #EE5A52 100%) !important;
+  background: var(--error-primary, #ff6b6b) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: white !important;
   border-radius: 6px !important;
@@ -883,34 +844,22 @@
 }
 
 .sa-memory-clear-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.2) 50%, 
-    transparent 100%);
-  transition: left 0.5s ease;
+  display: none;
 }
 
 .sa-memory-clear-button:hover::before {
-  left: 100%;
+  /* no-op */
 }
 
 .sa-memory-clear-button:hover {
-  background: linear-gradient(135deg, 
-    #EE5A52 0%, 
-    #FF6B6B 100%) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.35) !important;
+  background: var(--red-tertiary, #ee5a52) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .sa-memory-clear-button:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .sa-memory-clear-button img {
