@@ -6,6 +6,13 @@
 const WINDOW_Z_INDEX_BASE = 8000;
 const WINDOW_Z_INDEX_MAX = 8999;
 let nextZIndex = WINDOW_Z_INDEX_BASE;
+
+// Some UI overlays (like the project loader) sit above the normal window range.
+// This tier is for specific windows that must remain interactable above those overlays.
+// Keep below the context menu layer (see src/css/z-index.css).
+const WINDOW_ON_TOP_Z_INDEX_BASE = 9600;
+const WINDOW_ON_TOP_Z_INDEX_MAX = 9999;
+let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
@@ -30,11 +37,12 @@ class AddonWindow {
         this.maximizable = options.maximizable !== false;
         this.className = options.className || '';
         this.destroyOnMinimize = options.destroyOnMinimize || false;
+        this.alwaysOnTop = options.alwaysOnTop || false;
         
         this.isVisible = false;
         this.isMinimized = false;
         this.isMaximized = false;
-        this.zIndex = ++nextZIndex;
+        this.zIndex = this.alwaysOnTop ? ++nextOnTopZIndex : ++nextZIndex;
         
         this.onClose = options.onClose || (() => {});
         this.onMinimize = options.onMinimize || (() => {});
@@ -653,20 +661,32 @@ class AddonWindow {
     }
     
     bringToFront () {
-        if (nextZIndex >= WINDOW_Z_INDEX_MAX) {
-            const windows = Array.from(activeWindows.values());
+        const isOnTopTier = this.alwaysOnTop;
+        const baseZ = isOnTopTier ? WINDOW_ON_TOP_Z_INDEX_BASE : WINDOW_Z_INDEX_BASE;
+        const maxZ = isOnTopTier ? WINDOW_ON_TOP_Z_INDEX_MAX : WINDOW_Z_INDEX_MAX;
+
+        if ((isOnTopTier ? nextOnTopZIndex : nextZIndex) >= maxZ) {
+            const windows = Array.from(activeWindows.values()).filter(w => w.alwaysOnTop === isOnTopTier);
             const index = windows.indexOf(this);
             if (index !== -1) windows.splice(index, 1);
             windows.sort((a, b) => a.zIndex - b.zIndex);
 
-            nextZIndex = WINDOW_Z_INDEX_BASE;
-            for (const window of windows) {
-                window.zIndex = ++nextZIndex;
-                window.element.style.zIndex = window.zIndex;
+            if (isOnTopTier) {
+                nextOnTopZIndex = baseZ;
+                for (const window of windows) {
+                    window.zIndex = ++nextOnTopZIndex;
+                    window.element.style.zIndex = window.zIndex;
+                }
+            } else {
+                nextZIndex = baseZ;
+                for (const window of windows) {
+                    window.zIndex = ++nextZIndex;
+                    window.element.style.zIndex = window.zIndex;
+                }
             }
         }
 
-        this.zIndex = ++nextZIndex;
+        this.zIndex = isOnTopTier ? ++nextOnTopZIndex : ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
     }
     
