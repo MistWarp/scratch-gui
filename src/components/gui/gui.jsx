@@ -453,13 +453,15 @@ const GUIComponent = props => {
                         </Box>
                     </Box>
                 </Box>
-                <ExtensionLibrary
-                    vm={vm}
-                    visible={extensionLibraryVisible}
-                    onRequestClose={onRequestCloseExtensionLibrary}
-                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                    onEnableProcedureReturns={handleEnableProcedureReturns}
-                />
+                {extensionLibraryVisible ? (
+                    <ExtensionLibrary
+                        vm={vm}
+                        visible={extensionLibraryVisible}
+                        onRequestClose={onRequestCloseExtensionLibrary}
+                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                        onEnableProcedureReturns={handleEnableProcedureReturns}
+                    />
+                ) : null}
                 <DragLayer />
             </Box>
         );
