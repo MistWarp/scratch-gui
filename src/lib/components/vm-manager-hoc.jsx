@@ -6,6 +6,8 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 import AudioEngine from 'scratch-audio';
 
+import WindowManager from '../../addons/window-system/window-manager';
+
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import {
     LoadingStates,
@@ -40,6 +42,9 @@ const vmManagerHOC = function (WrappedComponent) {
         componentDidMount () {
             if (!this.props.vm.initialized) {
                 window.vm = this.props.vm;
+
+                // Expose the window manager on the VM for addons/integration.
+                if (!this.props.vm.wm) this.props.vm.wm = WindowManager;
                 try {
                     this.audioEngine = new AudioEngine();
                     this.props.vm.attachAudioEngine(this.audioEngine);

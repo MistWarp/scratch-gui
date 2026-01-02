@@ -177,7 +177,7 @@ class AddonWindow {
         }
         
         if (this.closable) {
-            const closeBtn = this.createControlButton('close', 'Minimize', () => this.minimize());
+            const closeBtn = this.createControlButton('close', 'Close', () => this.close());
             controlsElement.appendChild(closeBtn);
         }
         
@@ -233,19 +233,23 @@ class AddonWindow {
         let svgIcon = '';
         switch (type) {
         case 'maximize':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 </svg>`;
             break;
         case 'restore':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
-<path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>`;
             break;
         case 'close':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"/>
+                    <path d="m6 6 12 12"/>
                 </svg>`;
             break;
         }
@@ -343,13 +347,15 @@ class AddonWindow {
     updateMaximizeButton () {
         if (this.maximizeBtn) {
             const svgIcon = this.isMaximized ?
-                `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect x="2" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.2" fill="none" rx="0.5"/>
-<path d="M4 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/>
-                </svg>` :
-                `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5" fill="none" rx="1"/>
-                </svg>`;
+                `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>` :
+                `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    </svg>`;
             this.maximizeBtn.innerHTML = svgIcon;
             this.maximizeBtn.title = this.isMaximized ? 'Restore' : 'Maximize';
         }
