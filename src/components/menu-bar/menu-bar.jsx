@@ -1037,7 +1037,22 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}
                                     <MenuItem>
-                                        <div className={styles.submenuRow}>
+                                        <div
+                                            className={styles.submenuRow}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                this.props.onRequestCloseEdit();
+                                                this.props.onOpenExtensionLibrary();
+                                            }}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    this.props.onRequestCloseEdit();
+                                                    this.props.onOpenExtensionLibrary();
+                                                }
+                                            }}
+                                        >
                                             <PackagePlus />
                                             <span className={styles.submenuRowLabel}>
                                                 <FormattedMessage
