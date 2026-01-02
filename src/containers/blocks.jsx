@@ -87,8 +87,11 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
     if (!ScratchBlocks || ScratchBlocks.__mistwarpSystemBlocksClipboardInstalled) return;
     ScratchBlocks.__mistwarpSystemBlocksClipboardInstalled = true;
 
-    const canWriteText = () => typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText;
-    const canReadText = () => typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText;
+    const isFirefox = () => typeof navigator !== 'undefined' &&
+        typeof navigator.userAgent === 'string' &&
+        navigator.userAgent.includes('Firefox');
+    const canWriteText = () => !isFirefox() && typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText;
+    const canReadText = () => !isFirefox() && typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText;
 
     const encodeBase64Utf8 = value => {
         if (typeof btoa !== 'function') return null;
