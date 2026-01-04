@@ -1,3 +1,7 @@
 .sa-fullscreen.sa-body-editor {
   overflow: hidden !important;
 }
+
+.sa-fullscreen.sa-body-editor [class*="menu-bar_menu-bar"] {
+  display: none !important;
+}

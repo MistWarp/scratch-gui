@@ -187,7 +187,7 @@ export default async function ({ addon, console }) {
 
   // Running this on page load handles the case of the project initially
   // loading in Scratch fullscreen mode.
-  setPageScrollbar();
+  setPageScrollbar().then(updateLayoutVars);
   updateBrowserFullscreen();
 
   // Changing to or from Scratch fullscreen is signified by a state change
@@ -197,7 +197,7 @@ export default async function ({ addon, console }) {
     if (e.detail.action.type === "scratch-gui/mode/SET_FULL_SCREEN") {
       initScaler();
       updateBrowserFullscreen();
-      setPageScrollbar();
+      setPageScrollbar().then(updateLayoutVars);
       updatePhantomHeader();
     }
   });
@@ -224,6 +224,7 @@ export default async function ({ addon, console }) {
   // dynamically enabled.
   addon.settings.addEventListener("change", () => {
     updateBrowserFullscreen();
+    updateLayoutVars();
     updatePhantomHeader();
   });
   addon.self.addEventListener("disabled", () => {
