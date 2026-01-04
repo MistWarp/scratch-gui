@@ -228,22 +228,6 @@ const vmListenerHOC = function (WrappedComponent) {
                 e.preventDefault();
             }
 
-            // TW: prevent delete and backspace from deleting blocks in the editor while in fullscreen
-            // or in the editor too if the project has been using these keys for something
-            const blockEditorDeleteOperation = scratchKey => (
-                this.props.isEditorObscured || (
-                    this.props.isEditorUsable &&
-                    this.props.vm.runtime.ioDevices.keyboard.hasUsedKey(scratchKey)
-                )
-            );
-            if (
-                (e.keyCode === 8 && blockEditorDeleteOperation('backspace')) ||
-                (e.keyCode === 46 && blockEditorDeleteOperation('delete'))
-            ) {
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-            }
-
             // tw: prevent ' and / from opening quick find in Firefox
             if (e.keyCode === 222 || e.keyCode === 191) {
                 e.preventDefault();
