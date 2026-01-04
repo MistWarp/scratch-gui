@@ -5,6 +5,14 @@
   width: min(calc((100vh - 44px) * var(--sa-fullscreen-width) / var(--sa-fullscreen-height)), 100vw) !important;
 }
 
+[class*="stage-header_stage-header-wrapper-overlay"] {
+  top: var(--sa-menu-bar-height, 0px) !important;
+}
+
+[class*="stage-wrapper_full-screen"] {
+  top: calc(var(--sa-menu-bar-height, 0px) + 44px) !important;
+}
+
 [class*="stage-wrapper_full-screen"] [class*="stage-wrapper_stage-canvas-wrapper"],
 [class*="stage-wrapper_full-screen"] [class*="stage_stage"],
 [class*="stage-wrapper_full-screen"] [class*="stage_green-flag-overlay-wrapper"],
