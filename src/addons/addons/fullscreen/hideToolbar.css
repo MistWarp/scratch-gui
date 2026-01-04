@@ -1,16 +1,16 @@
 [class*="stage-wrapper_full-screen"] {
-  display: none;
   top: 0rem !important;
 }
 
 [class*="stage-header_stage-header-wrapper-overlay"] {
   display: block;
-  transform: translateY(-101%);
+  top: var(--sa-menu-bar-height, 0px) !important;
+  transform: translateY(calc(-101% - var(--sa-menu-bar-height, 0px)));
   transition: transform 0.3s;
 }
 
 .phantom-header {
-  position: absolute;
+  position: fixed;
   top: 0px;
   left: 0px;
   right: 0px;
