@@ -361,10 +361,8 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
 
         if (ScratchBlocks.mainWorkspace.isDragging()) return;
 
-        e.preventDefault();
-
         navigator.clipboard.readText()
-            .then(text => {
+            .then(async text => {
                 const parsed = parseClipboardTextToBlockXml(text);
                 const maybeXml = parsed && parsed.xml;
                 const meta = (parsed && parsed.meta) || (maybeXml && guessExtensionMetaForXml(maybeXml));
@@ -373,9 +371,8 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
                     ScratchBlocks.clipboardSource_ = ScratchBlocks.mainWorkspace;
                     ScratchBlocks.__mistwarpSystemClipboardExtensionMeta = meta;
                 }
-                return ensureExtensionsLoaded(ScratchBlocks.__mistwarpSystemClipboardExtensionMeta).then(() => {
-                    pasteFromCurrentClipboardXml();
-                });
+                await ensureExtensionsLoaded(ScratchBlocks.__mistwarpSystemClipboardExtensionMeta);
+                pasteFromCurrentClipboardXml();
             })
             .catch(() => {
                 pasteFromCurrentClipboardXml();
