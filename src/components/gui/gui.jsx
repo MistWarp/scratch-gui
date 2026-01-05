@@ -41,6 +41,7 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
+import NativeFindBar from '../find-bar/find-bar.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -128,6 +129,7 @@ const GUIComponent = props => {
         isTelemetryEnabled,
         isTotallyNormal,
         loading,
+        locale,
         logo,
         renderLogin,
         onClickAbout,
@@ -354,6 +356,12 @@ const GUIComponent = props => {
                 <Box className={styles.bodyWrapper}>
                     <Box className={styles.flexWrapper}>
                         <Box className={styles.editorWrapper}>
+                            <NativeFindBar
+                                activeTabIndex={activeTabIndex}
+                                isPlayerOnly={isPlayerOnly}
+                                locale={locale}
+                                vm={vm}
+                            />
                             <Tabs
                                 forceRenderTabPanel
                                 className={tabClassNames.tabs}
@@ -589,7 +597,8 @@ const mapStateToProps = state => ({
     // This is the button's mode, as opposed to the actual current state
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme.theme,
+    locale: state.locales.locale
 });
 
 export default injectIntl(connect(
