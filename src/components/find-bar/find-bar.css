@@ -1,0 +1,370 @@
+/* Find Bar styles.
+ * This file is a CSS module; all selectors are explicitly global.
+ */
+
+/* Scratch Addons editor-theme3 compatibility (copied, but kept global) */
+:global(.sa-block-color) {
+    --sa-block-colored-background: var(--sa-block-background-primary);
+    --sa-block-colored-background-secondary: var(--sa-block-field-background);
+    --sa-block-bright-background: var(--sa-block-background-primary);
+    --sa-block-text: var(--editorTheme3-blockText, white);
+    --sa-block-gray-text: white;
+    --sa-block-colored-text: var(--sa-block-background-primary);
+    --sa-block-text-on-bright-background: var(--editorTheme3-blockText, white);
+    --sa-block-input-color: var(--editorTheme3-inputColor, white);
+    --sa-block-input-text: var(--editorTheme3-inputColor-text, #575e75);
+}
+
+:global(.sa-block-color-motion) {
+    --sa-block-background-primary: var(--editorTheme3-motion-primary, #4c97ff);
+    --sa-block-background-secondary: var(--editorTheme3-motion-secondary, #4280d7);
+    --sa-block-background-tertiary: var(--editorTheme3-motion-tertiary, #3373cc);
+    --sa-block-field-background: var(--editorTheme3-motion-field, #3373cc);
+}
+
+:global(.sa-block-color-looks) {
+    --sa-block-background-primary: var(--editorTheme3-looks-primary, #9966ff);
+    --sa-block-background-secondary: var(--editorTheme3-looks-secondary, #855cd6);
+    --sa-block-background-tertiary: var(--editorTheme3-looks-tertiary, #774dcb);
+    --sa-block-field-background: var(--editorTheme3-looks-field, #774dcb);
+}
+
+:global(.sa-block-color-sounds) {
+    --sa-block-background-primary: var(--editorTheme3-sounds-primary, #cf63cf);
+    --sa-block-background-secondary: var(--editorTheme3-sounds-secondary, #c94fc9);
+    --sa-block-background-tertiary: var(--editorTheme3-sounds-tertiary, #bd42bd);
+    --sa-block-field-background: var(--editorTheme3-sounds-field, #bd42bd);
+}
+
+:global(.sa-block-color-events) {
+    --sa-block-background-primary: var(--editorTheme3-event-primary, #ffbf00);
+    --sa-block-background-secondary: var(--editorTheme3-event-secondary, #e6ac00);
+    --sa-block-background-tertiary: var(--editorTheme3-event-tertiary, #cc9900);
+    --sa-block-field-background: var(--editorTheme3-event-field, #cc9900);
+}
+
+:global(.sa-block-color-control) {
+    --sa-block-background-primary: var(--editorTheme3-control-primary, #ffab19);
+    --sa-block-background-secondary: var(--editorTheme3-control-secondary, #ec9c13);
+    --sa-block-background-tertiary: var(--editorTheme3-control-tertiary, #cf8b17);
+    --sa-block-field-background: var(--editorTheme3-control-field, #cf8b17);
+}
+
+:global(.sa-block-color-sensing) {
+    --sa-block-background-primary: var(--editorTheme3-sensing-primary, #5cb1d6);
+    --sa-block-background-secondary: var(--editorTheme3-sensing-secondary, #47a8d1);
+    --sa-block-background-tertiary: var(--editorTheme3-sensing-tertiary, #2e8eb8);
+    --sa-block-field-background: var(--editorTheme3-sensing-field, #2e8eb8);
+}
+
+:global(.sa-block-color-operators) {
+    --sa-block-background-primary: var(--editorTheme3-operators-primary, #59c059);
+    --sa-block-background-secondary: var(--editorTheme3-operators-secondary, #46b946);
+    --sa-block-background-tertiary: var(--editorTheme3-operators-tertiary, #389438);
+    --sa-block-field-background: var(--editorTheme3-operators-field, #389438);
+}
+
+:global(.sa-block-color-data) {
+    --sa-block-background-primary: var(--editorTheme3-data-primary, #ff8c1a);
+    --sa-block-background-secondary: var(--editorTheme3-data-secondary, #ff8000);
+    --sa-block-background-tertiary: var(--editorTheme3-data-tertiary, #db6e00);
+    --sa-block-field-background: var(--editorTheme3-data-field, #db6e00);
+}
+
+:global(.sa-block-color-data-lists),
+:global(.sa-block-color-list) {
+    --sa-block-background-primary: var(--editorTheme3-data_lists-primary, #ff661a);
+    --sa-block-background-secondary: var(--editorTheme3-data_lists-secondary, #ff5500);
+    --sa-block-background-tertiary: var(--editorTheme3-data_lists-tertiary, #e64d00);
+    --sa-block-field-background: var(--editorTheme3-data_lists-field, #e64d00);
+}
+
+:global(.sa-block-color-more),
+:global(.sa-block-color-null) {
+    --sa-block-background-primary: var(--editorTheme3-more-primary, #ff6680);
+    --sa-block-background-secondary: var(--editorTheme3-more-secondary, #ff4d6a);
+    --sa-block-background-tertiary: var(--editorTheme3-more-tertiary, #ff3355);
+    --sa-block-field-background: var(--editorTheme3-more-field, #ff3355);
+}
+
+/* Find bar */
+:global(.sa-find-bar) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    white-space: nowrap;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    width: 100%;
+    margin: 5px 12px;
+    margin-top: 7px;
+    gap: 8px;
+}
+
+:global(.mw-native-find-bar-container) {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 200px;
+}
+
+:global(.sa-find-bar[hidden]) {
+    display: none !important;
+}
+
+:global(.sa-find-wrapper) {
+    overflow: visible;
+    position: relative;
+    flex: 1;
+    max-width: 60em;
+    min-width: 280px;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+:global(.sa-find-dropdown-out) {
+    flex: 1;
+    display: block;
+    width: 100%;
+    position: relative;
+    height: 2.2rem;
+}
+
+:global(.sa-hidden-modifiers) {
+    display: none;
+}
+
+:global(.sa-find-input) {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box !important;
+
+    border-radius: 10px;
+    font-size: 0.75rem;
+    padding: 0 60px 0 2.4rem;
+    background: var(--ui-tertiary, #e6f3ff);
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
+    transition: all 0.2s ease;
+}
+
+:global(.sa-find-input:focus) {
+    background: var(--ui-white, #ffffff);
+    color: var(--text-primary, #575e75);
+    border-color: var(--looks-secondary, #4c97ff);
+    box-shadow: 0 0 0 2px var(--looks-transparent, rgba(76, 151, 255, 0.25));
+    outline: none;
+}
+
+
+
+:global(.sa-find-input:hover) {
+    border-color: var(--looks-secondary, #4c97ff);
+}
+
+:global(.sa-find-dropdown) {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    padding: 0.2em 0;
+    font-size: 0.75rem;
+    line-height: 1;
+    overflow-y: auto;
+    min-height: 128px;
+    max-height: 65vh;
+    user-select: none;
+    background-color: var(--ui-modal-background);
+    box-shadow: 0px 4px 8px 1px rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    z-index: 1000;
+    outline: 1px solid var(--ui-black-transparent);
+}
+
+/* gui.css loads after this module, so important is needed for overrides */
+:global([class*="gui_tab-list_"]) {
+    width: 100% !important;
+}
+
+:global([class*="gui_tab_"]) {
+    flex-grow: 0 !important;
+}
+
+:global(.sa-find-dropdown-out.visible > .sa-find-dropdown) {
+    display: block;
+}
+
+:global(.sa-find-dropdown > li) {
+    display: block;
+    padding: 0.5em 0.3em;
+    white-space: nowrap;
+    margin: 0;
+    font-weight: bold;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+:global(.sa-find-dropdown > li > b) {
+    background-color: #aaffaa;
+    color: black;
+}
+
+:global(.sa-find-dropdown > li:hover),
+:global(.sa-find-dropdown > li.sel) {
+    color: var(--sa-block-text-on-bright-background);
+    cursor: pointer;
+}
+
+:global(.sa-find-dropdown > li::before) {
+    content: "\25CF ";
+}
+
+:global(.sa-find-icon) {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+:global(.sa-find-icon svg) {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    display: block;
+}
+
+:global(.sa-find-input) {
+    position: relative;
+    z-index: 1;
+}
+
+:global(.sa-find-dropdown .sa-block-color) {
+    color: var(--sa-block-colored-text);
+}
+
+:global(.sa-find-dropdown .sa-block-color:hover),
+:global(.sa-find-dropdown .sa-block-color.sel) {
+    background-color: var(--sa-block-bright-background);
+}
+
+:global(.sa-find-dropdown .sa-find-flag) {
+    color: var(--operators-primary, var(--editorTheme3-operators-primary, #59c059));
+}
+
+:global(.sa-find-dropdown .sa-find-flag:hover),
+:global(.sa-find-dropdown .sa-find-flag.sel) {
+    background-color: var(--operators-primary, var(--editorTheme3-operators-primary, #59c059));
+    color: var(--sa-block-text-on-bright-background);
+}
+
+:global(.sa-find-opcode) {
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+:global(.sa-find-carousel) {
+    font-weight: normal;
+    position: absolute;
+    right: 0;
+    white-space: nowrap;
+    background-color: inherit;
+    z-index: 1;
+    padding: 0;
+}
+
+:global(.sa-find-carousel-control) {
+    padding: 0 6px;
+}
+
+:global(.sa-find-carousel-control:hover) {
+    color: #ffff80;
+}
+
+:global(.sa-find-controls) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+:global(.sa-find-toggle) {
+    min-width: 28px;
+    height: 28px;
+    padding: 4px 6px;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    background: var(--ui-secondary);
+    color: var(--text-primary-transparent);
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:global(.sa-find-toggle:hover) {
+    background: var(--ui-tertiary);
+    border-color: var(--looks-secondary);
+}
+
+:global(.sa-find-toggle-active) {
+    background: var(--looks-secondary);
+    color: white;
+    border-color: var(--looks-secondary);
+}
+
+
+
+@media (max-width: 1200px) {
+    :global(.sa-find-bar) {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    :global(.sa-find-wrapper) {
+        min-width: 200px;
+    }
+
+    :global(.sa-find-controls) {
+        gap: 2px;
+    }
+
+    :global(.sa-find-toggle) {
+        min-width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    :global(.sa-find-controls) {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    :global(.sa-find-toggle) {
+        min-width: 32px;
+        height: 28px;
+    }
+
+    :global(.sa-find-input) {
+        padding-right: 50px;
+    }
+
+
+}

@@ -6,6 +6,10 @@ import Utils from "./blockly/Utils.js";
 // Using a simple inline SVG for the search icon (avoid depending on React here)
 
 export default async function ({ addon, msg, console }) {
+  // MistWarp: Find Bar is now implemented natively in scratch-gui.
+  // Bail out to avoid duplicate UI and conflicting keybindings.
+  if (document.querySelector('.mw-native-find-bar')) return;
+
   const Blockly = await addon.tab.traps.getBlockly();
 
   function getMessages(blockJson) {
