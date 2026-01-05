@@ -71,51 +71,52 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
                     return () => {};
                 }
 
-                class patched {
-                    constructor () {
-                        if (document.querySelector('.mw-native-find-bar')) {
-                            if ((this.mostRecentEvent_.button === 1 ||
-                            this.mostRecentEvent_.shiftKey) &&
-                            findBar.findInput) {
-                                let block = this.startBlock_;
-                                for (; block; block = block.getSurroundParent()) {
-                                    if (block.type === 'procedures_definition' ||
-                                    (!this.jumpToDef && block.type === 'procedures_call')) {
-                                        const id = block.id ? block.id : block.getId ? block.getId() : null;
-                                        findBar.findInput.focus();
-                                        findBar.showDropDown(id);
-                                        return;
-                                    }
+                const patched = function () {
+                    /* eslint-disable no-invalid-this */
+                    if (document.querySelector('.mw-native-find-bar')) {
+                        if ((this.mostRecentEvent_.button === 1 ||
+                        this.mostRecentEvent_.shiftKey) &&
+                        findBar.findInput) {
+                            let block = this.startBlock_;
+                            for (; block; block = block.getSurroundParent()) {
+                                if (block.type === 'procedures_definition' ||
+                                (!this.jumpToDef && block.type === 'procedures_call')) {
+                                    const id = block.id ? block.id : block.getId ? block.getId() : null;
+                                    findBar.findInput.focus();
+                                    findBar.showDropDown(id);
+                                    return;
+                                }
 
-                                    if (block.type === 'data_variable' ||
-                                        block.type === 'data_changevariableby' ||
-                                        block.type === 'data_setvariableto') {
+                                if (block.type === 'data_variable' ||
+                                    block.type === 'data_changevariableby' ||
+                                    block.type === 'data_setvariableto') {
 
-                                        const id = block.getVars()[0];
-                                        findBar.findInput.focus();
-                                        findBar.showDropDown(id, block);
-                                        findBar.selVarID = id;
-                                        return;
-                                    }
+                                    const id = block.getVars()[0];
+                                    findBar.findInput.focus();
+                                    findBar.showDropDown(id, block);
+                                    findBar.selVarID = id;
+                                    return;
+                                }
 
-                                    if (
-                                        block.type === 'event_whenbroadcastreceived' ||
-                                        block.type === 'event_broadcastandwait' ||
-                                        block.type === 'event_broadcast') {
+                                if (
+                                    block.type === 'event_whenbroadcastreceived' ||
+                                    block.type === 'event_broadcastandwait' ||
+                                    block.type === 'event_broadcast') {
 
-                                        const id = block.id;
-                                        findBar.findInput.focus();
-                                        findBar.showDropDown(id, block);
-                                        findBar.selVarID = id;
-                                        return;
-                                    }
+                                    const id = block.id;
+                                    findBar.findInput.focus();
+                                    findBar.showDropDown(id, block);
+                                    findBar.selVarID = id;
+                                    return;
                                 }
                             }
                         }
-
-                        return originalDoBlockClick.call(this);
                     }
-                }
+
+                    const result = originalDoBlockClick.call(this);
+                    /* eslint-enable no-invalid-this */
+                    return result;
+                };
                 patched.__mwFindBarPatched = true;
 
                 ScratchBlocks.Gesture.prototype.doBlockClick_ = patched;
