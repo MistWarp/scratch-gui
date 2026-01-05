@@ -68,6 +68,9 @@ import {
     openFileMenu,
     closeFileMenu,
     fileMenuOpen,
+    openWorkspaceBookmarksMenu,
+    closeWorkspaceBookmarksMenu,
+    workspaceBookmarksMenuOpen,
     openEditMenu,
     closeEditMenu,
     editMenuOpen,
@@ -92,7 +95,19 @@ import {
 } from '../../reducers/autosave.js';
 
 import collectMetadata from '../../lib/collect-metadata';
+import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
 import SettingsStore from '../../addons/settings-store-singleton.js';
+
+import WorkspaceBookmarksMenu from './workspace-bookmarks-menu.jsx';
+
+import {
+    createWorkspaceBookmarksExportData,
+    downloadJsonObject,
+    getDefaultWorkspaceBookmarksPayload,
+    mergeWorkspaceBookmarksPayload,
+    readWorkspaceBookmarksFromStage,
+    writeWorkspaceBookmarksToStage
+} from '../../lib/mw/workspace-bookmarks.js';
 
 import styles from './menu-bar.css';
 
@@ -111,7 +126,8 @@ import oldtimeyLogo from './oldtimey-logo.svg';
 import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, Download, RefreshCcw, ClockPlus, Package, FileInput,
-    Save, ArchiveRestore, Gauge, FastForward, UserPen, Cloud, Settings, PackagePlus, Puzzle
+    Save, ArchiveRestore, Gauge, FastForward, UserPen, Cloud, Settings, PackagePlus, Puzzle,
+    Bookmark
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -223,8 +239,12 @@ class MenuBar extends React.Component {
         super(props);
         this.state = {
             autosaveTimeRemaining: 0,
-            autosavePaused: false
+            autosavePaused: false,
+            workspaceBookmarks: [],
+            workspaceBookmarksCategories: ['General'],
+            workspaceBookmarksCollapsedCategories: []
         };
+        this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
         bindAll(this, [
             'handleClickSeeInside',
@@ -245,12 +265,36 @@ class MenuBar extends React.Component {
             'restoreOptionMessage',
             'handleToggleAutosave',
             'getAutosaveEnabled',
-            'getAutosaveTimeRemaining'
+            'getAutosaveTimeRemaining',
+            'loadWorkspaceBookmarksFromProject',
+            'saveWorkspaceBookmarksToProject',
+            'ensureScratchBlocks',
+            'getCurrentWorkspaceBookmarkState',
+            'applyWorkspaceBookmarkState',
+            'handleAddWorkspaceBookmark',
+            'handleSwitchWorkspaceBookmark',
+            'handleDeleteWorkspaceBookmark',
+            'handleEditWorkspaceBookmark',
+            'handleToggleWorkspaceBookmarkCategoryCollapsed',
+            'handleExportWorkspaceBookmarks',
+            'handleImportWorkspaceBookmarks',
+            'handleClearAllWorkspaceBookmarks'
         ]);
     }
     componentDidMount () {
         document.addEventListener('keydown', this.handleKeyPress);
         this.startAutosaveCountdown();
+
+        // Prevent the legacy addon from also injecting a bookmarks menu.
+        window.__mistwarpNativeWorkspaceBookmarks = true;
+
+        this.loadWorkspaceBookmarksFromProject();
+        if (this.props.vm && this.props.vm.runtime) {
+            this.workspaceBookmarksProjectListener = () => {
+                this.loadWorkspaceBookmarksFromProject();
+            };
+            this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
+        }
     }
     componentDidUpdate (prevProps) {
         // Restart countdown if autosave settings changed
@@ -261,6 +305,9 @@ class MenuBar extends React.Component {
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
+        if (this.workspaceBookmarksProjectListener && this.props.vm && this.props.vm.runtime) {
+            this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
+        }
         if (this.autosaveCountdownInterval) {
             clearInterval(this.autosaveCountdownInterval);
         }
@@ -371,6 +418,33 @@ class MenuBar extends React.Component {
         };
     }
     handleKeyPress (event) {
+        // Workspace bookmarks shortcuts (Ctrl+Alt+1..0 to switch, Ctrl+Alt+T to add)
+        // Ignore when typing.
+        const target = event.target;
+        const isTyping = target && (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable
+        );
+        if (!isTyping && !this.props.isPlayerOnly && event.ctrlKey && event.altKey) {
+            const key = event.key.toLowerCase();
+            if (key >= '1' && key <= '9') {
+                event.preventDefault();
+                void this.handleSwitchWorkspaceBookmark(parseInt(key, 10) - 1);
+                return;
+            }
+            if (key === '0') {
+                event.preventDefault();
+                void this.handleSwitchWorkspaceBookmark(9);
+                return;
+            }
+            if (key === 't') {
+                event.preventDefault();
+                void this.handleAddWorkspaceBookmark();
+                return;
+            }
+        }
+
         const modifier = bowser.mac ? event.metaKey : event.ctrlKey;
         if (modifier) {
             if (event.key.toLowerCase() === 's') {
@@ -381,6 +455,319 @@ class MenuBar extends React.Component {
                 this.props.onStartSelectingFileUpload();
             }
         }
+    }
+
+    loadWorkspaceBookmarksFromProject () {
+        try {
+            const vm = this.props.vm;
+            if (!vm || !vm.runtime) return;
+            const stage = vm.runtime.getTargetForStage();
+            if (!stage || !stage.comments) return;
+
+            const payload = readWorkspaceBookmarksFromStage(stage) || getDefaultWorkspaceBookmarksPayload();
+            this.setState({
+                workspaceBookmarks: payload.bookmarks,
+                workspaceBookmarksCategories: payload.categories,
+                workspaceBookmarksCollapsedCategories: payload.collapsedCategories
+            });
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to load workspace bookmarks:', e);
+        }
+    }
+
+    saveWorkspaceBookmarksToProject () {
+        try {
+            const vm = this.props.vm;
+            if (!vm || !vm.runtime) return;
+            const stage = vm.runtime.getTargetForStage();
+            if (!stage || !stage.comments) return;
+
+            writeWorkspaceBookmarksToStage(stage, {
+                bookmarks: this.state.workspaceBookmarks,
+                categories: this.state.workspaceBookmarksCategories,
+                collapsedCategories: this.state.workspaceBookmarksCollapsedCategories
+            });
+
+            if (vm.runtime.emitProjectChanged) {
+                vm.runtime.emitProjectChanged();
+            }
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to save workspace bookmarks:', e);
+        }
+    }
+
+    ensureScratchBlocks () {
+        if (LazyScratchBlocks.isLoaded()) {
+            return Promise.resolve(LazyScratchBlocks.get());
+        }
+        return LazyScratchBlocks.load().then(() => LazyScratchBlocks.get());
+    }
+
+    async getCurrentWorkspaceBookmarkState () {
+        const ScratchBlocks = await this.ensureScratchBlocks();
+        const workspace = ScratchBlocks.getMainWorkspace();
+        if (!workspace) return null;
+
+        const metrics = workspace.getMetrics();
+        const currentTarget = this.props.vm ? this.props.vm.editingTarget : null;
+
+        return {
+            scrollX: metrics.viewLeft,
+            scrollY: metrics.viewTop,
+            scale: workspace.scale,
+            targetId: currentTarget ? currentTarget.id : null
+        };
+    }
+
+    async applyWorkspaceBookmarkState (state) {
+        if (!state) return;
+
+        const vm = this.props.vm;
+        if (!vm || !vm.runtime) return;
+
+        if (state.targetId && state.targetId !== vm.editingTarget?.id) {
+            const target = vm.runtime.getTargetById(state.targetId);
+            if (target) {
+                vm.setEditingTarget(state.targetId);
+            }
+        }
+
+        const ScratchBlocks = await this.ensureScratchBlocks();
+        const workspace = ScratchBlocks.getMainWorkspace();
+        if (workspace && workspace.scrollbar) {
+            workspace.setScale(state.scale);
+            const scrollX = state.scrollX - workspace.getMetrics().contentLeft;
+            const scrollY = state.scrollY - workspace.getMetrics().contentTop;
+            workspace.scrollbar.set(scrollX, scrollY);
+        }
+    }
+
+    async handleAddWorkspaceBookmark () {
+        const maxTabs = 20;
+        const enableCategories = true;
+
+        if (this.state.workspaceBookmarks.length >= maxTabs) {
+            alert(this.props.intl.formatMessage({
+                defaultMessage: 'Maximum number of bookmarks reached ({max})',
+                description: 'Alert when too many bookmarks exist',
+                id: 'tw.workspaceBookmarks.maxReached'
+            }, {max: maxTabs}));
+            return;
+        }
+
+        const state = await this.getCurrentWorkspaceBookmarkState();
+        if (!state) return;
+
+        const name = prompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark name:',
+                description: 'Prompt title for bookmark name',
+                id: 'tw.workspaceBookmarks.namePrompt'
+            }),
+            `Bookmark ${this.state.workspaceBookmarks.length + 1}`
+        );
+        if (name === null) return;
+
+        let category = 'General';
+        if (enableCategories) {
+            const categoryList = this.state.workspaceBookmarksCategories.join(', ');
+            const categoryInput = prompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Category (existing: {categories})',
+                    description: 'Prompt for bookmark category',
+                    id: 'tw.workspaceBookmarks.categoryPrompt'
+                }, {categories: categoryList}),
+                'General'
+            );
+            if (categoryInput === null) return;
+            category = categoryInput.trim() || 'General';
+        }
+
+        const bookmark = {
+            name: (name.trim() || `Bookmark ${this.state.workspaceBookmarks.length + 1}`),
+            category,
+            state,
+            timestamp: Date.now()
+        };
+
+        this.setState(prev => {
+            const categories = new Set(prev.workspaceBookmarksCategories);
+            categories.add(category);
+            return {
+                workspaceBookmarks: [...prev.workspaceBookmarks, bookmark],
+                workspaceBookmarksCategories: [...categories]
+            };
+        }, () => {
+            this.saveWorkspaceBookmarksToProject();
+            this.props.onRequestCloseWorkspaceBookmarks();
+        });
+    }
+
+    async handleSwitchWorkspaceBookmark (index) {
+        if (index < 0 || index >= this.state.workspaceBookmarks.length) return;
+        await this.applyWorkspaceBookmarkState(this.state.workspaceBookmarks[index].state);
+        this.props.onRequestCloseWorkspaceBookmarks();
+    }
+
+    handleDeleteWorkspaceBookmark (index) {
+        if (index < 0 || index >= this.state.workspaceBookmarks.length) return;
+        this.setState(prev => {
+            const next = [...prev.workspaceBookmarks];
+            next.splice(index, 1);
+            return {workspaceBookmarks: next};
+        }, () => {
+            this.saveWorkspaceBookmarksToProject();
+        });
+    }
+
+    handleEditWorkspaceBookmark (index) {
+        const enableCategories = true;
+        if (index < 0 || index >= this.state.workspaceBookmarks.length) return;
+        const bookmark = this.state.workspaceBookmarks[index];
+
+        const newName = prompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark name:',
+                description: 'Prompt title for bookmark name',
+                id: 'tw.workspaceBookmarks.namePrompt'
+            }),
+            bookmark.name
+        );
+        if (newName === null || newName.trim() === '') {
+            this.props.onRequestCloseWorkspaceBookmarks();
+            return;
+        }
+
+        let newCategory = bookmark.category || 'General';
+        if (enableCategories) {
+            const categoryList = this.state.workspaceBookmarksCategories.join(', ');
+            const categoryInput = prompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Category (existing: {categories})',
+                    description: 'Prompt for bookmark category',
+                    id: 'tw.workspaceBookmarks.categoryPrompt'
+                }, {categories: categoryList}),
+                newCategory
+            );
+            if (categoryInput !== null) {
+                newCategory = categoryInput.trim() || 'General';
+            }
+        }
+
+        this.setState(prev => {
+            const next = [...prev.workspaceBookmarks];
+            next[index] = {
+                ...next[index],
+                name: newName.trim(),
+                category: newCategory
+            };
+            const categories = new Set(prev.workspaceBookmarksCategories);
+            categories.add(newCategory);
+            return {
+                workspaceBookmarks: next,
+                workspaceBookmarksCategories: [...categories]
+            };
+        }, () => {
+            this.saveWorkspaceBookmarksToProject();
+            this.props.onRequestCloseWorkspaceBookmarks();
+        });
+    }
+
+    handleToggleWorkspaceBookmarkCategoryCollapsed (category) {
+        this.setState(prev => {
+            const set = new Set(prev.workspaceBookmarksCollapsedCategories);
+            if (set.has(category)) {
+                set.delete(category);
+            } else {
+                set.add(category);
+            }
+            return {workspaceBookmarksCollapsedCategories: [...set]};
+        }, () => {
+            this.saveWorkspaceBookmarksToProject();
+        });
+    }
+
+    handleExportWorkspaceBookmarks () {
+        const data = createWorkspaceBookmarksExportData({
+            bookmarks: this.state.workspaceBookmarks,
+            categories: this.state.workspaceBookmarksCategories,
+            collapsedCategories: this.state.workspaceBookmarksCollapsedCategories
+        });
+        downloadJsonObject(data, `workspace-bookmarks-${Date.now()}.json`);
+        this.props.onRequestCloseWorkspaceBookmarks();
+    }
+
+    handleImportWorkspaceBookmarks () {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.addEventListener('change', e => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (!data || !Array.isArray(data.bookmarks)) {
+                        throw new Error('Invalid format');
+                    }
+                    const importCount = data.bookmarks.length;
+                    this.setState(prev => {
+                        const merged = mergeWorkspaceBookmarksPayload({
+                            bookmarks: prev.workspaceBookmarks,
+                            categories: prev.workspaceBookmarksCategories,
+                            collapsedCategories: prev.workspaceBookmarksCollapsedCategories
+                        }, data);
+                        return {
+                            workspaceBookmarks: merged.bookmarks,
+                            workspaceBookmarksCategories: merged.categories
+                        };
+                    }, () => {
+                        this.saveWorkspaceBookmarksToProject();
+                        alert(this.props.intl.formatMessage({
+                            defaultMessage: 'Successfully imported {count} bookmarks!',
+                            description: 'Alert after importing bookmarks',
+                            id: 'tw.workspaceBookmarks.importSuccess'
+                        }, {count: importCount}));
+                    });
+                } catch {
+                    alert(this.props.intl.formatMessage({
+                        defaultMessage: 'Failed to import bookmarks. Please check the file format.',
+                        description: 'Alert when import fails',
+                        id: 'tw.workspaceBookmarks.importFailed'
+                    }));
+                }
+            };
+            reader.readAsText(file);
+        });
+        input.click();
+        this.props.onRequestCloseWorkspaceBookmarks();
+    }
+
+    handleClearAllWorkspaceBookmarks () {
+        if (this.state.workspaceBookmarks.length === 0) {
+            this.props.onRequestCloseWorkspaceBookmarks();
+            return;
+        }
+        const ok = confirm(this.props.intl.formatMessage({
+            defaultMessage: 'Are you sure you want to delete all {count} bookmarks? This action cannot be undone.',
+            description: 'Confirmation when clearing bookmarks',
+            id: 'tw.workspaceBookmarks.clearAllConfirm'
+        }, {count: this.state.workspaceBookmarks.length}));
+        if (!ok) {
+            this.props.onRequestCloseWorkspaceBookmarks();
+            return;
+        }
+        this.setState({
+            workspaceBookmarks: [],
+            workspaceBookmarksCategories: ['General'],
+            workspaceBookmarksCollapsedCategories: []
+        }, () => {
+            this.saveWorkspaceBookmarksToProject();
+            this.props.onRequestCloseWorkspaceBookmarks();
+        });
     }
     getSaveToComputerHandler (downloadProjectCallback) {
         return () => {
@@ -1155,6 +1542,45 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
+                        {!this.props.isPlayerOnly && (
+                            <MenuLabel
+                                open={this.props.workspaceBookmarksMenuOpen}
+                                onOpen={this.props.onClickWorkspaceBookmarks}
+                                onClose={this.props.onRequestCloseWorkspaceBookmarks}
+                            >
+                                <Bookmark size={20} />
+                                <span className={styles.collapsibleLabel}>
+                                    <FormattedMessage
+                                        defaultMessage="Bookmarks"
+                                        description="Workspace bookmarks menu label"
+                                        id="tw.workspaceBookmarks.menuLabel"
+                                    />
+                                </span>
+                                <ChevronDown size={8} />
+                                <MenuBarMenu
+                                    className={classNames(styles.menuBarMenu)}
+                                    open={this.props.workspaceBookmarksMenuOpen}
+                                    place={this.props.isRtl ? 'left' : 'right'}
+                                >
+                                    <WorkspaceBookmarksMenu
+                                        bookmarks={this.state.workspaceBookmarks}
+                                        categories={this.state.workspaceBookmarksCategories}
+                                        collapsedCategories={this.state.workspaceBookmarksCollapsedCategories}
+                                        enableCategories
+                                        showSearch
+                                        intl={this.props.intl}
+                                        onAddBookmark={this.handleAddWorkspaceBookmark}
+                                        onSwitchToBookmark={this.handleSwitchWorkspaceBookmark}
+                                        onEditBookmark={this.handleEditWorkspaceBookmark}
+                                        onDeleteBookmark={this.handleDeleteWorkspaceBookmark}
+                                        onToggleCategoryCollapsed={this.handleToggleWorkspaceBookmarkCategoryCollapsed}
+                                        onExport={this.handleExportWorkspaceBookmarks}
+                                        onImport={this.handleImportWorkspaceBookmarks}
+                                        onClearAll={this.handleClearAllWorkspaceBookmarks}
+                                    />
+                                </MenuBarMenu>
+                            </MenuLabel>
+                        )}
                     </div>
 
                     <Divider className={styles.divider} />
@@ -1324,6 +1750,7 @@ MenuBar.propTypes = {
     editMenuOpen: PropTypes.bool,
     enableCommunity: PropTypes.bool,
     fileMenuOpen: PropTypes.bool,
+    workspaceBookmarksMenuOpen: PropTypes.bool,
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
@@ -1358,6 +1785,7 @@ MenuBar.propTypes = {
     onClickExtensionManager: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickFile: PropTypes.func,
+    onClickWorkspaceBookmarks: PropTypes.func,
     onClickLogin: PropTypes.func,
     onClickMode: PropTypes.func,
     onClickNew: PropTypes.func,
@@ -1378,6 +1806,7 @@ MenuBar.propTypes = {
     onRequestCloseAccount: PropTypes.func,
     onRequestCloseEdit: PropTypes.func,
     onRequestCloseFile: PropTypes.func,
+    onRequestCloseWorkspaceBookmarks: PropTypes.func,
     onRequestCloseLogin: PropTypes.func,
     onRequestCloseMode: PropTypes.func,
     onRequestCloseSettings: PropTypes.func,
@@ -1428,6 +1857,7 @@ const mapStateToProps = (state, ownProps) => {
         currentLocale: state.locales.locale,
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
+        workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
@@ -1461,6 +1891,8 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
     onClickFile: () => dispatch(openFileMenu()),
     onRequestCloseFile: () => dispatch(closeFileMenu()),
+    onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),
+    onRequestCloseWorkspaceBookmarks: () => dispatch(closeWorkspaceBookmarksMenu()),
     onClickEdit: () => dispatch(openEditMenu()),
     onRequestCloseEdit: () => dispatch(closeEditMenu()),
     onClickErrors: () => dispatch(openErrorsMenu()),

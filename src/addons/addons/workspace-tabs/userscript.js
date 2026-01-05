@@ -26,6 +26,9 @@ const newSvg = (src, width, height) => {
  * @param {mainInputs} inputs the addon inputs
  */
 export default async function ({addon, console, msg}) {
+    if (typeof window !== 'undefined' && window.__mistwarpNativeWorkspaceBookmarks) {
+        return;
+    }
     const vm = addon.tab.traps.vm;
     const ScratchBlocks = await addon.tab.traps.getBlockly();
 
