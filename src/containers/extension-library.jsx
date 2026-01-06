@@ -90,41 +90,43 @@ const fetchLibrary = async () => {
     }));
     
     // Process Mistium extensions
-    const mistiumExtensions = mistiumData.extensions.map(extension => ({
-        name: extension.name,
-        nameTranslations: extension.nameTranslations || {},
-        description: extension.description,
-        descriptionTranslations: extension.descriptionTranslations || {},
-        extensionId: extension.id,
-        extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
-        iconURL: `https://extensions.mistium.com/${extension.image || 'images/unknown.svg'}`,
-        tags: ['mistium', 'tw'],
-        credits: [
-            ...(extension.by || []),
-            ...(extension.original || [])
-        ].map(credit => {
-            if (credit.link) {
-                return (
-                    <a
-                        href={credit.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        key={credit.name}
-                    >
-                        {credit.name}
-                    </a>
-                );
-            }
-            return credit.name;
-        }),
-        docsURI: null,
-        samples: extension.samples ? extension.samples.map(sample => ({
-            href: `${process.env.ROOT}editor?project_url=https://extensions-mistium.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
-            text: sample
-        })) : null,
-        incompatibleWithScratch: true,
-        featured: true
-    }));
+    const mistiumExtensions = mistiumData.extensions
+        .filter(ext => ext.featured)
+        .map(extension => ({
+            name: extension.name,
+            nameTranslations: extension.nameTranslations || {},
+            description: extension.description,
+            descriptionTranslations: extension.descriptionTranslations || {},
+            extensionId: extension.id,
+            extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
+            iconURL: `https://extensions.mistium.com/${extension.image || 'images/unknown.svg'}`,
+            tags: ['mistium', 'tw'],
+            credits: [
+                ...(extension.by || []),
+                ...(extension.original || [])
+            ].map(credit => {
+                if (credit.link) {
+                    return (
+                        <a
+                            href={credit.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            key={credit.name}
+                        >
+                            {credit.name}
+                        </a>
+                    );
+                }
+                return credit.name;
+            }),
+            docsURI: null,
+            samples: extension.samples ? extension.samples.map(sample => ({
+                href: `${process.env.ROOT}editor?project_url=https://extensions-mistium.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+                text: sample
+            })) : null,
+            incompatibleWithScratch: true,
+            featured: true
+        }));
     
     // Combine both extension sets
     return [...twExtensions, ...mistiumExtensions];
