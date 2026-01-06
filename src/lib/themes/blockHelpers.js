@@ -39,11 +39,15 @@ const injectExtensionCategoryTheme = (dynamicBlockXML, theme) => {
         const dom = parser.parseFromString(extension.xml, 'text/xml');
 
         const primaryColor = dom.documentElement.getAttribute('colour');
-        const usesCustomColors = primaryColor.toLowerCase() !== DEFAULT_EXTENSION_PRIMARY;
+        const usesCustomColors = primaryColor && primaryColor.toLowerCase() !== DEFAULT_EXTENSION_PRIMARY;
         if (usesCustomColors) {
             const converters = theme.getCustomExtensionColors();
-            dom.documentElement.setAttribute('colour', converters.categoryIconBackground(primaryColor));
-            dom.documentElement.setAttribute('secondaryColour', converters.categoryIconBorder(primaryColor));
+            if (converters &&
+                typeof converters.categoryIconBackground === 'function' &&
+                typeof converters.categoryIconBorder === 'function') {
+                dom.documentElement.setAttribute('colour', converters.categoryIconBackground(primaryColor));
+                dom.documentElement.setAttribute('secondaryColour', converters.categoryIconBorder(primaryColor));
+            }
         } else {
             dom.documentElement.setAttribute('colour', extensionColors.primary);
             // Note: the category's secondaryColour matches up with the blocks' tertiary color,
@@ -100,8 +104,16 @@ const injectExtensionBlockTheme = (blockInfoJson, theme) => {
 
     if (!blockInfoJson.extensions?.includes('default_extension_colors')) {
         const converters = theme.getCustomExtensionColors();
+        const canConvert = converters &&
+            typeof converters.primary === 'function' &&
+            typeof converters.secondary === 'function' &&
+            typeof converters.tertiary === 'function' &&
+            typeof converters.quaternary === 'function';
+        if (!canConvert) {
+            return injectBlockIcons(blockInfoJson, theme);
+        }
         return {
-            ...blockInfoJson,
+            ...injectBlockIcons(blockInfoJson, theme),
             colour: converters.primary(blockInfoJson.colour),
             colourSecondary: converters.secondary(blockInfoJson.colour),
             colourTertiary: converters.tertiary(blockInfoJson.colour),
