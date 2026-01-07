@@ -13,7 +13,6 @@ import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
 import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
-import TWDesktopSettings from './tw-desktop-settings.jsx';
 
 import {Palette} from 'lucide-react';
 
@@ -26,7 +25,6 @@ const SettingsMenu = ({
     canChangeLanguage,
     canChangeTheme,
     isRtl,
-    onClickDesktopSettings,
     onOpenCustomSettings,
     onRequestClose,
     onRequestOpen,
@@ -61,7 +59,6 @@ const SettingsMenu = ({
                         <TWFontsThemeMenu />
                     </React.Fragment>
                 )}
-                {onClickDesktopSettings && <TWDesktopSettings onClick={onClickDesktopSettings} />}
             </MenuSection>
             <div className={styles.menuSeparator} />
             {canChangeTheme && (
@@ -79,7 +76,6 @@ SettingsMenu.propTypes = {
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     isRtl: PropTypes.bool,
-    onClickDesktopSettings: PropTypes.func,
     onOpenCustomSettings: PropTypes.func,
     onRequestClose: PropTypes.func,
     onRequestOpen: PropTypes.func,

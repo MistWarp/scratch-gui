@@ -283,7 +283,6 @@
 }
 
 .accent-submenu .option {
-    gap: 0.25rem;
     flex-direction: column;
     text-align: center;
     font-size: 0.75rem;
