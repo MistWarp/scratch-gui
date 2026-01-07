@@ -168,7 +168,7 @@
     opacity: 0.5;
 }
 
-.account-info-group {
+.menu-bar:not(:has(> .main-menu-align-right)) > .account-info-group {
     display: flex;
     flex-direction: row;
     align-items: center;
