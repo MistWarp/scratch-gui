@@ -37,6 +37,8 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 
+import TWDesktopSettings from './tw-desktop-settings.jsx';
+
 import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
 
 import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
@@ -114,7 +116,6 @@ import styles from './menu-bar.css';
 // import helpIcon from '../../lib/assets/icon--tutorials.svg';
 // import mystuffIcon from './icon--mystuff.png';
 // import profileIcon from './icon--profile.png';
-import aboutIcon from './icon--about.svg';
 
 import ChevronDown from './ChevronDown.jsx';
 
@@ -973,11 +974,7 @@ class MenuBar extends React.Component {
                 onOpen={this.props.onRequestOpenAbout}
                 onClose={this.props.onRequestCloseAbout}
             >
-                <img
-                    className={styles.aboutIcon}
-                    src={aboutIcon}
-                    draggable={false}
-                />
+                <Info className={styles.aboutIcon} size={20} />
                 <MenuBarMenu
                     className={classNames(styles.menuBarMenu)}
                     open={this.props.aboutMenuOpen}
@@ -1413,6 +1410,8 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>
+                                    {this.props.onClickDesktopSettings &&
+                                        <TWDesktopSettings onClick={this.props.onClickDesktopSettings} />}
                                     {this.props.onClickAddonSettings && (
                                         <MenuItem onClick={this.props.onClickAddonSettings}>
                                             <Puzzle />
@@ -1700,9 +1699,8 @@ class MenuBar extends React.Component {
                     <TWSaveStatus
                         showSaveFilePicker={this.props.showSaveFilePicker}
                     />
+                    {aboutButton}
                 </div>
-
-                {aboutButton}
             </Box>
         );
 
@@ -1832,7 +1830,7 @@ MenuBar.propTypes = {
     }),
     username: PropTypes.string,
     userOwnsProject: PropTypes.bool,
-    vm: PropTypes.instanceOf(VM).isRequired
+    vm: PropTypes.instanceOf(VM).isRequired,
 };
 
 MenuBar.contextTypes = {
