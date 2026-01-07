@@ -974,7 +974,10 @@ class MenuBar extends React.Component {
                 onOpen={this.props.onRequestOpenAbout}
                 onClose={this.props.onRequestCloseAbout}
             >
-                <Info className={styles.aboutIcon} size={20} />
+                <Info
+                    className={styles.aboutIcon}
+                    size={20}
+                />
                 <MenuBarMenu
                     className={classNames(styles.menuBarMenu)}
                     open={this.props.aboutMenuOpen}
