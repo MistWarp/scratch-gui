@@ -18,7 +18,7 @@ const load = () => {
     return import(/* webpackChunkName: "sb" */ 'scratch-blocks')
         .then(m => {
             _ScratchBlocks = m.default;
-            
+
             if (_ScratchBlocks.Flyout &&
                 _ScratchBlocks.Flyout.prototype) {
                 const FlyoutProto = _ScratchBlocks.Flyout.prototype;
@@ -47,7 +47,7 @@ const load = () => {
                 };
             }
 
-            const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype
+            const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype;
 
             // Allow disabling flyout clipping (clip-path) at runtime.
             if (verticalFlyoutProto &&

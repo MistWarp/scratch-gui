@@ -122,3 +122,13 @@
   /* See editor-stage-left */
   z-index: 51;
 }
+
+/*
+  Palette resizing conflicts with auto-hide behavior (the flyout width is managed by this addon).
+  Disable the resize handle while this addon is enabled.
+*/
+[class*="blocks_blocks_"] [class*="paletteResizer"],
+[class*="blocks_blocks_"][class*="paletteResizer"] {
+  display: none !important;
+  pointer-events: none !important;
+}
