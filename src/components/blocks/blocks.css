@@ -4,6 +4,29 @@
 
 .blocks {
     height: 100%;
+    position: relative;
+}
+
+.paletteResizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--blocks-palette-width, 310px) - 4px);
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: calc($z-index-drag-layer + 1);
+    pointer-events: auto;
+    background: transparent;
+}
+
+[dir="rtl"] .paletteResizer {
+    left: auto;
+    right: calc(var(--blocks-palette-width, 310px) - 4px);
+}
+
+.paletteResizer:hover {
+    background-color: $ui-black-transparent;
 }
 
 .drag-over:after {
