@@ -46,9 +46,10 @@ const resolveStageSize = (stageSizeMode, isUnconstrained) => {
  * @param {STAGE_DISPLAY_SIZES} stageSize - the current fully-resolved stage size.
  * @param {{width: number, height: number}} customStageSize Custom stage size
  * @param {boolean} isFullScreen - true if full-screen mode is enabled.
+ * @param {?number} stageContainerWidth - optional container width to scale to in non-fullscreen mode.
  * @return {StageDimensions} - an object describing the dimensions of the stage.
  */
-const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
+const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageContainerWidth) => {
     const stageDimensions = {
         heightDefault: customStageSize.height,
         widthDefault: customStageSize.width,
@@ -88,6 +89,17 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
             stageDimensions.height = stageDimensions.scale * stageDimensions.heightDefault;
             stageDimensions.width = stageDimensions.scale * stageDimensions.widthDefault;
         }
+    }
+
+    if (!isFullScreen &&
+        typeof stageContainerWidth === 'number' &&
+        Number.isFinite(stageContainerWidth) &&
+        stageContainerWidth > 0) {
+        const availableContentWidth = Math.max(0, stageContainerWidth - 2);
+        const fitScale = availableContentWidth / stageDimensions.width;
+        stageDimensions.scale *= fitScale;
+        stageDimensions.width *= fitScale;
+        stageDimensions.height *= fitScale;
     }
 
     // Round off dimensions to prevent resampling/blurriness

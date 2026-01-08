@@ -56,6 +56,31 @@
     flex-direction: column;
 }
 
+.stage-pane-resizer {
+    flex: 0 0 6px;
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.stage-pane-resizer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2px;
+    right: 2px;
+    background: $ui-black-transparent;
+    opacity: 0;
+}
+
+.stage-pane-resizer:hover::before {
+    opacity: 1;
+}
+
 .tab-list {
     height: $stage-menu-height;
     width: 250px; /* Match width of the toolbox */

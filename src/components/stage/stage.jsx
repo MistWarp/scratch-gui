@@ -24,6 +24,7 @@ const StageComponent = props => {
         isPlayerOnly,
         isStarted,
         isRtl,
+        stageContainerWidth,
         colorInfo,
         micIndicator,
         question,
@@ -35,9 +36,13 @@ const StageComponent = props => {
         ...boxProps
     } = props;
 
-    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen);
-    const minWidth = getMinWidth(stageSize);
-    const transformStyle = stageDimensions.width < minWidth && !isFullScreen ? {
+    const isResizablePanel = !isFullScreen && typeof stageContainerWidth === 'number';
+    const stageDimensions = getStageDimensions(
+        stageSize, customStageSize, isFullScreen,
+        isResizablePanel ? stageContainerWidth : null
+    );
+    const minWidth = isResizablePanel ? 0 : getMinWidth(stageSize);
+    const transformStyle = (!isResizablePanel && stageDimensions.width < minWidth && !isFullScreen) ? {
         transform: `translateX(${(minWidth - stageDimensions.width) / (isRtl ? -2 : 2)}px)`
     } : {};
 
@@ -50,7 +55,7 @@ const StageComponent = props => {
                 onDoubleClick={onDoubleClick}
                 style={isPlayerOnly ? null : {
                     // add 2 because a 1px border is shown around each side of the stage
-                    minWidth: `${minWidth + 2}px`
+                    minWidth: minWidth ? `${minWidth + 2}px` : null
                 }}
             >
                 <Box
@@ -162,6 +167,7 @@ StageComponent.propTypes = {
     isFullScreen: PropTypes.bool.isRequired,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
+    stageContainerWidth: PropTypes.number,
     isStarted: PropTypes.bool,
     micIndicator: PropTypes.bool,
     onDeactivateColorPicker: PropTypes.func,

@@ -4,6 +4,23 @@ import React from 'react';
 import stylePropType from 'react-style-proptype';
 import styles from './box.css';
 
+const stylePropTypeAllowCssVars = function (props, propName, componentName, ...rest) {
+    const style = props[propName];
+    if (!style) return null;
+    if (typeof style !== 'object') return stylePropType(props, propName, componentName, ...rest);
+
+    const filteredStyle = {};
+    for (const key of Object.keys(style)) {
+        if (!key.startsWith('--')) {
+            filteredStyle[key] = style[key];
+        }
+    }
+    return stylePropType({
+        ...props,
+        [propName]: filteredStyle
+    }, propName, componentName, ...rest);
+};
+
 const getRandomColor = (function () {
     // In "DEBUG" mode this is used to output a random background color for each
     // box. The function gives the same "random" set for each seed, allowing re-
@@ -28,7 +45,7 @@ const getRandomColor = (function () {
     };
 }());
 
-const Box = props => {
+const Box = React.forwardRef((props, forwardedRef) => {
     const {
         alignContent,
         alignItems,
@@ -52,9 +69,16 @@ const Box = props => {
         onRuntimeOptionsChanged,
         ...componentProps
     } = props;
+
+    const combinedRef = componentRef || forwardedRef ? node => {
+        if (typeof componentRef === 'function') componentRef(node);
+        if (typeof forwardedRef === 'function') forwardedRef(node);
+        if (forwardedRef && typeof forwardedRef === 'object') forwardedRef.current = node;
+    } : null;
+
     return React.createElement(element, {
         className: classNames(className, styles.box),
-        ref: componentRef,
+        ref: combinedRef,
         style: Object.assign(
             {
                 alignContent: alignContent,
@@ -77,7 +101,9 @@ const Box = props => {
         ),
         ...componentProps
     }, children);
-};
+});
+
+Box.displayName = 'Box';
 Box.propTypes = {
     /** Defines how the browser distributes space between and around content items vertically within this box. */
     alignContent: PropTypes.oneOf([
@@ -125,7 +151,7 @@ Box.propTypes = {
     /** Specifies the flex shrink factor of a flex item. */
     shrink: PropTypes.number,
     /** An object whose keys are css property names and whose values correspond the the css property. */
-    style: stylePropType,
+    style: stylePropTypeAllowCssVars,
     /** The width in pixels (if specified as a number) or a string if different units are required. */
     width: PropTypes.oneOfType([
         PropTypes.number,
