@@ -1,7 +1,7 @@
 {
-  "short_name": "TurboWarp",
-  "name": "TurboWarp",
-  "description": "Mod of Scratch 3 with a compiler, dark mode, and more features.",
+  "short_name": "MistWarp",
+  "name": "MistWarp",
+  "description": "A powerful Scratch mod with advanced features and optimizations.",
   "icons": [
     {
       "src": "images/192.png",
