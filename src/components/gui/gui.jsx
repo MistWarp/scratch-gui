@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
-import React, {useCallback} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -47,6 +47,8 @@ import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../.
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
+import {setStageSize} from '../../reducers/stage-size';
+
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
@@ -70,6 +72,11 @@ const getFullscreenBackgroundColor = () => {
 
 const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
+const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
+const AUTO_RESTORE_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH * 0.875);
+const MIN_EDITOR_PANE_WIDTH = 598;
+const MIN_TARGET_PANE_HEIGHT = 180;
+
 const GUIComponent = props => {
     const handleEnableProcedureReturns = useCallback(() => {
         try {
@@ -87,6 +94,210 @@ const GUIComponent = props => {
             console.error('Error enabling procedure returns:', error);
         }
     }, []);
+
+    const editorWrapperRef = useRef(null);
+    const stageAndTargetWrapperRef = useRef(null);
+    const stageResizeRafRef = useRef(null);
+    const autoSmallStageRequestedRef = useRef(false);
+    const autoSmallStageActiveRef = useRef(false);
+    const lastNonSmallStageSizeModeRef = useRef(STAGE_SIZE_MODES.large);
+    const [stagePanelWidth, setStagePanelWidth] = useState(null);
+    const [stageContainerWidth, setStageContainerWidth] = useState(null);
+
+    const handleStagePanelResizeDoubleClick = useCallback(() => {
+        setStagePanelWidth(null);
+    }, []);
+
+    const getStageBorderExtraWidth = useCallback(containerEl => {
+        if (!containerEl || typeof window === 'undefined') return 0;
+        // CSS modules will generate something like "stage_stage__...".
+        const stageEl = containerEl.querySelector('[class*="stage_stage"]');
+        if (!stageEl) return 2;
+        const computedStyle = window.getComputedStyle(stageEl);
+        const borderLeft = Number.parseFloat(computedStyle.borderLeftWidth) || 0;
+        const borderRight = Number.parseFloat(computedStyle.borderRightWidth) || 0;
+        const total = borderLeft + borderRight;
+        if (!Number.isFinite(total) || total < 0) return 2;
+        return total;
+    }, []);
+
+    const measureStageContainerWidth = useCallback(() => {
+        const el = stageAndTargetWrapperRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect && typeof rect.width === 'number' && Number.isFinite(rect.width)) {
+            const computedStyle = window.getComputedStyle(el);
+            const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+            const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+            const borderExtra = getStageBorderExtraWidth(el);
+            setStageContainerWidth(Math.max(0, rect.width - paddingLeft - paddingRight - borderExtra));
+        }
+    }, [getStageBorderExtraWidth]);
+
+    useEffect(() => {
+        if (typeof stageContainerWidth !== 'number') return;
+        if (stageResizeRafRef.current) return;
+        stageResizeRafRef.current = window.requestAnimationFrame(() => {
+            stageResizeRafRef.current = null;
+            try {
+                window.dispatchEvent(new Event('resize'));
+            } catch (e) {
+                // ignore
+            }
+        });
+    }, [stageContainerWidth]);
+
+    useEffect(() => {
+        if (props.isFullScreen) return;
+        if (typeof stageContainerWidth !== 'number') return;
+
+        if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            lastNonSmallStageSizeModeRef.current = props.stageSizeMode;
+        }
+
+        if (stageContainerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
+            if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+                if (autoSmallStageRequestedRef.current) return;
+                autoSmallStageRequestedRef.current = true;
+                autoSmallStageActiveRef.current = true;
+                if (typeof props.onSetStageSize === 'function') {
+                    props.onSetStageSize(STAGE_SIZE_MODES.small);
+                }
+            }
+        } else {
+            autoSmallStageRequestedRef.current = false;
+
+            if (autoSmallStageActiveRef.current &&
+                props.stageSizeMode === STAGE_SIZE_MODES.small &&
+                stageContainerWidth >= AUTO_RESTORE_STAGE_INNER_WIDTH &&
+                typeof props.onSetStageSize === 'function') {
+                autoSmallStageActiveRef.current = false;
+                props.onSetStageSize(lastNonSmallStageSizeModeRef.current);
+            }
+        }
+    }, [stageContainerWidth, props.isFullScreen, props.onSetStageSize, props.stageSizeMode]);
+
+    useEffect(() => {
+        measureStageContainerWidth();
+        const el = stageAndTargetWrapperRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => {
+            measureStageContainerWidth();
+        });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [measureStageContainerWidth]);
+
+    const handleStagePanelResizePointerDown = useCallback(e => {
+        if (typeof e.button !== 'undefined' && e.button !== 0) return;
+        e.preventDefault();
+
+        const el = stageAndTargetWrapperRef.current;
+        if (!el) return;
+        const editorEl = editorWrapperRef.current;
+        const startRect = el.getBoundingClientRect();
+        const computedStyle = window.getComputedStyle(el);
+        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+        const borderExtra = getStageBorderExtraWidth(el);
+        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
+        const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
+        const startWidth = startRect.width;
+        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
+
+        setStageContainerWidth(startInnerWidth);
+
+        if (e.currentTarget &&
+            typeof e.currentTarget.setPointerCapture === 'function' &&
+            typeof e.pointerId === 'number') {
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
+
+        const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
+
+        const containerEl = editorEl ? editorEl.parentElement : null;
+        const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
+        const containerWidth = (containerRect && Number.isFinite(containerRect.width)) ?
+            containerRect.width :
+            window.innerWidth;
+        const resizerRect = (e.currentTarget && typeof e.currentTarget.getBoundingClientRect === 'function') ?
+            e.currentTarget.getBoundingClientRect() : null;
+        const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
+
+        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
+
+        let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
+        if (!stageWrapperEl) {
+            const candidates = Array.from(el.querySelectorAll('[class*="stage-wrapper"]'));
+            stageWrapperEl = candidates.find(candidate => candidate.querySelector('[class*="stage-header"]'));
+        }
+        const stageCanvasEl = stageWrapperEl ? stageWrapperEl.querySelector('[class*="stage_stage"]') : null;
+
+        const stageWrapperRect = stageWrapperEl ? stageWrapperEl.getBoundingClientRect() : null;
+        const stageCanvasRect = stageCanvasEl ? stageCanvasEl.getBoundingClientRect() : null;
+        const stageOverheadHeight = (stageWrapperRect && stageCanvasRect) ?
+            Math.max(0, stageWrapperRect.height - stageCanvasRect.height) :
+            88;
+
+        const maxStageCanvasHeight = Math.max(
+            0,
+            startRect.height - MIN_TARGET_PANE_HEIGHT - stageOverheadHeight
+        );
+
+        const customSize = props.customStageSize;
+        const widthPerHeight = (customSize && customSize.height > 0) ?
+            (customSize.width / customSize.height) :
+            (4 / 3);
+        const maxInnerWidthByHeight = (maxStageCanvasHeight * widthPerHeight) + 2;
+        const maxWidthByHeight = Math.max(
+            minWidth,
+            maxInnerWidthByHeight + paddingLeft + paddingRight + borderExtra
+        );
+
+        const maxWidth = Math.min(maxWidthByEditor, maxWidthByHeight);
+
+        const stageIsLeft = editorRect ? (startRect.left < editorRect.left) : false;
+        const directionFactor = stageIsLeft ? 1 : -1;
+
+        const onMove = ev => {
+            const x = (typeof ev.clientX === 'number') ? ev.clientX : 0;
+            const dx = x - startX;
+            const nextWidth = Math.min(maxWidth, Math.max(minWidth, startWidth + (dx * directionFactor)));
+            const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
+            setStagePanelWidth(nextWidth);
+            setStageContainerWidth(nextInnerWidth);
+
+            if (!props.isFullScreen &&
+                props.stageSizeMode !== STAGE_SIZE_MODES.small &&
+                typeof props.onSetStageSize === 'function' &&
+                nextInnerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
+                autoSmallStageActiveRef.current = true;
+                props.onSetStageSize(STAGE_SIZE_MODES.small);
+            }
+        };
+
+        const onUp = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    }, [
+        getStageBorderExtraWidth,
+        props.customStageSize,
+        props.isFullScreen,
+        props.onSetStageSize,
+        props.stageSizeMode
+    ]);
 
     const {
         accountNavOpen,
@@ -355,7 +566,10 @@ const GUIComponent = props => {
                 />
                 <Box className={styles.bodyWrapper}>
                     <Box className={styles.flexWrapper}>
-                        <Box className={styles.editorWrapper}>
+                        <Box
+                            className={styles.editorWrapper}
+                            ref={editorWrapperRef}
+                        >
                             <NativeFindBar
                                 activeTabIndex={activeTabIndex}
                                 isPlayerOnly={isPlayerOnly}
@@ -444,12 +658,32 @@ const GUIComponent = props => {
                             ) : null}
                         </Box>
 
-                        <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>
+                        <Box
+                            className={styles.stagePaneResizer}
+                            onPointerDown={handleStagePanelResizePointerDown}
+                            onDoubleClick={handleStagePanelResizeDoubleClick}
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabIndex={-1}
+                        />
+
+                        <Box
+                            className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
+                            ref={stageAndTargetWrapperRef}
+                            style={stagePanelWidth ? {
+                                width: `${stagePanelWidth}px`,
+                                flexBasis: `${stagePanelWidth}px`,
+                                flexShrink: 0
+                            } : null}
+                        >
                             <StageWrapper
                                 isFullScreen={isFullScreen}
                                 isRendererSupported={isRendererSupported()}
                                 isRtl={isRtl}
                                 stageSize={stageSize}
+                                stageContainerWidth={
+                                    typeof stageContainerWidth === 'number' ? stageContainerWidth : null
+                                }
                                 vm={vm}
                             />
                             <Box className={styles.targetWrapper}>
@@ -548,6 +782,7 @@ GUIComponent.propTypes = {
     onTelemetryModalOptIn: PropTypes.func,
     onTelemetryModalOptOut: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
+    onSetStageSize: PropTypes.func,
     renderLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
@@ -601,6 +836,11 @@ const mapStateToProps = state => ({
     locale: state.locales.locale
 });
 
+const mapDispatchToProps = dispatch => ({
+    onSetStageSize: stageSize => dispatch(setStageSize(stageSize))
+});
+
 export default injectIntl(connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(GUIComponent));

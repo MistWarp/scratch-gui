@@ -80,6 +80,7 @@ const StageHeaderComponent = function (props) {
         onSetStageFull,
         onOpenSettings,
         isEmbedded,
+        stageContainerWidth,
         stageSize,
         stageSizeMode,
         vm
@@ -87,7 +88,11 @@ const StageHeaderComponent = function (props) {
 
     let header = null;
 
-    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen || isEmbedded);
+    const useContainerWidth = !(isFullScreen || isEmbedded) && typeof stageContainerWidth === 'number';
+    const stageDimensions = getStageDimensions(
+        stageSize, customStageSize, isFullScreen || isEmbedded,
+        useContainerWidth ? stageContainerWidth : null
+    );
 
     if (isFullScreen || isEmbedded) {
         const settingsButton = isEmbedded && enableSettingsButton ? (
@@ -249,6 +254,7 @@ StageHeaderComponent.propTypes = {
     onSetStageFull: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,
+    stageContainerWidth: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)),
     stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)),
     vm: PropTypes.instanceOf(VM).isRequired
