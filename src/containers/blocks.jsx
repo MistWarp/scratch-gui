@@ -454,6 +454,9 @@ class Blocks extends React.Component {
         this.handlePaletteResizePointerUp = this.handlePaletteResizePointerUp.bind(this);
         this.setFlyoutWidth = this.setFlyoutWidth.bind(this);
 
+        this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
+        this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
+
         this.handlePaletteHoverEnter = this.handlePaletteHoverEnter.bind(this);
         this.handlePaletteHoverLeave = this.handlePaletteHoverLeave.bind(this);
         this.attachPaletteHoverListeners = this.attachPaletteHoverListeners.bind(this);
@@ -461,7 +464,8 @@ class Blocks extends React.Component {
 
         this.state = {
             prompt: null,
-            flyoutWidth: null
+            flyoutWidth: null,
+            paletteResizeEnabled: !SettingsStore.getAddonEnabled('hide-flyout')
         };
 
         this.paletteResizeSession = null;
@@ -474,6 +478,8 @@ class Blocks extends React.Component {
         this.toolboxUpdateQueue = [];
     }
     componentDidMount () {
+        SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
+
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -526,7 +532,9 @@ class Blocks extends React.Component {
         try {
             const initialFlyoutWidth = this.workspace.getFlyout().getWidth();
             if (typeof initialFlyoutWidth === 'number' && Number.isFinite(initialFlyoutWidth)) {
-                this.setFlyoutWidth(initialFlyoutWidth);
+                if (this.state.paletteResizeEnabled) {
+                    this.setFlyoutWidth(initialFlyoutWidth);
+                }
             }
         } catch (e) {
             // Ignore; resizing will be unavailable if flyout/toolbox APIs differ.
@@ -596,6 +604,7 @@ class Blocks extends React.Component {
         return (
             this.state.prompt !== nextState.prompt ||
             this.state.flyoutWidth !== nextState.flyoutWidth ||
+            this.state.paletteResizeEnabled !== nextState.paletteResizeEnabled ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -682,6 +691,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         this.detachPaletteHoverListeners();
         this.detachVM();
         this.unmounted = true;
@@ -764,6 +774,7 @@ class Blocks extends React.Component {
 
     setFlyoutWidth (flyoutWidth) {
         if (!this.workspace || !this.workspace.getFlyout || !this.workspace.getToolbox) return;
+        if (!this.state.paletteResizeEnabled) return;
         if (!(typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth))) return;
 
         const flyout = this.workspace.getFlyout();
@@ -790,6 +801,7 @@ class Blocks extends React.Component {
 
     handlePaletteResizePointerDown (e) {
         if (!this.workspace || !this.workspace.getFlyout || !this.workspace.getToolbox) return;
+        if (!this.state.paletteResizeEnabled) return;
         if (typeof e.button !== 'undefined' && e.button !== 0) return;
         e.preventDefault();
 
@@ -844,6 +856,7 @@ class Blocks extends React.Component {
 
     handlePaletteResizePointerMove (e) {
         if (!this.paletteResizeSession) return;
+        if (!this.state.paletteResizeEnabled) return;
         const {
             startFlyoutWidth,
             containerLeft,
@@ -898,6 +911,63 @@ class Blocks extends React.Component {
         window.removeEventListener('pointercancel', this.handlePaletteResizePointerUp);
         window.removeEventListener('mousemove', this.handlePaletteResizePointerMove);
         window.removeEventListener('mouseup', this.handlePaletteResizePointerUp);
+    }
+
+    handleAddonSettingChanged (e) {
+        const detail = e && e.detail;
+        if (!detail) return;
+        if (detail.addonId !== 'hide-flyout') return;
+        if (detail.settingId !== 'enabled') return;
+
+        const nextPaletteResizeEnabled = !SettingsStore.getAddonEnabled('hide-flyout');
+        if (this.state.paletteResizeEnabled === nextPaletteResizeEnabled) return;
+
+        this.setState({
+            paletteResizeEnabled: nextPaletteResizeEnabled
+        }, () => {
+            this.applyPaletteResizeEnabledState(nextPaletteResizeEnabled);
+        });
+    }
+
+    applyPaletteResizeEnabledState (paletteResizeEnabled) {
+        if (!this.workspace || !this.workspace.getFlyout || !this.workspace.getToolbox) return;
+
+        // Stop any active drag session immediately.
+        this.handlePaletteResizePointerUp();
+
+        const flyout = this.workspace.getFlyout();
+        const toolbox = this.workspace.getToolbox && this.workspace.getToolbox();
+        if (!flyout || !toolbox) return;
+
+        const CATEGORY_MENU_WIDTH = 60;
+
+        if (paletteResizeEnabled) {
+            // Re-sync the current (default) flyout width into our override system.
+            const currentWidth = flyout.getWidth();
+            if (typeof currentWidth === 'number' && Number.isFinite(currentWidth)) {
+                this.setFlyoutWidth(currentWidth);
+            }
+        } else {
+            // Clear width overrides so the auto-hiding palette addon can control layout.
+            if (typeof flyout.setWidth === 'function') {
+                flyout.setWidth(null);
+            }
+
+            const flyoutWidth = flyout.getWidth();
+            if (typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth)) {
+                toolbox.width = CATEGORY_MENU_WIDTH + flyoutWidth;
+            }
+
+            if (this.blocks && this.blocks.style) {
+                this.blocks.style.removeProperty('--blocks-palette-width');
+            }
+
+            if (this.state.flyoutWidth !== null) {
+                this.setState({flyoutWidth: null});
+            }
+
+            this.workspace.resize();
+        }
     }
     requestToolboxUpdate () {
         clearTimeout(this.toolboxUpdateTimeout);
@@ -1331,6 +1401,7 @@ class Blocks extends React.Component {
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
                     paletteWidth={typeof this.state.flyoutWidth === 'number' ?
                         (60 + this.state.flyoutWidth) : null}
+                    paletteResizingEnabled={this.state.paletteResizeEnabled}
                     onPaletteResizePointerDown={this.handlePaletteResizePointerDown}
                     {...props}
                 />
