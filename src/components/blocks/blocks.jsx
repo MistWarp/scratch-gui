@@ -9,6 +9,7 @@ const BlocksComponent = props => {
         containerRef,
         dragOver,
         gridVisible,
+        paletteResizingEnabled,
         onPaletteResizePointerDown,
         paletteWidth,
         style,
@@ -27,11 +28,13 @@ const BlocksComponent = props => {
             {...componentProps}
             componentRef={containerRef}
         >
-            <div
-                className={styles.paletteResizer}
-                onPointerDown={onPaletteResizePointerDown}
-                onMouseDown={onPaletteResizePointerDown}
-            />
+            {paletteResizingEnabled ? (
+                <div
+                    className={styles.paletteResizer}
+                    onPointerDown={onPaletteResizePointerDown}
+                    onMouseDown={onPaletteResizePointerDown}
+                />
+            ) : null}
         </Box>
     );
 };
@@ -39,6 +42,7 @@ BlocksComponent.propTypes = {
     containerRef: PropTypes.func,
     dragOver: PropTypes.bool,
     gridVisible: PropTypes.bool,
+    paletteResizingEnabled: PropTypes.bool,
     onPaletteResizePointerDown: PropTypes.func,
     paletteWidth: PropTypes.number,
     style: PropTypes.object
