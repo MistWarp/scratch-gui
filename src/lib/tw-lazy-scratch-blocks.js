@@ -9,6 +9,8 @@ const get = () => {
     return _ScratchBlocks;
 };
 
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
 const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
@@ -17,9 +19,83 @@ const load = () => {
         .then(m => {
             _ScratchBlocks = m.default;
             
+            if (_ScratchBlocks.Flyout &&
+                _ScratchBlocks.Flyout.prototype) {
+                const FlyoutProto = _ScratchBlocks.Flyout.prototype;
+                const originalGetWidth = FlyoutProto.getWidth;
+                if (typeof originalGetWidth === 'function' && typeof FlyoutProto.setWidth !== 'function') {
+                    FlyoutProto.setWidth = function (width) {
+                        this.twUserWidth_ = (typeof width === 'number' && Number.isFinite(width)) ? width : null;
+                    };
+                    FlyoutProto.getWidth = function () {
+                        if (typeof this.twUserWidth_ === 'number') return this.twUserWidth_;
+                        return originalGetWidth.call(this);
+                    };
+                }
+            }
+
+            if (_ScratchBlocks.Toolbox &&
+                _ScratchBlocks.Toolbox.prototype &&
+                typeof _ScratchBlocks.Toolbox.prototype.setFlyoutWidth !== 'function') {
+                _ScratchBlocks.Toolbox.prototype.setFlyoutWidth = function (flyoutWidth) {
+                    const CATEGORY_MENU_WIDTH = 60;
+                    if (!(typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth))) return;
+                    this.width = CATEGORY_MENU_WIDTH + flyoutWidth;
+                    if (this.flyout_ && typeof this.flyout_.setWidth === 'function') {
+                        this.flyout_.setWidth(flyoutWidth);
+                    }
+                };
+            }
+
+            const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype
+
+            // Allow disabling flyout clipping (clip-path) at runtime.
+            if (verticalFlyoutProto &&
+                typeof verticalFlyoutProto.twSetClippingEnabled !== 'function') {
+                verticalFlyoutProto.twSetClippingEnabled = function (enabled) {
+                    if (!this.workspace_ || !this.workspace_.svgGroup_) return;
+                    const svgGroup = this.workspace_.svgGroup_;
+                    const flyoutSvg = this.svgGroup_;
+                    if (enabled) {
+                        if (this.twOriginalClipPath_) {
+                            svgGroup.setAttribute('clip-path', this.twOriginalClipPath_);
+                        }
+
+                        if (flyoutSvg) {
+                            if (hasOwn(this, 'twOriginalFlyoutOverflow_')) {
+                                flyoutSvg.style.overflow = this.twOriginalFlyoutOverflow_ || '';
+                            }
+                            if (hasOwn(this, 'twOriginalFlyoutOverflowAttr_')) {
+                                if (this.twOriginalFlyoutOverflowAttr_ === null) {
+                                    flyoutSvg.removeAttribute('overflow');
+                                } else {
+                                    flyoutSvg.setAttribute('overflow', this.twOriginalFlyoutOverflowAttr_);
+                                }
+                            }
+                        }
+                    } else {
+                        if (!this.twOriginalClipPath_) {
+                            this.twOriginalClipPath_ = svgGroup.getAttribute('clip-path');
+                        }
+                        svgGroup.removeAttribute('clip-path');
+
+                        if (flyoutSvg) {
+                            if (!hasOwn(this, 'twOriginalFlyoutOverflow_')) {
+                                this.twOriginalFlyoutOverflow_ = flyoutSvg.style.overflow;
+                            }
+                            if (!hasOwn(this, 'twOriginalFlyoutOverflowAttr_')) {
+                                this.twOriginalFlyoutOverflowAttr_ = flyoutSvg.getAttribute('overflow');
+                            }
+                            flyoutSvg.style.overflow = 'visible';
+                            flyoutSvg.setAttribute('overflow', 'visible');
+                        }
+                    }
+                };
+            }
+            
             // Patch VerticalFlyout.createRect_ to handle race conditions
-            if (_ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype.createRect_) {
-                _ScratchBlocks.VerticalFlyout.prototype.createRect_ = function (block, x, y, blockHW, index) {
+            if (verticalFlyoutProto && verticalFlyoutProto.createRect_) {
+                verticalFlyoutProto.createRect_ = function (block, x, y, blockHW, index) {
                     // Create an invisible rectangle under the block to act as a button
                     const rect = _ScratchBlocks.utils.createSvgElement('rect', {
                         'fill-opacity': 0,
