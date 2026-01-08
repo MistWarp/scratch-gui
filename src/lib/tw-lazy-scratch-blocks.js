@@ -11,6 +11,32 @@ const get = () => {
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
+const applyHorizontalDeclip = flyoutInstance => {
+    if (!flyoutInstance || !flyoutInstance.clipRect_) return;
+    const rect = flyoutInstance.clipRect_;
+    if (!hasOwn(flyoutInstance, 'twOriginalClipRectX_')) {
+        flyoutInstance.twOriginalClipRectX_ = rect.getAttribute('x');
+    }
+    if (!hasOwn(flyoutInstance, 'twOriginalClipRectWidth_')) {
+        flyoutInstance.twOriginalClipRectWidth_ = rect.getAttribute('width');
+    }
+    rect.setAttribute('x', '-100000');
+    rect.setAttribute('width', '200000px');
+};
+
+const restoreHorizontalDeclip = flyoutInstance => {
+    if (!flyoutInstance || !flyoutInstance.clipRect_) return;
+    const rect = flyoutInstance.clipRect_;
+    if (hasOwn(flyoutInstance, 'twOriginalClipRectX_')) {
+        if (flyoutInstance.twOriginalClipRectX_ === null) rect.removeAttribute('x');
+        else rect.setAttribute('x', flyoutInstance.twOriginalClipRectX_);
+    }
+    if (hasOwn(flyoutInstance, 'twOriginalClipRectWidth_')) {
+        if (flyoutInstance.twOriginalClipRectWidth_ === null) rect.removeAttribute('width');
+        else rect.setAttribute('width', flyoutInstance.twOriginalClipRectWidth_);
+    }
+};
+
 const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
@@ -19,9 +45,8 @@ const load = () => {
         .then(m => {
             _ScratchBlocks = m.default;
 
-            if (_ScratchBlocks.Flyout &&
-                _ScratchBlocks.Flyout.prototype) {
-                const FlyoutProto = _ScratchBlocks.Flyout.prototype;
+            const FlyoutProto = _ScratchBlocks.Flyout && _ScratchBlocks.Flyout.prototype;
+            if (FlyoutProto) {
                 const originalGetWidth = FlyoutProto.getWidth;
                 if (typeof originalGetWidth === 'function' && typeof FlyoutProto.setWidth !== 'function') {
                     FlyoutProto.setWidth = function (width) {
@@ -34,10 +59,10 @@ const load = () => {
                 }
             }
 
-            if (_ScratchBlocks.Toolbox &&
-                _ScratchBlocks.Toolbox.prototype &&
-                typeof _ScratchBlocks.Toolbox.prototype.setFlyoutWidth !== 'function') {
-                _ScratchBlocks.Toolbox.prototype.setFlyoutWidth = function (flyoutWidth) {
+            const ToolboxProto = _ScratchBlocks.Toolbox && _ScratchBlocks.Toolbox.prototype;
+
+            if (ToolboxProto && typeof ToolboxProto.setFlyoutWidth !== 'function') {
+                ToolboxProto.setFlyoutWidth = function (flyoutWidth) {
                     const CATEGORY_MENU_WIDTH = 60;
                     if (!(typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth))) return;
                     this.width = CATEGORY_MENU_WIDTH + flyoutWidth;
@@ -50,13 +75,27 @@ const load = () => {
             const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype;
 
             // Allow disabling flyout clipping (clip-path) at runtime.
-            if (verticalFlyoutProto &&
-                typeof verticalFlyoutProto.twSetClippingEnabled !== 'function') {
+            if (verticalFlyoutProto && typeof verticalFlyoutProto.twSetClippingEnabled !== 'function') {
+
+                if (typeof verticalFlyoutProto.setMetrics_ === 'function' &&
+                    typeof verticalFlyoutProto.twOriginalSetMetrics_ !== 'function') {
+                    verticalFlyoutProto.twOriginalSetMetrics_ = verticalFlyoutProto.setMetrics_;
+
+                    verticalFlyoutProto.setMetrics_ = function (xyRatio) {
+                        verticalFlyoutProto.twOriginalSetMetrics_.call(this, xyRatio);
+                        if (this.twHorizontalDeclip_) {
+                            applyHorizontalDeclip(this);
+                        }
+                    };
+                }
+
                 verticalFlyoutProto.twSetClippingEnabled = function (enabled) {
                     if (!this.workspace_ || !this.workspace_.svgGroup_) return;
                     const svgGroup = this.workspace_.svgGroup_;
                     const flyoutSvg = this.svgGroup_;
                     if (enabled) {
+                        this.twHorizontalDeclip_ = false;
+                        restoreHorizontalDeclip(this);
                         if (this.twOriginalClipPath_) {
                             svgGroup.setAttribute('clip-path', this.twOriginalClipPath_);
                         }
@@ -77,7 +116,29 @@ const load = () => {
                         if (!this.twOriginalClipPath_) {
                             this.twOriginalClipPath_ = svgGroup.getAttribute('clip-path');
                         }
-                        svgGroup.removeAttribute('clip-path');
+                        this.twHorizontalDeclip_ = true;
+                        applyHorizontalDeclip(this);
+
+                        const options = this.workspace_ && this.workspace_.options;
+                        try {
+                            if (options &&
+                                typeof options.setMetrics === 'function' &&
+                                !hasOwn(this, 'twOriginalSetMetrics_')) {
+
+                                const original = options.setMetrics;
+                                this.twOriginalSetMetrics_ = original;
+                                const flyout = this;
+                                options.setMetrics = function (xyRatio) {
+                                    const result = original.call(this, xyRatio);
+                                    if (flyout.twHorizontalDeclip_) {
+                                        applyHorizontalDeclip(flyout);
+                                    }
+                                    return result;
+                                };
+                            }
+                        } catch (e) {
+                            // ignore
+                        }
 
                         if (flyoutSvg) {
                             if (!hasOwn(this, 'twOriginalFlyoutOverflow_')) {
