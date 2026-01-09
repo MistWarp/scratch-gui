@@ -35,6 +35,9 @@ class CustomProcedures extends React.Component {
     }
     setBlocks (blocksRef) {
         if (!blocksRef) return;
+
+        if (this.workspace) return;
+
         this.blocks = blocksRef;
         const workspaceConfig = defaultsDeep({},
             CustomProcedures.defaultOptions,
@@ -57,6 +60,7 @@ class CustomProcedures extends React.Component {
         this.mutationRoot.contextMenu = false;
 
         this.workspace.addChangeListener(() => {
+            if (!this.workspace || !this.mutationRoot || !this.mutationRoot.workspace) return;
             this.mutationRoot.onChangeFn();
             // Keep the block centered on the workspace
             const metrics = this.workspace.getMetrics();
