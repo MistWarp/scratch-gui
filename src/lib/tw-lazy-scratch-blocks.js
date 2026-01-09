@@ -14,12 +14,14 @@ const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const applyHorizontalDeclip = flyoutInstance => {
     if (!flyoutInstance || !flyoutInstance.clipRect_) return;
     const rect = flyoutInstance.clipRect_;
-    if (!hasOwn(flyoutInstance, 'twOriginalClipRectX_')) {
-        flyoutInstance.twOriginalClipRectX_ = rect.getAttribute('x');
-    }
-    if (!hasOwn(flyoutInstance, 'twOriginalClipRectWidth_')) {
-        flyoutInstance.twOriginalClipRectWidth_ = rect.getAttribute('width');
-    }
+
+    const currentX = rect.getAttribute('x');
+    const currentWidth = rect.getAttribute('width');
+    const alreadyDeclip = currentX === '-100000' && (currentWidth === '200000px' || currentWidth === '200000');
+    if (alreadyDeclip) return;
+
+    flyoutInstance.twOriginalClipRectX_ = currentX;
+    flyoutInstance.twOriginalClipRectWidth_ = currentWidth;
     rect.setAttribute('x', '-100000');
     rect.setAttribute('width', '200000px');
 };
