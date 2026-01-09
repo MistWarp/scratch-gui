@@ -47,9 +47,30 @@ const MonitorList = props => (
     </Box>
 );
 
+const validateOrderedMap = (props, propName, componentName) => {
+    const value = props[propName];
+    if (value === null) return null;
+
+    const isOrderedMap =
+        typeof OrderedMap.isOrderedMap === 'function' ?
+            OrderedMap.isOrderedMap(value) :
+            Boolean(
+                value &&
+                (value.constructor && value.constructor.name === 'OrderedMap') &&
+                typeof value.valueSeq === 'function'
+            );
+
+    if (!isOrderedMap) {
+        return new Error(
+            `Invalid prop \`${propName}\` supplied to \`${componentName}\`: expected an Immutable OrderedMap.`
+        );
+    }
+    return null;
+};
+
 MonitorList.propTypes = {
     draggable: PropTypes.bool.isRequired,
-    monitors: PropTypes.instanceOf(OrderedMap),
+    monitors: validateOrderedMap,
     onMonitorChange: PropTypes.func.isRequired,
     stageSize: PropTypes.shape({
         width: PropTypes.number,
