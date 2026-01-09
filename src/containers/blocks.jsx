@@ -726,6 +726,15 @@ class Blocks extends React.Component {
             el.addEventListener('mouseleave', this.handlePaletteHoverLeave);
         }
         this._paletteHoverEls = els;
+
+        try {
+            const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
+            if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
+                flyout.twSetClippingEnabled(false);
+            }
+        } catch (e) {
+            // ignore
+        }
     }
 
     detachPaletteHoverListeners () {
@@ -736,11 +745,11 @@ class Blocks extends React.Component {
         }
         this._paletteHoverEls = null;
         this.paletteHoverCount = 0;
-        // Restore clipping as a safe default.
+        // Default to no clipping when not hovered.
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
+                flyout.twSetClippingEnabled(false);
             }
         } catch (e) {
             // ignore
@@ -752,7 +761,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(false);
+                flyout.twSetClippingEnabled(true);
             }
         } catch (e) {
             // ignore
@@ -765,7 +774,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
+                flyout.twSetClippingEnabled(false);
             }
         } catch (e) {
             // ignore

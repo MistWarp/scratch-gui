@@ -9,36 +9,6 @@ const get = () => {
     return _ScratchBlocks;
 };
 
-const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
-
-const applyHorizontalDeclip = flyoutInstance => {
-    if (!flyoutInstance || !flyoutInstance.clipRect_) return;
-    const rect = flyoutInstance.clipRect_;
-
-    const currentX = rect.getAttribute('x');
-    const currentWidth = rect.getAttribute('width');
-    const alreadyDeclip = currentX === '-100000' && (currentWidth === '200000px' || currentWidth === '200000');
-    if (alreadyDeclip) return;
-
-    flyoutInstance.twOriginalClipRectX_ = currentX;
-    flyoutInstance.twOriginalClipRectWidth_ = currentWidth;
-    rect.setAttribute('x', '-100000');
-    rect.setAttribute('width', '200000px');
-};
-
-const restoreHorizontalDeclip = flyoutInstance => {
-    if (!flyoutInstance || !flyoutInstance.clipRect_) return;
-    const rect = flyoutInstance.clipRect_;
-    if (hasOwn(flyoutInstance, 'twOriginalClipRectX_')) {
-        if (flyoutInstance.twOriginalClipRectX_ === null) rect.removeAttribute('x');
-        else rect.setAttribute('x', flyoutInstance.twOriginalClipRectX_);
-    }
-    if (hasOwn(flyoutInstance, 'twOriginalClipRectWidth_')) {
-        if (flyoutInstance.twOriginalClipRectWidth_ === null) rect.removeAttribute('width');
-        else rect.setAttribute('width', flyoutInstance.twOriginalClipRectWidth_);
-    }
-};
-
 const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
@@ -76,7 +46,6 @@ const load = () => {
 
             const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype;
 
-            // Allow disabling flyout clipping (clip-path) at runtime.
             if (verticalFlyoutProto && typeof verticalFlyoutProto.twSetClippingEnabled !== 'function') {
 
                 if (typeof verticalFlyoutProto.setMetrics_ === 'function' &&
@@ -85,9 +54,6 @@ const load = () => {
 
                     verticalFlyoutProto.setMetrics_ = function (xyRatio) {
                         verticalFlyoutProto.twOriginalSetMetrics_.call(this, xyRatio);
-                        if (this.twHorizontalDeclip_) {
-                            applyHorizontalDeclip(this);
-                        }
                     };
                 }
 
@@ -95,71 +61,15 @@ const load = () => {
                     if (!this.workspace_ || !this.workspace_.svgGroup_) return;
                     const svgGroup = this.workspace_.svgGroup_;
                     const flyoutSvg = this.svgGroup_;
-                    if (enabled) {
-                        this.twHorizontalDeclip_ = false;
-                        restoreHorizontalDeclip(this);
-                        if (this.twOriginalClipPath_) {
-                            svgGroup.setAttribute('clip-path', this.twOriginalClipPath_);
-                        }
-
-                        if (flyoutSvg) {
-                            if (hasOwn(this, 'twOriginalFlyoutOverflow_')) {
-                                flyoutSvg.style.overflow = this.twOriginalFlyoutOverflow_ || '';
-                            }
-                            if (hasOwn(this, 'twOriginalFlyoutOverflowAttr_')) {
-                                if (this.twOriginalFlyoutOverflowAttr_ === null) {
-                                    flyoutSvg.removeAttribute('overflow');
-                                } else {
-                                    flyoutSvg.setAttribute('overflow', this.twOriginalFlyoutOverflowAttr_);
-                                }
-                            }
-                        }
-                    } else {
-                        if (!this.twOriginalClipPath_) {
-                            this.twOriginalClipPath_ = svgGroup.getAttribute('clip-path');
-                        }
-                        this.twHorizontalDeclip_ = true;
-                        applyHorizontalDeclip(this);
-
-                        const options = this.workspace_ && this.workspace_.options;
-                        try {
-                            if (options &&
-                                typeof options.setMetrics === 'function' &&
-                                !hasOwn(this, 'twOriginalSetMetrics_')) {
-
-                                const original = options.setMetrics;
-                                this.twOriginalSetMetrics_ = original;
-                                const flyout = this;
-                                options.setMetrics = function (xyRatio) {
-                                    const result = original.call(this, xyRatio);
-                                    if (flyout.twHorizontalDeclip_) {
-                                        applyHorizontalDeclip(flyout);
-                                    }
-                                    return result;
-                                };
-                            }
-                        } catch (e) {
-                            // ignore
-                        }
-
-                        if (flyoutSvg) {
-                            if (!hasOwn(this, 'twOriginalFlyoutOverflow_')) {
-                                this.twOriginalFlyoutOverflow_ = flyoutSvg.style.overflow;
-                            }
-                            if (!hasOwn(this, 'twOriginalFlyoutOverflowAttr_')) {
-                                this.twOriginalFlyoutOverflowAttr_ = flyoutSvg.getAttribute('overflow');
-                            }
-                            flyoutSvg.style.overflow = 'visible';
-                            flyoutSvg.setAttribute('overflow', 'visible');
-                        }
+                    svgGroup.removeAttribute('clip-path');
+                    if (flyoutSvg) {
+                        flyoutSvg.style.overflow = enabled ? 'visible' : 'hidden';
                     }
                 };
             }
             
-            // Patch VerticalFlyout.createRect_ to handle race conditions
             if (verticalFlyoutProto && verticalFlyoutProto.createRect_) {
                 verticalFlyoutProto.createRect_ = function (block, x, y, blockHW, index) {
-                    // Create an invisible rectangle under the block to act as a button
                     const rect = _ScratchBlocks.utils.createSvgElement('rect', {
                         'fill-opacity': 0,
                         'x': x,
@@ -171,11 +81,9 @@ const load = () => {
                     rect.tooltip = block;
                     _ScratchBlocks.Tooltip.bindMouseEvents(rect);
                     
-                    // Add the rectangles under the blocks, so that the blocks' tooltips work
                     const blockSvgRoot = block.getSvgRoot();
                     const canvas = this.workspace_.getCanvas();
                     
-                    // Enhanced safety check with additional validation
                     if (blockSvgRoot &&
                         blockSvgRoot.parentNode === canvas &&
                         canvas.contains &&
@@ -183,12 +91,10 @@ const load = () => {
                         try {
                             canvas.insertBefore(rect, blockSvgRoot);
                         } catch (e) {
-                            // Fallback to appendChild if insertBefore fails
                             console.warn('Flyout insertBefore failed, using appendChild as fallback:', e);
                             canvas.appendChild(rect);
                         }
                     } else {
-                        // If the block's SVG root is not a proper child of the canvas, just append the rect
                         canvas.appendChild(rect);
                     }
                     
