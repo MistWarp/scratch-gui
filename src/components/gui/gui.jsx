@@ -367,6 +367,7 @@ const GUIComponent = props => {
         onRequestCloseExtensionLibrary,
         onRequestCloseTelemetryModal,
         onSeeCommunity,
+        onSetStageSize: _onSetStageSize,
         onShare,
         onShowPrivacyPolicy,
         onStartSelectingFileUpload,
