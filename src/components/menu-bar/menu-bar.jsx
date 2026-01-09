@@ -41,7 +41,7 @@ import TWDesktopSettings from './tw-desktop-settings.jsx';
 
 import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
 
-import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
+import {openTipsLibrary, openSettingsModal, openRestorePointModal, openGitModal} from '../../reducers/modals';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -128,7 +128,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, Download, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, Gauge, FastForward, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark
+    Bookmark, GitBranch
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1413,6 +1413,14 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>
+                                    <MenuItem onClick={this.props.onClickGitModal}>
+                                        <GitBranch />
+                                        <FormattedMessage
+                                            defaultMessage="Git"
+                                            description="Menu bar item to open git window"
+                                            id="mw.menuBar.git"
+                                        />
+                                    </MenuItem>
                                     {this.props.onClickDesktopSettings &&
                                         <TWDesktopSettings onClick={this.props.onClickDesktopSettings} />}
                                     {this.props.onClickAddonSettings && (
@@ -1796,6 +1804,7 @@ MenuBar.propTypes = {
     onClickSaveAsCopy: PropTypes.func,
     onClickSettings: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
+    onClickGitModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
@@ -1910,6 +1919,10 @@ const mapDispatchToProps = dispatch => ({
     onClickSettingsModal: () => {
         dispatch(closeEditMenu());
         dispatch(openSettingsModal());
+    },
+    onClickGitModal: () => {
+        dispatch(closeEditMenu());
+        dispatch(openGitModal());
     },
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),

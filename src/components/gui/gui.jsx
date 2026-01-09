@@ -38,6 +38,7 @@ import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
+import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
@@ -388,6 +389,7 @@ const GUIComponent = props => {
         fontsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
+        gitModalVisible,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
@@ -429,6 +431,7 @@ const GUIComponent = props => {
                 {fontsModalVisible && <TWFontsModal />}
                 {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
                 {invalidProjectModalVisible && <TWInvalidProjectModal />}
+                {gitModalVisible && <TWGitModal />}
             </React.Fragment>
         );
 
@@ -800,6 +803,7 @@ GUIComponent.propTypes = {
     fontsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
+    gitModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 GUIComponent.defaultProps = {

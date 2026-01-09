@@ -1,0 +1,154 @@
+@import "../../css/colors.css";
+
+.modal-content {
+    width: 720px;
+}
+
+.body {
+    background: $ui-modal-background;
+    padding: 1.25rem 1.5rem;
+}
+
+.section {
+    margin-bottom: 1rem;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.label {
+    font-weight: 600;
+}
+
+.value {
+    opacity: 0.8;
+}
+
+.text-input {
+    flex: 1;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    padding: 0 0.75rem;
+    height: 2.5rem;
+    color: $text-primary-transparent;
+    font-size: .875rem;
+    background-color: $input-background;
+}
+
+.text-input:focus,
+.select:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.select {
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    padding: 0 0.5rem;
+    height: 2.5rem;
+    background-color: $input-background;
+    color: $text-primary-transparent;
+}
+
+.button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.button,
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 0.25rem;
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.button:not([disabled]):hover {
+    background: white;
+}
+
+.button[disabled],
+.primary-button[disabled] {
+    opacity: 0.5;
+}
+
+.primary-button {
+    background: $looks-secondary;
+    border: $looks-secondary;
+    color: white;
+}
+
+.primary-button:not([disabled]):hover {
+    filter: brightness(1.05);
+}
+
+.small-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.25rem;
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    font-weight: 600;
+    font-size: 0.75rem;
+    flex: 0 0 auto;
+}
+
+.small-button:not([disabled]):hover {
+    background: white;
+}
+
+.commit-list {
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    background-color: $input-background;
+    max-height: 200px;
+    overflow: auto;
+    padding: 0.5rem;
+}
+
+.commit-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+}
+
+.commit-oid {
+    font-family: monospace;
+    opacity: 0.8;
+    width: 4.5rem;
+    flex: 0 0 auto;
+}
+
+.commit-msg {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.muted {
+    opacity: 0.7;
+}
+
+.error {
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    background: white;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+    color: $motion-primary;
+}
