@@ -45,14 +45,43 @@ const GitModalComponent = props => {
                 {props.initialized ? (
                     <React.Fragment>
                         <Box className={styles.section}>
-                            <Box className={styles.row}>
-                                <span className={styles.label}>
+                            <Box className={styles.sectionHeader}>
+                                <span className={styles.sectionTitle}>
                                     <FormattedMessage
                                         defaultMessage="Branch"
                                         description="Current branch label"
                                         id="mw.gitModal.branch"
                                     />
                                 </span>
+                                <Box className={styles.headerActions}>
+                                    <button
+                                        className={styles.button}
+                                        onClick={props.onRefresh}
+                                        disabled={props.busy}
+                                    >
+                                        <RefreshCcw size={16} />
+                                        <FormattedMessage
+                                            defaultMessage="Refresh"
+                                            description="Refresh git status"
+                                            id="mw.gitModal.refresh"
+                                        />
+                                    </button>
+                                    <button
+                                        className={`${styles.button} ${styles.dangerButton}`}
+                                        onClick={props.onDeleteRepo}
+                                        disabled={props.busy}
+                                    >
+                                        <Trash size={16} />
+                                        <FormattedMessage
+                                            defaultMessage="Delete repo"
+                                            description="Delete repository"
+                                            id="mw.gitModal.deleteRepo"
+                                        />
+                                    </button>
+                                </Box>
+                            </Box>
+
+                            <Box className={`${styles.row} ${styles.rowWrap}`}>
                                 <select
                                     className={styles.select}
                                     value={props.currentBranch || ''}
@@ -73,33 +102,9 @@ const GitModalComponent = props => {
                                         </option>
                                     ))}
                                 </select>
-                                <button
-                                    className={styles.button}
-                                    onClick={props.onRefresh}
-                                    disabled={props.busy}
-                                >
-                                    <RefreshCcw size={16} />
-                                    <FormattedMessage
-                                        defaultMessage="Refresh"
-                                        description="Refresh git status"
-                                        id="mw.gitModal.refresh"
-                                    />
-                                </button>
-                                <button
-                                    className={styles.button}
-                                    onClick={props.onDeleteRepo}
-                                    disabled={props.busy}
-                                >
-                                    <Trash size={16} />
-                                    <FormattedMessage
-                                        defaultMessage="Delete repo"
-                                        description="Delete repository"
-                                        id="mw.gitModal.deleteRepo"
-                                    />
-                                </button>
                             </Box>
 
-                            <Box className={styles.row}>
+                            <Box className={`${styles.row} ${styles.rowWrap}`}>
                                 <input
                                     className={styles.textInput}
                                     value={props.newBranchName}
@@ -120,7 +125,7 @@ const GitModalComponent = props => {
                                     />
                                 </button>
                                 <button
-                                    className={styles.button}
+                                    className={`${styles.button} ${styles.dangerButton}`}
                                     onClick={handleDeleteCurrentBranch}
                                     data-ref={props.currentBranch || ''}
                                     disabled={props.busy || !props.currentBranch}
@@ -136,8 +141,8 @@ const GitModalComponent = props => {
                         </Box>
 
                         <Box className={styles.section}>
-                            <Box className={styles.row}>
-                                <span className={styles.label}>
+                            <Box className={styles.sectionHeader}>
+                                <span className={styles.sectionTitle}>
                                     <FormattedMessage
                                         defaultMessage="Author"
                                         description="Commit author label"
@@ -145,7 +150,7 @@ const GitModalComponent = props => {
                                     />
                                 </span>
                             </Box>
-                            <Box className={styles.row}>
+                            <Box className={`${styles.row} ${styles.rowWrap}`}>
                                 <input
                                     className={styles.textInput}
                                     value={props.authorName}
@@ -164,8 +169,8 @@ const GitModalComponent = props => {
                         </Box>
 
                         <Box className={styles.section}>
-                            <Box className={styles.row}>
-                                <span className={styles.label}>
+                            <Box className={styles.sectionHeader}>
+                                <span className={styles.sectionTitle}>
                                     <FormattedMessage
                                         defaultMessage="Commit"
                                         description="Commit section label"
@@ -173,7 +178,7 @@ const GitModalComponent = props => {
                                     />
                                 </span>
                             </Box>
-                            <Box className={styles.row}>
+                            <Box className={`${styles.row} ${styles.rowWrap}`}>
                                 <input
                                     className={styles.textInput}
                                     value={props.commitMessage}
@@ -209,8 +214,8 @@ const GitModalComponent = props => {
                         </Box>
 
                         <Box className={styles.section}>
-                            <Box className={styles.row}>
-                                <span className={styles.label}>
+                            <Box className={styles.sectionHeader}>
+                                <span className={styles.sectionTitle}>
                                     <FormattedMessage
                                         defaultMessage="Recent commits"
                                         description="Recent commits label"
@@ -284,8 +289,8 @@ const GitModalComponent = props => {
                     </React.Fragment>
                 ) : (
                     <Box className={styles.section}>
-                        <Box className={styles.row}>
-                            <span className={styles.label}>
+                        <Box className={styles.sectionHeader}>
+                            <span className={styles.sectionTitle}>
                                 <FormattedMessage
                                     defaultMessage="Repository"
                                     description="Git modal section label"
