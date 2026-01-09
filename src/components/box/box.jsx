@@ -64,17 +64,19 @@ const Box = React.forwardRef((props, forwardedRef) => {
         shrink,
         style,
         // Filter out non-DOM props that might be passed down
-        runtimeOptions,
-        vm,
-        onRuntimeOptionsChanged,
+        runtimeOptions: _runtimeOptions,
+        vm: _vm,
+        onRuntimeOptionsChanged: _onRuntimeOptionsChanged,
         ...componentProps
     } = props;
 
-    const combinedRef = componentRef || forwardedRef ? node => {
+    const combinedRefCallback = React.useCallback(node => {
         if (typeof componentRef === 'function') componentRef(node);
         if (typeof forwardedRef === 'function') forwardedRef(node);
         if (forwardedRef && typeof forwardedRef === 'object') forwardedRef.current = node;
-    } : null;
+    }, [componentRef, forwardedRef]);
+
+    const combinedRef = componentRef || forwardedRef ? combinedRefCallback : null;
 
     return React.createElement(element, {
         className: classNames(className, styles.box),
@@ -139,6 +141,10 @@ Box.propTypes = {
     element: PropTypes.string,
     /** Specifies the flex grow factor of a flex item. */
     grow: PropTypes.number,
+    /** Non-DOM props that should not be passed to the underlying element. */
+    runtimeOptions: PropTypes.object, // eslint-disable-line react/forbid-prop-types
+    vm: PropTypes.object, // eslint-disable-line react/forbid-prop-types
+    onRuntimeOptionsChanged: PropTypes.func,
     /** The height in pixels (if specified as a number) or a string if different units are required. */
     height: PropTypes.oneOfType([
         PropTypes.number,
