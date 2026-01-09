@@ -404,8 +404,8 @@ class AddonWindow {
         const minVisiblePixels = 50;
         const minX = -(this.width - minVisiblePixels);
         const maxX = window.innerWidth - minVisiblePixels;
-        const minY = 0; // Don't allow window top to go above page top
-        const maxY = window.innerHeight - minVisiblePixels;
+        const minY = getMenuBarHeight();
+        const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
         
         this.x = Math.max(minX, Math.min(newX, maxX));
         this.y = Math.max(minY, Math.min(newY, maxY));
@@ -584,6 +584,17 @@ class AddonWindow {
         if (direction.includes('n') && newHeight !== originalNewHeight) {
             newY = this.resizeStart.top + (this.resizeStart.height - newHeight);
         }
+
+        const minY = getMenuBarHeight();
+        if (newY < minY) {
+            const bottom = this.resizeStart.top + this.resizeStart.height;
+            newY = minY;
+            newHeight = Math.max(this.minHeight, bottom - newY);
+            if (this.maxHeight) newHeight = Math.min(this.maxHeight, newHeight);
+            if (direction.includes('n')) {
+                newY = Math.max(minY, bottom - newHeight);
+            }
+        }
         
         // Update dimensions
         this.width = newWidth;
@@ -740,7 +751,7 @@ class AddonWindow {
             this.isMaximized = false;
             if (this.savedState) {
                 this.x = this.savedState.x;
-                this.y = this.savedState.y;
+                this.y = Math.max(getMenuBarHeight(), this.savedState.y);
                 this.width = this.savedState.width;
                 this.height = this.savedState.height;
                 this.element.style.left = `${this.x}px`;
@@ -821,8 +832,9 @@ class AddonWindow {
     }
     
     center () {
+        const menuBarHeight = getMenuBarHeight();
         this.x = (window.innerWidth - this.width) / 2;
-        this.y = (window.innerHeight - this.height) / 2;
+        this.y = Math.max(menuBarHeight, (window.innerHeight - this.height) / 2);
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         return this;
