@@ -1380,6 +1380,7 @@ class Blocks extends React.Component {
             customStageSize,
             customProceduresVisible,
             extensionLibraryVisible,
+            isFullScreen,
             options,
             stageSize,
             vm,
@@ -1410,7 +1411,7 @@ class Blocks extends React.Component {
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
                     paletteWidth={typeof this.state.flyoutWidth === 'number' ?
                         (60 + this.state.flyoutWidth) : null}
-                    paletteResizingEnabled={this.state.paletteResizeEnabled}
+                    paletteResizingEnabled={this.state.paletteResizeEnabled && !isFullScreen}
                     onPaletteResizePointerDown={this.handlePaletteResizePointerDown}
                     {...props}
                 />
@@ -1482,6 +1483,7 @@ Blocks.propTypes = {
     updateToolboxState: PropTypes.func,
     useCatBlocks: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
+    isFullScreen: PropTypes.bool,
     workspaceMetrics: PropTypes.shape({
         targets: PropTypes.objectOf(PropTypes.object)
     })
@@ -1516,6 +1518,7 @@ const mapStateToProps = state => ({
     ),
     customStageSize: state.scratchGui.customStageSize,
     extensionLibraryVisible: state.scratchGui.modals.extensionLibrary,
+    isFullScreen: state.scratchGui.mode.isFullScreen,
     isRtl: state.locales.isRtl,
     locale: state.locales.locale,
     messages: state.locales.messages,
