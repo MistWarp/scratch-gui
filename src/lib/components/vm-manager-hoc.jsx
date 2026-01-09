@@ -7,6 +7,8 @@ import VM from 'scratch-vm';
 import AudioEngine from 'scratch-audio';
 
 import WindowManager from '../../addons/window-system/window-manager';
+import * as BrowserGit from '../git/browser-git';
+import JSZip from 'jszip';
 
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import {
@@ -45,6 +47,12 @@ const vmManagerHOC = function (WrappedComponent) {
 
                 // Expose the window manager on the VM for addons/integration.
                 if (!this.props.vm.wm) this.props.vm.wm = WindowManager;
+
+                // Expose MistWarp's browser git integration on the VM.
+                if (!this.props.vm.gui) this.props.vm.gui = {};
+                if (!this.props.vm.gui.git) this.props.vm.gui.git = BrowserGit;
+
+                this.installGitProjectFileHooks();
                 try {
                     this.audioEngine = new AudioEngine();
                     this.props.vm.attachAudioEngine(this.audioEngine);
@@ -72,6 +80,73 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();
             }
+        }
+
+        installGitProjectFileHooks () {
+            const vm = this.props.vm;
+            if (vm._mwGit_hooksInstalled) return;
+
+            vm._mwGit_hooksInstalled = true;
+            vm._mwGit_originalSaveProjectSb3 = vm.saveProjectSb3;
+            vm._mwGit_originalSaveProjectSb3Stream = vm.saveProjectSb3Stream;
+            vm._mwGit_originalLoadProject = vm.loadProject;
+
+            const addGitJsonToZip = async zip => {
+                const gitJson = await BrowserGit.exportRepoToGitJsonString();
+                if (!gitJson) return;
+                zip.file('git.json', gitJson);
+                const date = new Date(1591657163000);
+                for (const file of Object.values(zip.files)) {
+                    file.date = date;
+                }
+            };
+
+            vm.saveProjectSb3 = async (type, options) => {
+                // Use scratch-vm's internal zip creation to preserve determinism.
+                const zip = vm._saveProjectZip(options);
+                await addGitJsonToZip(zip);
+                return zip.generateAsync({
+                    type: type || 'blob',
+                    mimeType: 'application/x.scratch.sb3',
+                    compression: 'DEFLATE'
+                });
+            };
+
+            vm.saveProjectSb3Stream = (type, options) => {
+                const zip = vm._saveProjectZip(options);
+                return Promise.resolve(addGitJsonToZip(zip)).then(() => zip.generateInternalStream({
+                    type: type || 'arraybuffer',
+                    mimeType: 'application/x.scratch.sb3',
+                    compression: 'DEFLATE'
+                }));
+            };
+
+            vm.loadProject = async data => {
+                // If this looks like an SB3, try to restore git.json first.
+                try {
+                    let buffer = null;
+                    if (data instanceof ArrayBuffer) {
+                        buffer = data;
+                    } else if (ArrayBuffer.isView(data) && data.buffer) {
+                        buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                    } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
+                        buffer = await data.arrayBuffer();
+                    }
+
+                    if (buffer) {
+                        const zip = await JSZip.loadAsync(buffer);
+                        const file = zip.file('git.json');
+                        if (file) {
+                            const gitJson = await file.async('string');
+                            await BrowserGit.importRepoFromGitJsonString(gitJson);
+                        }
+                    }
+                } catch (e) {
+                    // ignore malformed/non-sb3 inputs
+                }
+
+                return vm._mwGit_originalLoadProject(data);
+            };
         }
         loadProject () {
             // tw: stop when loading new project
