@@ -145,91 +145,58 @@ class SB3Downloader extends React.Component {
             const jszipStream = this.props.saveProjectSb3Stream();
 
             const abortController = new AbortController();
+            jszipStream.on('error', error => {
+                abortController.abort(error);
+            });
 
-            let zipStream;
+            // JSZip's stream pause() and resume() methods are not necessarily completely no-ops
+            // if they are already paused or resumed. These also make it easier to add debug
+            // logging of when we actually pause or resume.
+            // Note that JSZip will keep sending some data after you ask it to pause.
+            let jszipStreamRunning = false;
+            const pauseJSZipStream = () => {
+                if (jszipStreamRunning) {
+                    jszipStreamRunning = false;
+                    jszipStream.pause();
+                }
+            };
+            const resumeJSZipStream = () => {
+                if (!jszipStreamRunning) {
+                    jszipStreamRunning = true;
+                    jszipStream.resume();
+                }
+            };
+
+            // Allow the JSZip stream to run quite a bit ahead of file writing. This helps
+            // reduce zip stream pauses on systems with high latency storage.
             const HIGH_WATER_MARK_BYTES = 1024 * 1024 * 5;
+
+            // Minimum size of buffer to pass into write(). Small buffers will be queued and
+            // written in batches as they reach or exceed this size.
             const WRITE_BUFFER_TARGET_SIZE_BYTES = 1024 * 1024;
 
-            if (jszipStream && typeof jszipStream.on === 'function') {
-                // Legacy JSZip StreamHelper (node-style events)
-                jszipStream.on('error', error => {
-                    abortController.abort(error);
-                });
-
-                let jszipStreamRunning = false;
-                const pauseJSZipStream = () => {
-                    if (jszipStreamRunning) {
-                        jszipStreamRunning = false;
-                        if (typeof jszipStream.pause === 'function') jszipStream.pause();
-                    }
-                };
-                const resumeJSZipStream = () => {
-                    if (!jszipStreamRunning) {
-                        jszipStreamRunning = true;
-                        if (typeof jszipStream.resume === 'function') jszipStream.resume();
-                    }
-                };
-
-                zipStream = new ReadableStream({
-                    start: controller => {
-                        jszipStream.on('data', data => {
-                            controller.enqueue(data);
-                            if (controller.desiredSize <= 0) {
-                                pauseJSZipStream();
-                            }
-                        });
-                        jszipStream.on('end', () => {
-                            controller.close();
-                        });
-                        resumeJSZipStream();
-                    },
-                    pull: () => {
-                        resumeJSZipStream();
-                    },
-                    cancel: () => {
-                        pauseJSZipStream();
-                    }
-                }, new ByteLengthQueuingStrategy({
-                    highWaterMark: HIGH_WATER_MARK_BYTES
-                }));
-            } else if (jszipStream && typeof jszipStream.getReader === 'function') {
-                zipStream = jszipStream;
-            } else if (jszipStream && typeof jszipStream[Symbol.asyncIterator] === 'function') {
-                zipStream = new ReadableStream({
-                    async start (controller) {
-                        try {
-                            for await (const chunk of jszipStream) {
-                                controller.enqueue(chunk);
-                                if (controller.desiredSize <= 0) {
-                                    await new Promise(r => setTimeout(r, 0));
-                                }
-                            }
-                            controller.close();
-                        } catch (err) {
-                            controller.error(err);
+            const zipStream = new ReadableStream({
+                start: controller => {
+                    jszipStream.on('data', data => {
+                        controller.enqueue(data);
+                        if (controller.desiredSize <= 0) {
+                            pauseJSZipStream();
                         }
-                    }
-                }, new ByteLengthQueuingStrategy({highWaterMark: HIGH_WATER_MARK_BYTES}));
-            } else {
-                zipStream = new ReadableStream({
-                    start: async controller => {
-                        try {
-                            const result = await jszipStream;
-                            if (result instanceof ArrayBuffer || ArrayBuffer.isView(result)) {
-                                controller.enqueue(new Uint8Array(result));
-                            } else if (typeof Blob !== 'undefined' && result instanceof Blob) {
-                                const buf = new Uint8Array(await result.arrayBuffer());
-                                controller.enqueue(buf);
-                            } else {
-                                controller.enqueue(result);
-                            }
-                            controller.close();
-                        } catch (err) {
-                            controller.error(err);
-                        }
-                    }
-                });
-            }
+                    });
+                    jszipStream.on('end', () => {
+                        controller.close();
+                    });
+                    resumeJSZipStream();
+                },
+                pull: () => {
+                    resumeJSZipStream();
+                },
+                cancel: () => {
+                    pauseJSZipStream();
+                }
+            }, new ByteLengthQueuingStrategy({
+                highWaterMark: HIGH_WATER_MARK_BYTES
+            }));
 
             const queuedChunks = [];
             const fileStream = new WritableStream({
