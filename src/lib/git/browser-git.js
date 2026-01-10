@@ -12,6 +12,8 @@ const REPO_DIR = '/repo';
 const SNAPSHOT_FILE = 'project.sb3';
 const EXPORT_VERSION = 1;
 
+let tempGitJsonString = null;
+
 const uint8ToBase64 = uint8 => {
     if (!uint8 || uint8.length === 0) return '';
     
@@ -221,6 +223,63 @@ const repoExists = () => {
     return exists(pfs, pathJoin(REPO_DIR, '.git'));
 };
 
+const listFilesRecursive = async (pfs, rootDir) => {
+    const out = [];
+    const walk = async currentDir => {
+        const entries = await pfs.readdir(currentDir);
+        for (const entry of entries) {
+            const full = `${currentDir}/${entry}`;
+            const stat = await pfs.stat(full);
+            if (stat.isDirectory()) {
+                await walk(full);
+            } else {
+                out.push(full);
+            }
+        }
+    };
+    await walk(rootDir);
+    return out;
+};
+
+const exportRepoToGitJsonString = async () => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    
+    if (!(await repoExists())) {
+        return null;
+    }
+
+    try {
+        const gitDir = pathJoin(REPO_DIR, '.git');
+        const files = await listFilesRecursive(pfs, gitDir);
+        const entries = await Promise.all(files.map(async filePath => {
+            try {
+                const data = await pfs.readFile(filePath);
+                const view = data instanceof Uint8Array ? data : new Uint8Array(data);
+                return {
+                    path: filePath.replace(`${REPO_DIR}/`, ''),
+                    encoding: 'base64',
+                    data: uint8ToBase64(view)
+                };
+            } catch (e) {
+                console.warn('Failed to read file for export:', filePath, e);
+                return null;
+            }
+        }));
+
+        // Filter out null entries from failed reads
+        const validEntries = entries.filter(entry => entry !== null);
+
+        return JSON.stringify({
+            version: EXPORT_VERSION,
+            repoDir: REPO_DIR,
+            entries: validEntries
+        });
+    } catch (e) {
+        throw new Error(`Failed to export repository: ${e.message}`);
+    }
+};
+
 const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -266,6 +325,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
                 message: 'Initialize repository',
                 author: getDefaultAuthor()
             });
+            tempGitJsonString = await exportRepoToGitJsonString();
         } catch (e) {
             // Clean up partial initialization on error
             try {
@@ -424,6 +484,7 @@ const createBranch = async ({ref} = {}) => {
     } catch (e) {
         throw new Error(`Failed to create branch ${ref}: ${e.message}`);
     }
+    tempGitJsonString = await exportRepoToGitJsonString();
     return 'ok';
 };
 
@@ -598,12 +659,15 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
             onProgress({phase: 'commit', message: 'Creating commit…', completed: 1, total: 1});
         }
 
-        return git.commit({
+        
+        const ret = await git.commit({
             fs,
             dir: REPO_DIR,
             message: message.trim(),
             author: effectiveAuthor
         });
+        tempGitJsonString = await exportRepoToGitJsonString();
+        return ret;
     } catch (e) {
         throw new Error(`Failed to commit: ${e.message}`);
     }
@@ -614,6 +678,7 @@ const deleteRepo = async () => {
     const pfs = fs.promises;
     if (!(await exists(pfs, REPO_DIR))) return;
     await removeRecursive(pfs, REPO_DIR);
+    tempGitJsonString = await exportRepoToGitJsonString();
 };
 
 const deleteBranch = async ref => {
@@ -631,6 +696,7 @@ const deleteBranch = async ref => {
     } catch (e) {
         throw new Error(`Failed to delete branch ${ref}: ${e.message}`);
     }
+    tempGitJsonString = await exportRepoToGitJsonString();
 };
 
 const listBranches = async () => {
@@ -733,63 +799,7 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-
-const listFilesRecursive = async (pfs, rootDir) => {
-    const out = [];
-    const walk = async currentDir => {
-        const entries = await pfs.readdir(currentDir);
-        for (const entry of entries) {
-            const full = `${currentDir}/${entry}`;
-            const stat = await pfs.stat(full);
-            if (stat.isDirectory()) {
-                await walk(full);
-            } else {
-                out.push(full);
-            }
-        }
-    };
-    await walk(rootDir);
-    return out;
-};
-
-const exportRepoToGitJsonString = async () => {
-    const fs = getFs();
-    const pfs = fs.promises;
-    
-    if (!(await repoExists())) {
-        return null;
-    }
-
-    try {
-        const gitDir = pathJoin(REPO_DIR, '.git');
-        const files = await listFilesRecursive(pfs, gitDir);
-        const entries = await Promise.all(files.map(async filePath => {
-            try {
-                const data = await pfs.readFile(filePath);
-                const view = data instanceof Uint8Array ? data : new Uint8Array(data);
-                return {
-                    path: filePath.replace(`${REPO_DIR}/`, ''),
-                    encoding: 'base64',
-                    data: uint8ToBase64(view)
-                };
-            } catch (e) {
-                console.warn('Failed to read file for export:', filePath, e);
-                return null;
-            }
-        }));
-
-        // Filter out null entries from failed reads
-        const validEntries = entries.filter(entry => entry !== null);
-
-        return JSON.stringify({
-            version: EXPORT_VERSION,
-            repoDir: REPO_DIR,
-            entries: validEntries
-        });
-    } catch (e) {
-        throw new Error(`Failed to export repository: ${e.message}`);
-    }
-};
+const exportRepoToGitJsonStringSync = () => tempGitJsonString || null;
 
 const importRepoFromGitJsonString = async gitJsonString => {
     if (!gitJsonString || typeof gitJsonString !== 'string') {
@@ -878,6 +888,7 @@ export {
     getBranchLogs,
     computeCommitGraph,
     exportRepoToGitJsonString,
+    exportRepoToGitJsonStringSync,
     importRepoFromGitJsonString,
     deleteRepo,
     deleteBranch,

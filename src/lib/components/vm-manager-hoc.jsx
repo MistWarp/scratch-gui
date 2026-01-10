@@ -85,72 +85,57 @@ const vmManagerHOC = function (WrappedComponent) {
         installGitProjectFileHooks () {
             const vm = this.props.vm;
             if (vm._mwGit_hooksInstalled) return;
-
             vm._mwGit_hooksInstalled = true;
-            vm._mwGit_originalSaveProjectSb3 = vm.saveProjectSb3;
-            vm._mwGit_originalSaveProjectSb3Stream = vm.saveProjectSb3Stream;
-            vm._mwGit_originalLoadProject = vm.loadProject;
 
-            const addGitJsonToZip = async zip => {
-                const gitJson = await BrowserGit.exportRepoToGitJsonString();
-                if (!gitJson) return;
-                zip.file('git.json', gitJson);
-                const date = new Date(1591657163000);
-                for (const file of Object.values(zip.files)) {
-                    file.date = date;
-                }
+            const originalSaveProjectZip = vm._saveProjectZip;
+            vm._saveProjectZip = (options = {}) => {
+                const zip = originalSaveProjectZip.call(vm, options);
+                zip.file('git.json', JSON.stringify(BrowserGit.exportRepoToGitJsonStringSync()));
+                return zip;
             };
 
-            vm.saveProjectSb3 = async (type, options) => {
-                // Use scratch-vm's internal zip creation to preserve determinism.
-                const zip = vm._saveProjectZip(options);
-                await addGitJsonToZip(zip);
-                return zip.generateAsync({
-                    type: type || 'blob',
-                    mimeType: 'application/x.scratch.sb3',
-                    compression: 'DEFLATE'
-                });
-            };
+            const originalLoadProject = vm.loadProject;
+            vm.loadProject = async data => {
+                let gitJson = null;
 
-            vm.saveProjectSb3Stream = (type, options) => {
-                const zip = vm._saveProjectZip(options);
-                return Promise.resolve(addGitJsonToZip(zip)).then(() => zip.generateInternalStream({
-                    type: type || 'arraybuffer',
-                    mimeType: 'application/x.scratch.sb3',
-                    compression: 'DEFLATE'
-                }));
-            };
-
-            vm.loadProject = async (data, options) => {
-                // If this looks like an SB3, clear any existing repo and
-                // try to restore git.json from the archive.
                 try {
                     let buffer = null;
                     if (data instanceof ArrayBuffer) {
                         buffer = data;
-                    } else if (ArrayBuffer.isView(data) && data.buffer) {
-                        buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                    } else if (ArrayBuffer.isView(data)) {
+                        buffer = data.buffer.slice(
+                            data.byteOffset,
+                            data.byteOffset + data.byteLength
+                        );
                     } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
                         buffer = await data.arrayBuffer();
                     }
 
-                    if (buffer && (typeof options !== 'object' || options.skipGitImport !== true)) {
+                    if (buffer) {
                         const zip = await JSZip.loadAsync(buffer);
-                        // Skip import if flagged as an internal restore
                         const file = zip.file('git.json');
-                        console.log(file);
                         if (file) {
-                            const gitJson = await file.async('string');
-                            await BrowserGit.importRepoFromGitJsonString(gitJson);
+                            gitJson = await file.async('string');
                         }
                     }
                 } catch (e) {
-                    // ignore malformed/non-sb3 inputs
+                    // ignore
                 }
 
-                return vm._mwGit_originalLoadProject(data);
+                const result = await originalLoadProject.call(vm, data);
+
+                if (gitJson) {
+                    try {
+                        await BrowserGit.importRepoFromGitJsonString(gitJson);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+
+                return result;
             };
         }
+
         loadProject () {
             // tw: stop when loading new project
             this.props.vm.quit();
@@ -219,7 +204,8 @@ const vmManagerHOC = function (WrappedComponent) {
         projectData: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         username: PropTypes.string,
-        vm: PropTypes.instanceOf(VM).isRequired
+        vm: PropTypes.instanceOf(VM).isRequired,
+        gitJson: PropTypes.object
     };
 
     const mapStateToProps = state => {
