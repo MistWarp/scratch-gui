@@ -1,5 +1,9 @@
 const sanitizePathPart = name => {
-    const safe = String(name || '')
+    if (!name || typeof name !== 'string') {
+        return 'unnamed';
+    }
+    
+    const safe = String(name)
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/[\\/:*?"<>|]/g, '-')
@@ -8,43 +12,100 @@ const sanitizePathPart = name => {
     return safe || 'unnamed';
 };
 
+const makeSafeScriptFilename = id => {
+    const str = String(id || '');
+    const base = sanitizePathPart(str) || 'script';
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+        h = ((h * 31) + str.charCodeAt(i)) % 0xFFFFFFFF;
+    }
+    const hex = Math.floor(h).toString(16);
+    return `${base}-${hex.slice(0, 8) || '0'}.xml`;
+};
+
+const yieldToBrowser = () => new Promise(resolve => {
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => resolve());
+    } else {
+        setTimeout(resolve, 0);
+    }
+});
+
 const ensureDir = async (fs, dirPath) => {
+    if (!fs || typeof fs.mkdir !== 'function') {
+        throw new Error('Invalid filesystem object');
+    }
+    if (!dirPath || typeof dirPath !== 'string') {
+        throw new Error('Invalid directory path');
+    }
+    
     try {
         await fs.mkdir(dirPath);
     } catch (e) {
-        // ignore
+        if (e.code !== 'EEXIST') {
+            throw e;
+        }
     }
 };
 
 const writeTextFile = async (fs, filePath, text) => {
-    await fs.writeFile(filePath, text);
+    if (!fs || typeof fs.writeFile !== 'function') {
+        throw new Error('Invalid filesystem object');
+    }
+    if (!filePath || typeof filePath !== 'string') {
+        throw new Error('Invalid file path');
+    }
+    if (text === null || typeof text === 'undefined') {
+        throw new Error('File content cannot be null or undefined');
+    }
+    
+    const content = typeof text === 'string' ? text : String(text);
+    await fs.writeFile(filePath, content);
 };
 
 const writeBinaryFile = async (fs, filePath, data) => {
+    if (!fs || typeof fs.writeFile !== 'function') {
+        throw new Error('Invalid filesystem object');
+    }
+    if (!filePath || typeof filePath !== 'string') {
+        throw new Error('Invalid file path');
+    }
+    if (!data) {
+        throw new Error('File data cannot be null or undefined');
+    }
+    
     if (typeof data === 'string') {
         await fs.writeFile(filePath, data);
         return;
     }
     const view = data instanceof Uint8Array ? data : new Uint8Array(data);
+    if (view.length === 0) {
+        console.warn('Writing empty binary file:', filePath);
+    }
     await fs.writeFile(filePath, view);
 };
 
 const removeRecursive = async (fs, filePath) => {
+    if (!fs || !filePath || typeof filePath !== 'string') {
+        return;
+    }
+    
     let stat;
     try {
         stat = await fs.stat(filePath);
     } catch (e) {
+        // File doesn't exist, nothing to remove
         return;
     }
 
     if (stat.isDirectory()) {
         const entries = await fs.readdir(filePath);
-        // eslint-disable-next-line no-await-in-loop
-        for (const entry of entries) await removeRecursive(fs, `${filePath}/${entry}`);
+        await Promise.all(entries.map(entry => removeRecursive(fs, `${filePath}/${entry}`)));
         try {
             await fs.rmdir(filePath);
         } catch (e) {
-            // ignore
+            // Directory might not be empty or have permission issues
+            console.warn('Failed to remove directory:', filePath, e);
         }
         return;
     }
@@ -52,23 +113,41 @@ const removeRecursive = async (fs, filePath) => {
     try {
         await fs.unlink(filePath);
     } catch (e) {
-        // ignore
+        // File might be locked or have permission issues
+        console.warn('Failed to remove file:', filePath, e);
     }
 };
 
 const clearWorkingTree = async ({pfs, dir}) => {
-    const entries = await pfs.readdir(dir);
-    for (const entry of entries) {
-        if (entry === '.git') continue;
-        if (entry === '.gitignore') continue;
-        // eslint-disable-next-line no-await-in-loop
-        await removeRecursive(pfs, `${dir}/${entry}`);
+    if (!pfs || typeof pfs.readdir !== 'function') {
+        throw new Error('Invalid filesystem object');
     }
+    if (!dir || typeof dir !== 'string') {
+        throw new Error('Invalid directory path');
+    }
+    
+    let entries;
+    try {
+        entries = await pfs.readdir(dir);
+    } catch (e) {
+        // Directory doesn't exist, nothing to clear
+        return;
+    }
+    
+    await Promise.all(entries.map(async entry => {
+        if (entry === '.git' || entry === '.gitignore') return;
+        await removeRecursive(pfs, `${dir}/${entry}`);
+    }));
 };
 
 const getTopLevelScripts = blocks => {
-    if (!blocks || !Array.isArray(blocks._scripts)) return [];
-    return blocks._scripts.filter(Boolean);
+    if (!blocks || typeof blocks !== 'object') {
+        return [];
+    }
+    if (!Array.isArray(blocks._scripts)) {
+        return [];
+    }
+    return blocks._scripts.filter(script => script !== null && typeof script !== 'undefined');
 };
 
 const wrapXml = inner => (
@@ -86,13 +165,31 @@ const getCostumeAssetType = (storage, costume) => {
 const getSoundAssetType = storage => storage.AssetType.Sound;
 
 const loadAssetData = async (storage, assetType, md5ext) => {
-    if (!md5ext) return null;
+    if (!storage || typeof storage.load !== 'function') {
+        throw new Error('Invalid storage object');
+    }
+    if (!assetType) {
+        throw new Error('Asset type is required');
+    }
+    if (!md5ext || typeof md5ext !== 'string') {
+        return null;
+    }
+    
     const md5 = md5ext.split('.')[0];
-    const asset = await storage.load(assetType, md5);
-    return asset ? asset.data : null;
+    if (!md5) {
+        return null;
+    }
+    
+    try {
+        const asset = await storage.load(assetType, md5);
+        return asset ? asset.data : null;
+    } catch (e) {
+        console.warn('Failed to load asset:', md5ext, e);
+        return null;
+    }
 };
 
-const writeTarget = async ({vm, target, storage, fs, dir}) => {
+const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressState}) => {
     const spriteName = sanitizePathPart(target.getName ? target.getName() : target.sprite && target.sprite.name);
     const spriteRoot = `${dir}/${spriteName}`;
 
@@ -115,8 +212,23 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
             // fallback: whole target as single file
             xmlInner = target.blocks.toXML(target.comments);
         }
-        // eslint-disable-next-line no-await-in-loop
-        await writeTextFile(fs, `${scriptsDir}/${scriptId}.xml`, wrapXml(xmlInner));
+        const filename = makeSafeScriptFilename(scriptId);
+        await writeTextFile(fs, `${scriptsDir}/${filename}`, wrapXml(xmlInner));
+
+        if (progressState) {
+            progressState.completed += 1;
+            if (typeof onProgress === 'function') {
+                onProgress({
+                    phase: 'write',
+                    message: `Writing scripts for ${spriteName}…`,
+                    completed: progressState.completed,
+                    total: progressState.total
+                });
+            }
+            if (progressState.completed % 25 === 0) {
+                await yieldToBrowser();
+            }
+        }
     }
 
     // Assets + index.json
@@ -134,10 +246,8 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
         const md5ext = costume.md5ext;
         const assetType = getCostumeAssetType(storage, costume);
 
-        // eslint-disable-next-line no-await-in-loop
         const data = await loadAssetData(storage, assetType, md5ext);
         if (data) {
-            // eslint-disable-next-line no-await-in-loop
             await writeBinaryFile(fs, `${costumesDir}/${filename}`, data);
         }
 
@@ -149,6 +259,21 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
             rotationCenterX: costume.rotationCenterX,
             rotationCenterY: costume.rotationCenterY
         });
+
+        if (progressState) {
+            progressState.completed += 1;
+            if (typeof onProgress === 'function') {
+                onProgress({
+                    phase: 'write',
+                    message: `Writing costumes for ${spriteName}…`,
+                    completed: progressState.completed,
+                    total: progressState.total
+                });
+            }
+            if (progressState.completed % 25 === 0) {
+                await yieldToBrowser();
+            }
+        }
     }
 
     const soundFiles = [];
@@ -158,10 +283,8 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
         const filename = ext ? `${name}.${ext}` : name;
         const md5ext = sound.md5ext;
 
-        // eslint-disable-next-line no-await-in-loop
         const data = await loadAssetData(storage, getSoundAssetType(storage), md5ext);
         if (data) {
-            // eslint-disable-next-line no-await-in-loop
             await writeBinaryFile(fs, `${soundsDir}/${filename}`, data);
         }
 
@@ -173,6 +296,21 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
             rate: sound.rate,
             sampleCount: sound.sampleCount
         });
+
+        if (progressState) {
+            progressState.completed += 1;
+            if (typeof onProgress === 'function') {
+                onProgress({
+                    phase: 'write',
+                    message: `Writing sounds for ${spriteName}…`,
+                    completed: progressState.completed,
+                    total: progressState.total
+                });
+            }
+            if (progressState.completed % 25 === 0) {
+                await yieldToBrowser();
+            }
+        }
     }
 
     const indexJson = {
@@ -199,18 +337,62 @@ const writeTarget = async ({vm, target, storage, fs, dir}) => {
     };
 
     await writeTextFile(fs, `${spriteRoot}/index.json`, JSON.stringify(indexJson, null, 2));
+
+    if (progressState) {
+        progressState.completed += 1;
+        if (typeof onProgress === 'function') {
+            onProgress({
+                phase: 'write',
+                message: `Writing metadata for ${spriteName}…`,
+                completed: progressState.completed,
+                total: progressState.total
+            });
+        }
+        if (progressState.completed % 25 === 0) await yieldToBrowser();
+    }
 };
 
-const writeProjectToWorkingTree = async ({vm, fs, dir}) => {
+const writeProjectToWorkingTree = async ({vm, fs, dir, onProgress} = {}) => {
+    console.log(vm);
     const runtime = vm && vm.runtime;
     const storage = runtime && runtime.storage;
     if (!runtime || !storage) throw new Error('VM runtime/storage not available');
 
     const targets = runtime.targets.filter(t => t.isOriginal);
 
+    const total = targets.reduce((acc, target) => {
+        const scripts = getTopLevelScripts(target.blocks).length;
+        let costumesCount = 0;
+        let soundsCount = 0;
+        try {
+            const spriteJsonString = vm.toJSON(target.id);
+            const spriteJson = JSON.parse(spriteJsonString);
+            costumesCount = Array.isArray(spriteJson.costumes) ? spriteJson.costumes.length : 0;
+            soundsCount = Array.isArray(spriteJson.sounds) ? spriteJson.sounds.length : 0;
+        } catch (e) {
+            // ignore
+        }
+        // +1 for index.json
+        return acc + scripts + costumesCount + soundsCount + 1;
+    }, 0);
+
+    const progressState = {
+        total: Math.max(1, total),
+        completed: 0
+    };
+
+    if (typeof onProgress === 'function') {
+        onProgress({
+            phase: 'write',
+            message: 'Writing project files…',
+            completed: 0,
+            total: progressState.total
+        });
+        await yieldToBrowser();
+    }
+
     for (const target of targets) {
-        // eslint-disable-next-line no-await-in-loop
-        await writeTarget({vm, target, storage, fs, dir});
+        await writeTarget({vm, target, storage, fs, dir, onProgress, progressState});
     }
 };
 
