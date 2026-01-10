@@ -121,8 +121,9 @@ const vmManagerHOC = function (WrappedComponent) {
                 }));
             };
 
-            vm.loadProject = async data => {
-                // If this looks like an SB3, try to restore git.json first.
+            vm.loadProject = async (data, options) => {
+                // If this looks like an SB3, clear any existing repo and
+                // try to restore git.json from the archive.
                 try {
                     let buffer = null;
                     if (data instanceof ArrayBuffer) {
@@ -133,9 +134,11 @@ const vmManagerHOC = function (WrappedComponent) {
                         buffer = await data.arrayBuffer();
                     }
 
-                    if (buffer) {
+                    if (buffer && (typeof options !== 'object' || options.skipGitImport !== true)) {
                         const zip = await JSZip.loadAsync(buffer);
+                        // Skip import if flagged as an internal restore
                         const file = zip.file('git.json');
+                        console.log(file);
                         if (file) {
                             const gitJson = await file.async('string');
                             await BrowserGit.importRepoFromGitJsonString(gitJson);

@@ -3,13 +3,12 @@
 .modal-content {
     width: min(720px, calc(100vw - 2rem));
     max-width: 720px;
-    max-height: calc(100vh - 4rem);
-    overflow: auto;
 }
 
 .body {
     background: $ui-modal-background;
     padding: 1.25rem 1.5rem;
+    overflow: scroll;
 }
 
 .section {
@@ -164,6 +163,7 @@
     max-height: 200px;
     overflow: auto;
     padding: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .commit-row {
@@ -243,6 +243,40 @@
     background: $looks-secondary;
 }
 
+.confirm-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.confirm-dialog-content {
+    background: $ui-modal-background;
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-message {
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+    color: $text-primary-transparent;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
 @media (max-width: 640px) {
     .body {
         padding: 1rem;
@@ -250,5 +284,10 @@
 
     .section {
         padding: 0.75rem;
+    }
+
+    .confirm-dialog-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
     }
 }

@@ -20,13 +20,115 @@ const messages = defineMessages({
         defaultMessage: 'Git',
         description: 'Title of the git window',
         id: 'mw.gitModal.title'
+    },
+    branchesLabel: {
+        defaultMessage: 'Branches',
+        description: 'Label for branch list',
+        id: 'mw.gitModal.branchesLabel'
+    },
+    mergeLabel: {
+        defaultMessage: 'Merge',
+        description: 'Merge section label',
+        id: 'mw.gitModal.merge'
+    },
+    show: {
+        defaultMessage: 'Show',
+        description: 'Show button',
+        id: 'mw.gitModal.show'
+    },
+    hide: {
+        defaultMessage: 'Hide',
+        description: 'Hide button',
+        id: 'mw.gitModal.hide'
+    },
+    intoLabel: {
+        defaultMessage: 'Into',
+        description: 'Merge into branch label',
+        id: 'mw.gitModal.merge.into'
+    },
+    fromLabel: {
+        defaultMessage: 'From',
+        description: 'Merge from branch label',
+        id: 'mw.gitModal.merge.from'
+    },
+    selectBranch: {
+        defaultMessage: 'Select branch',
+        description: 'Select branch placeholder',
+        id: 'mw.gitModal.merge.selectBranch'
+    },
+    previewMerge: {
+        defaultMessage: 'Preview merge',
+        description: 'Preview merge button',
+        id: 'mw.gitModal.merge.preview'
+    },
+    conflictsLabel: {
+        defaultMessage: 'Conflicts',
+        description: 'Conflicts section label',
+        id: 'mw.gitModal.merge.conflicts'
+    },
+    keepOurs: {
+        defaultMessage: 'Keep ours',
+        description: 'Keep ours version button',
+        id: 'mw.gitModal.merge.keepOurs'
+    },
+    keepTheirs: {
+        defaultMessage: 'Keep theirs',
+        description: 'Keep theirs version button',
+        id: 'mw.gitModal.merge.keepTheirs'
+    },
+    mergeApply: {
+        defaultMessage: 'Merge',
+        description: 'Apply merge button',
+        id: 'mw.gitModal.merge.apply'
     }
 });
 
 const GitModalComponent = props => {
+    const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+    const [deleteConfirmMessage, setDeleteConfirmMessage] = React.useState('');
+    const [deleteConfirmAction, setDeleteConfirmAction] = React.useState(null);
+    const [pendingDeleteBranchRef, setPendingDeleteBranchRef] = React.useState(null);
+
     const handleRestoreCommit = props.onRestoreCommit;
     const handleDownloadCommit = props.onDownloadCommit;
     const handleDeleteCurrentBranch = props.onDeleteBranch;
+
+    const handleDeleteRepoClick = () => {
+        setDeleteConfirmMessage(
+            'Delete this Git repository?\n\nThis removes the repo from this browser session/storage. ' +
+            'If you want to keep history, save the project first so git.json is embedded in the SB3.'
+        );
+        setDeleteConfirmAction(() => props.onDeleteRepo);
+        setShowDeleteConfirm(true);
+    };
+
+    const handleDeleteBranchClick = e => {
+        const ref = e && e.currentTarget ? e.currentTarget.dataset.ref : null;
+        if (!ref) return;
+        setPendingDeleteBranchRef(ref);
+        setDeleteConfirmMessage(`Delete branch "${ref}"?\n\nThis action cannot be undone.`);
+        setDeleteConfirmAction(() => () => handleDeleteCurrentBranch(ref));
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteConfirmAction) {
+            deleteConfirmAction();
+        }
+        setShowDeleteConfirm(false);
+        setDeleteConfirmMessage('');
+        setDeleteConfirmAction(null);
+        setPendingDeleteBranchRef(null);
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setDeleteConfirmMessage('');
+        setDeleteConfirmAction(null);
+        setPendingDeleteBranchRef(null);
+    };
+
+    const percent = typeof props.busyProgress === 'number' ? Math.round(props.busyProgress * 100) : null;
 
     return (
         <Modal
@@ -36,6 +138,27 @@ const GitModalComponent = props => {
             id="gitModal"
         >
             <Box className={styles.body}>
+                {props.busy ? (
+                    <Box className={styles.busy}>
+                        <span className={styles.busyText}>
+                            {props.busyMessage || 'Working…'}
+                        </span>
+                        {percent === null ? null : (
+                            <span className={styles.busyPercent}>
+                                {percent}{'%'}
+                            </span>
+                        )}
+                        {percent === null ? null : (
+                            <div className={styles.progressBar}>
+                                <div
+                                    className={styles.progressBarFill}
+                                    style={{width: `${Math.max(0, Math.min(100, percent))}%`}}
+                                />
+                            </div>
+                        )}
+                    </Box>
+                ) : null}
+
                 {props.error ? (
                     <Box className={styles.error}>
                         {props.error}
@@ -68,7 +191,7 @@ const GitModalComponent = props => {
                                     </button>
                                     <button
                                         className={`${styles.button} ${styles.dangerButton}`}
-                                        onClick={props.onDeleteRepo}
+                                        onClick={handleDeleteRepoClick}
                                         disabled={props.busy}
                                     >
                                         <Trash size={16} />
@@ -126,7 +249,7 @@ const GitModalComponent = props => {
                                 </button>
                                 <button
                                     className={`${styles.button} ${styles.dangerButton}`}
-                                    onClick={handleDeleteCurrentBranch}
+                                    onClick={handleDeleteBranchClick}
                                     data-ref={props.currentBranch || ''}
                                     disabled={props.busy || !props.currentBranch}
                                 >
@@ -273,19 +396,6 @@ const GitModalComponent = props => {
                                 )}
                             </Box>
                         </Box>
-
-                        <Box className={styles.buttonRow}>
-                            <button
-                                className={styles.button}
-                                onClick={props.onClose}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Close"
-                                    description="Close button"
-                                    id="gui.prompt.cancel"
-                                />
-                            </button>
-                        </Box>
                     </React.Fragment>
                 ) : (
                     <Box className={styles.section}>
@@ -318,16 +428,45 @@ const GitModalComponent = props => {
                                     id="mw.gitModal.init"
                                 />
                             </button>
-                            <button
-                                className={styles.button}
-                                onClick={props.onClose}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Close"
-                                    description="Close button"
-                                    id="gui.prompt.cancel"
-                                />
-                            </button>
+                        </Box>
+                    </Box>
+                )}
+                
+                {showDeleteConfirm && (
+                    <Box className={styles.confirmDialog}>
+                        <Box className={styles.confirmDialogContent}>
+                            <Box className={styles.confirmMessage}>
+                                {deleteConfirmMessage.split('\n').map((line, i) => (
+                                    <React.Fragment key={i}>
+                                        {line}
+                                        {i < deleteConfirmMessage.split('\n').length - 1 && <br />}
+                                    </React.Fragment>
+                                ))}
+                            </Box>
+                            <Box className={styles.confirmButtons}>
+                                <button
+                                    className={styles.button}
+                                    onClick={cancelDelete}
+                                    disabled={props.busy}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Cancel"
+                                        description="Cancel button"
+                                        id="gui.prompt.cancelDelete"
+                                    />
+                                </button>
+                                <button
+                                    className={`${styles.button} ${styles.dangerButton}`}
+                                    onClick={confirmDelete}
+                                    disabled={props.busy}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Delete"
+                                        description="Confirm delete button"
+                                        id="mw.gitModal.confirmDelete"
+                                    />
+                                </button>
+                            </Box>
                         </Box>
                     </Box>
                 )}
@@ -339,6 +478,8 @@ const GitModalComponent = props => {
 GitModalComponent.propTypes = {
     intl: intlShape,
     busy: PropTypes.bool.isRequired,
+    busyMessage: PropTypes.string,
+    busyProgress: PropTypes.number,
     error: PropTypes.string,
     initialized: PropTypes.bool.isRequired,
     currentBranch: PropTypes.string,
@@ -373,7 +514,13 @@ GitModalComponent.propTypes = {
 
 GitModalComponent.defaultProps = {
     error: null,
-    currentBranch: null
+    currentBranch: null,
+    busyMessage: null,
+    busyProgress: null,
+    graphBranches: [],
+    graphNodes: [],
+    branchColors: {},
+    graphBranchLogs: []
 };
 
 export default injectIntl(GitModalComponent);
