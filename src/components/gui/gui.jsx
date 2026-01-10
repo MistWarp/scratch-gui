@@ -125,26 +125,42 @@ const GUIComponent = props => {
     const measureStageContainerWidth = useCallback(() => {
         const el = stageAndTargetWrapperRef.current;
         if (!el) return;
+
         const rect = el.getBoundingClientRect();
-        if (rect && typeof rect.width === 'number' && Number.isFinite(rect.width)) {
-            const computedStyle = window.getComputedStyle(el);
-            const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-            const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-            const borderExtra = getStageBorderExtraWidth(el);
-            setStageContainerWidth(Math.max(0, rect.width - paddingLeft - paddingRight - borderExtra));
-        }
+        if (!Number.isFinite(rect.width)) return;
+
+        const computedStyle = window.getComputedStyle(el);
+        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+        const borderExtra = getStageBorderExtraWidth(el);
+
+        const innerWidth = Math.max(
+            0,
+            rect.width - paddingLeft - paddingRight - borderExtra
+        );
+
+        setStageContainerWidth(prev => {
+            if (typeof prev === 'number' && Math.abs(prev - innerWidth) < 2) {
+                return prev;
+            }
+            return innerWidth;
+        });
     }, [getStageBorderExtraWidth]);
 
+
+    const lastResizeWidthRef = useRef(null);
     useEffect(() => {
         if (typeof stageContainerWidth !== 'number') return;
+
+        const rounded = Math.round(stageContainerWidth);
+        if (lastResizeWidthRef.current === rounded) return;
+
+        lastResizeWidthRef.current = rounded;
+
         if (stageResizeRafRef.current) return;
-        stageResizeRafRef.current = window.requestAnimationFrame(() => {
+        stageResizeRafRef.current = requestAnimationFrame(() => {
             stageResizeRafRef.current = null;
-            try {
-                window.dispatchEvent(new Event('resize'));
-            } catch (e) {
-                // ignore
-            }
+            window.dispatchEvent(new Event('resize'));
         });
     }, [stageContainerWidth]);
 
@@ -206,7 +222,7 @@ const GUIComponent = props => {
         const startWidth = startRect.width;
         const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
 
-        setStageContainerWidth(startInnerWidth);
+        setStageContainerWidth(Math.round(startInnerWidth));
 
         if (e.currentTarget &&
             typeof e.currentTarget.setPointerCapture === 'function' &&
@@ -270,7 +286,12 @@ const GUIComponent = props => {
             const nextWidth = Math.min(maxWidth, Math.max(minWidth, startWidth + (dx * directionFactor)));
             const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
             setStagePanelWidth(nextWidth);
-            setStageContainerWidth(nextInnerWidth);
+            setStageContainerWidth(prev => {
+                if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
+                    return prev;
+                }
+                return nextInnerWidth;
+            });
 
             if (!props.isFullScreen &&
                 props.stageSizeMode !== STAGE_SIZE_MODES.small &&
