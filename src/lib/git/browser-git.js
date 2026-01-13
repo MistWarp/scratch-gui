@@ -1,6 +1,8 @@
 import LightningFS from '@isomorphic-git/lightning-fs';
 import http from 'isomorphic-git/http/web';
 import git, {Errors} from 'isomorphic-git';
+import JSZip from 'jszip';
+
 
 import {
     clearWorkingTree,
@@ -420,7 +422,6 @@ const getRepoChanges = async vm => {
     return status.map(row => {
         const [filepath] = row;
         const description = describeRepoChange(row);
-        fs.readFile(`${dir}/${filepath}`, {encoding: 'utf8'}, console.log);
         return {
             filepath,
             description
@@ -869,6 +870,142 @@ const importRepoFromGitJsonString = async gitJsonString => {
     }
 };
 
+const exportRepoToZip = async ({includeGitDir = true} = {}) => {
+    const fs = getFs();
+    const pfs = fs.promises;
+
+    if (!(await repoExists())) {
+        throw new Error('Repository not initialized');
+    }
+
+    const zip = new JSZip();
+    const root = REPO_DIR;
+
+    const files = await listFilesRecursive(pfs, root);
+
+    for (const absPath of files) {
+        if (!includeGitDir && absPath.startsWith(`${REPO_DIR}/.git/`)) {
+            continue;
+        }
+
+        const relPath = absPath.replace(`${REPO_DIR}/`, '');
+
+        try {
+            const data = await pfs.readFile(absPath);
+            const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+
+            zip.file(relPath, bytes);
+        } catch (e) {
+            console.warn('Skipping file during zip export:', relPath, e);
+        }
+    }
+
+    return zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: {level: 6}
+    });
+};
+
+const downloadRepoZip = async options => {
+    const blob = await exportRepoToZip(options);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-repo.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+const commitSb3 = async ({
+    sb3ArrayBuffer,
+    message,
+    author,
+    onProgress,
+    vm
+} = {}) => {
+    if (!sb3ArrayBuffer || !(sb3ArrayBuffer instanceof ArrayBuffer)) {
+        throw new Error('Invalid SB3 buffer');
+    }
+    if (!message || !message.trim()) {
+        throw new Error('Commit message is required');
+    }
+
+    const fs = getFs();
+    const pfs = fs.promises;
+
+    if (!(await repoExists())) {
+        await initRepo({defaultBranch: 'main'});
+    }
+
+    if (typeof onProgress === 'function') {
+        onProgress({phase: 'snapshot', message: 'Writing SB3 snapshot…'});
+    }
+
+    await clearWorkingTree({pfs, dir: REPO_DIR});
+    await pfs.writeFile(
+        pathJoin(REPO_DIR, SNAPSHOT_FILE),
+        new Uint8Array(sb3ArrayBuffer)
+    );
+
+    // IMPORTANT: this assumes writeProjectToWorkingTree
+    // already supports extracting from project.sb3
+    await writeProjectToWorkingTree({
+        fs: pfs,
+        dir: REPO_DIR,
+        onProgress,
+        vm: vm
+    });
+
+    await stageAll(fs, REPO_DIR, {onProgress});
+
+    const authorUsed = author || getDefaultAuthor();
+    if (author) setDefaultAuthor(author);
+
+    const oid = await git.commit({
+        fs,
+        dir: REPO_DIR,
+        message: message.trim(),
+        author: authorUsed
+    });
+
+    tempGitJsonString = await exportRepoToGitJsonString();
+    return oid;
+};
+
+const pickSb3File = () => new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.sb,.sb2,.sb3,.json';
+
+    input.onchange = () => {
+        const file = input.files && input.files[0];
+        if (!file) return reject(new Error('No file selected'));
+        resolve(file);
+    };
+
+    input.click();
+});
+
+const pickAndCommitSb3 = async ({
+    message,
+    author,
+    onProgress,
+    vm
+}) => {
+    const file = await pickSb3File();
+    const buffer = await file.arrayBuffer();
+
+    return commitSb3({
+        sb3ArrayBuffer: buffer,
+        message,
+        author,
+        onProgress,
+        vm
+    });
+};
+
 export {
     getDefaultAuthor,
     setDefaultAuthor,
@@ -899,6 +1036,10 @@ export {
     removeRemote,
     getRemotes,
     push,
+    exportRepoToZip,
+    downloadRepoZip,
+    commitSb3,
+    pickAndCommitSb3,
     REPO_DIR,
     git
 };
