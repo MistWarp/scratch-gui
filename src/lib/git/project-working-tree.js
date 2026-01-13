@@ -353,7 +353,6 @@ const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressSt
 };
 
 const writeProjectToWorkingTree = async ({vm, fs, dir, onProgress} = {}) => {
-    console.log(vm);
     const runtime = vm && vm.runtime;
     const storage = runtime && runtime.storage;
     if (!runtime || !storage) throw new Error('VM runtime/storage not available');
