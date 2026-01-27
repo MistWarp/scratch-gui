@@ -730,7 +730,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(false);
+                flyout.twSetClippingEnabled(true);
             }
         } catch (e) {
             // ignore
@@ -749,7 +749,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(false);
+                flyout.twSetClippingEnabled(true);
             }
         } catch (e) {
             // ignore
@@ -761,7 +761,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
+                flyout.twSetClippingEnabled(false);
             }
         } catch (e) {
             // ignore
@@ -774,7 +774,7 @@ class Blocks extends React.Component {
         try {
             const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(false);
+                flyout.twSetClippingEnabled(true);
             }
         } catch (e) {
             // ignore

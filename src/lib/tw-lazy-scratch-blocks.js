@@ -59,11 +59,49 @@ const load = () => {
 
                 verticalFlyoutProto.twSetClippingEnabled = function (enabled) {
                     if (!this.workspace_ || !this.workspace_.svgGroup_) return;
-                    const svgGroup = this.workspace_.svgGroup_;
-                    const flyoutSvg = this.svgGroup_;
-                    svgGroup.removeAttribute('clip-path');
-                    if (flyoutSvg) {
-                        flyoutSvg.style.overflow = enabled ? 'visible' : 'hidden';
+    
+                    let clipRect = this.clipRect_;
+                    if (!clipRect) {
+                        const svg = this.workspace_.getParentSvg();
+                        if (svg) {
+                            clipRect = svg.querySelector('#blocklyBlockMenuClipRect');
+                        }
+                    }
+    
+                    let flyoutSvg = this.svgGroup_;
+                    while (flyoutSvg && flyoutSvg.tagName !== 'svg') {
+                        flyoutSvg = flyoutSvg.parentElement;
+                    }
+
+                    if (!enabled && flyoutSvg && flyoutSvg.classList.contains('sa-flyoutClose')) {
+                        return;
+                    }
+    
+                    if (clipRect) {
+                        this.twClippingEnabled_ = enabled;
+                        if (enabled) {
+                            const metrics = this.getMetrics_();
+                            clipRect.setAttribute('width', metrics ? (`${metrics.viewWidth}px`) : '250px');
+            
+                            if (flyoutSvg) {
+                                flyoutSvg.style.overflow = 'hidden';
+                            }
+                        } else {
+                            clipRect.setAttribute('width', '100000px');
+            
+                            if (flyoutSvg) {
+                                flyoutSvg.style.overflow = 'visible';
+                            }
+                        }
+                    }
+                };
+
+                const originalSetMetrics = verticalFlyoutProto.setMetrics_;
+                verticalFlyoutProto.setMetrics_ = function (xyRatio) {
+                    originalSetMetrics.call(this, xyRatio);
+                    
+                    if (this.twClippingEnabled_ === false && this.clipRect_) {
+                        this.clipRect_.setAttribute('width', '100000px');
                     }
                 };
             }
