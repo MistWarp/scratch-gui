@@ -26,7 +26,7 @@
     "test:unit": "jest test[\\\\/]unit[\\\\/]addons",
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
-    "link": "npm link scratch-vm scratch-blocks scratch-render"
+    "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint"
   },
   "config": {
     "commitizen": {
@@ -96,7 +96,7 @@
     "redux-throttle": "0.1.1",
     "scratch-audio": "github:TurboWarp/scratch-audio#develop",
     "scratch-blocks": "github:MistWarp/scratch-blocks#20a02fcd88cc53a759b2e614a3c1597c25b56905",
-    "scratch-paint": "github:TurboWarp/scratch-paint#develop",
+    "scratch-paint": "github:MistWarp/scratch-paint#develop",
     "scratch-render": "github:MistWarp/scratch-render#develop",
     "scratch-vm": "github:MistWarp/scratch-vm#develop",
     "style-loader": "^0.23.0",
