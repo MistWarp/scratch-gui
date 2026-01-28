@@ -28,9 +28,11 @@ const htmlWebpackPluginCommon = {
 // When this changes, the path for all JS files will change, bypassing any HTTP caches
 const CACHE_EPOCH = 'gleba';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const base = {
-    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-    devtool: process.env.SOURCEMAP || (process.env.NODE_ENV === 'production' ? false : 'cheap-module-source-map'),
+    mode: isProduction ? 'production' : 'development',
+    devtool: process.env.SOURCEMAP || (isProduction ? false : 'cheap-module-source-map'),
     devServer: {
         contentBase: path.resolve(__dirname, 'build'),
         host: '0.0.0.0',
@@ -50,9 +52,9 @@ const base = {
     },
     output: {
         library: 'GUI',
-        filename: process.env.NODE_ENV === 'production' ?
+        filename: isProduction ?
             `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
-        chunkFilename: process.env.NODE_ENV === 'production' ?
+        chunkFilename: isProduction ?
             `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
         publicPath: root
     },
@@ -83,7 +85,14 @@ const base = {
                     ['react-intl', {
                         messagesDir: './translations/messages/'
                     }]],
-                presets: ['@babel/preset-env', '@babel/preset-react']
+                presets: [
+                    ['@babel/preset-env', {
+                        modules: false,
+                        useBuiltIns: 'entry',
+                        corejs: 3
+                    }],
+                    '@babel/preset-react'
+                ]
             }
         },
         {
@@ -167,7 +176,7 @@ module.exports = [
                     test: /\.(svg|png|wav|mp3|gif|jpg|woff2)$/,
                     loader: 'url-loader',
                     options: {
-                        limit: 2048,
+                        limit: 1024,
                         outputPath: 'static/assets/',
                         esModule: false
                     }
@@ -175,12 +184,56 @@ module.exports = [
             ])
         },
         optimization: {
+            usedExports: true,
+            sideEffects: true,
+            concatenateModules: true,
             splitChunks: {
                 chunks: 'all',
-                minChunks: 2,
-                minSize: 50000,
-                maxInitialRequests: 5
-            }
+                maxInitialRequests: 25,
+                maxAsyncRequests: 25,
+                minSize: 20000,
+                maxSize: 244000,
+                cacheGroups: {
+                    react: {
+                        test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+                        name: 'react-vendor',
+                        priority: 20,
+                        enforce: true
+                    },
+                    scratchVM: {
+                        test: /[\\/]node_modules[\\/]scratch-vm[\\/]/,
+                        name: 'scratch-vm',
+                        priority: 15,
+                        reuseExistingChunk: true
+                    },
+                    scratchBlocks: {
+                        test: /[\\/]node_modules[\\/]scratch-blocks[\\/]/,
+                        name: 'scratch-blocks',
+                        priority: 15,
+                        reuseExistingChunk: true
+                    },
+                    vendor: {
+                        test: /[\\/]node_modules[\\/]/,
+                        name (module) {
+                            const packageName = module.context.match(
+                                /[\\/]node_modules[\\/](.*?)([\\/]|$)/
+                            )[1];
+                            return `vendor.${packageName.replace('@', '')}`;
+                        },
+                        priority: 10,
+                        minChunks: 1,
+                        maxSize: 244000
+                    },
+                    common: {
+                        minChunks: 2,
+                        priority: 5,
+                        reuseExistingChunk: true,
+                        minSize: 30000
+                    }
+                }
+            },
+            runtimeChunk: 'single',
+            minimize: isProduction
         },
         plugins: base.plugins.concat([
             new webpack.DefinePlugin({
@@ -196,6 +249,18 @@ module.exports = [
                 filename: 'editor.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 isEditor: true,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true,
+                    removeRedundantAttributes: true,
+                    useShortDoctype: true,
+                    removeEmptyAttributes: true,
+                    removeStyleLinkTypeAttributes: true,
+                    keepClosingSlash: true,
+                    minifyJS: true,
+                    minifyCSS: true,
+                    minifyURLs: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
@@ -203,6 +268,18 @@ module.exports = [
                 template: 'src/playground/index.ejs',
                 filename: 'index.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true,
+                    removeRedundantAttributes: true,
+                    useShortDoctype: true,
+                    removeEmptyAttributes: true,
+                    removeStyleLinkTypeAttributes: true,
+                    keepClosingSlash: true,
+                    minifyJS: true,
+                    minifyCSS: true,
+                    minifyURLs: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
@@ -210,6 +287,10 @@ module.exports = [
                 template: 'src/playground/index.ejs',
                 filename: 'fullscreen.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
@@ -217,6 +298,10 @@ module.exports = [
                 template: 'src/playground/embed.ejs',
                 filename: 'embed.html',
                 title: `Embedded Project - ${APP_NAME}`,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
@@ -224,6 +309,10 @@ module.exports = [
                 template: 'src/playground/simple.ejs',
                 filename: 'addons.html',
                 title: `Addon Settings - ${APP_NAME}`,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
@@ -231,6 +320,10 @@ module.exports = [
                 template: 'src/playground/simple.ejs',
                 filename: 'credits.html',
                 title: `${APP_NAME} Credits`,
+                minify: isProduction ? {
+                    removeComments: true,
+                    collapseWhitespace: true
+                } : false,
                 ...htmlWebpackPluginCommon
             }),
             new CopyWebpackPlugin({
@@ -253,7 +346,7 @@ module.exports = [
         ])
     })
 ].concat(
-    process.env.NODE_ENV === 'production' || process.env.BUILD_MODE === 'dist' ? (
+    isProduction || process.env.BUILD_MODE === 'dist' ? (
         // export as library
         defaultsDeep({}, base, {
             target: 'web',
@@ -277,7 +370,7 @@ module.exports = [
                         test: /\.(svg|png|wav|mp3|gif|jpg|woff2)$/,
                         loader: 'url-loader',
                         options: {
-                            limit: 2048,
+                            limit: 1024,
                             outputPath: 'static/assets/',
                             publicPath: `${STATIC_PATH}/assets/`,
                             esModule: false
