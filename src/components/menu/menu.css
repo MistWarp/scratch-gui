@@ -60,6 +60,7 @@
 
 .menu-item img {
     color: $text-primary;
+    margin-right: 0.5rem;
 }
 
 .menu-item svg {

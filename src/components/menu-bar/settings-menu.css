@@ -71,6 +71,7 @@
 }
 
 .accent-icon-outer {
+    margin-right: 0.5rem;
     width: 24px;
     height: 24px;
     border: 3px solid $menu-bar-foreground;
@@ -317,6 +318,7 @@
     z-index: 3;
 }
 
+.accent-submenu .check img,
 .accent-submenu .check svg {
     display: block;
     width: 0.56rem;

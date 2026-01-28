@@ -41,7 +41,13 @@ import TWDesktopSettings from './tw-desktop-settings.jsx';
 
 import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
 
-import {openTipsLibrary, openSettingsModal, openRestorePointModal, openGitModal} from '../../reducers/modals';
+import {
+    openTipsLibrary,
+    openSettingsModal,
+    openRestorePointModal,
+    openGitModal,
+    openExtensionManagerModal
+} from '../../reducers/modals';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -126,9 +132,9 @@ import oldtimeyLogo from './oldtimey-logo.svg';
 
 import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
-    FilePlusCorner, Upload, Download, RefreshCcw, ClockPlus, Package, FileInput,
+    FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, Gauge, FastForward, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch
+    Bookmark, GitBranch, Rabbit, FileCog
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1327,42 +1333,75 @@ class MenuBar extends React.Component {
                                     )}</DeletionRestorer>
                                 )}
                                 <MenuSection>
-                                    <TurboMode>{(toggleTurboMode, {turboMode}) => (
-                                        <MenuItem onClick={toggleTurboMode}>
-                                            <Gauge />
-                                            {turboMode ? (
+                                    <MenuItem>
+                                        <div
+                                            className={styles.submenuRow}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                this.props.onRequestCloseEdit();
+                                                this.props.onOpenExtensionLibrary();
+                                            }}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    this.props.onRequestCloseEdit();
+                                                    this.props.onOpenExtensionLibrary();
+                                                }
+                                            }}
+                                        >
+                                            <Rabbit />
+                                            <span className={styles.submenuRowLabel}>
                                                 <FormattedMessage
-                                                    defaultMessage="Turn off Turbo Mode"
-                                                    description="Menu bar item for turning off turbo mode"
-                                                    id="gui.menuBar.turboModeOff"
+                                                    defaultMessage="Runtime"
+                                                    description="Menu bar submenu for managing runtime settings"
+                                                    id="tw.menuBar.runtime"
                                                 />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn on Turbo Mode"
-                                                    description="Menu bar item for turning on turbo mode"
-                                                    id="gui.menuBar.turboModeOn"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</TurboMode>
-                                    <FramerateChanger>{(changeFramerate, {framerate}) => (
-                                        <MenuItem onClick={changeFramerate}>
-                                            <FastForward />
-                                            {framerate === 60 ? (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn off 60 FPS Mode"
-                                                    description="Menu bar item for turning off 60 FPS mode"
-                                                    id="tw.menuBar.60off"
-                                                />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn on 60 FPS Mode"
-                                                    description="Menu bar item for turning on 60 FPS mode"
-                                                    id="tw.menuBar.60on"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</FramerateChanger>
+                                            </span>
+                                            <ChevronDown
+                                                size={8}
+                                                className={styles.submenuCaret}
+                                            />
+                                        </div>
+                                        <Submenu place={this.props.isRtl ? 'left' : 'right'}>
+                                            <TurboMode>{(toggleTurboMode, {turboMode}) => (
+                                                <MenuItem onClick={toggleTurboMode}>
+                                                    <Gauge />
+                                                    {turboMode ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Turn off Turbo Mode"
+                                                            description="Menu bar item for turning off turbo mode"
+                                                            id="gui.menuBar.turboModeOff"
+                                                        />
+                                                    ) : (
+                                                        <FormattedMessage
+                                                            defaultMessage="Turn on Turbo Mode"
+                                                            description="Menu bar item for turning on turbo mode"
+                                                            id="gui.menuBar.turboModeOn"
+                                                        />
+                                                    )}
+                                                </MenuItem>
+                                            )}</TurboMode>
+                                            <FramerateChanger>{(changeFramerate, {framerate}) => (
+                                                <MenuItem onClick={changeFramerate}>
+                                                    <FastForward />
+                                                    {framerate === 60 ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Turn off 60 FPS Mode"
+                                                            description="Menu bar item for turning off 60 FPS mode"
+                                                            id="tw.menuBar.60off"
+                                                        />
+                                                    ) : (
+                                                        <FormattedMessage
+                                                            defaultMessage="Turn on 60 FPS Mode"
+                                                            description="Menu bar item for turning on 60 FPS mode"
+                                                            id="tw.menuBar.60on"
+                                                        />
+                                                    )}
+                                                </MenuItem>
+                                            )}</FramerateChanger>
+                                        </Submenu>
+                                    </MenuItem>
                                     <ChangeUsername>{changeUsername => (
                                         <MenuItem onClick={changeUsername}>
                                             <UserPen />
@@ -1433,64 +1472,33 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
-                                    <MenuItem>
-                                        <div
-                                            className={styles.submenuRow}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => {
-                                                this.props.onRequestCloseEdit();
-                                                this.props.onOpenExtensionLibrary();
-                                            }}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    this.props.onRequestCloseEdit();
-                                                    this.props.onOpenExtensionLibrary();
-                                                }
-                                            }}
-                                        >
-                                            <PackagePlus />
-                                            <span className={styles.submenuRowLabel}>
-                                                <FormattedMessage
-                                                    defaultMessage="Extensions"
-                                                    description="Menu bar item for extensions"
-                                                    id="tw.menuBar.extensions"
-                                                />
-                                            </span>
-                                            <ChevronDown
-                                                size={8}
-                                                className={styles.submenuCaret}
-                                            />
-                                        </div>
-                                        <Submenu place={this.props.isRtl ? 'left' : 'right'}>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onRequestCloseEdit();
-                                                    this.props.onOpenExtensionLibrary();
-                                                }}
-                                            >
-                                                <PackagePlus />
-                                                <FormattedMessage
-                                                    defaultMessage="Add/Import"
-                                                    description="Menu bar item for adding or importing extensions"
-                                                    id="tw.menuBar.extensions.addImport"
-                                                />
-                                            </MenuItem>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onRequestCloseEdit();
-                                                    this.props.onOpenExtensionManagerModal();
-                                                }}
-                                            >
-                                                <Settings />
-                                                <FormattedMessage
-                                                    defaultMessage="Manage"
-                                                    description="Menu bar item for managing loaded extensions"
-                                                    id="tw.menuBar.extensions.manage"
-                                                />
-                                            </MenuItem>
-                                        </Submenu>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseEdit();
+                                            this.props.onOpenExtensionLibrary();
+                                        }}
+                                    >
+                                        <PackagePlus />
+                                        <FormattedMessage
+                                            defaultMessage="Add Extension"
+                                            description="Menu bar item for adding or importing extensions"
+                                            id="tw.menuBar.extensions.addImport"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseEdit();
+                                            this.props.onOpenExtensionManagerModal();
+                                        }}
+                                    >
+                                        <FileCog />
+                                        <FormattedMessage
+                                            defaultMessage="Manage Extensions"
+                                            description="Menu bar item for managing loaded extensions"
+                                            id="tw.menuBar.extensions.manage"
+                                        />
                                     </MenuItem>
                                 </MenuSection>
                             </MenuBarMenu>
@@ -1842,7 +1850,7 @@ MenuBar.propTypes = {
     }),
     username: PropTypes.string,
     userOwnsProject: PropTypes.bool,
-    vm: PropTypes.instanceOf(VM).isRequired,
+    vm: PropTypes.instanceOf(VM).isRequired
 };
 
 MenuBar.contextTypes = {
@@ -1927,6 +1935,7 @@ const mapDispatchToProps = dispatch => ({
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
     onClickNew: needSave => {
+        dispatch(setPlayer(false));
         dispatch(requestNewProject(needSave));
         dispatch(setFileHandle(null));
     },

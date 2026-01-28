@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
-import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
@@ -54,10 +54,19 @@ import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-enviro
 
 import styles from './gui.css';
 
+const messages = defineMessages({
+    addExtension: {
+        id: 'gui.gui.addExtension',
+        description: 'Button to add an extension in the target pane',
+        defaultMessage: 'Add Extension'
+    }
+});
+
 import {
     Blocks as BlocksIcon,
     PaintbrushVertical as CostumesIcon,
-    Volume2 as SoundsIcon
+    Volume2 as SoundsIcon,
+    PackagePlus as ExtensionIcon
 } from 'lucide-react';
 
 const getFullscreenBackgroundColor = () => {
@@ -388,6 +397,7 @@ const GUIComponent = props => {
         costumesTabVisible,
         customStageSize,
         enableCommunity,
+        intl,
         extensionLibraryVisible,
         isCreating,
         isEmbedded,
@@ -418,6 +428,7 @@ const GUIComponent = props => {
         onActivateSoundsTab,
         onActivateTab,
         onClickLogo,
+        onExtensionButtonClick,
         onOpenCustomExtensionModal,
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
@@ -720,6 +731,18 @@ const GUIComponent = props => {
                                             theme={theme}
                                             vm={vm}
                                         />
+                                    </Box>
+                                    <Box className={styles.extensionButtonContainer}>
+                                        <button
+                                            className={styles.extensionButton}
+                                            title={intl.formatMessage(messages.addExtension)}
+                                            onClick={onExtensionButtonClick}
+                                        >
+                                            <ExtensionIcon
+                                                className={styles.extensionButtonIcon}
+                                                draggable={false}
+                                            />
+                                        </button>
                                     </Box>
                                     <Box className={styles.watermark}>
                                         <Watermark />
