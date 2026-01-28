@@ -1,0 +1,1 @@
+(window.webpackJsonpGUI=window.webpackJsonpGUI||[]).push([[135],{2442:function(n,o,s){"use strict";s.r(o),s.d(o,"resources",function(){return e});var t=s(2443);const e={"hide-button.css":s.n(t).a}},2443:function(n,o,s){(n.exports=s(12)(!1)).push([n.i,'[class*="extension-button-container"] {\n  display: none !important;\n}',""])}}]);
