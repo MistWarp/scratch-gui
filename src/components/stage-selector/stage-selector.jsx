@@ -9,10 +9,7 @@ import styles from './stage-selector.css';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
 import backdropIcon from '../action-menu/icon--backdrop.svg';
-import fileUploadIcon from '../action-menu/icon--file-upload.svg';
-import paintIcon from '../action-menu/icon--paint.svg';
-import surpriseIcon from '../action-menu/icon--surprise.svg';
-import searchIcon from '../action-menu/icon--search.svg';
+import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
 
 const messages = defineMessages({
     addBackdropFromLibrary: {
@@ -101,7 +98,7 @@ const StageSelector = props => {
                 moreButtons={[
                     {
                         title: intl.formatMessage(messages.addBackdropFromFile),
-                        img: fileUploadIcon,
+                        img: Upload,
                         onClick: onBackdropFileUploadClick,
                         fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .gif',
                         fileChange: onBackdropFileUpload,
@@ -109,16 +106,16 @@ const StageSelector = props => {
                         fileMultiple: true
                     }, {
                         title: intl.formatMessage(messages.addBackdropFromSurprise),
-                        img: surpriseIcon,
+                        img: Sparkles,
                         onClick: onSurpriseBackdropClick
 
                     }, {
                         title: intl.formatMessage(messages.addBackdropFromPaint),
-                        img: paintIcon,
+                        img: Paintbrush,
                         onClick: onEmptyBackdropClick
                     }, {
                         title: intl.formatMessage(messages.addBackdropFromLibrary),
-                        img: searchIcon,
+                        img: Search,
                         onClick: onNewBackdropClick
                     }
                 ]}
