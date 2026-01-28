@@ -11,11 +11,9 @@ import {isRtl} from '@turbowarp/scratch-l10n';
 
 import styles from './sprite-selector.css';
 
-import fileUploadIcon from '../action-menu/icon--file-upload.svg';
-import paintIcon from '../action-menu/icon--paint.svg';
 import spriteIcon from '../action-menu/icon--sprite.svg';
-import surpriseIcon from '../action-menu/icon--surprise.svg';
-import searchIcon from '../action-menu/icon--search.svg';
+
+import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
 
 const messages = defineMessages({
     addSpriteFromLibrary: {
@@ -118,7 +116,7 @@ const SpriteSelectorComponent = function (props) {
                 moreButtons={[
                     {
                         title: intl.formatMessage(messages.addSpriteFromFile),
-                        img: fileUploadIcon,
+                        img: Upload,
                         onClick: onFileUploadClick,
                         fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .sprite2, .sprite3, .gif',
                         fileChange: onSpriteUpload,
@@ -126,15 +124,15 @@ const SpriteSelectorComponent = function (props) {
                         fileMultiple: true
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromSurprise),
-                        img: surpriseIcon,
+                        img: Sparkles,
                         onClick: onSurpriseSpriteClick // TODO need real function for this
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromPaint),
-                        img: paintIcon,
+                        img: Paintbrush,
                         onClick: onPaintSpriteClick // TODO need real function for this
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromLibrary),
-                        img: searchIcon,
+                        img: Search,
                         onClick: onNewSpriteClick
                     }
                 ]}
