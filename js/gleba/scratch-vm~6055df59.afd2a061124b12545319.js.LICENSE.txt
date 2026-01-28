@@ -1,7 +1,0 @@
-/*! @source http://purl.eligrey.com/github/canvas-toBlob.js/blob/master/canvas-toBlob.js */
-
-//!! Deliberately using an API that's deprecated in node.js because
-
-//!! Discussion: github.com/node-browser-compat/atob/pull/9
-
-//!! this file is for browsers and we expect them to cope with it.
