@@ -77,7 +77,7 @@ const MenubarAlignMenu = ({
             <AlignIcon id={theme.menuBarAlign} />
             <span className={styles.submenuLabel}>
                 <FormattedMessage
-                    defaultMessage="Menu Bar Alignment"
+                    defaultMessage="MenuBar Alignment"
                     description="Label for menu to choose menu bar alignment (left, center, right)"
                     id="tw.menuBar.menuBarAlign"
                 />

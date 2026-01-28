@@ -87,4 +87,5 @@ export default {
   "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
   "no-category-text": () => import(/* webpackChunkName: "addon-entry-no-category-text" */ "../addons/no-category-text/_runtime_entry.js"),
   "green-flag-order": () => import(/* webpackChunkName: "addon-entry-green-flag-order" */ "../addons/green-flag-order/_runtime_entry.js"),
+  "remove-extension-button": () => import(/* webpackChunkName: "addon-entry-remove-extension-button" */ "../addons/remove-extension-button/_runtime_entry.js"),
 };

@@ -5,7 +5,8 @@ const manifest = {
   "description": "Automatically saves your projects to local files at regular intervals to prevent data loss.",
   "credits": [
     {
-      "name": "Mistium"
+      "name": "Mistium",
+      "link": "https://mistium.com"
     }
   ],
   "userscripts": [
