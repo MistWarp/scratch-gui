@@ -43,28 +43,67 @@ import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
+import windowManager from '../addons/window-system/window-manager';
+
 import styles from './interface.css';
 
 // Import window manager dynamically
-let WindowManager = null;
 let settingsWindow = null;
 
-const loadWindowManager = async () => {
-    if (!WindowManager) {
-        try {
-            const module = await import('../addons/window-system/window-manager.js');
-            WindowManager = module.default;
-        } catch (e) {
-            console.warn('Window manager not available, falling back to new window:', e);
-            return null;
-        }
+const syncCssVarsToIframe = (iframe, vars) => {
+    const doc = iframe.contentDocument;
+    const root = doc.documentElement;
+
+    for (const [key, value] of Object.entries(vars)) {
+        root.style.setProperty(key, value);
     }
-    return WindowManager;
 };
 
-const handleClickAddonSettings = async addonId => {
-    const windowManager = await loadWindowManager();
-    
+const createSettingsContent = addonId => {
+    const container = settingsWindow.getContentElement();
+    container.style.padding = '0';
+    container.style.overflow = 'hidden';
+
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.borderRadius = '0 0 8px 8px';
+
+    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
+    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
+
+    iframe.src = url;
+
+    iframe.addEventListener('load', () => {
+        const computedStyle = getComputedStyle(document.documentElement);
+
+        syncCssVarsToIframe(iframe, {
+            '--motion-primary-transparent': computedStyle.getPropertyValue('--motion-primary-transparent'),
+            '--looks-secondary': computedStyle.getPropertyValue('--looks-secondary'),
+            '--looks-transparent': computedStyle.getPropertyValue('--looks-transparent'),
+            '--looks-secondary-dark': computedStyle.getPropertyValue('--looks-secondary-dark')
+        });
+    });
+
+    container.appendChild(iframe);
+};
+
+const navigateToAddon = addonId => {
+    if (settingsWindow) {
+        const iframe = settingsWindow.getContentElement().querySelector('iframe');
+        if (iframe) {
+            try {
+                const newUrl = `${iframe.src.split('#')[0]}#${addonId}`;
+                iframe.src = newUrl;
+            } catch (e) {
+                console.warn('Could not navigate to addon:', e);
+            }
+        }
+    }
+};
+
+const handleClickAddonSettings = addonId => {
     if (!windowManager) {
         // Fall back to original behavior if window manager isn't available
         const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
@@ -104,40 +143,6 @@ const handleClickAddonSettings = async addonId => {
 if (typeof window !== 'undefined') {
     window.handleClickAddonSettings = handleClickAddonSettings;
 }
-
-const createSettingsContent = (addonId) => {
-    const container = settingsWindow.getContentElement();
-    container.style.padding = '0';
-    container.style.overflow = 'hidden';
-    
-    // Create iframe to load the settings page
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.borderRadius = '0 0 8px 8px'; // Match window border radius
-    
-    // Construct the settings URL
-    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    
-    iframe.src = url;
-    container.appendChild(iframe);
-};
-
-const navigateToAddon = (addonId) => {
-    if (settingsWindow) {
-        const iframe = settingsWindow.getContentElement().querySelector('iframe');
-        if (iframe) {
-            try {
-                const newUrl = iframe.src.split('#')[0] + '#' + addonId;
-                iframe.src = newUrl;
-            } catch (e) {
-                console.warn('Could not navigate to addon:', e);
-            }
-        }
-    }
-};
 
 const messages = defineMessages({
     defaultTitle: {
