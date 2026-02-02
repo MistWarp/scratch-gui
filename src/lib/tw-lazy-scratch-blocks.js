@@ -52,8 +52,8 @@ const load = () => {
                     typeof verticalFlyoutProto.twOriginalSetMetrics_ !== 'function') {
                     verticalFlyoutProto.twOriginalSetMetrics_ = verticalFlyoutProto.setMetrics_;
 
-                    verticalFlyoutProto.setMetrics_ = function (xyRatio) {
-                        verticalFlyoutProto.twOriginalSetMetrics_.call(this, xyRatio);
+                    verticalFlyoutProto.setMetrics_ = function (...args) {
+                        return verticalFlyoutProto.twOriginalSetMetrics_.call(this, args[0]);
                     };
                 }
 
@@ -97,12 +97,13 @@ const load = () => {
                 };
 
                 const originalSetMetrics = verticalFlyoutProto.setMetrics_;
-                verticalFlyoutProto.setMetrics_ = function (xyRatio) {
-                    originalSetMetrics.call(this, xyRatio);
+                verticalFlyoutProto.setMetrics_ = function (...args) {
+                    const ret = originalSetMetrics.call(this, args[0]);
                     
                     if (this.twClippingEnabled_ === false && this.clipRect_) {
                         this.clipRect_.setAttribute('width', '100000px');
                     }
+                    return ret;
                 };
             }
             

@@ -1,6 +1,9 @@
 import LazyScratchBlocks from '../tw-lazy-scratch-blocks';
 import AddonHooks from '../../addons/hooks';
 
+import WindowManager from '../../addons/window-system/window-manager';
+import * as BrowserGit from '../git/browser-git';
+
 /**
  * Implements Scratch.gui API for unsandboxed extensions.
  * @param {any} Scratch window.Scratch, mutated in place.
@@ -34,7 +37,13 @@ const implementGuiAPI = Scratch => {
          *
          * @returns {Promise<any>} Promise that will resolve to ScratchBlocks.
          */
-        getBlocklyEagerly: () => LazyScratchBlocks.load()
+        getBlocklyEagerly: () => LazyScratchBlocks.load(),
+
+        // Expose the window manager on the VM for addons/integration.
+        wm: WindowManager,
+
+        // Expose MistWarp's browser git integration on the VM.
+        git: BrowserGit
     };
 };
 

@@ -4,12 +4,13 @@ import {IntlProvider} from 'react-intl';
 import {Provider} from 'react-redux';
 
 import MWFontsWindow from '../../components/mw-fonts-window/mw-fonts-window.jsx';
+import WindowManager from '../../addons/window-system/window-manager';
 
 let mwFontsWindow = null;
 let mwFontsContainer = null;
 
-const openMWFontsWindow = ({vm, store, locale, messages}) => {
-    const wm = vm && vm.wm;
+const openMWFontsWindow = ({store, locale, messages}) => {
+    const wm = WindowManager;
     if (!wm || typeof wm.createWindow !== 'function') {
         throw new Error('Window manager not available on vm.wm');
     }
