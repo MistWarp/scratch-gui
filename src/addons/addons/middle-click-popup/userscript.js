@@ -34,6 +34,7 @@ export default async function ({addon, msg}) {
 
     const popupContainer = popupRoot.appendChild(document.createElement('div'));
     popupContainer.classList.add('sa-mcp-container');
+    popupContainer.classList.add('sa-mcp-container-collapsed');
 
     const popupInputContainer = popupContainer.appendChild(document.createElement('div'));
     popupInputContainer.classList.add(addon.tab.scratchClass('input_input-form'));
@@ -131,6 +132,7 @@ export default async function ({addon, msg}) {
     /** @type {null | {x: number, y: number}} */
     let popupOrigin = null;
     let isCenteredMode = false;
+    let searchMode = 'everything';
 
     let previewWidth = 0;
     let previewHeight = 0;
@@ -154,6 +156,7 @@ export default async function ({addon, msg}) {
         }
 
         isCenteredMode = centered;
+        searchMode = centered ? 'everything' : 'blocks';
 
         previewScale = window.innerWidth * 0.00005 + addon.settings.get('popup_scale') / 100;
         
@@ -163,7 +166,7 @@ export default async function ({addon, msg}) {
         }
         
         if (centered) {
-            previewWidth = Math.min(window.innerWidth * 0.6, 800);
+            previewWidth = Math.min(window.innerWidth * 0.6, 600);
         } else {
             previewWidth = (window.innerWidth * addon.settings.get('popup_width')) / 100;
         }
@@ -183,10 +186,14 @@ export default async function ({addon, msg}) {
         popupContainer.style.width = `${previewWidth}px`;
 
         if (centered) {
-            popupOrigin = {x: window.innerWidth / 2 - previewWidth / 2, y: 20};
+            previewWidth = 600;
+            popupOrigin = {
+                x: window.innerWidth / 2 - previewWidth / 2,
+                y: window.innerHeight / 2
+            };
             popupPosition = {
-                x: (window.innerWidth - previewWidth) / 2,
-                y: 20
+                x: (window.innerWidth - previewWidth) / 2 - 30,
+                y: (window.innerHeight - 50) / 2 - 300
             };
         } else {
             popupOrigin = {x: mousePosition.x, y: mousePosition.y};
@@ -274,15 +281,18 @@ export default async function ({addon, msg}) {
         if (searchDebounceTimer) {
             clearTimeout(searchDebounceTimer);
         }
-    
+
         if (popupInput.value.trim().length === 0) {
+            popupContainer.classList.add('sa-mcp-container-collapsed');
             doPerformSearch();
             return;
         }
-    
+
+        popupContainer.classList.remove('sa-mcp-container-collapsed');
+
         popupStatusBar.textContent = 'Searching...';
         popupStatusBar.style.display = '';
-    
+
         searchDebounceTimer = setTimeout(doPerformSearch, SEARCH_DEBOUNCE_MS);
     }
 
@@ -302,7 +312,7 @@ export default async function ({addon, msg}) {
             return;
         }
         
-        const searchResult = performSearch(popupInput.value, querier, blockTypes, vm, PREVIEW_LIMIT);
+        const searchResult = performSearch(popupInput.value, querier, blockTypes, vm, PREVIEW_LIMIT, searchMode);
         const blockList = searchResult.blockList;
         queryIllegalResult = searchResult.queryIllegalResult;
         limited = searchResult.limited;
