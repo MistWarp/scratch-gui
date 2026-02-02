@@ -21,7 +21,7 @@
 
 .stage-wrapper.full-screen {
     position: fixed;
-    top: $menu-bar-height + $stage-menu-height;
+    top: $stage-menu-height;
     left: 0;
     right: 0;
     bottom: 0;
