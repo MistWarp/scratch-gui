@@ -7,12 +7,8 @@ import {loadGoogleFont} from './google-fonts';
 let currentFontStyleElement = null;
 
 const DEFAULT_FALLBACK_STACK = [
-    'system-ui',
-    '-apple-system',
-    'BlinkMacSystemFont',
-    '"Segoe UI"',
-    'Roboto',
-    '"Helvetica Neue"',
+    'Helvetica Neue',
+    'Helvetica',
     'Arial',
     'sans-serif'
 ];
