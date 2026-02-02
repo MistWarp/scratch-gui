@@ -1,0 +1,56 @@
+/* TurboWarp Tab Styles */
+[class*="gui_tab_"] {
+  flex-grow: 1;
+  height: 80%;
+  top: 0;
+  margin-bottom: 0;
+  border-radius: 1rem 1rem 0 0;
+  border: 1px solid var(--ui-black-transparent);
+  padding: 0.125rem 1.25rem 0;
+  font-size: 0.75rem;
+  background-color: var(--ui-tertiary);
+  color: var(--ui-text-primary-transparent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover {
+    border: 1px solid var(--ui-black-transparent);
+    background-color: var(--ui-white);
+  }
+
+  & svg {
+    margin-right: 0.125rem;
+  }
+}
+
+[class*="gui_tab_"][class*="react-tabs__tab--selected"] {
+  height: 90% !important;
+  color: var(--looks-secondary);
+  background-color: var(--ui-white);
+  z-index: 4;
+}
+
+[dir="ltr"] [class*="gui_tab_"] {
+  margin-left: -1.15rem;
+}
+
+[class*="gui_tab-list"] {
+  padding-left: 0;
+  height: 2.75rem;
+  width: 250px;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.80rem;
+  margin: 0 !important;
+  border-bottom: 0 !important;
+  color: var(--text-primary);
+}
