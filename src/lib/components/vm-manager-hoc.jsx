@@ -6,7 +6,6 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 import AudioEngine from 'scratch-audio';
 
-import WindowManager from '../../addons/window-system/window-manager';
 import * as BrowserGit from '../git/browser-git';
 import JSZip from 'jszip';
 
@@ -44,13 +43,6 @@ const vmManagerHOC = function (WrappedComponent) {
         componentDidMount () {
             if (!this.props.vm.initialized) {
                 window.vm = this.props.vm;
-
-                // Expose the window manager on the VM for addons/integration.
-                if (!this.props.vm.wm) this.props.vm.wm = WindowManager;
-
-                // Expose MistWarp's browser git integration on the VM.
-                if (!this.props.vm.gui) this.props.vm.gui = {};
-                if (!this.props.vm.gui.git) this.props.vm.gui.git = BrowserGit;
 
                 this.installGitProjectFileHooks();
                 try {
