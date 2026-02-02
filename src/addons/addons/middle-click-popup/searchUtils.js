@@ -25,15 +25,16 @@ import {evaluateMath, tryUnitConversion} from './mathUtils.js';
  * @param {BlockTypeInfo[]} blockTypes Block types
  * @param {any} vm VM instance
  * @param {number} PREVIEW_LIMIT Maximum number of results
+ * @param {string} searchMode 'blocks' or 'everything'
  * @returns {{
     * blockList: MenuItem[],
     * queryIllegalResult: any,
     * limited: boolean,
     * mathResult: (number | null),
     * conversionResult: any
- * }} Search results
- */
-const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
+  * }} Search results
+  */
+const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, searchMode = 'everything') => {
     /** @type {MenuItem[]} */
     const blockList = [];
     let queryIllegalResult = null;
@@ -52,6 +53,7 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
             }
         }
     } else {
+        const searchEverything = searchMode === 'everything';
         const queryResultObj = querier.queryWorkspace(searchValue);
         const queryResults = queryResultObj.results;
         queryIllegalResult = queryResultObj.illegalResult;
@@ -59,9 +61,11 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
 
         const searchTerms = searchValue.toLowerCase().split(/\s+/)
             .filter(t => t.length > 0);
-  
-        // Search sprites
-        const sprites = getAllSprites(vm);
+
+        // Search sprites (only in everything mode)
+        let spriteResults = [];
+        if (searchEverything) {
+            const sprites = getAllSprites(vm);
         const spriteResults = [];
         
         for (const sprite of sprites) {
@@ -86,12 +90,19 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
                     score: score
                 });
             }
+            spriteResults.push({
+                    spriteData: sprite,
+                    score: score
+                });
+            }
         }
         
         spriteResults.sort((a, b) => b.score - a.score);
-        
-        // Search costumes
-        const costumes = getAllCostumes(vm);
+
+        // Search costumes (only in everything mode)
+        let costumeResults = [];
+        if (searchEverything) {
+            const costumes = getAllCostumes(vm);
         const costumeResults = [];
         
         for (const costume of costumes) {
@@ -116,12 +127,19 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
                     score: score
                 });
             }
+            costumeResults.push({
+                    costumeData: costume,
+                    score: score
+                });
+            }
         }
         
         costumeResults.sort((a, b) => b.score - a.score);
-        
-        // Search custom blocks
-        const customBlocks = getAllCustomBlocks(vm);
+
+        // Search custom blocks (only in everything mode)
+        let customBlockResults = [];
+        if (searchEverything) {
+            const customBlocks = getAllCustomBlocks(vm);
         const customBlockResults = [];
         
         for (const customBlock of customBlocks) {
@@ -146,10 +164,15 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT) => {
                     score: score
                 });
             }
+            customBlockResults.push({
+                    customBlockData: customBlock,
+                    score: score
+                });
+            }
         }
         
         customBlockResults.sort((a, b) => b.score - a.score);
-        
+
         // Score regular blocks
         const scoredResults = queryResults.map(queryResult => {
             const blockText = queryResult.toText(false).toLowerCase();
