@@ -91,38 +91,6 @@ const filterAddonsBySupport = () => {
 };
 const {supported: supportedAddons, unsupported: unsupportedAddons} = filterAddonsBySupport();
 
-const groupAddons = () => {
-    const groups = {
-        new: {
-            label: settingsTranslations.groupNew,
-            open: true,
-            addons: []
-        },
-        others: {
-            label: settingsTranslations.groupOthers,
-            open: true,
-            addons: []
-        },
-        danger: {
-            label: settingsTranslations.groupDanger,
-            open: false,
-            addons: []
-        }
-    };
-    const manifests = Object.values(supportedAddons);
-    for (let index = 0; index < manifests.length; index++) {
-        const manifest = manifests[index];
-        if (manifest.tags.includes('new')) {
-            groups.new.addons.push(index);
-        } else if (manifest.tags.includes('danger') || manifest.noCompiler) {
-            groups.danger.addons.push(index);
-        } else {
-            groups.others.addons.push(index);
-        }
-    }
-    return groups;
-};
-
 const getAllTags = () => {
     const tags = new Set();
     for (const manifest of Object.values(supportedAddons)) {
