@@ -46,20 +46,24 @@ export default async function ({addon, msg}) {
         }
     };
 
-    const showNotification = (message, type = 'success') => {
+    const showPreview = (dataUrl) => {
         if (!addon.settings.get('show_notifications')) return;
     
-        const notification = document.createElement('div');
-        notification.className = `sa-screenshot-notification sa-screenshot-notification-${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
+        const preview = document.createElement('div');
+        preview.className = 'sa-screenshot-preview';
     
-        setTimeout(() => notification.classList.add('sa-screenshot-notification-visible'), 100);
+        const image = document.createElement('img');
+        image.src = dataUrl;
+        preview.appendChild(image);
+    
+        document.body.appendChild(preview);
+    
+        setTimeout(() => preview.classList.add('sa-screenshot-preview-visible'), 100);
         setTimeout(() => {
-            notification.classList.remove('sa-screenshot-notification-visible');
+            preview.classList.remove('sa-screenshot-preview-visible');
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
+                if (preview.parentNode) {
+                    preview.parentNode.removeChild(preview);
                 }
             }, 300);
         }, 3000);
@@ -84,7 +88,7 @@ export default async function ({addon, msg}) {
             const dataUrl = await snapshotPromise;
       
             if (!dataUrl) {
-                showNotification(msg('screenshot-error'), 'error');
+                showPreview(null);
                 return;
             }
 
@@ -93,7 +97,6 @@ export default async function ({addon, msg}) {
             const blob = await response.blob();
 
             if (!blob || blob.size === 0) {
-                showNotification(msg('screenshot-error'), 'error');
                 return;
             }
 
@@ -103,13 +106,12 @@ export default async function ({addon, msg}) {
                     await navigator.clipboard.write([
                         new ClipboardItem({'image/png': blob})
                     ]);
-                    showNotification(msg('screenshot-taken'));
+                    showPreview(dataUrl);
                     playSoundEffect();
                 } catch (err) {
-                    showNotification(msg('screenshot-error'), 'error');
                 }
             } else {
-                showNotification(msg('clipboard-not-supported'), 'success');
+                showPreview(dataUrl);
                 playSoundEffect();
             }
       
