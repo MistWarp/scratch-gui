@@ -18,6 +18,7 @@ const MENU_FONTS = 'fontsMenu';
 const MENU_ERRORS = 'errorsMenu';
 const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
+const MENU_EDITOR = 'editorMenu';
 
 class Menu {
     constructor (id) {
@@ -71,6 +72,7 @@ const rootMenu = new Menu('root')
     .addChild(new Menu(MENU_FILE))
     .addChild(new Menu(MENU_WORKSPACE_BOOKMARKS))
     .addChild(new Menu(MENU_EDIT))
+    .addChild(new Menu(MENU_EDITOR))
     .addChild(new Menu(MENU_MODE))
     .addChild(new Menu(MENU_SETTINGS))
     .addChild(new Menu(MENU_LOGIN))
@@ -94,7 +96,8 @@ const initialState = {
     [MENU_BLOCKS_THEME]: false,
     [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false,
-    [MENU_WORKSPACE_BOOKMARKS]: false
+    [MENU_WORKSPACE_BOOKMARKS]: false,
+    [MENU_EDITOR]: false
 };
 
 const reducer = function (state, action) {
@@ -202,6 +205,10 @@ const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
 const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
 const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
 
+const openEditorMenu = () => openMenu(MENU_EDITOR);
+const closeEditorMenu = () => closeMenu(MENU_EDITOR);
+const editorMenuOpen = state => state.scratchGui.menus[MENU_EDITOR];
+
 export {
     reducer as default,
     initialState as menuInitialState,
@@ -255,5 +262,8 @@ export {
     errorsMenuOpen,
     openCustomThemes,
     closeCustomThemes,
-    customThemesOpen
+    customThemesOpen,
+    openEditorMenu,
+    closeEditorMenu,
+    editorMenuOpen
 };

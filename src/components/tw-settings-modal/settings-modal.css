@@ -9,6 +9,136 @@
     overflow-y: auto;
 }
 
+.sidebarLayout {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.sidebar {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
+    background: $ui-secondary;
+    border-right: 1px solid $ui-black-transparent;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 100%;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebarItems {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    height: 100%;
+}
+
+.sidebarItems::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebarItems::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebarItems::-webkit-scrollbar-thumb {
+    background: $ui-black-transparent;
+    border-radius: 3px;
+}
+
+.sidebarItems::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.sidebarItem {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-primary;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebarItem::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebarItem:hover::before {
+    opacity: 1;
+}
+
+.sidebarItem:hover {
+    background: $ui-tertiary;
+    transform: translateX(2px);
+}
+
+.sidebarItem.selected {
+    background: $looks-transparent;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebarItem.selected::before {
+    opacity: 1;
+}
+
+.sidebarIcon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.sidebarLabel {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.contentArea {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    & > div {
+        height: 100%;
+
+        & > iframe {
+            height: 100%;
+            width: 100%;
+        }
+    }
+}
+
+.modalContent {
+    height: 100%;
+}
+
+.pageContent {
+    flex: 1;
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+}
+
 /* For small screens, such as in the embed */
 @media (max-height: 600px) {
     .modal-content {

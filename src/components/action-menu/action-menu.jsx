@@ -200,9 +200,9 @@ class ActionMenu extends React.Component {
 
 ActionMenu.propTypes = {
     className: PropTypes.string,
-    img: PropTypes.string,
+    img: PropTypes.oneOfType([PropTypes.string, PropTypes.elementType]),
     moreButtons: PropTypes.arrayOf(PropTypes.shape({
-        img: PropTypes.string,
+        img: PropTypes.oneOfType([PropTypes.string, PropTypes.elementType]),
         title: PropTypes.node.isRequired,
         onClick: PropTypes.func, // Optional, "coming soon" if no callback provided
         fileAccept: PropTypes.string, // Optional, only for file upload

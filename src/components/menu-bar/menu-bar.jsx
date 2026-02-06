@@ -133,8 +133,8 @@ import oldtimeyLogo from './oldtimey-logo.svg';
 import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
-    Save, ArchiveRestore, Gauge, FastForward, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, Rabbit, FileCog
+    Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -249,10 +249,13 @@ class MenuBar extends React.Component {
             autosavePaused: false,
             workspaceBookmarks: [],
             workspaceBookmarksCategories: ['General'],
-            workspaceBookmarksCollapsedCategories: []
+            workspaceBookmarksCollapsedCategories: [],
+            canUndo: true,
+            canRedo: true
         };
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
+        this.undoRedoChangeListener = null;
         bindAll(this, [
             'handleClickSeeInside',
             'handleClickNew',
@@ -265,7 +268,8 @@ class MenuBar extends React.Component {
             'handleClickRestorePoints',
             'handleClickSeeCommunity',
             'handleClickShare',
-            'handleSetMode',
+            'handleClickUndo',
+            'handleClickRedo',
             'handleKeyPress',
             'handleRestoreOption',
             'getSaveToComputerHandler',
@@ -278,6 +282,7 @@ class MenuBar extends React.Component {
             'ensureScratchBlocks',
             'getCurrentWorkspaceBookmarkState',
             'applyWorkspaceBookmarkState',
+            'updateUndoRedoState',
             'handleAddWorkspaceBookmark',
             'handleSwitchWorkspaceBookmark',
             'handleDeleteWorkspaceBookmark',
@@ -302,6 +307,17 @@ class MenuBar extends React.Component {
             };
             this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
+
+        this.ensureScratchBlocks().then(ScratchBlocks => {
+            const workspace = ScratchBlocks.getMainWorkspace();
+            if (workspace) {
+                this.undoRedoChangeListener = () => {
+                    setTimeout(() => this.updateUndoRedoState(), 0);
+                };
+                workspace.addChangeListener(this.undoRedoChangeListener);
+                setTimeout(() => this.updateUndoRedoState(), 100);
+            }
+        });
     }
     componentDidUpdate (prevProps) {
         // Restart countdown if autosave settings changed
@@ -317,6 +333,14 @@ class MenuBar extends React.Component {
         }
         if (this.autosaveCountdownInterval) {
             clearInterval(this.autosaveCountdownInterval);
+        }
+        if (this.undoRedoChangeListener) {
+            this.ensureScratchBlocks().then(ScratchBlocks => {
+                const workspace = ScratchBlocks.getMainWorkspace();
+                if (workspace) {
+                    workspace.removeChangeListener(this.undoRedoChangeListener);
+                }
+            });
         }
     }
     handleClickNew () {
@@ -962,6 +986,41 @@ class MenuBar extends React.Component {
     handleClickSeeInside () {
         this.props.onClickSeeInside();
     }
+    handleClickUndo () {
+        if (!this.props.isPlayerOnly && this.state.canUndo) {
+            this.ensureScratchBlocks().then(ScratchBlocks => {
+                const workspace = ScratchBlocks.getMainWorkspace();
+                if (workspace) {
+                    workspace.undo(false);
+                    this.updateUndoRedoState();
+                }
+            });
+        }
+    }
+    handleClickRedo () {
+        if (!this.props.isPlayerOnly && this.state.canRedo) {
+            this.ensureScratchBlocks().then(ScratchBlocks => {
+                const workspace = ScratchBlocks.getMainWorkspace();
+                if (workspace) {
+                    workspace.undo(true);
+                    this.updateUndoRedoState();
+                }
+            });
+        }
+    }
+    updateUndoRedoState () {
+        if (this.props.isPlayerOnly) return;
+        this.ensureScratchBlocks().then(ScratchBlocks => {
+            const workspace = ScratchBlocks.getMainWorkspace();
+            if (workspace) {
+                const canUndo = workspace.hasUndoStack ?
+                    workspace.hasUndoStack() : (workspace.undoStack_ && workspace.undoStack_.length > 0);
+                const canRedo = workspace.hasRedoStack ?
+                    workspace.hasRedoStack() : (workspace.redoStack_ && workspace.redoStack_.length > 0);
+                this.setState({canUndo, canRedo});
+            }
+        });
+    }
     buildAboutMenu (onClickAbout) {
         if (!onClickAbout) {
             // hide the button
@@ -1240,6 +1299,16 @@ class MenuBar extends React.Component {
                                             </MenuItem>
                                         </MenuSection>
                                     )}
+                                    <MenuSection className={styles.menuSection}>
+                                        <MenuItem onClick={this.props.onClickGitModal}>
+                                            <GitBranch />
+                                            <FormattedMessage
+                                                defaultMessage="Git"
+                                                description="Menu bar item to open git window"
+                                                id="mw.menuBar.git"
+                                            />
+                                        </MenuItem>
+                                    </MenuSection>
                                     <MenuSection>
                                         <MenuItem onClick={this.handleClickRestorePoints}>
                                             <RefreshCcw />
@@ -1321,87 +1390,76 @@ class MenuBar extends React.Component {
                                 open={this.props.editMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
-                                {this.props.isPlayerOnly ? null : (
-                                    <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (
-                                        <MenuItem
-                                            className={classNames({[styles.disabled]: !restorable})}
-                                            onClick={this.handleRestoreOption(handleRestore)}
-                                        >
-                                            <ArchiveRestore />
-                                            {this.restoreOptionMessage(deletedItem)}
-                                        </MenuItem>
-                                    )}</DeletionRestorer>
-                                )}
                                 <MenuSection>
-                                    <MenuItem>
-                                        <div
-                                            className={styles.submenuRow}
-                                            role="button"
-                                            tabIndex={0}
+                                    {this.props.isPlayerOnly ? null : (
+                                        <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (
+                                            <MenuItem
+                                                className={classNames({[styles.disabled]: !restorable})}
+                                                onClick={this.handleRestoreOption(handleRestore)}
+                                            >
+                                                <ArchiveRestore />
+                                                {this.restoreOptionMessage(deletedItem)}
+                                            </MenuItem>
+                                        )}</DeletionRestorer>
+                                    )}
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        className={classNames({[styles.disabled]: !this.state.canUndo})}
+                                        onClick={this.state.canUndo ? this.handleClickUndo : null}
+                                    >
+                                        <Undo />
+
+                                        <FormattedMessage
+                                            defaultMessage="Undo"
+                                            description="Menu bar item for undoing"
+                                            id="gui.menuBar.undo"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        className={classNames({[styles.disabled]: !this.state.canRedo})}
+                                        onClick={this.state.canRedo ? this.handleClickRedo : null}
+                                    >
+                                        <Redo />
+
+                                        <FormattedMessage
+                                            defaultMessage="Redo"
+                                            description="Menu bar item for redoing"
+                                            id="gui.menuBar.redo"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickSettingsModal();
+                                            this.props.onRequestCloseEdit();
+                                        }}
+                                    >
+                                        <Settings />
+                                        <FormattedMessage
+                                            defaultMessage="Project Settings"
+                                            description="Menu bar item for settings"
+                                            id="tw.menuBar.moreSettings"
+                                        />
+                                    </MenuItem>
+                                    {this.props.onClickDesktopSettings &&
+                                        <TWDesktopSettings onClick={this.props.onClickDesktopSettings} />}
+                                    {this.props.onClickAddonSettings && (
+                                        <MenuItem
                                             onClick={() => {
+                                                this.props.onClickAddonSettings();
                                                 this.props.onRequestCloseEdit();
-                                                this.props.onOpenExtensionLibrary();
-                                            }}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    this.props.onRequestCloseEdit();
-                                                    this.props.onOpenExtensionLibrary();
-                                                }
                                             }}
                                         >
-                                            <Rabbit />
-                                            <span className={styles.submenuRowLabel}>
-                                                <FormattedMessage
-                                                    defaultMessage="Runtime"
-                                                    description="Menu bar submenu for managing runtime settings"
-                                                    id="tw.menuBar.runtime"
-                                                />
-                                            </span>
-                                            <ChevronDown
-                                                size={8}
-                                                className={styles.submenuCaret}
+                                            <Puzzle />
+                                            <FormattedMessage
+                                                defaultMessage="Addons"
+                                                description="Menu bar item for addon settings"
+                                                id="tw.menuBar.addons"
                                             />
-                                        </div>
-                                        <Submenu place={this.props.isRtl ? 'left' : 'right'}>
-                                            <TurboMode>{(toggleTurboMode, {turboMode}) => (
-                                                <MenuItem onClick={toggleTurboMode}>
-                                                    <Gauge />
-                                                    {turboMode ? (
-                                                        <FormattedMessage
-                                                            defaultMessage="Turn off Turbo Mode"
-                                                            description="Menu bar item for turning off turbo mode"
-                                                            id="gui.menuBar.turboModeOff"
-                                                        />
-                                                    ) : (
-                                                        <FormattedMessage
-                                                            defaultMessage="Turn on Turbo Mode"
-                                                            description="Menu bar item for turning on turbo mode"
-                                                            id="gui.menuBar.turboModeOn"
-                                                        />
-                                                    )}
-                                                </MenuItem>
-                                            )}</TurboMode>
-                                            <FramerateChanger>{(changeFramerate, {framerate}) => (
-                                                <MenuItem onClick={changeFramerate}>
-                                                    <FastForward />
-                                                    {framerate === 60 ? (
-                                                        <FormattedMessage
-                                                            defaultMessage="Turn off 60 FPS Mode"
-                                                            description="Menu bar item for turning off 60 FPS mode"
-                                                            id="tw.menuBar.60off"
-                                                        />
-                                                    ) : (
-                                                        <FormattedMessage
-                                                            defaultMessage="Turn on 60 FPS Mode"
-                                                            description="Menu bar item for turning on 60 FPS mode"
-                                                            id="tw.menuBar.60on"
-                                                        />
-                                                    )}
-                                                </MenuItem>
-                                            )}</FramerateChanger>
-                                        </Submenu>
-                                    </MenuItem>
+                                        </MenuItem>
+                                    )}
                                     <ChangeUsername>{changeUsername => (
                                         <MenuItem onClick={changeUsername}>
                                             <UserPen />
@@ -1443,36 +1501,41 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
-                                <MenuSection>
-                                    <MenuItem onClick={this.props.onClickSettingsModal}>
-                                        <Settings />
-                                        <FormattedMessage
-                                            defaultMessage="Settings"
-                                            description="Menu bar item for settings"
-                                            id="tw.menuBar.moreSettings"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.props.onClickGitModal}>
-                                        <GitBranch />
-                                        <FormattedMessage
-                                            defaultMessage="Git"
-                                            description="Menu bar item to open git window"
-                                            id="mw.menuBar.git"
-                                        />
-                                    </MenuItem>
-                                    {this.props.onClickDesktopSettings &&
-                                        <TWDesktopSettings onClick={this.props.onClickDesktopSettings} />}
-                                    {this.props.onClickAddonSettings && (
-                                        <MenuItem onClick={this.props.onClickAddonSettings}>
-                                            <Puzzle />
-                                            <FormattedMessage
-                                                defaultMessage="Addons"
-                                                description="Menu bar item for addon settings"
-                                                id="tw.menuBar.addons"
-                                            />
-                                        </MenuItem>
-                                    )}
-                                </MenuSection>
+                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
+                                    <MenuSection>
+                                        {window.__mistwarpDebuggerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpDebuggerToggle();
+                                                    this.props.onRequestCloseEdit();
+                                                }}
+                                            >
+                                                <Bug />
+                                                <FormattedMessage
+                                                    defaultMessage="Debugger"
+                                                    description="Menu bar item to toggle the debugger"
+                                                    id="tw.menuBar.debugger"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                        {window.__mistwarpVariableManagerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpVariableManagerToggle();
+                                                    this.props.onRequestCloseEdit();
+                                                }}
+                                            >
+                                                <Database />
+                                                <FormattedMessage
+                                                    defaultMessage="Variable Manager"
+                                                    description="Menu bar item to toggle the variable manager"
+                                                    id="tw.menuBar.variableManager"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                    </MenuSection>
+                                ) : null}
+                                
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
@@ -1625,11 +1688,12 @@ class MenuBar extends React.Component {
                         />
                     ) : null)}
 
-                    {(this.props.isShowingProject || this.props.isUpdating) && this.props.projectId && this.props.projectId !== '0' ? (
-                        <div className={classNames(styles.menuBarItem, styles.viewCounter)}>
-                            <TWViewCounter projectId={this.props.projectId} />
-                        </div>
-                    ) : null}
+                    {(this.props.isShowingProject || this.props.isUpdating) &&
+                        this.props.projectId && this.props.projectId !== '0' ? (
+                            <div className={classNames(styles.menuBarItem, styles.viewCounter)}>
+                                <TWViewCounter projectId={this.props.projectId} />
+                            </div>
+                        ) : null}
                     {this.props.canShare ? (
                         (this.props.isShowingProject || this.props.isUpdating) && (
                             <div className={classNames(styles.menuBarItem)}>
@@ -1765,6 +1829,7 @@ MenuBar.propTypes = {
     confirmReadyToReplaceProject: PropTypes.func,
     currentLocale: PropTypes.string.isRequired,
     editMenuOpen: PropTypes.bool,
+    editorMenuOpen: PropTypes.bool,
     enableCommunity: PropTypes.bool,
     fileMenuOpen: PropTypes.bool,
     workspaceBookmarksMenuOpen: PropTypes.bool,
@@ -1801,6 +1866,7 @@ MenuBar.propTypes = {
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
     onClickEdit: PropTypes.func,
+    onClickEditor: PropTypes.func,
     onClickFile: PropTypes.func,
     onClickWorkspaceBookmarks: PropTypes.func,
     onClickLogin: PropTypes.func,
@@ -1811,6 +1877,7 @@ MenuBar.propTypes = {
     onClickSave: PropTypes.func,
     onClickSaveAsCopy: PropTypes.func,
     onClickSettings: PropTypes.func,
+    onClickPreferencesModal: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
@@ -1823,6 +1890,7 @@ MenuBar.propTypes = {
     onRequestCloseAbout: PropTypes.func,
     onRequestCloseAccount: PropTypes.func,
     onRequestCloseEdit: PropTypes.func,
+    onRequestCloseEditor: PropTypes.func,
     onRequestCloseFile: PropTypes.func,
     onRequestCloseWorkspaceBookmarks: PropTypes.func,
     onRequestCloseLogin: PropTypes.func,
