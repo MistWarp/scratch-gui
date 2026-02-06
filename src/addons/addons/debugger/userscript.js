@@ -865,7 +865,10 @@ export default async function ({addon, console, msg}) {
         setActiveTab(allTabs[0]);
     }
 
-    addSmallStageClass();
+    // Expose toggle function globally for menu access
+    window.__mistwarpDebuggerToggle = toggleDebuggerInterface;
+
+    // addSmallStageClass();
 
     const ogGreenFlag = vm.runtime.greenFlag;
     vm.runtime.greenFlag = function (...args) {
@@ -976,25 +979,4 @@ export default async function ({addon, console, msg}) {
             console.error('Error during global debugger cleanup:', error);
         }
     };
-
-    while (true) {
-        await addon.tab.waitForElement(
-            '[class^="stage-header_stage-size-row"], [class^="stage-header_fullscreen-buttons-row_"]',
-            {
-                markAsSeen: true,
-                reduxEvents: [
-                    'scratch-gui/mode/SET_PLAYER',
-                    'scratch-gui/mode/SET_FULL_SCREEN',
-                    'fontsLoaded/SET_FONTS_LOADED',
-                    'scratch-gui/locales/SELECT_LOCALE'
-                ]
-            }
-        );
-        if (addon.tab.editorMode === 'editor') {
-            addon.tab.appendToSharedSpace({space: 'stageHeader', element: debuggerButtonOuter, order: 0});
-        } else {
-            debuggerButtonOuter.remove();
-            setInterfaceVisible(false);
-        }
-    }
 }

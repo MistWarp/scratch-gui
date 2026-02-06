@@ -20,15 +20,12 @@ class UsernameModal extends React.Component {
     constructor (props) {
         super(props);
 
-        let storeThemeInProject = false;
-        try {
-            storeThemeInProject = localStorage.getItem('mw:store-theme-in-project') === 'true';
-        } catch (e) {
-            // ignore
-        }
-
         this.state = {
-            storeThemeInProject
+            optimizeAnimations: localStorage.getItem('mw:optimize-animations') === 'true',
+            debugMode: localStorage.getItem('mw:debug-mode') === 'true',
+            showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
+            viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
+            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true'
         };
 
         bindAll(this, [
@@ -47,19 +44,14 @@ class UsernameModal extends React.Component {
             'handleUnsafeOptimisationsChange',
             'handleRealLayerIndexesChange',
             'handleStoreProjectOptions',
+            'handleOptimizeAnimationsChange',
+            'handleDebugModeChange',
+            'handleShowFPSCounterChange',
+            'handleViewCompiledModeChange',
             'handleStoreThemeInProjectChange'
         ]);
     }
 
-    handleStoreThemeInProjectChange (e) {
-        const enabled = e.target.checked;
-        this.setState({storeThemeInProject: enabled});
-        try {
-            localStorage.setItem('mw:store-theme-in-project', enabled ? 'true' : 'false');
-        } catch (err) {
-            // ignore
-        }
-    }
     handleFramerateChange (e) {
         this.props.vm.setFramerate(e.target.checked ? 60 : 30);
     }
@@ -163,6 +155,51 @@ class UsernameModal extends React.Component {
             mistwarpTheme
         });
     }
+
+    handleOptimizeAnimationsChange (e) {
+        this.setState({optimizeAnimations: e.target.checked});
+        try {
+            localStorage.setItem('mw:optimize-animations', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    handleDebugModeChange (e) {
+        this.setState({debugMode: e.target.checked});
+        try {
+            localStorage.setItem('mw:debug-mode', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    handleShowFPSCounterChange (e) {
+        this.setState({showFPSCounter: e.target.checked});
+        try {
+            localStorage.setItem('mw:show-fps-counter', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    handleViewCompiledModeChange (e) {
+        this.setState({viewCompiledMode: e.target.checked});
+        try {
+            localStorage.setItem('mw:view-compiled-mode', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    handleStoreThemeInProjectChange (e) {
+        this.setState({storeThemeInProject: e.target.checked});
+        try {
+            localStorage.setItem('mw:store-theme-in-project', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
     render () {
         const {
             /* eslint-disable no-unused-vars */
@@ -194,8 +231,17 @@ class UsernameModal extends React.Component {
                     this.props.customStageSize.height !== defaultStageSize.height
                 }
                 onStoreProjectOptions={this.handleStoreProjectOptions}
-                storeThemeInProject={this.state.storeThemeInProject}
+                onOptimizeAnimationsChange={this.handleOptimizeAnimationsChange}
+                onDebugModeChange={this.handleDebugModeChange}
+                onShowFPSCounterChange={this.handleShowFPSCounterChange}
+                onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
+                optimizeAnimations={this.state.optimizeAnimations}
+                debugMode={this.state.debugMode}
+                showFPSCounter={this.state.showFPSCounter}
+                viewCompiledMode={this.state.viewCompiledMode}
+                storeThemeInProject={this.state.storeThemeInProject}
+                theme={this.props.theme}
                 {...props}
             />
         );
@@ -230,7 +276,6 @@ UsernameModal.propTypes = {
     }),
     disableCompiler: PropTypes.bool,
     caseSensitiveLists: PropTypes.bool,
-    unsafeOptimisations: PropTypes.bool,
     realLayerIndexes: PropTypes.bool,
     theme: PropTypes.any
 };
@@ -246,12 +291,10 @@ const mapStateToProps = state => ({
     removeLimits: !state.scratchGui.tw.runtimeOptions.miscLimits,
     warpTimer: state.scratchGui.tw.compilerOptions.warpTimer,
     customStageSize: state.scratchGui.customStageSize,
-    disableCompiler: !state.scratchGui.tw.compilerOptions.enabled,
     // Handle possible undefined value for caseSensitiveLists
     caseSensitiveLists: !!state.scratchGui.tw.runtimeOptions.caseSensitiveLists,
-    unsafeOptimisations: !!state.scratchGui.tw.runtimeOptions.unsafeOptimisations,
     realLayerIndexes: !!state.scratchGui.tw.runtimeOptions.realLayerIndexes,
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme?.theme
 });
 
 const mapDispatchToProps = dispatch => ({

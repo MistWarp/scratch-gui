@@ -276,62 +276,24 @@ class AddonWindow {
             justify-content: center;
             border-radius: 6px;
             color: var(--text-primary, #666);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
             font-size: 0;
             margin: 0;
             padding: 0;
         `;
         
-        // Add shimmer effect
-        const shimmer = document.createElement('div');
-        shimmer.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.3) 50%, 
-                transparent 100%);
-            transition: left 0.5s ease;
-            pointer-events: none;
-        `;
-        button.appendChild(shimmer);
-        
         // Hover effects
         button.addEventListener('mouseenter', () => {
-            if (type === 'close') {
-                button.style.background = 'linear-gradient(135deg, #ffbd2e 0%, #ffa500 100%)';
-                button.style.color = 'white';
-                button.style.transform = 'scale(1.05)';
-                button.style.boxShadow = '0 4px 12px rgba(255, 189, 46, 0.4)';
-            } else {
-                button.style.background = 'linear-gradient(135deg, #28ca42 0%, #20a935 100%)';
-                button.style.color = 'white';
-                button.style.transform = 'scale(1.05)';
-                button.style.boxShadow = '0 4px 12px rgba(40, 202, 66, 0.4)';
-            }
-            shimmer.style.left = '100%';
+            button.style.background = 'var(--looks-secondary, #4C97FF)';
+            button.style.color = 'white';
         });
-        
+
         button.addEventListener('mouseleave', () => {
             button.style.background = 'transparent';
             button.style.color = 'var(--text-primary, #666)';
-            button.style.transform = 'scale(1)';
-            button.style.boxShadow = 'none';
-            shimmer.style.left = '-100%';
         });
         
         button.addEventListener('mousedown', e => {
             e.stopPropagation();
-            button.style.transform = 'scale(0.95)';
-        });
-        
-        button.addEventListener('mouseup', () => {
-            button.style.transform = 'scale(1.05)';
         });
         
         button.addEventListener('click', e => {

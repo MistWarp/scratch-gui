@@ -3,9 +3,9 @@
 const addons = [
     'cat-blocks',
     'editor-devtools',
-    'find-bar',
     'middle-click-popup',
     'jump-to-def',
+    'tab-styles',
     'reorder-custom-inputs',
     'editor-searchable-dropdowns',
     'data-category-tweaks-v2',
@@ -71,7 +71,6 @@ const addons = [
     'columns',
     'number-pad',
     'editor-number-arrow-keys',
-    'expanded-backpack',
     'script-snap',
     'fullscreen',
     'hide-stage',
@@ -87,11 +86,11 @@ const addons = [
 ];
 
 const newAddons = [
-    'expanded-backpack',
     'autosave',
     'no-category-text',
     'green-flag-order',
-    'remove-extension-button'
+    'remove-extension-button',
+    'tab-styles'
 ];
 
 // eslint-disable-next-line import/no-commonjs

@@ -20,6 +20,7 @@ const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
+const MODAL_PREFERENCES = 'preferencesModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -40,7 +41,8 @@ const initialState = {
     [MODAL_UNKNOWN_PLATFORM]: false,
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_EXTENSION_MANAGER]: false,
-    [MODAL_GIT]: false
+    [MODAL_GIT]: false,
+    [MODAL_PREFERENCES]: false
 };
 
 const reducer = function (state, action) {
@@ -127,6 +129,9 @@ const openExtensionManagerModal = function () {
 const openGitModal = function () {
     return openModal(MODAL_GIT);
 };
+const openPreferencesModal = function () {
+    return openModal(MODAL_PREFERENCES);
+};
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
 };
@@ -184,6 +189,9 @@ const closeExtensionManagerModal = function () {
 const closeGitModal = function () {
     return closeModal(MODAL_GIT);
 };
+const closePreferencesModal = function () {
+    return closeModal(MODAL_PREFERENCES);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -206,6 +214,7 @@ export {
     openInvalidProjectModal,
     openExtensionManagerModal,
     openGitModal,
+    openPreferencesModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -224,5 +233,6 @@ export {
     closeUnknownPlatformModal,
     closeInvalidProjectModal,
     closeExtensionManagerModal,
-    closeGitModal
+    closeGitModal,
+    closePreferencesModal
 };

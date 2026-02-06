@@ -3,7 +3,6 @@ import _cat_blocks from "../addons/cat-blocks/_manifest_entry.js";
 import _dev_inspector from "../addons/dev-inspector/_manifest_entry.js";
 import _frame_stepper from "../addons/frame-stepper/_manifest_entry.js";
 import _editor_devtools from "../addons/editor-devtools/_manifest_entry.js";
-import _find_bar from "../addons/find-bar/_manifest_entry.js";
 import _middle_click_popup from "../addons/middle-click-popup/_manifest_entry.js";
 import _jump_to_def from "../addons/jump-to-def/_manifest_entry.js";
 import _reorder_custom_inputs from "../addons/reorder-custom-inputs/_manifest_entry.js";
@@ -71,7 +70,6 @@ import _editor_comment_previews from "../addons/editor-comment-previews/_manifes
 import _columns from "../addons/columns/_manifest_entry.js";
 import _number_pad from "../addons/number-pad/_manifest_entry.js";
 import _editor_number_arrow_keys from "../addons/editor-number-arrow-keys/_manifest_entry.js";
-import _expanded_backpack from "../addons/expanded-backpack/_manifest_entry.js";
 import _script_snap from "../addons/script-snap/_manifest_entry.js";
 import _fullscreen from "../addons/fullscreen/_manifest_entry.js";
 import _hide_stage from "../addons/hide-stage/_manifest_entry.js";
@@ -82,7 +80,6 @@ import _tw_disable_cloud_variables from "../addons/tw-disable-cloud-variables/_m
 import _tw_disable_compiler from "../addons/tw-disable-compiler/_manifest_entry.js";
 import _editor_stepping from "../addons/editor-stepping/_manifest_entry.js";
 import _autosave from "../addons/autosave/_manifest_entry.js";
-import _workspace_tabs from "../addons/workspace-tabs/_manifest_entry.js";
 import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
 import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _remove_extension_button from "../addons/remove-extension-button/_manifest_entry.js";
@@ -92,7 +89,6 @@ export default {
   "dev-inspector": _dev_inspector,
   "frame-stepper": _frame_stepper,
   "editor-devtools": _editor_devtools,
-  "find-bar": _find_bar,
   "middle-click-popup": _middle_click_popup,
   "jump-to-def": _jump_to_def,
   "reorder-custom-inputs": _reorder_custom_inputs,
@@ -160,7 +156,6 @@ export default {
   "columns": _columns,
   "number-pad": _number_pad,
   "editor-number-arrow-keys": _editor_number_arrow_keys,
-  "expanded-backpack": _expanded_backpack,
   "script-snap": _script_snap,
   "fullscreen": _fullscreen,
   "hide-stage": _hide_stage,
@@ -171,7 +166,6 @@ export default {
   "tw-disable-compiler": _tw_disable_compiler,
   "editor-stepping": _editor_stepping,
   "autosave": _autosave,
-  "workspace-tabs": _workspace_tabs,
   "no-category-text": _no_category_text,
   "green-flag-order": _green_flag_order,
   "remove-extension-button": _remove_extension_button,

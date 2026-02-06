@@ -187,8 +187,8 @@ class WindowedModal extends React.Component {
         
         // Adjust size for specific modal types
         if (className.includes('settings')) {
-            width = 800;
-            height = 900;
+            width = 880;
+            height = 550;
         } else if (className.includes('library')) {
             width = 1000;
             height = 750;
@@ -351,6 +351,7 @@ class WindowedModal extends React.Component {
                         flex: 1,
                         overflow: 'hidden',
                         minHeight: 0,
+                        height: '100%',
                         maxHeight: '100%',
                         padding: '0',
                         position: 'relative',

@@ -18,7 +18,7 @@ const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Settings',
+        defaultMessage: 'Project Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
     },
@@ -322,7 +322,7 @@ const UnsafeOptimisations = props => (
 
 const CaseSensitiveLists = props => (
     <BooleanSetting
-        value={props.value !== undefined ? props.value : false}
+        value={typeof props.value === 'undefined' ? false : props.value}
         onChange={props.onChange}
         label={
             <FormattedMessage
@@ -342,9 +342,14 @@ const CaseSensitiveLists = props => (
     />
 );
 
+CaseSensitiveLists.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func.isRequired
+};
+
 const RealLayerIndexes = props => (
     <BooleanSetting
-        value={props.value !== undefined ? props.value : false}
+        value={typeof props.value === 'undefined' ? false : props.value}
         onChange={props.onChange}
         label={
             <FormattedMessage
@@ -363,6 +368,11 @@ const RealLayerIndexes = props => (
         }
     />
 );
+
+RealLayerIndexes.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func.isRequired
+};
 
 const DisableCompiler = props => (
     <BooleanSetting
@@ -414,7 +424,7 @@ const CustomStageSize = ({
                     max="1024"
                     step="1"
                 />
-                <span>{'×'}</span>
+                <span>{'x'}</span>
                 <BufferedInput
                     value={stageHeight}
                     onSubmit={onStageHeightChange}

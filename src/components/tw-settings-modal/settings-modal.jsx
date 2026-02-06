@@ -13,13 +13,13 @@ import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 
-/* eslint-disable react/no-multi-comp */
+import {Settings, Zap} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Settings',
+        defaultMessage: 'Project Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
     },
@@ -27,6 +27,25 @@ const messages = defineMessages({
         defaultMessage: 'Click for help',
         description: 'Hover text of help icon in settings',
         id: 'tw.settingsModal.help'
+    },
+    headerFeatured: {
+        defaultMessage: 'Featured',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.featured'
+    },
+    headerRemoveLimits: {
+        defaultMessage: 'Remove Limits',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.removeLimits'
+    },
+    headerDangerZone: {
+        defaultMessage: 'Danger Zone',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.dangerZone'
+    },
+    headerExperimental: {
+        defaultMessage: 'Experimental',
+        id: 'mw.settings.experimental'
     }
 });
 
@@ -41,6 +60,35 @@ const LearnMore = props => (
         </DocumentationLink>
     </React.Fragment>
 );
+
+const Header = ({children}) => (
+    <div className={styles.header}>
+        {children}
+        <div className={styles.divider} />
+    </div>
+);
+Header.propTypes = {
+    children: PropTypes.node
+};
+
+const SidebarItem = ({id, label, icon: Icon, isSelected, onClick}) => (
+    <div
+        className={classNames(styles.sidebarItem, {[styles.selected]: isSelected})}
+        onClick={() => onClick(id)}
+        title={label}
+    >
+        {Icon && <Icon className={styles.sidebarIcon} />}
+        <span className={styles.sidebarLabel}>{label}</span>
+    </div>
+);
+
+SidebarItem.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    icon: PropTypes.elementType,
+    onClick: PropTypes.func.isRequired,
+    isSelected: PropTypes.bool
+};
 
 class UnwrappedSetting extends React.Component {
     constructor (props) {
@@ -66,6 +114,9 @@ class UnwrappedSetting extends React.Component {
         }));
     }
     render () {
+        const {active, primary, secondary, help, slug, intl} = this.props;
+        const {helpVisible} = this.state;
+
         return (
             <div
                 className={classNames(styles.setting, {
@@ -73,11 +124,11 @@ class UnwrappedSetting extends React.Component {
                 })}
             >
                 <div className={styles.label}>
-                    {this.props.primary}
+                    {primary}
                     <button
                         className={styles.helpIcon}
                         onClick={this.handleClickHelp}
-                        title={this.props.intl.formatMessage(messages.help)}
+                        title={intl.formatMessage(messages.help)}
                     >
                         <img
                             src={helpIcon}
@@ -85,17 +136,18 @@ class UnwrappedSetting extends React.Component {
                         />
                     </button>
                 </div>
-                {this.state.helpVisible && (
+                {helpVisible && (
                     <div className={styles.detail}>
-                        {this.props.help}
-                        {this.props.slug && <LearnMore slug={this.props.slug} />}
+                        {help}
+                        {slug && <LearnMore slug={slug} />}
                     </div>
                 )}
-                {this.props.secondary}
+                {secondary}
             </div>
         );
     }
 }
+
 UnwrappedSetting.propTypes = {
     intl: intlShape,
     active: PropTypes.bool,
@@ -104,6 +156,7 @@ UnwrappedSetting.propTypes = {
     secondary: PropTypes.node,
     slug: PropTypes.string
 };
+
 const Setting = injectIntl(UnwrappedSetting);
 
 const BooleanSetting = ({value, onChange, label, ...props}) => (
@@ -122,38 +175,157 @@ const BooleanSetting = ({value, onChange, label, ...props}) => (
         }
     />
 );
+
 BooleanSetting.propTypes = {
     onChange: PropTypes.func.isRequired,
     value: PropTypes.bool.isRequired,
     label: PropTypes.node.isRequired
 };
 
-const HighQualityPen = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="High Quality Pen"
-                description="High quality pen setting"
-                id="tw.settingsModal.highQualityPen"
-            />
+const settingDefinitions = {
+    highQualityPen: {
+        label: {
+            defaultMessage: 'High Quality Pen',
+            description: 'High quality pen setting',
+            id: 'tw.settingsModal.highQualityPen'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Allows pen projects to render at higher resolutions and disables some coordinate rounding in the editor. Not all projects benefit from this setting and it may impact performance.',
+            description: 'High quality pen setting help',
+            id: 'tw.settingsModal.highQualityPenHelp'
+        },
+        slug: 'high-quality-pen'
+    },
+    interpolation: {
+        label: {
+            defaultMessage: 'Interpolation',
+            description: 'Interpolation setting',
+            id: 'tw.settingsModal.interpolation'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Makes projects appear smoother by interpolating sprite motion. Interpolation should not be used on 3D projects, raytracers, pen projects, and laggy projects as interpolation will make them run slower without making them appear smoother.',
+            description: 'Interpolation setting help',
+            id: 'tw.settingsModal.interpolationHelp'
+        },
+        slug: 'interpolation'
+    },
+    infiniteClones: {
+        label: {
+            defaultMessage: 'Infinite Clones',
+            description: 'Infinite Clones setting',
+            id: 'tw.settingsModal.infiniteClones'
+        },
+        help: {
+            defaultMessage: 'Disables Scratch\'s 300 clone limit.',
+            description: 'Infinite Clones setting help',
+            id: 'tw.settingsModal.infiniteClonesHelp'
+        },
+        slug: 'infinite-clones'
+    },
+    removeFencing: {
+        label: {
+            defaultMessage: 'Remove Fencing',
+            description: 'Remove Fencing setting',
+            id: 'tw.settingsModal.removeFencing'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Allows sprites to move offscreen, become as large or as small as they want, and makes touching blocks work offscreen.',
+            description: 'Remove Fencing setting help',
+            id: 'tw.settingsModal.removeFencingHelp'
+        },
+        slug: 'remove-fencing'
+    },
+    removeMiscLimits: {
+        label: {
+            defaultMessage: 'Remove Miscellaneous Limits',
+            description: 'Remove Miscellaneous Limits setting',
+            id: 'tw.settingsModal.removeMiscLimits'
+        },
+        help: {
+            defaultMessage: 'Removes sound effect limits and pen size limits.',
+            description: 'Remove Miscellaneous Limits setting help',
+            id: 'tw.settingsModal.removeMiscLimitsHelp'
+        },
+        slug: 'remove-misc-limits'
+    },
+    warpTimer: {
+        label: {
+            defaultMessage: 'Warp Timer',
+            description: 'Warp Timer setting',
+            id: 'tw.settingsModal.warpTimer'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Makes scripts check if they are stuck in a long or infinite loop and run at a low framerate instead of getting stuck until the loop finishes. This fixes most crashes but has a significant performance impact, so it\'s only enabled by default in the editor.',
+            description: 'Warp Timer help',
+            id: 'tw.settingsModal.warpTimerHelp'
+        },
+        slug: 'warp-timer'
+    },
+    caseSensitiveLists: {
+        label: {
+            defaultMessage: 'Case Sensitive Lists',
+            description: 'Case Sensitive Lists setting',
+            id: 'tw.settingsModal.caseSensitiveLists'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Makes lists case sensitive. This means that \'a\' and \'A\' are different values. This is not recommended for most projects but can improve speed massively for list heavy projects.',
+            description: 'Case Sensitive Lists help',
+            id: 'tw.settingsModal.caseSensitiveListsHelp'
         }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Allows pen projects to render at higher resolutions and disables some coordinate rounding in the editor. Not all projects benefit from this setting and it may impact performance."
-                description="High quality pen setting help"
-                id="tw.settingsModal.highQualityPenHelp"
-            />
+    },
+    realLayerIndexes: {
+        label: {
+            defaultMessage: 'Real Layer Indexes',
+            description: 'Real Layer Indexes label',
+            id: 'tw.settingsModal.realLayerIndexes'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Changes layer indexes to change the position in the render order array without limiting the number of layers to the number of drawables.',
+            description: 'Real Layer Indexes help',
+            id: 'tw.settingsModal.realLayerIndexesHelp'
         }
-        slug="high-quality-pen"
-    />
-);
+    }
+};
 
-const CustomFPS = props => (
+const createBooleanSetting = (key, definition) => {
+    const SettingComponent = props => (
+        <BooleanSetting
+            value={typeof props.value === 'undefined' ? false : props.value}
+            onChange={props.onChange}
+            label={<FormattedMessage {...definition.label} />}
+            help={<FormattedMessage {...definition.help} />}
+            slug={definition.slug}
+        />
+    );
+
+    SettingComponent.propTypes = {
+        value: PropTypes.string,
+        onChange: PropTypes.func.isRequired
+    };
+
+    SettingComponent.displayName = key;
+    return SettingComponent;
+};
+
+const HighQualityPen = createBooleanSetting('HighQualityPen', settingDefinitions.highQualityPen);
+const Interpolation = createBooleanSetting('Interpolation', settingDefinitions.interpolation);
+const InfiniteClones = createBooleanSetting('InfiniteClones', settingDefinitions.infiniteClones);
+const RemoveFencing = createBooleanSetting('RemoveFencing', settingDefinitions.removeFencing);
+const RemoveMiscLimits = createBooleanSetting('RemoveMiscLimits', settingDefinitions.removeMiscLimits);
+const WarpTimer = createBooleanSetting('WarpTimer', settingDefinitions.warpTimer);
+const CaseSensitiveLists = createBooleanSetting('CaseSensitiveLists', settingDefinitions.caseSensitiveLists);
+const RealLayerIndexes = createBooleanSetting('RealLayerIndexes', settingDefinitions.realLayerIndexes);
+
+const CustomFPS = ({framerate, onChange, onCustomizeFramerate}) => (
     <BooleanSetting
-        value={props.framerate !== 30}
-        onChange={props.onChange}
+        value={framerate !== 30}
+        onChange={onChange}
         label={
             <FormattedMessage
                 defaultMessage="60 FPS (Custom FPS)"
@@ -170,7 +342,7 @@ const CustomFPS = props => (
                 values={{
                     customFramerate: (
                         <a
-                            onClick={props.onCustomizeFramerate}
+                            onClick={onCustomizeFramerate}
                             tabIndex="0"
                         >
                             <FormattedMessage
@@ -186,163 +358,12 @@ const CustomFPS = props => (
         slug="custom-fps"
     />
 );
+
 CustomFPS.propTypes = {
     framerate: PropTypes.number,
     onChange: PropTypes.func,
     onCustomizeFramerate: PropTypes.func
 };
-
-const Interpolation = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Interpolation"
-                description="Interpolation setting"
-                id="tw.settingsModal.interpolation"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Makes projects appear smoother by interpolating sprite motion. Interpolation should not be used on 3D projects, raytracers, pen projects, and laggy projects as interpolation will make them run slower without making them appear smoother."
-                description="Interpolation setting help"
-                id="tw.settingsModal.interpolationHelp"
-            />
-        }
-        slug="interpolation"
-    />
-);
-
-const InfiniteClones = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Infinite Clones"
-                description="Infinite Clones setting"
-                id="tw.settingsModal.infiniteClones"
-            />
-        }
-        help={
-            <FormattedMessage
-                defaultMessage="Disables Scratch's 300 clone limit."
-                description="Infinite Clones setting help"
-                id="tw.settingsModal.infiniteClonesHelp"
-            />
-        }
-        slug="infinite-clones"
-    />
-);
-
-const RemoveFencing = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Remove Fencing"
-                description="Remove Fencing setting"
-                id="tw.settingsModal.removeFencing"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Allows sprites to move offscreen, become as large or as small as they want, and makes touching blocks work offscreen."
-                description="Remove Fencing setting help"
-                id="tw.settingsModal.removeFencingHelp"
-            />
-        }
-        slug="remove-fencing"
-    />
-);
-
-const RemoveMiscLimits = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Remove Miscellaneous Limits"
-                description="Remove Miscellaneous Limits setting"
-                id="tw.settingsModal.removeMiscLimits"
-            />
-        }
-        help={
-            <FormattedMessage
-                defaultMessage="Removes sound effect limits and pen size limits."
-                description="Remove Miscellaneous Limits setting help"
-                id="tw.settingsModal.removeMiscLimitsHelp"
-            />
-        }
-        slug="remove-misc-limits"
-    />
-);
-
-const WarpTimer = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                defaultMessage="Warp Timer"
-                description="Warp Timer setting"
-                id="tw.settingsModal.warpTimer"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Makes scripts check if they are stuck in a long or infinite loop and run at a low framerate instead of getting stuck until the loop finishes. This fixes most crashes but has a significant performance impact, so it's only enabled by default in the editor."
-                description="Warp Timer help"
-                id="tw.settingsModal.warpTimerHelp"
-            />
-        }
-        slug="warp-timer"
-    />
-);
-
-const CaseSensitiveLists = props => (
-    <BooleanSetting
-        value={props.value !== undefined ? props.value : false}
-        onChange={props.onChange}
-        label={
-            <FormattedMessage
-                defaultMessage="Case Sensitive Lists"
-                description="Case Sensitive Lists setting"
-                id="tw.settingsModal.caseSensitiveLists"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Makes lists case sensitive. This means that 'a' and 'A' are different values. This is not recommended for most projects but can improve speed massively for list heavy projects."
-                description="Case Sensitive Lists help"
-                id="tw.settingsModal.caseSensitiveListsHelp"
-            />
-        }
-    />
-);
-
-const RealLayerIndexes = props => (
-    <BooleanSetting
-        value={props.value !== undefined ? props.value : false}
-        onChange={props.onChange}
-        label={
-            <FormattedMessage
-                defaultMessage="Real Layer Indexes"
-                description="Real Layer Indexes label"
-                id="tw.settingsModal.realLayerIndexes"
-            />
-        }
-        help={
-            <FormattedMessage
-                // eslint-disable-next-line max-len
-                defaultMessage="Changes layer indexes to change the position in the render order array without limiting the number of layers to the number of drawables."
-                description="Real Layer Indexes help"
-                id="tw.settingsModal.realLayerIndexesHelp"
-            />
-        }
-    />
-);
 
 const CustomStageSize = ({
     customStageSizeEnabled,
@@ -353,7 +374,7 @@ const CustomStageSize = ({
 }) => (
     <Setting
         active={customStageSizeEnabled}
-        primary={(
+        primary={
             <div className={classNames(styles.label, styles.customStageSize)}>
                 <FormattedMessage
                     defaultMessage="Custom Stage Size:"
@@ -380,7 +401,7 @@ const CustomStageSize = ({
                     step="1"
                 />
             </div>
-        )}
+        }
         secondary={
             (stageWidth >= 1000 || stageHeight >= 1000) && (
                 <div className={styles.warning}>
@@ -394,14 +415,14 @@ const CustomStageSize = ({
                 </div>
             )
         }
-        help={(
+        help={
             <FormattedMessage
                 // eslint-disable-next-line max-len
                 defaultMessage="Changes the size of the Scratch stage from 480x360 to something else. Try 640x360 to make the stage widescreen. Very few projects will handle this properly."
                 description="Custom Stage Size option"
                 id="tw.settingsModal.customStageSizeHelp"
             />
-        )}
+        }
         slug="custom-stage-size"
     />
 );
@@ -471,95 +492,237 @@ StoreProjectOptions.propTypes = {
     onStoreThemeInProjectChange: PropTypes.func
 };
 
-const Header = props => (
-    <div className={styles.header}>
-        {props.children}
-        <div className={styles.divider} />
-    </div>
-);
-Header.propTypes = {
-    children: PropTypes.node
+const pageConfigurations = {
+    general: {
+        sections: [
+            {
+                headerMessage: 'headerFeatured',
+                settings: [
+                    {
+                        component: CustomFPS,
+                        props: props => ({
+                            framerate: props.framerate,
+                            onChange: props.onFramerateChange,
+                            onCustomizeFramerate: props.onCustomizeFramerate
+                        })
+                    },
+                    {
+                        component: Interpolation,
+                        props: props => ({
+                            value: props.interpolation,
+                            onChange: props.onInterpolationChange
+                        })
+                    },
+                    {
+                        component: HighQualityPen,
+                        props: props => ({
+                            value: props.highQualityPen,
+                            onChange: props.onHighQualityPenChange
+                        })
+                    },
+                    {
+                        component: WarpTimer,
+                        props: props => ({
+                            value: props.warpTimer,
+                            onChange: props.onWarpTimerChange
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerRemoveLimits',
+                settings: [
+                    {
+                        component: InfiniteClones,
+                        props: props => ({
+                            value: props.infiniteClones,
+                            onChange: props.onInfiniteClonesChange
+                        })
+                    },
+                    {
+                        component: RemoveFencing,
+                        props: props => ({
+                            value: props.removeFencing,
+                            onChange: props.onRemoveFencingChange
+                        })
+                    },
+                    {
+                        component: RemoveMiscLimits,
+                        props: props => ({
+                            value: props.removeLimits,
+                            onChange: props.onRemoveLimitsChange
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerDangerZone',
+                settings: [
+                    {
+                        component: CustomStageSize,
+                        props: props => props,
+                        condition: props => !props.isEmbedded
+                    },
+                    {
+                        component: StoreProjectOptions,
+                        props: props => props,
+                        condition: props => !props.isEmbedded
+                    }
+                ]
+            }
+        ]
+    },
+    experimental: {
+        sections: [
+            {
+                headerMessage: 'headerExperimental',
+                settings: [
+                    {
+                        component: RealLayerIndexes,
+                        props: props => ({
+                            value: props.realLayerIndexes,
+                            onChange: props.onRealLayerIndexesChange
+                        })
+                    },
+                    {
+                        component: CaseSensitiveLists,
+                        props: props => ({
+                            value: props.caseSensitiveLists,
+                            onChange: props.onCaseSensitiveListsChange
+                        })
+                    }
+                ]
+            }
+        ]
+    }
 };
 
-const SettingsModalComponent = props => (
-    <Modal
-        className={styles.modalContent}
-        onRequestClose={props.onClose}
-        contentLabel={props.intl.formatMessage(messages.title)}
-        id="settingsModal"
-    >
-        <Box className={styles.body}>
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Featured"
-                    description="Settings modal section"
-                    id="tw.settingsModal.featured"
-                />
-            </Header>
-            <CustomFPS
-                framerate={props.framerate}
-                onChange={props.onFramerateChange}
-                onCustomizeFramerate={props.onCustomizeFramerate}
-            />
-            <Interpolation
-                value={props.interpolation}
-                onChange={props.onInterpolationChange}
-            />
-            <HighQualityPen
-                value={props.highQualityPen}
-                onChange={props.onHighQualityPenChange}
-            />
-            <WarpTimer
-                value={props.warpTimer}
-                onChange={props.onWarpTimerChange}
-            />
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Remove Limits"
-                    description="Settings modal section"
-                    id="tw.settingsModal.removeLimits"
-                />
-            </Header>
-            <InfiniteClones
-                value={props.infiniteClones}
-                onChange={props.onInfiniteClonesChange}
-            />
-            <RemoveFencing
-                value={props.removeFencing}
-                onChange={props.onRemoveFencingChange}
-            />
-            <RemoveMiscLimits
-                value={props.removeLimits}
-                onChange={props.onRemoveLimitsChange}
-            />
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Danger Zone"
-                    description="Settings modal section"
-                    id="tw.settingsModal.dangerZone"
-                />
-            </Header>
-            {!props.isEmbedded && (
-                <CustomStageSize
-                    {...props}
-                />
-            )}
-            <CaseSensitiveLists
-                value={props.caseSensitiveLists}
-                onChange={props.onCaseSensitiveListsChange}
-            />
-            <RealLayerIndexes
-                value={props.realLayerIndexes}
-                onChange={props.onRealLayerIndexesChange}
-            />
-            {!props.isEmbedded && (
-                <StoreProjectOptions
-                    {...props}
-                />
-            )}
-        </Box>
-    </Modal>
+const UnwrappedPageRenderer = ({config, intl, ...props}) => (
+    <Box className={styles.body}>
+        {config.sections.map((section, sectionIdx) => (
+            <React.Fragment key={sectionIdx}>
+                <Header>
+                    {intl.formatMessage(messages[section.headerMessage])}
+                </Header>
+                {section.settings.map((setting, settingIdx) => {
+                    if (setting.condition && !setting.condition(props)) {
+                        return null;
+                    }
+
+                    const SettingComponent = setting.component;
+                    const settingProps = setting.props(props);
+
+                    return (<SettingComponent
+                        key={settingIdx}
+                        {...settingProps}
+                    />);
+                })}
+            </React.Fragment>
+        ))}
+    </Box>
 );
+
+UnwrappedPageRenderer.propTypes = {
+    config: PropTypes.object.isRequired,
+    intl: intlShape.isRequired
+};
+
+const PageRenderer = injectIntl(UnwrappedPageRenderer);
+
+const GeneralPage = props => (<PageRenderer
+    config={pageConfigurations.general}
+    {...props}
+/>);
+const ExperimentalPage = props => (<PageRenderer
+    config={pageConfigurations.experimental}
+    {...props}
+/>);
+
+const SettingsRouter = ({view, ...handlers}) => {
+    switch (view) {
+    case 'general':
+        return <GeneralPage {...handlers} />;
+    case 'experimental':
+        return <ExperimentalPage {...handlers} />;
+    default:
+        return null;
+    }
+};
+
+SettingsRouter.propTypes = {
+    view: PropTypes.string.isRequired,
+    onStoreProjectOptions: PropTypes.func
+};
+
+class SettingsModalComponent extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions']);
+
+        this.state = {
+            currentView: 'general'
+        };
+    }
+
+    handleNavigate (category) {
+        this.setState({currentView: category});
+    }
+
+    handleStoreProjectOptions () {
+        this.props.onStoreProjectOptions();
+    }
+
+    render () {
+        const {intl} = this.props;
+        const {currentView} = this.state;
+
+        const categories = [
+            {
+                id: 'general',
+                label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
+                icon: Settings
+            },
+            {
+                id: 'experimental',
+                label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
+                icon: Zap
+            }
+        ];
+
+        return (
+            <Modal
+                className={styles.modalContent}
+                onRequestClose={this.props.onClose}
+                contentLabel={intl.formatMessage(messages.title)}
+                id="settingsModal"
+            >
+                <Box className={styles.sidebarLayout}>
+                    <div className={styles.sidebar}>
+                        <div className={styles.sidebarItems}>
+                            {categories.map(cat => (
+                                <SidebarItem
+                                    key={cat.id}
+                                    id={cat.id}
+                                    label={cat.label}
+                                    icon={cat.icon}
+                                    onClick={this.handleNavigate}
+                                    isSelected={currentView === cat.id}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div className={styles.contentArea}>
+                        <SettingsRouter
+                            view={currentView}
+                            {...this.props}
+                            onStoreProjectOptions={this.handleStoreProjectOptions}
+                        />
+                    </div>
+                </Box>
+            </Modal>
+        );
+    }
+}
 
 SettingsModalComponent.propTypes = {
     intl: intlShape,
@@ -580,8 +743,6 @@ SettingsModalComponent.propTypes = {
     onRemoveLimitsChange: PropTypes.func,
     warpTimer: PropTypes.bool,
     onWarpTimerChange: PropTypes.func,
-    disableCompiler: PropTypes.bool,
-    onDisableCompilerChange: PropTypes.func,
     caseSensitiveLists: PropTypes.bool,
     onCaseSensitiveListsChange: PropTypes.func,
     realLayerIndexes: PropTypes.bool,
@@ -593,7 +754,13 @@ SettingsModalComponent.propTypes = {
     onStageHeightChange: PropTypes.func,
     onStoreProjectOptions: PropTypes.func,
     storeThemeInProject: PropTypes.bool,
-    onStoreThemeInProjectChange: PropTypes.func
+    onStoreThemeInProjectChange: PropTypes.func,
+    optimizeAnimations: PropTypes.bool,
+    onOptimizeAnimationsChange: PropTypes.func,
+    debugMode: PropTypes.bool,
+    onDebugModeChange: PropTypes.func,
+    showFPSCounter: PropTypes.bool,
+    onShowFPSCounterChange: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);
