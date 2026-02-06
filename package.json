@@ -13,6 +13,7 @@
   "scripts": {
     "build": "npm run clean && webpack --colors --bail",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
+    "reinstall": "npm ci && npm link scratch-vm scratch-render scratch-blocks",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
     "prune": "./prune-gh-pages.sh",
@@ -73,6 +74,7 @@
     "lucide-react": "^0.562.0",
     "omggif": "1.0.9",
     "papaparse": "5.3.0",
+    "peerjs": "^1.4.7",
     "postcss-import": "^12.0.0",
     "postcss-loader": "^3.0.0",
     "postcss-simple-vars": "^5.0.1",

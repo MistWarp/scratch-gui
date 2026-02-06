@@ -47,6 +47,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
+import CollaborationService from '../lib/collaboration-service.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -273,6 +274,12 @@ class Blocks extends React.Component {
             this.setLocale();
         }
 
+        // Attach collaboration service to workspace if connected
+        const collaborationService = CollaborationService.getInstance();
+        if (collaborationService.isConnected) {
+            collaborationService.attachToWorkspace(this.workspace);
+        }
+
         // tw: Handle when extensions are added when Blocks isn't mounted
         for (const category of this.props.vm.runtime._blockInfo) {
             this.handleExtensionAdded(category);
@@ -389,6 +396,10 @@ class Blocks extends React.Component {
 
         // Clear the flyout blocks so that they can be recreated on mount.
         this.props.vm.clearFlyoutBlocks();
+
+        // Detach collaboration service from workspace
+        const collaborationService = CollaborationService.getInstance();
+        collaborationService.detachFromWorkspace();
 
         AddonHooks.blocklyWorkspace = null;
     }

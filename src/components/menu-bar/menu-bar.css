@@ -247,6 +247,12 @@
     vertical-align: middle;
 }
 
+.collaboration-icon {
+    height: 1.25rem;
+    margin: 0.5rem;
+    vertical-align: middle;
+}
+
 .collapsible-label {
     margin: 0 .25rem;
 }
