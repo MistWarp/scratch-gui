@@ -31,11 +31,11 @@ import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
 import SettingsMenu from './settings-menu.jsx';
 import TWViewCounter from './tw-view-counter.jsx';
 
-import FramerateChanger from '../../containers/tw-framerate-changer.jsx';
 import ChangeUsername from '../../containers/tw-change-username.jsx';
 import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
+import CollaborationContainer from '../../containers/collaboration-container.jsx';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 
@@ -48,6 +48,7 @@ import {
     openGitModal,
     openExtensionManagerModal
 } from '../../reducers/modals';
+import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -134,7 +135,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -270,6 +271,8 @@ class MenuBar extends React.Component {
             'handleClickShare',
             'handleClickUndo',
             'handleClickRedo',
+            'handleClickCollaboration',
+            'handleSetMode',
             'handleKeyPress',
             'handleRestoreOption',
             'getSaveToComputerHandler',
@@ -411,6 +414,9 @@ class MenuBar extends React.Component {
                 waitForUpdate(false); // immediately transition to project page
             }
         }
+    }
+    handleClickCollaboration () {
+        this.props.onClickCollaboration();
     }
     handleSetMode (mode) {
         return () => {
@@ -1563,6 +1569,14 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.extensions.manage"
                                         />
                                     </MenuItem>
+                                    <MenuItem onClick={this.props.onClickCollaboration}>
+                                        <Handshake size={20} />
+                                        <FormattedMessage
+                                            defaultMessage="Live Collaboration"
+                                            description="Menu bar item for live collaboration"
+                                            id="tw.menuBar.collaboration"
+                                        />
+                                    </MenuItem>
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
@@ -1860,6 +1874,7 @@ MenuBar.propTypes = {
     ]),
     onClickAccount: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
+    onClickCollaboration: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
@@ -1975,6 +1990,7 @@ const mapDispatchToProps = dispatch => ({
     onOpenTipLibrary: () => dispatch(openTipsLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
+    onClickCollaboration: () => dispatch(openCollaborationModal()),
     onClickFile: () => dispatch(openFileMenu()),
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),
