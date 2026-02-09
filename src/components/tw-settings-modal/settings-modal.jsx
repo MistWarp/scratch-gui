@@ -305,7 +305,7 @@ const createBooleanSetting = (key, definition) => {
     );
 
     SettingComponent.propTypes = {
-        value: PropTypes.string,
+        value: PropTypes.bool,
         onChange: PropTypes.func.isRequired
     };
 

@@ -4,7 +4,6 @@
 @import "../../css/units.css";
 
 .modalContent {
-    max-width: 600px;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -27,6 +26,143 @@
     }
 }
 
+/* Improved layout for connected state */
+.connectedActions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.connectedActions .buttonGroup {
+    margin-top: 0;
+}
+
+/* Better visual grouping for user list */
+.usersSectionWrapper {
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.usersSection {
+    margin-bottom: 0;
+}
+
+/* Separate action buttons more clearly */
+.primaryActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.secondaryActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.secondaryActions .dangerButton,
+.secondaryActions .primaryButton {
+    flex: 1;
+}
+
+/* Better visual feedback for sections */
+.sectionDivider {
+    height: 1px;
+    background: $ui-black-transparent;
+    margin: 1.5rem 0;
+}
+
+/* Improve visibility of pending requests */
+.requestsSection {
+    border-top: 2px solid $error-primary;
+    padding-top: 1.5rem;
+    margin-top: 2rem;
+}
+
+.requestsSection .sectionTitle {
+    color: $error-primary;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.requestsSection .sectionTitle::before {
+    content: '•';
+    font-size: 1.5rem;
+}
+
+/* Better layout for privacy settings */
+.privacySection {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.privacyCard {
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.privacyCard.private {
+    border-left-color: $ui-black-transparent;
+}
+
+.privacyCardTitle {
+    font-weight: bold;
+    font-size: 0.875rem;
+    color: $text-primary;
+    margin-bottom: 0.25rem;
+}
+
+.privacyCardDesc {
+    font-size: 0.8125rem;
+    color: $text-primary;
+    opacity: 0.8;
+}
+
+/* For smaller screens/mobile */
+@media (max-width: 480px) {
+    .connectedActions {
+        gap: 0.75rem;
+    }
+
+    .usersSectionWrapper {
+        padding: 0.75rem;
+    }
+
+    .privacyCard {
+        padding: 0.75rem;
+    }
+
+    .joinSection,
+    .createSection {
+        padding: 0.75rem;
+    }
+}
+
+.alphaBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    background: $error-transparent;
+    border-bottom: 1px solid $error-primary;
+    color: $error-primary;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.bannerIcon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.bannerContent {
+    flex: 1;
+}
+
 .content {
     padding: 0;
     max-width: none;
@@ -43,6 +179,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 1rem;
+    padding-left: 1rem;
 }
 
 .headerIcon {
@@ -61,6 +198,7 @@
 
 .description {
     margin-bottom: 1.5rem;
+    padding-left: 1rem;
     color: $text-primary;
     line-height: 1.5;
     font-size: 0.875rem;
@@ -72,6 +210,91 @@
 
 .inputGroup {
     margin-bottom: 1rem;
+}
+
+.roomActions {
+    margin-top: 1rem;
+}
+
+.description {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.editUsernameButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.editUsernameButton:hover {
+    background: $ui-black-transparent;
+}
+
+.editUsernameButton:active {
+    background: $badge-border;
+}
+
+.joinSection {
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.joinSection .sectionTitle {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.joinSection .inputGroup {
+    margin-bottom: 1rem;
+}
+
+.joinSection .primaryButton {
+    width: 100%;
+}
+
+.joinError {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: $error-transparent;
+    border: 1px solid $error-primary;
+    border-radius: 0.25rem;
+    color: $error-primary;
+    font-size: 0.875rem;
+}
+
+.createSection {
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.createSection .sectionTitle {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.createDescription {
+    margin-bottom: 1rem;
+    color: $text-primary;
+    line-height: 1.4;
+    font-size: 0.875rem;
+}
+
+.createSection .secondaryButton {
+    width: 100%;
 }
 
 .label {
@@ -94,7 +317,7 @@
     font-weight: normal;
     line-height: 1.5;
     box-sizing: border-box;
-    min-height: 2.75rem; /* Match button height: (0.75rem * 2) + 1.5 line-height + border */
+    min-height: 2.75rem;
 }
 
 .input:focus {
@@ -218,6 +441,7 @@
 
 .connectedInfo {
     margin-bottom: 1.5rem;
+    padding-left: 1rem;
 }
 
 .status {
@@ -294,22 +518,6 @@
     color: $text-primary;
 }
 
-.userIconSvg {
-    width: 20px;
-    height: 20px;
-    color: $text-primary;
-}
-
-.hostCrown {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    color: $motion-primary;
-    top: -2px;
-    right: -2px;
-    filter: none;
-}
-
 .username {
     flex: 1;
     font-weight: bold;
@@ -363,49 +571,6 @@
 .kickIcon {
     width: 12px;
     height: 12px;
-}
-
-.usernameSection {
-    margin-bottom: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid $ui-black-transparent;
-}
-
-.usernameChange {
-    display: flex;
-    gap: 0.5rem;
-    align-items: flex-end;
-}
-
-.usernameChange .input {
-    flex: 1;
-    margin: 0;
-}
-
-.changeUsernameButton {
-    background: $motion-primary;
-    color: white;
-    border: none;
-    padding: 0.75rem 1rem;
-    border-radius: 0.25rem;
-    font-weight: bold;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.2s;
-    font-family: inherit;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    min-height: 2.75rem;
-    box-sizing: border-box;
-}
-
-.changeUsernameButton:hover:not(:disabled) {
-    background: $motion-tertiary;
-}
-
-.changeUsernameButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 /* Privacy selector styles */
@@ -511,5 +676,6 @@
 .privacySection {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
+    padding-left: 1rem;
     border-top: 1px solid $ui-black-transparent;
 }

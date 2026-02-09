@@ -10,7 +10,7 @@ const MyersDiff = {
      * @param {string} textB - Modified text
      * @returns {DiffResult} Diff result with hunks and changes
      */
-    compute(textA, textB) {
+    compute (textA, textB) {
         const linesA = this._splitLines(textA);
         const linesB = this._splitLines(textB);
 
@@ -32,10 +32,10 @@ const MyersDiff = {
 
     /**
      * Split text into lines, preserving line endings
-     * @param {string} text 
+     * @param {string} text
      * @returns {string[]}
      */
-    _splitLines(text) {
+    _splitLines (text) {
         if (!text) return [];
         const lines = text.split('\n');
         if (lines[lines.length - 1] === '') {
@@ -50,7 +50,7 @@ const MyersDiff = {
      * @param {string[]} linesB
      * @returns {Array<{type: 'same'|'add'|'remove', lineA: number, lineB: number}>}
      */
-    _myersDiffAlgorithm(linesA, linesB) {
+    _myersDiffAlgorithm (linesA, linesB) {
         const N = linesA.length;
         const M = linesB.length;
         const MAX = N + M;
@@ -61,7 +61,7 @@ const MyersDiff = {
 
         const trace = [];
 
-        let x, y;
+        let x; let y;
         for (let D = 0; D <= MAX; D++) {
             trace.push(new Int32Array(V));
 
@@ -93,14 +93,14 @@ const MyersDiff = {
     /**
      * Backtrace to find edit script
      */
-    _backtrace(trace, x, y, linesA, linesB) {
+    _backtrace (trace, x, y, linesA, linesB) {
         const result = [];
         let D = trace.length - 1;
 
         const V = trace[D];
         const k = x - y;
         const offset = linesA.length + linesB.length;
-        let prevK, prevX, prevY;
+        let prevK; let prevX; let prevY;
 
         while (D > 0) {
             V = trace[D];
@@ -161,7 +161,7 @@ const MyersDiff = {
     /**
      * Convert edit script to diff hunks
      */
-    _convertToDiffHunks(linesA, linesB, editScript) {
+    _convertToDiffHunks (linesA, linesB, editScript) {
         const hunks = [];
         let currentHunk = null;
 
@@ -219,7 +219,7 @@ const MyersDiff = {
     /**
      * Create empty result
      */
-    _createEmptyResult() {
+    _createEmptyResult () {
         return {
             hunks: [],
             linesA: [],
@@ -232,7 +232,7 @@ const MyersDiff = {
     /**
      * Create result with all additions
      */
-    _createAddAllResult(linesB) {
+    _createAddAllResult (linesB) {
         const changes = linesB.map((line, i) => ({
             type: 'add',
             content: line,
@@ -258,7 +258,7 @@ const MyersDiff = {
     /**
      * Create result with all deletions
      */
-    _createRemoveAllResult(linesA) {
+    _createRemoveAllResult (linesA) {
         const changes = linesA.map((line, i) => ({
             type: 'remove',
             content: line,
@@ -283,10 +283,10 @@ const MyersDiff = {
 
     /**
      * Compute hash of text for quick comparison
-     * @param {string} text 
+     * @param {string} text
      * @returns {string}
      */
-    computeHash(text) {
+    computeHash (text) {
         let hash = 0;
         if (!text) return '0';
 
@@ -301,11 +301,11 @@ const MyersDiff = {
 
     /**
      * Compare two texts for equality
-     * @param {string} textA 
-     * @param {string} textB 
+     * @param {string} textA
+     * @param {string} textB
      * @returns {boolean}
      */
-    areEqual(textA, textB) {
+    areEqual (textA, textB) {
         return textA === textB;
     }
 };

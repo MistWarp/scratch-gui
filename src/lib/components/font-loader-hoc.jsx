@@ -15,11 +15,8 @@ const FontLoaderHOC = function (WrappedComponent) {
             if (this.props.fontsLoaded) return;
 
             // Load fonts asynchronously without blocking the UI
-            const startTime = performance.now();
             loadFonts()
                 .then(() => {
-                    const loadTime = performance.now() - startTime;
-                    console.log(`🔤 Fonts loaded in ${loadTime.toFixed(2)}ms`);
                     this.props.onSetFontsLoaded();
                 })
                 .catch(() => {

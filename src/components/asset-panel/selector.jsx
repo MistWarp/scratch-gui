@@ -72,6 +72,7 @@ const Selector = props => {
                             details={item.details}
                             dragPayload={item.dragPayload}
                             dragType={dragType}
+                            editors={item.editors}
                             id={index}
                             index={index}
                             name={item.name}

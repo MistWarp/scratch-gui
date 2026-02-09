@@ -128,7 +128,8 @@ export const getFileContentAtCommit = async ({fs, dir, oid, filepath}) => {
         try {
             text = new TextDecoder().decode(uint8Array);
         } catch (e) {
-            text = Array.from(uint8Array).map(b => String.fromCharCode(b)).join('');
+            text = Array.from(uint8Array).map(b => String.fromCharCode(b))
+                .join('');
         }
 
         return {text, oid: oid};
@@ -303,7 +304,7 @@ export const computeLineDiff = async (contentA, contentB, options = {}) => {
  * @param {string} text
  * @returns {string}
  */
-function normalizeWhitespace(text) {
+function normalizeWhitespace (text) {
     return text
         .split('\n')
         .map(line => line.trim().replace(/\s+/g, ' '))
@@ -317,19 +318,19 @@ function normalizeWhitespace(text) {
  * @param {string} contentB
  * @returns {Promise<DiffResult>}
  */
-function computeDiffWithWorker(worker, contentA, contentB) {
+function computeDiffWithWorker (worker, contentA, contentB) {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             reject(new Error('Diff computation timeout'));
             worker.terminate();
         }, 30000);
 
-        worker.onmessage = (e) => {
+        worker.onmessage = e => {
             clearTimeout(timeout);
             resolve(e.data);
         };
 
-        worker.onerror = (e) => {
+        worker.onerror = e => {
             clearTimeout(timeout);
             reject(new Error(`Worker error: ${e.message}`));
         };

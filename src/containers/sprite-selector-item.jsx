@@ -133,6 +133,7 @@ class SpriteSelectorItem extends React.PureComponent {
             receivedBlocks,
             costumeURL,
             vm,
+            editingUsers,
             /* eslint-enable no-unused-vars */
             ...props
         } = this.props;
@@ -164,6 +165,10 @@ SpriteSelectorItem.propTypes = {
     dragPayload: PropTypes.any,
     dragType: PropTypes.string,
     dragging: PropTypes.bool,
+    editingUsers: PropTypes.arrayOf(PropTypes.shape({
+        userId: PropTypes.string,
+        username: PropTypes.string
+    })),
     // eslint-disable-next-line react/forbid-prop-types
     id: PropTypes.any,
     index: PropTypes.number,
@@ -180,12 +185,18 @@ SpriteSelectorItem.propTypes = {
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-const mapStateToProps = (state, {id}) => ({
-    dragging: state.scratchGui.assetDrag.dragging,
-    receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
-            state.scratchGui.hoveredTarget.sprite === id,
-    vm: state.scratchGui.vm
-});
+const mapStateToProps = (state, {id}) => {
+    const spriteId = typeof id === 'string' ? id : String(id);
+    const spriteEditors = state.scratchGui.collaboration.spriteEditors[spriteId] || [];
+    
+    return {
+        dragging: state.scratchGui.assetDrag.dragging,
+        receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
+                state.scratchGui.hoveredTarget.sprite === id,
+        editingUsers: spriteEditors,
+        vm: state.scratchGui.vm
+    };
+};
 const mapDispatchToProps = dispatch => ({
     dispatchSetHoveredSprite: spriteId => {
         dispatch(setHoveredSprite(spriteId));

@@ -1,10 +1,5 @@
-import {getTargetIdForMessage} from './target-id-utils.js';
 import cursorIcon from '../assets/icon--cursor.svg';
 
-/**
- * Setup the cursor layer
- * @param {CollaborationService} service - The collaboration service instance
- */
 const setupCursorLayer = service => {
     if (!service.workspace) return;
     const svg = service.workspace.getParentSvg && service.workspace.getParentSvg();
@@ -22,12 +17,55 @@ const setupCursorLayer = service => {
     container.style.position = container.style.position || 'relative';
     container.appendChild(layer);
     service.cursorLayer = layer;
+
+    const chatInput = document.createElement('input');
+    chatInput.type = 'text';
+    chatInput.className = 'collaboration-chat-input';
+    chatInput.placeholder = 'Say something... (max 500 chars)';
+    chatInput.maxLength = 500;
+    chatInput.style.position = 'absolute';
+    chatInput.style.display = 'none';
+    chatInput.style.zIndex = '1000';
+    chatInput.style.padding = '8px 12px';
+    chatInput.style.borderRadius = '20px';
+    chatInput.style.border = '1px solid var(--ui-modal-overlay)';
+    chatInput.style.background = 'var(--ui-white, white)';
+    chatInput.style.color = 'var(--text-primary, #575E75)';
+    chatInput.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    chatInput.style.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    chatInput.style.fontSize = '13px';
+    chatInput.style.outline = 'none';
+    chatInput.style.minWidth = '120px';
+    chatInput.style.transform = 'translate(15px, -15px)';
+
+    chatInput.addEventListener('keydown', e => e.stopPropagation());
+    chatInput.addEventListener('mousedown', e => e.stopPropagation());
+
+    chatInput.addEventListener('input', e => {
+        if (e.target.value.length > 500) {
+            e.target.value = e.target.value.substring(0, 500);
+        }
+        service.sendMessage('cursor-chat', {text: e.target.value});
+
+    });
+
+    chatInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            chatInput.blur();
+        }
+    });
+
+    chatInput.addEventListener('blur', () => {
+        chatInput.style.display = 'none';
+        chatInput.value = '';
+        service.isChatting = false;
+        service.sendMessage('cursor-chat', {text: null});
+    });
+
+    layer.appendChild(chatInput);
+    service.localChatInput = chatInput;
 };
 
-/**
- * Destroy the cursor layer
- * @param {CollaborationService} service - The collaboration service instance
- */
 const destroyCursorLayer = service => {
     if (service.cursorLayer && service.cursorLayer.parentNode) {
         service.cursorLayer.parentNode.removeChild(service.cursorLayer);
@@ -39,10 +77,6 @@ const destroyCursorLayer = service => {
     service.remoteCursors.clear();
 };
 
-/**
- * Bind cursor events
- * @param {CollaborationService} service - The collaboration service instance
- */
 const bindCursorEvents = service => {
     if (!service.workspace) return;
     const svg = service.workspace.getParentSvg && service.workspace.getParentSvg();
@@ -58,25 +92,49 @@ const bindCursorEvents = service => {
         const scale = service.workspace.scale || 1;
         const wX = metrics ? (metrics.viewLeft + x) / scale : x;
         const wY = metrics ? (metrics.viewTop + y) / scale : y;
-        
-        // Get the target ID to send (mapped for clients)
-        const localTargetId = service.vm && service.vm.editingTarget ? service.vm.editingTarget.id : null;
-        const targetId = getTargetIdForMessage(service, localTargetId);
-        
+
         service._lastCursorOverlay = {x, y};
-        service.sendMessage('cursor-move', {x: wX, y: wY, targetId});
+
+        const localTarget = service.vm && service.vm.editingTarget ? service.vm.editingTarget : null;
+        const targetName = localTarget ? localTarget.getName() : null;
+        const isStage = localTarget ? localTarget.isStage : false;
+
+        service.sendMessage('cursor-move', {x: wX, y: wY, targetName, isStage});
+
+        if (service.isChatting && service.localChatInput) {
+            service.localChatInput.style.left = `${x}px`;
+            service.localChatInput.style.top = `${y}px`;
+        }
     };
     service._onMouseLeave = () => {
         service.sendMessage('cursor-leave', {});
     };
     container.addEventListener('mousemove', service._onMouseMove);
     container.addEventListener('mouseleave', service._onMouseLeave);
+
+    service._onKeyDown = e => {
+        if (e.key === '/' && !service.isChatting) {
+            const activeTag = document.activeElement ? document.activeElement.tagName : '';
+            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement.isContentEditable) {
+                return;
+            }
+
+            e.preventDefault();
+            service.isChatting = true;
+
+            if (service.localChatInput && service._lastCursorOverlay) {
+                const {x, y} = service._lastCursorOverlay;
+
+                service.localChatInput.style.left = `${x}px`;
+                service.localChatInput.style.top = `${y}px`;
+                service.localChatInput.style.display = 'block';
+                service.localChatInput.focus();
+            }
+        }
+    };
+    window.addEventListener('keydown', service._onKeyDown);
 };
 
-/**
- * Unbind cursor events
- * @param {CollaborationService} service - The collaboration service instance
- */
 const unbindCursorEvents = service => {
     if (!service.workspace) return;
     const svg = service.workspace.getParentSvg && service.workspace.getParentSvg();
@@ -85,18 +143,17 @@ const unbindCursorEvents = service => {
     if (!container) return;
     if (service._onMouseMove) container.removeEventListener('mousemove', service._onMouseMove);
     if (service._onMouseLeave) container.removeEventListener('mouseleave', service._onMouseLeave);
+    if (service._onKeyDown) window.removeEventListener('keydown', service._onKeyDown);
     service._onMouseMove = null;
     service._onMouseLeave = null;
+    service._onKeyDown = null;
 };
 
-/**
- * Handle cursor move
- * @param {CollaborationService} service - The collaboration service instance
- * @param {object} payload - The cursor move payload
- * @param {Peer.DataConnection} conn - The connection object
- */
 const handleCursorMove = (service, payload, conn) => {
-    if (!service.cursorLayer || !service.workspace) return;
+    if (!service.cursorLayer || !service.workspace) {
+        return;
+    }
+
     const id = payload.sender;
     if (!id) return;
     let el = service.remoteCursors.get(id);
@@ -108,19 +165,16 @@ const handleCursorMove = (service, payload, conn) => {
         el.style.height = '24px';
         el.style.transform = 'translate(0, 0)';
         el.style.pointerEvents = 'none';
-        
-        // Create cursor icon from imported SVG
+
         const cursorImg = document.createElement('img');
         cursorImg.src = cursorIcon;
         cursorImg.className = 'collaboration-cursor-icon';
         cursorImg.style.width = '24px';
         cursorImg.style.height = '24px';
-        // Use CSS filter to colorize the cursor to match the theme
-        // This filter makes black SVGs white, preserving the shape
         cursorImg.style.filter = 'brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.4))';
         cursorImg.draggable = false;
         el.appendChild(cursorImg);
-        
+
         const label = document.createElement('div');
         label.className = 'collaboration-cursor-label';
         label.style.position = 'absolute';
@@ -135,24 +189,43 @@ const handleCursorMove = (service, payload, conn) => {
         label.style.whiteSpace = 'nowrap';
         label.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.appendChild(label);
+
+        const chat = document.createElement('div');
+        chat.className = 'collaboration-cursor-chat';
+        chat.style.position = 'absolute';
+        chat.style.bottom = '100%';
+        chat.style.left = '10px';
+        chat.style.marginBottom = '8px';
+        chat.style.padding = '8px 12px';
+        chat.style.borderRadius = '16px';
+        chat.style.borderBottomLeftRadius = '4px';
+        chat.style.background = 'var(--ui-white, white)';
+        chat.style.color = 'var(--text-primary, #575E75)';
+        chat.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        chat.style.fontSize = '13px';
+        chat.style.whiteSpace = 'normal';
+        chat.style.wordWrap = 'break-word';
+        chat.style.wordBreak = 'break-word';
+        chat.style.display = 'none';
+        chat.style.maxWidth = '400px';
+        chat.style.minWidth = '200px';
+        chat.style.overflow = 'hidden';
+        chat.style.maxHeight = 'none';
+        el.appendChild(chat);
+
         service.cursorLayer.appendChild(el);
         service.remoteCursors.set(id, el);
     }
     const metrics = service.workspace.getMetrics && service.workspace.getMetrics();
     const scale = service.workspace.scale || 1;
-    const currentTargetId = service.vm && service.vm.editingTarget ? service.vm.editingTarget.id : null;
-    
-    // Map the remote target ID to local target ID if we're a client
-    let remoteTargetId = payload.targetId;
-    if (!service.isHost && remoteTargetId && service.targetMapping) {
-        // For clients: map host's target ID to our local target ID
-        const mappedId = service.targetMapping[remoteTargetId];
-        if (mappedId) {
-            remoteTargetId = mappedId;
-        }
-    }
-    
-    if (remoteTargetId && currentTargetId && remoteTargetId !== currentTargetId) {
+
+    const currentTarget = service.vm && service.vm.editingTarget ? service.vm.editingTarget : null;
+    const currentTargetName = currentTarget ? currentTarget.getName() : null;
+
+    const remoteTargetName = payload.targetName;
+    const remoteIsStage = payload.isStage || false;
+
+    if (remoteTargetName && currentTargetName && remoteTargetName !== currentTargetName) {
         el.style.display = 'none';
     } else {
         const x = (payload.x * scale) - (metrics ? metrics.viewLeft : 0);
@@ -161,8 +234,14 @@ const handleCursorMove = (service, payload, conn) => {
         el.style.top = `${y}px`;
         el.style.display = 'block';
     }
-    service.remoteCursorPositions.set(id, {x: payload.x, y: payload.y, targetId: remoteTargetId});
-    const labelEl = el.children[1]; // Second child is the label
+
+    service.remoteCursorPositions.set(id, {
+        x: payload.x,
+        y: payload.y,
+        targetName: remoteTargetName,
+        isStage: remoteIsStage
+    });
+    const labelEl = el.children[1];
     const user = service.users.get(id);
     const name = user && user.username ? user.username : '';
     if (labelEl) labelEl.textContent = name;
@@ -176,12 +255,6 @@ const handleCursorMove = (service, payload, conn) => {
     }
 };
 
-/**
- * Handle cursor leave
- * @param {CollaborationService} service - The collaboration service instance
- * @param {object} payload - The cursor leave payload
- * @param {Peer.DataConnection} conn - The connection object
- */
 const handleCursorLeave = (service, payload, conn) => {
     if (!service.cursorLayer) return;
     const id = payload.sender;
@@ -198,22 +271,56 @@ const handleCursorLeave = (service, payload, conn) => {
     }
 };
 
-/**
- * Update all remote cursor positions
- * @param {CollaborationService} service - The collaboration service instance
- */
+const handleCursorChat = (service, payload, conn) => {
+    if (!service.cursorLayer) return;
+    const id = payload.sender;
+    if (!id) return;
+    const el = service.remoteCursors.get(id);
+    if (!el) return;
+
+    const chat = el.children[2];
+    if (chat) {
+        if (payload.text) {
+            chat.textContent = payload.text;
+            chat.style.display = 'block';
+        } else {
+            chat.style.display = 'none';
+        }
+    }
+
+    if (service.isHost && payload.sender !== service.peer.id) {
+        service.connections.forEach(connection => {
+            if (connection !== conn && connection.open) {
+                connection.send({
+                    type: 'cursor-chat',
+                    payload,
+                    sender: payload.sender,
+                    timestamp: Date.now()
+                });
+            }
+        });
+    }
+};
+
 const updateAllRemoteCursorPositions = service => {
     if (!service.workspace || !service.cursorLayer) return;
     const metrics = service.workspace.getMetrics && service.workspace.getMetrics();
     const scale = service.workspace.scale || 1;
-    const currentTargetId = service.vm && service.vm.editingTarget ? service.vm.editingTarget.id : null;
+
+    const currentTarget = service.vm && service.vm.editingTarget ? service.vm.editingTarget : null;
+    const currentTargetName = currentTarget ? currentTarget.getName() : null;
+
     service.remoteCursors.forEach((el, id) => {
         const pos = service.remoteCursorPositions.get(id);
         if (!pos) return;
-        if (pos.targetId && currentTargetId && pos.targetId !== currentTargetId) {
+
+        const remoteTargetName = pos.targetName;
+
+        if (remoteTargetName && currentTargetName && remoteTargetName !== currentTargetName) {
             el.style.display = 'none';
             return;
         }
+
         const x = (pos.x * scale) - (metrics ? metrics.viewLeft : 0);
         const y = (pos.y * scale) - (metrics ? metrics.viewTop : 0);
         el.style.left = `${x}px`;
@@ -222,10 +329,6 @@ const updateAllRemoteCursorPositions = service => {
     });
 };
 
-/**
- * Bind viewport sync listeners
- * @param {CollaborationService} service - The collaboration service instance
- */
 const bindViewportSyncListeners = service => {
     if (!service.workspace) return;
     const svg = service.workspace.getParentSvg && service.workspace.getParentSvg();
@@ -235,49 +338,17 @@ const bindViewportSyncListeners = service => {
     service._onViewportWheel = () => {
         updateAllRemoteCursorPositions(service);
         if (!service.workspace) return;
-        const metrics = service.workspace.getMetrics && service.workspace.getMetrics();
-        const scale = service.workspace.scale || 1;
-        if (service._lastCursorOverlay) {
-            const wX = metrics ?
-                (metrics.viewLeft + service._lastCursorOverlay.x) / scale :
-                service._lastCursorOverlay.x;
-            const wY = metrics ?
-                (metrics.viewTop + service._lastCursorOverlay.y) / scale :
-                service._lastCursorOverlay.y;
-            
-            const localTargetId = service.vm && service.vm.editingTarget ?
-                service.vm.editingTarget.id : null;
-            const targetId = getTargetIdForMessage(service, localTargetId);
-            service.sendMessage('cursor-move', {x: wX, y: wY, targetId});
-        }
+
     };
     service._onWorkspaceChangeForCursor = () => {
         updateAllRemoteCursorPositions(service);
         if (!service.workspace) return;
-        const metrics = service.workspace.getMetrics && service.workspace.getMetrics();
-        const scale = service.workspace.scale || 1;
-        if (service._lastCursorOverlay) {
-            const wX = metrics ?
-                (metrics.viewLeft + service._lastCursorOverlay.x) / scale :
-                service._lastCursorOverlay.x;
-            const wY = metrics ?
-                (metrics.viewTop + service._lastCursorOverlay.y) / scale :
-                service._lastCursorOverlay.y;
-            
-            const localTargetId = service.vm && service.vm.editingTarget ?
-                service.vm.editingTarget.id : null;
-            const targetId = getTargetIdForMessage(service, localTargetId);
-            service.sendMessage('cursor-move', {x: wX, y: wY, targetId});
-        }
+
     };
     container.addEventListener('wheel', service._onViewportWheel, {passive: true});
     service.workspace.addChangeListener(service._onWorkspaceChangeForCursor);
 };
 
-/**
- * Unbind viewport sync listeners
- * @param {CollaborationService} service - The collaboration service instance
- */
 const unbindViewportSyncListeners = service => {
     if (!service.workspace) return;
     const svg = service.workspace.getParentSvg && service.workspace.getParentSvg();
@@ -300,6 +371,7 @@ export {
     handleCursorMove,
     handleCursorLeave,
     updateAllRemoteCursorPositions,
+    handleCursorChat,
     bindViewportSyncListeners,
     unbindViewportSyncListeners
 };

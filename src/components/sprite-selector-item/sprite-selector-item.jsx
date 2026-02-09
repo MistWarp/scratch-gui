@@ -7,6 +7,7 @@ import styles from './sprite-selector-item.css';
 import {ContextMenuTrigger} from 'react-contextmenu';
 import {DangerousMenuItem, ContextMenu, MenuItem} from '../context-menu/context-menu.jsx';
 import {FormattedMessage} from 'react-intl';
+import CollaborationSpriteIndicator from '../collaboration-sprite-indicator.jsx';
 
 // react-contextmenu requires unique id to match trigger and context menu
 let contextMenuId = 0;
@@ -40,6 +41,11 @@ const SpriteSelectorItem = props => (
                         src={props.costumeURL}
                     />
                 </div>
+            </div>
+        ) : null}
+        {props.editingUsers && props.editingUsers.length > 0 ? (
+            <div className={styles.collaborationIndicator}>
+                <CollaborationSpriteIndicator editingUsers={props.editingUsers} />
             </div>
         ) : null}
         <div className={styles.spriteInfo}>
@@ -102,6 +108,10 @@ SpriteSelectorItem.propTypes = {
     componentRef: PropTypes.func,
     costumeURL: PropTypes.string,
     details: PropTypes.string,
+    editingUsers: PropTypes.arrayOf(PropTypes.shape({
+        userId: PropTypes.string,
+        username: PropTypes.string
+    })),
     // eslint-disable-next-line react/forbid-prop-types
     name: PropTypes.any,
     number: PropTypes.number,

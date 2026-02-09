@@ -17,6 +17,7 @@ import {
     COSTUMES_TAB_INDEX,
     SOUNDS_TAB_INDEX
 } from '../reducers/editor-tab';
+import collaborationService from '../lib/collaboration-service.js';
 
 import {
     closeCostumeLibrary,
@@ -74,20 +75,31 @@ class GUI extends React.Component {
         if (this.props.isShowingProject && !prevProps.isShowingProject) {
             // this only notifies container when a project changes from not yet loaded to loaded
             // At this time the project view in www doesn't need to know when a project is unloaded
-            
+
             // Log total loading time
             if (window.MISTWARP_LOAD_START_TIME) {
                 const totalLoadTime = Date.now() - window.MISTWARP_LOAD_START_TIME;
                 console.log(`🚀 MistWarp project loaded in ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}s)`);
-                
+
                 // Also use Performance API if available
                 if (window.performance && window.performance.mark && window.performance.measure) {
                     window.performance.mark('mistwarp-load-end');
                     window.performance.measure('mistwarp-total-load', 'mistwarp-load-start', 'mistwarp-load-end');
                 }
             }
-            
+
             this.props.onProjectLoaded();
+        }
+
+        // Sync costume when tab changes from costumes tab
+        if (prevProps.activeTabIndex === COSTUMES_TAB_INDEX &&
+            this.props.activeTabIndex !== COSTUMES_TAB_INDEX) {
+            if (collaborationService) {
+                const serviceInstance = collaborationService.getInstance();
+                if (serviceInstance) {
+                    serviceInstance.syncCurrentCostume();
+                }
+            }
         }
     }
     render () {
@@ -149,7 +161,8 @@ GUI.propTypes = {
     projectHost: PropTypes.string,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     telemetryModalVisible: PropTypes.bool,
-    vm: PropTypes.instanceOf(VM).isRequired
+    vm: PropTypes.instanceOf(VM).isRequired,
+    activeTabIndex: PropTypes.number
 };
 
 GUI.defaultProps = {
