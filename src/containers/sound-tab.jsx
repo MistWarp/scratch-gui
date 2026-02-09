@@ -14,7 +14,6 @@ import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 import searchIcon from '../components/action-menu/icon--search.svg';
 
 import RecordModal from './record-modal.jsx';
-import {Mic} from 'lucide-react';
 import SoundEditor from './sound-editor.jsx';
 import SoundLibrary from './sound-library.jsx';
 import SoundEditorNotSupported from '../components/tw-sound-editor-not-supported/sound-editor-not-supported.jsx';
@@ -245,12 +244,8 @@ class SoundTab extends React.Component {
                     onClick: this.handleSurpriseSound
                 }, {
                     title: intl.formatMessage(messages.recordSound),
-                    img: Mic,
+                    img: addSoundFromRecordingIcon,
                     onClick: onNewSoundFromRecordingClick
-                }, {
-                    title: intl.formatMessage(messages.addSound),
-                    img: searchIcon,
-                    onClick: onNewSoundFromLibraryClick
                 }] : []}
                 dragType={DragConstants.SOUND}
                 isRtl={isRtl}

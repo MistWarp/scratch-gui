@@ -84,6 +84,7 @@ import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
 import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _remove_extension_button from "../addons/remove-extension-button/_manifest_entry.js";
 import _tab_styles from "../addons/tab-styles/_manifest_entry.js";
+import _window_theme from "../addons/window-theme/_manifest_entry.js";
 export default {
   "cat-blocks": _cat_blocks,
   "dev-inspector": _dev_inspector,
@@ -169,5 +170,6 @@ export default {
   "no-category-text": _no_category_text,
   "green-flag-order": _green_flag_order,
   "remove-extension-button": _remove_extension_button,
-  "tab-styles": _tab_styles
+  "tab-styles": _tab_styles,
+  "window-theme": _window_theme
 };

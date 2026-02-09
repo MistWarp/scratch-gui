@@ -15,7 +15,7 @@
     width: 8px;
     cursor: col-resize;
     touch-action: none;
-    z-index: calc($z-index-drag-layer + 1);
+    z-index: $z-index-grab-handles;
     pointer-events: auto;
     background: transparent;
 }

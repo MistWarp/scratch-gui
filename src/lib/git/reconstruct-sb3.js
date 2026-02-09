@@ -25,7 +25,8 @@ const sanitizePathPart = name => {
 let blockIdCounter = 0;
 const generateBlockId = () => {
     blockIdCounter++;
-    const random = Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+    const random = Math.floor(Math.random() * 0xFFFFFF).toString(16)
+        .padStart(6, '0');
     return `b${Date.now().toString(36)}${random}`;
 };
 
@@ -34,7 +35,7 @@ const generateBlockId = () => {
  * @param {Element} node - Mutation DOM element
  * @returns {object}
  */
-const parseMutation = (node) => {
+const parseMutation = node => {
     const mutation = {};
     
     if (!node || !node.attributes) {
@@ -63,7 +64,7 @@ const parseMutation = (node) => {
  * @param {string} xml - XML string for blocks
  * @returns {object} Blocks structure {blockId: {opcode, inputs, fields, children...}}
  */
-export const parseBlocksFromXML = (xml) => {
+export const parseBlocksFromXML = xml => {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(xml, 'text/xml');
@@ -249,7 +250,7 @@ const readDirectory = async (pfs, dirPath) => {
  * @param {Uint8Array} data - Data to hash
  * @returns {Promise<string>}
  */
-const computeMD5 = async (data) => {
+const computeMD5 = async data => {
     if (typeof crypto !== 'undefined' && crypto.subtle) {
         try {
             const hashBuffer = await crypto.subtle.digest('MD5', data);
@@ -266,7 +267,8 @@ const computeMD5 = async (data) => {
         hash ^= data[i];
         hash = Math.imul(hash, 16777619);
     }
-    return (hash >>> 0).toString(16).padStart(32, '0').slice(0, 32);
+    return (hash >>> 0).toString(16).padStart(32, '0')
+        .slice(0, 32);
 };
 
 /**
@@ -343,7 +345,8 @@ export const readSpriteCostumes = async (pfs, spriteDir) => {
                 const filePath = `${costumesDir}/${file}`;
                 const data = await readFile(pfs, filePath);
                 
-                const ext = file.split('.').pop().toLowerCase();
+                const ext = file.split('.').pop()
+                    .toLowerCase();
                 const name = file.replace(`.${ext}`, '');
 
                 costumes.push({
@@ -384,7 +387,8 @@ export const readSpriteSounds = async (pfs, spriteDir) => {
                 const filePath = `${soundsDir}/${file}`;
                 const data = await readFile(pfs, filePath);
 
-                const ext = file.split('.').pop().toLowerCase();
+                const ext = file.split('.').pop()
+                    .toLowerCase();
                 const name = file.replace(`.${ext}`, '');
 
                 let sampleCount = null;
@@ -501,8 +505,8 @@ export const reconstructSb3FromWorkingTree = async ({fs, dir, onProgress}) => {
 
     try {
         const entries = await readDirectory(pfs, dir);
-        const spriteDirs = entries.filter(e => 
-            !e.startsWith('.') && 
+        const spriteDirs = entries.filter(e =>
+            !e.startsWith('.') &&
             e !== 'project.sb3'
         ).map(e => `${dir}/${e}`);
 

@@ -374,8 +374,6 @@ const TWStateManager = function (WrappedComponent) {
             // Handle room codes for automatic collaboration
             if (urlParams.has('room')) {
                 const roomCode = urlParams.get('room');
-                console.log(`[STATE MANAGER] Found room parameter: ${roomCode}`);
-                console.log(`[STATE MANAGER] Current username: ${this.props.username}`);
 
                 this.pendingRoomCode = roomCode;
 
@@ -386,11 +384,7 @@ const TWStateManager = function (WrappedComponent) {
 
                 if (this.props.username) {
                     this.handleRoomCode(roomCode);
-                } else {
-                    console.log(`[STATE MANAGER] Username not ready, will handle room code when username is set`);
                 }
-            } else {
-                console.log(`[STATE MANAGER] No room parameter found in URL: ${location.search}`);
             }
 
             const routerCallbacks = {
@@ -409,11 +403,12 @@ const TWStateManager = function (WrappedComponent) {
                 setLocalStorage(USERNAME_KEY, this.props.username);
                 
                 // Sync username with collaboration service if connected
-                if (typeof window !== 'undefined' && window.CollaborationService && prevProps.username && this.props.username) {
+                if (typeof window !== 'undefined' &&
+                    window.CollaborationService &&
+                    prevProps.username && this.props.username) {
                     try {
                         const service = window.CollaborationService.getInstance();
                         if (service && service.isConnectedToHostPeer()) {
-                            console.log(`[STATE MANAGER] Syncing username change to collaboration: ${prevProps.username} -> ${this.props.username}`);
                             service.changeUsername(this.props.username);
                         }
                     } catch (error) {
@@ -423,7 +418,6 @@ const TWStateManager = function (WrappedComponent) {
                 
                 // Check if we have a pending room code to handle now that username is available
                 if (this.pendingRoomCode && this.props.username && !prevProps.username) {
-                    console.log(`[STATE MANAGER] Username now available: ${this.props.username}, handling pending room code: ${this.pendingRoomCode}`);
                     this.handleRoomCode(this.pendingRoomCode);
                     this.pendingRoomCode = null; // Clear the pending room code
                 }

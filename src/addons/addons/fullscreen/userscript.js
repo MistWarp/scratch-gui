@@ -228,12 +228,12 @@ export default async function ({ addon, console }) {
     updatePhantomHeader();
   });
   addon.self.addEventListener("disabled", () => {
-    resizeObserver.disconnect();
+    if (resizeObserver) resizeObserver.disconnect();
     detachHoverListeners();
     updatePhantomHeader();
   });
   addon.self.addEventListener("reenabled", () => {
-    resizeObserver.observe(stage);
+    if (resizeObserver && stage) resizeObserver.observe(stage);
     updateBrowserFullscreen();
     updatePhantomHeader();
   });

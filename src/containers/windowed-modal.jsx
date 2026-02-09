@@ -198,7 +198,7 @@ class WindowedModal extends React.Component {
             resizable = false;
         } else if (id === 'customProceduresModal') {
             width = 800;
-            height = 830;
+            height = 700;
             resizable = false;
             maximizable = false;
         } else if (id === 'usernameModal') {
@@ -207,6 +207,11 @@ class WindowedModal extends React.Component {
             height = 400;
             resizable = false;
             maximizable = false;
+        } else if (id === 'collaborationModal') {
+            // Collaboration modal
+            width = 600;
+            height = 720;
+            resizable = true;
         } else if (id === 'mwProjectThemeModal') {
             width = 520;
             height = 240;

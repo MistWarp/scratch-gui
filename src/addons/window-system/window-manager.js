@@ -3,6 +3,21 @@
  * Provides a unified API for creating and managing draggable, resizable windows
  */
 
+const css = `
+.addon-window-btn {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.addon-window-btn:hover {
+  background: var(--looks-secondary, #4C97FF);
+  color: white;
+}
+`;
+
+const style = document.createElement('style');
+style.textContent = css;
+document.head.appendChild(style);
+
 const WINDOW_Z_INDEX_BASE = 8000;
 const WINDOW_Z_INDEX_MAX = 8999;
 let nextZIndex = WINDOW_Z_INDEX_BASE;
@@ -15,8 +30,6 @@ const WINDOW_ON_TOP_Z_INDEX_MAX = 9999;
 let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
-
-import getMenuBarHeight from '../../lib/utils/menu-bar-height';
 
 class AddonWindow {
     constructor (options = {}) {
@@ -281,17 +294,6 @@ class AddonWindow {
             padding: 0;
         `;
         
-        // Hover effects
-        button.addEventListener('mouseenter', () => {
-            button.style.background = 'var(--looks-secondary, #4C97FF)';
-            button.style.color = 'white';
-        });
-
-        button.addEventListener('mouseleave', () => {
-            button.style.background = 'transparent';
-            button.style.color = 'var(--text-primary, #666)';
-        });
-        
         button.addEventListener('mousedown', e => {
             e.stopPropagation();
         });
@@ -299,16 +301,6 @@ class AddonWindow {
         button.addEventListener('click', e => {
             e.stopPropagation();
             onClick();
-        });
-        
-        // Focus handling for accessibility
-        button.addEventListener('focus', () => {
-            button.style.outline = '2px solid var(--looks-secondary, #4C97FF)';
-            button.style.outlineOffset = '2px';
-        });
-        
-        button.addEventListener('blur', () => {
-            button.style.outline = 'none';
         });
         
         return button;
@@ -362,12 +354,11 @@ class AddonWindow {
         const newY = e.clientY - this.dragOffset.y;
         
         // Allow window to move mostly off-screen but keep 50px visible
-        // Don't allow the top of the window to go above the top of the page
         const minVisiblePixels = 50;
         const minX = -(this.width - minVisiblePixels);
         const maxX = window.innerWidth - minVisiblePixels;
-        const minY = getMenuBarHeight();
-        const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
+        const minY = -this.height;
+        const maxY = window.innerHeight - minVisiblePixels;
         
         this.x = Math.max(minX, Math.min(newX, maxX));
         this.y = Math.max(minY, Math.min(newY, maxY));
@@ -546,17 +537,6 @@ class AddonWindow {
         if (direction.includes('n') && newHeight !== originalNewHeight) {
             newY = this.resizeStart.top + (this.resizeStart.height - newHeight);
         }
-
-        const minY = getMenuBarHeight();
-        if (newY < minY) {
-            const bottom = this.resizeStart.top + this.resizeStart.height;
-            newY = minY;
-            newHeight = Math.max(this.minHeight, bottom - newY);
-            if (this.maxHeight) newHeight = Math.min(this.maxHeight, newHeight);
-            if (direction.includes('n')) {
-                newY = Math.max(minY, bottom - newHeight);
-            }
-        }
         
         // Update dimensions
         this.width = newWidth;
@@ -579,10 +559,9 @@ class AddonWindow {
     };
     
     addScrollbarStyling () {
-        // Create a style element for custom scrollbars
-        const style = document.createElement('style');
+        const newStyle = document.createElement('style');
         
-        style.textContent = `
+        newStyle.textContent = `
             .addon-window-content {
                 scrollbar-width: thin;
                 scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
@@ -629,8 +608,8 @@ class AddonWindow {
             }
         `;
         
-        document.head.appendChild(style);
-        this.scrollbarStyle = style; // Store reference for cleanup
+        document.head.appendChild(newStyle);
+        this.scrollbarStyle = newStyle;
     }
     
     bringToFront () {
@@ -713,7 +692,7 @@ class AddonWindow {
             this.isMaximized = false;
             if (this.savedState) {
                 this.x = this.savedState.x;
-                this.y = Math.max(getMenuBarHeight(), this.savedState.y);
+                this.y = this.savedState.y;
                 this.width = this.savedState.width;
                 this.height = this.savedState.height;
                 this.element.style.left = `${this.x}px`;
@@ -745,16 +724,15 @@ class AddonWindow {
         };
         
         this.isMaximized = true;
-        const menuBarHeight = getMenuBarHeight();
         this.x = 0;
-        this.y = menuBarHeight;
+        this.y = 0;
         this.width = window.innerWidth;
-        this.height = Math.max(0, window.innerHeight - menuBarHeight);
+        this.height = window.innerHeight;
         
         this.element.style.left = '0px';
-        this.element.style.top = `${menuBarHeight}px`;
+        this.element.style.top = '0px';
         this.element.style.width = '100vw';
-        this.element.style.height = `${this.height}px`;
+        this.element.style.height = '100vh';
         
         this.updateMaximizeButton();
         this.onMaximize();
@@ -794,9 +772,8 @@ class AddonWindow {
     }
     
     center () {
-        const menuBarHeight = getMenuBarHeight();
         this.x = (window.innerWidth - this.width) / 2;
-        this.y = Math.max(menuBarHeight, (window.innerHeight - this.height) / 2);
+        this.y = (window.innerHeight - this.height) / 2;
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         return this;

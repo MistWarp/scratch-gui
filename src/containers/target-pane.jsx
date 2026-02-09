@@ -24,6 +24,7 @@ import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
 import downloadBlob from '../lib/utils/download-blob';
 import log from '../lib/utils/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
+import CollaborationService from '../lib/collaboration-service.js';
 
 class TargetPane extends React.Component {
     constructor (props) {
@@ -104,6 +105,11 @@ class TargetPane extends React.Component {
         this.props.vm.setEditingTarget(id);
         if (this.props.stage && id !== this.props.stage.id) {
             this.props.onHighlightTarget(id);
+        }
+        
+        const service = CollaborationService.getInstance();
+        if (service) {
+            service.onEditingTargetChange();
         }
     }
     async handleSurpriseSpriteClick () {

@@ -11,14 +11,25 @@ export default async function ({ addon, console, msg }) {
   let projectJSONEditor = null;
   let blockJSONEditor = null;
 
-  const createTextJSONEditor = editorContainer => new JSONEditor(editorContainer, {
-    mode: 'text',
-    modes: ['text'],
-    search: true,
-    mainMenuBar: true,
-    navigationBar: false,
-    statusBar: true
-  });
+  const createTextJSONEditor = (editorContainer) => {
+    const editor = new JSONEditor(editorContainer, {
+      mode: 'text',
+      modes: ['text'],
+      search: true,
+      mainMenuBar: true,
+      navigationBar: false,
+      statusBar: true,
+      onModeChange: function (newMode) {
+      }
+    });
+    setTimeout(() => {
+      try {
+        editor.update();
+      } catch (e) {
+      }
+    }, 50);
+    return editor;
+  };
 
   const ensureProjectJSONEditor = editorContainer => {
     if (projectJSONEditor) return;
@@ -110,26 +121,31 @@ export default async function ({ addon, console, msg }) {
           <button class="dev-inspector-download">Download JSON</button>
           <button class="dev-inspector-save">Save JSON</button>
         </div>
-        <div class="dev-inspector-json-editor" style="flex: 1; width: 100%; min-height: 300px; border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; overflow: hidden; background: var(--ui-secondary, #f9f9f9);"></div>
+        <div class="dev-inspector-json-editor"></div>
         </div>
       </div>
-      <div class="dev-inspector-content-panel" data-panel="project" style="display: none;">
+      <div class="dev-inspector-content-panel dev-inspector-hidden" data-panel="project">
         <div class="dev-inspector-actions">
           <button class="dev-inspector-project-refresh">Refresh JSON</button>
           <button class="dev-inspector-project-copy">Copy JSON</button>
           <button class="dev-inspector-project-download">Download JSON</button>
           <button class="dev-inspector-project-reload">Reload Project</button>
         </div>
-        <div class="dev-inspector-project-editor" style="flex: 1; width: 100%; min-height: 400px; border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)); border-radius: 6px; overflow: hidden; background: var(--ui-secondary, #f9f9f9);"></div>
+        <div class="dev-inspector-project-editor"></div>
       </div>
     `;
     
     const copyBtn = container.querySelector('.dev-inspector-copy');
     const downloadBtn = container.querySelector('.dev-inspector-download');
     const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
-    
+
     copyBtn.addEventListener('click', () => {
       ensureBlockJSONEditor(blockEditorContainer);
+      if (!blockJSONEditor) {
+        copyBtn.textContent = 'Editor not ready!';
+        setTimeout(() => copyBtn.textContent = 'Copy JSON', 2000);
+        return;
+      }
       navigator.clipboard.writeText(getEditorText(blockJSONEditor)).then(() => {
         copyBtn.textContent = 'Copied!';
         setTimeout(() => {
@@ -137,10 +153,15 @@ export default async function ({ addon, console, msg }) {
         }, 2000);
       });
     });
-    
+
     downloadBtn.addEventListener('click', () => {
       const blockId = container.querySelector('.dev-inspector-block-id').textContent;
       ensureBlockJSONEditor(blockEditorContainer);
+      if (!blockJSONEditor) {
+        downloadBtn.textContent = 'Editor not ready!';
+        setTimeout(() => downloadBtn.textContent = 'Download JSON', 2000);
+        return;
+      }
       const blob = new Blob([getEditorText(blockJSONEditor)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -149,15 +170,19 @@ export default async function ({ addon, console, msg }) {
       a.click();
       URL.revokeObjectURL(url);
     });
-    
     const saveBtn = container.querySelector('.dev-inspector-save');
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
         ensureBlockJSONEditor(blockEditorContainer);
+        if (!blockJSONEditor) {
+          saveBtn.textContent = 'Editor not ready!';
+          setTimeout(() => saveBtn.textContent = 'Save JSON', 2000);
+          return;
+        }
         const blockIdSpan = container.querySelector('.dev-inspector-block-id');
         try {
           const newBlockData = blockJSONEditor.get();
-          
+
           if (!vm || !vm.runtime || !blockIdSpan.textContent) {
             saveBtn.textContent = 'VM not available!';
             setTimeout(() => {
@@ -168,7 +193,7 @@ export default async function ({ addon, console, msg }) {
 
           const blockId = blockIdSpan.textContent;
           let projectJson = getProjectJSON();
-          
+
           if (!projectJson) {
             saveBtn.textContent = 'Failed to get project JSON!';
             setTimeout(() => {
@@ -189,7 +214,7 @@ export default async function ({ addon, console, msg }) {
           const currentBlockData = blockResult.block;
           const currentDataStr = JSON.stringify(currentBlockData);
           const newDataStr = JSON.stringify(newBlockData);
-          
+
           if (currentDataStr === newDataStr) {
             saveBtn.textContent = 'No changes detected!';
             setTimeout(() => {
@@ -202,13 +227,13 @@ export default async function ({ addon, console, msg }) {
 
           saveBtn.textContent = 'Reloading...';
           saveBtn.disabled = true;
-          
+
           projectJSONCache = null;
           projectJSONCacheString = null;
-          
+
           await vm.runtime.stopAll();
           await vm.loadProject(projectJson);
-          
+
           saveBtn.textContent = 'Saved & Reloaded!';
           setTimeout(() => {
             saveBtn.textContent = 'Save JSON';
@@ -238,7 +263,27 @@ export default async function ({ addon, console, msg }) {
         
         panels.forEach(panel => {
           const panelType = panel.getAttribute('data-panel');
-          panel.style.display = panelType === targetTab ? 'flex' : 'none';
+          if (panelType === targetTab) {
+            panel.classList.remove('dev-inspector-hidden');
+            panel.style.cssText = `
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+              min-height: 0;
+              gap: 16px;
+            `;
+          } else {
+            panel.classList.add('dev-inspector-hidden');
+            panel.style.cssText = `
+              flex: 0;
+              display: none;
+              flex-direction: column;
+              overflow: hidden;
+              min-height: 0;
+              gap: 16px;
+            `;
+          }
         });
         
         if (targetTab === 'project') {
@@ -250,20 +295,18 @@ export default async function ({ addon, console, msg }) {
         }
       });
     });
-    
     const projectRefreshBtn = container.querySelector('.dev-inspector-project-refresh');
     const projectCopyBtn = container.querySelector('.dev-inspector-project-copy');
     const projectDownloadBtn = container.querySelector('.dev-inspector-project-download');
     const projectReloadBtn = container.querySelector('.dev-inspector-project-reload');
     const projectEditorContainer = container.querySelector('.dev-inspector-project-editor');
-    
+
     function loadProjectJSONAsync(editorContainer) {
       if (!vm || !vm.runtime) {
         ensureProjectJSONEditor(editorContainer);
         try {
           projectJSONEditor.set({$error: 'VM not available'});
         } catch (e) {
-          // ignore
         }
         return;
       }
@@ -272,19 +315,18 @@ export default async function ({ addon, console, msg }) {
       try {
         projectJSONEditor.set({$status: 'Loading project JSON...'});
       } catch (e) {
-        // ignore
       }
-      
+
       requestAnimationFrame(() => {
         try {
           const projectJson = vm.toJSON();
           projectJSONCache = projectJson;
-          
+
           requestAnimationFrame(() => {
             try {
               const parsed = JSON.parse(projectJson);
               projectJSONCacheString = JSON.stringify(parsed, null, 2);
-              
+
               requestAnimationFrame(() => {
                 try {
                   projectJSONEditor.set(parsed);
@@ -297,7 +339,6 @@ export default async function ({ addon, console, msg }) {
               try {
                 projectJSONEditor.set({$error: 'Error parsing project JSON: ' + e.message});
               } catch (e2) {
-                // ignore
               }
               console.error('Error parsing project JSON:', e);
             }
@@ -306,7 +347,6 @@ export default async function ({ addon, console, msg }) {
           try {
             projectJSONEditor.set({$error: 'Error loading project JSON: ' + e.message});
           } catch (e2) {
-            // ignore
           }
           console.error('Error loading project JSON:', e);
         }
@@ -321,7 +361,7 @@ export default async function ({ addon, console, msg }) {
 
       ensureProjectJSONEditor(projectEditorContainer);
       loadProjectJSONAsync(projectEditorContainer);
-      
+
       setTimeout(() => {
         if (projectEditorContainer.dataset.loaded === 'true') {
           projectRefreshBtn.textContent = 'Refreshed!';
@@ -334,9 +374,14 @@ export default async function ({ addon, console, msg }) {
         }, 1000);
       }, 100);
     });
-    
+
     projectCopyBtn.addEventListener('click', () => {
       ensureProjectJSONEditor(projectEditorContainer);
+      if (!projectJSONEditor) {
+        projectCopyBtn.textContent = 'Editor not ready!';
+        setTimeout(() => projectCopyBtn.textContent = 'Copy JSON', 2000);
+        return;
+      }
       navigator.clipboard.writeText(getEditorText(projectJSONEditor)).then(() => {
         projectCopyBtn.textContent = 'Copied!';
         setTimeout(() => {
@@ -344,9 +389,14 @@ export default async function ({ addon, console, msg }) {
         }, 2000);
       });
     });
-    
+
     projectDownloadBtn.addEventListener('click', () => {
       ensureProjectJSONEditor(projectEditorContainer);
+      if (!projectJSONEditor) {
+        projectDownloadBtn.textContent = 'Editor not ready!';
+        setTimeout(() => projectDownloadBtn.textContent = 'Download JSON', 2000);
+        return;
+      }
       const blob = new Blob([getEditorText(projectJSONEditor)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -359,8 +409,13 @@ export default async function ({ addon, console, msg }) {
     projectReloadBtn.addEventListener('click', async () => {
       try {
         ensureProjectJSONEditor(projectEditorContainer);
+        if (!projectJSONEditor) {
+          projectReloadBtn.textContent = 'Editor not ready!';
+          setTimeout(() => projectReloadBtn.textContent = 'Reload Project', 2000);
+          return;
+        }
         const newProjectData = projectJSONEditor.get();
-        
+
         if (!vm || !vm.runtime) {
           projectReloadBtn.textContent = 'VM not available!';
           setTimeout(() => {
@@ -368,19 +423,19 @@ export default async function ({ addon, console, msg }) {
           }, 2000);
           return;
         }
-        
+
         projectReloadBtn.textContent = 'Reloading...';
         projectReloadBtn.disabled = true;
-        
+
         projectJSONCache = null;
         projectJSONCacheString = null;
-        
+
         await vm.runtime.stopAll();
         await vm.loadProject(newProjectData);
-        
+
         projectReloadBtn.textContent = 'Project Reloaded!';
         projectEditorContainer.dataset.loaded = 'false';
-        
+
         setTimeout(() => {
           projectReloadBtn.textContent = 'Reload Project';
           projectReloadBtn.disabled = false;
@@ -395,65 +450,7 @@ export default async function ({ addon, console, msg }) {
       }
     });
     
-    container.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      height: 100%;
-      overflow: hidden;
-      background: var(--ui-primary, #ffffff);
-      color: var(--text-primary, #575e75);
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      box-sizing: border-box;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      min-height: 0;
-    `;
-    
-    const infoGrid = container.querySelector('.dev-inspector-info-grid');
-    infoGrid.style.cssText = `
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    `;
-    
-    const updateGridColumns = () => {
-      const blockEditorElement = container.querySelector('.dev-inspector-json-editor');
-      const projectEditorElement = container.querySelector('.dev-inspector-project-editor');
-      if (!blockEditorElement && !projectEditorElement) return;
-      
-      const containerWidth = container.offsetWidth - 32;
-      let fontSize;
-      if (containerWidth < 400) {
-        infoGrid.style.gridTemplateColumns = '1fr';
-        container.style.fontSize = '12px';
-        fontSize = '10px';
-      } else if (containerWidth < 600) {
-        infoGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-        container.style.fontSize = '13px';
-        fontSize = '11px';
-      } else if (containerWidth < 800) {
-        infoGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-        container.style.fontSize = '14px';
-        fontSize = '11px';
-      } else {
-        infoGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
-        container.style.fontSize = '14px';
-        fontSize = '12px';
-      }
-      
-      if (blockEditorElement) blockEditorElement.style.fontSize = fontSize;
-      if (projectEditorElement) projectEditorElement.style.fontSize = fontSize;
-    };
-    
-    if (window.ResizeObserver) {
-      const resizeObserver = new ResizeObserver(updateGridColumns);
-      resizeObserver.observe(container);
-    }
-    
-    setTimeout(updateGridColumns, 0);
-    
+
     const infoItems = container.querySelectorAll('.dev-inspector-info-item');
     infoItems.forEach(item => {
       item.style.cssText = `
@@ -461,7 +458,7 @@ export default async function ({ addon, console, msg }) {
         flex-direction: column;
         gap: 6px;
       `;
-      
+
       const label = item.querySelector('label');
       const span = item.querySelector('span');
       
@@ -493,96 +490,38 @@ export default async function ({ addon, console, msg }) {
       }
     });
     
-    const tabsContainer = container.querySelector('.dev-inspector-tabs');
-    tabsContainer.style.cssText = `
-      display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
-      border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-    `;
     
-    const tabButtons = container.querySelectorAll('.dev-inspector-tab');
-    tabButtons.forEach(tab => {
-      tab.style.cssText = `
-        padding: 8px 16px;
-        background: transparent;
-        color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
-        border: none;
-        border-bottom: 2px solid transparent;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        margin-bottom: -1px;
-      `;
-      
-      if (tab.classList.contains('dev-inspector-tab-active')) {
-        tab.style.color = 'var(--ui-blue, #4c97ff)';
-        tab.style.borderBottomColor = 'var(--ui-blue, #4c97ff)';
-      }
-      
-      tab.addEventListener('mouseenter', () => {
-        if (!tab.classList.contains('dev-inspector-tab-active')) {
-          tab.style.color = 'var(--text-primary, #575e75)';
-        }
-      });
-      
-      tab.addEventListener('mouseleave', () => {
-        if (!tab.classList.contains('dev-inspector-tab-active')) {
-          tab.style.color = 'var(--text-primary-transparent, rgba(87, 94, 117, 0.6))';
-        }
-      });
-    });
-    
-    tabButtons.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabButtons.forEach(t => {
-          t.style.color = 'var(--text-primary-transparent, rgba(87, 94, 117, 0.6))';
-          t.style.borderBottomColor = 'transparent';
-        });
-        tab.style.color = 'var(--ui-blue, #4c97ff)';
-        tab.style.borderBottomColor = 'var(--ui-blue, #4c97ff)';
-      });
-    });
+
     
     const contentPanels = container.querySelectorAll('.dev-inspector-content-panel');
     const activeTab = container.querySelector('.dev-inspector-tab-active')?.getAttribute('data-tab') || 'block';
     contentPanels.forEach(panel => {
       const panelType = panel.getAttribute('data-panel');
       const isVisible = panelType === activeTab;
-      panel.style.cssText = `
-        flex: 1;
-        display: ${isVisible ? 'flex' : 'none'};
-        flex-direction: column;
-        overflow: hidden;
-        min-height: 0;
-        gap: 16px;
-      `;
+      if (isVisible) {
+        panel.classList.remove('dev-inspector-hidden');
+        panel.style.cssText = `
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          min-height: 0;
+          gap: 16px;
+        `;
+      } else {
+        panel.classList.add('dev-inspector-hidden');
+        panel.style.cssText = `
+          flex: 0;
+          display: none;
+          flex-direction: column;
+          overflow: hidden;
+          min-height: 0;
+          gap: 16px;
+        `;
+      }
     });
     
-    const infoSection = container.querySelector('.dev-inspector-info');
-    if (infoSection) {
-      infoSection.style.cssText = `
-        flex: 0 0 auto;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-      `;
-    }
     
-    const jsonSection = container.querySelector('.dev-inspector-json');
-    if (jsonSection) {
-    jsonSection.style.cssText = `
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 200px;
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-    `;
-    }
     
     const actionDivs = container.querySelectorAll('.dev-inspector-actions');
     actionDivs.forEach(actionsDiv => {
@@ -594,45 +533,6 @@ export default async function ({ addon, console, msg }) {
     `;
     });
     
-    const buttons = container.querySelectorAll('button:not(.dev-inspector-tab)');
-    buttons.forEach((button, index) => {
-      const isDownload = button.textContent.includes('Download');
-      const isReload = button.textContent.includes('Reload');
-      const isRefresh = button.textContent.includes('Refresh');
-      button.style.cssText = `
-        padding: 8px 16px;
-        background: ${isDownload ? 'var(--ui-green, #0fbd8c)' : isReload ? 'var(--ui-orange, #ff8c42)' : isRefresh ? 'var(--ui-gray, #8e8e93)' : 'var(--ui-blue, #4c97ff)'};
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      `;
-      
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = 'translateY(-1px)';
-        button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-      });
-      
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = 'none';
-      });
-    });
-    
-    const headings = container.querySelectorAll('h3');
-    headings.forEach(h => {
-      h.style.cssText = `
-        margin: 0 0 8px 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-primary, #575e75);
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      `;
-    });
     
     return container;
   }
@@ -791,48 +691,96 @@ export default async function ({ addon, console, msg }) {
         onClose: cleanup,
         onMinimize: cleanup
       });
-      
+
       const content = createInspectorContent();
       inspectorWindow.setContent(content);
-      
+
       inspectorWindow.show();
+
+      const container = inspectorWindow.element.querySelector('.dev-inspector-container');
+      const infoGrid = container.querySelector('.dev-inspector-info-grid');
+
+      const updateGridColumns = () => {
+        if (!infoGrid) return;
+
+        const containerWidth = container.offsetWidth - 32;
+        if (containerWidth < 400) {
+          infoGrid.style.gridTemplateColumns = '1fr';
+        } else if (containerWidth < 600) {
+          infoGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        } else if (containerWidth < 800) {
+          infoGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        } else {
+          infoGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        }
+
+        requestAnimationFrame(() => {
+          if (blockJSONEditor && typeof blockJSONEditor.update === 'function') {
+            try {
+              blockJSONEditor.update();
+            } catch (e) {
+            }
+          }
+          if (projectJSONEditor && typeof projectJSONEditor.update === 'function') {
+            try {
+              projectJSONEditor.update();
+            } catch (e) {
+            }
+          }
+        });
+      };
+
+      if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(updateGridColumns);
+        resizeObserver.observe(container);
+      }
+
+      setTimeout(updateGridColumns, 0);
     }
 
     const container = inspectorWindow.element.querySelector('.dev-inspector-container');
-    
+
     container.querySelector('.dev-inspector-block-id').textContent = blockInfo.id;
     container.querySelector('.dev-inspector-block-type').textContent = blockInfo.type;
     container.querySelector('.dev-inspector-block-category').textContent = blockInfo.category;
     container.querySelector('.dev-inspector-block-opcode').textContent = blockInfo.opcode;
-    container.querySelector('.dev-inspector-block-position').textContent = 
+    container.querySelector('.dev-inspector-block-position').textContent =
       `(${blockInfo.position.x}, ${blockInfo.position.y})`;
-    container.querySelector('.dev-inspector-block-parent').textContent = 
+    container.querySelector('.dev-inspector-block-parent').textContent =
       blockInfo.parentBlock ? 'Yes' : 'No';
-    container.querySelector('.dev-inspector-block-children').textContent = 
+    container.querySelector('.dev-inspector-block-children').textContent =
       blockInfo.childBlocks.length > 0 ? `Yes (${blockInfo.childBlocks.length})` : 'No';
-    container.querySelector('.dev-inspector-block-shadow').textContent = 
+    container.querySelector('.dev-inspector-block-shadow').textContent =
       blockInfo.isShadow ? 'Yes' : 'No';
-    
+
     const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
-    ensureBlockJSONEditor(blockEditorContainer);
-    
-    const projectJson = getProjectJSON();
-    const blockResult = findBlockInProjectJSON(projectJson, blockInfo.id);
-    
-    if (blockResult && blockResult.block) {
-      try {
-        blockJSONEditor.set(blockResult.block);
-      } catch (e) {
-        blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+
+    setTimeout(() => {
+      ensureBlockJSONEditor(blockEditorContainer);
+
+      if (!blockJSONEditor) {
+        console.error('Failed to initialize JSONEditor');
+        return;
       }
-    } else {
-      try {
-        blockJSONEditor.set(blockInfo.scratchData || blockInfo);
-      } catch (e) {
-        blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+
+      const projectJson = getProjectJSON();
+      const blockResult = findBlockInProjectJSON(projectJson, blockInfo.id);
+
+      if (blockResult && blockResult.block) {
+        try {
+          blockJSONEditor.set(blockResult.block);
+        } catch (e) {
+          blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+        }
+      } else {
+        try {
+          blockJSONEditor.set(blockInfo.scratchData || blockInfo);
+        } catch (e) {
+          blockJSONEditor.set({$error: 'Error showing block JSON: ' + e.message});
+        }
       }
-    }
-    
+    }, 150);
+
     container.currentBlock = block;
   }
   

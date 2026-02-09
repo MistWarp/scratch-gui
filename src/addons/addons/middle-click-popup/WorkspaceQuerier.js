@@ -717,7 +717,9 @@ class TokenTypeBlock extends TokenType {
             break;
         }
       }
-      this.fullTokenProviders.push(fullTokenProvider);
+      if (fullTokenProvider) {
+        this.fullTokenProviders.push(fullTokenProvider);
+      }
     }
 
     /**
@@ -880,7 +882,7 @@ class TokenTypeBlock extends TokenType {
       return;
     }
 
-    for (const token of tokenProvider.parseTokens(query, idx, depth + 1)) {
+    for (const token of tokenProvider?.parseTokens?.(query, idx, depth + 1) ?? []) {
       ++query.tokenCount;
 
       if (!query.canCreateMoreTokens()) break;

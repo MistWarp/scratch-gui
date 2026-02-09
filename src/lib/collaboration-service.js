@@ -5,7 +5,8 @@ import {
 } from './collaboration/event-serialization.js';
 import {
     collaborationBlockListener as collaborationBlockListenerImpl,
-    handleBlockEvent as handleBlockEventImpl
+    handleBlockEvent as handleBlockEventImpl,
+    clearPendingEventTimers as clearPendingEventTimersImpl
 } from './collaboration/block-events.js';
 import {
     attachToWorkspace as attachToWorkspaceExternal,
@@ -25,6 +26,7 @@ import {
     sendProjectSync as sendProjectSyncExternal,
     handleProjectSyncStart as handleProjectSyncStartExternal,
     handleProjectSyncChunk as handleProjectSyncChunkExternal,
+    handleProjectStreamEnd as handleProjectStreamEndExternal,
     debugTargetStates as debugTargetStatesExternal
 } from './collaboration/sync-manager.js';
 import {
@@ -56,57 +58,74 @@ import {
     handleCursorMove as handleCursorMoveExternal,
     handleCursorLeave as handleCursorLeaveExternal,
     updateAllRemoteCursorPositions as updateAllRemoteCursorPositionsExternal,
+    handleCursorChat as handleCursorChatExternal,
     bindViewportSyncListeners as bindViewportSyncListenersExternal,
     unbindViewportSyncListeners as unbindViewportSyncListenersExternal
 } from './collaboration/cursor-sync.js';
-/**
- * Live Collaboration Service for Scratch projects using Peer projects using PeerJS
- * Manages real-time collaboration features including room management, user tracking, and block synchronization
- */
+import {APPNAME} from './constants/brand.js';
 
-// Singleton instance
 let collaborationServiceInstance = null;
 
 class CollaborationService {
     constructor () {
         this.peer = null;
-        this.connections = new Map(); // Map of peer IDs to connection objects
+        this.connections = new Map();
         this.isHost = false;
         this.roomId = null;
         this.username = null;
         this.isConnected = false;
-        this.isConnectedToHost = false; // Track if we're actually connected to the host
-        this.users = new Map(); // Map of peer IDs to user info
-        this.hostId = null; // Track who the host is
+        this.isConnectedToHost = false;
+        this.users = new Map();
+        this.hostId = null;
         this.vm = null;
         this.eventListeners = new Map();
-        this.isApplyingRemoteChange = false; // Flag to prevent infinite loops
-        this.wasKicked = false; // Flag to track if user was kicked
-        this.pendingEvents = []; // Queue for events that couldn't be applied immediately
-        this.retryTimer = null; // Timer for retrying pending events
-        this.currentConnectionFailureHandler = null; // Handler for connection failures during host connection
-        this.targetMapping = {}; // Mapping between host target IDs and our target IDs
-        this.lastSyncTime = 0; // Track when we last performed a sync operation
-        this.isSyncOperation = false; // Flag to mark events as sync-originated
-        this.roomPrivacy = 'public'; // Room privacy setting: 'public' or 'private'
-        this.pendingJoinRequests = new Map(); // Map of pending join requests (peer ID -> user info)
-        this.isDisconnecting = false; // Flag to prevent multiple disconnect calls
-        this.connectionTimeout = null; // Store connection timeout reference
+        this.isApplyingRemoteChange = false;
+        this.wasKicked = false;
+        this.pendingEvents = [];
+        this.retryTimer = null;
+        this.currentConnectionFailureHandler = null;
+        this.targetMapping = {};
+        this.lastSyncTime = 0;
+        this.isSyncOperation = false;
+        this.isSwitchingTarget = false;
+        this.roomPrivacy = 'public';
+        this.pendingJoinRequests = new Map();
+        this.isDisconnecting = false;
+        this.connectionTimeout = null;
         this.seenEventIds = new Set();
+        this.seenEventTimestamps = new Map();
         this.remoteCursors = new Map();
         this.cursorLayer = null;
         this.remoteCursorPositions = new Map();
         this._lastCursorOverlay = null;
-        this.isLoadingProject = false; // Flag to track if a project is being loaded (including UI init)
+        this._currentSyncSequence = 0;
+        this._lastReceivedSyncSequence = -1;
+        this.userEditingTargets = new Map();
+        this._activeSyncDirection = null;
+        this._syncRequestTimer = null;
+        this._syncRequestCooldown = 2000;
+        this._suppressionClearTimer = null;
+        this._state = 'IDLE';
+        this._cleanupInterval = setInterval(() => {
+            if (this.seenEventIds.size > 100) {
+                const now = Date.now();
+                const eventsToRemove = [];
+                this.seenEventTimestamps.forEach((timestamp, eventId) => {
+                    if (now - timestamp > 30000) {
+                        eventsToRemove.push(eventId);
+                    }
+                });
+                if (eventsToRemove.length > 0) {
+                    eventsToRemove.forEach(eventId => {
+                        this.seenEventIds.delete(eventId);
+                        this.seenEventTimestamps.delete(eventId);
+                    });
+                }
+            }
+        }, 30000);
 
-        // Sync sequence tracking to prevent loops
-        this._currentSyncSequence = 0; // Incremented by host on each sync send
-        this._lastReceivedSyncSequence = -1; // Track last sync we completed as client
-        this._activeSyncDirection = null; // 'sending' (host) or 'receiving' (client) or null
-
-        // Configure PeerJS with public servers
         this.peerConfig = {
-            host: '0.peerjs.com',
+            host: 'collab_warp.mistium.com',
             port: 443,
             path: '/',
             secure: true,
@@ -123,9 +142,9 @@ class CollaborationService {
                 iceCandidatePoolSize: 10,
                 iceTransportPolicy: 'all'
             },
-            debug: 2 // Enable debug logging
+            debug: 2
         };
-        
+
 
         this.messageHandlers = {
             'user-join': this.handleUserJoin.bind(this),
@@ -136,6 +155,9 @@ class CollaborationService {
             'sync-request': this.handleSyncRequest.bind(this),
             'project-sync-start': this.handleProjectSyncStart.bind(this),
             'project-sync-chunk': this.handleProjectSyncChunk.bind(this),
+            'project-stream-start': this.handleProjectStreamStart.bind(this),
+            'project-stream-data': this.handleProjectStreamData.bind(this),
+            'project-stream-end': this.handleProjectStreamEnd.bind(this),
             'targets-update': this.handleTargetsUpdate.bind(this),
             'block-event': (payload, conn) => handleBlockEventImpl(this, payload, conn),
             'asset-event': this.handleAssetEvent.bind(this),
@@ -148,290 +170,277 @@ class CollaborationService {
             'room-privacy': this.handleRoomPrivacy.bind(this),
             'target-switch': this.handleTargetSwitch.bind(this),
             'target-created': this.handleTargetCreated.bind(this),
-            'target-deleted': this.handleTargetDeleted.bind(this)
+            'target-deleted': this.handleTargetDeleted.bind(this),
+            'stage-costume-change': this.handleStageCostumeChange.bind(this),
+            'costume-change': this.handleCostumeChange.bind(this),
+            'extension-load': this.handleExtensionLoad.bind(this),
+            'client-sync-complete': this.handleClientSyncComplete.bind(this),
+            'session-ready': this.handleSessionReady.bind(this),
+            'cursor-chat': this.handleCursorChat.bind(this),
+            'host-loading-start': this.handleHostLoadingStart.bind(this),
+            'host-loading-progress': this.handleHostLoadingProgress.bind(this),
+            'host-loading-complete': this.handleHostLoadingComplete.bind(this),
+            'sprite-info-changed': this.handleSpriteInfoChanged.bind(this)
         };
     }
 
-    /**
-     * Request a full project sync from the host (client only).
-     * This is throttled and guarded to prevent host/client ping-pong loops.
-     * @param {string} [reason] Optional reason (helps debugging)
-     */
-    requestProjectSync (reason = 'unspecified') {
-        if (!this.isConnected || this.isHost) return;
-        if (!this.hostId) {
-            console.warn('[COLLABORATION] requestProjectSync: no hostId yet, skipping');
-            return;
-        }
-
-        // Don't request sync while we're already in a sync operation
-        if (this._activeSyncDirection !== null) {
-            console.log('[COLLABORATION] requestProjectSync: sync already active', {
-                reason,
-                direction: this._activeSyncDirection
-            });
-            return;
-        }
-
-        console.log('[COLLABORATION] 📣 Requesting project sync from host', {
-            reason,
-            hostId: this.hostId,
-            lastSequence: this._lastReceivedSyncSequence
-        });
-
-        this.sendMessage('sync-request', {
-            reason,
-            lastKnownSequence: this._lastReceivedSyncSequence
-        }, this.hostId);
+    getState () {
+        return this._state;
     }
 
-    /**
-     * Initialize the collaboration service with a VM instance
-     * @param {VirtualMachine} vm - The Scratch VM instance
-     */
+    _setState (newState) {
+        this._state = newState;
+    }
+
+    _isShuttingDown () {
+        return this.isDisconnecting || this._state === 'DISCONNECTING';
+    }
+
+    handleHostLoadingStart () {
+        if (this.isHost) return;
+        this.emit('host-loading-start');
+    }
+
+    handleHostLoadingProgress (payload) {
+        if (this.isHost) return;
+        this.emit('host-loading-progress', {progress: payload.progress});
+    }
+
+    handleHostLoadingComplete () {
+        if (this.isHost) return;
+        this.emit('host-loading-complete');
+    }
+
+    requestProjectSync (reason = 'unspecified') {
+        if (!this.isConnected || this.isHost) return;
+        if (!this.hostId) return;
+        if (this._activeSyncDirection !== null) return;
+
+        if (this._syncRequestTimer) {
+            clearTimeout(this._syncRequestTimer);
+        }
+
+        this._syncRequestTimer = setTimeout(() => {
+            this._syncRequestTimer = null;
+            this.sendMessage('sync-request', {
+                reason,
+                lastKnownSequence: this._lastReceivedSyncSequence
+            }, this.hostId);
+        }, this._syncRequestCooldown);
+    }
+
+    shouldSuppressEvents () {
+        return this.isSyncOperation || this.isApplyingRemoteChange || this.isLoadingProject || this.isSwitchingTarget;
+    }
+
     init (vm) {
         this.vm = vm;
-
-        // Create a custom block listener that filters for collaboration-relevant events
         this.collaborationBlockListener = this.collaborationBlockListener.bind(this);
-        
-        // Debug: Log flag states periodically
-        this._debugFlagInterval = setInterval(() => {
-            if (this.isConnected) {
-                const timeSinceSync = this.lastSyncTime ? Date.now() - this.lastSyncTime : -1;
-                console.log('[🔍 FLAG STATE]', {
-                    isConnected: this.isConnected,
-                    isHost: this.isHost,
-                    isSyncOperation: this.isSyncOperation,
-                    isApplyingRemoteChange: this.isApplyingRemoteChange,
-                    isLoadingProject: this.isLoadingProject,
-                    timeSinceLastSync: timeSinceSync,
-                    cooldownActive: timeSinceSync >= 0 && timeSinceSync < 3000,
-                    connectionCount: this.connections.size,
-                    seenEventIds: this.seenEventIds.size,
-                    pendingEvents: this.pendingEvents.length
-                });
-            }
-        }, 5000); // Log every 5 seconds
 
-        // Listen for VM events to sync changes
         if (this.vm) {
             this.vm.on('workspaceUpdate', this.onWorkspaceUpdate.bind(this));
             this.vm.on('PROJECT_CHANGED', this.onProjectChanged.bind(this));
-            this.vm.runtime.on('TARGETS_UPDATE', this.onTargetsUpdate.bind(this));
-            
-            const service = this;
-            
-            // NOTE: Target switching is disabled to allow independent editing
-            // Users can work on different sprites simultaneously
-            // this.onEditingTargetChange = this.onEditingTargetChange.bind(this);
-            
-            // // Wrap setEditingTarget to detect target switches
-            // const originalSetEditingTarget = this.vm.setEditingTarget.bind(this.vm);
-            // this.vm.setEditingTarget = function (targetId) {
-            //     const previousTarget = service.vm.editingTarget ? service.vm.editingTarget.id : null;
-            //     originalSetEditingTarget(targetId);
-            //     if (service.isConnected && !service.isApplyingRemoteChange && previousTarget !== targetId) {
-            //         service.onEditingTargetChange(targetId);
-            //     }
-            // };
-            
-            // Wrap addSprite to detect sprite creation
-            const originalAddSprite = this.vm.addSprite.bind(this.vm);
-            this.vm.addSprite = function (spriteJson) {
-                return originalAddSprite(spriteJson).then(() => {
-                    if (service.isConnected && !service.isApplyingRemoteChange &&
-                        !service.isSyncOperation && !service.isLoadingProject) {
-                        service.onTargetCreated();
-                    }
+
+            if (this.vm.runtime) {
+                this.vm.runtime.on('TARGETS_UPDATE', this.onTargetsUpdate.bind(this));
+                this.vm.runtime.on('SPRITE_INFO_CHANGED', (target, changedProps) => {
+                    this.spriteInfoChanged(target, changedProps);
                 });
-            };
-            
-            // Wrap duplicateSprite to detect sprite duplication
-            const originalDuplicateSprite = this.vm.duplicateSprite.bind(this.vm);
-            this.vm.duplicateSprite = function (targetId) {
-                return originalDuplicateSprite(targetId).then(() => {
-                    if (service.isConnected && !service.isApplyingRemoteChange &&
-                        !service.isSyncOperation && !service.isLoadingProject) {
-                        service.onTargetCreated();
-                    }
-                });
-            };
-            
-            // Wrap deleteSprite to detect sprite deletion
-            const originalDeleteSprite = this.vm.deleteSprite.bind(this.vm);
-            this.vm.deleteSprite = function (targetId) {
-                const result = originalDeleteSprite(targetId);
-                if (service.isConnected && !service.isApplyingRemoteChange &&
-                    !service.isSyncOperation && !service.isLoadingProject) {
-                    service.onTargetDeleted(targetId);
-                }
-                return result;
-            };
-            
+                this.vm.runtime.on('TARGET_VISUAL_CHANGE', this.onTargetVisualChange.bind(this));
+            }
             this.wrapVMAssetMethods();
             this.wrapVMLoadProject();
+            this.wrapExtensionManager();
         }
     }
 
-    /**
-     * Wrap vm.loadProject to detect project loads and handle collaboration behavior
-     */
     wrapVMLoadProject () {
         if (!this.vm || !this.vm.loadProject) return;
-        
+
         const originalLoadProject = this.vm.loadProject.bind(this.vm);
         const service = this;
-        
+
+        if (!service.lastLoadTime) {
+            service.lastLoadTime = Date.now();
+        }
+
         this.vm.loadProject = function (input) {
-            // Check if this is a collaboration-related load (from sync)
             const isSyncLoad = service.isSyncOperation || service.isApplyingRemoteChange;
-            
-            // Check if we're in the process of connecting (to avoid disconnecting during initial join)
-            const isConnecting = service.isConnectedToHost && !service.lastSyncTime;
-            
-            // Loop detection: If we're loading projects too frequently, something is wrong
             const now = Date.now();
             const timeSinceLastLoad = now - service.lastLoadTime;
+
             if (!isSyncLoad && service.lastLoadTime > 0 && timeSinceLastLoad < 1000) {
-                service.loadCount++;
+                service.loadCount = (service.loadCount || 0) + 1;
                 if (service.loadCount > 3) {
-                    console.error(
-                        '[🔄 VM LoadProject Wrapper] ⚠️ LOOP DETECTED: Project loaded',
-                        service.loadCount, 'times in rapid succession!'
-                    );
-                    console.error('[🔄 VM LoadProject Wrapper] Aborting to prevent infinite loop. Flags:', {
-                        isLoadingProject: service.isLoadingProject,
-                        isSyncOperation: service.isSyncOperation,
-                        isConnected: service.isConnected,
-                        isHost: service.isHost,
-                        scheduledSyncTimeout: !!service.scheduledSyncTimeout
-                    });
-                    // Force clear all flags to break the loop
                     service.isLoadingProject = false;
                     service.isSyncOperation = false;
                     if (service.scheduledSyncTimeout) {
                         clearTimeout(service.scheduledSyncTimeout);
                         service.scheduledSyncTimeout = null;
                     }
-                    // Still allow this load, but prevent future rapid loads
                     service.loadCount = 0;
-                    service.lastLoadTime = now + 5000; // Prevent loads for next 5 seconds
+                    service.lastLoadTime = now + 5000;
                 }
             } else {
                 service.loadCount = 0;
             }
             service.lastLoadTime = now;
-            
-            console.log('┌──────────────────────────────────────────────────────────┐');
-            console.log('│ 🔄 VM LOADPROJECT CALLED                                 │');
-            console.log('└──────────────────────────────────────────────────────────┘');
-            console.log('[🔄 VM LoadProject Wrapper] Project load starting', {
-                isSyncLoad: isSyncLoad,
-                isConnecting: isConnecting,
-                isHost: service.isHost,
-                isConnected: service.isConnected,
-                timeSinceLastLoad: timeSinceLastLoad,
-                loadCount: service.loadCount,
-                flags: {
-                    isSyncOperation: service.isSyncOperation,
-                    isApplyingRemoteChange: service.isApplyingRemoteChange,
-                    isLoadingProject: service.isLoadingProject
-                }
-            });
-            
-            // Always log stack trace to see where the load is being called from
-            console.trace('[🔄 VM LoadProject Wrapper] Stack trace for load:');
-            
-            // Set flag to suppress event broadcasting during project load
-            // This includes the entire loading and UI initialization period
+
             if (!isSyncLoad && service.isConnected) {
                 service.isLoadingProject = true;
-                console.log('[🔄 VM LoadProject Wrapper] Set isLoadingProject = true (non-sync load)');
             }
-            
+
+            if (service.isHost && service.isConnected && !isSyncLoad && service.connections.size > 0) {
+                service.sendMessage('host-loading-start', {timestamp: Date.now()});
+            }
+
+            const progressHandler = (finished, total) => {
+                if (service.isHost && service.isConnected && !isSyncLoad && total > 0) {
+                    const progress = Math.round((finished / total) * 100);
+                    service.sendMessage('host-loading-progress', {progress, finished, total});
+                }
+            };
+
+            if (service.isHost && service.isConnected && !isSyncLoad) {
+                service.vm.on('ASSET_PROGRESS', progressHandler);
+            }
+
             return originalLoadProject(input).then(() => {
-                console.log('┌──────────────────────────────────────────────────────────┐');
-                console.log('│ ✅ VM LOADPROJECT COMPLETED                              │');
-                console.log('└──────────────────────────────────────────────────────────┘');
-                console.log('[🔄 VM LoadProject Wrapper] Project loaded successfully', {
-                    isSyncLoad,
-                    isHost: service.isHost,
-                    connectionsCount: service.connections.size,
-                    flags: {
-                        isSyncOperation: service.isSyncOperation,
-                        isApplyingRemoteChange: service.isApplyingRemoteChange,
-                        isLoadingProject: service.isLoadingProject
-                    }
-                });
-                
-                // If host loaded a project (not from sync), sync it to all clients
-                // Wait until after UI initialization completes before sending sync
                 if (service.isHost && service.isConnected && !isSyncLoad) {
-                    // Cancel any previously scheduled sync to prevent duplicates
+                    service.vm.off('ASSET_PROGRESS', progressHandler);
+                }
+
+                if (service.isHost && service.isConnected && !isSyncLoad) {
                     if (service.scheduledSyncTimeout) {
-                        console.log('[🔄 VM LoadProject Wrapper] Canceling previous scheduled sync');
                         clearTimeout(service.scheduledSyncTimeout);
                         service.scheduledSyncTimeout = null;
                     }
-                    
-                    // Only schedule sync if there are actually connections to sync to
+
                     if (service.connections.size > 0) {
-                        console.log(
-                            '[🔄 VM LoadProject Wrapper] 📅 Host loaded project, scheduling sync to clients in 3500ms'
-                        );
+                        service.sendMessage('host-loading-complete', {timestamp: Date.now()});
+
                         service.scheduledSyncTimeout = setTimeout(() => {
-                            // Double-check we're not already syncing before sending
                             if (service.isSyncOperation) {
-                                console.warn('[🔄 VM LoadProject Wrapper] ⚠️ Already syncing, skipping scheduled sync');
                                 service.scheduledSyncTimeout = null;
                                 return;
                             }
-                            // Also check if we already sent a sync very recently (within last 2 seconds)
                             const timeSinceLastSync = Date.now() - service.lastSyncTime;
                             if (service.lastSyncTime > 0 && timeSinceLastSync < 2000) {
-                                console.warn(
-                                    `[🔄 VM LoadProject Wrapper] ⚠️ Sync sent ${timeSinceLastSync}ms ago, duplicate`
-                                );
                                 service.scheduledSyncTimeout = null;
                                 return;
                             }
-                            console.log(
-                                '[🔄 VM LoadProject Wrapper] ⏰ Scheduled sync timer fired, sending sync to clients'
-                            );
-                            service.scheduledSyncTimeout = null; // Clear the timeout reference
-                            service.sendProjectSync(null); // Send to all connections
-                        }, 3500); // Send sync after UI initialization completes
+                            service.scheduledSyncTimeout = null;
+                            service.sendProjectSync(null);
+                        }, 500);
                     } else {
-                        // No connections, just clear the loading flag
-                        console.log(
-                            '[🔄 VM LoadProject Wrapper] No clients connected, clearing isLoadingProject immediately'
-                        );
                         setTimeout(() => {
                             service.isLoadingProject = false;
-                            console.log(
-                                '[🔄 VM LoadProject Wrapper] ✅ Cleared isLoadingProject flag (host with no connections)'
-                            );
                         }, 3000);
                     }
                 } else if (!isSyncLoad && service.isConnected) {
-                    // For clients or other non-sync loads, clear the flag after UI initialization
                     setTimeout(() => {
                         service.isLoadingProject = false;
-                        console.log('[🔄 VM LoadProject Wrapper] ✅ Cleared isLoadingProject flag (non-host)');
                     }, 3000);
                 }
-                
-                // If client loaded a project (not from sync), disconnect them
-                // BUT don't disconnect if we're still in the initial connection process
-                if (!service.isHost && service.isConnected && !isSyncLoad && !isConnecting) {
-                    console.log('[🔄 VM LoadProject Wrapper] Client loaded project, disconnecting from collaboration');
-                    service.disconnect();
-                }
-                
+
                 return Promise.resolve();
             });
         };
+    }
+
+    wrapExtensionManager () {
+        if (!this.vm || !this.vm.extensionManager) return;
+
+        const service = this;
+        const extensionManager = this.vm.extensionManager;
+
+        if (extensionManager.loadExtensionURL) {
+            const originalLoadExtensionURL = extensionManager.loadExtensionURL.bind(extensionManager);
+            extensionManager.loadExtensionURL = async function (extensionURL, ...args) {
+                const result = await originalLoadExtensionURL(extensionURL, ...args);
+
+                if (service.isConnected && !service.isApplyingRemoteChange &&
+                    !service.isSyncOperation && !service.isLoadingProject) {
+                    service.sendMessage('extension-load', {
+                        extensionURL: extensionURL,
+                        timestamp: Date.now()
+                    });
+                }
+
+                return result;
+            };
+        }
+
+        if (extensionManager.loadExtensionIdSync) {
+            const originalLoadExtensionIdSync = extensionManager.loadExtensionIdSync.bind(extensionManager);
+            extensionManager.loadExtensionIdSync = function (extensionId) {
+                const result = originalLoadExtensionIdSync(extensionId);
+
+                if (service.isConnected && !service.isApplyingRemoteChange &&
+                    !service.isSyncOperation && !service.isLoadingProject) {
+                    service.sendMessage('extension-load', {
+                        extensionId: extensionId,
+                        isBuiltin: true,
+                        timestamp: Date.now()
+                    });
+                }
+
+                return result;
+            };
+        }
+    }
+
+    handleExtensionLoad (payload, conn) {
+        if (!this.vm || !this.vm.extensionManager) return;
+        if (payload.sender === this.peer.id) return;
+
+        const extensionManager = this.vm.extensionManager;
+        this.isApplyingRemoteChange = true;
+
+        const loadExtension = async () => {
+            try {
+                const extId = payload.extensionId;
+                const extURL = payload.extensionURL;
+
+                if (extId && extensionManager.isExtensionLoaded(extId)) {
+                    return;
+                }
+
+                if (extId && extensionManager.isBuiltinExtension &&
+                    extensionManager.isBuiltinExtension(extId)) {
+                    extensionManager.loadExtensionIdSync(extId);
+                } else if (extURL) {
+                    await extensionManager.loadExtensionURL(extURL);
+                } else if (extId) {
+                    try {
+                        extensionManager.loadExtensionIdSync(extId);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            } catch (e) {
+                // ignore
+            } finally {
+                setTimeout(() => {
+                    this.isApplyingRemoteChange = false;
+                }, 100);
+            }
+        };
+
+        loadExtension();
+
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'extension-load',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
     }
 
     /**
@@ -453,22 +462,10 @@ class CollaborationService {
         return detachFromWorkspaceExternal(this);
     }
 
-    /**
-     * Custom block listener that filters for collaboration-relevant events only
-     * This runs alongside the VM's main blockListener but only syncs meaningful code changes
-     * @param {Blockly.Events.Abstract} event - The Blockly event object
-     * @return {boolean} - True if the event was handled, false otherwise
-     */
     collaborationBlockListener (event) {
         return collaborationBlockListenerImpl(this, event);
     }
 
-    /**
-     * Determine if a Blockly event should be synced to other collaborators
-     * Only sync events that represent actual code changes, not UI navigation
-     * @param {Blockly.Events.Abstract} event - The Blockly event object
-     * @return {boolean} - True if the event should be synced, false otherwise
-     */
     shouldSyncEvent (event) {
         return shouldSyncEventExternal(this, event);
     }
@@ -481,22 +478,10 @@ class CollaborationService {
         return handleAssetEventExternal(this, payload, conn);
     }
 
-    /**
-     * Serialize a Blockly event for transmission to other collaborators
-     * Remove unnecessary data and ensure it's JSON-serializable
-     * @param {Blockly.Events.Abstract} event - The Blockly event object
-     * @return {object} - The serialized event object
-     */
     serializeEvent (event) {
         return serializeEventExternal(this, event);
     }
 
-    /**
-     * Generate a unique peer ID for a room to prevent collisions
-     * @param {string} roomId - The collaboration room ID
-     * @param {boolean} isHost - Whether this peer is the host
-     * @return {string} - The generated unique peer ID
-     */
     generatePeerId (roomId, isHost = false) {
         if (!roomId) {
             throw new Error('roomId is required for generatePeerId');
@@ -505,97 +490,83 @@ class CollaborationService {
         const sanitizedRoomId = roomId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
         if (isHost) {
-            // Host ID is predictable based on room name
-            return `mistwarp-collab-${sanitizedRoomId}-host`;
+            return `${APPNAME}-collab-${sanitizedRoomId}-host`;
         }
-        // User IDs include timestamp and random string to prevent collisions
         const timestamp = Date.now();
-        const randomString = Math.random().toString(36)
+        const randomString = Math.random()
+            .toString(36)
             .substring(2, 11);
-        return `mistwarp-collab-${sanitizedRoomId}-user-${timestamp}-${randomString}`;
-        
+        return `${APPNAME}-collab-${sanitizedRoomId}-user-${timestamp}-${randomString}`;
     }
 
-    /**
-     * Create or join a collaboration room
-     * @param {string} roomId - The collaboration room ID
-     * @param {string} username - The user's display name
-     * @param {boolean} isHost - Whether this peer is the host
-     * @param {string} privacy - Room privacy setting ('public' or 'private')
-     * @return {Promise<void>} - A promise that resolves when the room is connected
-     */
     connectToRoom (roomId, username, isHost = false, privacy = 'public') {
         return connectToRoomExternal(this, roomId, username, isHost, privacy);
     }
 
-    /**
-     * Setup host functionality
-     */
     setupHost () {
         setupHostExternal(this);
     }
 
-    /**
-     * Helper method to attempt workspace attachment with multiple strategies
-     * @param {string} context - Contextual information for logging/debugging
-     */
     attemptWorkspaceAttachment (context) {
         attemptWorkspaceAttachmentExternal(this, context);
     }
 
-    /**
-     * Connect to the host of the room
-     */
     connectToHost () {
         connectToHostExternal(this);
     }
 
-    /**
-     * Setup connection event handlers
-     * @param {Peer.DataConnection} conn - The connection object
-     */
     handleConnection (conn) {
         handleConnectionExternal(this, conn);
     }
 
-    /**
-     * Handle incoming messages
-     * @param {object} data - The message payload
-     * @param {Peer.DataConnection} conn - The connection object
-     */
     handleMessage (data, conn) {
         handleMessageExternal(this, data, conn);
     }
 
-    /**
-     * Send a message to all connected peers or specific connection
-     * @param {string} type - The message type
-     * @param {object} payload - The message payload
-     * @param {Peer.DataConnection} targetConn - The connection object
-     */
     sendMessage (type, payload, targetConn = null) {
         sendMessageExternal(this, type, payload, targetConn);
     }
 
-    /**
-     * Message handlers
-     * @param {object} payload - The message payload
-     * @param {Peer.DataConnection} conn - The connection object
-     */
     handleUserJoin (payload, conn) {
         handleUserJoinExternal(this, payload, conn);
     }
 
     handleUserLeave (payload) {
         this.users.delete(payload.id);
+        this.userEditingTargets.delete(payload.id);
+
+        if (this.pendingSyncs && this.pendingSyncs.has(payload.id)) {
+            this.pendingSyncs.delete(payload.id);
+
+            if (this.isHost && this.pendingSyncs.size === 0) {
+                this.sendMessage('session-ready', {timestamp: Date.now()});
+                this.emit('session-ready');
+            }
+        }
+
+        if (typeof window !== 'undefined' && window.ReduxStore) {
+            const store = window.ReduxStore;
+            const state = store.getState();
+            const spriteEditors = state.scratchGui.collaboration.spriteEditors;
+            
+            Object.keys(spriteEditors).forEach(spriteId => {
+                const editors = spriteEditors[spriteId];
+                const hasUser = editors.some(editor => editor.userId === payload.id);
+                
+                if (hasUser) {
+                    store.dispatch({
+                        type: 'scratch-gui/collaboration/REMOVE_SPRITE_EDITOR',
+                        spriteId: spriteId,
+                        userId: payload.id
+                    });
+                }
+            });
+        }
+
         this.emit('user-left', payload);
     }
 
     handleUsersList (payload) {
-        // Received the current users list from host
-        console.log('Received users list from host:', payload.users);
-
-        // Don't clear our own user if we're not in the host's list yet
         const ourUser = this.users.get(this.peer.id);
 
         this.users.clear();
@@ -603,12 +574,10 @@ class CollaborationService {
             this.users.set(user.id, user);
         });
 
-        // Make sure we're still in the list
         if (ourUser && !this.users.has(this.peer.id)) {
             this.users.set(this.peer.id, ourUser);
         }
 
-        console.log('Updated users list:', Array.from(this.users.values()));
         this.emit('users-updated', {users: Array.from(this.users.values())});
     }
 
@@ -621,12 +590,10 @@ class CollaborationService {
 
     handleKickUser (payload) {
         if (payload.targetId === this.peer.id) {
-            // We're being kicked - set flag before disconnecting
             this.wasKicked = true;
             this.disconnect();
             this.emit('kicked-from-room', payload);
         } else if (this.isHost) {
-            // Host is kicking someone else, close their connection
             const targetConn = this.connections.get(payload.targetId);
             if (targetConn) {
                 targetConn.close();
@@ -641,26 +608,13 @@ class CollaborationService {
         const now = Date.now();
         const since = now - this._lastHostSyncRequestHandledAt;
         if (this._lastHostSyncRequestHandledAt > 0 && since < this._hostSyncRequestCooldownMs) {
-            console.warn('[COLLABORATION] Host ignoring sync-request burst', {
-                since,
-                payload
-            });
             return;
         }
         this._lastHostSyncRequestHandledAt = now;
-
-        console.log('[COLLABORATION] Host received sync-request, sending project sync', {
-            from: conn ? conn.peer : payload.sender,
-            requestId: payload && payload.requestId,
-            reason: payload && payload.reason
-        });
-
         this.sendProjectSync(conn ? conn : payload.sender);
     }
 
     handleProjectSyncStart (payload, conn) {
-        // If we requested a sync, consider it fulfilled once the host begins sending.
-        // This helps prevent repeat client->host sync-request loops.
         if (!this.isHost) {
             this._projectSyncRequestInFlight = false;
         }
@@ -671,23 +625,61 @@ class CollaborationService {
         return handleProjectSyncChunkExternal(this, payload, conn);
     }
 
-    handleTargetsUpdate (payload, conn) {
-        // Handle targets update (sprite creation/deletion) from other users
-        if (this.vm && payload.sender !== this.peer.id && !this.isApplyingRemoteChange) {
-            // Apply targets update from other user
-            console.log('Applying targets update from:', payload.sender);
-            // Note: targets updates are typically handled via project sync,
-            // so we might just log this for now to avoid conflicts
-        }
+    handleProjectStreamStart (payload, conn) {
+        return handleProjectSyncStartExternal(this, payload, conn);
+    }
 
-        // If we're the host, broadcast to all other peers (except the sender)
-        // But don't broadcast if we're currently applying a remote change
-        if (this.isHost && payload.sender !== this.peer.id && !this.isApplyingRemoteChange) {
+    handleProjectStreamData (payload, conn) {
+        return handleProjectSyncChunkExternal(this, payload, conn);
+    }
+
+    handleProjectStreamEnd (payload, conn) {
+        return handleProjectStreamEndExternal(this, payload, conn);
+    }
+
+    handleClientSyncComplete (payload) {
+        if (!this.isHost) return;
+
+        if (this.pendingSyncs) {
+            this.pendingSyncs.delete(payload.sender);
+
+            if (this.pendingSyncs.size === 0) {
+                this.sendMessage('session-ready', {timestamp: Date.now()});
+                this.emit('session-ready');
+            }
+        }
+    }
+
+    handleSessionReady () {
+        this.emit('session-ready');
+    }
+
+    handleTargetsUpdate (payload, conn) {
+        if (!this.vm || !this.vm.runtime) return;
+        if (payload.sender === this.peer.id) return;
+
+        this.isApplyingRemoteChange = true;
+
+        const updates = payload.updates || [];
+        updates.forEach(update => {
+            const targetId = this.isHost ? update.targetId : (this.targetMapping[update.targetId] || update.targetId);
+            const target = this.vm.runtime.getTargetById(targetId);
+            if (target) {
+                if ('x' in update && 'y' in update) target.setXY(update.x, update.y);
+                if ('direction' in update) target.setDirection(update.direction);
+                if ('size' in update) target.setSize(update.size);
+                if ('visible' in update) target.setVisible(update.visible);
+            }
+        });
+
+        this.isApplyingRemoteChange = false;
+
+        if (this.isHost) {
             this.connections.forEach(connection => {
                 if (connection !== conn && connection.open) {
                     connection.send({
                         type: 'targets-update',
-                        payload,
+                        payload: payload,
                         sender: payload.sender,
                         timestamp: Date.now()
                     });
@@ -728,6 +720,10 @@ class CollaborationService {
         return updateAllRemoteCursorPositionsExternal(this);
     }
 
+    handleCursorChat (payload, conn) {
+        return handleCursorChatExternal(this, payload, conn);
+    }
+
     bindViewportSyncListeners () {
         return bindViewportSyncListenersExternal(this);
     }
@@ -736,18 +732,10 @@ class CollaborationService {
         return unbindViewportSyncListenersExternal(this);
     }
 
-    /**
-     * Reconstruct a Blockly event from serialized data for the VM
-     * @param {object} serializedEvent - The serialized event object
-     * @return {Blockly.Events.Abstract} - The reconstructed event object
-     */
     reconstructEvent (serializedEvent) {
         return reconstructEventExternal(this, serializedEvent);
     }
 
-    /**
-     * VM event handlers
-     */
     onWorkspaceUpdate () {
         return;
     }
@@ -757,20 +745,155 @@ class CollaborationService {
     }
 
     onTargetsUpdate () {
-        return;
+        if (!this.isConnected || this.isApplyingRemoteChange || this.isSyncOperation || this.isLoadingProject) return;
+
+        const now = Date.now();
+        if (this._lastTargetsUpdate && now - this._lastTargetsUpdate < 33) return;
+        this._lastTargetsUpdate = now;
+
+        const updates = [];
+        const targets = this.vm.runtime.targets;
+
+        if (!this._lastTargetState) this._lastTargetState = {};
+
+        for (let i = 0; i < targets.length; i++) {
+            const target = targets[i];
+            if (target.isStage) continue;
+
+            const id = target.id;
+            const state = {
+                x: target.x,
+                y: target.y,
+                direction: target.direction,
+                size: target.size,
+                visible: target.visible
+            };
+
+            const lastState = this._lastTargetState[id];
+
+            if (!lastState ||
+                lastState.x !== state.x ||
+                lastState.y !== state.y ||
+                lastState.direction !== state.direction ||
+                lastState.size !== state.size ||
+                lastState.visible !== state.visible) {
+
+                updates.push({targetId: id, ...state});
+                this._lastTargetState[id] = state;
+            }
+        }
+
+        if (updates.length > 0) {
+            this.sendMessage('targets-update', {updates, timestamp: now});
+        }
     }
 
-    /**
-     * Utility methods
-     * @param {Peer.DataConnection} conn - The connection object
-     * @return {Promise<void>} - A promise that resolves when the project sync is complete
-     */
+    onTargetVisualChange (target) {
+        if (!this.isConnected || !target || this.isApplyingRemoteChange ||
+            this.isSyncOperation || this.isLoadingProject) return;
+
+        if (typeof target.currentCostume !== 'number') return;
+
+        const targetId = target.id;
+        const payload = {
+            targetId,
+            currentCostume: target.currentCostume,
+            isStage: target.isStage
+        };
+
+        if (target.isStage) {
+            this.sendMessage('stage-costume-change', payload);
+        } else {
+            this.sendMessage('costume-change', payload);
+        }
+    }
+
+    handleStageCostumeChange (payload, conn) {
+        if (!this.vm || !this.vm.runtime) return;
+
+        const targetId = payload.targetId;
+        const mappedTargetId = !this.isHost && this.targetMapping ?
+            this.targetMapping[targetId] : targetId;
+
+        const stage = this.vm.runtime.getTargetById(mappedTargetId);
+        if (stage && stage.isStage) {
+            const costumeIndex = payload.currentCostume;
+            if (costumeIndex >= 0 && costumeIndex < stage.getCostumes().length) {
+                stage.setCostume(costumeIndex);
+            }
+        }
+
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'stage-costume-change',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleCostumeChange (payload, conn) {
+        if (!this.vm || !this.vm.runtime) return;
+
+        const targetId = payload.targetId;
+        const mappedTargetId = !this.isHost && this.targetMapping ?
+            this.targetMapping[targetId] : targetId;
+
+        const target = this.vm.runtime.getTargetById(mappedTargetId);
+        if (target && !target.isStage) {
+            const costumeIndex = payload.currentCostume;
+            if (costumeIndex >= 0 && costumeIndex < target.getCostumes().length) {
+                target.setCostume(costumeIndex);
+            }
+        }
+
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'costume-change',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    syncCurrentCostume () {
+        if (!this.isConnected || !this.vm || !this.vm.runtime ||
+            this.isApplyingRemoteChange || this.isSyncOperation || this.isLoadingProject) {
+            return;
+        }
+
+        const target = this.vm.editingTarget;
+        if (!target || typeof target.currentCostume !== 'number') return;
+
+        const targetId = target.id;
+        const payload = {
+            targetId,
+            currentCostume: target.currentCostume,
+            isStage: target.isStage
+        };
+
+        if (target.isStage) {
+            this.sendMessage('stage-costume-change', payload);
+        } else {
+            this.sendMessage('costume-change', payload);
+        }
+    }
+
     sendProjectSync (conn) {
         return sendProjectSyncExternal(this, conn);
     }
 
     changeUsername (newUsername) {
-        console.log(`[COLLABORATION] Changing username from "${this.username}" to "${newUsername}"`);
         this.username = newUsername;
         this.sendMessage('username-change', {
             id: this.peer.id,
@@ -780,15 +903,12 @@ class CollaborationService {
         if (this.users.has(this.peer.id)) {
             this.users.get(this.peer.id).username = newUsername;
         }
-
-        console.log(`[COLLABORATION] Username change broadcasted to all clients`);
     }
 
     kickUser (userId) {
         if (this.isHost) {
             this.sendMessage('kick-user', {targetId: userId});
 
-            // Close connection locally
             const conn = this.connections.get(userId);
             if (conn) {
                 if (conn.close) conn.close();
@@ -811,36 +931,37 @@ class CollaborationService {
     }
 
     disconnect () {
-        console.log('🧹 Disconnecting, roomId before clear:', this.roomId);
-
-        // Prevent multiple disconnect calls
         if (this.isDisconnecting) {
-            console.log('🔄 Already disconnecting, skipping');
             return;
         }
 
         if (!this.peer && !this.isConnected && !this.isConnectedToHost) {
-            console.log('🔄 Already disconnected, skipping');
             return;
         }
 
-        // Mark as disconnecting to prevent duplicate calls
         this.isDisconnecting = true;
+        this._setState('DISCONNECTING');
 
-        // Clear any pending timeouts
         if (this.connectionTimeout) {
             clearTimeout(this.connectionTimeout);
             this.connectionTimeout = null;
         }
-        
+
         if (this.scheduledSyncTimeout) {
             clearTimeout(this.scheduledSyncTimeout);
             this.scheduledSyncTimeout = null;
         }
 
+        // Clear reconnection timer and state
+        if (this._reconnectTimer) {
+            clearTimeout(this._reconnectTimer);
+            this._reconnectTimer = null;
+        }
+        this._reconnectionState = null;
+        this._attemptReconnect = null;
+
         if (this.peer) {
             try {
-                // Clear pending events and debug interval before closing connections
                 this.clearPendingEvents();
 
                 if (this._debugFlagInterval) {
@@ -848,61 +969,69 @@ class CollaborationService {
                     this._debugFlagInterval = null;
                 }
 
-                // Close all active connections
+                if (this._syncRequestTimer) {
+                    clearTimeout(this._syncRequestTimer);
+                    this._syncRequestTimer = null;
+                }
+
+                if (this._suppressionClearTimer) {
+                    clearTimeout(this._suppressionClearTimer);
+                    this._suppressionClearTimer = null;
+                }
+
                 this.connections.forEach(conn => {
                     try {
-                        if (conn) {
-                            if (conn.close) conn.close();
-                        }
+                        if (conn && conn.close) conn.close();
                     } catch (e) {
-                        console.warn('Error closing connection:', e);
+                        // ignore
                     }
                 });
 
-                // Destroy the peer if possible
                 if (this.peer && !this.peer.destroyed && this.peer.destroy) {
                     this.peer.destroy();
                 }
             } catch (e) {
-                console.warn('Error destroying peer:', e);
+                // ignore
             }
             this.peer = null;
         }
 
-        // Detach from workspace
         this.detachFromWorkspace();
-
-        // Clear pending events
         this.clearPendingEvents();
+
+        clearPendingEventTimersImpl();
+
+        if (this._cleanupInterval) {
+            clearInterval(this._cleanupInterval);
+            this._cleanupInterval = null;
+        }
 
         this.connections.clear();
         this.users.clear();
-        this.pendingJoinRequests.clear(); // Clear pending join requests
+        this.pendingJoinRequests.clear();
+        this.userEditingTargets.clear();
         this.isConnected = false;
-        this.isConnectedToHost = false; // Reset host connection flag
+        this.isConnectedToHost = false;
         this.isHost = false;
         this.roomId = null;
-        this.roomPrivacy = 'public'; // Reset room privacy
-        this.hostId = null; // Clear host ID
-        this.wasKicked = false; // Reset kick flag
-        this.currentConnectionFailureHandler = null; // Clear connection failure handler
-        this.targetMapping = {}; // Clear target mapping
-        this.isSyncOperation = false; // Clear sync operation flag
-        this.isLoadingProject = false; // Clear loading flag
+        this.roomPrivacy = 'public';
+        this.hostId = null;
+        this.wasKicked = false;
+        this.currentConnectionFailureHandler = null;
+        this.targetMapping = {};
+        this.isSyncOperation = false;
+        this.isLoadingProject = false;
+        this.isSwitchingTarget = false;
         this.seenEventIds.clear();
+        this.seenEventTimestamps.clear();
         this.destroyCursorLayer();
 
-        // Reset disconnecting flag after cleanup
         this.isDisconnecting = false;
+        this._setState('IDLE');
 
         this.emit('disconnected');
     }
 
-    /**
-     * Event emitter functionality
-     * @param {string} event - The event name
-     * @param {function} callback - The callback function to register
-     */
     on (event, callback) {
         if (!this.eventListeners.has(event)) {
             this.eventListeners.set(event, []);
@@ -925,115 +1054,77 @@ class CollaborationService {
             this.eventListeners.get(event).forEach(callback => {
                 try {
                     callback(data);
-                } catch (error) {
-                    console.error('Event listener error:', error);
+                } catch (e) {
+                    // ignore
                 }
             });
         }
     }
 
-    /**
-     * Queue an event that couldn't be applied immediately for later retry
-     * @param {object} payload - The event payload
-     */
     queuePendingEvent (payload) {
-        // Add timestamp to track how long events have been pending
         const eventWithTimestamp = {
             ...payload,
             queuedAt: Date.now()
         };
 
         this.pendingEvents.push(eventWithTimestamp);
-
         this.startRetryTimer();
 
-        // Limit queue size to prevent memory leaks
         if (this.pendingEvents.length > 100) {
-            console.warn('⚠️ Pending events queue is getting large, removing oldest events');
-            this.pendingEvents.splice(0, 10); // Remove oldest 10 events
+            this.pendingEvents.splice(0, 10);
         }
     }
 
-    /**
-     * Start a timer to retry pending events
-     */
     startRetryTimer () {
         if (this.retryTimer) {
-            return; // Timer already running
+            return;
         }
 
         this.retryTimer = setTimeout(() => {
             this.retryTimer = null;
             this.processPendingEvents();
 
-            // Continue retrying if there are still pending events
             if (this.pendingEvents.length > 0) {
                 this.startRetryTimer();
             }
-        }, 1000); // Retry every second
+        }, 1000);
     }
 
-    /**
-     * Process queued events that couldn't be applied previously
-     */
     processPendingEvents () {
         if (this.pendingEvents.length === 0) {
             return;
         }
-
-        console.log('🔄 Processing', this.pendingEvents.length, 'pending events');
 
         const currentTime = Date.now();
         const eventsToRetry = [];
         const expiredEvents = [];
         const preSyncEvents = [];
 
-        // Separate events that should be retried vs. those that have expired or are from before sync
         for (const event of this.pendingEvents) {
             const age = currentTime - event.queuedAt;
-            
-            // Filter out events queued before the last sync
+
             if (event.queuedAt < this.lastSyncTime) {
                 preSyncEvents.push(event);
-            } else if (age > 30000) { // 30 seconds timeout
+            } else if (age > 30000) {
                 expiredEvents.push(event);
             } else {
                 eventsToRetry.push(event);
             }
         }
 
-        // Remove pre-sync events
-        if (preSyncEvents.length > 0) {
-            console.warn('⚠️ Removing', preSyncEvents.length, 'events queued before last sync');
-        }
-
-        // Remove expired events
-        if (expiredEvents.length > 0) {
-            console.warn('⚠️ Removing', expiredEvents.length, 'expired pending events');
-        }
-
-        // Clear the pending events array
         this.pendingEvents = [];
 
-        // Try to apply the non-expired events
         for (const payload of eventsToRetry) {
             try {
-                // Remove the queuedAt timestamp before processing
                 const cleanPayload = {...payload};
                 delete cleanPayload.queuedAt;
-
-                // Try to apply the event again
-                this.handleBlockEvent(cleanPayload, null, true); // Pass true to indicate this is a retry
-            } catch (error) {
-                console.warn('⚠️ Failed to retry pending event:', error);
-                // If it fails again, it will be re-queued
+                this.handleBlockEvent(cleanPayload, null, true);
+            } catch (e) {
+                // ignore
             }
         }
     }
 
-    /**
-     * Clear all pending events (useful when disconnecting or resetting)
-     */
     clearPendingEvents () {
         this.pendingEvents = [];
         if (this.retryTimer) {
@@ -1042,209 +1133,209 @@ class CollaborationService {
         }
     }
 
-    /**
-     * Debug method to validate and log current target states
-     * @param {string} context - The context to log the target states for
-     * @return {object} - An object containing target information
-     */
     debugTargetStates (context = '') {
         return debugTargetStatesExternal(this, context);
     }
 
-    /**
-     * Handle join request from a potential collaborator
-     * @param {object} data - The join request payload
-     * @param {Peer.DataConnection} connection - The connection object
-     * @return {void}
-     */
     handleJoinRequest (data, connection) {
         return handleJoinRequestExternal(this, data, connection);
     }
 
-    /**
-     * Handle join approval response
-     * @param {object} data - The join approval payload
-     * @param {Peer.DataConnection} connection - The connection object
-     * @return {void}
-     */
     handleJoinApproved (data, connection) {
         return handleJoinApprovedExternal(this, data, connection);
     }
 
-    /**
-     * Handle join denial response
-     * @param {object} data - The join denial payload
-     * @param {Peer.DataConnection} connection - The connection object
-     * @return {void}
-     */
     handleJoinDenied (data, connection) {
         return handleJoinDeniedExternal(this, data, connection);
     }
 
-    /**
-     * Handle room privacy information
-     * @param {object} data - The room privacy payload
-     * @param {Peer.DataConnection} connection - The connection object
-     * @return {void}
-     */
     handleRoomPrivacy (data, connection) {
         return handleRoomPrivacyExternal(this, data, connection);
     }
 
-    /**
-     * Handle editing target change from host
-     * NOTE: Disabled to allow independent editing - users can work on different sprites
-     */
-    handleTargetSwitch () {
-        // Disabled: Each user can edit different targets independently
-        // if (this.isHost || !this.vm) return;
-        //
-        // const targetId = getLocalTargetId(this, data.targetId);
-        // if (targetId && this.vm.runtime.getTargetById(targetId)) {
-        //     this.isApplyingRemoteChange = true;
-        //     this.vm.setEditingTarget(targetId);
-        //     setTimeout(() => {
-        //         this.isApplyingRemoteChange = false;
-        //     }, 100);
-        // }
-    }
-
-    /**
-     * Handle target created event from host
-     */
-    handleTargetCreated () {
-        if (this.isHost || !this.vm) return;
+    handleTargetSwitch (payload, conn) {
+        const spriteId = payload.targetId;
+        const userId = payload.userId;
+        const username = payload.username;
         
-        // Request a full project sync to get the new target
-        console.log('[COLLABORATION] New target created by host, requesting sync');
-        this.requestProjectSync('host-target-created');
-    }
-
-    /**
-     * Handle target deleted event from host
-     */
-    handleTargetDeleted () {
-        if (this.isHost || !this.vm) return;
+        if (!userId) return;
         
-        // Request a full project sync to handle the deletion
-        console.log('[COLLABORATION] Target deleted by host, requesting sync');
-        this.requestProjectSync('host-target-deleted');
-    }
-
-    /**
-     * Called when the editing target changes (local change)
-     */
-    onEditingTargetChange () {
-    }
-
-    /**
-     * Called when a target is created (local change)
-     */
-    onTargetCreated () {
-        if (!this.isConnected || this.isApplyingRemoteChange ||
-            this.isSyncOperation || this.isLoadingProject) return;
+        const oldTargetId = this.userEditingTargets.get(userId);
         
-        console.log('[COLLABORATION] Local target created, syncing to peers');
-        this.sendMessage('target-created', {
-            timestamp: Date.now()
-        });
+        if (spriteId !== oldTargetId) {
+            if (typeof window !== 'undefined' && window.ReduxStore) {
+                const store = window.ReduxStore;
+                
+                if (oldTargetId) {
+                    store.dispatch({
+                        type: 'scratch-gui/collaboration/REMOVE_SPRITE_EDITOR',
+                        spriteId: oldTargetId,
+                        userId: userId
+                    });
+                }
+                
+                if (spriteId) {
+                    store.dispatch({
+                        type: 'scratch-gui/collaboration/SET_SPRITE_EDITOR',
+                        spriteId: spriteId,
+                        userId: userId,
+                        username: username,
+                        timestamp: Date.now()
+                    });
+                }
+            }
+            
+            this.userEditingTargets.set(userId, spriteId);
+        }
         
-        // Send full project sync to ensure clients get the new target
-        if (this.isHost) {
-            setTimeout(() => {
-                this.sendProjectSync(null);
-            }, 500);
+        if (this.isHost && conn && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'target-switch',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
         }
     }
 
-    /**
-     * Called when a target is deleted (local change)
-     * @param {string} targetId - The deleted target ID
-     */
+    handleTargetCreated () {
+        return;
+    }
+
+    handleTargetDeleted () {
+        return;
+    }
+
+    onEditingTargetChange () {
+        if (!this.vm || !this.isConnected || this.isApplyingRemoteChange) return;
+
+        const editingTargetId = this.vm.editingTarget ? this.vm.editingTarget.id : null;
+
+        this.sendMessage('target-switch', {
+            targetId: editingTargetId,
+            userId: this.peer.id,
+            username: this.username,
+            timestamp: Date.now()
+        });
+
+        this.isSwitchingTarget = true;
+        setTimeout(() => {
+            this.isSwitchingTarget = false;
+        }, 500);
+    }
+
+    onTargetCreated () {
+        return;
+    }
+
+    spriteInfoChanged (target, changedProps) {
+        if (!this.isConnected || !target || this.isApplyingRemoteChange ||
+            this.isSyncOperation || this.isLoadingProject) {
+            return;
+        }
+
+        if (target.isStage) return;
+
+        const payload = {
+            targetName: target.sprite.name,
+            changedProps,
+            timestamp: Date.now()
+        };
+
+        this.sendMessage('sprite-info-changed', payload);
+    }
+
+    handleSpriteInfoChanged (payload, conn) {
+        if (!this.vm || !this.vm.runtime) return;
+        if (!payload.sender) return;
+        if (payload.sender === this.peer.id) return;
+
+        const targetName = payload.targetName;
+        if (!targetName) return;
+
+        const target = this.vm.runtime.targets.find(t => t.sprite.name === targetName && !t.isStage && t.isOriginal);
+        if (!target) {
+            console.warn('[Collab] Target not found for name:', targetName);
+            return;
+        }
+        if (target.isStage) return;
+
+        this.isApplyingRemoteChange = true;
+
+        const changedProps = payload.changedProps || {};
+        
+        let newX = target.x;
+        let newY = target.y;
+        if ('x' in changedProps) newX = changedProps.x;
+        if ('y' in changedProps) newY = changedProps.y;
+        if (newX !== target.x || newY !== target.y) {
+            target.setXY(newX, newY);
+        }
+        if ('direction' in changedProps) target.setDirection(changedProps.direction);
+        if ('size' in changedProps) target.setSize(changedProps.size);
+        if ('visible' in changedProps) target.setVisible(changedProps.visible);
+        if ('rotationStyle' in changedProps) target.setRotationStyle(changedProps.rotationStyle);
+
+        this.isApplyingRemoteChange = false;
+
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'sprite-info-changed',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
     onTargetDeleted (targetId) {
         if (!this.isConnected || this.isApplyingRemoteChange ||
             this.isSyncOperation || this.isLoadingProject) return;
-        
-        console.log('[COLLABORATION] Local target deleted, syncing to peers');
+
         const targetIdToSend = getTargetIdForMessage(this, targetId);
         this.sendMessage('target-deleted', {
             targetId: targetIdToSend,
             timestamp: Date.now()
         });
-        
-        // Send full project sync to ensure clients remove the target
-        if (this.isHost) {
-            setTimeout(() => {
-                this.sendProjectSync(null);
-            }, 500);
-        }
     }
 
-    /**
-     * Approve a join request (host only)
-     * @param {string} requesterId - The ID of the user who requested to join
-     * @param {string} requesterUsername - The username of the user who requested to join
-     * @return {Promise<void>} - A promise that resolves when the join request is approved
-     */
     approveJoinRequest (requesterId, requesterUsername) {
         return approveJoinRequestExternal(this, requesterId, requesterUsername);
     }
 
-    /**
-     * Deny a join request (host only)
-     * @param {string} requesterId - The ID of the user who requested to join
-     * @param {string} reason - The reason for the join request being denied
-     * @return {Promise<void>} - A promise that resolves when the join request is denied
-     */
     denyJoinRequest (requesterId, reason = 'Host denied your request') {
         return denyJoinRequestExternal(this, requesterId, reason);
     }
 
-    /**
-     * Cancel a pending join request (for clients waiting for approval)
-     * @return {Promise<void>} - A promise that resolves when the join request is cancelled
-     */
     cancelJoinRequest () {
         return cancelJoinRequestExternal(this);
     }
 
-    /**
-     * Handle join cancellation from a client
-     * @param {object} data - The join cancellation payload
-     * @param {Peer.DataConnection} connection - The connection object
-     * @return {void}
-     */
     handleJoinCancelled (data, connection) {
         return handleJoinCancelledExternal(this, data, connection);
     }
 
-    /**
-     * Get pending join requests (host only)
-     * @return {object[]} - An array of pending join requests
-     */
     getPendingJoinRequests () {
         return getPendingJoinRequestsExternal(this);
     }
 
-    /**
-     * Get current room privacy setting
-     * @return {string} - The current room privacy setting
-     */
     getRoomPrivacy () {
         return getRoomPrivacyExternal(this);
     }
 
-    /**
-     * Change room privacy setting (host only)
-     * @param {string} newPrivacy - The new room privacy setting
-     * @return {Promise<void>} - A promise that resolves when the room privacy is changed
-     */
     changeRoomPrivacy (newPrivacy) {
         return changeRoomPrivacyExternal(this, newPrivacy);
     }
 }
 
-// Export singleton instance
 const CollaborationServiceExport = {
     getInstance () {
         if (!collaborationServiceInstance) {
@@ -1254,7 +1345,6 @@ const CollaborationServiceExport = {
     }
 };
 
-// Make it available globally for easier access from components
 if (typeof window !== 'undefined') {
     window.CollaborationService = CollaborationServiceExport;
 }

@@ -1,0 +1,90 @@
+.addon-window {
+  border-radius: 16px !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  background: linear-gradient(135deg, var(--ui-modal-background, #ffffff) 0%, var(--ui-primary, #f8f9fa) 100%) !important;
+}
+
+.addon-window:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05) inset !important;
+}
+
+.addon-window-header {
+  background: linear-gradient(135deg, var(--ui-secondary, #f8f9fa) 0%, var(--ui-primary, #ffffff) 100%) !important;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 12px 16px !important;
+  min-height: 48px !important;
+  justify-content: flex-start !important;
+}
+
+.addon-window-title {
+  flex: 1 !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: var(--text-primary, #333) !important;
+  order: 2 !important;
+  padding: 0 16px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+}
+
+.addon-window-controls {
+  order: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  opacity: 1 !important;
+}
+
+.addon-window-btn {
+  border-radius: 50% !important;
+  width: 12px !important;
+  height: 12px !important;
+  padding: 0 !important;
+}
+
+.addon-window-btn-close {
+  color: #FF5F57 !important;
+  background-color: #FF5F57 !important;
+  order: 1 !important;
+}
+
+.addon-window-btn-minimize {
+  color: #FEBC2E !important;
+  background-color: #FEBC2E !important;
+  order: 2 !important;
+}
+
+.addon-window-btn-maximize,
+.addon-window-btn-restore {
+  color: #28C840 !important;
+  background-color: #28C840 !important;
+  order: 3 !important;
+}
+
+.addon-window-btn svg {
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+  stroke: var(--ui-white, #ffffff) !important;
+  stroke-width: 2px !important;
+  opacity: 0 !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.addon-window-btn:hover {
+  opacity: 1 !important;
+
+  & svg {
+    opacity: 1 !important;
+  }
+}
+
+.addon-window-content {
+  border-radius: 0 0 16px 16px !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
