@@ -598,8 +598,19 @@ const handleAssetEvent = (service, payload, conn) => {
     service._eventDedupeCache.set(dedupeKey, now);
 
     if (service._eventDedupeCache.size > 100) {
-        const oldestKey = service._eventDedupeCache.keys().next().value;
-        service._eventDedupeCache.delete(oldestKey);
+        let oldestKey = null;
+        let oldestTimestamp = Infinity;
+
+        service._eventDedupeCache.forEach((timestamp, key) => {
+            if (timestamp < oldestTimestamp) {
+                oldestTimestamp = timestamp;
+                oldestKey = key;
+            }
+        });
+
+        if (oldestKey) {
+            service._eventDedupeCache.delete(oldestKey);
+        }
     }
 
     service.isApplyingRemoteChange = true;

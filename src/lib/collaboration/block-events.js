@@ -715,6 +715,13 @@ const handleBlockEvent = (service, payload, conn, isRetry = false) => {
         }
         if (!targetForEvent && payload.targetId) {
             targetForEvent = service.vm.runtime.getTargetById(payload.targetId);
+
+            if (!targetForEvent && !service.isHost && service.targetMapping &&
+                service.targetMapping[payload.targetId]) {
+                targetForEvent = service.vm.runtime.getTargetById(
+                    service.targetMapping[payload.targetId]
+                );
+            }
         }
         if (!targetForEvent && reconstructedEvent.targetName) {
             targetForEvent = service.vm.runtime.targets.find(
@@ -768,6 +775,11 @@ const clearPendingEventTimers = () => {
         }
     }
     pendingCreateEvents.clear();
+
+    recentlyCreatedProcedureBlocks.clear();
+    currentlyCreatingBlocks.clear();
+    procedureBlockCreationWindowStart = 0;
+    window._procedureCreationWindowActive = false;
 };
 
 const resetBlockEventsState = () => {

@@ -319,19 +319,24 @@ class CollaborationService {
                     if (service.connections.size > 0) {
                         service.sendMessage('host-loading-complete', {timestamp: Date.now()});
 
-                        service.scheduledSyncTimeout = setTimeout(() => {
-                            if (service.isSyncOperation) {
+                        const shouldScheduleSync = service._syncRequestedOnApproval === false;
+                        if (shouldScheduleSync) {
+                            service.scheduledSyncTimeout = setTimeout(() => {
+                                if (service.isSyncOperation) {
+                                    service.scheduledSyncTimeout = null;
+                                    return;
+                                }
+                                const timeSinceLastSync = Date.now() - service.lastSyncTime;
+                                if (service.lastSyncTime > 0 && timeSinceLastSync < 2000) {
+                                    service.scheduledSyncTimeout = null;
+                                    return;
+                                }
                                 service.scheduledSyncTimeout = null;
-                                return;
-                            }
-                            const timeSinceLastSync = Date.now() - service.lastSyncTime;
-                            if (service.lastSyncTime > 0 && timeSinceLastSync < 2000) {
-                                service.scheduledSyncTimeout = null;
-                                return;
-                            }
-                            service.scheduledSyncTimeout = null;
-                            service.sendProjectSync(null);
-                        }, 500);
+                                service.sendProjectSync(null);
+                            }, 500);
+                        } else {
+                            service._syncRequestedOnApproval = false;
+                        }
                     } else {
                         setTimeout(() => {
                             service.isLoadingProject = false;
@@ -427,7 +432,9 @@ class CollaborationService {
             }
         };
 
-        loadExtension();
+        loadExtension().catch(err => {
+            console.error('[Collab] Unhandled extension load error:', err);
+        });
 
         if (this.isHost && payload.sender !== this.peer.id) {
             this.connections.forEach(connection => {
@@ -1070,8 +1077,19 @@ class CollaborationService {
         this.pendingEvents.push(eventWithTimestamp);
         this.startRetryTimer();
 
+        const now = Date.now();
+        const beforeLength = this.pendingEvents.length;
+
+        this.pendingEvents = this.pendingEvents.filter(
+            evt => now - evt.queuedAt < 30000
+        );
+        const removed = beforeLength - this.pendingEvents.length;
+        if (removed > 0) {
+            console.log(`[Collab] Removed ${removed} expired pending events`);
+        }
+
         if (this.pendingEvents.length > 100) {
-            this.pendingEvents.splice(0, 10);
+            this.pendingEvents = this.pendingEvents.slice(-90);
         }
     }
 

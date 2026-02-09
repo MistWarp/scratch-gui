@@ -5,6 +5,7 @@ class NotificationManager {
         this.maxNotifications = 5;
         this.defaultDuration = 4000;
         this.nextId = 0;
+        this.dismissTimeouts = new Map();
     }
 
     subscribe (listener) {
@@ -36,22 +37,34 @@ class NotificationManager {
         this.notifyListeners();
 
         if (duration > 0) {
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 this.dismiss(id);
             }, duration);
+            this.dismissTimeouts.set(id, timeoutId);
         }
 
         return id;
     }
 
     dismiss (id) {
+        if (this.dismissTimeouts.has(id)) {
+            clearTimeout(this.dismissTimeouts.get(id));
+            this.dismissTimeouts.delete(id);
+        }
         this.notifications = this.notifications.filter(n => n.id !== id);
         this.notifyListeners();
     }
 
     dismissAll () {
+        this.dismissTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.dismissTimeouts.clear();
         this.notifications = [];
         this.notifyListeners();
+    }
+
+    cleanup () {
+        this.dismissAll();
+        this.listeners = [];
     }
 
     info (message, duration, options) {

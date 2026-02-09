@@ -30,6 +30,12 @@ const createReconnectHandler = service => {
         const state = service._reconnectionState;
 
         if (now - state.lastAttemptTime < 1000) {
+            const timeToWait = 1000 - (now - state.lastAttemptTime);
+            setTimeout(() => {
+                if (!service.isDisconnecting && !(service._isShuttingDown && service._isShuttingDown())) {
+                    service._attemptReconnect();
+                }
+            }, timeToWait);
             return;
         }
 
@@ -139,7 +145,8 @@ const connectToHost = service => {
         service._reconnectionState.lastFailureTime = Date.now();
 
         if (!service._isShuttingDown || !service._isShuttingDown()) {
-            if (shouldTriggerReconnect && service._consecutiveFailures < 5 && service._attemptReconnect) {
+            if (shouldTriggerReconnect && service._reconnectionState.consecutiveFailures < 5 &&
+                service._attemptReconnect) {
                 console.warn('[Connection] Connection failed, attempting reconnection...');
                 service._attemptReconnect();
             } else {
@@ -195,16 +202,18 @@ const connectToHost = service => {
         let iceFailureTimeout = null;
         conn.peerConnection.addEventListener('iceconnectionstatechange', () => {
             const state = conn.peerConnection.iceConnectionState;
-            
+
             if (state === 'failed' || state === 'disconnected') {
                 if (!errorHandled) {
                     iceFailures++;
                     console.warn(`[Connection] ICE connection state: ${state} (failure ${iceFailures})`);
-                    
+
+                    if (iceFailureTimeout) {
+                        clearTimeout(iceFailureTimeout);
+                        iceFailureTimeout = null;
+                    }
+
                     if (iceFailures > 2) {
-                        if (iceFailureTimeout) {
-                            clearTimeout(iceFailureTimeout);
-                        }
                         const backoffDelay = Math.min(2000 * Math.pow(2, iceFailures - 3), 16000);
                         iceFailureTimeout = setTimeout(() => {
                             if (!conn.open && !errorHandled) {
@@ -212,10 +221,11 @@ const connectToHost = service => {
                                     `ICE connection failed after ${iceFailures} attempts. This may be a network issue.`
                                 );
                             }
+                            iceFailureTimeout = null;
                         }, backoffDelay);
                     }
                 }
-            } else if (state === 'connected') {
+            } else if (state === 'connected' || state === 'completed') {
                 iceFailures = 0;
                 if (iceFailureTimeout) {
                     clearTimeout(iceFailureTimeout);
@@ -392,6 +402,8 @@ const handleJoinApproved = (service, connection) => {
     };
     service.users.set(service.peer.id, ourUser);
     service.emit('user-joined', ourUser);
+
+    service._syncRequestedOnApproval = true;
     service.sendMessage('sync-request', {}, connection);
     service.emit('join-approved');
     service.emit('connected-to-host');
