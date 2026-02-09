@@ -68,7 +68,7 @@ class CollaborationModal extends Component {
             currentUsername: this.props.currentUsername
         });
 
-        if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer) {
+        if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer && !this.autoJoinInProgress) {
             console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
 
             const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
@@ -76,6 +76,7 @@ class CollaborationModal extends Component {
             this.autoJoinInProgress = true;
             this._autoJoinTimer = setTimeout(() => {
                 this._autoJoinTimer = null;
+                this.autoJoinInProgress = false;
                 this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
             }, 100);
         }
@@ -152,6 +153,7 @@ class CollaborationModal extends Component {
                 this.props.roomId &&
                 hasCurrentUsername &&
                 !this._autoJoinTimer &&
+                !this.autoJoinInProgress &&
                 timeSinceLastAttempt > cooldownPeriod &&
                 failureCount < 5;
 
@@ -162,6 +164,7 @@ class CollaborationModal extends Component {
                 this.autoJoinInProgress = true;
                 this._autoJoinTimer = setTimeout(() => {
                     this._autoJoinTimer = null;
+                    this.autoJoinInProgress = false;
                     this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
                 }, 100);
             } else if (failureCount >= 5) {

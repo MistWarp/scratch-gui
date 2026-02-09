@@ -93,6 +93,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('host-loading-start', this.handleHostLoadingStart);
         this.collaborationService.on('host-loading-progress', this.handleHostLoadingProgress);
         this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
+        this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
+        this.collaborationService.on('session-ready', this.handleSessionReady);
 
         this.projectSyncProgress = 0;
         this.projectSyncLoadingBar = null;
@@ -118,6 +120,14 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('host-loading-start', this.handleHostLoadingStart);
         this.collaborationService.off('host-loading-progress', this.handleHostLoadingProgress);
         this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
+        this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
+        this.collaborationService.off('session-ready', this.handleSessionReady);
+
+        // Clear waiting overlay if it exists
+        this.clearWaitingOverlay();
+
+        // Cleanup notification manager
+        NotificationSystem.cleanup();
 
         // Disconnect if connected
         if (this.collaborationService.isConnected) {
@@ -298,6 +308,8 @@ class CollaborationContainer extends Component {
 
         NotificationSystem.info('Disconnected from collaboration room', 3000);
 
+        this.clearWaitingOverlay();
+
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetRoomPrivacy('public');
@@ -471,13 +483,17 @@ class CollaborationContainer extends Component {
         }
     }
 
-    handleSessionReady () {
+    clearWaitingOverlay () {
         if (this.waitingOverlay) {
             if (this.waitingOverlay.parentNode) {
                 this.waitingOverlay.parentNode.removeChild(this.waitingOverlay);
             }
             this.waitingOverlay = null;
         }
+    }
+
+    handleSessionReady () {
+        this.clearWaitingOverlay();
     }
 
     render () {
