@@ -94,6 +94,7 @@
 }
 
 .sa-mcp-input-wrapper > input {
+  left: 0;
   position: absolute;
   border: 0;
   outline: none;
