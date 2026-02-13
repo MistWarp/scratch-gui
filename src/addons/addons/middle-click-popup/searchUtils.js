@@ -1,7 +1,7 @@
 // Search and filtering utilities
 
-import {getAllSprites, getAllCostumes, getAllCustomBlocks} from './vmHelpers.js';
-import {evaluateMath, tryUnitConversion} from './mathUtils.js';
+import { getAllSprites, getAllCostumes, getAllCustomBlocks, getAllSounds } from './vmHelpers.js';
+import { evaluateMath, tryUnitConversion } from './mathUtils.js';
 
 /**
  * @typedef MenuItem
@@ -16,7 +16,10 @@ import {evaluateMath, tryUnitConversion} from './mathUtils.js';
  * @property {string} [headerText] Text for the section header
  * @property {boolean} [isCustomBlock] Whether this is a custom block item
  * @property {any} [customBlockData] Custom block data if this is a custom block item
+ * @property {any} [soundData] Sound data if this is a sound item
+ * @property {boolean} [isSound] Whether this is a sound item
  */
+
 
 /**
  * Perform search and generate menu items
@@ -27,13 +30,13 @@ import {evaluateMath, tryUnitConversion} from './mathUtils.js';
  * @param {number} PREVIEW_LIMIT Maximum number of results
  * @param {string} searchMode 'blocks' or 'everything'
  * @returns {{
-    * blockList: MenuItem[],
-    * queryIllegalResult: any,
-    * limited: boolean,
-    * mathResult: (number | null),
-    * conversionResult: any
-  * }} Search results
-  */
+ *     blockList: MenuItem[],
+ *     queryIllegalResult: any,
+ *     limited: boolean,
+ *     mathResult: (number | null),
+ *     conversionResult: any
+ *   }} Search results
+ */
 const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, searchMode = 'everything') => {
     /** @type {MenuItem[]} */
     const blockList = [];
@@ -62,127 +65,163 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
         const searchTerms = searchValue.toLowerCase().split(/\s+/)
             .filter(t => t.length > 0);
 
-        // Search sprites (only in everything mode)
         let spriteResults = [];
         if (searchEverything) {
             const sprites = getAllSprites(vm);
-        const spriteResults = [];
-        
-        for (const sprite of sprites) {
-            const spriteName = sprite.name.toLowerCase();
-            let score = 0;
-            
-            if (spriteName === searchValue.toLowerCase()) {
-                score += 2000;
-            }
-            
-            if (spriteName.startsWith(searchValue.toLowerCase())) {
-                score += 1500;
-            }
-            
-            if (spriteName.includes(searchValue.toLowerCase())) {
-                score += 1000;
-            }
-            
-            if (score > 0) {
-                spriteResults.push({
-                    spriteData: sprite,
-                    score: score
-                });
-            }
-            spriteResults.push({
-                    spriteData: sprite,
-                    score: score
-                });
+
+            for (const sprite of sprites) {
+                const spriteName = sprite.name.toLowerCase();
+                let score = 0;
+
+                if (spriteName === searchValue.toLowerCase()) {
+                    score += 2000;
+                }
+
+                if (spriteName.startsWith(searchValue.toLowerCase())) {
+                    score += 1500;
+                }
+
+                if (spriteName.includes(searchValue.toLowerCase())) {
+                    score += 1000;
+                }
+
+                const containsAll = searchTerms.every(term => spriteName.includes(term));
+                if (containsAll) {
+                    score += 200;
+                }
+
+                if (score > 0) {
+                    spriteResults.push({
+                        spriteData: sprite,
+                        score: score
+                    });
+                }
             }
         }
-        
+
         spriteResults.sort((a, b) => b.score - a.score);
 
         // Search costumes (only in everything mode)
         let costumeResults = [];
         if (searchEverything) {
             const costumes = getAllCostumes(vm);
-        const costumeResults = [];
-        
-        for (const costume of costumes) {
-            const costumeName = costume.name.toLowerCase();
-            let score = 0;
-            
-            if (costumeName === searchValue.toLowerCase()) {
-                score += 2000;
-            }
-            
-            if (costumeName.startsWith(searchValue.toLowerCase())) {
-                score += 1500;
-            }
-            
-            if (costumeName.includes(searchValue.toLowerCase())) {
-                score += 1000;
-            }
-            
-            if (score > 0) {
-                costumeResults.push({
-                    costumeData: costume,
-                    score: score
-                });
-            }
-            costumeResults.push({
-                    costumeData: costume,
-                    score: score
-                });
+
+            for (const costume of costumes) {
+                const costumeName = costume.name.toLowerCase();
+                let score = 0;
+
+                if (costumeName === searchValue.toLowerCase()) {
+                    score += 2000;
+                }
+
+                if (costumeName.startsWith(searchValue.toLowerCase())) {
+                    score += 1500;
+                }
+
+                if (costumeName.includes(searchValue.toLowerCase())) {
+                    score += 1000;
+                }
+
+                const containsAll = searchTerms.every(term => costumeName.includes(term));
+                if (containsAll) {
+                    score += 200;
+                }
+
+                if (score > 0) {
+                    costumeResults.push({
+                        costumeData: costume,
+                        score: score
+                    });
+                }
             }
         }
-        
+
         costumeResults.sort((a, b) => b.score - a.score);
+
+        // Search sounds (only in everything mode)
+        let soundResults = [];
+        if (searchEverything) {
+            const sounds = getAllSounds(vm);
+
+            for (const sound of sounds) {
+                const soundName = sound.name.toLowerCase();
+                let score = 0;
+
+                if (soundName === searchValue.toLowerCase()) {
+                    score += 2000;
+                }
+
+                if (soundName.startsWith(searchValue.toLowerCase())) {
+                    score += 1500;
+                }
+
+                if (soundName.includes(searchValue.toLowerCase())) {
+                    score += 1000;
+                }
+
+                const containsAll = searchTerms.every(term => soundName.includes(term));
+                if (containsAll) {
+                    score += 200;
+                }
+
+                if (score > 0) {
+                    soundResults.push({
+                        soundData: sound,
+                        score: score
+                    });
+                }
+            }
+        }
+
+        soundResults.sort((a, b) => b.score - a.score);
 
         // Search custom blocks (only in everything mode)
         let customBlockResults = [];
         if (searchEverything) {
             const customBlocks = getAllCustomBlocks(vm);
-        const customBlockResults = [];
-        
-        for (const customBlock of customBlocks) {
-            const blockName = customBlock.displayName.toLowerCase();
-            let score = 0;
-            
-            if (blockName === searchValue.toLowerCase()) {
-                score += 2000;
-            }
-            
-            if (blockName.startsWith(searchValue.toLowerCase())) {
-                score += 1500;
-            }
-            
-            if (blockName.includes(searchValue.toLowerCase())) {
-                score += 1000;
-            }
-            
-            if (score > 0) {
-                customBlockResults.push({
-                    customBlockData: customBlock,
-                    score: score
-                });
-            }
-            customBlockResults.push({
-                    customBlockData: customBlock,
-                    score: score
-                });
+
+            for (const customBlock of customBlocks) {
+                const blockName = customBlock.displayName.toLowerCase();
+                let score = 0;
+
+                if (blockName === searchValue.toLowerCase()) {
+                    score += 2000;
+                }
+
+                if (blockName.startsWith(searchValue.toLowerCase())) {
+                    score += 1500;
+                }
+
+                if (blockName.includes(searchValue.toLowerCase())) {
+                    score += 1000;
+                }
+
+                const containsAll = searchTerms.every(term => blockName.includes(term));
+                if (containsAll) {
+                    score += 200;
+                }
+
+                if (score > 0) {
+                    customBlockResults.push({
+                        customBlockData: customBlock,
+                        score: score
+                    });
+                }
             }
         }
-        
+
         customBlockResults.sort((a, b) => b.score - a.score);
 
         // Score regular blocks
         const scoredResults = queryResults.map(queryResult => {
             const blockText = queryResult.toText(false).toLowerCase();
-    
+
             let score = 0;
-    
+
             if (blockText === searchValue.toLowerCase()) {
                 score += 1000;
             }
-    
+
             if (blockText.startsWith(searchValue.toLowerCase())) {
                 score += 500;
             }
@@ -191,7 +230,7 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
             if (containsAll) {
                 score += 200;
             }
-    
+
             const words = blockText.split(/\s+/);
             for (const term of searchTerms) {
                 for (const word of words) {
@@ -203,23 +242,23 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
                     }
                 }
             }
-    
+
             score -= blockText.length * 0.5;
 
             const inputCount = (blockText.match(/\(\)/g) || []).length;
             score -= inputCount * 10;
-    
+
             return {
                 queryResult,
                 score,
                 blockText
             };
         });
-  
+
         scoredResults.sort((a, b) => b.score - a.score);
-  
+
         const topResults = scoredResults.slice(0, PREVIEW_LIMIT);
-        
+
         // Build the menu with sections
         if (spriteResults.length > 0) {
             blockList.push({
@@ -237,7 +276,7 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
                 });
             }
         }
-        
+
         if (costumeResults.length > 0) {
             blockList.push({
                 block: null,
@@ -254,7 +293,24 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
                 });
             }
         }
-        
+
+        if (soundResults.length > 0) {
+            blockList.push({
+                block: null,
+                isHeader: true,
+                headerText: 'Sounds',
+                score: 9500
+            });
+            for (const result of soundResults) {
+                blockList.push({
+                    block: null,
+                    soundData: result.soundData,
+                    isSound: true,
+                    score: result.score
+                });
+            }
+        }
+
         if (customBlockResults.length > 0) {
             blockList.push({
                 block: null,
@@ -271,7 +327,7 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
                 });
             }
         }
-        
+
         if (topResults.length > 0) {
             blockList.push({
                 block: null,
@@ -288,7 +344,7 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
                 });
             }
         }
-        
+
         // Calculate math/conversion results
         mathResult = evaluateMath(searchValue);
         if (!mathResult) {

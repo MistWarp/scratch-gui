@@ -1,7 +1,7 @@
 // Rendering and block preview utilities
 
 import {renderBlock, getBlockHeight} from './BlockRenderer.js';
-import {createSpritePreviewItem, createCostumePreviewItem, createSectionHeader} from './uiComponents.js';
+import {createSpritePreviewItem, createCostumePreviewItem, createSectionHeader, createSoundPreviewItem} from './uiComponents.js';
 
 /**
  * Render a custom block to SVG
@@ -32,25 +32,40 @@ const renderCustomBlock = (customBlockData, svgBlock, Blockly, vm) => {
                 const nextEl = blockXml.querySelector('next');
                 if (nextEl) nextEl.remove();
 
-                const tempBlock = Blockly.Xml.domToBlock(blockXml, workspace);
-                
-                if (tempBlock && tempBlock.getSvgRoot()) {
-                    const svgClone = tempBlock.getSvgRoot().cloneNode(true);
-                    svgBlock.appendChild(svgClone);
+                Blockly.Events.disable();
+                let tempBlock = null;
+                try {
+                    tempBlock = Blockly.Xml.domToBlock(blockXml, workspace);
                     
-                    const bbox = tempBlock.getBoundingRectangle();
-                    const blockWidth = bbox.right - bbox.left;
-                    const blockHeight = bbox.bottom - bbox.top;
+                    if (tempBlock && tempBlock.getSvgRoot()) {
+                        const svgClone = tempBlock.getSvgRoot().cloneNode(true);
+                        svgBlock.appendChild(svgClone);
+                        
+                        const bbox = tempBlock.getBoundingRectangle();
+                        const blockWidth = bbox.right - bbox.left;
+                        const blockHeight = bbox.bottom - bbox.top;
+                        
+                        if (!isNaN(blockWidth) && !isNaN(blockHeight) &&
+                            isFinite(blockWidth) && isFinite(blockHeight) &&
+                            blockWidth > 0 && blockHeight > 0) {
+                            return {
+                                width: blockWidth,
+                                height: blockHeight
+                            };
+                        }
+                    }
+                } finally {
+                    // Re-enable events before disposing
+                    Blockly.Events.enable();
                     
-                    tempBlock.dispose(false);
-                    
-                    if (!isNaN(blockWidth) && !isNaN(blockHeight) &&
-                        isFinite(blockWidth) && isFinite(blockHeight) &&
-                        blockWidth > 0 && blockHeight > 0) {
-                        return {
-                            width: blockWidth,
-                            height: blockHeight
-                        };
+                    // Dispose temp block safely
+                    if (tempBlock) {
+                        try {
+                            tempBlock.dispose(false);
+                        } catch (disposeError) {
+                            // Ignore dispose errors for temp blocks
+                            console.warn('Error disposing temp block:', disposeError);
+                        }
                     }
                 }
             }
@@ -91,19 +106,21 @@ const renderMenuItem = (result, svgBlock, previewWidth, previewScale, Blockly, v
         svgBlock.appendChild(foreignObject);
         
         renderedBlock = {width: previewWidth / previewScale, height: height};
-    } else if (result.isSprite || result.isCostume) {
+    } else if (result.isSprite || result.isCostume || result.isSound) {
         height = 60;
         const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         foreignObject.setAttribute('width', `${previewWidth / previewScale}`);
         foreignObject.setAttribute('height', `${height}`);
-        
+
         let item;
         if (result.isSprite) {
             item = createSpritePreviewItem(result.spriteData, vm);
         } else if (result.isCostume) {
             item = createCostumePreviewItem(result.costumeData);
+        } else if (result.isSound) {
+            item = createSoundPreviewItem(result.soundData);
         }
-        
+
         if (item) {
             foreignObject.appendChild(item);
             svgBlock.appendChild(foreignObject);

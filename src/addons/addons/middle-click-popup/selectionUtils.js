@@ -9,13 +9,13 @@
  */
 const findNextSelectableIndex = (queryPreviews, startIdx, selectedPreviewIdx) => {
     let actualIdx = startIdx;
-    
+
     if (actualIdx >= 0 && actualIdx < queryPreviews.length) {
         const candidate = queryPreviews[actualIdx];
         if (candidate && candidate.isHeader) {
             // Determine direction based on where we're coming from
             const direction = actualIdx > selectedPreviewIdx ? 1 : -1;
-            
+
             // Search for the next non-header in that direction
             let searchIdx = actualIdx + direction;
             while (searchIdx >= 0 && searchIdx < queryPreviews.length) {
@@ -25,7 +25,7 @@ const findNextSelectableIndex = (queryPreviews, startIdx, selectedPreviewIdx) =>
                 }
                 searchIdx += direction;
             }
-            
+
             // If we didn't find anything in that direction, try the opposite
             if (queryPreviews[actualIdx].isHeader) {
                 searchIdx = actualIdx - direction;
@@ -37,14 +37,14 @@ const findNextSelectableIndex = (queryPreviews, startIdx, selectedPreviewIdx) =>
                     searchIdx -= direction;
                 }
             }
-            
+
             // If still a header (all items are headers?), return -1
             if (queryPreviews[actualIdx] && queryPreviews[actualIdx].isHeader) {
                 return -1;
             }
         }
     }
-    
+
     return actualIdx;
 };
 
@@ -148,10 +148,23 @@ const handleBlockSelection = (block, Blockly, mousePosition) => {
     return newBlock;
 };
 
+const handleSoundSelection = (soundData, vm, redux) => {
+    const editingTarget = vm.editingTarget;
+    if (editingTarget) {
+        editingTarget.setSound(soundData.index);
+
+        redux.dispatch({
+            type: 'scratch-gui/navigation/ACTIVATE_TAB',
+            activeTabIndex: 2
+        });
+    }
+};
+
 export {
     findNextSelectableIndex,
     handleSpriteSelection,
     handleCostumeSelection,
     handleCustomBlockSelection,
+    handleSoundSelection,
     handleBlockSelection
 };

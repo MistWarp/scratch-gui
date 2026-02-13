@@ -119,9 +119,35 @@ const createCustomBlockPreviewItem = customBlockData => {
     return container;
 };
 
+const createSoundPreviewItem = soundData => {
+    const container = document.createElement('div');
+    container.classList.add('sa-mcp-sound-item');
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.padding = '8px';
+    container.style.cursor = 'pointer';
+    container.style.borderRadius = '4px';
+
+    const icon = document.createElement('span');
+    icon.textContent = '🔊';
+    icon.style.width = '48px';
+    icon.style.height = '48px';
+    icon.style.marginRight = '8px';
+    icon.style.objectFit = 'contain';
+    icon.classList.add('sa-mcp-sound-icon');
+    container.appendChild(icon);
+
+    const nameLabel = document.createElement('span');
+    nameLabel.textContent = soundData.name;
+    container.appendChild(nameLabel);
+
+    return container;
+};
+
 export {
     createSpritePreviewItem,
     createCostumePreviewItem,
     createSectionHeader,
-    createCustomBlockPreviewItem
+    createCustomBlockPreviewItem,
+    createSoundPreviewItem
 };

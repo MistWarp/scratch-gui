@@ -51,7 +51,7 @@ const manifest = {
             type: 'integer',
             min: 1,
             max: 100,
-            default: 16
+            default: 30
         },
         {
             dynamic: true,
