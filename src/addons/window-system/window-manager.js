@@ -175,7 +175,6 @@ class AddonWindow {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
             z-index: 1;
         `;
         

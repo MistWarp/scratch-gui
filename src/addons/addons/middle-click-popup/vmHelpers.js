@@ -94,8 +94,25 @@ const getAllCustomBlocks = vm => {
     return customBlocks;
 };
 
+const getAllSounds = vm => {
+    const sounds = [];
+    const editingTarget = vm.editingTarget;
+    if (editingTarget) {
+        const targetSounds = editingTarget.getSounds();
+        for (let i = 0; i < targetSounds.length; i++) {
+            sounds.push({
+                index: i,
+                name: targetSounds[i].name,
+                asset: targetSounds[i].asset
+            });
+        }
+    }
+    return sounds;
+};
+
 export {
     getAllSprites,
     getAllCostumes,
-    getAllCustomBlocks
+    getAllCustomBlocks,
+    getAllSounds
 };

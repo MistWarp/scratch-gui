@@ -7,18 +7,19 @@ import { BlockInstance, BlockShape, BlockTypeInfo } from "./BlockTypeInfo.js";
 import { onClearTextWidthCache } from "./module.js";
 import { performSearch } from "./searchUtils.js";
 import { renderMenuItem, calculateActualHeight } from "./renderingUtils.js";
-import { 
-    findNextSelectableIndex, 
-    handleSpriteSelection, 
-    handleCostumeSelection, 
+import {
+    findNextSelectableIndex,
+    handleSpriteSelection,
+    handleCostumeSelection,
     handleCustomBlockSelection,
-    handleBlockSelection 
+    handleSoundSelection,
+    handleBlockSelection
 } from "./selectionUtils.js";
 
 /**
  * @param {{addon: any, msg: any}} param0
  */
-export default async function ({addon, msg}) {
+export default async function ({ addon, msg }) {
     const Blockly = await addon.tab.traps.getBlockly();
     const vm = addon.tab.traps.vm;
 
@@ -39,6 +40,19 @@ export default async function ({addon, msg}) {
     const popupInputContainer = popupContainer.appendChild(document.createElement('div'));
     popupInputContainer.classList.add(addon.tab.scratchClass('input_input-form'));
     popupInputContainer.classList.add('sa-mcp-input-wrapper');
+
+    const popupSearchIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    popupSearchIcon.setAttribute('viewBox', '0 0 24 24');
+    popupSearchIcon.setAttribute('fill', 'none');
+    popupSearchIcon.setAttribute('stroke', '#999');
+    popupSearchIcon.setAttribute('stroke-width', '2');
+    popupSearchIcon.setAttribute('stroke-linecap', 'round');
+    popupSearchIcon.setAttribute('stroke-linejoin', 'round');
+    popupSearchIcon.classList.add('sa-mcp-search-icon');
+    const searchIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    searchIconPath.setAttribute('d', 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z');
+    popupSearchIcon.appendChild(searchIconPath);
+    popupInputContainer.appendChild(popupSearchIcon);
 
     const popupInputSuggestion = popupInputContainer.appendChild(document.createElement('input'));
     popupInputSuggestion.classList.add('sa-mcp-input-suggestion');
@@ -90,13 +104,13 @@ export default async function ({addon, msg}) {
 
     const querier = new WorkspaceQuerier();
 
-    let mousePosition = {x: 0, y: 0};
+    let mousePosition = { x: 0, y: 0 };
     document.addEventListener('mousemove', e => {
-        mousePosition = {x: e.clientX, y: e.clientY};
+        mousePosition = { x: e.clientX, y: e.clientY };
     });
     document.addEventListener('mousedown', e => {
-        mousePosition = {x: e.clientX, y: e.clientY};
-    }, {capture: true});
+        mousePosition = { x: e.clientX, y: e.clientY };
+    }, { capture: true });
 
     onClearTextWidthCache(closePopup);
 
@@ -113,9 +127,11 @@ export default async function ({addon, msg}) {
    * @property {any} [costumeData]
    * @property {boolean} [isHeader]
    * @property {string} [headerText]
-   * @property {boolean} [isCustomBlock]
-   * @property {any} [customBlockData]
-   */
+ * @property {boolean} [isCustomBlock]
+ * @property {any} [customBlockData]
+ * @property {boolean} [isSound]
+ * @property {any} [soundData]
+ */
     /** @type {ResultPreview[]} */
     const queryPreviews = [];
     /** @type {QueryResult | null} */
@@ -142,7 +158,7 @@ export default async function ({addon, msg}) {
     const previewMinHeight = 0;
     let previewMaxHeight = 0;
 
-    function openPopup (centered = false) {
+    function openPopup(centered = false) {
         if (addon.self.disabled) return;
 
         // Don't show the menu if we're not in the code editor
@@ -159,25 +175,25 @@ export default async function ({addon, msg}) {
         searchMode = centered ? 'everything' : 'blocks';
 
         previewScale = window.innerWidth * 0.00005 + addon.settings.get('popup_scale') / 100;
-        
+
         // Validate previewScale
         if (isNaN(previewScale) || !isFinite(previewScale) || previewScale <= 0) {
             previewScale = 0.56; // Default scale
         }
-        
+
         if (centered) {
             previewWidth = Math.min(window.innerWidth * 0.6, 600);
         } else {
             previewWidth = (window.innerWidth * addon.settings.get('popup_width')) / 100;
         }
-        
+
         // Validate previewWidth
         if (isNaN(previewWidth) || !isFinite(previewWidth) || previewWidth <= 0) {
             previewWidth = 480; // Default width
         }
-        
+
         previewMaxHeight = (window.innerHeight * addon.settings.get('popup_max_height')) / 100;
-        
+
         // Validate previewMaxHeight
         if (isNaN(previewMaxHeight) || !isFinite(previewMaxHeight) || previewMaxHeight <= 0) {
             previewMaxHeight = 480; // Default max height
@@ -196,20 +212,20 @@ export default async function ({addon, msg}) {
                 y: (window.innerHeight - 50) / 2 - 300
             };
         } else {
-            popupOrigin = {x: mousePosition.x, y: mousePosition.y};
-            popupPosition = {x: mousePosition.x + 16, y: mousePosition.y - 8};
+            popupOrigin = { x: mousePosition.x, y: mousePosition.y };
+            popupPosition = { x: mousePosition.x + 16, y: mousePosition.y - 8 };
         }
-        
+
         // Set initial position immediately
         popupRoot.style.top = `${popupPosition.y}px`;
         popupRoot.style.left = `${popupPosition.x}px`;
-        
+
         popupInput.value = '';
-        
+
         // Show the popup immediately
         popupRoot.style.display = '';
         popupInput.focus();
-        
+
         // Load blocks asynchronously
         requestAnimationFrame(() => {
             const toolbox = workspace.getToolbox();
@@ -218,7 +234,7 @@ export default async function ({addon, msg}) {
                 // Show a loading message
                 popupStatusBar.textContent = 'Loading blocks...';
                 popupStatusBar.style.display = '';
-                
+
                 // Retry after a short delay
                 setTimeout(() => {
                     loadBlockTypes(workspace);
@@ -228,7 +244,7 @@ export default async function ({addon, msg}) {
             }
         });
     }
-    
+
     /**
      * Load block types from a workspace
      * @param {*} workspace Workspace to load block types from
@@ -236,7 +252,7 @@ export default async function ({addon, msg}) {
     function loadBlockTypes(workspace) {
         try {
             blockTypes = BlockTypeInfo.getBlocks(Blockly, vm, workspace, msg);
-            
+
             if (!blockTypes || blockTypes.length === 0) {
                 console.warn('Middle-click popup: No block types available, showing empty search');
                 blockTypes = [];
@@ -244,7 +260,7 @@ export default async function ({addon, msg}) {
                 popupStatusBar.style.display = '';
                 return;
             }
-            
+
             querier.indexWorkspace([...blockTypes]);
             blockTypes.sort((a, b) => {
                 /**
@@ -255,7 +271,7 @@ export default async function ({addon, msg}) {
                 const prio = (block) => ['operators', 'data'].indexOf(block.category.name) - (block.id.startsWith('data_') ? 1 : 0);
                 return prio(b) - prio(a);
             });
-            
+
             // Perform initial search now that blocks are loaded
             doPerformSearch();
         } catch (error) {
@@ -265,7 +281,7 @@ export default async function ({addon, msg}) {
         }
     }
 
-    function closePopup () {
+    function closePopup() {
         if (allowMenuClose) {
             popupOrigin = null;
             popupPosition = null;
@@ -277,7 +293,7 @@ export default async function ({addon, msg}) {
 
     popupInput.addEventListener('input', updateInput);
 
-    function updateInput () {
+    function updateInput() {
         if (searchDebounceTimer) {
             clearTimeout(searchDebounceTimer);
         }
@@ -296,7 +312,7 @@ export default async function ({addon, msg}) {
         searchDebounceTimer = setTimeout(doPerformSearch, SEARCH_DEBOUNCE_MS);
     }
 
-    function doPerformSearch () {
+    function doPerformSearch() {
         const searchStartTime = performance.now();
 
         // Check if blocks are loaded and workspace is indexed
@@ -305,18 +321,18 @@ export default async function ({addon, msg}) {
             popupStatusBar.style.display = '';
             return;
         }
-        
+
         if (blockTypes.length === 0) {
             popupStatusBar.textContent = 'No blocks available';
             popupStatusBar.style.display = '';
             return;
         }
-        
+
         const searchResult = performSearch(popupInput.value, querier, blockTypes, vm, PREVIEW_LIMIT, searchMode);
         const blockList = searchResult.blockList;
         queryIllegalResult = searchResult.queryIllegalResult;
         limited = searchResult.limited;
-        
+
         // Handle math/conversion results display
         if (popupInput.value.trim().length === 0) {
             popupStatusBar.style.display = 'none';
@@ -337,11 +353,11 @@ export default async function ({addon, msg}) {
                 popupResultBox.style.display = 'none';
                 popupResultBox.classList.remove('sa-mcp-result-math', 'sa-mcp-result-conversion');
             }
-      
+
             const searchTime = (performance.now() - searchStartTime).toFixed(1);
             const hasComputed = popupResultBox.style.display !== 'none';
             const searchCount = blockList.length;
-            
+
             let statusText = '';
             if (hasComputed && searchCount > 0) {
                 statusText = `${searchCount} result${searchCount !== 1 ? 's' : ''}`;
@@ -351,7 +367,7 @@ export default async function ({addon, msg}) {
                 statusText = 'No results found';
             }
             statusText += ` (${searchTime}ms)`;
-            
+
             if (limited) {
                 popupStatusBar.textContent = statusText + ' - Results limited';
                 popupStatusBar.style.display = '';
@@ -369,7 +385,7 @@ export default async function ({addon, msg}) {
 
         queryPreviews.length = 0;
         let y = 0;
-    
+
         for (let resultIdx = 0; resultIdx < blockList.length; resultIdx++) {
             const result = blockList[resultIdx];
 
@@ -395,28 +411,28 @@ export default async function ({addon, msg}) {
             const svgGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             popupPreviewBlocks.appendChild(svgGroup);
             const { renderedBlock, height } = renderMenuItem(result, svgGroup, previewWidth, previewScale, Blockly, vm);
-            
+
             /** @type {SVGGElement} */
             const svgBlock = svgGroup;
-            
+
             if (!renderedBlock || !svgBlock) continue; // Skip if we couldn't render
 
             const actualHeight = calculateActualHeight(result, renderedBlock, height);
-            
+
             if (isNaN(y)) {
                 y = 0;
             }
-            
+
             svgBackground.classList.add('sa-mcp-preview-block-bg');
             svgBackground.addEventListener('mousemove', mouseMoveListener);
             svgBackground.addEventListener('mousedown', mouseDownListener);
             svgBlock.addEventListener('mousemove', mouseMoveListener);
             svgBlock.addEventListener('mousedown', mouseDownListener);
             svgBlock.classList.add('sa-mcp-preview-block');
-            
+
             // For custom blocks, headers, sprites, and costumes, position background at y
             // For regular blocks, add some offset
-            const bgOffset = (result.isHeader || result.isSprite || result.isCostume) ? 0 : actualHeight / 10;
+            const bgOffset = (result.isHeader || result.isSprite || result.isCostume || result.isSound) ? 0 : actualHeight / 10;
             svgBackground.setAttribute('transform', `translate(0, ${(y + bgOffset) * previewScale})`);
             svgBackground.setAttribute('height', `${actualHeight * previewScale}px`);
 
@@ -433,7 +449,9 @@ export default async function ({addon, msg}) {
                 isHeader: result.isHeader,
                 headerText: result.headerText,
                 isCustomBlock: result.isCustomBlock,
-                customBlockData: result.customBlockData
+                customBlockData: result.customBlockData,
+                isSound: result.isSound,
+                soundData: result.soundData
             });
 
             y += actualHeight;
@@ -444,7 +462,7 @@ export default async function ({addon, msg}) {
         }
 
         const totalHeight = (y + 8) * previewScale;
-        
+
         if (isNaN(totalHeight) || !isFinite(totalHeight)) {
             previewHeight = previewMinHeight;
         } else if (totalHeight < previewMinHeight) {
@@ -469,7 +487,7 @@ export default async function ({addon, msg}) {
                 popupPosition.y = Math.max(0, window.innerHeight - popupHeight);
                 popupRoot.style.top = `${popupPosition.y}px`;
             }
-            
+
             // Also check if it goes off the right edge
             const popupRight = popupPosition.x + previewWidth;
             if (popupRight > window.innerWidth) {
@@ -484,7 +502,7 @@ export default async function ({addon, msg}) {
         updateScrollbar();
     }
 
-    function updateSelection (/** @type {number} */ newIdx) {
+    function updateSelection(/** @type {number} */ newIdx) {
         if (selectedPreviewIdx === newIdx) return;
 
         const oldSelection = queryPreviews[selectedPreviewIdx];
@@ -495,22 +513,22 @@ export default async function ({addon, msg}) {
 
         if (queryPreviews.length === 0 && queryIllegalResult) {
             popupInputSuggestion.value =
-        popupInput.value + queryIllegalResult.toText(true).substring(popupInput.value.length);
+                popupInput.value + queryIllegalResult.toText(true).substring(popupInput.value.length);
             return;
         }
 
         // Use selection utility to find next selectable index
         const actualIdx = findNextSelectableIndex(queryPreviews, newIdx, selectedPreviewIdx);
-        
+
         if (actualIdx === -1) {
             selectedPreviewIdx = -1;
             return;
         }
-        
+
         const newSelection = queryPreviews[actualIdx];
         if (newSelection) {
             selectedPreviewIdx = actualIdx;
-            
+
             newSelection.svgBackground.classList.add('sa-mcp-preview-block-bg-selection');
             newSelection.svgBlock.classList.add('sa-mcp-preview-block-selection');
 
@@ -535,7 +553,7 @@ export default async function ({addon, msg}) {
     // @ts-ignore
     document.addEventListener('selectionchange', updateCursor);
 
-    function updateCursor () {
+    function updateCursor() {
         const cursorPos = popupInput.selectionStart ?? 0;
         const cursorPosRel = popupInput.value.length === 0 ? 0 : cursorPos / popupInput.value.length;
 
@@ -543,15 +561,14 @@ export default async function ({addon, msg}) {
         for (let previewIdx = 0; previewIdx < queryPreviews.length; previewIdx++) {
             const preview = queryPreviews[previewIdx];
 
-            let blockX = 5;
+            let blockX = 12;
             let blockY = 0;
-            
-            if (preview.isHeader || preview.isSprite || preview.isCostume) {
-                // Headers, sprites, and costume items don't need special positioning
+
+            if (preview.isHeader || preview.isSprite || preview.isCostume || preview.isSound) {
                 blockY = y * previewScale;
             } else if (preview.isCustomBlock) {
                 // Custom blocks need more left padding and more top padding
-                blockX = 15;
+                blockX = 22;
                 if (blockX + preview.renderedBlock.width > previewWidth / previewScale) {
                     blockX += (previewWidth / previewScale - blockX - preview.renderedBlock.width) * previewScale * cursorPosRel;
                 }
@@ -568,7 +585,7 @@ export default async function ({addon, msg}) {
 
             if (preview.isHeader) {
                 y += 40;
-            } else if (preview.isSprite || preview.isCostume) {
+            } else if (preview.isSprite || preview.isCostume || preview.isSound) {
                 y += 60;
             } else if (preview.isCustomBlock) {
                 const customHeight = (preview.renderedBlock && typeof preview.renderedBlock === 'object' && 'height' in preview.renderedBlock)
@@ -586,7 +603,7 @@ export default async function ({addon, msg}) {
 
     popupPreviewContainer.addEventListener('scroll', updateScrollbar);
 
-    function updateScrollbar () {
+    function updateScrollbar() {
         const scrollTop = popupPreviewContainer.scrollTop;
         const scrollY = popupPreviewContainer.scrollHeight;
 
@@ -597,7 +614,7 @@ export default async function ({addon, msg}) {
 
         const scrollbarHeight = (previewHeight / scrollY) * previewHeight;
         const scrollbarY = (scrollTop / scrollY) * previewHeight;
-        
+
         // Ensure values are valid numbers before setting attributes
         if (!isNaN(scrollbarHeight) && !isNaN(scrollbarY) && scrollbarHeight > 0) {
             popupPreviewScrollbarSVG.style.display = '';
@@ -608,7 +625,7 @@ export default async function ({addon, msg}) {
         }
     }
 
-    function selectBlock () {
+    function selectBlock() {
         const selectedPreview = queryPreviews[selectedPreviewIdx];
         if (!selectedPreview) return;
 
@@ -622,6 +639,12 @@ export default async function ({addon, msg}) {
 
         if (selectedPreview.isCostume && selectedPreview.costumeData) {
             handleCostumeSelection(selectedPreview.costumeData, vm, addon.tab.redux);
+            closePopup();
+            return;
+        }
+
+        if (selectedPreview.isSound && selectedPreview.soundData) {
+            handleSoundSelection(selectedPreview.soundData, vm, addon.tab.redux);
             closePopup();
             return;
         }
@@ -640,8 +663,8 @@ export default async function ({addon, msg}) {
             clientX: mousePosition.x,
             clientY: mousePosition.y,
             type: 'mousedown',
-            stopPropagation: function () {},
-            preventDefault: function () {},
+            stopPropagation: function () { },
+            preventDefault: function () { },
             target: selectedPreview.svgBlock
         };
         const workspace = Blockly.getMainWorkspace();
@@ -650,7 +673,7 @@ export default async function ({addon, msg}) {
         }
     }
 
-    function acceptAutocomplete () {
+    function acceptAutocomplete() {
         let factory;
         if (queryPreviews[selectedPreviewIdx]) factory = queryPreviews[selectedPreviewIdx].autocompleteFactory;
         else factory = () => popupInputSuggestion.value;
@@ -662,61 +685,61 @@ export default async function ({addon, msg}) {
 
     popupInput.addEventListener('keydown', e => {
         switch (e.key) {
-        case 'Escape':
-            if (popupInput.value.length > 0) {
-                popupInput.value = '';
-                updateInput();
-            } else {
+            case 'Escape':
+                if (popupInput.value.length > 0) {
+                    popupInput.value = '';
+                    updateInput();
+                } else {
+                    closePopup();
+                }
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'Tab':
+                acceptAutocomplete();
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'Enter':
+                selectBlock();
                 closePopup();
-            }
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'Tab':
-            acceptAutocomplete();
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'Enter':
-            selectBlock();
-            closePopup();
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'ArrowDown':
-            if (selectedPreviewIdx + 1 >= queryPreviews.length) updateSelection(0);
-            else updateSelection(selectedPreviewIdx + 1);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'ArrowUp':
-            if (selectedPreviewIdx - 1 < 0) updateSelection(queryPreviews.length - 1);
-            else updateSelection(selectedPreviewIdx - 1);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'PageDown':
-            const nextIdx = Math.min(selectedPreviewIdx + 10, queryPreviews.length - 1);
-            updateSelection(nextIdx);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'PageUp':
-            const prevIdx = Math.max(selectedPreviewIdx - 10, 0);
-            updateSelection(prevIdx);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'Home':
-            updateSelection(0);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
-        case 'End':
-            updateSelection(queryPreviews.length - 1);
-            e.stopPropagation();
-            e.preventDefault();
-            break;
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                if (selectedPreviewIdx + 1 >= queryPreviews.length) updateSelection(0);
+                else updateSelection(selectedPreviewIdx + 1);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+                if (selectedPreviewIdx - 1 < 0) updateSelection(queryPreviews.length - 1);
+                else updateSelection(selectedPreviewIdx - 1);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'PageDown':
+                const nextIdx = Math.min(selectedPreviewIdx + 10, queryPreviews.length - 1);
+                updateSelection(nextIdx);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'PageUp':
+                const prevIdx = Math.max(selectedPreviewIdx - 10, 0);
+                updateSelection(prevIdx);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'Home':
+                updateSelection(0);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
+            case 'End':
+                updateSelection(queryPreviews.length - 1);
+                e.stopPropagation();
+                e.preventDefault();
+                break;
         }
     });
 
@@ -741,7 +764,7 @@ export default async function ({addon, msg}) {
     const _doWorkspaceClick_ = Blockly.Gesture.prototype.doWorkspaceClick_;
     Blockly.Gesture.prototype.doWorkspaceClick_ = function () {
         if (this.mostRecentEvent_.button === 1 || this.mostRecentEvent_.shiftKey) openPopup();
-        mousePosition = {x: this.mostRecentEvent_.clientX, y: this.mostRecentEvent_.clientY};
+        mousePosition = { x: this.mostRecentEvent_.clientX, y: this.mostRecentEvent_.clientY };
         _doWorkspaceClick_.call(this);
     };
 
@@ -751,9 +774,9 @@ export default async function ({addon, msg}) {
         if (popupPosition) {
             if (
                 e.clientX > popupPosition.x &&
-        e.clientX < popupPosition.x + previewWidth &&
-        e.clientY > popupPosition.y &&
-        e.clientY < popupPosition.y + previewHeight
+                e.clientX < popupPosition.x + previewWidth &&
+                e.clientY > popupPosition.y &&
+                e.clientY < popupPosition.y + previewHeight
             ) {
                 return Blockly.DELETE_AREA_TOOLBOX;
             }
