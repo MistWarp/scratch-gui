@@ -16,10 +16,40 @@ export default class Dropdown {
         this.items = [];
         this.selected = null;
         this.carousel = new Carousel(utils);
+
+        this._cachedVariableUses = new Map();
+        this._cachedProcedureCalls = new Map();
+        this._cachedEventCalls = new Map();
+        this._cacheWorkspaceVersion = null;
     }
 
     get workspace () {
         return this.ScratchBlocks.getMainWorkspace();
+    }
+
+    _getWorkspaceVersion () {
+        const workspace = this.workspace;
+        if (!workspace) return null;
+        return workspace.id || (workspace.getAllBlocks && JSON.stringify(workspace.getAllBlocks().map(b => b.id)));
+    }
+
+    _shouldInvalidateCache () {
+        const currentVersion = this._getWorkspaceVersion();
+        if (currentVersion !== this._cacheWorkspaceVersion) {
+            this._cacheWorkspaceVersion = currentVersion;
+            this._cachedVariableUses.clear();
+            this._cachedProcedureCalls.clear();
+            this._cachedEventCalls.clear();
+            return true;
+        }
+        return false;
+    }
+
+    _invalidateCache () {
+        this._cachedVariableUses.clear();
+        this._cachedProcedureCalls.clear();
+        this._cachedEventCalls.clear();
+        this._cacheWorkspaceVersion = null;
     }
 
     createDom () {
@@ -224,6 +254,12 @@ export default class Dropdown {
     }
 
     getVariableUsesById (id) {
+        this._shouldInvalidateCache();
+
+        if (this._cachedVariableUses.has(id)) {
+            return this._cachedVariableUses.get(id);
+        }
+
         const uses = [];
         const topBlocks = this.workspace.getTopBlocks();
         for (const topBlock of topBlocks) {
@@ -239,10 +275,18 @@ export default class Dropdown {
                 }
             }
         }
+
+        this._cachedVariableUses.set(id, uses);
         return uses;
     }
 
     getCallsToProcedureById (id) {
+        this._shouldInvalidateCache();
+
+        if (this._cachedProcedureCalls.has(id)) {
+            return this._cachedProcedureCalls.get(id);
+        }
+
         const procBlock = this.workspace.getBlockById(id);
         const label = procBlock.getChildren()[0];
         const procCode = label.getProcCode();
@@ -260,10 +304,17 @@ export default class Dropdown {
             }
         }
 
+        this._cachedProcedureCalls.set(id, uses);
         return uses;
     }
 
     getCallsToEventsByName (name) {
+        this._shouldInvalidateCache();
+
+        if (this._cachedEventCalls.has(name)) {
+            return this._cachedEventCalls.get(name);
+        }
+
         const uses = [];
         const targets = this.vm.runtime.targets;
 
@@ -294,6 +345,7 @@ export default class Dropdown {
             }
         }
 
+        this._cachedEventCalls.set(name, uses);
         return uses;
     }
 
@@ -305,5 +357,9 @@ export default class Dropdown {
         }
         this.items = [];
         this.selected = null;
+        this._cachedVariableUses.clear();
+        this._cachedProcedureCalls.clear();
+        this._cachedEventCalls.clear();
+        this._cacheWorkspaceVersion = null;
     }
 }

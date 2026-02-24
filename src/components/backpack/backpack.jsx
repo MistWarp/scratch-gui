@@ -57,7 +57,9 @@ const Backpack = ({
     onResizePointerDown,
     onMouseEnter,
     onMouseLeave,
-    onMore
+    onMore,
+    searchQuery,
+    onSearchChange
 }) => (
     <div className={styles.backpackContainer}>
         {expanded ? (
@@ -99,69 +101,82 @@ const Backpack = ({
                 onMouseLeave={onMouseLeave}
                 style={height ? {height: `${height}px`} : null}
             >
-                {/* eslint-disable-next-line no-negated-condition */}
-                {error !== false ? (
-                    <div className={styles.statusMessage}>
-                        <FormattedMessage
-                            defaultMessage="Error loading backpack"
-                            description="Error backpack message"
-                            id="gui.backpack.errorBackpack"
-                        />
-                        <div className={styles.errorMessage}>{error}</div>
-                    </div>
-                ) : (
-                    loading ? (
+                <div className={styles.searchContainer}>
+                    <input
+                        className={styles.searchInput}
+                        placeholder={intl.formatMessage({
+                            id: 'gui.backpack.searchPlaceholder',
+                            defaultMessage: 'Search backpack...'
+                        })}
+                        value={searchQuery}
+                        onChange={e => onSearchChange(e.target.value)}
+                    />
+                </div>
+                <div className={styles.itemsScroller}>
+                    {/* eslint-disable-next-line no-negated-condition */}
+                    {error !== false ? (
                         <div className={styles.statusMessage}>
                             <FormattedMessage
-                                defaultMessage="Loading..."
-                                description="Loading backpack message"
-                                id="gui.backpack.loadingBackpack"
+                                defaultMessage="Error loading backpack"
+                                description="Error backpack message"
+                                id="gui.backpack.errorBackpack"
                             />
+                            <div className={styles.errorMessage}>{error}</div>
                         </div>
                     ) : (
-                        contents.length > 0 ? (
-                            <div className={styles.backpackListInner}>
-                                {contents.map(item => (
-                                    <SpriteSelectorItem
-                                        className={styles.backpackItem}
-                                        costumeURL={item.thumbnailUrl}
-                                        details={item.name}
-                                        dragPayload={item}
-                                        dragType={dragTypeMap[item.type]}
-                                        id={item.id}
-                                        key={item.id}
-                                        name={intl.formatMessage(labelMap[item.type])}
-                                        selected={false}
-                                        onClick={noop}
-                                        onDeleteButtonClick={onDelete}
-                                        // Currently, renaming sprites is not supported.
-                                        onRenameButtonClick={item.type === 'sprite' ? null : onRename}
-                                    />
-                                ))}
-                                {showMore && (
-                                    <button
-                                        className={styles.more}
-                                        onClick={onMore}
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="More"
-                                            description="Load more from backpack"
-                                            id="gui.backpack.more"
-                                        />
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
+                        loading ? (
                             <div className={styles.statusMessage}>
                                 <FormattedMessage
-                                    defaultMessage="Backpack is empty"
-                                    description="Empty backpack message"
-                                    id="gui.backpack.emptyBackpack"
+                                    defaultMessage="Loading..."
+                                    description="Loading backpack message"
+                                    id="gui.backpack.loadingBackpack"
                                 />
                             </div>
+                        ) : (
+                            contents.length > 0 ? (
+                                <div className={styles.backpackListInner}>
+                                    {contents.map(item => (
+                                        <SpriteSelectorItem
+                                            className={styles.backpackItem}
+                                            costumeURL={item.thumbnailUrl}
+                                            details={item.name}
+                                            dragPayload={item}
+                                            dragType={dragTypeMap[item.type]}
+                                            id={item.id}
+                                            key={item.id}
+                                            name={intl.formatMessage(labelMap[item.type])}
+                                            selected={false}
+                                            onClick={noop}
+                                            onDeleteButtonClick={onDelete}
+                                            // Currently, renaming sprites is not supported.
+                                            onRenameButtonClick={item.type === 'sprite' ? null : onRename}
+                                        />
+                                    ))}
+                                    {showMore && (
+                                        <button
+                                            className={styles.more}
+                                            onClick={onMore}
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="More"
+                                                description="Load more from backpack"
+                                                id="gui.backpack.more"
+                                            />
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className={styles.statusMessage}>
+                                    <FormattedMessage
+                                        defaultMessage="Backpack is empty"
+                                        description="Empty backpack message"
+                                        id="gui.backpack.emptyBackpack"
+                                    />
+                                </div>
+                            )
                         )
-                    )
-                )}
+                    )}
+                </div>
             </div>
         ) : null}
     </div>
@@ -182,6 +197,8 @@ Backpack.propTypes = {
     height: PropTypes.number,
     intl: intlShape,
     loading: PropTypes.bool,
+    searchQuery: PropTypes.string,
+    onSearchChange: PropTypes.func,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
     onResizePointerDown: PropTypes.func,
@@ -199,6 +216,8 @@ Backpack.defaultProps = {
     expanded: false,
     height: null,
     loading: false,
+    searchQuery: '',
+    onSearchChange: null,
     showMore: false,
     onMore: null,
     onResizePointerDown: null,

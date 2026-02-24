@@ -38,8 +38,8 @@ const SettingsMenu = ({
         <Palette size={20} />
         <span className={styles.dropdownLabel}>
             <FormattedMessage
-                defaultMessage="Theme"
-                description="Theme menu"
+                defaultMessage="View"
+                description="View menu"
                 id="gui.menuBar.theme"
             />
         </span>

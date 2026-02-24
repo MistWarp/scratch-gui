@@ -64,6 +64,7 @@
     position: relative;
     z-index: 2;
     pointer-events: auto;
+    opacity: 0;
 }
 
 .stage-pane-resizer::before {

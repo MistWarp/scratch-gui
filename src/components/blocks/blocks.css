@@ -25,10 +25,6 @@
     right: calc(var(--blocks-palette-width, 310px) - 4px);
 }
 
-.paletteResizer:hover {
-    background-color: $ui-black-transparent;
-}
-
 .drag-over:after {
     content: '';
     position: absolute;
