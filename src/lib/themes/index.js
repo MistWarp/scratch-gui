@@ -136,6 +136,10 @@ class Theme {
     getCustomExtensionColors () {
         return BLOCKS_MAP[this.blocks].customExtensionColors;
     }
+
+    getBlocksThemeId () {
+        return `${this.blocks}-${BLOCKS_MAP[this.blocks].blocksMediaFolder}`;
+    }
 }
 const keys = Object.keys(GUI_MAP);
 for (const key of keys) {

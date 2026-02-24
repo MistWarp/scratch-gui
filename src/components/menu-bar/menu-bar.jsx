@@ -46,8 +46,10 @@ import {
     openSettingsModal,
     openRestorePointModal,
     openGitModal,
-    openExtensionManagerModal
+    openExtensionManagerModal,
+    openSimpleDialog
 } from '../../reducers/modals';
+import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
 import {
@@ -135,7 +137,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -293,7 +295,10 @@ class MenuBar extends React.Component {
             'handleToggleWorkspaceBookmarkCategoryCollapsed',
             'handleExportWorkspaceBookmarks',
             'handleImportWorkspaceBookmarks',
-            'handleClearAllWorkspaceBookmarks'
+            'handleClearAllWorkspaceBookmarks',
+            'showAlert',
+            'showPrompt',
+            'showConfirm'
         ]);
     }
     componentDidMount () {
@@ -322,30 +327,43 @@ class MenuBar extends React.Component {
             }
         });
     }
-    componentDidUpdate (prevProps) {
-        // Restart countdown if autosave settings changed
-        if (prevProps.autosaveEnabled !== this.props.autosaveEnabled ||
-            prevProps.autosaveInterval !== this.props.autosaveInterval) {
-            this.startAutosaveCountdown();
-        }
-    }
-    componentWillUnmount () {
-        document.removeEventListener('keydown', this.handleKeyPress);
-        if (this.workspaceBookmarksProjectListener && this.props.vm && this.props.vm.runtime) {
-            this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
-        }
-        if (this.autosaveCountdownInterval) {
-            clearInterval(this.autosaveCountdownInterval);
-        }
-        if (this.undoRedoChangeListener) {
-            this.ensureScratchBlocks().then(ScratchBlocks => {
-                const workspace = ScratchBlocks.getMainWorkspace();
-                if (workspace) {
-                    workspace.removeChangeListener(this.undoRedoChangeListener);
-                }
+
+    showAlert (title, message) {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'alert',
+                title,
+                message,
+                onOk: () => resolve()
             });
-        }
+        });
     }
+
+    showPrompt (title, message, defaultValue = '') {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'prompt',
+                title,
+                message,
+                defaultValue,
+                onOk: value => resolve(value),
+                onCancel: () => resolve(null)
+            });
+        });
+    }
+
+    showConfirm (title, message) {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'confirm',
+                title,
+                message,
+                onOk: () => resolve(true),
+                onCancel: () => resolve(false)
+            });
+        });
+    }
+
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
         // but if they are not logged in and can't save, user should consider
@@ -586,18 +604,28 @@ class MenuBar extends React.Component {
         const enableCategories = true;
 
         if (this.state.workspaceBookmarks.length >= maxTabs) {
-            alert(this.props.intl.formatMessage({
-                defaultMessage: 'Maximum number of bookmarks reached ({max})',
-                description: 'Alert when too many bookmarks exist',
-                id: 'tw.workspaceBookmarks.maxReached'
-            }, {max: maxTabs}));
+            await this.showAlert(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Error',
+                    id: 'tw.workspaceBookmarks.errorTitle'
+                }),
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Maximum number of bookmarks reached ({max})',
+                    description: 'Alert when too many bookmarks exist',
+                    id: 'tw.workspaceBookmarks.maxReached'
+                }, {max: maxTabs})
+            );
             return;
         }
 
         const state = await this.getCurrentWorkspaceBookmarkState();
         if (!state) return;
 
-        const name = prompt(
+        const name = await this.showPrompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark Name',
+                id: 'tw.workspaceBookmarks.nameTitle'
+            }),
             this.props.intl.formatMessage({
                 defaultMessage: 'Bookmark name:',
                 description: 'Prompt title for bookmark name',
@@ -610,7 +638,11 @@ class MenuBar extends React.Component {
         let category = 'General';
         if (enableCategories) {
             const categoryList = this.state.workspaceBookmarksCategories.join(', ');
-            const categoryInput = prompt(
+            const categoryInput = await this.showPrompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Bookmark Category',
+                    id: 'tw.workspaceBookmarks.categoryTitle'
+                }),
                 this.props.intl.formatMessage({
                     defaultMessage: 'Category (existing: {categories})',
                     description: 'Prompt for bookmark category',
@@ -659,12 +691,16 @@ class MenuBar extends React.Component {
         });
     }
 
-    handleEditWorkspaceBookmark (index) {
+    async handleEditWorkspaceBookmark (index) {
         const enableCategories = true;
         if (index < 0 || index >= this.state.workspaceBookmarks.length) return;
         const bookmark = this.state.workspaceBookmarks[index];
 
-        const newName = prompt(
+        const newName = await this.showPrompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark Name',
+                id: 'tw.workspaceBookmarks.nameTitle'
+            }),
             this.props.intl.formatMessage({
                 defaultMessage: 'Bookmark name:',
                 description: 'Prompt title for bookmark name',
@@ -680,7 +716,11 @@ class MenuBar extends React.Component {
         let newCategory = bookmark.category || 'General';
         if (enableCategories) {
             const categoryList = this.state.workspaceBookmarksCategories.join(', ');
-            const categoryInput = prompt(
+            const categoryInput = await this.showPrompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Bookmark Category',
+                    id: 'tw.workspaceBookmarks.categoryTitle'
+                }),
                 this.props.intl.formatMessage({
                     defaultMessage: 'Category (existing: {categories})',
                     description: 'Prompt for bookmark category',
@@ -761,20 +801,32 @@ class MenuBar extends React.Component {
                             workspaceBookmarks: merged.bookmarks,
                             workspaceBookmarksCategories: merged.categories
                         };
-                    }, () => {
+                    }, async () => {
                         this.saveWorkspaceBookmarksToProject();
-                        alert(this.props.intl.formatMessage({
-                            defaultMessage: 'Successfully imported {count} bookmarks!',
-                            description: 'Alert after importing bookmarks',
-                            id: 'tw.workspaceBookmarks.importSuccess'
-                        }, {count: importCount}));
+                        await this.showAlert(
+                            this.props.intl.formatMessage({
+                                defaultMessage: 'Success',
+                                id: 'tw.workspaceBookmarks.importTitle'
+                            }),
+                            this.props.intl.formatMessage({
+                                defaultMessage: 'Successfully imported {count} bookmarks!',
+                                description: 'Alert after importing bookmarks',
+                                id: 'tw.workspaceBookmarks.importSuccess'
+                            }, {count: importCount})
+                        );
                     });
                 } catch {
-                    alert(this.props.intl.formatMessage({
-                        defaultMessage: 'Failed to import bookmarks. Please check the file format.',
-                        description: 'Alert when import fails',
-                        id: 'tw.workspaceBookmarks.importFailed'
-                    }));
+                    this.showAlert(
+                        this.props.intl.formatMessage({
+                            defaultMessage: 'Error',
+                            id: 'tw.workspaceBookmarks.importErrorTitle'
+                        }),
+                        this.props.intl.formatMessage({
+                            defaultMessage: 'Failed to import bookmarks. Please check the file format.',
+                            description: 'Alert when import fails',
+                            id: 'tw.workspaceBookmarks.importFailed'
+                        })
+                    );
                 }
             };
             reader.readAsText(file);
@@ -783,16 +835,22 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseWorkspaceBookmarks();
     }
 
-    handleClearAllWorkspaceBookmarks () {
+    async handleClearAllWorkspaceBookmarks () {
         if (this.state.workspaceBookmarks.length === 0) {
             this.props.onRequestCloseWorkspaceBookmarks();
             return;
         }
-        const ok = confirm(this.props.intl.formatMessage({
-            defaultMessage: 'Are you sure you want to delete all {count} bookmarks? This action cannot be undone.',
-            description: 'Confirmation when clearing bookmarks',
-            id: 'tw.workspaceBookmarks.clearAllConfirm'
-        }, {count: this.state.workspaceBookmarks.length}));
+        const ok = await this.showConfirm(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Confirm',
+                id: 'tw.workspaceBookmarks.clearTitle'
+            }),
+            this.props.intl.formatMessage({
+                defaultMessage: 'Are you sure you want to delete all {count} bookmarks? This action cannot be undone.',
+                description: 'Confirmation when clearing bookmarks',
+                id: 'tw.workspaceBookmarks.clearAllConfirm'
+            }, {count: this.state.workspaceBookmarks.length})
+        );
         if (!ok) {
             this.props.onRequestCloseWorkspaceBookmarks();
             return;
@@ -897,57 +955,13 @@ class MenuBar extends React.Component {
         }
     }
     showAutosaveNotification (message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `autosave-notification autosave-${type}`;
-        notification.textContent = message;
-
-        // Style the notification
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            backgroundColor: type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3',
-            color: 'white',
-            padding: '12px 20px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            zIndex: '10000',
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            maxWidth: '300px',
-            animation: 'slideInRight 0.3s ease-out'
-        });
-
-        // Add CSS for animation if not already present
-        if (!document.getElementById('autosave-notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'autosave-notification-styles';
-            style.textContent = `
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
+        // Use the toast notification system instead of manual DOM manipulation
+        if (this.props.showToast) {
+            this.props.showToast(message, type);
+        } else {
+            // Fallback to console if showToast is not available
+            console.log(`[${type.toUpperCase()}] ${message}`);
         }
-
-        // Add to page
-        document.body.appendChild(notification);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-in';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
     }
     formatTimeRemaining (seconds) {
         if (seconds <= 0) return '';
@@ -1578,6 +1592,21 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickShowTutorial();
+                                            this.props.onRequestCloseEdit();
+                                        }}
+                                    >
+                                        <Sparkles />
+                                        <FormattedMessage
+                                            defaultMessage="Show Tutorial"
+                                            description="Menu bar item to show the tutorial"
+                                            id="tw.menuBar.showTutorial"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
                         {this.props.isTotallyNormal && (
@@ -1880,6 +1909,8 @@ MenuBar.propTypes = {
     onClickRestorePoints: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
+    openSimpleDialog: PropTypes.func.isRequired,
+    showToast: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickEditor: PropTypes.func,
     onClickFile: PropTypes.func,
@@ -1895,6 +1926,7 @@ MenuBar.propTypes = {
     onClickPreferencesModal: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
+    onClickShowTutorial: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
@@ -2008,13 +2040,17 @@ const mapDispatchToProps = dispatch => ({
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickSettings: () => dispatch(openSettingsMenu()),
-    onClickSettingsModal: () => {
+     onClickSettingsModal: () => {
         dispatch(closeEditMenu());
         dispatch(openSettingsModal());
     },
     onClickGitModal: () => {
         dispatch(closeEditMenu());
         dispatch(openGitModal());
+    },
+    onClickShowTutorial: () => {
+        localStorage.removeItem('mw:has-seen-onboarding');
+        dispatch(showOnboarding());
     },
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),

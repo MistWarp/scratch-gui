@@ -15,7 +15,6 @@ import {
 } from '../../reducers/project-state';
 import {
     setCollaborationRoomId,
-    setCollaborationConnected,
     openCollaborationModal
 } from '../../reducers/collaboration.js';
 import {
@@ -324,34 +323,40 @@ const TWStateManager = function (WrappedComponent) {
                 }
             }
 
-            if (urlParams.has('hqpen')) {
+            if (urlParams.has('hqpen') && this.props.vm && this.props.vm.renderer) {
                 this.props.vm.renderer.setUseHighQualityRender(true);
             }
 
-            if (urlParams.has('turbo')) {
+            if (urlParams.has('turbo') && this.props.vm) {
                 this.props.vm.setTurboMode(true);
             }
 
             if (urlParams.has('stuck') || urlParams.has('warp_timer')) {
-                this.props.vm.setCompilerOptions({
-                    warpTimer: true
-                });
+                if (this.props.vm) {
+                    this.props.vm.setCompilerOptions({
+                        warpTimer: true
+                    });
+                }
             }
 
             if (urlParams.has('nocompile')) {
-                this.props.vm.setCompilerOptions({
-                    enabled: false
-                });
+                if (this.props.vm) {
+                    this.props.vm.setCompilerOptions({
+                        enabled: false
+                    });
+                }
             }
 
             if (urlParams.has('clones')) {
-                const clones = +urlParams.get('clones');
-                if (Number.isNaN(clones) || clones < 0) {
-                    alert(this.props.intl.formatMessage(messages.invalidClones));
-                } else {
-                    this.props.vm.setRuntimeOptions({
-                        maxClones: clones
-                    });
+                if (this.props.vm) {
+                    const clones = +urlParams.get('clones');
+                    if (Number.isNaN(clones) || clones < 0) {
+                        alert(this.props.intl.formatMessage(messages.invalidClones));
+                    } else {
+                        this.props.vm.setRuntimeOptions({
+                            maxClones: clones
+                        });
+                    }
                 }
             }
 
@@ -537,7 +542,13 @@ const TWStateManager = function (WrappedComponent) {
                 return true;
             }
             if (this.props.projectChanged) {
-                if (!window.confirm('Are you sure you want to switch project?')) {
+                let confirmed = false;
+                if (this.props.confirmWithMessage) {
+                    confirmed = this.props.confirmWithMessage('Are you sure you want to switch project?');
+                } else {
+                    confirmed = window.confirm('Are you sure you want to switch project?');
+                }
+                if (!confirmed) {
                     return false;
                 }
             }
@@ -628,6 +639,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetUsername: PropTypes.func,
         onSetCollaborationRoomId: PropTypes.func,
         onOpenCollaborationModal: PropTypes.func,
+        confirmWithMessage: PropTypes.func,
         reduxProjectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         routingStyle: PropTypes.oneOf(Object.keys(routers)),
         username: PropTypes.string,

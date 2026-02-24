@@ -1,0 +1,211 @@
+@import "../../css/colors.css";
+
+:global(.mw-onboarding-content) {
+    padding: 24px 20px 20px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 100%;
+}
+
+:global(.mw-onboarding-icon) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px auto;
+    background: var(--looks-secondary);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px var(--ui-black-transparent);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px var(--ui-black-transparent);
+    }
+    50% {
+        box-shadow: 0 4px 16px var(--ui-black-transparent);
+    }
+}
+
+:global(.mw-onboarding-icon) svg {
+    color: var(--ui-white);
+}
+
+:global(.mw-onboarding-title) {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    text-align: center;
+    color: inherit;
+}
+
+:global(.mw-onboarding-description) {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+    text-align: center;
+    color: inherit;
+    opacity: 0.9;
+}
+
+:global(.mw-onboarding-steps) {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+:global(.mw-onboarding-step-dot) {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--ui-black-transparent);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+    :global(.mw-onboarding-step-dot) {
+        background-color: var(--ui-white-transparent);
+    }
+}
+
+:global(.mw-onboarding-step-dot.active) {
+    background-color: var(--looks-secondary);
+    transform: scale(1.3);
+}
+
+:global(.mw-onboarding-buttons) {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 12px;
+    margin-top: auto;
+}
+
+:global(.mw-onboarding-button) {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+}
+
+:global(.mw-onboarding-button-primary) {
+    background-color: var(--looks-secondary);
+    color: var(--ui-white);
+}
+
+:global(.mw-onboarding-button-primary):hover {
+    opacity: 0.85;
+}
+
+:global(.mw-onboarding-button-primary):active {
+    opacity: 0.7;
+}
+
+:global(.mw-onboarding-button-secondary) {
+    background-color: var(--ui-transparent);
+    color: var(--looks-secondary);
+    border: 1px solid var(--looks-secondary);
+}
+
+:global(.mw-onboarding-button-secondary):hover {
+    background-color: var(--looks-light-transparent);
+}
+
+:global(.mw-onboarding-button-secondary):active {
+    background-color: var(--looks-light-transparent);
+    opacity: 0.8;
+}
+
+:global(.mw-onboarding-skip-text) {
+    font-size: 13px;
+    color: var(--text-primary-transparent);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 8px;
+    user-select: none;
+}
+
+:global(.mw-onboarding-skip-text):hover {
+    color: var(--looks-secondary);
+}
+
+:global(.mw-onboarding-content) {
+    animation: contentFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes contentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:global(.mw-onboarding-steps) {
+    animation: stepsFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes stepsFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:global(.mw-onboarding-buttons) {
+    animation: buttonsFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes buttonsFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 320px) {
+    :global(.mw-onboarding-content) {
+        padding: 20px 16px 16px 16px;
+    }
+
+    :global(.mw-onboarding-title) {
+        font-size: 16px;
+    }
+
+    :global(.mw-onboarding-description) {
+        font-size: 13px;
+    }
+
+    :global(.mw-onboarding-button) {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
