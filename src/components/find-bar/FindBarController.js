@@ -41,10 +41,59 @@ export default class FindBarController {
 
         this._onDocumentKeyDown = e => this.eventKeyDown(e);
         document.addEventListener('keydown', this._onDocumentKeyDown, true);
+
+        this._cachedScratchBlocks = null;
+        this._cachedScratchCostumes = null;
+        this._cachedScratchSounds = null;
+        this._lastWorkspaceVersion = null;
+        this._debounceTimer = null;
+        this._workspaceChangeListener = null;
     }
 
     get workspace () {
         return this.ScratchBlocks.getMainWorkspace();
+    }
+
+    _debounce (func, delay) {
+        if (this._debounceTimer) {
+            clearTimeout(this._debounceTimer);
+        }
+        this._debounceTimer = setTimeout(func, delay);
+    }
+
+    _invalidateCache () {
+        this._cachedScratchBlocks = null;
+        this._cachedScratchCostumes = null;
+        this._cachedScratchSounds = null;
+        this._lastWorkspaceVersion = null;
+    }
+
+    _getWorkspaceVersion () {
+        const workspace = this.workspace;
+        if (!workspace) return null;
+        return workspace.id || (workspace.getAllBlocks && workspace.getAllBlocks().length);
+    }
+
+    _setupWorkspaceListener () {
+        if (this._workspaceChangeListener) return;
+
+        this._workspaceChangeListener = () => {
+            this._invalidateCache();
+            this.dropdown.empty();
+        };
+
+        const workspace = this.workspace;
+        if (workspace && workspace.addChangeListener) {
+            workspace.addChangeListener(this._workspaceChangeListener);
+        }
+    }
+
+    _removeWorkspaceListener () {
+        const workspace = this.workspace;
+        if (workspace && workspace.removeChangeListener && this._workspaceChangeListener) {
+            workspace.removeChangeListener(this._workspaceChangeListener);
+        }
+        this._workspaceChangeListener = null;
     }
 
     createDom (root) {
@@ -116,11 +165,17 @@ export default class FindBarController {
         this.searchStats.className = 'sa-find-stats';
 
         this.bindEvents();
+        this._setupWorkspaceListener();
         this.tabChanged();
     }
 
     destroy () {
         document.removeEventListener('keydown', this._onDocumentKeyDown, true);
+        this._removeWorkspaceListener();
+        if (this._debounceTimer) {
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = null;
+        }
         if (this.findBarOuter) {
             this.findBarOuter.remove();
             this.findBarOuter = null;
@@ -134,10 +189,10 @@ export default class FindBarController {
     bindEvents () {
         this.findInput.addEventListener('focus', () => {
             this.updateModifierVisibility();
+            this.showDropDown();
             if (this.findInput.value) {
-                this.inputChange();
+                this.inputChange({skipDebounce: true});
             } else {
-                this.showDropDown();
                 this.showAllItems();
             }
         });
@@ -171,6 +226,10 @@ export default class FindBarController {
         const tab = this.activeTabIndexRef.current;
         const visible = tab === 0 || tab === 1 || tab === 2;
         this.findBarOuter.hidden = !visible;
+        if (!visible) {
+            this._invalidateCache();
+            this.dropdown.empty();
+        }
     }
 
     clearChildren (element) {
@@ -258,24 +317,34 @@ export default class FindBarController {
         return null;
     }
 
-    inputChange () {
+    inputChange (options = {}) {
         if (!this.findInput.value) {
-            this.showDropDown();
             this.showAllItems();
             return;
         }
 
-        this.showDropDown();
-
         const val = this.findInput.value;
         const searchVal = this.isCaseSensitive ? val : val.toLowerCase();
 
-        if (searchVal === this.prevValue) {
-            return;
-        }
-        this.prevValue = searchVal;
+        const performSearch = () => {
+            if (searchVal === this.prevValue) {
+                return;
+            }
+            this._performSearch(searchVal, val);
+        };
 
-        const regex = this.getSearchRegex(val);
+        if (options.skipDebounce) {
+            performSearch();
+        } else {
+            this._debounce(performSearch, 20);
+        }
+    }
+
+    _performSearch (searchVal, originalVal) {
+        this.prevValue = searchVal;
+        this.showDropDown();
+
+        const regex = this.getSearchRegex(originalVal);
 
         const listLI = this.dropdown.items;
 
@@ -311,6 +380,7 @@ export default class FindBarController {
     }
 
     showAllItems () {
+        this.showDropDown();
         const listLI = this.dropdown.items;
 
         for (const li of listLI) {
@@ -422,7 +492,8 @@ export default class FindBarController {
     }
 
     showDropDown (focusID, instanceBlock) {
-        if (!focusID && this.dropdownOut.classList.contains('visible') && this.findInput.value) {
+        const hasValue = this.findInput.value && this.dropdown.items.length > 0;
+        if (!focusID && this.dropdownOut.classList.contains('visible') && hasValue) {
             return;
         }
 
@@ -431,15 +502,34 @@ export default class FindBarController {
         this.dropdownOut.classList.add('visible');
 
         let scratchBlocks;
-        switch (this.activeTabIndexRef.current) {
+        const tabIndex = this.activeTabIndexRef.current;
+        const workspaceVersion = this._getWorkspaceVersion();
+
+        switch (tabIndex) {
         case 0:
-            scratchBlocks = this.getScratchBlocks();
+            if (this._cachedScratchBlocks && this._lastWorkspaceVersion === workspaceVersion) {
+                scratchBlocks = this._cachedScratchBlocks;
+            } else {
+                scratchBlocks = this.getScratchBlocks();
+                this._cachedScratchBlocks = scratchBlocks;
+                this._lastWorkspaceVersion = workspaceVersion;
+            }
             break;
         case 1:
-            scratchBlocks = this.getScratchCostumes();
+            if (this._cachedScratchCostumes) {
+                scratchBlocks = this._cachedScratchCostumes;
+            } else {
+                scratchBlocks = this.getScratchCostumes();
+                this._cachedScratchCostumes = scratchBlocks;
+            }
             break;
         case 2:
-            scratchBlocks = this.getScratchSounds();
+            if (this._cachedScratchSounds) {
+                scratchBlocks = this._cachedScratchSounds;
+            } else {
+                scratchBlocks = this.getScratchSounds();
+                this._cachedScratchSounds = scratchBlocks;
+            }
             break;
         default:
             scratchBlocks = [];
@@ -582,8 +672,55 @@ export default class FindBarController {
             }
         }
 
-        const blocks = this.workspace.getAllBlocks().filter(v => !v.isShadow_);
-        for (const block of blocks) {
+        const allBlocks = this.workspace.getAllBlocks();
+        const nonShadowBlocks = new Set();
+        const textInputsByBlockId = new Map();
+
+        const isTextInputField = field => {
+            if (!field || typeof field.getText !== 'function') return false;
+            if (this.ScratchBlocks.FieldTextInput && field instanceof this.ScratchBlocks.FieldTextInput) return true;
+            if (this.ScratchBlocks.FieldNumber && field instanceof this.ScratchBlocks.FieldNumber) return true;
+            const ctorName = field.constructor && field.constructor.name;
+            return ctorName === 'FieldTextInput' || ctorName === 'FieldNumber' || ctorName === 'FieldAngle';
+        };
+
+        const collectTextInputsFromBlock = block => {
+            const inputList = block.inputList;
+            if (!inputList) return [];
+
+            const values = [];
+            for (const input of inputList) {
+                const fieldRow = input.fieldRow;
+                if (!fieldRow) continue;
+                for (const field of fieldRow) {
+                    if (!isTextInputField(field)) continue;
+                    const text = String(field.getText()).trim();
+                    if (text) values.push(text);
+                }
+            }
+            return values;
+        };
+
+        for (const block of allBlocks) {
+            if (!block) continue;
+            if (!block.isShadow_) {
+                nonShadowBlocks.add(block);
+            }
+
+            if (block.id) {
+                const values = collectTextInputsFromBlock(block);
+                if (values.length > 0) {
+                    let entry = textInputsByBlockId.get(block.id);
+                    if (!entry) {
+                        entry = {block, values: new Set()};
+                        textInputsByBlockId.set(block.id, entry);
+                    }
+                    for (const value of values) entry.values.add(value);
+                }
+            }
+        }
+
+        for (const block of nonShadowBlocks) {
             const blockType = block.type;
             if (
                 !blockType.startsWith('data_') &&
@@ -620,48 +757,6 @@ export default class FindBarController {
         const events = this.getCallsToEvents();
         for (const event of events) {
             addBlock('receive', this.msg('event', {name: event.eventName}), event.block).eventName = event.eventName;
-        }
-
-        const textInputsByBlockId = new Map();
-
-        const isTextInputField = field => {
-            if (!field || typeof field.getText !== 'function') return false;
-            if (this.ScratchBlocks.FieldTextInput && field instanceof this.ScratchBlocks.FieldTextInput) return true;
-            if (this.ScratchBlocks.FieldNumber && field instanceof this.ScratchBlocks.FieldNumber) return true;
-            const ctorName = field.constructor && field.constructor.name;
-            return ctorName === 'FieldTextInput' || ctorName === 'FieldNumber' || ctorName === 'FieldAngle';
-        };
-
-        const collectTextInputsFromBlock = block => {
-            const inputList = block.inputList;
-            if (!inputList) return [];
-
-            const values = [];
-            for (const input of inputList) {
-                const fieldRow = input.fieldRow;
-                if (!fieldRow) continue;
-                for (const field of fieldRow) {
-                    if (!isTextInputField(field)) continue;
-                    const text = String(field.getText()).trim();
-                    if (text) values.push(text);
-                }
-            }
-            return values;
-        };
-
-        const allBlocksIncludingShadows = this.workspace.getAllBlocks();
-        for (const block of allBlocksIncludingShadows) {
-            if (!block || !block.id) continue;
-
-            const values = collectTextInputsFromBlock(block);
-            if (values.length === 0) continue;
-
-            let entry = textInputsByBlockId.get(block.id);
-            if (!entry) {
-                entry = {block, values: new Set()};
-                textInputsByBlockId.set(block.id, entry);
-            }
-            for (const value of values) entry.values.add(value);
         }
 
         for (const {block, values} of textInputsByBlockId.values()) {

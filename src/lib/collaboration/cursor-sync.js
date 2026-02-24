@@ -38,7 +38,6 @@ const setupCursorLayer = service => {
     chatInput.style.minWidth = '120px';
     chatInput.style.transform = 'translate(15px, -15px)';
 
-    chatInput.addEventListener('keydown', e => e.stopPropagation());
     chatInput.addEventListener('mousedown', e => e.stopPropagation());
 
     chatInput.addEventListener('input', e => {
@@ -50,6 +49,7 @@ const setupCursorLayer = service => {
     });
 
     chatInput.addEventListener('keydown', e => {
+        e.stopPropagation();
         if (e.key === 'Enter' || e.key === 'Escape') {
             chatInput.blur();
         }
@@ -335,15 +335,29 @@ const bindViewportSyncListeners = service => {
     if (!svg) return;
     const container = svg.parentNode;
     if (!container) return;
+
+    const sendLocalCursorPosition = () => {
+        if (!service._lastCursorOverlay || !service.workspace) return;
+        const metrics = service.workspace.getMetrics();
+        const scale = service.workspace.scale || 1;
+        const {x, y} = service._lastCursorOverlay;
+        const wX = metrics ? (metrics.viewLeft + x) / scale : x;
+        const wY = metrics ? (metrics.viewTop + y) / scale : y;
+
+        const localTarget = service.vm && service.vm.editingTarget ? service.vm.editingTarget : null;
+        const targetName = localTarget ? localTarget.getName() : null;
+        const isStage = localTarget ? localTarget.isStage : false;
+
+        service.sendMessage('cursor-move', {x: wX, y: wY, targetName, isStage});
+    };
+
     service._onViewportWheel = () => {
         updateAllRemoteCursorPositions(service);
-        if (!service.workspace) return;
-
+        sendLocalCursorPosition();
     };
     service._onWorkspaceChangeForCursor = () => {
         updateAllRemoteCursorPositions(service);
-        if (!service.workspace) return;
-
+        sendLocalCursorPosition();
     };
     container.addEventListener('wheel', service._onViewportWheel, {passive: true});
     service.workspace.addChangeListener(service._onWorkspaceChangeForCursor);

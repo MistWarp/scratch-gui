@@ -11,7 +11,7 @@ const createReconnectHandler = service => {
         };
     }
 
-    service._handleConnectionLost = reason => {
+    service._handleConnectionLost = /* eslint-disable-line no-unused-vars */ reason => {
         if (service.isDisconnecting || (service._isShuttingDown && service._isShuttingDown())) {
             return;
         }
@@ -45,7 +45,8 @@ const createReconnectHandler = service => {
             state.isReconnecting = false;
             service.disconnect();
             service.emit('connection-failed', {
-                error: 'Unable to establish a stable connection after multiple attempts. Please check your network connection and try again.'
+                error: 'Unable to establish a stable connection after ' +
+                    'multiple attempts. Please check your network connection and try again.'
             });
             return;
         }
@@ -77,7 +78,8 @@ const createReconnectHandler = service => {
                         state.isReconnecting = false;
                         service.disconnect();
                         service.emit('connection-failed', {
-                            error: 'Connection unstable after multiple reconnection attempts. Please refresh the page and try again.'
+                            error: 'Connection unstable after multiple reconnection ' +
+                                'attempts. Please refresh the page and try again.'
                         });
                     }
                 }

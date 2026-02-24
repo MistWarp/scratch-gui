@@ -102,9 +102,12 @@ class CollaborationService {
         this._lastReceivedSyncSequence = -1;
         this.userEditingTargets = new Map();
         this._activeSyncDirection = null;
+        this._syncRequestedOnApproval = false;
         this._syncRequestTimer = null;
         this._syncRequestCooldown = 2000;
         this._suppressionClearTimer = null;
+        this._lastHostSyncRequestHandledAt = 0;
+        this._hostSyncRequestCooldownMs = 1000;
         this._state = 'IDLE';
         this._cleanupInterval = setInterval(() => {
             if (this.seenEventIds.size > 100) {
@@ -295,7 +298,7 @@ class CollaborationService {
             }
 
             const progressHandler = (finished, total) => {
-                if (service.isHost && service.isConnected && !isSyncLoad && total > 0) {
+                if (service.isHost && service.isConnected && total > 0) {
                     const progress = Math.round((finished / total) * 100);
                     service.sendMessage('host-loading-progress', {progress, finished, total});
                 }

@@ -836,7 +836,6 @@ const handleAssetEvent = (service, payload, conn) => {
                         ctx.drawImage(img, 0, 0);
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-                        service.isApplyingRemoteChange = true;
                         service.vm.updateBitmap(
                             payload.costumeIndex,
                             imageData,
@@ -844,9 +843,6 @@ const handleAssetEvent = (service, payload, conn) => {
                             payload.rotationCenterY,
                             payload.bitmapResolution || 2
                         );
-                        setTimeout(() => {
-                            service.isApplyingRemoteChange = false;
-                        }, 50);
                     };
                     img.src = payload.bitmapData;
                     return;
@@ -863,16 +859,12 @@ const handleAssetEvent = (service, payload, conn) => {
                     }
 
                     if (payload.isVector && payload.svg) {
-                        service.isApplyingRemoteChange = true;
                         service.vm.updateSvg(
                             payload.costumeIndex,
                             payload.svg,
                             payload.rotationCenterX,
                             payload.rotationCenterY
                         );
-                        setTimeout(() => {
-                            service.isApplyingRemoteChange = false;
-                        }, 50);
                     } else if (!payload.isVector && payload.bitmapData) {
                         const img = new Image();
                         img.onload = () => {
@@ -883,7 +875,6 @@ const handleAssetEvent = (service, payload, conn) => {
                             ctx.drawImage(img, 0, 0);
                             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-                            service.isApplyingRemoteChange = true;
                             service.vm.updateBitmap(
                                 payload.costumeIndex,
                                 imageData,
@@ -891,9 +882,6 @@ const handleAssetEvent = (service, payload, conn) => {
                                 payload.rotationCenterY,
                                 2
                             );
-                            setTimeout(() => {
-                                service.isApplyingRemoteChange = false;
-                            }, 50);
                         };
                         img.src = payload.bitmapData;
                     }

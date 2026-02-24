@@ -3,6 +3,7 @@ import {
 } from './stream-utils.js';
 
 const SYNC_COOLDOWN_MS = 5000;
+const CHUNK_SIZE = 65536;
 
 let _syncPendingPromise = null;
 
@@ -122,19 +123,44 @@ const sendProjectSync = async (service, conn) => {
                     stageHeight,
                     syncTimestamp: service.lastSyncTime,
                     syncSequence: syncState.sequence,
-                    format: 'sb3'
+                    format: 'sb3',
+                    includeChunking: true
                 }, conn);
 
                 if (service.connections.size === 0) {
                     return true;
                 }
 
-                service.sendMessage('project-stream-data', {
-                    sequence: 0,
-                    data: Array.from(allData),
-                    syncTimestamp: service.lastSyncTime,
-                    syncSequence: syncState.sequence
-                }, conn);
+                const totalChunks = Math.ceil(size / CHUNK_SIZE);
+                let bytesSent = 0;
+
+                for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                    const startByte = chunkIndex * CHUNK_SIZE;
+                    const endByte = Math.min(startByte + CHUNK_SIZE, size);
+                    const chunkLength = endByte - startByte;
+                    const chunkData = allData.subarray(startByte, endByte);
+
+                    const payload = {
+                        sequence: chunkIndex,
+                        data: Array.from(chunkData),
+                        syncTimestamp: service.lastSyncTime,
+                        syncSequence: syncState.sequence,
+                        isLastChunk: chunkIndex === totalChunks - 1
+                    };
+
+                    service.sendMessage('project-stream-data', payload, conn);
+
+                    bytesSent += chunkLength;
+                    const progress = Math.round((bytesSent / size) * 100);
+
+                    service.emit('project-sync-upload-progress', {
+                        progress,
+                        sentBytes: bytesSent,
+                        totalSize: size,
+                        chunksCompleted: chunkIndex + 1,
+                        totalChunks
+                    });
+                }
 
                 service.sendMessage('project-stream-end', {
                     totalSent: size,
@@ -142,14 +168,6 @@ const sendProjectSync = async (service, conn) => {
                     syncTimestamp: service.lastSyncTime,
                     syncSequence: syncState.sequence
                 }, conn);
-
-                service.emit('project-sync-upload-progress', {
-                    progress: 100,
-                    sentBytes: size,
-                    totalSize: size,
-                    chunksCompleted: 1,
-                    totalChunks: 1
-                });
 
                 return true;
 
@@ -200,6 +218,21 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
         service.detachFromWorkspace();
     }
 
+    const progressHandler = (finished, total) => {
+        if (total > 0) {
+            const progress = Math.round((finished / total) * 100);
+            const finishedMB = Math.round((finished / 1024 / 1024 * 10)) / 10;
+            const totalMB = Math.round((total / 1024 / 1024 * 10)) / 10;
+            service.emit('project-sync-download-progress', {
+                phase: 'loading',
+                progress: Math.min(90, progress),
+                message: `Loading ${finishedMB}M / ${totalMB}M...`
+            });
+        }
+    };
+
+    service.vm.on('ASSET_PROGRESS', progressHandler);
+
     let loadPromise;
 
     if (format === 'sb3') {
@@ -216,15 +249,11 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
     }
 
     loadPromise.then(async () => {
+        service.vm.off('ASSET_PROGRESS', progressHandler);
 
         if (stageWidth && stageHeight && service.vm.setStageSize) {
             service.vm.setStageSize(stageWidth, stageHeight);
         }
-
-        service.emit('project-sync-download-progress', {progress: 100});
-        setTimeout(() => {
-            service.emit('project-sync-download-complete');
-        }, 200);
 
         if (loadedExtensions && loadedExtensions.length > 0) {
             for (const extId of loadedExtensions) {
@@ -238,7 +267,8 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
                         } else {
                             try {
                                 service.vm.extensionManager.loadExtensionIdSync(extId);
-                            } catch (e) {
+                            } catch (e2) {
+                                console.warn(`[Stream Sync] Failed to load extension ${extId} (fallback):`, e2);
                             }
                         }
                     } catch (error) {
@@ -258,11 +288,24 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
                             currentKeys.splice(currentIndex, 1);
                             currentKeys.splice(targetIndex, 0, extId);
                         } catch (e) {
+                            console.warn(`[Stream Sync] Failed to reorder extension ${extId}:`, e);
                         }
                     }
                 }
             }
+
+            service.emit('project-sync-download-progress', {
+                phase: 'extensions',
+                progress: 95,
+                message: 'Loading extensions...'
+            });
+        } else {
+            service.emit('project-sync-download-progress', {progress: 100});
         }
+
+        setTimeout(() => {
+            service.emit('project-sync-download-complete');
+        }, 200);
 
         if (format !== 'sb3' && targetInfo) {
             const newTargetMapping = {};
@@ -329,6 +372,7 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
         service.emit('session-ready');
         service.isLoadingProject = false;
     }).catch(error => {
+        service.vm.off('ASSET_PROGRESS', progressHandler);
         console.error('[Stream Sync] Failed to load project:', error);
         service.isApplyingRemoteChange = false;
         service.isSyncOperation = false;
@@ -415,7 +459,7 @@ const handleProjectStreamStart = (service, payload) => {
 
         service.emit('project-sync-download-start', {
             totalSize: payload.totalSize,
-            totalChunks: 1
+            totalChunks: payload.includeChunking ? Math.ceil(payload.totalSize / 65536) : 1
         });
     }
 };
@@ -424,7 +468,10 @@ const handleProjectStreamStart = (service, payload) => {
 const handleProjectStreamData = (service, payload) => {
     if (!service.isHost && service.vm && service.streamProcessor) {
         try {
-            service.streamProcessor.processChunk(payload.data);
+            const data = payload.data;
+            if (Array.isArray(data) && data.length > 0) {
+                service.streamProcessor.processChunk(data);
+            }
         } catch (error) {
             console.error('[Stream Sync] Failed to process stream data:', error);
             service.emit('sync-failed', {error: 'Failed to process stream data'});

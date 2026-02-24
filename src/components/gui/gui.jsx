@@ -518,9 +518,11 @@ const GUIComponent = props => {
     ]);
 
     const minDimensions = useMemo(() => ({
-        minWidth: 1024 + Math.max(0, customStageSize.width - 480),
+        minWidth: typeof stagePanelWidth === 'number' ?
+            MIN_EDITOR_PANE_WIDTH + stagePanelWidth + 6 + 16 :
+            1024 + Math.max(0, customStageSize.width - 480),
         minHeight: 640 + Math.max(0, customStageSize.height - 360)
-    }), [customStageSize.width, customStageSize.height]);
+    }), [customStageSize.width, customStageSize.height, stagePanelWidth]);
 
     const stagePanelStyle = useMemo(() => {
         if (!stagePanelWidth) return null;
