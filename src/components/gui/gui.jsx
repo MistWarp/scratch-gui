@@ -44,14 +44,17 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
+import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
+import Onboarding from '../../containers/onboarding.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
+import {showOnboarding} from '../../reducers/onboarding';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -456,6 +459,8 @@ const GUIComponent = props => {
         telemetryModalVisible,
         theme,
         tipsLibraryVisible,
+        onOpenOnboarding,
+        onboardingVisible,
         usernameModalVisible,
         settingsModalVisible,
         customExtensionModalVisible,
@@ -469,6 +474,16 @@ const GUIComponent = props => {
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
+
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem('mw:has-seen-onboarding');
+        if (!hasSeenOnboarding && !isEmbedded && !isPlayerOnly && typeof onOpenOnboarding === 'function') {
+            const timer = setTimeout(() => {
+                onOpenOnboarding();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
 
     const tabClassNames = useMemo(() => ({
         tabs: styles.tabs,
@@ -504,6 +519,8 @@ const GUIComponent = props => {
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
+            <SimpleDialog />
+            {onboardingVisible && <Onboarding />}
         </React.Fragment>
     ), [
         securityManager,
@@ -514,7 +531,8 @@ const GUIComponent = props => {
         fontsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
-        gitModalVisible
+        gitModalVisible,
+        onboardingVisible
     ]);
 
     const minDimensions = useMemo(() => ({
@@ -727,7 +745,7 @@ const GUIComponent = props => {
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
                                         <Blocks
-                                            key={`${blocksId}/${theme.id}`}
+                                            key={`${blocksId}/${theme.getBlocksThemeId()}`}
                                             canUseCloud={canUseCloud}
                                             grow={1}
                                             isVisible={blocksTabVisible}
@@ -902,6 +920,8 @@ GUIComponent.propTypes = {
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.instanceOf(Theme),
     tipsLibraryVisible: PropTypes.bool,
+    onOpenOnboarding: PropTypes.func,
+    onboardingVisible: PropTypes.bool,
     usernameModalVisible: PropTypes.bool,
     settingsModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
@@ -941,11 +961,13 @@ const mapStateToProps = state => ({
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
     theme: state.scratchGui.theme.theme,
-    locale: state.locales.locale
+    locale: state.locales.locale,
+    onboardingVisible: state.scratchGui.onboarding.visible
 });
 
 const mapDispatchToProps = dispatch => ({
-    onSetStageSize: stageSize => dispatch(setStageSize(stageSize))
+    onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
+    onOpenOnboarding: () => dispatch(showOnboarding())
 });
 
 export default injectIntl(connect(

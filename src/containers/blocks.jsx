@@ -142,6 +142,7 @@ class Blocks extends React.Component {
 
         this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
+        this.updateBlockColors = this.updateBlockColors.bind(this);
 
         this.handlePaletteHoverEnter = this.handlePaletteHoverEnter.bind(this);
         this.handlePaletteHoverLeave = this.handlePaletteHoverLeave.bind(this);
@@ -304,10 +305,16 @@ class Blocks extends React.Component {
             this.props.locale !== nextProps.locale ||
             this.props.anyModalVisible !== nextProps.anyModalVisible ||
             this.props.stageSize !== nextProps.stageSize ||
-            this.props.customStageSize !== nextProps.customStageSize
+            this.props.customStageSize !== nextProps.customStageSize ||
+            this.props.theme !== nextProps.theme
         );
     }
     componentDidUpdate (prevProps) {
+        // Update block colors when theme changes but media folder stays the same
+        if (this.props.theme !== prevProps.theme) {
+            this.updateBlockColors(this.props.theme);
+        }
+
         // If any modals are open, call hideChaff to close z-indexed field editors
         if (this.props.anyModalVisible && !prevProps.anyModalVisible) {
             this.ScratchBlocks.hideChaff();
@@ -336,16 +343,16 @@ class Blocks extends React.Component {
             // Set workspace visibility with performance optimization
             if (this.workspace) {
                 this.workspace.setVisible(true);
-                
+
                 // Check for pending procedure returns request
                 if (this.props.vm && this.props.vm._pendingProcedureReturns) {
                     console.log('Blocks: Detected pending procedure returns request, enabling...');
                     this.props.vm._pendingProcedureReturns = false;
-                    
+
                     // Enable procedure returns after workspace is ready
                     setTimeout(() => {
                         this.handleEnableProcedureReturns();
-                        
+
                         // Also handle pending category selection
                         if (this.props.vm._pendingCategorySelection) {
                             const categoryId = this.props.vm._pendingCategorySelection;
@@ -692,6 +699,34 @@ class Blocks extends React.Component {
                     this.workspace.getFlyout().setRecyclingEnabled(true);
                 });
             });
+    }
+
+    updateBlockColors (theme) {
+        if (!this.workspace || !this.ScratchBlocks) return;
+
+        const newColors = theme.getBlockColors();
+
+        try {
+            if (this.ScratchBlocks.Colours && this.ScratchBlocks.Colours.overrideColours) {
+                this.ScratchBlocks.Colours.overrideColours(newColors);
+            }
+
+            if (this.workspace.getFlyout && this.workspace.setVisible) {
+                this.workspace.setVisible(false);
+                this.workspace.setVisible(this.props.isVisible);
+            }
+
+            this.requestToolboxUpdate();
+
+            setTimeout(() => {
+                if (this.workspace && !this.unmounted) {
+                    this.workspace.refreshToolboxSelection_();
+                    this.workspace.markDraggedBlockAsDirty();
+                }
+            }, 0);
+        } catch (e) {
+            console.error('Error updating block colors:', e);
+        }
     }
 
     updateToolbox () {

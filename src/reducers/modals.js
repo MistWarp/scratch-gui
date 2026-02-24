@@ -21,6 +21,8 @@ const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
 const MODAL_PREFERENCES = 'preferencesModal';
+const MODAL_SIMPLE_DIALOG = 'simpleDialog';
+const MODAL_ONBOARDING = 'onboardingModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -42,7 +44,9 @@ const initialState = {
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_EXTENSION_MANAGER]: false,
     [MODAL_GIT]: false,
-    [MODAL_PREFERENCES]: false
+    [MODAL_PREFERENCES]: false,
+    [MODAL_SIMPLE_DIALOG]: false,
+    [MODAL_ONBOARDING]: false
 };
 
 const reducer = function (state, action) {
@@ -54,7 +58,13 @@ const reducer = function (state, action) {
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: false
+            [action.modal]: false,
+            simpleDialogConfig: null
+        });
+    case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
+        return Object.assign({}, state, {
+            [MODAL_SIMPLE_DIALOG]: true,
+            simpleDialogConfig: action.dialogConfig
         });
     default:
         return state;
@@ -132,6 +142,15 @@ const openGitModal = function () {
 const openPreferencesModal = function () {
     return openModal(MODAL_PREFERENCES);
 };
+const openOnboardingModal = function () {
+    return openModal(MODAL_ONBOARDING);
+};
+const openSimpleDialog = function (dialogConfig) {
+    return {
+        type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
+        dialogConfig
+    };
+};
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
 };
@@ -192,6 +211,9 @@ const closeGitModal = function () {
 const closePreferencesModal = function () {
     return closeModal(MODAL_PREFERENCES);
 };
+const closeOnboardingModal = function () {
+    return closeModal(MODAL_ONBOARDING);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -215,6 +237,7 @@ export {
     openExtensionManagerModal,
     openGitModal,
     openPreferencesModal,
+    openOnboardingModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -234,5 +257,7 @@ export {
     closeInvalidProjectModal,
     closeExtensionManagerModal,
     closeGitModal,
-    closePreferencesModal
+    closeOnboardingModal,
+    closeModal,
+    openSimpleDialog
 };

@@ -33,6 +33,8 @@ import vmReducer, {vmInitialState} from './vm';
 import vmStatusReducer, {vmStatusInitialState} from './vm-status';
 import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace-metrics';
 import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-theme';
+import onboardingReducer, {onboardingInitialState} from './onboarding';
+import toastReducer, {toastInitialState} from './toast';
 import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
@@ -46,6 +48,7 @@ const guiInitialState = {
     blockDrag: blockDragInitialState,
     cards: cardsInitialState,
     colorPicker: colorPickerInitialState,
+    toast: toastInitialState,
     collaboration: collaborationInitialState,
     connectionModal: connectionModalInitialState,
     customStageSize: customStageSizeInitialState,
@@ -73,7 +76,8 @@ const guiInitialState = {
     tw: twInitialState,
     vm: vmInitialState,
     vmStatus: vmStatusInitialState,
-    workspaceMetrics: workspaceMetricsInitialState
+    workspaceMetrics: workspaceMetricsInitialState,
+    onboarding: onboardingInitialState
 };
 
 const initPlayer = function (currentState) {
@@ -148,6 +152,19 @@ const initTelemetryModal = function (currentState) {
     );
 };
 
+const initOnboarding = function (currentState) {
+    return Object.assign(
+        {},
+        currentState,
+        {
+            onboarding: {
+                visible: true,
+                step: 0
+            }
+        }
+    );
+};
+
 const guiReducer = combineReducers({
     alerts: alertsReducer,
     assetDrag: assetDragReducer,
@@ -155,6 +172,7 @@ const guiReducer = combineReducers({
     blockDrag: blockDragReducer,
     cards: cardsReducer,
     colorPicker: colorPickerReducer,
+    toast: toastReducer,
     collaboration: collaborationReducer,
     connectionModal: connectionModalReducer,
     customStageSize: customStageSizeReducer,
@@ -182,7 +200,8 @@ const guiReducer = combineReducers({
     tw: twReducer,
     vm: vmReducer,
     vmStatus: vmStatusReducer,
-    workspaceMetrics: workspaceMetricsReducer
+    workspaceMetrics: workspaceMetricsReducer,
+    onboarding: onboardingReducer
 });
 
 export {
@@ -193,5 +212,6 @@ export {
     initFullScreen,
     initPlayer,
     initTelemetryModal,
-    initTutorialCard
+    initTutorialCard,
+    initOnboarding
 };
