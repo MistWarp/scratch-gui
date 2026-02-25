@@ -22,6 +22,7 @@ $motion-primary-default: var(--motion-primary-default);
 $motion-tertiary-default: var(--motion-tertiary-default);
 
 $looks-secondary-default: var(--looks-secondary-default);
+$looks-tertiary-default: var(--looks-tertiary-default);
 $looks-transparent-default: var(--looks-transparent-default);
 $looks-light-transparent-default: var(--looks-light-transparent-default);
 $looks-secondary-dark-default: var(--looks-secondary-dark-default);

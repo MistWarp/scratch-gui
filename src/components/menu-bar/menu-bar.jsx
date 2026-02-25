@@ -47,6 +47,7 @@ import {
     openRestorePointModal,
     openGitModal,
     openExtensionManagerModal,
+    openShortcutManagerModal,
     openSimpleDialog
 } from '../../reducers/modals';
 import {showOnboarding} from '../../reducers/onboarding';
@@ -96,7 +97,10 @@ import {
     closeSettingsMenu,
     errorsMenuOpen,
     openErrorsMenu,
-    closeErrorsMenu
+    closeErrorsMenu,
+    openToolsMenu,
+    closeToolsMenu,
+    toolsMenuOpen
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
 import {
@@ -137,7 +141,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -242,6 +246,19 @@ const MenuItemLink = props => (
 MenuItemLink.propTypes = {
     children: PropTypes.node.isRequired,
     href: PropTypes.string.isRequired
+};
+
+const formatShortcutDisplay = keyCombo => {
+    if (!keyCombo) return '';
+    const platform = bowser.mac ? 'mac' : 'windows';
+    return keyCombo
+        .replace(/Ctrl/g, platform === 'mac' ? '⌘' : 'Ctrl')
+        .replace(/Cmd/g, '⌘')
+        .replace(/Alt/g, platform === 'mac' ? '⌥' : 'Alt')
+        .replace(/Shift/g, '⇧')
+        .replace(/Space/g, '␣')
+        .replace(/Enter/g, '↵')
+        .replace(/ /g, '');
 };
 
 class MenuBar extends React.Component {
@@ -1112,14 +1129,11 @@ class MenuBar extends React.Component {
             />
         );
         const newProjectMessage = (
-            <div>
-                <FilePlusCorner />
-                <FormattedMessage
-                    defaultMessage="New"
-                    description="Menu bar item for creating a new project"
-                    id="gui.menuBar.new"
-                />
-            </div>
+            <FormattedMessage
+                defaultMessage="New"
+                description="Menu bar item for creating a new project"
+                id="gui.menuBar.new"
+            />
         );
         const remixButton = (
             <Button
@@ -1222,6 +1236,7 @@ class MenuBar extends React.Component {
                                         isRtl={this.props.isRtl}
                                         onClick={this.handleClickNew}
                                     >
+                                        <FilePlusCorner />
                                         {newProjectMessage}
                                     </MenuItem>
                                     {this.props.onClickNewWindow && (
@@ -1240,14 +1255,20 @@ class MenuBar extends React.Component {
                                     {(this.props.canSave || this.props.canCreateCopy || this.props.canRemix) && (
                                         <MenuSection>
                                             {this.props.canSave && (
-                                                <MenuItem onClick={this.handleClickSave}>
+                                                <MenuItem
+                                                    onClick={this.handleClickSave}
+                                                    shortcut={formatShortcutDisplay('Ctrl+S')}
+                                                >
                                                     {saveNowMessage}
                                                 </MenuItem>
                                             )}
                                             {this.props.canCreateCopy && (
                                                 <div>
                                                     <Save />
-                                                    <MenuItem onClick={this.handleClickSaveAsCopy}>
+                                                    <MenuItem
+                                                        onClick={this.handleClickSaveAsCopy}
+                                                        shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                    >
                                                         {createCopyMessage}
                                                     </MenuItem>
                                                 </div>
@@ -1262,6 +1283,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.props.onStartSelectingFileUpload}
+                                            shortcut={formatShortcutDisplay('Ctrl+O')}
                                         >
                                             <Upload />
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
@@ -1274,8 +1296,11 @@ class MenuBar extends React.Component {
                                                     {extended.available && (
                                                         <React.Fragment>
                                                             {extended.name !== null && (
-                                                                // eslint-disable-next-line max-len
-                                                                <MenuItem onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}>
+                                                                <MenuItem
+                                                                    // eslint-disable-next-line max-len
+                                                                    onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}
+                                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                                >
                                                                     <FileInput />
                                                                     <FormattedMessage
                                                                         defaultMessage="Save to {file}"
@@ -1289,7 +1314,10 @@ class MenuBar extends React.Component {
                                                                 </MenuItem>
                                                             )}
                                                             {/* eslint-disable-next-line max-len */}
-                                                            <MenuItem onClick={this.getSaveToComputerHandler(extended.saveAsNew)}>
+                                                            <MenuItem
+                                                                onClick={this.getSaveToComputerHandler(extended.saveAsNew)}
+                                                                shortcut={formatShortcutDisplay('Ctrl+S')}
+                                                            >
                                                                 <Save />
                                                                 <FormattedMessage
                                                                     defaultMessage="Save as..."
@@ -1308,6 +1336,7 @@ class MenuBar extends React.Component {
                                         <MenuSection>
                                             <MenuItem
                                                 onClick={this.handleClickPackager}
+                                                shortcut={formatShortcutDisplay('Ctrl+P')}
                                             >
                                                 <Package />
                                                 <FormattedMessage
@@ -1320,25 +1349,20 @@ class MenuBar extends React.Component {
                                         </MenuSection>
                                     )}
                                     <MenuSection className={styles.menuSection}>
-                                        <MenuItem onClick={this.props.onClickGitModal}>
-                                            <GitBranch />
+                                        <MenuItem onClick={this.props.onClickCollaboration}>
+                                            <Handshake size={20} />
                                             <FormattedMessage
-                                                defaultMessage="Git"
-                                                description="Menu bar item to open git window"
-                                                id="mw.menuBar.git"
+                                                defaultMessage="Live Collaboration"
+                                                description="Menu bar item for live collaboration"
+                                                id="tw.menuBar.collaboration"
                                             />
                                         </MenuItem>
-                                        <MenuItem onClick={this.props.onClickCollaboration}>
-                                        <Handshake size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Live Collaboration"
-                                            description="Menu bar item for live collaboration"
-                                            id="tw.menuBar.collaboration"
-                                        />
-                                    </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
-                                        <MenuItem onClick={this.handleClickRestorePoints}>
+                                        <MenuItem
+                                            onClick={this.handleClickRestorePoints}
+                                            shortcut={formatShortcutDisplay('Alt+R')}
+                                        >
                                             <RefreshCcw />
                                             <FormattedMessage
                                                 defaultMessage="Restore points"
@@ -1435,6 +1459,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canUndo})}
                                         onClick={this.state.canUndo ? this.handleClickUndo : null}
+                                        shortcut={formatShortcutDisplay('Ctrl+Z')}
                                     >
                                         <Undo />
 
@@ -1447,6 +1472,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canRedo})}
                                         onClick={this.state.canRedo ? this.handleClickRedo : null}
+                                        shortcut={formatShortcutDisplay('Ctrl+Shift+Z')}
                                     >
                                         <Redo />
 
@@ -1463,6 +1489,7 @@ class MenuBar extends React.Component {
                                             this.props.onClickSettingsModal();
                                             this.props.onRequestCloseEdit();
                                         }}
+                                        shortcut={formatShortcutDisplay('Ctrl+,')}
                                     >
                                         <Settings />
                                         <FormattedMessage
@@ -1528,69 +1555,6 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuItem>
                                     )}</CloudVariablesToggler>
-                                </MenuSection>
-                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
-                                    <MenuSection>
-                                        {window.__mistwarpDebuggerToggle && (
-                                            <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpDebuggerToggle();
-                                                    this.props.onRequestCloseEdit();
-                                                }}
-                                            >
-                                                <Bug />
-                                                <FormattedMessage
-                                                    defaultMessage="Debugger"
-                                                    description="Menu bar item to toggle the debugger"
-                                                    id="tw.menuBar.debugger"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                        {window.__mistwarpVariableManagerToggle && (
-                                            <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpVariableManagerToggle();
-                                                    this.props.onRequestCloseEdit();
-                                                }}
-                                            >
-                                                <Database />
-                                                <FormattedMessage
-                                                    defaultMessage="Variable Manager"
-                                                    description="Menu bar item to toggle the variable manager"
-                                                    id="tw.menuBar.variableManager"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                    </MenuSection>
-                                ) : null}
-                                
-                                <MenuSection>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onRequestCloseEdit();
-                                            this.props.onOpenExtensionLibrary();
-                                        }}
-                                    >
-                                        <PackagePlus />
-                                        <FormattedMessage
-                                            defaultMessage="Add Extension"
-                                            description="Menu bar item for adding or importing extensions"
-                                            id="tw.menuBar.extensions.addImport"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onRequestCloseEdit();
-                                            this.props.onOpenExtensionManagerModal();
-                                        }}
-                                    >
-                                        <FileCog />
-                                        <FormattedMessage
-                                            defaultMessage="Manage Extensions"
-                                            description="Menu bar item for managing loaded extensions"
-                                            id="tw.menuBar.extensions.manage"
-                                        />
-                                    </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItem
@@ -1666,6 +1630,121 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
+                        <MenuLabel
+                            open={this.props.toolsMenuOpen}
+                            onOpen={this.props.onClickTools}
+                            onClose={this.props.onRequestCloseTools}
+                        >
+                            <Wrench size={20} />
+                            <span className={styles.collapsibleLabel}>
+                                <FormattedMessage
+                                    defaultMessage="Tools"
+                                    description="Text for tools dropdown menu"
+                                    id="gui.menuBar.tools"
+                                />
+                            </span>
+                            <ChevronDown size={8} />
+                            <MenuBarMenu
+                                className={classNames(styles.menuBarMenu)}
+                                open={this.props.toolsMenuOpen}
+                                place={this.props.isRtl ? 'left' : 'right'}
+                            >
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickGitModal();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <GitBranch />
+                                        <FormattedMessage
+                                            defaultMessage="Git"
+                                            description="Menu bar item to open git window"
+                                            id="mw.menuBar.git"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
+                                    <MenuSection>
+                                        {window.__mistwarpDebuggerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpDebuggerToggle();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Bug />
+                                                <FormattedMessage
+                                                    defaultMessage="Debugger"
+                                                    description="Menu bar item to toggle the debugger"
+                                                    id="tw.menuBar.debugger"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                        {window.__mistwarpVariableManagerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpVariableManagerToggle();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Database />
+                                                <FormattedMessage
+                                                    defaultMessage="Variable Manager"
+                                                    description="Menu bar item to toggle the variable manager"
+                                                    id="tw.menuBar.variableManager"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                    </MenuSection>
+                                ) : null}
+                                <MenuSection>
+                                     <MenuItem
+                                         onClick={() => {
+                                             this.props.onRequestCloseTools();
+                                             this.props.onOpenExtensionLibrary();
+                                         }}
+                                         shortcut={formatShortcutDisplay('Ctrl+.')}
+                                     >
+                                         <PackagePlus />
+                                         <FormattedMessage
+                                             defaultMessage="Add Extension"
+                                             description="Menu bar item for adding or importing extensions"
+                                             id="tw.menuBar.extensions.addImport"
+                                         />
+                                     </MenuItem>
+                                     <MenuItem
+                                         onClick={() => {
+                                             this.props.onRequestCloseTools();
+                                             this.props.onOpenExtensionManagerModal();
+                                         }}
+                                         shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                     >
+                                        <FileCog />
+                                        <FormattedMessage
+                                            defaultMessage="Manage Extensions"
+                                            description="Menu bar item for managing loaded extensions"
+                                            id="tw.menuBar.extensions.manage"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickShortcutManagerModal();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Keyboard />
+                                        <FormattedMessage
+                                            defaultMessage="Keyboard Shortcuts"
+                                            description="Menu bar item for keyboard shortcuts"
+                                            id="tw.menuBar.keyboardShortcuts"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                            </MenuBarMenu>
+                        </MenuLabel>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
                                 open={this.props.workspaceBookmarksMenuOpen}
@@ -1876,6 +1955,7 @@ MenuBar.propTypes = {
     enableCommunity: PropTypes.bool,
     fileMenuOpen: PropTypes.bool,
     workspaceBookmarksMenuOpen: PropTypes.bool,
+    toolsMenuOpen: PropTypes.bool,
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
@@ -1927,6 +2007,7 @@ MenuBar.propTypes = {
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
+    onClickShortcutManagerModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
@@ -1943,6 +2024,8 @@ MenuBar.propTypes = {
     onRequestCloseLogin: PropTypes.func,
     onRequestCloseMode: PropTypes.func,
     onRequestCloseSettings: PropTypes.func,
+    onClickTools: PropTypes.func,
+    onRequestCloseTools: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onSetAutosaveEnabled: PropTypes.func,
@@ -1993,6 +2076,7 @@ const mapStateToProps = (state, ownProps) => {
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
+        toolsMenuOpen: toolsMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
         isRtl: state.locales.isRtl,
         isUpdating: getIsUpdating(loadingState),
@@ -2031,6 +2115,8 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseEdit: () => dispatch(closeEditMenu()),
     onClickErrors: () => dispatch(openErrorsMenu()),
     onRequestCloseErrors: () => dispatch(closeErrorsMenu()),
+    onClickTools: () => dispatch(openToolsMenu()),
+    onRequestCloseTools: () => dispatch(closeToolsMenu()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),
     onClickMode: () => dispatch(openModeMenu()),
@@ -2040,7 +2126,7 @@ const mapDispatchToProps = dispatch => ({
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickSettings: () => dispatch(openSettingsMenu()),
-     onClickSettingsModal: () => {
+    onClickSettingsModal: () => {
         dispatch(closeEditMenu());
         dispatch(openSettingsModal());
     },
@@ -2051,6 +2137,9 @@ const mapDispatchToProps = dispatch => ({
     onClickShowTutorial: () => {
         localStorage.removeItem('mw:has-seen-onboarding');
         dispatch(showOnboarding());
+    },
+    onClickShortcutManagerModal: () => {
+        dispatch(openShortcutManagerModal());
     },
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),

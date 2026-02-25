@@ -34,3 +34,9 @@
     user-select: none;
     transform-origin: 50%;
 }
+
+.deleteText {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
+}

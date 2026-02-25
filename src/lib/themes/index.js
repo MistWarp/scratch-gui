@@ -7,6 +7,7 @@ import * as blocksDark from './blocks/dark';
 import {ACCENT_MAP, ACCENT_DEFAULT} from './accents';
 import {GUI_MAP, GUI_DEFAULT} from './gui';
 import {MENUBAR_ALIGN, MENUBAR_ALIGN_DEFAULT} from './menubar';
+import {ICON_PACK_DEFAULT, ICON_PACK_MAP, ICON_PACKS} from './icon-packs/index.js';
 
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
@@ -49,7 +50,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts, name) {
+    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts, name, iconPack) {
         if (!name) name = gui;
         // do not modify these directly
         /** @readonly */
@@ -70,6 +71,8 @@ class Theme {
         this.wallpaper = wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
         /** @readonly */
         this.fonts = fonts || {system: [], google: [], history: []};
+        /** @readonly */
+        this.iconPack = Object.prototype.hasOwnProperty.call(ICON_PACK_MAP, iconPack) ? iconPack : ICON_PACK_DEFAULT;
 
         /** @readonly */
         this.name = name;
@@ -79,19 +82,21 @@ class Theme {
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
+            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name, this.iconPack);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
+            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name, this.iconPack);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
+            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts, this.name, this.iconPack);
         } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts, this.name);
+            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts, this.name, this.iconPack);
         } else if (what === 'wallpaper') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts, this.name);
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts, this.name, this.iconPack);
         } else if (what === 'fonts') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to, this.name);
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to, this.name, this.iconPack);
+        } else if (what === 'iconPack') {
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name, to);
         } else if (what === 'name') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, to);
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, to, this.iconPack);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }
@@ -147,7 +152,8 @@ for (const key of keys) {
         ACCENT_DEFAULT, key, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT,
         {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
         {system: [], google: [], history: []},
-        GUI_MAP[key].name
+        GUI_MAP[key].name,
+        ICON_PACK_DEFAULT
         
     );
 }
@@ -163,6 +169,9 @@ export {
     ACCENT_DEFAULT,
     GUI_DEFAULT,
     MENUBAR_ALIGN_DEFAULT,
+    ICON_PACK_DEFAULT,
+    ICON_PACK_MAP,
+    ICON_PACKS,
 
     BLOCKS_THREE,
     BLOCKS_DARK,

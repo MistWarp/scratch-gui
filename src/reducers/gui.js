@@ -35,6 +35,7 @@ import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace
 import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-theme';
 import onboardingReducer, {onboardingInitialState} from './onboarding';
 import toastReducer, {toastInitialState} from './toast';
+import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
 import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
@@ -77,7 +78,8 @@ const guiInitialState = {
     vm: vmInitialState,
     vmStatus: vmStatusInitialState,
     workspaceMetrics: workspaceMetricsInitialState,
-    onboarding: onboardingInitialState
+    onboarding: onboardingInitialState,
+    shortcuts: shortcutsInitialState
 };
 
 const initPlayer = function (currentState) {
@@ -201,7 +203,8 @@ const guiReducer = combineReducers({
     vm: vmReducer,
     vmStatus: vmStatusReducer,
     workspaceMetrics: workspaceMetricsReducer,
-    onboarding: onboardingReducer
+    onboarding: onboardingReducer,
+    shortcuts: shortcutsReducer
 });
 
 export {

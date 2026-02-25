@@ -1,97 +1,282 @@
 import icon from './icon.svg';
 import WindowManager from '../../window-system/window-manager.js';
 
+// Lucide icons as SVG strings
+const SEARCH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+
+const X_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+
+const VARIABLE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21s-4-3-4-9 4-9 4-9"/><path d="M16 3s4 3 4 9-4 9-4 9"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>`;
+
+const LIST_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`;
+
+const CLOUD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>`;
+
+const EYE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+const EYE_OFF_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7c.41 0 .83-.02 1.24-.05"/><path d="m2 2 20 20"/></svg>`;
+
+const SPRITE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>`;
+
+const STAGE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`;
+
+const FILTER_ALL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7h8"/><path d="M3 7h2"/><path d="M7 11h2"/><path d="M3 11h2"/><path d="M5 15h2"/><path d="M3 15h2"/><path d="M17 11h4"/><path d="M11 15h4"/><path d="M15 19h2"/></svg>`;
+
+const FILTER_VAR_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21s-4-3-4-9 4-9 4-9"/><path d="M16 3s4 3 4 9-4 9-4 9"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>`;
+
+const FILTER_LIST_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`;
+
+const FILTER_CLOUD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a4 4 0 0 1-.5-7.97 5 5 0 0 1 9.9-1V7a3 3 0 0 1 5.93-.72"/></svg>`;
+
+const EMPTY_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`;
+
 /**
- * Variable Manager addon main script
- * @param {object} param0 Scratch addon parameters
+ * Variable Manager addon - completely redesigned
  */
 export default async function ({addon, console, msg}) {
     const vm = addon.tab.traps.vm;
 
+    // State
     let localVariables = [];
     let globalVariables = [];
+    let allVariables = [];
     let preventUpdate = false;
     let updateScheduled = false;
     let lastUpdateTime = 0;
-    const UPDATE_THROTTLE = 50; // Reduced for better responsiveness
+    const UPDATE_THROTTLE = 50;
+
     let variableManagerWindow = null;
-    let currentFilter = '';
+    let currentFilter = 'all'; // 'all', 'variables', 'lists', 'cloud'
+    let currentSearch = '';
     let selectedVariable = null;
 
-    // Create the Variable Manager interface
+    // Create the main manager container
     const manager = document.createElement('div');
     manager.className = 'sa-var-manager';
     manager.setAttribute('role', 'main');
     manager.setAttribute('aria-label', 'Variable Manager');
-    manager.setAttribute('tabindex', '-1');
 
-    // Create header with search and controls
-    const header = document.createElement('div');
-    header.className = 'sa-var-manager-header';
+    // Top bar with search and filters
+    const topbar = document.createElement('div');
+    topbar.className = 'sa-var-manager-topbar';
 
-    const searchContainer = document.createElement('div');
-    searchContainer.className = 'sa-var-manager-search-container';
+    // Search and filter row
+    const filtersRow = document.createElement('div');
+    filtersRow.className = 'sa-var-manager-filters';
+
+    // Search wrapper
+    const searchWrapper = document.createElement('div');
+    searchWrapper.className = 'sa-var-manager-search-wrapper';
+
+    const searchIcon = document.createElement('div');
+    searchIcon.className = 'sa-var-manager-search-icon';
+    searchIcon.innerHTML = SEARCH_ICON;
 
     const searchBox = document.createElement('input');
-    searchBox.placeholder = `${msg('search')} (Ctrl+F)`;
-    searchBox.className = addon.tab.scratchClass('input_input-form', {others: 'sa-var-manager-searchbox'});
+    searchBox.placeholder = 'Search...';
+    searchBox.className = 'sa-var-manager-searchbox';
     searchBox.type = 'text';
     searchBox.setAttribute('aria-label', 'Search variables and lists');
 
     const clearSearchBtn = document.createElement('button');
     clearSearchBtn.className = 'sa-var-manager-clear-search';
-    clearSearchBtn.innerHTML = '×';
-    clearSearchBtn.title = 'Clear search (Escape)';
+    clearSearchBtn.innerHTML = X_ICON;
+    clearSearchBtn.title = 'Clear search';
     clearSearchBtn.style.display = 'none';
     clearSearchBtn.setAttribute('aria-label', 'Clear search');
 
-    // Enhanced search with debouncing and better performance
-    let searchTimeout;
-    const performSearch = searchTerm => {
-        currentFilter = searchTerm.toLowerCase();
-    
-        // Batch DOM updates
-        requestAnimationFrame(() => {
-            for (const variable of localVariables) {
-                variable.handleSearch(currentFilter);
+    searchWrapper.appendChild(searchIcon);
+    searchWrapper.appendChild(searchBox);
+    searchWrapper.appendChild(clearSearchBtn);
+
+    // Filter tabs
+    const filterTabs = document.createElement('div');
+    filterTabs.className = 'sa-var-manager-filters-tabs';
+
+    const createFilterTab = (filter, icon, label) => {
+        const tab = document.createElement('button');
+        tab.className = 'sa-var-manager-filter-tab';
+        tab.dataset.filter = filter;
+        tab.innerHTML = `${icon}<span>${label}</span><span class="sa-var-manager-filter-count">0</span>`;
+        tab.setAttribute('aria-label', `Filter by ${label}`);
+        tab.setAttribute('role', 'button');
+        tab.setAttribute('tabindex', '0');
+
+        tab.addEventListener('click', () => setFilter(filter));
+
+        tab.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setFilter(filter);
             }
-            for (const variable of globalVariables) {
-                variable.handleSearch(currentFilter);
-            }
-            updateHeadingVisibility();
-            clearSearchBtn.style.display = searchTerm ? 'flex' : 'none';
-      
-            // Update accessibility
-            const resultsCount = getVisibleVariableCount();
-            searchBox.setAttribute('aria-describedby', 'search-results');
-            if (!document.getElementById('search-results')) {
-                const resultsAnnouncer = document.createElement('div');
-                resultsAnnouncer.id = 'search-results';
-                resultsAnnouncer.setAttribute('aria-live', 'polite');
-                resultsAnnouncer.style.position = 'absolute';
-                resultsAnnouncer.style.left = '-10000px';
-                manager.appendChild(resultsAnnouncer);
-            }
-            document.getElementById('search-results').textContent =
-        `Found ${resultsCount} variables matching "${searchTerm}"`;
         });
+
+        return tab;
     };
 
-    // Optimized search with better debouncing
-    searchBox.addEventListener('input', e => {
+    const allFilterTab = createFilterTab('all', FILTER_ALL_ICON, 'All');
+    const varFilterTab = createFilterTab('variables', FILTER_VAR_ICON, 'Vars');
+    const listFilterTab = createFilterTab('lists', FILTER_LIST_ICON, 'Lists');
+    const cloudFilterTab = createFilterTab('cloud', FILTER_CLOUD_ICON, 'Cloud');
+
+    filterTabs.append(allFilterTab, varFilterTab, listFilterTab, cloudFilterTab);
+
+    filtersRow.append(searchWrapper, filterTabs);
+    topbar.appendChild(filtersRow);
+
+    // Stats bar
+    const statsBar = document.createElement('div');
+    statsBar.className = 'sa-var-manager-stats';
+
+    const createStat = (icon, value) => {
+        const stat = document.createElement('div');
+        stat.className = 'sa-var-manager-stat';
+        stat.innerHTML = `${icon}<span class="sa-var-manager-stat-value">${value}</span>`;
+        return stat;
+    };
+
+    const statsVariables = createStat(VARIABLE_ICON, '0');
+    const statsLists = createStat(LIST_ICON, '0');
+    const statsCloud = createStat(CLOUD_ICON, '0');
+
+    statsBar.append(statsVariables, statsLists, statsCloud);
+    topbar.appendChild(statsBar);
+
+    manager.appendChild(topbar);
+
+    // Content area
+    const content = document.createElement('div');
+    content.className = 'sa-var-manager-content';
+    manager.appendChild(content);
+
+    // Empty state
+    const emptyState = document.createElement('div');
+    emptyState.className = 'sa-var-manager-empty';
+    emptyState.innerHTML = `
+        <div class="sa-var-manager-empty-icon">${EMPTY_ICON}</div>
+        <div class="sa-var-manager-empty-text">No variables found</div>
+        <div class="sa-var-manager-empty-subtext">Try clearing your search or filters</div>
+    `;
+    emptyState.style.display = 'none';
+    content.appendChild(emptyState);
+
+    // Local section
+    const localSection = document.createElement('div');
+    localSection.className = 'sa-var-manager-section';
+    localSection.innerHTML = `
+        <div class="sa-var-manager-section-header">
+            ${SPRITE_ICON}
+            <span>For this Sprite</span>
+            <span class="sa-var-manager-section-count">0</span>
+        </div>
+        <div class="sa-var-manager-list"></div>
+    `;
+    content.appendChild(localSection);
+
+    const localList = localSection.querySelector('.sa-var-manager-list');
+    const localCount = localSection.querySelector('.sa-var-manager-section-count');
+
+    // Global section
+    const globalSection = document.createElement('div');
+    globalSection.className = 'sa-var-manager-section';
+    globalSection.innerHTML = `
+        <div class="sa-var-manager-section-header">
+            ${STAGE_ICON}
+            <span>For All Sprites</span>
+            <span class="sa-var-manager-section-count">0</span>
+        </div>
+        <div class="sa-var-manager-list"></div>
+    `;
+    content.appendChild(globalSection);
+
+    const globalList = globalSection.querySelector('.sa-var-manager-list');
+    const globalCount = globalSection.querySelector('.sa-var-manager-section-count');
+
+    // Helper functions
+    const updateStats = () => {
+        const variables = allVariables.filter(v => v.type === 'variable').length;
+        const lists = allVariables.filter(v => v.type === 'list').length;
+        const clouds = allVariables.filter(v => v.isCloud).length;
+
+        statsVariables.querySelector('.sa-var-manager-stat-value').textContent = variables;
+        statsLists.querySelector('.sa-var-manager-stat-value').textContent = lists;
+        statsCloud.querySelector('.sa-var-manager-stat-value').textContent = clouds;
+
+        // Update filter counts
+        allFilterTab.querySelector('.sa-var-manager-filter-count').textContent = allVariables.length;
+        varFilterTab.querySelector('.sa-var-manager-filter-count').textContent = variables;
+        listFilterTab.querySelector('.sa-var-manager-filter-count').textContent = lists;
+        cloudFilterTab.querySelector('.sa-var-manager-filter-count').textContent = clouds;
+    };
+
+    const setFilter = (filter) => {
+        currentFilter = filter;
+
+        filterTabs.querySelectorAll('.sa-var-manager-filter-tab').forEach(tab => {
+            tab.classList.toggle('sa-var-manager-filter-active', tab.dataset.filter === filter);
+        });
+
+        applyFilters();
+    };
+
+    const applyFilters = () => {
+        const searchLower = currentSearch.toLowerCase();
+
+        allVariables.forEach(v => {
+            const matchesSearch = !searchLower || 
+                v.name.toLowerCase().includes(searchLower) ||
+                v.value?.toString().toLowerCase().includes(searchLower);
+
+            let matchesFilter = true;
+            if (currentFilter === 'variables') {
+                matchesFilter = v.type === 'variable';
+            } else if (currentFilter === 'lists') {
+                matchesFilter = v.type === 'list';
+            } else if (currentFilter === 'cloud') {
+                matchesFilter = v.isCloud;
+            }
+
+            const visible = matchesSearch && matchesFilter;
+            v.setVisible(visible);
+        });
+
+        updateSectionVisibility();
+    };
+
+    const updateSectionVisibility = () => {
+        const visibleLocals = localVariables.filter(v => v.visible);
+        const visibleGlobals = globalVariables.filter(v => v.visible);
+
+        localSection.style.display = visibleLocals.length > 0 ? 'block' : 'none';
+        globalSection.style.display = visibleGlobals.length > 0 ? 'block' : 'none';
+
+        localCount.textContent = visibleLocals.length;
+        globalCount.textContent = visibleGlobals.length;
+
+        const hasVisible = visibleLocals.length > 0 || visibleGlobals.length > 0;
+        emptyState.style.display = hasVisible ? 'none' : 'flex';
+    };
+
+    // Search functionality
+    let searchTimeout;
+    const performSearch = (searchTerm) => {
+        currentSearch = searchTerm;
+        clearSearchBtn.style.display = searchTerm ? 'flex' : 'none';
+        applyFilters();
+    };
+
+    searchBox.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => performSearch(e.target.value), 100);
     });
 
-    clearSearchBtn.addEventListener('click', e => {
-        e.preventDefault();
+    clearSearchBtn.addEventListener('click', () => {
         searchBox.value = '';
         performSearch('');
         searchBox.focus();
     });
 
-    // Add keyboard shortcuts for search
-    searchBox.addEventListener('keydown', e => {
+    searchBox.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (searchBox.value) {
                 clearSearchBtn.click();
@@ -106,134 +291,354 @@ export default async function ({addon, console, msg}) {
         }
     });
 
-    searchContainer.appendChild(searchBox);
-    searchContainer.appendChild(clearSearchBtn);
-    header.appendChild(searchContainer);
-
-    // Enhanced stats display with better formatting
-    const statsContainer = document.createElement('div');
-    statsContainer.className = 'sa-var-manager-stats';
-    statsContainer.setAttribute('aria-live', 'polite');
-    header.appendChild(statsContainer);
-
-    manager.appendChild(header);
-
-    // Helper functions for better UX
-    const getVisibleVariableCount = () => {
-        const visibleLocal = localVariables.filter(v => v.row.style.display !== 'none');
-        const visibleGlobal = globalVariables.filter(v => v.row.style.display !== 'none');
-        return visibleLocal.length + visibleGlobal.length;
-    };
-
     const focusFirstVisibleVariable = () => {
-        const allVariables = [...localVariables, ...globalVariables];
-        const firstVisible = allVariables.find(v => v.row.style.display !== 'none');
+        const firstVisible = allVariables.find(v => v.visible && v.input);
         if (firstVisible && firstVisible.input) {
             firstVisible.input.focus();
             selectedVariable = firstVisible;
         }
     };
 
-    const updateStats = () => {
-        const totalVars = localVariables.length + globalVariables.length;
-        const totalLists = localVariables.filter(v => v.scratchVariable.type === 'list').length +
-                      globalVariables.filter(v => v.scratchVariable.type === 'list').length;
-    
-        statsContainer.innerHTML = `
-      <span>Variables: ${totalVars - totalLists}</span>
-      <span>Lists: ${totalLists}</span>
-    `;
-    };
+    // WrappedVariable class - completely redesigned
+    class WrappedVariable {
+        constructor(scratchVariable, target) {
+            this.scratchVariable = scratchVariable;
+            this.target = target;
+            this.type = scratchVariable.type === 'list' ? 'list' : 'variable';
+            this.isCloud = scratchVariable.isCloud || false;
+            this.name = scratchVariable.name;
+            this.id = scratchVariable.id;
+            this.visible = true;
+            this.ignoreTooBig = false;
+            this.lastValue = null;
 
-    const announceVariableChange = (variableName, oldValue, newValue) => {
-    // Create accessible announcements for variable changes
-        if (!document.getElementById('variable-announcer')) {
-            const announcer = document.createElement('div');
-            announcer.id = 'variable-announcer';
-            announcer.setAttribute('aria-live', 'assertive');
-            announcer.style.position = 'absolute';
-            announcer.style.left = '-10000px';
-            manager.appendChild(announcer);
+            this.buildDOM();
         }
-        const announcer = document.getElementById('variable-announcer');
-        announcer.textContent = `${variableName} changed from ${oldValue} to ${newValue}`;
-    };
 
-    const localVars = document.createElement('div');
-    localVars.className = 'sa-var-manager-section';
-    const localHeading = document.createElement('div');
-    const localList = document.createElement('table');
-    localHeading.className = 'sa-var-manager-heading';
-    localHeading.innerHTML = `
-    <span>${msg('for-this-sprite')}</span>
-    <span class="sa-var-manager-count" data-section="local">0</span>
-  `;
-    localList.className = 'sa-var-manager-table';
-    localVars.appendChild(localHeading);
-    localVars.appendChild(localList);
+        buildDOM() {
+            this.card = document.createElement('div');
+            this.card.className = 'sa-var-manager-card';
+            this.card.dataset.variableId = this.id;
 
-    const globalVars = document.createElement('div');
-    globalVars.className = 'sa-var-manager-section';
-    const globalHeading = document.createElement('div');
-    const globalList = document.createElement('table');
-    globalHeading.className = 'sa-var-manager-heading';
-    globalHeading.innerHTML = `
-    <span>${msg('for-all-sprites')}</span>
-    <span class="sa-var-manager-count" data-section="global">0</span>
-  `;
-    globalList.className = 'sa-var-manager-table';
-    globalVars.appendChild(globalHeading);
-    globalVars.appendChild(globalList);
+            const icon = document.createElement('div');
+            icon.className = 'sa-var-manager-card-icon';
+            icon.dataset.type = this.isCloud ? 'cloud' : this.type;
 
-    const content = document.createElement('div');
-    content.className = 'sa-var-manager-content';
-    content.appendChild(localVars);
-    content.appendChild(globalVars);
-    manager.appendChild(content);
-
-    // Enhanced heading visibility with counts
-    const updateHeadingVisibility = () => {
-        const filteredLocals = localVariables.filter(v => v.row.style.display !== 'none');
-        const filteredGlobals = globalVariables.filter(v => v.row.style.display !== 'none');
-    
-        localHeading.style.display = filteredLocals.length === 0 ? 'none' : '';
-        globalHeading.style.display = filteredGlobals.length === 0 ? 'none' : '';
-    
-        // Update counts
-        const localCount = document.querySelector('[data-section="local"]');
-        const globalCount = document.querySelector('[data-section="global"]');
-        if (localCount) localCount.textContent = filteredLocals.length;
-        if (globalCount) globalCount.textContent = filteredGlobals.length;
-    
-        // Update stats
-        updateStats();
-    };
-
-    const rowToVariableMap = new WeakMap();
-    const observer = new IntersectionObserver(
-        changes => {
-            for (const change of changes) {
-                const variable = rowToVariableMap.get(change.target);
-                variable?.setVisible(change.isIntersecting);
+            if (this.isCloud) {
+                icon.innerHTML = CLOUD_ICON;
+            } else if (this.type === 'list') {
+                icon.innerHTML = LIST_ICON;
+            } else {
+                icon.innerHTML = VARIABLE_ICON;
             }
-        },
-        {
-            rootMargin: '100px'
-        }
-    );
 
-    // Add keyboard shortcut to open variable manager
-    const setupKeyboardShortcut = () => {
-        document.addEventListener('keydown', e => {
-            // Ctrl+Shift+V to open variable manager
-            if (e.ctrlKey && e.shiftKey && e.key === 'V' && !e.altKey) {
-                e.preventDefault();
+            const body = document.createElement('div');
+            body.className = 'sa-var-manager-card-body';
+
+            const header = document.createElement('div');
+            header.className = 'sa-var-manager-card-header';
+
+            const nameInput = document.createElement('input');
+            nameInput.className = 'sa-var-manager-name-input';
+            nameInput.value = this.name;
+            nameInput.setAttribute('aria-label', `${this.type} name`);
+            this.nameInput = nameInput;
+
+            const badges = document.createElement('div');
+            badges.className = 'sa-var-manager-card-badges';
+
+            if (this.type === 'list') {
+                const listBadge = document.createElement('div');
+                listBadge.className = 'sa-var-manager-badge';
+                listBadge.dataset.badge = 'list';
+                listBadge.innerHTML = `${LIST_ICON}<span>List</span>`;
+                badges.appendChild(listBadge);
+            }
+
+            if (this.isCloud) {
+                const cloudBadge = document.createElement('div');
+                cloudBadge.className = 'sa-var-manager-badge';
+                cloudBadge.dataset.badge = 'cloud';
+                cloudBadge.innerHTML = `${CLOUD_ICON}<span>Cloud</span>`;
+                badges.appendChild(cloudBadge);
+            }
+
+            header.append(nameInput, badges);
+
+            const valueWrapper = document.createElement('div');
+            valueWrapper.className = 'sa-var-manager-value-wrapper';
+
+            const valueInput = document.createElement('textarea');
+            valueInput.className = 'sa-var-manager-value-input';
+            valueInput.setAttribute('aria-label', `${this.name} value`);
+            this.input = valueInput;
+
+            const tooBig = document.createElement('button');
+            tooBig.className = 'sa-var-manager-too-big';
+            tooBig.textContent = 'Variable too large to display';
+            tooBig.addEventListener('click', () => {
+                this.ignoreTooBig = true;
+                this.updateValue(true);
+            });
+            this.tooBig = tooBig;
+
+            valueWrapper.append(valueInput, tooBig);
+
+            body.append(header, valueWrapper);
+
+            this.card.append(icon, body);
+
+            this.setupEventListeners();
+        }
+
+        setupEventListeners() {
+            const workspace = () => Blockly.getMainWorkspace();
+
+            // Name input handling
+            const onNameBlur = () => {
+                const newName = this.nameInput.value.trim();
+                if (newName === this.name) return;
+
+                const CLOUD_PREFIX = '☁ ';
+                let processedName = newName;
+
+                if (this.isCloud) {
+                    if (!processedName.startsWith('☁')) {
+                        processedName = CLOUD_PREFIX + processedName;
+                    } else if (!processedName.startsWith(CLOUD_PREFIX)) {
+                        processedName = CLOUD_PREFIX + processedName.substring(1);
+                    }
+                }
+
+                if (!processedName.trim()) {
+                    this.showError(this.nameInput);
+                    return;
+                }
+
+                let nameAlreadyUsed = false;
+                try {
+                    const w = workspace();
+                    if (this.target.isStage) {
+                        const existingNames = vm.runtime.getAllVarNamesOfType(this.scratchVariable.type);
+                        nameAlreadyUsed = existingNames.includes(processedName);
+                    } else if (w) {
+                        nameAlreadyUsed = !!w.getVariable(processedName, this.scratchVariable.type);
+                    }
+                } catch (e) {
+                    console.error('Error checking variable name:', e);
+                }
+
+                if (nameAlreadyUsed) {
+                    this.showError(this.nameInput);
+                    return;
+                }
+
+                try {
+                    const w = workspace();
+                    if (w) {
+                        w.renameVariableById(this.id, processedName);
+                    }
+                    this.name = processedName;
+                    if (this.nameInput.value !== processedName) {
+                        this.nameInput.value = processedName;
+                    }
+                } catch (e) {
+                    console.error('Error renaming variable:', e);
+                    this.showError(this.nameInput);
+                }
+            };
+
+            this.nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.nameInput.blur();
+                }
+                if (e.key === 'Escape') {
+                    this.nameInput.value = this.name;
+                    e.preventDefault();
+                    this.nameInput.blur();
+                }
+            });
+
+            this.nameInput.addEventListener('focus', () => {
+                preventUpdate = true;
+                manager.classList.add('freeze');
+                this.nameInput.select();
+            });
+
+            this.nameInput.addEventListener('blur', onNameBlur);
+
+            // Value input handling
+            const onValueBlur = () => {
+                try {
+                    const newValue = this.scratchVariable.type === 'list' 
+                        ? this.input.value.split('\n').filter(line => line !== '')
+                        : this.input.value;
+                    vm.setVariableValue(this.target.id, this.id, newValue);
+                    this.input.classList.remove('sa-var-manager-error');
+                } catch (e) {
+                    console.error('Error setting variable value:', e);
+                    this.showError(this.input);
+                }
+            };
+
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'a' && (e.ctrlKey || e.metaKey)) return; // Allow Ctrl+A
+
+                if (e.key === 'Escape') {
+                    this.updateValue(true);
+                    e.preventDefault();
+                    this.input.blur();
+                }
+
+                // Tab navigation
+                if (e.key === 'Tab') {
+                    const currentIndex = allVariables.indexOf(selectedVariable);
+                    if (e.shiftKey && currentIndex > 0) {
+                        e.preventDefault();
+                        const prev = allVariables.slice(0, currentIndex).reverse().find(v => v.visible);
+                        if (prev && prev.input) {
+                            prev.input.focus();
+                            selectedVariable = prev;
+                        }
+                    } else if (!e.shiftKey && currentIndex < allVariables.length - 1) {
+                        e.preventDefault();
+                        const next = allVariables.slice(currentIndex + 1).find(v => v.visible);
+                        if (next && next.input) {
+                            next.input.focus();
+                            selectedVariable = next;
+                        }
+                    }
+                }
+            });
+
+            this.input.addEventListener('focus', () => {
+                preventUpdate = true;
+                manager.classList.add('freeze');
+                selectedVariable = this;
+                if (this.scratchVariable.type !== 'list') {
+                    this.input.select();
+                } else {
+                    this.input.setSelectionRange(0, 0);
+                }
+            });
+
+            this.input.addEventListener('blur', onValueBlur);
+
+            this.input.addEventListener('touchstart', (e) => {
                 e.stopPropagation();
-                toggleVariableManager();
+            }, { passive: true });
+        }
+
+        showError(element) {
+            element.classList.add('sa-var-manager-error');
+            setTimeout(() => element.classList.remove('sa-var-manager-error'), 1000);
+        }
+
+        updateValue(force) {
+            if (!this.visible && !force) return;
+
+            let value;
+            let maxSafeLength;
+
+            if (this.type === 'list') {
+                value = this.scratchVariable.value.join('\n');
+                maxSafeLength = 5000000;
+            } else {
+                value = String(this.scratchVariable.value);
+                maxSafeLength = 1000000;
             }
+
+            if (!force && this.lastValue === value) return;
+            this.lastValue = value;
+
+            if (!this.ignoreTooBig && value.length > maxSafeLength) {
+                this.card.dataset.tooBig = 'true';
+                return;
+            }
+
+            this.card.dataset.tooBig = 'false';
+            if (this.input.value !== value) {
+                this.input.value = value;
+                if (this.type === 'list') {
+                    this.input.style.height = 'auto';
+                    const height = Math.min(200, this.input.scrollHeight);
+                    if (height > 0) {
+                        this.input.style.height = `${height}px`;
+                    }
+                }
+            }
+        }
+
+        setVisible(visible) {
+            if (this.visible === visible) return;
+            this.visible = visible;
+            this.card.style.display = visible ? 'flex' : 'none';
+            if (visible) {
+                this.updateValue(true);
+            }
+        }
+    }
+
+    // Update scheduling
+    const scheduleUpdate = () => {
+        if (updateScheduled) return;
+        if (!variableManagerWindow || preventUpdate || !variableManagerWindow.isVisible) return;
+
+        updateScheduled = true;
+        requestAnimationFrame(() => {
+            const now = Date.now();
+            if (now - lastUpdateTime < UPDATE_THROTTLE) {
+                setTimeout(() => {
+                    updateScheduled = false;
+                    scheduleUpdate();
+                }, UPDATE_THROTTLE - (now - lastUpdateTime));
+                return;
+            }
+
+            quickReload();
+            lastUpdateTime = now;
+            updateScheduled = false;
         });
     };
 
+    const quickReload = () => {
+        if (!variableManagerWindow || preventUpdate || !variableManagerWindow.isVisible) return;
+
+        allVariables.forEach(v => v.updateValue());
+    };
+
+    const fullReload = () => {
+        if (!variableManagerWindow || preventUpdate || !variableManagerWindow.isVisible) return;
+
+        const editingTarget = vm.runtime.getEditingTarget();
+        const stage = vm.runtime.getTargetForStage();
+
+        // Clean up old variables
+        localVariables.forEach(v => v.card.remove());
+        globalVariables.forEach(v => v.card.remove());
+
+        localVariables = editingTarget.isStage
+            ? []
+            : Object.values(editingTarget.variables)
+                .filter(i => i.type === '' || i.type === 'list')
+                .map(i => new WrappedVariable(i, editingTarget));
+
+        globalVariables = Object.values(stage.variables)
+            .filter(i => i.type === '' || i.type === 'list')
+            .map(i => new WrappedVariable(i, stage));
+
+        allVariables = [...localVariables, ...globalVariables];
+
+        // Append to lists
+        localList.append(...localVariables.map(v => v.card));
+        globalList.append(...globalVariables.map(v => v.card));
+
+        applyFilters();
+        updateStats();
+    };
+
+    // Window management
     const toggleVariableManager = () => {
         if (variableManagerWindow && variableManagerWindow.isVisible) {
             hideVariableManager();
@@ -247,64 +652,53 @@ export default async function ({addon, console, msg}) {
             variableManagerWindow.show().bringToFront();
             return;
         }
-    
-        // Create window using window system
+
+        const initialX = Math.max(24, Math.min(window.innerWidth - 474, 50));
+        const initialY = Math.max(24, Math.min(window.innerHeight - 574, 50));
+
         variableManagerWindow = WindowManager.createWindow({
             id: 'variable-manager',
             title: msg('variables'),
-            width: 450,
-            height: 550,
-            minWidth: 380,
-            minHeight: 320,
-            maxWidth: 1200,
-            maxHeight: 900,
+            width: 650,
+            height: 600,
+            minWidth: 500,
+            minHeight: 400,
+            maxWidth: Math.min(window.innerWidth * 0.9, 1400),
+            maxHeight: Math.min(window.innerHeight * 0.9, 1000),
             className: 'sa-variable-manager-window',
+            x: initialX,
+            y: initialY,
             onClose: () => {
                 variableManagerWindow = null;
                 cleanup();
-            },
-            onResize: () => {
-                // Trigger resize event for internal components
-                requestAnimationFrame(() => {
-                    window.dispatchEvent(new Event('resize'));
-                });
             }
         });
-    
-        // Position near debugger if it exists
-        const debuggerEl = document.querySelector('.sa-debugger-interface, [class*="debugger"]');
+
+        // Try to position near debugger
+        const debuggerEl = document.querySelector('.sa-debugger-window');
         if (debuggerEl) {
-            const debuggerRect = debuggerEl.getBoundingClientRect();
-            const modalWidth = 450;
-      
-            // Check if there's space to the left of debugger
-            if (debuggerRect.left > modalWidth + 20) {
-                variableManagerWindow.x = Math.max(10, debuggerRect.left - modalWidth - 10);
-                variableManagerWindow.y = Math.max(10, debuggerRect.top);
-            } else {
-                // Position to the right
-                variableManagerWindow.x = Math.min(window.innerWidth - modalWidth - 20, debuggerRect.right + 10);
-                variableManagerWindow.y = Math.max(10, debuggerRect.top);
+            try {
+                const debuggerRect = debuggerEl.getBoundingClientRect();
+                const margin = 10;
+
+                if (debuggerRect.left > 460) {
+                    variableManagerWindow.x = Math.max(margin, debuggerRect.left - 460 - margin);
+                } else {
+                    variableManagerWindow.x = Math.min(window.innerWidth - 460 - margin, debuggerRect.right + margin);
+                }
+                variableManagerWindow.y = Math.max(margin, debuggerRect.top);
+            } catch (e) {
+                // Use default position
             }
-      
-            variableManagerWindow.element.style.left = `${variableManagerWindow.x}px`;
-            variableManagerWindow.element.style.top = `${variableManagerWindow.y}px`;
         }
-    
-        // Set the content to our manager element
+
         variableManagerWindow.setContent(manager);
-    
-        // Show the window
         variableManagerWindow.show();
 
-        // Focus management - focus the search box initially
         setTimeout(() => {
-            const searchBox = manager.querySelector('.sa-var-manager-searchbox');
-            if (searchBox) {
-                searchBox.focus();
-            }
+            searchBox.focus();
             fullReload();
-        }, 100);
+        }, 50);
     };
 
     const hideVariableManager = () => {
@@ -312,372 +706,32 @@ export default async function ({addon, console, msg}) {
             variableManagerWindow.close();
         }
     };
-    class WrappedVariable {
-        constructor (scratchVariable, target) {
-            this.scratchVariable = scratchVariable;
-            this.target = target;
-            this.visible = false;
-            this.ignoreTooBig = false;
-            this.lastValue = null;
-            this.buildDOM();
-        }
 
-        updateValue (force) {
-            if (!this.visible && !force) return;
-
-            let newValue;
-            let maxSafeLength;
-            if (this.scratchVariable.type === 'list') {
-                newValue = this.scratchVariable.value.join('\n');
-                maxSafeLength = 5000000;
-            } else {
-                newValue = this.scratchVariable.value;
-                maxSafeLength = 1000000;
-            }
-
-            // Performance: only update if value actually changed
-            if (!force && this.lastValue === newValue) return;
-            this.lastValue = newValue;
-
-            if (!this.ignoreTooBig && newValue.length > maxSafeLength) {
-                this.input.value = '';
-                this.row.dataset.tooBig = true;
-                return;
-            }
-
-            this.row.dataset.tooBig = false;
-            if (newValue !== this.input.value) {
-                this.input.disabled = false;
-                this.input.value = newValue;
-        
-                // Update visual indicators
-                this.updateVisualState();
-            }
-        }
-
-        updateVisualState () {
-            // Add visual indicators for variable types
-            this.row.dataset.variableType = this.scratchVariable.type || 'variable';
-            this.row.dataset.isCloud = this.scratchVariable.isCloud || false;
-      
-            if (this.scratchVariable.type === 'list') {
-                const itemCount = Array.isArray(this.scratchVariable.value) ? this.scratchVariable.value.length : 0;
-                this.row.dataset.listItems = itemCount;
-            }
-        }
-
-        handleSearch (search) {
-            if (!search) {
-                this.row.style.display = '';
-                this.updateValue(true);
-                return;
-            }
-      
-            const searchLower = search.toLowerCase();
-            const nameMatches = this.scratchVariable.name.toLowerCase().includes(searchLower);
-            const valueMatches = this.scratchVariable.value.toString().toLowerCase()
-                .includes(searchLower);
-      
-            if (nameMatches || valueMatches) {
-                this.row.style.display = '';
-                this.updateValue(true);
-            } else {
-                this.row.style.display = 'none';
-            }
-        }
-
-        resizeInputIfList () {
-            if (this.scratchVariable.type === 'list') {
-                this.input.style.height = 'auto';
-                const height = Math.min(1000, this.input.scrollHeight);
-                if (height > 0) {
-                    this.input.style.height = `${height}px`;
-                }
-            }
-        }
-
-        setVisible (visible) {
-            if (this.visible === visible) return;
-            this.visible = visible;
-            if (visible) {
-                this.updateValue();
-            }
-        }
-
-        buildDOM () {
-            const id = `sa-variable-manager-${this.scratchVariable.id}`;
-
-            const row = document.createElement('tr');
-            this.row = row;
-            row.className = 'sa-var-manager-row';
-      
-            const labelCell = document.createElement('td');
-            labelCell.className = 'sa-var-manager-name';
-
-            // Enhanced label with icon and type indicator
-            const labelContainer = document.createElement('div');
-            labelContainer.className = 'sa-var-manager-label-container';
-
-            const typeIcon = document.createElement('span');
-            typeIcon.className = 'sa-var-manager-type-icon';
-            typeIcon.textContent = this.scratchVariable.type === 'list' ? '📋' :
-                this.scratchVariable.isCloud ? '☁️' : '📝';
-
-            const label = document.createElement('input');
-            label.value = this.scratchVariable.name;
-            label.className = 'sa-var-manager-name-input';
-            label.htmlFor = id;
-      
-            const onLabelOut = e => {
-                e.preventDefault();
-                const workspace = Blockly.getMainWorkspace();
-
-                let newName = label.value.trim();
-                if (newName === this.scratchVariable.name) {
-                    return;
-                }
-
-                const CLOUD_SYMBOL = '☁';
-                const CLOUD_PREFIX = `${CLOUD_SYMBOL} `;
-                if (this.scratchVariable.isCloud) {
-                    if (newName.startsWith(CLOUD_SYMBOL)) {
-                        if (!newName.startsWith(CLOUD_PREFIX)) {
-                            newName = `${newName.substring(0, 1)} ${newName.substring(1)}`;
-                        }
-                    } else {
-                        newName = CLOUD_PREFIX + newName;
-                    }
-                }
-
-                let nameAlreadyUsed = false;
-                if (this.target.isStage) {
-                    const existingNames = vm.runtime.getAllVarNamesOfType(this.scratchVariable.type);
-                    nameAlreadyUsed = existingNames.includes(newName);
-                } else {
-                    nameAlreadyUsed = !!workspace.getVariable(newName, this.scratchVariable.type);
-                }
-
-                const isEmpty = !newName.trim();
-                if (isEmpty || nameAlreadyUsed) {
-                    label.value = this.scratchVariable.name;
-                    // Show error feedback
-                    label.classList.add('sa-var-manager-error');
-                    setTimeout(() => label.classList.remove('sa-var-manager-error'), 1000);
-                } else {
-                    workspace.renameVariableById(this.scratchVariable.id, newName);
-                    if (label.value !== newName) {
-                        label.value = newName;
-                    }
-                }
-            };
-
-            label.addEventListener('keydown', e => {
-                if (e.key === 'Enter') e.target.blur();
-                if (e.key === 'Escape') {
-                    label.value = this.scratchVariable.name;
-                    e.target.blur();
-                }
-            });
-            label.addEventListener('focusout', onLabelOut);
-
-            label.addEventListener('focus', e => {
-                preventUpdate = true;
-                manager.classList.add('freeze');
-            });
-
-            label.addEventListener('blur', e => {
-                preventUpdate = false;
-                manager.classList.remove('freeze');
-            });
-
-            labelContainer.appendChild(typeIcon);
-            labelContainer.appendChild(label);
-            labelCell.appendChild(labelContainer);
-
-            rowToVariableMap.set(row, this);
-            observer.observe(row);
-
-            const valueCell = document.createElement('td');
-            valueCell.className = 'sa-var-manager-value';
-
-            const tooBigElement = document.createElement('button');
-            this.tooBigElement = tooBigElement;
-            tooBigElement.textContent = msg('too-big');
-            tooBigElement.className = 'sa-var-manager-too-big';
-            tooBigElement.addEventListener('click', () => {
-                this.ignoreTooBig = true;
-                this.updateValue(true);
-            });
-
-            let input;
-            if (this.scratchVariable.type === 'list') {
-                input = document.createElement('textarea');
-                input.placeholder = 'Enter list items (one per line)';
-            } else {
-                input = document.createElement('input');
-                input.placeholder = 'Enter value';
-            }
-            input.className = 'sa-var-manager-value-input';
-            input.id = id;
-            this.input = input;
-
-            this.updateValue(true);
-            this.updateVisualState();
-      
-            if (this.scratchVariable.type === 'list') {
-                this.input.addEventListener('input', () => this.resizeInputIfList(), false);
-            }
-
-            const onInputOut = e => {
-                e.preventDefault();
-                try {
-                    if (this.scratchVariable.type === 'list') {
-                        const newValue = input.value.split('\n');
-                        vm.setVariableValue(this.target.id, this.scratchVariable.id, newValue);
-                    } else {
-                        vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value);
-                    }
-                    input.classList.remove('sa-var-manager-error');
-                } catch (error) {
-                    console.error('Error setting variable value:', error);
-                    input.classList.add('sa-var-manager-error');
-                    setTimeout(() => input.classList.remove('sa-var-manager-error'), 1000);
-                }
-                input.blur();
-            };
-
-            input.addEventListener('keydown', e => {
-                if (e.target.nodeName === 'INPUT' && e.key === 'Enter') e.target.blur();
-                if (e.key === 'Escape') {
-                    this.updateValue(true);
-                    e.target.blur();
-                }
-            });
-            input.addEventListener('focusout', onInputOut);
-
-            input.addEventListener('focus', e => {
-                preventUpdate = true;
-                manager.classList.add('freeze');
-            });
-
-            input.addEventListener('blur', e => {
-                preventUpdate = false;
-                manager.classList.remove('freeze');
-            });
-
-            valueCell.appendChild(input);
-            valueCell.appendChild(tooBigElement);
-            row.appendChild(labelCell);
-            row.appendChild(valueCell);
-
-            this.handleSearch(searchBox.value);
-        }
-    }
-
-    // Improved performance with throttling and batch updates
-    const scheduleUpdate = () => {
-        if (updateScheduled) return;
-        if (!variableManagerWindow || preventUpdate) return;
-    
-        updateScheduled = true;
-        requestAnimationFrame(() => {
-            const now = Date.now();
-            if (now - lastUpdateTime < UPDATE_THROTTLE) {
-                setTimeout(() => {
-                    updateScheduled = false;
-                    scheduleUpdate();
-                }, UPDATE_THROTTLE - (now - lastUpdateTime));
-                return;
-            }
-      
-            quickReload();
-            lastUpdateTime = now;
-            updateScheduled = false;
-        });
-    };
-
-    const fullReload = () => {
-        if (!variableManagerWindow || preventUpdate) return;
-
-        const editingTarget = vm.runtime.getEditingTarget();
-        const stage = vm.runtime.getTargetForStage();
-    
-        // Clean up old observers
-        for (const variable of [...localVariables, ...globalVariables]) {
-            observer.unobserve(variable.row);
-        }
-    
-        localVariables = editingTarget.isStage ?
-            [] :
-            Object.values(editingTarget.variables)
-                .filter(i => i.type === '' || i.type === 'list')
-                .map(i => new WrappedVariable(i, editingTarget));
-        globalVariables = Object.values(stage.variables)
-            .filter(i => i.type === '' || i.type === 'list')
-            .map(i => new WrappedVariable(i, stage));
-
-        updateHeadingVisibility();
-
-        // Use DocumentFragment for batch DOM operations
-        const localFragment = document.createDocumentFragment();
-        const globalFragment = document.createDocumentFragment();
-
-        while (localList.firstChild) {
-            localList.removeChild(localList.firstChild);
-        }
-        while (globalList.firstChild) {
-            globalList.removeChild(globalList.firstChild);
-        }
-
-        for (const variable of localVariables) {
-            localFragment.appendChild(variable.row);
-            variable.resizeInputIfList();
-        }
-        for (const variable of globalVariables) {
-            globalFragment.appendChild(variable.row);
-            variable.resizeInputIfList();
-        }
-    
-        localList.appendChild(localFragment);
-        globalList.appendChild(globalFragment);
-    };
-
-    const quickReload = () => {
-        if (!variableManagerWindow || preventUpdate) return;
-
-        for (const variable of localVariables) {
-            variable.updateValue();
-        }
-        for (const variable of globalVariables) {
-            variable.updateValue();
-        }
-    };
-
+    // Cleanup
     const cleanup = () => {
+        localVariables.forEach(v => v.card.remove());
+        globalVariables.forEach(v => v.card.remove());
         localVariables = [];
         globalVariables = [];
-    
-        // Clean up observers
-        for (const variable of [...localVariables, ...globalVariables]) {
-            if (variable.row) {
-                observer.unobserve(variable.row);
-            }
-        }
+        allVariables = [];
+        selectedVariable = null;
     };
 
     // Keyboard shortcuts
-    const handleKeyboardShortcuts = e => {
-    // Only handle shortcuts when variable manager is visible
-        if (!variableManagerWindow) return;
-    
-        // Ctrl/Cmd + F to focus search
+    const handleKeyboardShortcuts = (e) => {
+        if (!variableManagerWindow || !variableManagerWindow.isVisible) return;
+
         if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
             e.preventDefault();
             searchBox.focus();
             searchBox.select();
         }
-    
-        // Escape to clear search or close modal
+
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {
+            e.preventDefault();
+            hideVariableManager();
+        }
+
         if (e.key === 'Escape') {
             if (document.activeElement === searchBox && searchBox.value) {
                 clearSearchBtn.click();
@@ -689,40 +743,21 @@ export default async function ({addon, console, msg}) {
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
 
-    // Cleanup on addon disable
-    addon.self.addEventListener('disabled', () => {
-        document.removeEventListener('keydown', handleKeyboardShortcuts);
-        hideVariableManager();
-        removeStepHook();
-        cleanup();
-    });
-
-    addon.tab.redux.initialize();
-
-    // Improved event handling with throttling
+    // Event hooks
     vm.runtime.on('PROJECT_LOADED', () => {
-        try {
-            if (variableManagerWindow) fullReload();
-        } catch (e) {
-            console.error(e);
-        }
-    });
-  
-    vm.runtime.on('TOOLBOX_EXTENSIONS_NEED_UPDATE', () => {
-        try {
-            if (variableManagerWindow) fullReload();
-        } catch (e) {
-            console.error(e);
-        }
+        if (variableManagerWindow?.isVisible) fullReload();
     });
 
-    // Replace inefficient runtime step hook with more targeted events
+    vm.runtime.on('TOOLBOX_EXTENSIONS_NEED_UPDATE', () => {
+        if (variableManagerWindow?.isVisible) fullReload();
+    });
+
     let stepHookInstalled = false;
-  
+
     const installStepHook = () => {
         if (stepHookInstalled) return;
         stepHookInstalled = true;
-    
+
         const oldStep = vm.runtime._step;
         vm.runtime._step = function (...args) {
             const ret = oldStep.call(this, ...args);
@@ -735,51 +770,52 @@ export default async function ({addon, console, msg}) {
         };
     };
 
-    const removeStepHook = () => {
-        stepHookInstalled = false;
-    // Note: We can't easily restore the original _step function,
-    // but the scheduleUpdate will handle inactive tabs gracefully
-    };
-
-    addon.self.addEventListener('reenabled', () => {
-        installStepHook();
-    });
-
-    // Initialize step hook
     installStepHook();
 
-    // Create the Variable Manager button in the stage header
-    const variableManagerButtonOuter = document.createElement('div');
-    variableManagerButtonOuter.className = 'sa-variable-manager-container';
-    const variableManagerButton = document.createElement('div');
-    variableManagerButton.className = addon.tab.scratchClass('button_outlined-button', 'stage-header_stage-button');
-  
-    // Prevent text selection on the button
-    variableManagerButton.style.userSelect = 'none';
-    variableManagerButton.style.webkitUserSelect = 'none';
-    variableManagerButton.style.mozUserSelect = 'none';
-    variableManagerButton.style.msUserSelect = 'none';
-  
-    const variableManagerButtonContent = document.createElement('div');
-    variableManagerButtonContent.className = addon.tab.scratchClass('button_content');
-    const variableManagerButtonImage = document.createElement('svg');
-    variableManagerButtonImage.className = addon.tab.scratchClass('stage-header_stage-button-icon');
-    variableManagerButtonImage.draggable = false;
-    variableManagerButtonImage.innerHTML = addon.self.getResource('/icon.svg');
-    variableManagerButtonContent.appendChild(variableManagerButtonImage);
-    variableManagerButton.appendChild(variableManagerButtonContent);
-    variableManagerButtonOuter.appendChild(variableManagerButton);
-    variableManagerButton.addEventListener('click', () => toggleVariableManager());
+    addon.self.addEventListener('disabled', () => {
+        document.removeEventListener('keydown', handleKeyboardShortcuts);
+        hideVariableManager();
+        cleanup();
+    });
 
-    // Add keyboard shortcut (Ctrl+Shift+V)
-    document.addEventListener('keydown', e => {
-        if (e.ctrlKey && e.shiftKey && e.key === 'V' && !e.repeat) {
+    addon.self.addEventListener('reenabled', () => {
+        if (variableManagerWindow) fullReload();
+    });
+
+    // Expose toggle function
+    window.__mistwarpVariableManagerToggle = toggleVariableManager;
+
+    // Create button
+    const buttonOuter = document.createElement('div');
+    buttonOuter.className = 'sa-variable-manager-container';
+    const button = document.createElement('div');
+    button.className = addon.tab.scratchClass('button_outlined-button', 'stage-header_stage-button');
+
+    const buttonContent = document.createElement('div');
+    buttonContent.className = addon.tab.scratchClass('button_content');
+    const buttonImage = document.createElement('svg');
+    buttonImage.className = addon.tab.scratchClass('stage-header_stage-button-icon');
+    buttonImage.draggable = false;
+    buttonImage.innerHTML = addon.self.getResource('/icon.svg');
+    buttonContent.appendChild(buttonImage);
+    button.appendChild(buttonContent);
+    buttonOuter.appendChild(button);
+
+    const preventSelection = (e) => e.preventDefault();
+    button.addEventListener('mousedown', preventSelection);
+    button.addEventListener('selectstart', preventSelection);
+
+    button.addEventListener('click', toggleVariableManager);
+
+    // Global keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V' && !e.repeat) {
             e.preventDefault();
             toggleVariableManager();
         }
     });
 
-    // Wait for the stage header to load and add our button next to the debugger
+    // Add to stage header
     while (true) {
         await addon.tab.waitForElement(
             '[class^="stage-header_stage-size-row"], [class^="stage-header_fullscreen-buttons-row_"]',
@@ -794,16 +830,15 @@ export default async function ({addon, console, msg}) {
                 reduxCondition: state => !state.scratchGui.mode.isPlayerOnly
             }
         );
-    
+
         if (addon.tab.editorMode === 'editor') {
-            // Add next to debugger with order 1 (debugger uses order 0)
             addon.tab.appendToSharedSpace({
                 space: 'stageHeader',
-                element: variableManagerButtonOuter,
-                order: 1
+                element: buttonOuter,
+                order: 2
             });
         } else {
-            variableManagerButtonOuter.remove();
+            buttonOuter.remove();
             hideVariableManager();
         }
     }

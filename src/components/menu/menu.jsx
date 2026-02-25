@@ -63,7 +63,8 @@ const MenuItem = ({
     children,
     className,
     expanded = false,
-    onClick
+    onClick,
+    shortcut
 }) => (
     <li
         className={classNames(
@@ -75,6 +76,7 @@ const MenuItem = ({
         onClick={onClick}
     >
         {children}
+        {shortcut && <span className={styles.shortcut}>{shortcut}</span>}
     </li>
 );
 
@@ -82,7 +84,8 @@ MenuItem.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     expanded: PropTypes.bool,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    shortcut: PropTypes.string
 };
 
 

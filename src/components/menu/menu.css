@@ -9,7 +9,7 @@
     padding: 0;
     padding-bottom: 5px;
     margin: 0;
-    min-width: 186px;
+    min-width: 240px;
     overflow: visible;
     border: 2px solid transparent;
 }
@@ -81,6 +81,19 @@
 
 .menu-item.hoverable {
     cursor: pointer;
+}
+
+.menu-item .shortcut {
+    float: right;
+    opacity: 0.6;
+    font-size: 0.9em;
+    font-weight: normal;
+    margin-left: 20px;
+    letter-spacing: -0.5px;
+}
+
+.menu-item:hover .shortcut {
+    opacity: 0.8;
 }
 
 .menu-section {

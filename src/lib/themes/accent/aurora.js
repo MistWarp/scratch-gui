@@ -4,6 +4,7 @@ const guiColors = {
     'motion-tertiary': 'oklab(0.75 -0.08 0.06)',
 
     'looks-secondary': 'oklab(0.70 -0.10 0.08)',
+    'looks-tertiary': 'hsla(215, 100%, 55%, 1)',
     'looks-transparent': 'oklab(0.70 -0.10 0.08 / 0.35)',
     'looks-light-transparent': 'oklab(0.70 -0.10 0.08 / 0.15)',
     'looks-secondary-dark': 'oklab(0.60 -0.12 0.10)',

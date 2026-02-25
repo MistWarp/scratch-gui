@@ -24,7 +24,7 @@ class NotificationsProvider extends React.Component {
         }
     }
 
-    handleDismiss = (id) => {
+    handleDismiss = id => {
         notificationManager.dismiss(id);
     };
 

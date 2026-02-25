@@ -954,3 +954,13 @@
     cursor: pointer;
     border: none;
 }
+
+.menuIcon {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.checkText {
+    font-size: 0.9rem;
+    font-weight: bold;
+}

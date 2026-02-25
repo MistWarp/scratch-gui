@@ -14,16 +14,18 @@ Notifications.propTypes = {
 
 function Notifications ({notifications, onDismiss}) {
     return (
-        <div style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: '9000',
-            display: 'flex',
-            flexDirection: 'column-reverse',
-            gap: '10px',
-            pointerEvents: 'none'
-        }}>
+        <div
+            style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                zIndex: '9000',
+                display: 'flex',
+                flexDirection: 'column-reverse',
+                gap: '10px',
+                pointerEvents: 'none'
+            }}
+        >
             {notifications.map(notif => (
                 <Notification
                     key={notif.id}

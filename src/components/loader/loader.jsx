@@ -47,33 +47,33 @@ const messages = defineMessages({
 
 // Array of random loading messages
 const randomMessages = [
-  "MistWarp's anniversary is less than a year away! - Nameless",
-  "ur gay - Flufi",
-  "that is making my braincells consider dying as their next action - JustNoone",
-  "i moved the addons tab to edit because i like it :yum: - Mistium",
-  "OH MY FLIPPERS - roturBOT",
-  "we have more themes than TurboWarp, which makes MistWarp better - Mistium",
-  "Femboys can be not gray - JustNoone",
-  "Penguinmod cringe fr fr ong no cap (real) (not gone wrong) (mistwarp better real) - Flufi",
-  "Fences are always gray - Nameless",
-  "Dont try, dont try to hide it - Flufi",
-  "CSS is my passion - Nameless",
-  "CSS is a turing complete scripting language - Mistium",
-  "I want to be Poland - Andrew",
-  "Programer socks are part of the official MistWarp uniform - Nameless",
-  "Wear thigh highs or die :3 - Flufi",
-  "This mod has no swears, pg family friendly - Mistium",
-  "Grah - Flufi",
-  "I am a professional MistWarp user - Nameless",
-  "Next person to be confused by this quote is gay - Flufi",
-  "Look under there",
-  "do not the mistwarp - Flufi",
-  "how sign in to mistwarp - Andrew",
-  "if only mistwarp was less mist and more warp - Mistium",
-  "i just laughed so hard i died - Flufi",
-  "I just laughed so hard that I just laughed so hard - ViMi",
-  "i own turbowarp and penguinmod - Andrew",
-  "evil is bad, but good evil is bad good - volxten_"
+    "MistWarp's anniversary is less than a year away! - Nameless",
+    'ur gay - Flufi',
+    'that is making my braincells consider dying as their next action - JustNoone',
+    'i moved the addons tab to edit because i like it :yum: - Mistium',
+    'OH MY FLIPPERS - roturBOT',
+    'we have more themes than TurboWarp, which makes MistWarp better - Mistium',
+    'Femboys can be not gray - JustNoone',
+    'Penguinmod cringe fr fr ong no cap (real) (not gone wrong) (mistwarp better real) - Flufi',
+    'Fences are always gray - Nameless',
+    'Dont try, dont try to hide it - Flufi',
+    'CSS is my passion - Nameless',
+    'CSS is a turing complete scripting language - Mistium',
+    'I want to be Poland - Andrew',
+    'Programer socks are part of the official MistWarp uniform - Nameless',
+    'Wear thigh highs or die :3 - Flufi',
+    'This mod has no swears, pg family friendly - Mistium',
+    'Grah - Flufi',
+    'I am a professional MistWarp user - Nameless',
+    'Next person to be confused by this quote is gay - Flufi',
+    'Look under there',
+    'do not the mistwarp - Flufi',
+    'how sign in to mistwarp - Andrew',
+    'if only mistwarp was less mist and more warp - Mistium',
+    'i just laughed so hard i died - Flufi',
+    'I just laughed so hard that I just laughed so hard - ViMi',
+    'i own turbowarp and penguinmod - Andrew',
+    'evil is bad, but good evil is bad good - volxten_'
 ];
 
 // Because progress events are fired so often during the very performance-critical loading
@@ -117,7 +117,7 @@ class LoaderComponent extends React.Component {
             this.messageEl.textContent = this.props.intl.formatMessage(messages.projectData);
         } else {
             this.barInnerEl.style.width = `${finished / total * 100}%`;
-            const message = this.props.isRemote ? messages.downloadingAssets : messages.loadingAssets
+            const message = this.props.isRemote ? messages.downloadingAssets : messages.loadingAssets;
             this.messageEl.textContent = this.props.intl.formatMessage(message, {
                 complete: finished,
                 total

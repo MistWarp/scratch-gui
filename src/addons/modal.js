@@ -93,7 +93,7 @@ export const confirm = (tab, title, message, {useEditorClasses = false} = {}) =>
             innerText: message
         })
     );
-    const {buttonRow, cancelButton, okButton} = createButtonRow(tab, mode);
+    const {buttonRow, cancelButton, okButton} = createButtonRow(tab);
     content.appendChild(buttonRow);
     okButton.focus();
     return new Promise(resolve => {

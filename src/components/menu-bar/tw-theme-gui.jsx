@@ -11,46 +11,51 @@ import {closeSettingsMenu, guiMenuOpen, openGuiMenu} from '../../reducers/menus.
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
+import {useIcon} from '../icon-provider/icons.jsx';
 
-import {Check} from 'lucide-react';
-
-const ThemeIcon = ({id}) => {
-    return (
-        <svg
-            className={classNames(styles.icon, "lucide")}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            dangerouslySetInnerHTML={{ __html: GUI_MAP[id].icon }}
-        />
-    );
-};
+const ThemeIcon = ({id}) => (
+    <svg
+        className={classNames(styles.icon, 'lucide')}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        dangerouslySetInnerHTML={{__html: GUI_MAP[id].icon}}
+    />
+);
 
 ThemeIcon.propTypes = {
     id: PropTypes.string
 };
 
-const ThemeMenuItem = props => (
-    <MenuItem onClick={props.onClick}>
-        <div className={styles.option}>
-            <Check
-                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                size={15}
-            />
-            <ThemeIcon id={props.id} />
-            <span className={props.name}>
-                <FormattedMessage
-                    defaultMessage="{theme}"
-                    description="Label for theme option"
-                    id="tw.theme.option"
-                    values={{
-                        theme: props.name
-                    }}
-                />
-            </span>
-        </div>
-    </MenuItem>
-);
+const ThemeMenuItem = props => {
+    const Check = useIcon('Check');
+    
+    return (
+        <MenuItem onClick={props.onClick}>
+            <div className={styles.option}>
+                {Check ? (
+                    <Check
+                        className={classNames(styles.check, {[styles.selected]: props.isSelected})}
+                        size={15}
+                    />
+                ) : (
+                    <span className={classNames(styles.check, {[styles.selected]: props.isSelected}, styles.checkText)}>✓</span>
+                )}
+                <ThemeIcon id={props.id} />
+                <span className={props.name}>
+                    <FormattedMessage
+                        defaultMessage="{theme}"
+                        description="Label for theme option"
+                        id="tw.theme.option"
+                        values={{
+                            theme: props.name
+                        }}
+                    />
+                </span>
+            </div>
+        </MenuItem>
+    );
+};
 
 ThemeMenuItem.propTypes = {
     id: PropTypes.string,

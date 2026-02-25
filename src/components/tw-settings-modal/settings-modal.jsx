@@ -114,7 +114,7 @@ class UnwrappedSetting extends React.Component {
         }));
     }
     render () {
-        const {active, primary, secondary, help, slug, intl} = this.props;
+        const {primary, secondary, help, slug, intl} = this.props;
         const {helpVisible} = this.state;
 
         return (
@@ -695,6 +695,8 @@ class SettingsModalComponent extends React.Component {
                 onRequestClose={this.props.onClose}
                 contentLabel={intl.formatMessage(messages.title)}
                 id="settingsModal"
+                width={880}
+                height={550}
             >
                 <Box className={styles.sidebarLayout}>
                     <div className={styles.sidebar}>

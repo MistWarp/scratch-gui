@@ -24,6 +24,7 @@ $motion-primary: var(--motion-primary);
 $motion-tertiary: var(--motion-tertiary);
 
 $looks-secondary: var(--looks-secondary);
+$looks-tertiary: var(--looks-tertiary);
 $looks-transparent: var(--looks-transparent);
 $looks-light-transparent: var(--looks-light-transparent);
 $looks-secondary-dark: var(--looks-secondary-dark);

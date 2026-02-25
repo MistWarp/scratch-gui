@@ -48,6 +48,7 @@ class LibraryComponent extends React.Component {
             'setFilteredDataRef'
         ]);
         const favorites = this.readFavoritesFromStorage();
+        this._isMounted = false;
         this.state = {
             playingItem: null,
             filterQuery: '',
@@ -58,14 +59,20 @@ class LibraryComponent extends React.Component {
         };
     }
     componentDidMount () {
+        this._isMounted = true;
         // Rendering all the items in the library can take a bit, so we'll always
         // show one frame with a loading spinner.
         setTimeout(() => {
-            this.setState({
-                canDisplay: true
-            });
+            if (this._isMounted) {
+                this.setState({
+                    canDisplay: true
+                });
+            }
         });
         if (this.props.setStopHandler) this.props.setStopHandler(this.handlePlayingEnd);
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
     }
     componentDidUpdate (prevProps, prevState) {
         if (prevState.filterQuery !== this.state.filterQuery ||
@@ -112,7 +119,9 @@ class LibraryComponent extends React.Component {
         }));
     }
     handleClose () {
-        this.props.onRequestClose();
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
+        }
     }
     handleTagClick (tag) {
         if (this.state.playingItem === null) {
@@ -255,6 +264,8 @@ class LibraryComponent extends React.Component {
                 id={this.props.id}
                 visible={this.props.visible}
                 onRequestClose={this.handleClose}
+                width={1000}
+                height={750}
             >
                 <div className={styles.libraryModalContent}>
                     {(this.props.filterable || this.props.tags) && (

@@ -22,6 +22,10 @@ const UsernameModalComponent = props => (
         onRequestClose={props.onCancel}
         contentLabel={props.intl.formatMessage(messages.title)}
         id="usernameModal"
+        resizable={false}
+        maximizable={false}
+        width={550}
+        height={400}
     >
         <Box className={styles.body}>
             {props.mustChangeUsername && <React.Fragment>

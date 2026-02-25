@@ -19,6 +19,8 @@ const MENU_ERRORS = 'errorsMenu';
 const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
 const MENU_EDITOR = 'editorMenu';
+const MENU_TOOLS = 'toolsMenu';
+const MENU_ICON_PACK = 'iconPackMenu';
 
 class Menu {
     constructor (id) {
@@ -68,11 +70,13 @@ const rootMenu = new Menu('root')
             .addChild(new Menu(MENU_WALLPAPER))
             .addChild(new Menu(MENU_FONTS))
             .addChild(new Menu(MENU_BLOCKS_THEME))
+            .addChild(new Menu(MENU_ICON_PACK))
     )
     .addChild(new Menu(MENU_FILE))
     .addChild(new Menu(MENU_WORKSPACE_BOOKMARKS))
     .addChild(new Menu(MENU_EDIT))
     .addChild(new Menu(MENU_EDITOR))
+    .addChild(new Menu(MENU_TOOLS))
     .addChild(new Menu(MENU_MODE))
     .addChild(new Menu(MENU_SETTINGS))
     .addChild(new Menu(MENU_LOGIN))
@@ -97,7 +101,9 @@ const initialState = {
     [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false,
     [MENU_WORKSPACE_BOOKMARKS]: false,
-    [MENU_EDITOR]: false
+    [MENU_EDITOR]: false,
+    [MENU_TOOLS]: false,
+    [MENU_ICON_PACK]: false
 };
 
 const reducer = function (state, action) {
@@ -209,6 +215,14 @@ const openEditorMenu = () => openMenu(MENU_EDITOR);
 const closeEditorMenu = () => closeMenu(MENU_EDITOR);
 const editorMenuOpen = state => state.scratchGui.menus[MENU_EDITOR];
 
+const openToolsMenu = () => openMenu(MENU_TOOLS);
+const closeToolsMenu = () => closeMenu(MENU_TOOLS);
+const toolsMenuOpen = state => state.scratchGui.menus[MENU_TOOLS];
+
+const openIconPackMenu = () => openMenu(MENU_ICON_PACK);
+const closeIconPackMenu = () => closeMenu(MENU_ICON_PACK);
+const iconPackMenuOpen = state => state.scratchGui.menus[MENU_ICON_PACK];
+
 export {
     reducer as default,
     initialState as menuInitialState,
@@ -265,5 +279,11 @@ export {
     customThemesOpen,
     openEditorMenu,
     closeEditorMenu,
-    editorMenuOpen
+    editorMenuOpen,
+    openToolsMenu,
+    closeToolsMenu,
+    toolsMenuOpen,
+    openIconPackMenu,
+    closeIconPackMenu,
+    iconPackMenuOpen
 };

@@ -1,17 +1,18 @@
 @import url("../editor-theme3/compatibility.css");
 
 [dir="ltr"] .sa-debugger-container {
-  margin-right: 0.2rem;
+  margin-right: 0.5rem;
 }
 
 [dir="rtl"] .sa-debugger-container {
-  margin-left: 0.2rem;
+  margin-left: 0.5rem;
 }
 
 /* Prevent text selection on debugger button */
 .sa-debugger-container,
 .sa-debugger-container * {
   user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Prevent highlighting/focus states on debugger button */
@@ -20,17 +21,16 @@
 .sa-debugger-container [class*="stage-button"] {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
   user-select: none !important;
+  outline: none !important;
 }
 
 .sa-debugger-container button:active,
 .sa-debugger-container [class*="button_"]:active,
 .sa-debugger-container [class*="stage-button"]:active {
   background-color: inherit !important;
-  transform: none !important;
+  transform: scale(0.95) !important;
+  transition: transform 0.1s ease !important;
 }
 
 .sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-debugger-container {
@@ -39,283 +39,223 @@
 
 .sa-debugger-container [class*="button_content_"] {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Unread indicator */
 .sa-debugger-unread::after {
   content: "";
   position: absolute;
-  top: 1px;
-  right: 0;
+  top: 2px;
+  right: 2px;
   display: block;
-  width: 6px;
-  height: 6px;
-  background-color: var(--looks-secondary);
+  width: 8px;
+  height: 8px;
+  background: var(--looks-secondary);
   border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(76, 151, 255, 0.4);
 }
 
 .sa-debugger-container .sa-debugger-active {
-  background-color: var(--ui-primary) !important;
-  border-color: var(--ui-primary) !important;
-  opacity: 0.8;
+  background: linear-gradient(135deg, 
+    var(--looks-secondary) 0%, 
+    var(--looks-secondary-dark) 100%) !important;
+  border-color: var(--looks-secondary-dark) !important;
+  box-shadow: 0 2px 8px rgba(76, 151, 255, 0.3), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
-.sa-debugger-container .sa-debugger-active::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: transparent;
-  border-radius: inherit;
-  pointer-events: none;
+/* Window content styling - now using window-manager for the main container */
+.sa-debugger-interface-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(135deg, 
+    var(--ui-secondary) 0%, 
+    var(--ui-primary) 100%);
 }
 
-/* Enhanced debugger window styling with gradient backgrounds */
-.sa-debugger-interface {
-  display: none;
-  position: absolute;
-  z-index: 492;
-  background-color: var(--ui-modal-background);
-  color: var(--ui-modal-foreground);
-  width: 480px;
-  height: 350px;
-  min-width: 280px;
-  min-height: 200px;
-  max-width: 90vw;
-  max-height: 90vh;
-  border: 1px solid var(--ui-black-transparent);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 
-              0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Enhanced header styling */
-.sa-debugger-interface h1 {
-  padding: 16px 20px;
-  z-index: 10;
-  width: calc(100% - 40px);
-  font-size: 22px;
-  font-weight: 700;
-  background-color: var(--ui-modal-header-background);
-  color: var(--ui-modal-header-foreground);
-  border-bottom: 1px solid var(--ui-black-transparent);
-  margin: 0;
-  text-shadow: none;
-}
-
-.sa-debugger-interface [class*="card_header-buttons_"] {
-  background-color: var(--looks-secondary);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Enhanced header layout with compact spacing */
+/* Header styling - matches mistwarp's design language */
 .sa-debugger-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background-color: var(--ui-modal-background);
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, 
+    var(--ui-secondary) 0%, 
+    var(--ui-primary) 100%);
   border-bottom: 1px solid var(--ui-black-transparent);
+  backdrop-filter: blur(10px);
+  min-height: 48px;
+  gap: 0.5rem;
 }
 
+/* Tabs - modern styling with better consistency */
 .sa-debugger-tabs {
-  margin: 0;
   display: flex;
   align-items: center;
+  gap: 0.25rem;
+  margin: 0;
   padding: 0;
-  font-size: 0.7rem;
-  gap: 4px;
+  list-style: none;
+  flex: 1;
 }
 
 .sa-debugger-tabs li {
-  margin: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
-  background-color: var(--ui-secondary);
-  border: 1px solid var(--looks-secondary-dark);
-  border-radius: 16px;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--form-radius, 4px);
   color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  font-size: 0.8rem;
   font-weight: 500;
-}
-
-.sa-debugger-tabs li::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: none;
-  transition: left 0.5s ease;
-}
-
-.sa-debugger-tabs li:hover::before {
-  left: 100%;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  position: relative;
 }
 
 .sa-debugger-tabs li:hover {
-  background-color: var(--ui-modal-background);
-  border-color: var(--looks-secondary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--ui-tertiary);
+}
+
+.sa-debugger-tabs li:focus-visible {
+  background: var(--ui-tertiary);
+  outline: 2px solid var(--looks-secondary);
+  outline-offset: 2px;
 }
 
 .sa-debugger-tabs li.sa-debugger-tab-selected {
-  background-color: var(--looks-secondary);
-  background-clip: padding-box;
-  border-color: var(--looks-secondary-dark);
-  box-shadow: 0 2px 8px rgba(76, 151, 255, 0.3), 
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  font-weight: 600;
+  background: linear-gradient(135deg, 
+    var(--looks-secondary) 0%, 
+    var(--looks-secondary-dark) 100%);
   color: var(--ui-white);
+  box-shadow: 0 2px 6px rgba(76, 151, 255, 0.25), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.sa-debugger-tabs li[aria-selected="false"] {
+  color: var(--text-primary-transparent);
 }
 
 .sa-debugger-icon {
   flex-shrink: 0;
   width: 14px;
   height: 14px;
-  margin: 0;
-  margin-right: 6px;
   background-color: currentColor;
 }
 
-/* Enhanced header buttons with compact grid layout */
+/* Header buttons - matches mistwarp button styles */
 .sa-debugger-header-buttons {
-  margin: 0;
   display: flex;
   align-items: center;
+  gap: 0.375rem;
+  margin: 0;
   padding: 0;
-  font-size: 0.7rem;
-  gap: 4px;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"] {
-  margin: 0;
-  display: flex;
-  flex-direction: row;
+  display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
-  background-color: var(--ui-secondary);
-  border: 1px solid var(--looks-secondary-dark);
-  border-radius: 16px;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.75rem;
+  background: var(--ui-tertiary);
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: var(--form-radius, 4px);
   color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  font-weight: 500;
-}
-
-.sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: none;
-  transition: left 0.5s ease;
-}
-
-.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover::before {
-  left: 100%;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:hover {
-  background-color: var(--ui-modal-background);
-  border-color: var(--looks-secondary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--ui-secondary);
+  border-color: var(--ui-black-transparent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .sa-debugger-header-buttons [class*="card_shrink-expand-button"]:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.sa-debugger-header-buttons span {
-  font-weight: 500;
-  text-shadow: none;
+.sa-debugger-header-buttons [class*="card_shrink-expand-button"]:focus-visible {
+  outline: 2px solid var(--looks-secondary);
+  outline-offset: 2px;
 }
 
-/* Enhanced unpause button with pulsing animation */
+/* Unpause button - matches mistwarp's action button style */
 .sa-debugger-unpause {
-  background-color: var(--pen-primary) !important;
-  animation: saDebuggerUnpause 2s infinite alternate;
+  background: linear-gradient(135deg, 
+    var(--pen-primary) 0%, 
+    var(--pen-tertiary) 100%) !important;
+  border-color: transparent !important;
+  color: white !important;
+  box-shadow: 0 3px 6px rgba(0, 212, 170, 0.25) !important;
 }
 
-@keyframes saDebuggerUnpause {
-  0% {
-    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3), 
-                0 0 0 0 rgba(0, 212, 170, 0.7);
-  }
-  100% {
-    box-shadow: 0 6px 16px rgba(0, 212, 170, 0.4), 
-                0 0 0 8px rgba(0, 212, 170, 0);
-  }
+.sa-debugger-unpause:hover {
+  background: linear-gradient(135deg, 
+    var(--pen-tertiary) 0%, 
+    var(--pen-primary) 100%) !important;
+  box-shadow: 0 4px 8px rgba(0, 212, 170, 0.35) !important;
 }
 
-/* Enhanced tab content area with flex layout for better space utilization */
-.sa-debugger-interface-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-}
-
+/* Tab content area */
 .sa-debugger-tab-content {
   flex: 1;
   overflow: auto;
-  cursor: auto;
-  background-color: var(--ui-secondary);
-  border-radius: 0 0 8px 8px;
-  box-sizing: border-box;
-  min-height: 0; /* Important for flex child to shrink */
+  background: var(--ui-primary);
+  border-radius: 0 0 12px 12px;
+  min-height: 0;
+  padding: 0.75rem;
 }
 
 .sa-debugger-chart {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
-  background-color: var(--ui-modal-background);
+  border-radius: var(--form-radius, 4px);
+  background: var(--ui-secondary);
 }
 
-/* Enhanced performance and memory tabs with full height utilization */
+/* Performance and Memory tabs */
 .sa-performance-tab-content,
 .sa-memory-tab-content {
   height: 100%;
-  padding: 12px;
-  background-color: var(--ui-secondary);
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
   overflow-y: auto;
+  background: var(--ui-primary);
 }
 
-/* Enhanced log styling with full height utilization */
+/* Log view styling */
 .sa-debugger-log-outer {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--ui-secondary);
+  background: var(--ui-primary);
 }
 
 .sa-debugger-log-inner {
   flex: 1;
   position: relative;
   overflow-y: auto;
-  font-size: 11px;
-  line-height: 1.3;
-  contain: strict;
-  border-radius: 6px;
-  padding: 4px;
-  min-height: 0; /* Important for flex child to shrink */
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  border-radius: var(--form-radius, 4px);
+  padding: 0.25rem;
+  min-height: 0;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
 }
 
 .sa-debugger-log-empty {
@@ -324,10 +264,11 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-style: italic;
-  background-color: var(--ui-modal-background);
-  border-radius: 6px;
+  color: var(--text-primary-transparent);
+  background: var(--ui-secondary);
+  border-radius: var(--form-radius, 4px);
 }
 
 .sa-debugger-log-end {
@@ -338,118 +279,125 @@
   height: 1px;
 }
 
-/* Enhanced compact log entries */
+/* Compact log entries */
 .sa-debugger-log {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 18px;
+  height: 20px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 0 6px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-  transition: background-color 0.2s ease;
-  font-size: 10px;
+  border-bottom: 1px solid transparent;
+  padding: 0 0.375rem;
+  transition: background-color 0.1s ease;
 }
 
 .sa-debugger-log:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background: var(--ui-tertiary);
 }
 
 .sa-debugger-log[data-type="warn"] {
-  border-color: rgba(255, 193, 7, 0.5);
-  background-color: rgba(255, 193, 7, 0.1);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.08) 0%, 
+    rgba(255, 193, 7, 0.05) 100%);
 }
 
 .sa-debugger-log[data-type="error"] {
-  border-color: rgba(255, 107, 107, 0.5);
-  color: var(--error-primary);
-  background-color: rgba(255, 107, 107, 0.1);
+  background: linear-gradient(135deg, 
+    rgba(255, 107, 107, 0.08) 0%, 
+    rgba(255, 107, 107, 0.05) 100%);
 }
 
 .sa-debugger-log-repeats {
-  background-color: var(--extensions-primary);
+  background: linear-gradient(135deg, 
+    var(--extensions-primary) 0%, 
+    var(--extensions-tertiary) 100%);
   color: white;
   border-radius: 8px;
-  padding: 1px 6px;
-  margin-right: 4px;
-  font-size: 9px;
+  padding: 0.0625rem 0.375rem;
+  margin-right: 0.25rem;
+  font-size: 0.5625rem;
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
 }
 
-/* Enhanced compact log icons */
+/* Log icons */
 .sa-debugger-log-icon {
   width: 12px;
   height: 12px;
-  margin-right: 4px;
+  margin-right: 0.25rem;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease;
   flex-shrink: 0;
+}
+
+.sa-debugger-log:hover .sa-debugger-log-icon {
+  transform: scale(1.1);
 }
 
 [data-type="warn"] .sa-debugger-log-icon {
   background-image: url(./icons/warning.svg);
-  background-color: rgba(255, 193, 7, 0.15);
-  background-size: 8px;
+  background-color: var(--extensions-light);
+  background-size: 9px;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 [data-type="error"] .sa-debugger-log-icon {
   background-image: url(./icons/error.svg);
-  background-color: rgba(255, 107, 107, 0.15);
-  background-size: 8px;
+  background-color: var(--error-primary);
+  background-size: 9px;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 [data-type="log"] .sa-debugger-log-icon {
   background-image: url(./icons/info.svg);
-  background-color: var(--ui-black-transparent);
-  background-size: 8px;
+  background-color: var(--ui-tertiary);
+  background-size: 9px;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .sa-debugger-threads .sa-debugger-log-icon {
   background-image: url(./icons/subthread.svg);
-  background-color: rgba(76, 151, 255, 0.15);
-  background-size: 8px;
+  background-color: var(--looks-secondary);
+  background-size: 9px;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* Enhanced compact log link styling */
+/* Log link styling */
 .sa-debugger-log-link {
-  color: inherit;
+  color: var(--text-primary);
   cursor: pointer;
-  opacity: 0.7;
-  text-decoration: underline;
-  float: right;
+  text-decoration: none;
   text-align: right;
   max-width: 30%;
-  padding-left: 4px;
-  margin-right: 4px;
+  padding: 0.125rem 0.375rem;
   margin-left: auto;
-  font-size: 9px;
-  background-color: var(--ui-secondary);
-  padding: 1px 4px;
+  font-size: 0.5625rem;
+  background: var(--ui-secondary);
   border-radius: 3px;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   flex-shrink: 0;
+  border: 1px solid transparent;
 }
 
 .sa-debugger-log-link:hover {
-  text-decoration: underline;
-  color: var(--looks-secondary);
-  opacity: 1;
-  background-color: var(--looks-transparent);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, 
+    var(--looks-secondary) 0%, 
+    var(--looks-secondary-dark) 100%);
+  color: white;
+  border-color: var(--looks-secondary-dark);
+  box-shadow: 0 2px 4px rgba(76, 151, 255, 0.25);
+}
+
+.sa-debugger-log-link:active {
+  transform: scale(0.95);
 }
 
 .sa-debugger-log-link-unknown {
@@ -462,9 +410,9 @@
   text-overflow: ellipsis;
   white-space: pre;
   flex: 1;
-  font-size: 10px;
-  line-height: 1.4;
-  padding-right: 4px;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  padding-right: 0.25rem;
 }
 
 .sa-debugger-log-text-empty {
@@ -482,10 +430,10 @@
   opacity: 0.8;
 }
 
-/* Enhanced thread styling */
+/* Thread styling */
 .sa-debugger-thread-indent {
-  width: calc(20px * var(--level));
-  margin-right: 6px;
+  width: calc(16px * var(--level));
+  margin-right: 0.375rem;
   position: relative;
 }
 
@@ -495,8 +443,8 @@
   left: 50%;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background-color: var(--ui-black-transparent);
+  width: 1px;
+  background: var(--ui-black-transparent);
   transform: translateX(-50%);
 }
 
@@ -509,160 +457,151 @@
 }
 
 .sa-debugger-thread-id {
-  font-size: 9px;
-  opacity: 0.6;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 1px 4px;
+  font-size: 0.5625rem;
+  opacity: 0.7;
+  background: var(--ui-tertiary);
+  padding: 0.0625rem 0.25rem;
   border-radius: 3px;
-  margin-left: 6px;
+  margin-left: 0.375rem;
+  font-weight: 500;
 }
+
 .sa-debugger-thread-target-name {
   font-weight: 600;
-  margin-right: 6px;
+  margin-right: 0.375rem;
   color: var(--looks-secondary);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .sa-debugger-thread-running {
-  background-color: rgba(255, 193, 7, 0.12);
-  font-weight: 600;
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.12) 0%, 
+    rgba(255, 193, 7, 0.08) 100%);
   border-left: 2px solid var(--control-primary);
-  box-shadow: 0 1px 4px rgba(255, 193, 7, 0.15);
+  box-shadow: 0 1px 3px rgba(255, 193, 7, 0.15);
 }
 
+/* Block preview styling */
 .sa-debugger-block-preview {
-  padding: 2px 6px;
-  margin-right: 4px;
+  padding: 0.125rem 0.375rem;
+  margin-right: 0.25rem;
   background-color: var(--sa-block-colored-background, var(--looks-secondary));
   color: var(--sa-block-text, white);
-  border-radius: 4px;
-  font-size: 9px;
+  border-radius: var(--form-radius, 4px);
+  font-size: 0.5625rem;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
 }
 
 .sa-debugger-block-preview:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
 }
 
 .sa-debugger-block-preview[data-shape="round"] {
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .sa-debugger-block-preview[data-shape="stacked"] {
-  border-radius: 4px;
+  border-radius: var(--form-radius, 4px);
 }
 
-/* Enhanced compact compiler warning */
+/* Compiler warning - improved styling */
 .sa-debugger-compiler-warning {
-  position: relative;
-  display: block;
+  display: none;
   text-align: center;
-  height: 24px;
-  line-height: 24px;
+  padding: 0.5rem 0.75rem;
   color: var(--link-color);
-  background-color: rgba(255, 193, 7, 0.08);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.1) 0%, 
+    rgba(255, 193, 7, 0.05) 100%);
   border: 1px solid rgba(255, 193, 7, 0.25);
-  border-radius: 4px;
-  margin: 6px 12px;
-  padding: 0 12px;
+  border-radius: var(--form-radius, 4px);
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
   font-weight: 500;
-  transition: all 0.25s ease;
   cursor: pointer;
-  font-size: 11px;
+  transition: all 0.15s ease;
 }
 
 .sa-debugger-compiler-warning:hover {
-  background-color: rgba(255, 193, 7, 0.15);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.15) 0%, 
+    rgba(255, 193, 7, 0.1) 100%);
+  box-shadow: 0 2px 6px rgba(255, 193, 7, 0.2);
 }
 
-.sa-debugger-compiler-warning[hidden] {
-  display: none;
+.sa-debugger-compiler-warning:active {
+  transform: scale(0.98);
+}
+
+.sa-debugger-compiler-warning:not([hidden]) {
+  display: block;
 }
 
 .sa-debugger-thread-compiled {
   font-style: italic;
   opacity: 0.7;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  margin: 4px 0;
+  padding: 0.5rem;
+  background: var(--ui-secondary);
+  border-radius: var(--form-radius, 4px);
+  margin: 0.25rem 0;
+  border-left: 2px solid var(--ui-black-transparent);
 }
 
-/* Enhanced memory tab with compact grid layout */
+/* Memory tab styling */
 .sa-memory-tab-content {
-  padding: 12px;
+  padding: 0.75rem;
   color: var(--text-primary);
-  background: var(--ui-secondary);
+  background: var(--ui-primary);
 }
 
 .sa-memory-info-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--ui-modal-background);
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: var(--ui-secondary);
   border-radius: 8px;
   border: 1px solid var(--ui-black-transparent);
 }
 
 .sa-memory-info-card {
-  background: var(--ui-secondary);
+  background: var(--ui-primary);
   border-radius: 6px;
-  padding: 10px;
+  padding: 0.625rem;
   text-align: center;
   border: 1px solid var(--ui-black-transparent);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  min-height: 60px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 56px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-.sa-memory-info-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: none;
-  transition: left 0.5s ease;
-}
-
-.sa-memory-info-card:hover::before {
-  left: 100%;
+  gap: 0.125rem;
 }
 
 .sa-memory-info-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  background: var(--ui-modal-background);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  background: var(--ui-secondary);
 }
 
 .sa-memory-info-title {
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   color: var(--text-primary-transparent);
-  margin: 0 0 4px 0;
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .sa-memory-info-value {
-  font-size: 16px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-clones .sa-memory-info-value {
@@ -682,225 +621,166 @@
 }
 
 .sa-memory-info-card.sa-memory-warning {
-  border-color: var(--control-primary);
-  background-color: rgba(255, 193, 7, 0.15);
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+  border-color: var(--extensions-primary);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.12) 0%, 
+    rgba(255, 193, 7, 0.08) 100%);
 }
 
 .sa-memory-info-card.sa-memory-critical {
   border-color: var(--error-primary);
-  background-color: rgba(255, 107, 107, 0.15);
-  animation: sa-memory-pulse 2s infinite;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-}
-
-@keyframes sa-memory-pulse {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
+  background: linear-gradient(135deg, 
+    rgba(255, 107, 107, 0.12) 0%, 
+    rgba(255, 107, 107, 0.08) 100%);
 }
 
 .sa-memory-tab-content h2 {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
-  margin: 16px 0 8px 0;
+  margin: 0.75rem 0 0.5rem 0;
   color: var(--text-primary);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .sa-memory-tab-content .sa-debugger-chart {
-  margin-bottom: 12px;
-  background: var(--ui-modal-background);
-  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: var(--ui-secondary);
+  border-radius: var(--form-radius, 4px);
   border: 1px solid var(--ui-black-transparent);
 }
 
-/* Enhanced compact memory clear button styling */
+/* Clear button - improved styling */
 .sa-memory-clear-button {
-  background-color: var(--error-primary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: linear-gradient(135deg, 
+    var(--error-primary) 0%, 
+    var(--error-tertiary) 100%) !important;
+  border: 1px solid var(--error-primary) !important;
   color: white !important;
-  border-radius: 6px !important;
-  padding: 6px 10px !important;
+  border-radius: var(--form-radius, 4px) !important;
+  padding: 0.375rem 0.75rem !important;
   font-weight: 600 !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 2px 6px var(--error-transparent) !important;
-  position: relative !important;
-  overflow: hidden !important;
-  font-size: 11px !important;
-}
-
-.sa-memory-clear-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: none;
-  transition: left 0.5s ease;
-}
-
-.sa-memory-clear-button:hover::before {
-  left: 100%;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.25) !important;
+  font-size: 0.75rem !important;
 }
 
 .sa-memory-clear-button:hover {
-  background-color: var(--error-light) !important;
+  box-shadow: 0 3px 6px rgba(255, 107, 107, 0.35) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 10px var(--error-transparent) !important;
 }
 
 .sa-memory-clear-button:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 2px 6px var(--error-transparent) !important;
+  transform: scale(0.95) !important;
+  box-shadow: 0 1px 3px rgba(255, 107, 107, 0.2) !important;
 }
 
 .sa-memory-clear-button .sa-debugger-icon {
   width: 12px !important;
   height: 12px !important;
-  margin-right: 4px !important;
+  margin-right: 0.25rem !important;
   background-color: currentColor !important;
 }
 
-/* Enhanced responsive design for better space efficiency */
+/* Responsive design */
 @media (max-width: 768px) {
   .sa-debugger-header-buttons {
-    gap: 4px;
+    gap: 0.25rem;
   }
   
   .sa-debugger-tabs {
-    gap: 3px;
+    gap: 0.125rem;
   }
   
   .sa-debugger-tabs li {
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .sa-debugger-header {
+    flex-wrap: wrap;
   }
   
   .sa-memory-info-section {
-    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-    gap: 6px;
-    padding: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.375rem;
+    padding: 0.5rem;
   }
   
   .sa-memory-info-card {
-    padding: 8px;
-    min-height: 50px;
+    padding: 0.5rem;
+    min-height: 48px;
   }
   
   .sa-memory-info-value {
-    font-size: 14px;
+    font-size: 0.75rem;
   }
   
   .sa-memory-info-title {
-    font-size: 8px;
+    font-size: 0.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .sa-debugger-header {
     flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    padding: 6px 8px;
+    gap: 0.5rem;
+    padding: 0.5rem;
   }
   
   .sa-debugger-tabs {
     justify-content: center;
-    gap: 2px;
+    width: 100%;
+    overflow-x: auto;
   }
   
   .sa-debugger-header-buttons {
     justify-content: center;
+    width: 100%;
   }
   
   .sa-memory-info-section {
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 0.25rem;
+    padding: 0.375rem;
   }
 }
 
-/* High contrast mode support */
+/* High contrast mode */
 @media (prefers-contrast: high) {
-  .sa-debugger-interface {
-    border-width: 2px;
-  }
-  
   .sa-debugger-tabs li,
   .sa-debugger-header-buttons [class*="card_shrink-expand-button"],
-  .sa-memory-info-card {
+  .sa-memory-info-card,
+  .sa-debugger-log,
+  .sa-debugger-block-preview {
     border-width: 2px;
   }
   
-  .sa-debugger-log {
-    border-bottom-width: 2px;
+  .sa-debugger-log-link {
+    border-width: 1px;
   }
 }
 
-/* Reduced motion support */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .sa-debugger-tabs li,
   .sa-debugger-header-buttons [class*="card_shrink-expand-button"],
   .sa-memory-info-card,
   .sa-debugger-log,
   .sa-debugger-block-preview,
-  .sa-debugger-log-link {
-    transition: none;
-    animation: none;
-  }
-  
-  .sa-debugger-tabs li::before,
-  .sa-debugger-header-buttons [class*="card_shrink-expand-button"]::before,
-  .sa-memory-info-card::before,
-  .sa-memory-clear-button::before {
-    display: none;
-  }
-  
-  .sa-debugger-unpause {
-    animation: none;
-  }
-  
-  .sa-memory-info-card.sa-memory-critical {
-    animation: none;
+  .sa-debugger-log-link,
+  .sa-memory-clear-button {
+    transition: none !important;
+    animation: none !important;
   }
 }
 
-/* Dark theme enhancements */
+/* Dark theme */
 @media (prefers-color-scheme: dark) {
-  .sa-debugger-interface {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
-                0 15px 12px rgba(0, 0, 0, 0.3);
+  .sa-debugger-log-link:hover {
+    box-shadow: 0 2px 8px rgba(76, 151, 255, 0.4);
   }
 }
 
-/* Print styles */
-@media print {
-  .sa-debugger-interface {
-    box-shadow: none;
-    border: 2px solid #000;
-    background: white !important;
-    color: black !important;
-  }
-  
-  .sa-debugger-header-buttons,
-  .sa-debugger-resize-handle {
-    display: none;
-  }
-  
-  .sa-debugger-tabs li {
-    background: white !important;
-    color: black !important;
-    border: 1px solid #000;
-  }
-}
-
-/* Custom compact scrollbar styling for webkit browsers */
+/* Scrollbar styling - matches mistwarp */
 .sa-debugger-log-inner::-webkit-scrollbar,
 .sa-debugger-tab-content::-webkit-scrollbar {
   width: 6px;
@@ -909,28 +789,38 @@
 
 .sa-debugger-log-inner::-webkit-scrollbar-track,
 .sa-debugger-tab-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ui-tertiary);
   border-radius: 3px;
 }
 
 .sa-debugger-log-inner::-webkit-scrollbar-thumb,
 .sa-debugger-tab-content::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--ui-black-transparent);
   border-radius: 3px;
-  transition: all 0.25s ease;
 }
 
 .sa-debugger-log-inner::-webkit-scrollbar-thumb:hover,
 .sa-debugger-tab-content::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Performance optimizations */
-.sa-debugger-interface,
-.sa-debugger-header,
-.sa-debugger-tabs li,
-.sa-debugger-header-buttons [class*="card_shrink-expand-button"],
-.sa-memory-info_card {
-  will-change: transform;
-  transform: translateZ(0);
+/* Print styles */
+@media print {
+  .sa-debugger-interface {
+    box-shadow: none !important;
+    border: 2px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .sa-debugger-header-buttons,
+  .sa-memory-clear-button {
+    display: none !important;
+  }
+  
+  .sa-debugger-tabs li {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #000;
+  }
 }

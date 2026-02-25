@@ -19,6 +19,7 @@ import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
 import MenuBar from '../menu-bar/menu-bar.jsx';
 import CostumeLibrary from '../../containers/costume-library.jsx';
+import SoundLibrary from '../../containers/sound-library.jsx';
 import BackdropLibrary from '../../containers/backdrop-library.jsx';
 import Watermark from '../../containers/watermark.jsx';
 
@@ -44,6 +45,7 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
+import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
@@ -400,6 +402,7 @@ const GUIComponent = props => {
         children,
         connectionModalVisible,
         costumeLibraryVisible,
+        soundLibraryVisible,
         costumesTabVisible,
         customStageSize,
         enableCommunity,
@@ -440,9 +443,11 @@ const GUIComponent = props => {
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
         onRequestCloseExtensionLibrary,
+        onRequestCloseSoundLibrary,
         onRequestCloseTelemetryModal,
         onSeeCommunity,
         onSetStageSize: _onSetStageSize,
+        onSetFullScreen: _onSetFullScreen,
         onShare,
         onShowPrivacyPolicy,
         onStartSelectingFileUpload,
@@ -468,6 +473,7 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        shortcutManagerModalVisible,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
@@ -484,6 +490,20 @@ const GUIComponent = props => {
             return () => clearTimeout(timer);
         }
     }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
+
+    useEffect(() => {
+        if (onStartSelectingFileUpload || onClickPackager) {
+            const {updateCallbacks: updateShortcutsCallbacks} = require('../../lib/shortcuts/event-router.js');
+            const newCallbacks = {};
+            if (onStartSelectingFileUpload) {
+                newCallbacks.loadFromComputer = onStartSelectingFileUpload;
+            }
+            if (onClickPackager) {
+                newCallbacks.openPackager = onClickPackager;
+            }
+            updateShortcutsCallbacks(newCallbacks);
+        }
+    }, [onStartSelectingFileUpload, onClickPackager]);
 
     const tabClassNames = useMemo(() => ({
         tabs: styles.tabs,
@@ -507,6 +527,7 @@ const GUIComponent = props => {
             <TWRestorePointManager />
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
+            <ShortcutManager visible={shortcutManagerModalVisible} />
             {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
             {settingsModalVisible && (
                 <TWSettingsModal
@@ -532,6 +553,7 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        shortcutManagerModalVisible,
         onboardingVisible
     ]);
 
@@ -639,6 +661,12 @@ const GUIComponent = props => {
                     <BackdropLibrary
                         vm={vm}
                         onRequestClose={onRequestCloseBackdropLibrary}
+                    />
+                ) : null}
+                {soundLibraryVisible ? (
+                    <SoundLibrary
+                        vm={vm}
+                        onRequestClose={onRequestCloseSoundLibrary}
                     />
                 ) : null}
                 <MenuBar
@@ -861,6 +889,7 @@ GUIComponent.propTypes = {
     cardsVisible: PropTypes.bool,
     children: PropTypes.node,
     costumeLibraryVisible: PropTypes.bool,
+    soundLibraryVisible: PropTypes.bool,
     costumesTabVisible: PropTypes.bool,
     customStageSize: PropTypes.shape({
         width: PropTypes.number,
@@ -885,8 +914,8 @@ GUIComponent.propTypes = {
     onClickAccountNav: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
-    onClickNewWindow: PropTypes.func,
     onClickPackager: PropTypes.func,
+    onClickNewWindow: PropTypes.func,
     onClickLogo: PropTypes.func,
     onCloseAccountNav: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
@@ -897,6 +926,7 @@ GUIComponent.propTypes = {
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,
     onRequestCloseCostumeLibrary: PropTypes.func,
+    onRequestCloseSoundLibrary: PropTypes.func,
     onRequestCloseExtensionLibrary: PropTypes.func,
     onRequestCloseTelemetryModal: PropTypes.func,
     onSeeCommunity: PropTypes.func,
@@ -909,6 +939,7 @@ GUIComponent.propTypes = {
     onTelemetryModalOptOut: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
     onSetStageSize: PropTypes.func,
+    onSetFullScreen: PropTypes.func,
     renderLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
@@ -924,6 +955,7 @@ GUIComponent.propTypes = {
     onboardingVisible: PropTypes.bool,
     usernameModalVisible: PropTypes.bool,
     settingsModalVisible: PropTypes.bool,
+    shortcutManagerModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
@@ -962,13 +994,15 @@ const mapStateToProps = state => ({
     stageSizeMode: state.scratchGui.stageSize.stageSize,
     theme: state.scratchGui.theme.theme,
     locale: state.locales.locale,
-    onboardingVisible: state.scratchGui.onboarding.visible
+    onboardingVisible: state.scratchGui.onboarding.visible,
+    shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal
 });
 
 const mapDispatchToProps = dispatch => ({
-    onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
-    onOpenOnboarding: () => dispatch(showOnboarding())
-});
+        onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
+        onOpenOnboarding: () => dispatch(showOnboarding())
+    }
+);
 
 export default injectIntl(connect(
     mapStateToProps,

@@ -201,7 +201,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
 
                 if (filename && filename.endsWith('.html')) {
                     try {
-                        const blob = new Blob([projectData], { type: 'text/html' });
+                        const blob = new Blob([projectData], {type: 'text/html'});
                         const unpackaged = await unpackage(blob);
                         projectData = unpackaged.data;
                     } catch (error) {

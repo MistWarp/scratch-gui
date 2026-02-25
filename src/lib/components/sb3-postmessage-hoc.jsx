@@ -7,7 +7,7 @@ import {getIsShowingProject} from '../../reducers/project-state';
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
  * This allows external applications to send SB3 data or URLs to Mistwarp for loading.
- * 
+ *
  * Expected message format:
  * {
  *   type: 'LOAD_SB3',
@@ -63,7 +63,7 @@ const SB3PostMessageHOC = function (WrappedComponent) {
 
                 // Allow HTTP for localhost and development
                 if (url.protocol === 'http:' && (
-                    url.hostname === 'localhost' || 
+                    url.hostname === 'localhost' ||
                     url.hostname === '127.0.0.1' ||
                     url.hostname.endsWith('.local')
                 )) {
