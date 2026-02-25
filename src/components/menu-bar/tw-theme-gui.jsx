@@ -11,7 +11,6 @@ import {closeSettingsMenu, guiMenuOpen, openGuiMenu} from '../../reducers/menus.
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
-import {useIcon} from '../icon-provider/icons.jsx';
 
 const ThemeIcon = ({id}) => (
     <svg
@@ -28,19 +27,10 @@ ThemeIcon.propTypes = {
 };
 
 const ThemeMenuItem = props => {
-    const Check = useIcon('Check');
-    
     return (
         <MenuItem onClick={props.onClick}>
             <div className={styles.option}>
-                {Check ? (
-                    <Check
-                        className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                        size={15}
-                    />
-                ) : (
-                    <span className={classNames(styles.check, {[styles.selected]: props.isSelected}, styles.checkText)}>✓</span>
-                )}
+                <span className={classNames(styles.check, {[styles.selected]: props.isSelected}, styles.checkText)}>✓</span>
                 <ThemeIcon id={props.id} />
                 <span className={props.name}>
                     <FormattedMessage

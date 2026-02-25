@@ -4,11 +4,8 @@ import classNames from 'classnames';
 
 import styles from './delete-button.css';
 import deleteIcon from './icon--delete.svg';
-import {useIcon} from '../icon-provider/icons.jsx';
 
 const DeleteButton = props => {
-    const Trash = useIcon('Trash');
-    
     return (
         <div
             aria-label="Delete"
@@ -21,11 +18,7 @@ const DeleteButton = props => {
             onClick={props.onClick}
         >
             <div className={styles.deleteButtonVisible}>
-                {Trash ? (
-                    <Trash size={15} />
-                ) : (
-                    <span className={styles.deleteText}>✕</span>
-                )}
+                <span className={styles.deleteText}>✕</span>
             </div>
         </div>
     );
