@@ -18,6 +18,7 @@ import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
 
 import ChevronDown from './ChevronDown.jsx';
+import {Eye} from 'lucide-react';
 
 const SettingsMenu = ({
     canChangeLanguage,
@@ -34,7 +35,11 @@ const SettingsMenu = ({
             onOpen={onRequestOpen}
             onClose={onRequestClose}
         >
-            <span className={styles.menuIcon}>{'⚙'}</span>
+            <Eye
+                width={20}
+                height={20}
+                size={20}
+            />
             <span className={styles.dropdownLabel}>
                 <FormattedMessage
                     defaultMessage="View"
