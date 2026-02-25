@@ -20,6 +20,7 @@ import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import {connect} from 'react-redux';
 import storage from '../lib/persistence/storage';
 import VM from 'scratch-vm';
+import {updateCallbacks} from '../lib/shortcuts/event-router.js';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
@@ -105,6 +106,8 @@ class Backpack extends React.Component {
 
         document.addEventListener('pointermove', this.handleGlobalPointerMove);
         document.addEventListener('mousemove', this.handleGlobalPointerMove);
+
+        updateCallbacks({toggleBackpack: this.handleToggle});
     }
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
@@ -389,7 +392,7 @@ class Backpack extends React.Component {
                 loading={this.state.loading}
                 searchQuery={this.state.searchQuery}
                 onSearchChange={this.handleSearchChange}
-                showMore={!this.state.searchQuery && this.state.moreToLoad}
+                showMore={!this.props.searchQuery && this.state.moreToLoad}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}

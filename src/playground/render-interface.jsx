@@ -44,6 +44,7 @@ import runAddons from '../addons/entry';
 import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
 import windowManager from '../addons/window-system/window-manager';
+import IconPackProvider from '../components/icon-provider/icon-provider.jsx';
 
 import styles from './interface.css';
 
@@ -337,13 +338,15 @@ class Interface extends React.Component {
                         width: `${Math.max(480, props.customStageSize.width) + 2}px`
                     }) : null}
                 >
-                    <GUI
-                        onClickAddonSettings={handleClickAddonSettings}
-                        onUpdateProjectTitle={this.handleUpdateProjectTitle}
-                        backpackVisible
-                        backpackHost="_local_"
-                        {...props}
-                    />
+                    <IconPackProvider>
+                        <GUI
+                            onClickAddonSettings={handleClickAddonSettings}
+                            onUpdateProjectTitle={this.handleUpdateProjectTitle}
+                            backpackVisible
+                            backpackHost="_local_"
+                            {...props}
+                        />
+                    </IconPackProvider>
                     {isHomepage ? (
                         <React.Fragment>
                             {isBrowserSupported() ? null : (

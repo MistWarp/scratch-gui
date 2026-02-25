@@ -81,21 +81,25 @@ function Notification ({id, message, type, onDismiss, duration}) {
                 }, 300);
             }}
         >
-            <span style={{
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '20px',
-                height: '20px',
-                color: colors[type]
-            }}>
+            <span
+                style={{
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '20px',
+                    height: '20px',
+                    color: colors[type]
+                }}
+            >
                 <Icon size={16} />
             </span>
-            <span style={{
-                flex: 1,
-                lineHeight: '1.4'
-            }}>
+            <span
+                style={{
+                    flex: 1,
+                    lineHeight: '1.4'
+                }}
+            >
                 {message}
             </span>
         </div>

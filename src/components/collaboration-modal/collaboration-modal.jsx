@@ -111,10 +111,10 @@ class CollaborationModal extends Component {
                     clearTimeout(this._autoJoinTimer);
                     this._autoJoinTimer = null;
                 }
-            } else {
-                const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
-                this._autoJoinFailures.delete(roomIdKey);
+                return;
             }
+            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
+            this._autoJoinFailures.delete(roomIdKey);
         }
 
         const shouldResetToJoin =
@@ -195,6 +195,7 @@ class CollaborationModal extends Component {
                     }
                 }
             } catch (error) {
+                // ignore
             }
         }
     }
@@ -567,7 +568,8 @@ class CollaborationModal extends Component {
                         <AlertTriangle size={20} />
                     </div>
                     <div className={styles.bannerContent}>
-                        <strong>Alpha Warning:</strong> This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.
+                        <strong>{'Alpha Warning:'}</strong>
+                        {'This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.'}
                     </div>
                 </div>
 
@@ -1069,6 +1071,9 @@ class CollaborationModal extends Component {
                 onRequestClose={this.props.onRequestClose}
                 contentLabel="Live Collaboration"
                 id="collaborationModal"
+                width={600}
+                height={720}
+                resizable
             >
                 <Box className={styles.body}>
                     {content}

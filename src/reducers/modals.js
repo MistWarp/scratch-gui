@@ -23,6 +23,7 @@ const MODAL_GIT = 'gitModal';
 const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
+const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -46,7 +47,8 @@ const initialState = {
     [MODAL_GIT]: false,
     [MODAL_PREFERENCES]: false,
     [MODAL_SIMPLE_DIALOG]: false,
-    [MODAL_ONBOARDING]: false
+    [MODAL_ONBOARDING]: false,
+    [MODAL_SHORTCUT_MANAGER]: false
 };
 
 const reducer = function (state, action) {
@@ -145,6 +147,9 @@ const openPreferencesModal = function () {
 const openOnboardingModal = function () {
     return openModal(MODAL_ONBOARDING);
 };
+const openShortcutManagerModal = function () {
+    return openModal(MODAL_SHORTCUT_MANAGER);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -214,9 +219,13 @@ const closePreferencesModal = function () {
 const closeOnboardingModal = function () {
     return closeModal(MODAL_ONBOARDING);
 };
+const closeShortcutManagerModal = function () {
+    return closeModal(MODAL_SHORTCUT_MANAGER);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
+    closeModal,
     openBackdropLibrary,
     openCostumeLibrary,
     openExtensionLibrary,
@@ -238,6 +247,8 @@ export {
     openGitModal,
     openPreferencesModal,
     openOnboardingModal,
+    openShortcutManagerModal,
+    openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -257,7 +268,7 @@ export {
     closeInvalidProjectModal,
     closeExtensionManagerModal,
     closeGitModal,
+    closePreferencesModal,
     closeOnboardingModal,
-    closeModal,
-    openSimpleDialog
+    closeShortcutManagerModal
 };

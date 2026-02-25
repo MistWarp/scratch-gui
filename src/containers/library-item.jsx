@@ -6,7 +6,6 @@ import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import LibraryItemComponent from '../components/library-item/library-item.jsx';
 
 
-
 class LibraryItem extends React.PureComponent {
     constructor (props) {
         super(props);

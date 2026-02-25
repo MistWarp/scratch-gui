@@ -1,0 +1,354 @@
+@import "../../css/colors.css";
+
+.container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 240px;
+    border-right: 1px solid $ui-black-transparent;
+    background: $ui-secondary;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebarHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 12px;
+    border-bottom: 1px solid $ui-black-transparent;
+    margin-bottom: 12px;
+}
+
+.sidebarTitle {
+    font-size: 0.875rem;
+    font-weight: bold;
+    opacity: 0.7;
+}
+
+.searchContainer {
+    position: relative;
+    margin: 0 16px 12px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-primary;
+    opacity: 0.5;
+}
+
+.searchInput {
+    width: calc(100% - 40px);
+    padding-left: 28px;
+    font-size: 0.75rem;
+    height: 28px;
+}
+
+.categoryList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+}
+
+.categoryItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background-color 0.1s;
+}
+
+.categoryItem:hover {
+    background-color: $ui-black-transparent;
+}
+
+.categoryItem.selected {
+    background-color: $looks-secondary;
+    color: $ui-primary;
+    font-weight: bold;
+}
+
+.categoryLabel {
+    flex: 1;
+}
+
+.categoryCount {
+    background: $ui-black-transparent;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.categoryItem.selected .categoryCount {
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+}
+
+.content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.noResults {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 12px;
+    color: $text-primary;
+    opacity: 0.5;
+    font-size: 0.875rem;
+}
+
+.category {
+    margin-bottom: 24px;
+}
+
+.category:last-child {
+    margin-bottom: 0;
+}
+
+.categoryTitle {
+    font-size: 0.875rem;
+    font-weight: bold;
+    margin: 0 0 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid $ui-black-transparent;
+    color: $text-primary;
+    opacity: 0.8;
+}
+
+.categoryItems {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shortcutItem {
+    background: $ui-tertiary;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.1s;
+}
+
+.shortcutItem:hover {
+    background: $ui-black-transparent;
+}
+
+.shortcutInfo {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shortcutLabel {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.shortcutKey {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.keyDisplay {
+    background: $ui-black-transparent;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: monospace;
+    min-width: 60px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.resetIcon,
+.editIcon {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.1s;
+    opacity: 0.5;
+}
+
+.resetIcon:hover,
+.editIcon:hover {
+    background: $ui-black-transparent;
+    opacity: 1;
+}
+
+.shortcutEditor {
+    flex: 1;
+    max-width: 300px;
+}
+
+.editorDisplay {
+    background: $ui-black-transparent;
+    border: 1px solid $looks-secondary;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.keyPart {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.keySeparator {
+    opacity: 0.5;
+    margin-left: 2px;
+}
+
+.instruction {
+    color: $text-primary;
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.editorButtons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.editorButton {
+    background: $ui-tertiary;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.editorButton:hover {
+    background: $ui-black-transparent;
+}
+
+.editorButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.saveButton {
+    background: $looks-secondary;
+    color: $ui-primary;
+}
+
+.saveButton:hover {
+    background: $looks-tertiary;
+}
+
+.editorHint {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    text-align: center;
+}
+
+.conflictWarning {
+    padding: 24px;
+}
+
+.conflictHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.conflictIcon {
+    color: #ff9900;
+}
+
+.conflictMessage {
+    margin-bottom: 24px;
+}
+
+.conflictList {
+    margin: 12px 0;
+    padding-left: 20px;
+}
+
+.conflictItem {
+    margin: 6px 0;
+    font-size: 0.875rem;
+}
+
+.conflictQuestion {
+    margin-top: 16px;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.conflictButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.conflictButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.confirmButton {
+    background: $looks-secondary;
+    color: $ui-primary;
+}
+
+.confirmButton:hover {
+    background: $looks-tertiary;
+}
+
+.footer {
+    border-top: 1px solid $ui-black-transparent;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: $ui-secondary;
+}
+
+.resetAllButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.doneButton {
+    min-width: 80px;
+}

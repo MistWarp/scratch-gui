@@ -33,6 +33,8 @@ const ConnectionModalComponent = props => (
         id="connectionModal"
         onHelp={props.onHelp}
         onRequestClose={props.onCancel}
+        width={500}
+        height={400}
     >
         <Box className={styles.body}>
             {props.phase === PHASES.scanning && !props.useAutoScan && <ScanningStep {...props} />}

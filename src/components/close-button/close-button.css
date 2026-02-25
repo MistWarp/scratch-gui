@@ -77,3 +77,9 @@
     width: 2rem;
     height: 2rem;
 }
+
+.closeText {
+    font-size: 1.2rem;
+    font-weight: bold;
+    line-height: 1;
+}

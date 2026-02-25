@@ -40,7 +40,10 @@ AlignIcon.propTypes = {
 const AlignMenuItem = props => (
     <MenuItem onClick={props.onClick}>
         <div className={styles.option}>
-            <Check size={15} className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
+            <Check
+                size={15}
+                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
+            />
             <AlignIcon id={props.id} />
             <span className={styles.themeName}>
                 <FormattedMessage
@@ -97,7 +100,7 @@ const MenubarAlignMenu = ({
                 />
             ))}
         </Submenu>
-    </MenuItem>)
+    </MenuItem>);
 };
 
 MenubarAlignMenu.propTypes = {

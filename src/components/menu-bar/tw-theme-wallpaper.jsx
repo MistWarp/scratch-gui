@@ -61,7 +61,12 @@ const WallpaperMenuItem = ({url, isSelected, onClick, onRemove}) => (
                         onRemove(url);
                     }}
                 >
-                    <Trash size={14} className={styles.removeWallpaperIcon} style={{margin: '0'}} size={20} />
+                    <Trash
+                        size={14}
+                        className={styles.removeWallpaperIcon}
+                        style={{margin: '0'}}
+                        size={20}
+                    />
                 </button>
             ) : null}
         </div>
@@ -109,8 +114,14 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
     };
 
     return (
-        <div className={styles.wallpaperForm} onClick={e => e.stopPropagation()}>
-            <form onSubmit={handleSubmit} onClick={e => e.stopPropagation()}>
+        <div
+            className={styles.wallpaperForm}
+            onClick={e => e.stopPropagation()}
+        >
+            <form
+                onSubmit={handleSubmit}
+                onClick={e => e.stopPropagation()}
+            >
                 <input
                     type="url"
                     placeholder="Enter image URL..."
@@ -134,8 +145,14 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     </button>
                 </div>
             </form>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-opacity" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-opacity"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Opacity:"
                         description="Label for wallpaper opacity slider"
@@ -173,10 +190,19 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
-                <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(opacity * 100)}%</span>
+                <span
+                    className={styles.opacityValue}
+                    onClick={e => e.stopPropagation()}
+                >{Math.round(opacity * 100)}%</span>
             </div>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-darkness" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-darkness"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Darkness:"
                         description="Label for wallpaper darkness slider"
@@ -214,10 +240,19 @@ const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGrid
                     onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
-                <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(darkness * 100)}%</span>
+                <span
+                    className={styles.opacityValue}
+                    onClick={e => e.stopPropagation()}
+                >{Math.round(darkness * 100)}%</span>
             </div>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-grid-visible" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-grid-visible"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Show Grid:"
                         description="Label for wallpaper grid visibility toggle"
@@ -278,7 +313,6 @@ const WallpaperMenu = ({
 
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
-
     
 
     const handleRemoveWallpaper = urlToRemove => {

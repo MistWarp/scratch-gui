@@ -62,11 +62,17 @@ ThemeIcon.propTypes = {
 const ThemeMenuItem = ({id, disabled, isSelected, onClick}) => (
     <MenuItem onClick={disabled ? null : onClick}>
         <div className={classNames(styles.option, {[styles.disabled]: disabled})}>
-            <Check size={15} className={classNames(styles.check, {[styles.selected]: isSelected})} />
+            <Check
+                size={15}
+                className={classNames(styles.check, {[styles.selected]: isSelected})}
+            />
             <ThemeIcon id={id} />
             <FormattedMessage {...options[id]} />
             {id === BLOCKS_CUSTOM && (
-                <ExternalLink size={20} className={styles.openLink} />
+                <ExternalLink
+                    size={20}
+                    className={styles.openLink}
+                />
             )}
         </div>
     </MenuItem>
@@ -140,7 +146,7 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
-           applyTheme(theme);
+        applyTheme(theme);
     },
     onOpenMenu: () => dispatch(openBlocksThemeMenu())
 });

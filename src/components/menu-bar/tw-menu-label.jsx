@@ -63,8 +63,8 @@ class MenuLabel extends React.Component {
         // 1. The menu is open
         // 2. The mouseup is outside the menu
         // 3. The initial mousedown was also outside the menu (indicating a click outside)
-        if (this.props.open && 
-            !this.menuEl.contains(e.target) && 
+        if (this.props.open &&
+            !this.menuEl.contains(e.target) &&
             !this.mouseDownInsideMenu) {
             this.props.onClose();
         }

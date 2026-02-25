@@ -32,7 +32,7 @@ export default function ({addon, msg}) {
      * @param {*} value - The value to report. Can be of any type. If it's an object, it will be stringified.
      * @throws {Error} Will throw an error if the block does not exist.
      */
-    ScratchBlocks.WorkspaceSvg.prototype.reportValue = function (id, value) {
+    ScratchBlocks.WorkspaceSvg.prototype.reportValue = function (id, value, fullValue) {
         const block = this.getBlockById(id);
         if (!block) {
             throw new Error('Tried to report value on block that does not exist.');
@@ -45,8 +45,8 @@ export default function ({addon, msg}) {
 
         const valueReportBox = document.createElement('div');
         valueReportBox.setAttribute('class', 'valueReportBox');
-        let displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
-        displayValue = displayValue.length > 5000 ? `${displayValue.slice(0, 5000)}...` : displayValue;
+        const copyValue = fullValue || value;
+        const displayValue = copyValue.length > 5000 ? `${copyValue.slice(0, 5000)}...` : copyValue;
         valueReportBox.innerText = displayValue;
         if (!addon.self.disabled) {
             // use to get focus and event priority
@@ -58,7 +58,7 @@ export default function ({addon, msg}) {
                 }
             };
 
-            if (value.length !== 0) {
+            if (copyValue.length !== 0) {
                 const copyButton = document.createElement('img');
                 copyButton.setAttribute('role', 'button');
                 copyButton.setAttribute('tabindex', '0');
@@ -68,7 +68,7 @@ export default function ({addon, msg}) {
                 copyButton.classList.add('sa-copy-reporter-icon');
                 addon.tab.displayNoneWhileDisabled(copyButton);
 
-                copyButton.onclick = () => navigator.clipboard.writeText(value);
+                copyButton.onclick = () => navigator.clipboard.writeText(copyValue);
                 valueReportBox.appendChild(copyButton);
             }
         }

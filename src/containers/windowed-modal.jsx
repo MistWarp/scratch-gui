@@ -171,56 +171,18 @@ class WindowedModal extends React.Component {
         } = this.props;
         
         // Determine window size based on content type
-        let width = 600;
-        let height = 500;
-        let resizable = true;
-        let maximizable = true;
-        let minWidth = 400;
-        let minHeight = 300;
-        let maxWidth = null;
-        let maxHeight = null;
-        
+        let width = this.props.width || 600;
+        let height = this.props.height || 500;
+        const resizable = this.props.resizable !== false;
+        const maximizable = this.props.maximizable !== false;
+        const minWidth = this.props.minWidth || 400;
+        const minHeight = this.props.minHeight || 300;
+        const maxWidth = this.props.maxWidth || null;
+        const maxHeight = this.props.maxHeight || null;
+    
         if (fullScreen) {
             width = Math.min(1200, window.innerWidth - 100);
             height = Math.min(800, window.innerHeight - 100);
-        }
-        
-        // Adjust size for specific modal types
-        if (className.includes('settings')) {
-            width = 880;
-            height = 550;
-        } else if (className.includes('library')) {
-            width = 1000;
-            height = 750;
-        } else if (className.includes('connection')) {
-            width = 500;
-            height = 400;
-            resizable = false;
-        } else if (id === 'customProceduresModal') {
-            width = 800;
-            height = 700;
-            resizable = false;
-            maximizable = false;
-        } else if (id === 'usernameModal') {
-            // Specific styling for username modal
-            width = 550;
-            height = 400;
-            resizable = false;
-            maximizable = false;
-        } else if (id === 'collaborationModal') {
-            // Collaboration modal
-            width = 600;
-            height = 720;
-            resizable = true;
-        } else if (id === 'mwProjectThemeModal') {
-            width = 520;
-            height = 240;
-            minWidth = 520;
-            minHeight = 0;
-            maxWidth = 520;
-            maxHeight = 240;
-            resizable = false;
-            maximizable = false;
         }
         
         this.window = WindowManager.createWindow({
@@ -456,7 +418,15 @@ WindowedModal.propTypes = {
     visible: PropTypes.bool,
     locale: PropTypes.string,
     messages: PropTypes.object,
-    store: PropTypes.object.isRequired
+    store: PropTypes.object.isRequired,
+    width: PropTypes.number,
+    height: PropTypes.number,
+    resizable: PropTypes.bool,
+    maximizable: PropTypes.bool,
+    minWidth: PropTypes.number,
+    minHeight: PropTypes.number,
+    maxWidth: PropTypes.number,
+    maxHeight: PropTypes.number
 };
 
 const mapStateToProps = state => ({

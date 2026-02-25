@@ -721,7 +721,9 @@ class Blocks extends React.Component {
             setTimeout(() => {
                 if (this.workspace && !this.unmounted) {
                     this.workspace.refreshToolboxSelection_();
-                    this.workspace.markDraggedBlockAsDirty();
+                    if (typeof this.workspace.markDraggedBlockAsDirty === 'function') {
+                        this.workspace.markDraggedBlockAsDirty();
+                    }
                 }
             }, 0);
         } catch (e) {
@@ -847,7 +849,7 @@ class Blocks extends React.Component {
         this.workspace.glowBlock(data.id, false);
     }
     onVisualReport (data) {
-        this.workspace.reportValue(data.id, data.value);
+        this.workspace.reportValue(data.id, data.value, data.fullValue);
     }
     getToolboxXML () {
         // Use try/catch because this requires digging pretty deep into the VM

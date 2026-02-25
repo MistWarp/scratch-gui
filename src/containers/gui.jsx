@@ -9,7 +9,10 @@ import {injectIntl, intlShape} from 'react-intl';
 import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import {
     getIsError,
-    getIsShowingProject
+    getIsShowingProject,
+    requestNewProject,
+    manualUpdateProject,
+    saveProjectAsCopy
 } from '../reducers/project-state';
 import {
     activateTab,
@@ -17,16 +20,27 @@ import {
     COSTUMES_TAB_INDEX,
     SOUNDS_TAB_INDEX
 } from '../reducers/editor-tab';
+import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
+import {setStageSize} from '../reducers/stage-size';
+import {setFullScreen} from '../reducers/mode';
 import collaborationService from '../lib/collaboration-service.js';
 
 import {
     closeCostumeLibrary,
     closeBackdropLibrary,
+    closeSoundLibrary,
     closeTelemetryModal,
     openExtensionLibrary,
     closeExtensionLibrary,
     openCustomExtensionModal,
-    openExtensionManagerModal
+    openExtensionManagerModal,
+    openSpriteLibrary,
+    openCostumeLibrary,
+    openSoundLibrary,
+    openSettingsModal,
+    openRestorePointModal,
+    openShortcutManagerModal,
+    openSimpleDialog
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -45,6 +59,8 @@ import GUIComponent from '../components/gui/gui.jsx';
 import {setIsScratchDesktop} from '../lib/utils/isScratchDesktop.js';
 import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.jsx';
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
+import {initialize as initializeShortcuts} from
+    '../lib/shortcuts/event-router.js';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -64,6 +80,37 @@ class GUI extends React.Component {
         this.props.onStorageInit(storage);
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
+
+        initializeShortcuts(
+            {
+                requestNewProject: this.props.requestNewProject,
+                manualUpdateProject: this.props.manualUpdateProject,
+                saveProjectAsCopy: this.props.saveProjectAsCopy,
+                openSettingsModal: this.props.openSettingsModal,
+                openSpriteLibrary: this.props.openSpriteLibrary,
+                openCostumeLibrary: this.props.openCostumeLibrary,
+                openSoundLibrary: this.props.openSoundLibrary,
+                openExtensionLibrary: this.props.onOpenExtensionLibrary,
+                openExtensionManagerModal: this.props.openExtensionManagerModal,
+                openRestorePointModal: this.props.openRestorePointModal,
+                activateTab: this.props.activateTab
+            },
+            this.props.vm,
+            {
+                loadFromComputer: this.props.onStartSelectingFileUpload,
+                openPackager: this.props.onClickPackager,
+                toggleStageSize: () => {
+                    this.props.onSetStageSize(
+                        this.props.stageSizeMode === STAGE_SIZE_MODES.large 
+                            ? STAGE_SIZE_MODES.small 
+                            : STAGE_SIZE_MODES.large
+                    );
+                },
+                setFullScreen: () => {
+                    this.props.onSetFullScreen(!this.props.isFullScreen);
+                }
+            }
+        );
     }
     componentDidUpdate (prevProps) {
         if (this.props.projectId !== prevProps.projectId) {
@@ -108,18 +155,28 @@ class GUI extends React.Component {
         }
         const {
             /* eslint-disable no-unused-vars */
+            activateTab,
             assetHost,
             cloudHost,
             error,
             isError,
             isScratchDesktop,
             isShowingProject,
+            manualUpdateProject,
             onProjectLoaded,
             onStorageInit,
             onUpdateProjectId,
             onVmInit,
+            openCostumeLibrary,
+            openExtensionManagerModal,
+            openRestorePointModal,
+            openSettingsModal,
+            openSoundLibrary,
+            openSpriteLibrary,
             projectHost,
             projectId,
+            requestNewProject,
+            saveProjectAsCopy,
             /* eslint-enable no-unused-vars */
             children,
             fetchingProject,
@@ -195,6 +252,7 @@ const mapStateToProps = state => {
         isShowingProject: getIsShowingProject(loadingState),
         loadingStateVisible: state.scratchGui.modals.loadingProject,
         projectId: state.scratchGui.projectState.projectId,
+        soundLibraryVisible: state.scratchGui.modals.soundLibrary,
         soundsTabVisible: state.scratchGui.editorTab.activeTabIndex === SOUNDS_TAB_INDEX,
         targetIsStage: (
             state.scratchGui.targets.stage &&
@@ -223,8 +281,21 @@ const mapDispatchToProps = dispatch => ({
     onOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal()),
     onRequestCloseBackdropLibrary: () => dispatch(closeBackdropLibrary()),
     onRequestCloseCostumeLibrary: () => dispatch(closeCostumeLibrary()),
+    onRequestCloseSoundLibrary: () => dispatch(closeSoundLibrary()),
     onRequestCloseExtensionLibrary: () => dispatch(closeExtensionLibrary()),
-    onRequestCloseTelemetryModal: () => dispatch(closeTelemetryModal())
+    onRequestCloseTelemetryModal: () => dispatch(closeTelemetryModal()),
+    activateTab: tab => dispatch(activateTab(tab)),
+    onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
+    onSetFullScreen: isOpen => dispatch(setFullScreen(isOpen)),
+    requestNewProject: needSave => dispatch(requestNewProject(needSave)),
+    manualUpdateProject: () => dispatch(manualUpdateProject()),
+    saveProjectAsCopy: () => dispatch(saveProjectAsCopy()),
+    openSpriteLibrary: () => dispatch(openSpriteLibrary()),
+    openCostumeLibrary: () => dispatch(openCostumeLibrary()),
+    openSoundLibrary: () => dispatch(openSoundLibrary()),
+    openExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
+    openSettingsModal: () => dispatch(openSettingsModal()),
+    openRestorePointModal: () => dispatch(openRestorePointModal())
 });
 
 const ConnectedGUI = injectIntl(connect(

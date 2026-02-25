@@ -20,6 +20,14 @@ const ProjectThemeModal = props => (
         onRequestClose={props.onCancel}
         contentLabel={props.intl.formatMessage(messages.title)}
         id="mwProjectThemeModal"
+        resizable={false}
+        maximizable={false}
+        width={520}
+        height={240}
+        minWidth={520}
+        minHeight={240}
+        maxWidth={520}
+        maxHeight={240}
     >
         <div className={styles.body}>
             <p>

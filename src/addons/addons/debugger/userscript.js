@@ -70,7 +70,7 @@ export default async function ({addon, console, msg}) {
     });
 
     const vm = addon.tab.traps.vm;
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
         if (vm.editingTarget) return resolve();
         vm.runtime.once('PROJECT_LOADED', resolve);
     });
@@ -197,7 +197,6 @@ export default async function ({addon, console, msg}) {
     let tabListElement;
     let buttonContainerElement;
     let tabContentContainer;
-    let updateCompilerWarningVisibility;
 
     // Cleanup for listeners tied to a specific debugger window instance.
     // (Do not put VM/runtime overrides here; closing the window should not disable debugging.)
@@ -283,18 +282,22 @@ export default async function ({addon, console, msg}) {
     };
 
     const createDebuggerWindow = () => {
+        // Calculate reasonable initial positioning
+        const initialX = Math.max(24, Math.min(window.innerWidth - 624, 50));
+        const initialY = Math.max(24, Math.min(window.innerHeight - 424, 50));
+
         debuggerWindow = WindowManager.createWindow({
             id: 'debugger',
             title: 'Debugger',
             width: 600,
             height: 400,
-            minWidth: 600,
-            minHeight: 400,
+            minWidth: 400,
+            minHeight: 300,
             maxWidth: Math.min(window.innerWidth * 0.9, 800),
             maxHeight: Math.min(window.innerHeight * 0.9, 600),
             className: 'sa-debugger-window',
-            x: 50,
-            y: 50,
+            x: initialX,
+            y: initialY,
             onClose: () => {
                 // Cleanup when window is closed. The debugger addon continues running;
                 // we only tear down listeners that were tied to this window instance.
@@ -306,20 +309,18 @@ export default async function ({addon, console, msg}) {
                 tabListElement = null;
                 buttonContainerElement = null;
                 tabContentContainer = null;
-                updateCompilerWarningVisibility = null;
-        
+
                 // Hide active tab properly
                 if (activeTab && activeTab.hide) {
                     activeTab.hide();
                 }
-        
+
                 // Update button state to reflect that debugger is closed
-                debuggerButtonContent.classList.remove('sa-debugger-unread');
-                debuggerButtonContent.classList.remove('sa-debugger-active');
-        
-                // Clear any pending messages or timers if they exist
+                debuggerButtonContent.classList.remove('sa-debugger-unread', 'sa-debugger-active');
+
+                // Clear any pending messages or timers
                 setHasUnreadMessage(false);
-        
+
                 // Run window-scoped cleanup functions
                 for (const cleanup of windowCleanupFunctions) {
                     try {
@@ -329,17 +330,10 @@ export default async function ({addon, console, msg}) {
                     }
                 }
                 windowCleanupFunctions.length = 0;
-        
-                // Optional: pause the program if it's running when debugger closes
-                // This provides better UX as users expect debugger closure to stop debugging
+
+                // Pause the program if it's paused when debugger closes
                 if (isPaused()) {
                     setPaused(false);
-                }
-            },
-            onResize: () => {
-                // Handle any resize logic for tabs if needed
-                if (activeTab && activeTab.resize) {
-                    activeTab.resize();
                 }
             }
         });
@@ -352,19 +346,16 @@ export default async function ({addon, console, msg}) {
 
         // If tabs have already been created, mount them into this new window instance.
         mountDebuggerInterface();
-    
-        // Add keyboard shortcut support
-        const handleKeyDown = e => {
+
+        // Add keyboard shortcut support (Escape to close)
+        const handleKeyDown = (e) => {
             if (e.key === 'Escape' && isInterfaceVisible) {
                 e.preventDefault();
                 setInterfaceVisible(false);
             }
         };
-    
-        // Add global escape key listener when debugger is open
+
         document.addEventListener('keydown', handleKeyDown);
-    
-        // Track keyboard listener for cleanup
         windowCleanupFunctions.push(() => {
             document.removeEventListener('keydown', handleKeyDown);
         });
@@ -394,28 +385,11 @@ export default async function ({addon, console, msg}) {
             className: 'sa-debugger-header'
         });
 
-        const compilerWarning = document.createElement('a');
-        compilerWarning.addEventListener('click', () => {
-            addon.tab.redux.dispatch({
-                type: 'scratch-gui/modals/OPEN_MODAL',
-                modal: 'settingsModal'
-            });
-        });
-        compilerWarning.className = 'sa-debugger-log sa-debugger-compiler-warning';
-        compilerWarning.textContent = 'The debugger works best when the compiler is disabled.';
-        updateCompilerWarningVisibility = () => {
-            compilerWarning.hidden = true; // the compiler cant be disabled in mw
-        };
-        vm.on('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
-        updateCompilerWarningVisibility();
-    
-        // Track this VM event listener for cleanup
-        windowCleanupFunctions.push(() => {
-            vm.off('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
-        });
+        // compilerWarning is not needed in mistwarp - the compiler is built-in
+        // and cannot be disabled by users
 
         interfaceHeader.append(tabListElement, buttonContainerElement);
-        interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
+        interfaceContainer.append(interfaceHeader, tabContentContainer);
 
         return interfaceContainer;
     };
@@ -431,6 +405,7 @@ export default async function ({addon, console, msg}) {
         if (description) {
             button.title = description;
         }
+
         const iconElement = Object.assign(document.createElement('span'), {
             className: 'sa-debugger-icon'
         });
@@ -446,20 +421,26 @@ export default async function ({addon, console, msg}) {
             iconElement.style.webkitMaskSize = 'contain';
             iconElement.style.maskSize = 'contain';
         }
+
         const textElement = Object.assign(document.createElement('span'), {
             textContent: text || 'Button'
         });
         button.appendChild(iconElement);
         button.appendChild(textElement);
-    
-        // Add keyboard support
-        button.addEventListener('keydown', e => {
+
+        // Add keyboard and touch support
+        button.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 button.click();
             }
         });
-    
+
+        // Prevent double-tap zoom on mobile
+        button.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+        }, { passive: true });
+
         return {
             element: button,
             image: iconElement,
@@ -488,20 +469,26 @@ export default async function ({addon, console, msg}) {
             iconElement.style.webkitMaskSize = 'contain';
             iconElement.style.maskSize = 'contain';
         }
+
         const textElement = Object.assign(document.createElement('span'), {
             textContent: text || 'Tab'
         });
         tab.appendChild(iconElement);
         tab.appendChild(textElement);
-    
+
         // Add keyboard support for tabs
-        tab.addEventListener('keydown', e => {
+        tab.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 tab.click();
             }
         });
-    
+
+        // Prevent double-tap zoom on mobile
+        tab.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+        }, { passive: true });
+
         return {
             element: tab,
             image: iconElement,
@@ -826,8 +813,9 @@ export default async function ({addon, console, msg}) {
     }
     messagesLoggedBeforeLogsTabLoaded.length = 0;
 
-    setActiveTab = tab => {
+    setActiveTab = (tab) => {
         if (tab === activeTab) return;
+
         const selectedClass = 'sa-debugger-tab-selected';
         if (activeTab) {
             activeTab.hide();
@@ -835,6 +823,7 @@ export default async function ({addon, console, msg}) {
             activeTab.tab.element.setAttribute('aria-selected', 'false');
             activeTab.tab.element.setAttribute('tabindex', '-1');
         }
+
         tab.tab.element.classList.add(selectedClass);
         tab.tab.element.setAttribute('aria-selected', 'true');
         tab.tab.element.setAttribute('tabindex', '0');
@@ -849,9 +838,7 @@ export default async function ({addon, console, msg}) {
             buttonContainerElement.appendChild(button.element);
         }
 
-        // Close button no longer needed here - removed for cleaner UX
-
-        if (isInterfaceVisible) {
+        if (isInterfaceVisible && activeTab.show) {
             activeTab.show();
         }
     };
@@ -867,8 +854,6 @@ export default async function ({addon, console, msg}) {
 
     // Expose toggle function globally for menu access
     window.__mistwarpDebuggerToggle = toggleDebuggerInterface;
-
-    // addSmallStageClass();
 
     const ogGreenFlag = vm.runtime.greenFlag;
     vm.runtime.greenFlag = function (...args) {

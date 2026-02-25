@@ -32,8 +32,15 @@ const ButtonComponent = ({
             onClick={onClick}
             {...props}
         >
-            {Icon ? <Icon className={iconClass} size={20} /> : (
-                iconSrc ? <img className={iconClass} src={iconSrc} alt="" /> : null
+            {Icon ? <Icon
+                className={iconClass}
+                size={20}
+            /> : (
+                iconSrc ? <img
+                    className={iconClass}
+                    src={iconSrc}
+                    alt=""
+                /> : null
             )}
             <div className={styles.content}>{children}</div>
         </span>

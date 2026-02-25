@@ -1,4 +1,4 @@
-import { base64ToArrayBuffer } from '../utils/base64';
+import {base64ToArrayBuffer} from '../utils/base64';
 import JSZip from '@turbowarp/jszip';
 
 const TYPE_AUTOMATIC = 0;

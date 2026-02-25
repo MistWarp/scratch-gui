@@ -13,8 +13,7 @@ import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
 import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
-
-import {Palette} from 'lucide-react';
+import {useIcon} from '../icon-provider/icons.jsx';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
@@ -29,48 +28,56 @@ const SettingsMenu = ({
     onRequestClose,
     onRequestOpen,
     settingsMenuOpen
-}) => (
-    <MenuLabel
-        open={settingsMenuOpen}
-        onOpen={onRequestOpen}
-        onClose={onRequestClose}
-    >
-        <Palette size={20} />
-        <span className={styles.dropdownLabel}>
-            <FormattedMessage
-                defaultMessage="View"
-                description="View menu"
-                id="gui.menuBar.theme"
-            />
-        </span>
-        <ChevronDown />
-        <MenuBarMenu
-            className={menuBarStyles.menuBarMenu}
+}) => {
+    const Palette = useIcon('Palette');
+    
+    return (
+        <MenuLabel
             open={settingsMenuOpen}
-            place={isRtl ? 'left' : 'right'}
+            onOpen={onRequestOpen}
+            onClose={onRequestClose}
         >
-            <MenuSection>
-                {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
-                {canChangeTheme && (
-                    <React.Fragment>
-                        <TWCustomThemeMenu />
-                        <TWGuiThemeMenu />
-                        <TWWallpaperMenu />
-                        <TWFontsThemeMenu />
-                    </React.Fragment>
-                )}
-            </MenuSection>
-            <div className={styles.menuSeparator} />
-            {canChangeTheme && (
-                <MenuSection>
-                    <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
-                    <TWMenuBarAlignMenu />
-                    <TWAccentThemeMenu />
-                </MenuSection>
+            {Palette ? (
+                <Palette size={20} />
+            ) : (
+                <span className={styles.menuIcon}>{'⚙'}</span>
             )}
-        </MenuBarMenu>
-    </MenuLabel>
-);
+            <span className={styles.dropdownLabel}>
+                <FormattedMessage
+                    defaultMessage="View"
+                    description="View menu"
+                    id="gui.menuBar.theme"
+                />
+            </span>
+            <ChevronDown />
+            <MenuBarMenu
+                className={menuBarStyles.menuBarMenu}
+                open={settingsMenuOpen}
+                place={isRtl ? 'left' : 'right'}
+            >
+                <MenuSection>
+                    {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
+                    {canChangeTheme && (
+                        <React.Fragment>
+                            <TWCustomThemeMenu />
+                            <TWGuiThemeMenu />
+                            <TWWallpaperMenu />
+                            <TWFontsThemeMenu />
+                        </React.Fragment>
+                    )}
+                </MenuSection>
+                <div className={styles.menuSeparator} />
+                {canChangeTheme && (
+                    <MenuSection>
+                        <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
+                        <TWMenuBarAlignMenu />
+                        <TWAccentThemeMenu />
+                    </MenuSection>
+                )}
+            </MenuBarMenu>
+        </MenuLabel>
+    );
+};
 
 SettingsMenu.propTypes = {
     canChangeLanguage: PropTypes.bool,

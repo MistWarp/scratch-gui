@@ -175,6 +175,7 @@ class GradientUtils {
             'motion-tertiary': variations.dark,
 
             'looks-secondary': variations.primary,
+            'looks-tertiary': variations.dark,
             'looks-transparent': variations.transparent,
             'looks-light-transparent': variations.lightTransparent,
             'looks-secondary-dark': variations.dark,

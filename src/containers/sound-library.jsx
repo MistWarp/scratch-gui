@@ -65,26 +65,33 @@ class SoundLibrary extends React.PureComponent {
          */
         this.handleStop = null;
 
+        this._isMounted = false;
+
         this.state = {
             data: null
         };
     }
     componentDidMount () {
+        this._isMounted = true;
         const soundLibrary = getSoundLibrary();
         if (soundLibrary.then) {
-            soundLibrary.then(data => this.setState({
-                data: getSoundLibraryThumbnailData(data, this.props.isRtl)
-            }));
+            soundLibrary.then(data => {
+                if (this._isMounted) {
+                    this.setState({
+                        data: getSoundLibraryThumbnailData(data, this.props.isRtl)
+                    });
+                }
+            });
         } else {
             this.setState({
                 data: getSoundLibraryThumbnailData(soundLibrary, this.props.isRtl)
             });
         }
 
-        this.audioEngine = new AudioEngine(new SharedAudioContext());
         this.playingSoundPromise = null;
     }
     componentWillUnmount () {
+        this._isMounted = false;
         this.stopPlayingSound();
     }
     onStop () {
@@ -131,6 +138,16 @@ class SoundLibrary extends React.PureComponent {
         const md5 = idParts[0];
         const vm = this.props.vm;
 
+        // Lazy init audio engine on first hover (ensures audio context is ready)
+        if (!this.audioEngine) {
+            const audioContext = SharedAudioContext();
+            if (audioContext) {
+                this.audioEngine = new AudioEngine(audioContext);
+            } else {
+                return;
+            }
+        }
+
         // In case enter is called twice without a corresponding leave
         // inbetween, stop the last playback before queueing a new sound.
         this.stopPlayingSound();
@@ -139,7 +156,7 @@ class SoundLibrary extends React.PureComponent {
         // instruction after the play instruction.
         this.playingSoundPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5)
             .then(soundAsset => {
-                if (soundAsset) {
+                if (soundAsset && this._isMounted && this.audioEngine) {
                     const sound = {
                         md5: md5ext,
                         name: soundItem.name,
@@ -175,7 +192,9 @@ class SoundLibrary extends React.PureComponent {
             name: soundItem.name
         };
         this.props.vm.addSound(vmSound).then(() => {
-            this.props.onNewSound();
+            if (this.props.onNewSound) {
+                this.props.onNewSound();
+            }
         });
     }
     render () {
@@ -199,7 +218,7 @@ class SoundLibrary extends React.PureComponent {
 SoundLibrary.propTypes = {
     intl: intlShape.isRequired,
     isRtl: PropTypes.bool,
-    onNewSound: PropTypes.func.isRequired,
+    onNewSound: PropTypes.func,
     onRequestClose: PropTypes.func,
     vm: PropTypes.instanceOf(VM).isRequired
 };

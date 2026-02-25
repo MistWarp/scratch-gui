@@ -52,11 +52,11 @@ const parseURL = url => {
     return parsed;
 };
 
-let allowedAudio = false;
-let allowedVideo = false;
-let allowedReadClipboard = false;
-let allowedNotify = false;
-let allowedGeolocation = false;
+const allowedAudio = false;
+const allowedVideo = false;
+const allowedReadClipboard = false;
+const allowedNotify = false;
+const allowedGeolocation = false;
 
 const SECURITY_MANAGER_METHODS = [
     'getSandboxMode',

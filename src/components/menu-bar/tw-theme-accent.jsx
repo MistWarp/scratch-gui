@@ -99,7 +99,7 @@ const AccentThemeMenu = ({
             </span>
             <ChevronDown className={styles.expandCaret} />
         </div>
-        <Submenu 
+        <Submenu
             place={isRtl ? 'left' : 'right'}
             className={styles.accentSubmenu}
         >

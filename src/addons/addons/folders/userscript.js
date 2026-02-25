@@ -437,6 +437,7 @@ export default async function ({ addon, console, msg }) {
         itemData.realIndex = i;
         itemData.inFolder = itemFolderName;
         newItem.name = itemData;
+        newItem.order = i;
 
         return {
           newItem,
@@ -525,6 +526,7 @@ export default async function ({ addon, console, msg }) {
           folderData.folderOpen = isOpen;
           folderItem.items = folderItems;
           folderItem.name = folderData;
+          folderItem.order = i;
 
           let folderAsset;
           if (isOpen) {
@@ -752,12 +754,7 @@ export default async function ({ addon, console, msg }) {
         }
       };
       const renameFolder = async () => {
-        let newName = await addon.tab.prompt(
-          msg("rename-folder-prompt-title"),
-          msg("rename-folder-prompt"),
-          data.folder,
-          { useEditorClasses: true }
-        );
+        let newName = prompt(msg("rename-folder-prompt") + ":", data.folder);
         // Prompt cancelled, do not rename
         if (newName === null) {
           return;
@@ -816,12 +813,7 @@ export default async function ({ addon, console, msg }) {
       };
 
       const createFolder = async () => {
-        const name = await addon.tab.prompt(
-          msg("name-prompt-title"),
-          msg("name-prompt"),
-          getNameWithoutFolder(data.realName),
-          { useEditorClasses: true }
-        );
+        const name = prompt(msg("name-prompt") + ":", getNameWithoutFolder(data.realName));
         if (name === null) {
           return;
         }
@@ -1272,11 +1264,10 @@ export default async function ({ addon, console, msg }) {
       const dragInfo = args[0];
       const folderItems = dragInfo && dragInfo.payload && dragInfo.payload.sa_folder_items;
       if (Array.isArray(folderItems)) {
-        addon.tab.confirm("", msg("confirm-backpack-folder"), { useEditorClasses: true }).then((result) => {
-          if (!result) return;
+        if (confirm(msg("confirm-backpack-folder"))) {
           this.sa_queuedItems = folderItems;
           this.sa_loadNextItem();
-        });
+        }
         return;
       }
       return originalHandleDrop.call(this, ...args);
