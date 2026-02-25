@@ -3,11 +3,8 @@ import React from 'react';
 import classNames from 'classnames';
 
 import styles from './close-button.css';
-import {useIcon} from '../icon-provider/icons.jsx';
 
 const CloseButton = props => {
-    const ArrowLeft = useIcon('ArrowLeft');
-    const X = useIcon('X');
     const iconSize = props.size === CloseButton.SIZE_SMALL ? 12 : 20;
     return (
         <div
@@ -26,21 +23,7 @@ const CloseButton = props => {
             onClick={props.onClick}
         >
             {props.buttonType === 'back' ? (
-                ArrowLeft ? (
-                    <ArrowLeft size={20} />
-                ) : (
-                    <span className={styles.closeText}>←</span>
-                )
-            ) : X ? (
-                <X
-                    className={classNames(
-                        styles.closeIcon,
-                        {
-                            [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
-                        }
-                    )}
-                    size={iconSize}
-                />
+                <span className={styles.closeText}>←</span>
             ) : (
                 <span className={classNames(styles.closeText, styles.closeIcon, {
                     [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
