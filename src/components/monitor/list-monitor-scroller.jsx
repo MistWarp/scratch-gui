@@ -40,7 +40,6 @@ class ListMonitorScroller extends React.Component {
                 <div className={styles.listIndex}>{index + 1 /* one indexed */}</div>
                 <div
                     className={styles.listValue}
-                    dataIndex={index}
                     style={{
                         background: this.props.categoryColor.background,
                         color: this.props.categoryColor.text
