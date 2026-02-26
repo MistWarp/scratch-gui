@@ -1,4 +1,4 @@
-import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT, ICON_PACK_DEFAULT} from './index.js';
+import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
 
@@ -25,12 +25,12 @@ const systemPreferencesTheme = () => {
 
     // Fallback: construct a minimal Theme if Theme.defaults isn't initialized yet
     if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT, null, null, null, ICON_PACK_DEFAULT);
+        return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT, null, null, null, ICON_PACK_DEFAULT);
+        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
     }
-    return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT, null, null, null, ICON_PACK_DEFAULT);
+    return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
 };
 
 /**
@@ -108,9 +108,7 @@ const detectTheme = () => {
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
             wallpaper,
-            parsed.fonts || {system: [], google: [], history: []},
-            GUI_MAP[parsed.gui || systemPreferences.gui]?.name,
-            parsed.iconPack || systemPreferences.iconPack
+            parsed.fonts || {system: [], google: [], history: []}
         );
     } catch (e) {
         // ignore
@@ -137,22 +135,19 @@ const persistTheme = theme => {
             nonDefaultSettings.inlineCustomTheme = theme.export();
         }
     } else {
-    if (theme.accent !== systemPreferences.accent) {
-        nonDefaultSettings.accent = theme.accent;
-    }
-    if (theme.gui !== systemPreferences.gui) {
-        nonDefaultSettings.gui = theme.gui;
-    }
-    // custom blocks are managed by addon at runtime, don't save here
-    if (theme.blocks !== systemPreferences.blocks && theme.blocks !== BLOCKS_CUSTOM) {
-        nonDefaultSettings.blocks = theme.blocks;
-    }
-    if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
-        nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
-    }
-    if (theme.iconPack !== systemPreferences.iconPack) {
-        nonDefaultSettings.iconPack = theme.iconPack;
-    }
+        if (theme.accent !== systemPreferences.accent) {
+            nonDefaultSettings.accent = theme.accent;
+        }
+        if (theme.gui !== systemPreferences.gui) {
+            nonDefaultSettings.gui = theme.gui;
+        }
+        // custom blocks are managed by addon at runtime, don't save here
+        if (theme.blocks !== systemPreferences.blocks && theme.blocks !== BLOCKS_CUSTOM) {
+            nonDefaultSettings.blocks = theme.blocks;
+        }
+        if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
+            nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
+        }
         // Always save wallpaper settings if they exist
         if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
             nonDefaultSettings.wallpaper = theme.wallpaper;

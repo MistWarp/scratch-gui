@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 import {applyGuiColors} from '../lib/themes/guiHelpers';
 import {BLOCKS_CUSTOM, Theme} from '../lib/themes';
-import {detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance';
+import {detectTheme, onSystemPreferenceChange, persistTheme} from '../lib/themes/themePersistance';
 import {setTheme} from '../reducers/theme';
 
 const TWThemeManagerHOC = function (WrappedComponent) {
@@ -20,8 +20,22 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             this.removeListeners = onSystemPreferenceChange(this.handleSystemThemeChange);
         }
         componentDidUpdate (prevProps) {
-            if (prevProps.reduxTheme !== this.props.reduxTheme) {
-                applyGuiColors(this.props.reduxTheme);
+            const prevTheme = prevProps.reduxTheme;
+            const currentTheme = this.props.reduxTheme;
+
+            const themeChanged = !prevTheme ||
+                !currentTheme ||
+                prevTheme.id !== currentTheme.id ||
+                prevTheme.accent !== currentTheme.accent ||
+                prevTheme.gui !== currentTheme.gui ||
+                prevTheme.blocks !== currentTheme.blocks ||
+                prevTheme.menuBarAlign !== currentTheme.menuBarAlign ||
+                prevTheme.iconPack !== currentTheme.iconPack ||
+                prevTheme.name !== currentTheme.name;
+
+            if (themeChanged) {
+                applyGuiColors(currentTheme);
+                persistTheme(currentTheme);
             }
         }
         componentWillUnmount () {

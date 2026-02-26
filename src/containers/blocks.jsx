@@ -310,9 +310,21 @@ class Blocks extends React.Component {
         );
     }
     componentDidUpdate (prevProps) {
-        // Update block colors when theme changes but media folder stays the same
-        if (this.props.theme !== prevProps.theme) {
-            this.updateBlockColors(this.props.theme);
+        // Update block colors when theme changes (check properties, not just reference)
+        const prevTheme = prevProps.theme;
+        const currentTheme = this.props.theme;
+        const themeChanged = !prevTheme ||
+            !currentTheme ||
+            prevTheme.id !== currentTheme.id ||
+            prevTheme.accent !== currentTheme.accent ||
+            prevTheme.gui !== currentTheme.gui ||
+            prevTheme.blocks !== currentTheme.blocks ||
+            prevTheme.menuBarAlign !== currentTheme.menuBarAlign ||
+            prevTheme.iconPack !== currentTheme.iconPack ||
+            prevTheme.name !== currentTheme.name;
+
+        if (themeChanged) {
+            this.updateBlockColors(currentTheme);
         }
 
         // If any modals are open, call hideChaff to close z-indexed field editors
@@ -707,9 +719,125 @@ class Blocks extends React.Component {
         const newColors = theme.getBlockColors();
 
         try {
+            // Try to override the ScratchBlocks color definitions
             if (this.ScratchBlocks.Colours && this.ScratchBlocks.Colours.overrideColours) {
                 this.ScratchBlocks.Colours.overrideColours(newColors);
             }
+
+            // Update flyout background constant (Blockly sets this, not CSS)
+            const flyout = this.workspace.getFlyout && this.workspace.getFlyout();
+            if (flyout && newColors.flyout && typeof flyout.setBackgroundColour_ === 'function') {
+                flyout.setBackgroundColour_(newColors.flyout);
+            }
+
+            // Force update of all cached color lookups
+            if (this.ScratchBlocks.workspace && this.ScratchBlocks.workspace.Workspace) {
+                // Force Blockly to recalculate theme colors
+                if (this.workspace.getAllBlocks) {
+                    const blocks = this.workspace.getAllBlocks();
+                    blocks.forEach(block => {
+                        if (block.updateColour) {
+                            block.updateColour();
+                        }
+                    });
+                }
+            }
+
+            // Update workspace-specific colors directly if available
+            const workspace = this.workspace;
+            if (workspace) {
+                // Update workspace background
+                const blocksSvg = this.blocks && this.blocks.querySelector('svg.blocklySvg');
+                if (blocksSvg && newColors.workspace) {
+                    blocksSvg.style.backgroundColor = newColors.workspace;
+                }
+
+                // Update grid color if available
+                if (newColors.gridColor && workspace.grid_ && workspace.grid_.pattern) {
+                    workspace.grid_.pattern.setAttribute('fill', newColors.gridColor);
+                }
+
+                // Update scrollbar colors if available
+                if (workspace.scrollbar) {
+                    const scrollbar = workspace.scrollbar;
+                    if (scrollbar.vScroll && scrollbar.vScroll.outerSvg_) {
+                        const vSvg = scrollbar.vScroll.outerSvg_;
+                        if (vSvg && newColors.scrollbar) {
+                            vSvg.style.fill = newColors.scrollbar;
+                        }
+                    }
+                    if (scrollbar.hScroll && scrollbar.hScroll.outerSvg_) {
+                        const hSvg = scrollbar.hScroll.outerSvg_;
+                        if (hSvg && newColors.scrollbar) {
+                            hSvg.style.fill = newColors.scrollbar;
+                        }
+                    }
+                }
+            }
+
+            // Update flyout background element (the path element ScratchBlocks creates)
+            if (newColors.flyout) {
+                const flyoutBackground = document.querySelector('svg.blocklyFlyout > path.blocklyFlyoutBackground, svg.blocklyFlyout > rect.blocklyFlyoutBackground');
+                if (flyoutBackground) {
+                    flyoutBackground.setAttribute('fill', newColors.flyout);
+                }
+                // Also update the SVG background
+                const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                if (flyoutSvg) {
+                    flyoutSvg.style.backgroundColor = newColors.flyout;
+                }
+            }
+
+            // Update toolbox/palette background element
+            if (newColors.toolbox) {
+                const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                if (toolboxBackground) {
+                    toolboxBackground.setAttribute('fill', newColors.toolbox);
+                }
+                const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                if (toolboxSvg) {
+                    toolboxSvg.style.backgroundColor = newColors.toolbox;
+                }
+            }
+
+            // Update toolbox text colors
+            if (newColors.toolboxText || newColors.flyoutLabelColor) {
+                const textColor = newColors.toolboxText || newColors.flyoutLabelColor;
+                const labels = document.querySelectorAll('.blocklyTreeLabel, .blocklyFlyoutLabelText');
+                labels.forEach(label => {
+                    label.style.fill = textColor;
+                });
+            }
+
+            // Update separator lines in toolbox
+            if (newColors.toolboxText) {
+                const separators = document.querySelectorAll('.blocklyTreeSeparator');
+                separators.forEach(separator => {
+                    separator.style.borderColor = newColors.toolboxText;
+                });
+            }
+
+            // Update category icons in toolbox
+            const categoryIcons = document.querySelectorAll('.blocklyTreeIcon');
+            categoryIcons.forEach(icon => {
+                const parentRow = icon.closest('.blocklyTreeRow');
+                if (parentRow && newColors.toolboxText) {
+                    const label = parentRow.querySelector('.blocklyTreeLabel');
+                    if (label) {
+                        const categoryType = label.getAttribute('data-category');
+                        // Get the color for this category
+                        let categoryColor;
+                        try {
+                            categoryColor = this.ScratchBlocks.Colours.categoryTypeToColorMap[categoryType];
+                            if (categoryColor) {
+                                icon.style.backgroundColor = categoryColor.colorPrimary;
+                            }
+                        } catch (e) {
+                            // Ignore errors getting category colors
+                        }
+                    }
+                }
+            });
 
             if (this.workspace.getFlyout && this.workspace.setVisible) {
                 this.workspace.setVisible(false);
@@ -724,8 +852,69 @@ class Blocks extends React.Component {
                     if (typeof this.workspace.markDraggedBlockAsDirty === 'function') {
                         this.workspace.markDraggedBlockAsDirty();
                     }
+
+                    // Update toolbox and flyout elements again after they re-render
+                    if (newColors.toolbox) {
+                        const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        if (toolboxSvg) {
+                            toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
+                        }
+                        if (toolboxBackground) {
+                            toolboxBackground.setAttribute('fill', newColors.toolbox);
+                        }
+                    }
+                    if (newColors.flyout) {
+                        const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        if (flyoutSvg) {
+                            flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
+                        }
+                        if (flyoutBackground) {
+                            flyoutBackground.setAttribute('fill', newColors.flyout);
+                        }
+                    }
+                    if (newColors.toolboxText || newColors.flyoutLabelColor) {
+                        const textColor = newColors.toolboxText || newColors.flyoutLabelColor;
+                        const labels = document.querySelectorAll('.blocklyTreeLabel, .blocklyFlyoutLabelText');
+                        labels.forEach(label => {
+                            label.style.setProperty('fill', textColor, 'important');
+                        });
+                    }
+                    if (newColors.scrollbar) {
+                        const scrollbarElements = document.querySelectorAll('.blocklyScrollbarBackground, .blocklyScrollbarThumb');
+                        scrollbarElements.forEach(el => {
+                            el.style.setProperty('fill', newColors.scrollbar, 'important');
+                        });
+                    }
                 }
-            }, 0);
+            }, 100);
+
+            // Additional retry to ensure colors stick after all re-renders
+            setTimeout(() => {
+                if (this.workspace && !this.unmounted) {
+                    if (newColors.toolbox) {
+                        const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        if (toolboxSvg) {
+                            toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
+                        }
+                        if (toolboxBackground) {
+                            toolboxBackground.setAttribute('fill', newColors.toolbox);
+                        }
+                    }
+                    if (newColors.flyout) {
+                        const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        if (flyoutSvg) {
+                            flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
+                        }
+                        if (flyoutBackground) {
+                            flyoutBackground.setAttribute('fill', newColors.flyout);
+                        }
+                    }
+                }
+            }, 300);
         } catch (e) {
             console.error('Error updating block colors:', e);
         }

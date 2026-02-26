@@ -344,6 +344,27 @@ class MenuBar extends React.Component {
             }
         });
     }
+    componentWillUnmount () {
+        document.removeEventListener('keydown', this.handleKeyPress);
+        
+        if (this.autosaveCountdownInterval) {
+            clearInterval(this.autosaveCountdownInterval);
+            this.autosaveCountdownInterval = null;
+        }
+        
+        if (this.props.vm && this.props.vm.runtime && this.workspaceBookmarksProjectListener) {
+            this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
+        }
+        
+        if (this.undoRedoChangeListener) {
+            this.ensureScratchBlocks().then(ScratchBlocks => {
+                const workspace = ScratchBlocks.getMainWorkspace();
+                if (workspace) {
+                    workspace.removeChangeListener(this.undoRedoChangeListener);
+                }
+            });
+        }
+    }
 
     showAlert (title, message) {
         return new Promise(resolve => {

@@ -35,3 +35,51 @@
     --editorDarkMode-page: $ui-primary;
     --editorDarkMode-highlightText: $looks-secondary;
 }
+
+/* Workspace theme support */
+:root {
+    --editorTheme3-workspace-background: transparent;
+    --editorTheme3-toolbox-background: transparent;
+    --editorTheme3-toolbox-text: inherit;
+    --editorTheme3-flyout-background: transparent;
+    --editorTheme3-flyout-text: inherit;
+    --editorTheme3-scrollbar: #c1c1c1;
+    --editorTheme3-grid-color: #dedede;
+}
+
+:global(svg.blocklySvg) {
+    background-color: var(--editorTheme3-workspace-background) !important;
+}
+
+:global(svg.blocklyToolbox) {
+    background-color: var(--editorTheme3-toolbox-background) !important;
+}
+
+:global(svg.blocklyToolbox > path.blocklyToolboxBackground) {
+    fill: var(--editorTheme3-toolbox-background) !important;
+}
+
+:global(.blocklyTreeLabel) {
+    fill: var(--editorTheme3-toolbox-text) !important;
+}
+
+:global(svg.blocklyFlyout) {
+    background-color: var(--editorTheme3-flyout-background) !important;
+}
+
+:global(svg.blocklyFlyout > rect.blocklyFlyoutBackground) {
+    fill: var(--editorTheme3-flyout-background) !important;
+}
+
+:global(.blocklyFlyoutLabelText) {
+    fill: var(--editorTheme3-flyout-text) !important;
+}
+
+:global(.blocklyScrollbarBackground),
+:global(.blocklyScrollbarThumb) {
+    fill: var(--editorTheme3-scrollbar) !important;
+}
+
+:global(.blocklyScrollbarBackground) {
+    stroke: var(--editorTheme3-scrollbar) !important;
+}

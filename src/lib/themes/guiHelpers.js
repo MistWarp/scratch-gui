@@ -312,6 +312,29 @@ const applyGuiColors = theme => {
         doc.style.setProperty(`--editorTheme3-${color}-tertiary`, blockColors[color].tertiary);
         doc.style.setProperty(`--editorTheme3-${color}-field-background`, blockColors[color].quaternary);
     }
+    
+    // Set workspace-specific colors from GUI themes
+    if (blockColors.workspace) {
+        doc.style.setProperty('--editorTheme3-workspace-background', blockColors.workspace);
+    }
+    if (blockColors.toolbox) {
+        doc.style.setProperty('--editorTheme3-toolbox-background', blockColors.toolbox);
+    }
+    if (blockColors.toolboxText || blockColors.flyoutLabelColor) {
+        doc.style.setProperty('--editorTheme3-toolbox-text', blockColors.toolboxText || blockColors.flyoutLabelColor);
+    }
+    if (blockColors.flyout) {
+        doc.style.setProperty('--editorTheme3-flyout-background', blockColors.flyout);
+    }
+    if (blockColors.flyoutText || blockColors.flyoutLabelColor) {
+        doc.style.setProperty('--editorTheme3-flyout-text', blockColors.flyoutText || blockColors.flyoutLabelColor);
+    }
+    if (blockColors.scrollbar) {
+        doc.style.setProperty('--editorTheme3-scrollbar', blockColors.scrollbar);
+    }
+    if (blockColors.gridColor) {
+        doc.style.setProperty('--editorTheme3-grid-color', blockColors.gridColor);
+    }
 
     // Some browsers will color their interfaces to match theme-color, so if we make it the same color as our
     // menu bar, it'll look pretty cool.

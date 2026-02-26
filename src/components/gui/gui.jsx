@@ -773,7 +773,7 @@ const GUIComponent = props => {
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
                                         <Blocks
-                                            key={`${blocksId}/${theme.getBlocksThemeId()}`}
+                                            key={`${blocksId}/${theme.id}`}
                                             canUseCloud={canUseCloud}
                                             grow={1}
                                             isVisible={blocksTabVisible}
@@ -999,10 +999,9 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-        onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
-        onOpenOnboarding: () => dispatch(showOnboarding())
-    }
-);
+    onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
+    onOpenOnboarding: () => dispatch(showOnboarding())
+});
 
 export default injectIntl(connect(
     mapStateToProps,
