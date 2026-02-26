@@ -1,0 +1,7 @@
+[class*="gui_tab_"] span {
+    display: none;
+}
+
+[class*="gui_tab_"] svg {
+    margin-right: 0;
+}

@@ -13,14 +13,6 @@ const manifest = {
   "dynamicDisable": true,
   "userstyles": [
     {
-      "url": "mistwarp.css",
-      "if": {
-        "settings": {
-          "tab_style": "mistwarp"
-        }
-      }
-    },
-    {
       "url": "turbowarp.css",
       "if": {
         "settings": {
@@ -33,6 +25,22 @@ const manifest = {
       "if": {
         "settings": {
           "tab_style": "scratchbox"
+        }
+      }
+    },
+    {
+      "url": "icon-only.css",
+      "if": {
+        "settings": {
+          "looks": "icon-only"
+        }
+      }
+    },
+    {
+      "url": "text-only.css",
+      "if": {
+        "settings": {
+          "looks": "text-only"
         }
       }
     }
@@ -59,6 +67,27 @@ const manifest = {
       ],
       "default": "MistWarp"
     },
+    {
+      "dynamic": true,
+      "name": "Looks",
+      "id": "looks",
+      "type": "select",
+      "potentialValues": [
+        {
+            "name": "Default",
+            "id": "default"
+        },
+        {
+            "name": "Icon Only",
+            "id": "icon-only"
+        },
+        {
+            "name": "Text Only",
+            "id": "text-only"
+        }
+      ],
+      "default": "Default"
+    }
   ],
   "enabledByDefault": false
 };
