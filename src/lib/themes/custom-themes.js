@@ -497,7 +497,6 @@ class CustomTheme extends Theme {
             author: this.author,
             createdAt: this.createdAt,
             accent: this.originalAccent, // Use original accent (not the fallback string)
-            customAccent: this.customAccent, // Include custom accent data
             gui: this.gui,
             blocks: this.blocks,
             menuBarAlign: this.menuBarAlign,
@@ -521,8 +520,7 @@ class CustomTheme extends Theme {
             throw new Error('Missing required theme properties');
         }
 
-        // Use the original accent from the export data
-        const accentToUse = data.customAccent ? data.accent : data.accent;
+        const accentToUse = data.accent;
 
         const theme = new CustomTheme(
             data.name,
