@@ -21,6 +21,19 @@ const fromHardcoded = ({userID = '0', username}) => {
 
 // The lists below are in no particular order.
 
+const team = [
+    {
+        text: 'Mistium',
+        image: 'https://github.com/mistium.png',
+        href: 'https://mistium.com'
+    },
+    {
+        text: 'antiviiris',
+        image: 'https://github.com/antiviiris.png',
+        href: 'https://github.com/antiviiris'
+    }
+];
+
 const contributors = [
     {
         userID: '41219524',
@@ -336,6 +349,7 @@ const docs = [
 ].map(fromHardcoded);
 
 export default {
+    team,
     contributors: shuffle(contributors),
     addonDevelopers: shuffle(addonDevelopers),
     extensionDevelopers: shuffle(extensionDevelopers),
