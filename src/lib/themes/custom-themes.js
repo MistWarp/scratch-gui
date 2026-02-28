@@ -899,7 +899,9 @@ class CustomThemeManager {
         const looksLikeNitroboltTheme = obj => isPlainObject(obj) &&
             typeof obj.name === 'string' &&
             (typeof obj.isGradient === 'boolean' || isPlainObject(obj.gradient) || obj.gradient === null) &&
-            (typeof obj.primaryColor === 'string' || typeof obj.secondaryColor === 'string' || typeof obj.tertiaryColor === 'string');
+            (typeof obj.primaryColor === 'string' ||
+            typeof obj.secondaryColor === 'string' ||
+            typeof obj.tertiaryColor === 'string');
 
         const toNumberOrNull = value => {
             if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -922,7 +924,9 @@ class CustomThemeManager {
             const primaryColor = typeof nitrobolt.primaryColor === 'string' ? nitrobolt.primaryColor : '#ff6b6b';
 
             const gradient = nitrobolt.gradient;
-            const hasGradient = Boolean(nitrobolt.isGradient) && isPlainObject(gradient) && Array.isArray(gradient.colors);
+            const hasGradient = Boolean(nitrobolt.isGradient) &&
+                isPlainObject(gradient) &&
+                Array.isArray(gradient.colors);
 
             let accent;
             if (hasGradient) {
