@@ -102,10 +102,10 @@ class Theme {
 
     getGuiColors () {
         return defaultsDeep(
-            {},
             ACCENT_MAP[this.accent].guiColors,
             GUI_MAP[this.gui].guiColors,
-            BLOCKS_MAP[this.blocks].colors
+            BLOCKS_MAP[this.blocks].colors,
+            {'looks-secondary': '#d399e5'}
         );
     }
 

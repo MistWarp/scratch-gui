@@ -141,7 +141,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard, Send
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1591,6 +1591,16 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.showTutorial"
                                         />
                                     </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItemLink href="https://discord.gg/awDktjgYVE">
+                                        <Send />
+                                        <FormattedMessage
+                                            defaultMessage="Make Suggestions"
+                                            description="Menu bar item to join Discord server"
+                                            id="tw.menuBar.joinDiscord"
+                                        />
+                                    </MenuItemLink>
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
