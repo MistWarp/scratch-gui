@@ -228,6 +228,7 @@
 .blocks-wrapper {
     flex-grow: 1;
     position: relative;
+    border-radius: 0 0.5rem 0.5rem 0;
 }
 
 .stage-and-target-wrapper {
