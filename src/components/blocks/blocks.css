@@ -43,7 +43,6 @@
     right: 0;
     bottom: 0;
     left: 0;
-    border: 1px solid $ui-black-transparent;
     border-top-right-radius: $space;
     border-bottom-right-radius: $space;
 }
@@ -89,7 +88,7 @@
 .blocks :global(.blocklyFlyout) {
     border-right: 1px solid $ui-black-transparent;
     box-sizing: content-box;
-    border-radius: 10px;
+    border-radius: 0 10px 10px 0;
 }
 
 [dir="rtl"] .blocks :global(.blocklyFlyout) {
