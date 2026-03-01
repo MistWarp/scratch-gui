@@ -336,6 +336,14 @@ const applyGuiColors = theme => {
         doc.style.setProperty('--editorTheme3-grid-color', blockColors.gridColor);
     }
 
+    // Flame graph colors
+    const isDark = doc.style.getPropertyValue('--color-scheme') === 'dark';
+    doc.style.setProperty('--flamegraph-color-fast', isDark ? 'hsl(220, 70%, 55%)' : 'hsl(240, 80%, 50%)');
+    doc.style.setProperty('--flamegraph-color-medium-fast', isDark ? 'hsl(200, 70%, 58%)' : 'hsl(180, 80%, 53%)');
+    doc.style.setProperty('--flamegraph-color-medium', isDark ? 'hsl(160, 70%, 55%)' : 'hsl(120, 80%, 56%)');
+    doc.style.setProperty('--flamegraph-color-medium-slow', isDark ? 'hsl(100, 70%, 57%)' : 'hsl(60, 80%, 59%)');
+    doc.style.setProperty('--flamegraph-color-slow', isDark ? 'hsl(40, 85%, 60%)' : 'hsl(0, 80%, 62%)');
+
     // Some browsers will color their interfaces to match theme-color, so if we make it the same color as our
     // menu bar, it'll look pretty cool.
     let metaThemeColor = document.head.querySelector('meta[name=theme-color]');

@@ -30,6 +30,7 @@ import {
     closeBackdropLibrary,
     closeSoundLibrary,
     closeTelemetryModal,
+    closeFlameGraphModal,
     openExtensionLibrary,
     closeExtensionLibrary,
     openCustomExtensionModal,
@@ -40,7 +41,8 @@ import {
     openSettingsModal,
     openRestorePointModal,
     openShortcutManagerModal,
-    openSimpleDialog
+    openSimpleDialog,
+    openFlameGraphModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -267,6 +269,7 @@ const mapStateToProps = state => {
         unknownPlatformModalVisible: state.scratchGui.modals.unknownPlatformModal,
         invalidProjectModalVisible: state.scratchGui.modals.invalidProjectModal,
         gitModalVisible: state.scratchGui.modals.gitModal,
+        flameGraphModalVisible: state.scratchGui.modals.flameGraphModal,
         vm: state.scratchGui.vm
     };
 };
@@ -295,7 +298,9 @@ const mapDispatchToProps = dispatch => ({
     openSoundLibrary: () => dispatch(openSoundLibrary()),
     openExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
     openSettingsModal: () => dispatch(openSettingsModal()),
-    openRestorePointModal: () => dispatch(openRestorePointModal())
+    openRestorePointModal: () => dispatch(openRestorePointModal()),
+    onRequestCloseFlameGraph: () => dispatch(closeFlameGraphModal()),
+    onClickFlameGraphModal: () => dispatch(openFlameGraphModal())
 });
 
 const ConnectedGUI = injectIntl(connect(

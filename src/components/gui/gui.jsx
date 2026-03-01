@@ -50,6 +50,7 @@ import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
+import MWFlameGraph from '../mw-flame-graph/flame-graph.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -473,8 +474,11 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        flameGraphModalVisible,
         shortcutManagerModalVisible,
         vm,
+        onRequestCloseFlameGraph,
+        onClickFlameGraphModal,
         ...componentProps
     } = omit(props, 'dispatch');
     if (children) {
@@ -540,6 +544,10 @@ const GUIComponent = props => {
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
+            {flameGraphModalVisible && <MWFlameGraph
+                vm={vm}
+                onRequestClose={onRequestCloseFlameGraph}
+            />}
             <SimpleDialog />
             {onboardingVisible && <Onboarding />}
         </React.Fragment>
@@ -553,7 +561,10 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        flameGraphModalVisible,
         shortcutManagerModalVisible,
+        onRequestCloseFlameGraph,
+        vm,
         onboardingVisible
     ]);
 
@@ -699,6 +710,7 @@ const GUIComponent = props => {
                     onClickNewWindow={onClickNewWindow}
                     onClickPackager={onClickPackager}
                     onClickLogo={onClickLogo}
+                    onClickFlameGraphModal={onClickFlameGraphModal}
                     onCloseAccountNav={onCloseAccountNav}
                     onLogOut={onLogOut}
                     onOpenExtensionLibrary={onOpenExtensionLibrary}

@@ -48,6 +48,7 @@ import {
     openGitModal,
     openExtensionManagerModal,
     openShortcutManagerModal,
+    openFlameGraphModal,
     openSimpleDialog
 } from '../../reducers/modals';
 import {showOnboarding} from '../../reducers/onboarding';
@@ -141,7 +142,8 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard, Send
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard, Send,
+    Flame
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1596,7 +1598,7 @@ class MenuBar extends React.Component {
                                     <MenuItemLink href="https://discord.gg/awDktjgYVE">
                                         <Send />
                                         <FormattedMessage
-                                            defaultMessage="Make Suggestions"
+                                            defaultMessage="Join Discord"
                                             description="Menu bar item to join Discord server"
                                             id="tw.menuBar.joinDiscord"
                                         />
@@ -1730,27 +1732,27 @@ class MenuBar extends React.Component {
                                     </MenuSection>
                                 ) : null}
                                 <MenuSection>
-                                     <MenuItem
-                                         onClick={() => {
-                                             this.props.onRequestCloseTools();
-                                             this.props.onOpenExtensionLibrary();
-                                         }}
-                                         shortcut={formatShortcutDisplay('Ctrl+.')}
-                                     >
-                                         <PackagePlus />
-                                         <FormattedMessage
-                                             defaultMessage="Add Extension"
-                                             description="Menu bar item for adding or importing extensions"
-                                             id="tw.menuBar.extensions.addImport"
-                                         />
-                                     </MenuItem>
-                                     <MenuItem
-                                         onClick={() => {
-                                             this.props.onRequestCloseTools();
-                                             this.props.onOpenExtensionManagerModal();
-                                         }}
-                                         shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
-                                     >
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseTools();
+                                            this.props.onOpenExtensionLibrary();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+.')}
+                                    >
+                                        <PackagePlus />
+                                        <FormattedMessage
+                                            defaultMessage="Add Extension"
+                                            description="Menu bar item for adding or importing extensions"
+                                            id="tw.menuBar.extensions.addImport"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseTools();
+                                            this.props.onOpenExtensionManagerModal();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                    >
                                         <FileCog />
                                         <FormattedMessage
                                             defaultMessage="Manage Extensions"
@@ -2039,6 +2041,7 @@ MenuBar.propTypes = {
     onClickGitModal: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
     onClickShortcutManagerModal: PropTypes.func,
+    onClickFlameGraphModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
@@ -2171,6 +2174,9 @@ const mapDispatchToProps = dispatch => ({
     },
     onClickShortcutManagerModal: () => {
         dispatch(openShortcutManagerModal());
+    },
+    onClickFlameGraphModal: () => {
+        dispatch(openFlameGraphModal());
     },
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
