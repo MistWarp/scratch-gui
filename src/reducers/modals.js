@@ -24,6 +24,7 @@ const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
+const MODAL_FLAME_GRAPH = 'flameGraphModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -48,7 +49,8 @@ const initialState = {
     [MODAL_PREFERENCES]: false,
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_ONBOARDING]: false,
-    [MODAL_SHORTCUT_MANAGER]: false
+    [MODAL_SHORTCUT_MANAGER]: false,
+    [MODAL_FLAME_GRAPH]: false
 };
 
 const reducer = function (state, action) {
@@ -150,6 +152,9 @@ const openOnboardingModal = function () {
 const openShortcutManagerModal = function () {
     return openModal(MODAL_SHORTCUT_MANAGER);
 };
+const openFlameGraphModal = function () {
+    return openModal(MODAL_FLAME_GRAPH);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -222,6 +227,9 @@ const closeOnboardingModal = function () {
 const closeShortcutManagerModal = function () {
     return closeModal(MODAL_SHORTCUT_MANAGER);
 };
+const closeFlameGraphModal = function () {
+    return closeModal(MODAL_FLAME_GRAPH);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -248,6 +256,7 @@ export {
     openPreferencesModal,
     openOnboardingModal,
     openShortcutManagerModal,
+    openFlameGraphModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
@@ -270,5 +279,6 @@ export {
     closeGitModal,
     closePreferencesModal,
     closeOnboardingModal,
-    closeShortcutManagerModal
+    closeShortcutManagerModal,
+    closeFlameGraphModal
 };
