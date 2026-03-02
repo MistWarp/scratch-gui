@@ -338,10 +338,13 @@ class CustomTheme extends Theme {
         this.createdAt = new Date().toISOString();
         /** @readonly */
         this.uuid = this.generateUUID();
-        /** @readonly */
-        this.customAccent = typeof accent === 'object' ? accent : null;
-        /** @readonly */
-        this.originalAccent = accent; // Store the original accent for export
+
+        // Check if it's a full accent object (with guiColors)
+        const isFullAccent = typeof accent === 'object' && accent.guiColors;
+        this.customAccent = isFullAccent ? accent : null;
+
+        // Store the original accent data (either gradient format or full accent object)
+        this.originalAccent = accent;
     }
 
     generateUUID () {
@@ -490,19 +493,169 @@ class CustomTheme extends Theme {
      * @returns {object} Theme data
      */
     export () {
+        const accentExport = this._exportGradient();
+
         return {
             uuid: this.uuid,
+            createdAt: this.createdAt,
             name: this.name,
             description: this.description,
             author: this.author,
-            createdAt: this.createdAt,
-            accent: this.originalAccent, // Use original accent (not the fallback string)
+            accent: accentExport || null,
             gui: this.gui,
             blocks: this.blocks,
             menuBarAlign: this.menuBarAlign,
-            wallpaper: this.wallpaper,
-            fonts: this.fonts,
-            version: '1.0'
+            wallpaper: this.wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
+            fonts: this.fonts || {system: [], google: [], history: []}
+        };
+    }
+
+    /**
+     * Convert OKLab to sRGB (0–255)
+     * Based on Björn Ottosson's reference implementation
+     * @param {number} L OKLab L component
+     * @param {number} a OKLab a component
+     * @param {number} b OKLab b component
+     * @returns {object} An object of {r, g, b}
+     */
+    oklabToRgb (L, a, b) {
+        // OKLab → LMS
+        const l_ = L + (0.3963377774 * a) + (0.2158037573 * b);
+        const m_ = L - (0.1055613458 * a) - (0.0638541728 * b);
+        const s_ = L - (0.0894841775 * a) - (1.2914855480 * b);
+
+        const l = l_ * l_ * l_;
+        const m = m_ * m_ * m_;
+        const s = s_ * s_ * s_;
+
+        // LMS → linear sRGB
+        let r = (4.0767416621 * l) - (3.3077115913 * m) + (0.2309699292 * s);
+        let g = (-1.2684380046 * l) + (2.6097574011 * m) - (0.3413193965 * s);
+        let b2 = (-0.0041960863 * l) - (0.7034186147 * m) + (1.7076147010 * s);
+
+        // linear → gamma
+        const compand = x =>
+            (x <= 0.0031308 ?
+                12.92 * x :
+                (1.055 * Math.pow(x, 1 / 2.4)) - 0.055);
+
+        r = compand(r);
+        g = compand(g);
+        b2 = compand(b2);
+
+        const clamp = v => Math.min(255, Math.max(0, Math.round(v * 255)));
+
+        return {
+            r: clamp(r),
+            g: clamp(g),
+            b: clamp(b2)
+        };
+    }
+
+    
+    /**
+  * Export gradient accent to format
+ * @returns {object} Gradient format
+  */
+    _exportGradient () {
+        if (this.originalAccent && typeof this.originalAccent === 'object' &&
+            Array.isArray(this.originalAccent.colors)) {
+            return this.originalAccent;
+        }
+
+        const menuBarImage = document.documentElement.style
+            .getPropertyValue('--menu-bar-background-image');
+
+        if (!menuBarImage) return null;
+
+        const directionMatch = menuBarImage.match(/([\d.]+)deg/i);
+        const direction = directionMatch ? directionMatch[1] : '90';
+
+        const colorStops = [];
+
+        // Match full color stop tokens (rgb/rgba/hex/oklab + optional position)
+        const stops = menuBarImage.match(
+            /(oklab\([^)]+\)|rgba?\([^)]+\)|#[a-fA-F0-9]{3,8})\s*([\d.]+%?)?/gi
+        ) || [];
+
+        stops.forEach((stop, index) => {
+            let color = null;
+            let position = null;
+
+            const rgbaMatch = stop.match(
+                /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)\s*([\d.]+)?%?/i
+            );
+
+            const hexMatch = stop.match(/#([a-fA-F0-9]{3,8})/);
+
+            const oklabMatch = stop.match(
+                /oklab\(\s*([+-]?[\d.]+)\s+([+-]?[\d.]+)\s+([+-]?[\d.]+)(?:\s*\/\s*([+-]?[\d.]+))?\s*\)\s*([\d.]+)?%?/i
+            );
+
+            if (rgbaMatch) {
+                const [, r, g, b, pos] = rgbaMatch;
+
+                color =
+                `#${
+                    parseInt(r, 10).toString(16)
+                        .padStart(2, '0')
+                }${parseInt(g, 10).toString(16)
+                    .padStart(2, '0')
+                }${parseInt(b, 10).toString(16)
+                    .padStart(2, '0')}`;
+
+                position = typeof pos === 'undefined' ?
+                    (index / (stops.length - 1)) * 100 :
+                    parseFloat(pos);
+
+            } else if (hexMatch) {
+                color = hexMatch[0];
+
+                const posMatch = stop.match(/([\d.]+)%/);
+                position = posMatch ?
+                    parseFloat(posMatch[1]) :
+                    (index / (stops.length - 1)) * 100;
+
+            } else if (oklabMatch) {
+                const [, L, A, B, _alpha, pos] = oklabMatch;
+
+                const {r, g, b} = this.oklabToRgb(
+                    parseFloat(L),
+                    parseFloat(A),
+                    parseFloat(B)
+                );
+
+                color = `#${r.toString(16).padStart(2, '0')
+                }${g.toString(16).padStart(2, '0')
+                }${b.toString(16).padStart(2, '0')}`;
+
+                position = typeof pos === 'undefined' ?
+                    (index / (stops.length - 1)) * 100 :
+                    parseFloat(pos);
+            }
+
+            if (color !== null && position !== null) {
+                colorStops.push({color, position});
+            }
+        });
+
+        colorStops.sort((a, b) => a.position - b.position);
+
+        return {
+            colors: colorStops,
+            direction: direction.toString()
+        };
+    }
+
+    /**
+     * Export standard accent to format
+     * @param {string} accent - Standard accent color name
+     * @returns {object} Standard accent format
+     */
+    _exportStandardAccent (accent) {
+        return {
+            type: 'standard',
+            name: accent
         };
     }
 
@@ -516,11 +669,24 @@ class CustomTheme extends Theme {
             throw new Error('Invalid theme data');
         }
 
-        if (!data.name || !data.accent || !data.gui || !data.blocks) {
+        if (!data.name || !data.gui || !data.blocks) {
             throw new Error('Missing required theme properties');
         }
 
-        const accentToUse = data.accent;
+        let accentToUse = data.accent;
+
+        // Handle null/undefined accent - create a default accent
+        if (!accentToUse) {
+            accentToUse = {
+                guiColors: GradientUtils.generateAccentColors('#ff6b6b')
+            };
+        } else if (accentToUse && typeof accentToUse === 'object' && Array.isArray(accentToUse.colors)) {
+            // Check if accent is in gradient format (colors array)
+            const colors = accentToUse.colors;
+            const direction = accentToUse.direction || '90';
+            const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
+            accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+        }
 
         const theme = new CustomTheme(
             data.name,
@@ -582,19 +748,33 @@ class CustomThemeManager {
     loadCustomThemes () {
         try {
             const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
-            if (stored) {
-                const themesData = JSON.parse(stored);
-                for (const themeData of themesData) {
-                    try {
-                        const theme = CustomTheme.import(themeData);
-                        this.themes.set(theme.uuid, theme);
-                    } catch (e) {
-                        console.warn('Failed to load custom theme:', e);
-                    }
+            if (!stored) {
+                console.log('No custom themes found in storage');
+                return;
+            }
+
+            const themesData = JSON.parse(stored);
+            if (!Array.isArray(themesData)) {
+                console.warn('Invalid themes data format in storage - not an array');
+                return;
+            }
+
+            console.log(`Loading ${themesData.length} custom themes from storage`);
+
+            let loadedCount = 0;
+            for (const themeData of themesData) {
+                try {
+                    const theme = CustomTheme.import(themeData);
+                    this.themes.set(theme.uuid, theme);
+                    loadedCount++;
+                } catch (e) {
+                    console.warn(`Failed to load custom theme "${themeData?.name || 'unknown'}":`, e);
                 }
             }
+
+            console.log(`Successfully loaded ${loadedCount}/${themesData.length} custom themes`);
         } catch (e) {
-            console.warn('Failed to load custom themes from storage:', e);
+            console.error('Failed to load custom themes from storage:', e);
         }
     }
 
@@ -604,10 +784,36 @@ class CustomThemeManager {
     saveCustomThemes () {
         try {
             const themesData = Array.from(this.themes.values()).map(theme => theme.export());
-            localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, JSON.stringify(themesData));
+
+            if (themesData.length === 0) {
+                localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
+                console.log('Cleared custom themes storage (no themes)');
+                this._emitChange();
+                return;
+            }
+
+            const jsonString = JSON.stringify(themesData, null, 2);
+
+            if (jsonString.length > 5 * 1024 * 1024) {
+                console.warn('Theme data is very large (over 5MB), may cause storage issues');
+            }
+
+            localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, jsonString);
+
+            console.log(`Saved ${themesData.length} custom themes to storage (${jsonString.length} bytes)`);
+
             this._emitChange();
         } catch (e) {
-            console.warn('Failed to save custom themes to storage:', e);
+            console.error('Failed to save custom themes to storage:', e);
+
+            if (e.name === 'QuotaExceededError') {
+                const currentData = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+                if (currentData) {
+                    localStorage.setItem(`${CUSTOM_THEMES_STORAGE_KEY}_backup`, currentData);
+                }
+                throw new Error('Storage quota exceeded - try deleting some themes');
+            }
+
             throw new Error(`Failed to save themes: ${e.message}`);
         }
     }
@@ -878,10 +1084,10 @@ class CustomThemeManager {
     exportAllThemes () {
         const themes = this.getAllThemes().map(theme => theme.export());
         return {
-            version: '1.0',
-            exportedAt: new Date().toISOString(),
-            themes: themes,
-            count: themes.length
+            version: '2.0',
+            platform: 'MistWarp',
+            timestamp: Date.now(),
+            themes: themes
         };
     }
 
@@ -1087,6 +1293,36 @@ class CustomThemeManager {
 
         this.addTheme(customTheme);
         return customTheme;
+    }
+
+    /**
+     * Get storage diagnostics
+     * @returns {object} Storage information
+     */
+    getStorageInfo () {
+        try {
+            const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+            const size = stored ? new Blob([stored]).size : 0;
+            const parsed = stored ? JSON.parse(stored) : [];
+
+            return {
+                hasData: Boolean(stored),
+                themeCount: Array.isArray(parsed) ? parsed.length : 0,
+                dataSize: size,
+                dataSizeFormatted: `${(size / 1024).toFixed(2)} KB`,
+                isValid: Array.isArray(parsed),
+                quotaEstimate: {
+                    used: size,
+                    total: 5 * 1024 * 1024,
+                    percentage: ((size / (5 * 1024 * 1024)) * 100).toFixed(2)
+                }
+            };
+        } catch (e) {
+            return {
+                error: e.message,
+                hasData: !!localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY)
+            };
+        }
     }
 }
 
