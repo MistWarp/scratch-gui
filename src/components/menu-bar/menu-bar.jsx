@@ -1596,7 +1596,7 @@ class MenuBar extends React.Component {
                                     <MenuItemLink href="https://discord.gg/awDktjgYVE">
                                         <Send />
                                         <FormattedMessage
-                                            defaultMessage="Make Suggestions"
+                                            defaultMessage="Join Our Discord"
                                             description="Menu bar item to join Discord server"
                                             id="tw.menuBar.joinDiscord"
                                         />
