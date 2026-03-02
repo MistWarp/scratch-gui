@@ -78,6 +78,9 @@ const GradientCreatorApp = props => {
     const handlePreview = async () => {
         if (isPreviewActive) {
             setIsPreviewActive(false);
+            if (props.onPreview) {
+                props.onPreview('', [], '', 90);
+            }
             return;
         }
 
@@ -86,7 +89,15 @@ const GradientCreatorApp = props => {
             return;
         }
 
-        setIsPreviewActive(true);
+        if (props.onPreview) {
+            props.onPreview(
+                name,
+                gradientColors,
+                primaryColor,
+                direction
+            );
+            setIsPreviewActive(true);
+        }
     };
 
     const handleAddColorStop = () => {
@@ -490,7 +501,8 @@ GradientCreatorApp.propTypes = {
     initialDirection: PropTypes.number,
     initialPrimaryColor: PropTypes.string,
     onCancel: PropTypes.func,
-    onCreate: PropTypes.func
+    onCreate: PropTypes.func,
+    onPreview: PropTypes.func
 };
 
 const GradientEditorApp = props => {
@@ -511,6 +523,9 @@ const GradientEditorApp = props => {
     const handlePreview = async () => {
         if (isPreviewActive) {
             setIsPreviewActive(false);
+            if (props.onPreview) {
+                props.onPreview('', [], '', 90);
+            }
             return;
         }
 
@@ -519,7 +534,15 @@ const GradientEditorApp = props => {
             return;
         }
 
-        setIsPreviewActive(true);
+        if (props.onPreview) {
+            props.onPreview(
+                name,
+                gradientColors,
+                primaryColor,
+                direction
+            );
+            setIsPreviewActive(true);
+        }
     };
 
     const handleAddColorStop = () => {
@@ -878,7 +901,8 @@ GradientEditorApp.propTypes = {
     initialDirection: PropTypes.number,
     initialPrimaryColor: PropTypes.string,
     onCancel: PropTypes.func,
-    onUpdate: PropTypes.func
+    onUpdate: PropTypes.func,
+    onPreview: PropTypes.func
 };
 
 class CustomThemeMenu extends React.Component {
@@ -888,28 +912,26 @@ class CustomThemeMenu extends React.Component {
 
     constructor (props) {
         super(props);
+        this._unsubscribeCustomThemes = null;
+
         this.state = {
             customThemes: customThemeManager.getAllThemes(),
             showCreateDialog: false,
-            showImportDialog: false,
-            showGradientCreator: false,
-            showGradientEditor: false,
-            editingThemeUuid: null,
             createName: '',
             createDescription: '',
-            importData: '',
-            // Gradient creation state
             gradientColors: [
                 {color: '#ff6b6b', position: 0},
                 {color: '#4ecdc4', position: 100}
             ],
-            gradientDirection: 90,
             primaryColor: '#ff6b6b',
+            gradientDirection: 90,
             selectedPreset: '',
-            showColorPicker: false,
-            activeColorStop: 0
+            showGradientCreator: false,
+            showGradientEditor: false,
+            editingThemeUuid: null,
+            originalThemeBeforePreview: null
         };
-        
+
         this.fileInputRef = React.createRef();
         this.createThemeWindow = null;
         this.gradientCreatorWindow = null;
@@ -967,6 +989,15 @@ class CustomThemeMenu extends React.Component {
                                             }
                                         });
                                 },
+                                onPreview: (name, gradientColors, primaryColor, direction) => {
+                                    return this.handlePreviewTheme(
+                                        name,
+                                        this.state.createDescription,
+                                        gradientColors,
+                                        primaryColor,
+                                        direction
+                                    );
+                                },
                                 onCancel: () => {
                                     if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
                                 }
@@ -1012,6 +1043,8 @@ class CustomThemeMenu extends React.Component {
         }
     }
 
+    // TODO: Migrate to functional component with useEffect cleanup
+    // componentWillUnmount is deprecated in React 16.3+
     componentWillUnmount () {
         this._isMounted = false;
 
@@ -1031,6 +1064,12 @@ class CustomThemeMenu extends React.Component {
                 // Ignore abort errors
             }
             this._activeFileReader = null;
+        }
+
+        // Restore preview if still active
+        const {originalThemeBeforePreview} = this.state;
+        if (originalThemeBeforePreview) {
+            this.props.onChangeTheme(originalThemeBeforePreview);
         }
     }
 
@@ -1122,6 +1161,12 @@ class CustomThemeMenu extends React.Component {
             className: 'tw-gradient-creator-window',
             onClose: () => {
                 try {
+                    const {originalThemeBeforePreview} = this.state;
+                    if (originalThemeBeforePreview && this._isMounted) {
+                        this.props.onChangeTheme(originalThemeBeforePreview);
+                        this.safeSetState({originalThemeBeforePreview: null});
+                    }
+
                     if (this.gradientCreatorContainer) {
                         try {
                             ReactDOM.unmountComponentAtNode(this.gradientCreatorContainer);
@@ -1162,7 +1207,21 @@ class CustomThemeMenu extends React.Component {
                                         }
                                     });
                             },
+                            onPreview: (name, gradientColors, primaryColor, direction) => {
+                                return this.handlePreviewTheme(
+                                    name,
+                                    this.state.createDescription,
+                                    gradientColors,
+                                    primaryColor,
+                                    direction
+                                );
+                            },
                             onCancel: () => {
+                                const {originalThemeBeforePreview} = this.state;
+                                if (originalThemeBeforePreview && this._isMounted) {
+                                    this.props.onChangeTheme(originalThemeBeforePreview);
+                                    this.safeSetState({originalThemeBeforePreview: null});
+                                }
                                 if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
                             }
                         })
@@ -1196,6 +1255,12 @@ class CustomThemeMenu extends React.Component {
             className: 'tw-gradient-editor-window',
             onClose: () => {
                 try {
+                    const {originalThemeBeforePreview} = this.state;
+                    if (originalThemeBeforePreview && this._isMounted) {
+                        this.props.onChangeTheme(originalThemeBeforePreview);
+                        this.safeSetState({originalThemeBeforePreview: null});
+                    }
+
                     if (this.gradientEditorContainer) {
                         try {
                             ReactDOM.unmountComponentAtNode(this.gradientEditorContainer);
@@ -1236,7 +1301,21 @@ class CustomThemeMenu extends React.Component {
                                         }
                                     });
                             },
+                            onPreview: (name, gradientColors, primaryColor, direction) => {
+                                return this.handlePreviewTheme(
+                                    name,
+                                    this.state.createDescription,
+                                    gradientColors,
+                                    primaryColor,
+                                    direction
+                                );
+                            },
                             onCancel: () => {
+                                const {originalThemeBeforePreview} = this.state;
+                                if (originalThemeBeforePreview && this._isMounted) {
+                                    this.props.onChangeTheme(originalThemeBeforePreview);
+                                    this.safeSetState({originalThemeBeforePreview: null});
+                                }
                                 if (this.gradientEditorWindow) this.gradientEditorWindow.close();
                             }
                         })
@@ -1513,6 +1592,40 @@ class CustomThemeMenu extends React.Component {
         }
     };
 
+    handlePreviewTheme = (name, description, gradientColors, primaryColor, direction) => {
+        const {originalThemeBeforePreview} = this.state;
+
+        // Treat empty name as signal to stop preview (restore original theme)
+        if (!name || originalThemeBeforePreview) {
+            if (originalThemeBeforePreview) {
+                this.props.onChangeTheme(originalThemeBeforePreview);
+                this.safeSetState({originalThemeBeforePreview: null});
+                return true;
+            }
+            return false;
+        }
+
+        const {theme: currentTheme} = this.props;
+
+        const gradientAccent = GradientUtils.createGradientAccent(gradientColors, primaryColor, {direction});
+
+        const previewTheme = new CustomTheme(
+            name,
+            description,
+            gradientAccent,
+            currentTheme.gui || 'light',
+            currentTheme.blocks || 'three',
+            currentTheme.menuBarAlign || 'left',
+            currentTheme.wallpaper,
+            currentTheme.fonts
+        );
+
+        this.safeSetState({originalThemeBeforePreview: currentTheme});
+
+        this.props.onChangeTheme(previewTheme);
+        return true;
+    };
+
     handleExportThemes = async () => {
         try {
             const exportData = customThemeManager.exportAllThemes();
@@ -1536,10 +1649,10 @@ class CustomThemeMenu extends React.Component {
     handleExportSingleTheme = async theme => {
         try {
             const exportData = {
-                version: '1.0',
-                exportedAt: new Date().toISOString(),
+                version: '2.0',
+                timestamp: Date.now(),
                 themes: [theme.export()],
-                count: 1
+                platform: 'MistWarp'
             };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], {
                 type: 'application/json'
@@ -1766,7 +1879,11 @@ class CustomThemeMenu extends React.Component {
                         >
                             <div className={styles.option}>
                                 <Check
-                                    className={classNames(styles.check, {[styles.selected]: theme instanceof CustomTheme && theme.uuid === customTheme.uuid})}
+                                    className={
+                                        classNames(styles.check, {
+                                            [styles.selected]: theme instanceof CustomTheme &&
+                                                               theme.uuid === customTheme.uuid
+                                        })}
                                     size={15}
                                 />
                                 <div className={styles.customThemeItemInfo}>
