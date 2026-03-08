@@ -272,7 +272,7 @@ const WarpThemeModal = props => {
             result = result.filter(theme =>
                 theme.name.toLowerCase().includes(query) ||
                 theme.description?.toLowerCase().includes(query) ||
-                theme.author.toLowerCase().includes(query)
+                theme.authorName.toLowerCase().includes(query)
             );
         }
         
@@ -444,7 +444,7 @@ const WarpThemeModal = props => {
                                 />
                                 <div className={styles.themeContent}>
                                     <h3 className={styles.themeName}>{theme.name}</h3>
-                                    <p className={styles.themeAuthor}>by {theme.author}</p>
+                                    <p className={styles.themeAuthor}>by {theme.authorName}</p>
                                     {theme.description && (
                                         <p className={styles.themeDescription}>{theme.description}</p>
                                     )}
