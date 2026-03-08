@@ -8,6 +8,7 @@ import {MenuSection} from '../menu/menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
 import TWAccentThemeMenu from './tw-theme-accent.jsx';
 import TWGuiThemeMenu from './tw-theme-gui.jsx';
+import TWWarpThemeMenu from './mw-warptheme-menu.jsx';
 import TWBlocksThemeMenu from './tw-theme-blocks.jsx';
 import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
@@ -66,11 +67,13 @@ const SettingsMenu = ({
                 </MenuSection>
                 <div className={styles.menuSeparator} />
                 {canChangeTheme && (
-                    <MenuSection>
-                        <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
-                        <TWMenuBarAlignMenu />
-                        <TWAccentThemeMenu />
-                    </MenuSection>
+<MenuSection>
+                    <TWCustomThemeMenu />
+                    <TWGuiThemeMenu />
+                    <TWWallpaperMenu />
+                    <TWFontsThemeMenu />
+                    <TWWarpThemeMenu />
+                </MenuSection>
                 )}
             </MenuBarMenu>
         </MenuLabel>
