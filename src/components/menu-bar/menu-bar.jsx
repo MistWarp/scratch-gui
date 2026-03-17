@@ -1593,11 +1593,11 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
-                                    <MenuItemLink href="https://discord.gg/awDktjgYVE">
+                                    <MenuItemLink href="https://originchats.mistium.com?server=chats.mistium.com">
                                         <Send />
                                         <FormattedMessage
-                                            defaultMessage="Join Our Discord"
-                                            description="Menu bar item to join Discord server"
+                                            defaultMessage="originChats"
+                                            description="Menu bar item to join originChats"
                                             id="tw.menuBar.joinDiscord"
                                         />
                                     </MenuItemLink>
@@ -1730,27 +1730,27 @@ class MenuBar extends React.Component {
                                     </MenuSection>
                                 ) : null}
                                 <MenuSection>
-                                     <MenuItem
-                                         onClick={() => {
-                                             this.props.onRequestCloseTools();
-                                             this.props.onOpenExtensionLibrary();
-                                         }}
-                                         shortcut={formatShortcutDisplay('Ctrl+.')}
-                                     >
-                                         <PackagePlus />
-                                         <FormattedMessage
-                                             defaultMessage="Add Extension"
-                                             description="Menu bar item for adding or importing extensions"
-                                             id="tw.menuBar.extensions.addImport"
-                                         />
-                                     </MenuItem>
-                                     <MenuItem
-                                         onClick={() => {
-                                             this.props.onRequestCloseTools();
-                                             this.props.onOpenExtensionManagerModal();
-                                         }}
-                                         shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
-                                     >
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseTools();
+                                            this.props.onOpenExtensionLibrary();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+.')}
+                                    >
+                                        <PackagePlus />
+                                        <FormattedMessage
+                                            defaultMessage="Add Extension"
+                                            description="Menu bar item for adding or importing extensions"
+                                            id="tw.menuBar.extensions.addImport"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseTools();
+                                            this.props.onOpenExtensionManagerModal();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                    >
                                         <FileCog />
                                         <FormattedMessage
                                             defaultMessage="Manage Extensions"
