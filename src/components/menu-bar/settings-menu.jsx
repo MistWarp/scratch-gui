@@ -29,56 +29,53 @@ const SettingsMenu = ({
     onRequestClose,
     onRequestOpen,
     settingsMenuOpen
-}) => {
-    return (
-        <MenuLabel
-            open={settingsMenuOpen}
-            onOpen={onRequestOpen}
-            onClose={onRequestClose}
-        >
-            <Eye
-                width={20}
-                height={20}
-                size={20}
+}) => (
+    <MenuLabel
+        open={settingsMenuOpen}
+        onOpen={onRequestOpen}
+        onClose={onRequestClose}
+    >
+        <Eye
+            width={20}
+            height={20}
+            size={20}
+        />
+        <span className={styles.dropdownLabel}>
+            <FormattedMessage
+                defaultMessage="View"
+                description="View menu"
+                id="gui.menuBar.theme"
             />
-            <span className={styles.dropdownLabel}>
-                <FormattedMessage
-                    defaultMessage="View"
-                    description="View menu"
-                    id="gui.menuBar.theme"
-                />
-            </span>
-            <ChevronDown />
-            <MenuBarMenu
-                className={menuBarStyles.menuBarMenu}
-                open={settingsMenuOpen}
-                place={isRtl ? 'left' : 'right'}
-            >
-                <MenuSection>
-                    {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
-                    {canChangeTheme && (
-                        <React.Fragment>
-                            <TWCustomThemeMenu />
-                            <TWGuiThemeMenu />
-                            <TWWallpaperMenu />
-                            <TWFontsThemeMenu />
-                        </React.Fragment>
-                    )}
-                </MenuSection>
-                <div className={styles.menuSeparator} />
+        </span>
+        <ChevronDown />
+        <MenuBarMenu
+            className={menuBarStyles.menuBarMenu}
+            open={settingsMenuOpen}
+            place={isRtl ? 'left' : 'right'}
+        >
+            <MenuSection>
+                {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
                 {canChangeTheme && (
-<MenuSection>
-                    <TWCustomThemeMenu />
-                    <TWGuiThemeMenu />
-                    <TWWallpaperMenu />
-                    <TWFontsThemeMenu />
+                    <React.Fragment>
+                        <TWCustomThemeMenu />
+                        <TWGuiThemeMenu />
+                        <TWWallpaperMenu />
+                        <TWFontsThemeMenu />
+                    </React.Fragment>
+                )}
+            </MenuSection>
+            <div className={styles.menuSeparator} />
+            {canChangeTheme && (
+                <MenuSection>
+                    <TWBlocksThemeMenu />
+                    <TWMenuBarAlignMenu />
+                    <TWAccentThemeMenu />
                     <TWWarpThemeMenu />
                 </MenuSection>
-                )}
-            </MenuBarMenu>
-        </MenuLabel>
-    );
-};
+            )}
+        </MenuBarMenu>
+    </MenuLabel>
+);
 
 SettingsMenu.propTypes = {
     canChangeLanguage: PropTypes.bool,
