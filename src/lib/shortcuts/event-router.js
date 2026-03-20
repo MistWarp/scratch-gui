@@ -379,11 +379,13 @@ const handleKeyDown = event => {
     const keyCombo = normalizeEventKey(event);
     const matchingShortcut = findMatchingShortcut(keyCombo);
 
-    if (matchingShortcut) {
-        event.preventDefault();
-        event.stopPropagation();
-        executeShortcut(matchingShortcut);
-    }
+	if (matchingShortcut) {
+		if (matchingShortcut.actionType !== null) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+		executeShortcut(matchingShortcut);
+	}
 };
 
 const updateShortcuts = customShortcuts => {
