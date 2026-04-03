@@ -268,6 +268,7 @@ export default async function ({ addon, console, msg }) {
   const addLiveBlockCount = async () => {
     if (vm.editingTarget) {
       let handler = null;
+      let isLoading = false;
       while (true) {
         const topBar = await addon.tab.waitForElement("[class^='menu-bar_main-menu']", {
           markAsSeen: true,
@@ -278,7 +279,7 @@ export default async function ({ addon, console, msg }) {
           ],
           reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
         });
-        
+
         let display = topBar.appendChild(document.createElement("span"));
         addon.tab.displayNoneWhileDisabled(display);
         display.style.order = 1;
@@ -286,34 +287,34 @@ export default async function ({ addon, console, msg }) {
         display.style.padding = '4px 8px';
         display.style.borderRadius = '4px';
         display.style.transition = 'background-color 0.2s';
-        
+
         const updateDisplay = () => {
           const metrics = getProjectComplexity();
           const parts = [];
-          
+
           const hideBlocks = addon.settings.get('hide_block_count');
           const showCostumes = addon.settings.get('show_costume_count');
           const showSounds = addon.settings.get('show_sound_count');
           const showComplexity = addon.settings.get('show_complexity_score');
-          
+
           if (!hideBlocks) {
             parts.push(msg("blocks", { num: metrics.blockCount }));
           }
-          
+
           if (showCostumes) parts.push(msg("costumes", { num: metrics.costumeCount }));
           if (showSounds) parts.push(msg("sounds", { num: metrics.soundCount }));
-          
+
           let displayText = parts.join(', ');
-          
+
           if (showComplexity) {
             displayText += ` (${msg("complexity-short")}: ${metrics.complexityScore})`;
           }
-          
+
           display.innerText = displayText;
         };
-        
+
         updateDisplay();
-        
+
         display.addEventListener('click', showComplexityDetails);
         display.addEventListener('mouseenter', () => {
           display.style.backgroundColor = 'var(--ui-black-transparent, rgba(0,0,0,0.1))';
@@ -321,18 +322,32 @@ export default async function ({ addon, console, msg }) {
         display.addEventListener('mouseleave', () => {
           display.style.backgroundColor = 'transparent';
         });
-        
-        let debounce; // debouncing values because of the way 'PROJECT_CHANGED' works
+
+        let debounce;
         if (handler) {
           vm.off("PROJECT_CHANGED", handler);
           vm.runtime.off("PROJECT_LOADED", handler);
         }
         handler = async () => {
+          if (isLoading) return;
           clearTimeout(debounce);
           debounce = setTimeout(updateDisplay, 1000);
         };
         vm.on("PROJECT_CHANGED", handler);
-        vm.runtime.on("PROJECT_LOADED", handler);
+        vm.runtime.on("PROJECT_LOADED", () => {
+          isLoading = false;
+          updateDisplay();
+        });
+        
+        if (addon.tab.redux) {
+          addon.tab.redux.addEventListener("statechanged", (e) => {
+            const actionType = e.detail.action.type;
+            if (actionType.startsWith("scratch-gui/project-state/") && 
+                (actionType.includes("LOADING") || actionType.includes("START"))) {
+              isLoading = true;
+            }
+          });
+        }
       }
     } else {
       let timeout = setTimeout(function () {
