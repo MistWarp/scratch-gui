@@ -63,13 +63,14 @@ const applyThemeFonts = async fonts => {
     newFontStyleElement.id = 'theme-fonts';
     newFontStyleElement.textContent = `
         /* Theme Fonts - High Priority Overrides */
-        * {
-            font-family: ${fontFamily} !important;
+        *:not([class^="paint-editor_text-area_"]) {
+            font-family: var(--theme-font, ${fontFamily}) !important;
         }
-        
-        /* Specific targets for better coverage */
-        body, html, 
-        .gui, .blocklySvg,
+
+        /* Ensure key UI elements inherit correctly */
+        body, html,
+        .gui, 
+        .blocklySvg,
         [class*="gui_"],
         [class*="menu-bar_"],
         [class*="settings-menu_"],
@@ -78,7 +79,7 @@ const applyThemeFonts = async fonts => {
         .blocklyHtmlInput,
         button, input, textarea, select,
         .menu-bar, .menu-item {
-            font-family: ${fontFamily} !important;
+            font-family: inherit !important;
         }
         
         /* SVG text elements in Blockly */
