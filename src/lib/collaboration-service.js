@@ -27,7 +27,8 @@ import {
     handleProjectSyncStart as handleProjectSyncStartExternal,
     handleProjectSyncChunk as handleProjectSyncChunkExternal,
     handleProjectStreamEnd as handleProjectStreamEndExternal,
-    debugTargetStates as debugTargetStatesExternal
+    debugTargetStates as debugTargetStatesExternal,
+    resetSyncState as resetSyncStateExternal
 } from './collaboration/sync-manager.js';
 import {
     getTargetIdForMessage,
@@ -236,6 +237,18 @@ class CollaborationService {
         return this.isSyncOperation || this.isApplyingRemoteChange || this.isLoadingProject || this.isSwitchingTarget;
     }
 
+    beginApplyingRemoteChange () {
+        this._applyingRemoteChangeCount++;
+        this.isApplyingRemoteChange = true;
+    }
+
+    endApplyingRemoteChange () {
+        this._applyingRemoteChangeCount = Math.max(0, this._applyingRemoteChangeCount - 1);
+        if (this._applyingRemoteChangeCount === 0) {
+            this.isApplyingRemoteChange = false;
+        }
+    }
+
     init (vm) {
         this.vm = vm;
         this.collaborationBlockListener = this.collaborationBlockListener.bind(this);
@@ -403,7 +416,7 @@ class CollaborationService {
         if (payload.sender === this.peer.id) return;
 
         const extensionManager = this.vm.extensionManager;
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
         const loadExtension = async () => {
             try {
@@ -430,7 +443,7 @@ class CollaborationService {
                 // ignore
             } finally {
                 setTimeout(() => {
-                    this.isApplyingRemoteChange = false;
+                    this.endApplyingRemoteChange();
                 }, 100);
             }
         };
@@ -668,21 +681,23 @@ class CollaborationService {
         if (!this.vm || !this.vm.runtime) return;
         if (payload.sender === this.peer.id) return;
 
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
-        const updates = payload.updates || [];
-        updates.forEach(update => {
-            const targetId = this.isHost ? update.targetId : (this.targetMapping[update.targetId] || update.targetId);
-            const target = this.vm.runtime.getTargetById(targetId);
-            if (target) {
-                if ('x' in update && 'y' in update) target.setXY(update.x, update.y);
-                if ('direction' in update) target.setDirection(update.direction);
-                if ('size' in update) target.setSize(update.size);
-                if ('visible' in update) target.setVisible(update.visible);
-            }
-        });
-
-        this.isApplyingRemoteChange = false;
+        try {
+            const updates = payload.updates || [];
+            updates.forEach(update => {
+                const targetId = this.isHost ? update.targetId : (this.targetMapping[update.targetId] || update.targetId);
+                const target = this.vm.runtime.getTargetById(targetId);
+                if (target) {
+                    if ('x' in update && 'y' in update) target.setXY(update.x, update.y);
+                    if ('direction' in update) target.setDirection(update.direction);
+                    if ('size' in update) target.setSize(update.size);
+                    if ('visible' in update) target.setVisible(update.visible);
+                }
+            });
+        } finally {
+            this.endApplyingRemoteChange();
+        }
 
         if (this.isHost) {
             this.connections.forEach(connection => {
@@ -1032,9 +1047,12 @@ class CollaborationService {
         this.isSyncOperation = false;
         this.isLoadingProject = false;
         this.isSwitchingTarget = false;
+        this.isApplyingRemoteChange = false;
+        this._applyingRemoteChangeCount = 0;
         this.seenEventIds.clear();
         this.seenEventTimestamps.clear();
         this.destroyCursorLayer();
+        resetSyncStateExternal();
 
         this.isDisconnecting = false;
         this._setState('IDLE');
@@ -1285,7 +1303,7 @@ class CollaborationService {
         }
         if (target.isStage) return;
 
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
         const changedProps = payload.changedProps || {};
         
@@ -1301,7 +1319,7 @@ class CollaborationService {
         if ('visible' in changedProps) target.setVisible(changedProps.visible);
         if ('rotationStyle' in changedProps) target.setRotationStyle(changedProps.rotationStyle);
 
-        this.isApplyingRemoteChange = false;
+        this.endApplyingRemoteChange();
 
         if (this.isHost && payload.sender !== this.peer.id) {
             this.connections.forEach(connection => {

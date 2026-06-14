@@ -682,22 +682,22 @@ const handleBlockEvent = (service, payload, conn, isRetry = false) => {
         }
     }
 
-    service.isApplyingRemoteChange = true;
+    service.beginApplyingRemoteChange();
 
     try {
         const reconstructedEvent = reconstructEvent(service, payload.event);
         if (reconstructedEvent === null) {
             if (isRetry) {
-                service.isApplyingRemoteChange = false;
+                service.endApplyingRemoteChange();
                 return;
             }
             service.queuePendingEvent(payload);
-            service.isApplyingRemoteChange = false;
+            service.endApplyingRemoteChange();
             return;
         }
 
         if (!validateBlockEvent(reconstructedEvent)) {
-            service.isApplyingRemoteChange = false;
+            service.endApplyingRemoteChange();
             return;
         }
 
@@ -705,7 +705,7 @@ const handleBlockEvent = (service, payload, conn, isRetry = false) => {
         reconstructedEvent._eventOrigin = eventOrigin;
 
         if (!service.vm.blockListener) {
-            service.isApplyingRemoteChange = false;
+            service.endApplyingRemoteChange();
             return;
         }
 
@@ -733,7 +733,7 @@ const handleBlockEvent = (service, payload, conn, isRetry = false) => {
             if (!isRetry) {
                 service.queuePendingEvent(payload);
             }
-            service.isApplyingRemoteChange = false;
+            service.endApplyingRemoteChange();
             return;
         }
 
@@ -750,7 +750,7 @@ const handleBlockEvent = (service, payload, conn, isRetry = false) => {
         // Handle error
     } finally {
         setTimeout(() => {
-            service.isApplyingRemoteChange = false;
+            service.endApplyingRemoteChange();
         }, 50);
     }
 
