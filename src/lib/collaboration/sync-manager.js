@@ -13,6 +13,12 @@ const syncState = {
     lastClientSyncId: null
 };
 
+const resetSyncState = () => {
+    syncState.active = false;
+    syncState.lastClientSyncId = null;
+    _syncPendingPromise = null;
+};
+
 const sendProjectSync = async (service, conn) => {
     if (service.vm) {
         if (service._isShuttingDown && service._isShuttingDown()) {
@@ -353,24 +359,28 @@ const processCompleteProject = (service, projectData, targetInfo, currentEditing
         service.emit('project-sync-wait', {message: 'Waiting for host...'});
 
         await new Promise(resolve => {
-            const handler = () => {
-                service.off('session-ready', handler);
-                resolve();
-            };
             const timeout = setTimeout(() => {
                 service.off('session-ready', handler);
                 console.warn('[Sync Barrier] Timed out waiting for host!');
                 resolve();
             }, 30000);
 
-            service.on('session-ready', () => {
+            const handler = () => {
                 clearTimeout(timeout);
-                handler();
-            });
+                resolve();
+            };
+            service.on('session-ready', handler);
         });
 
         service.emit('session-ready');
         service.isLoadingProject = false;
+
+        setTimeout(() => {
+            if (service.isLoadingProject && !service.isSyncOperation && !service.isApplyingRemoteChange) {
+                console.warn('[Sync] Safety timeout: clearing stuck isLoadingProject');
+                service.isLoadingProject = false;
+            }
+        }, 35000);
     }).catch(error => {
         service.vm.off('ASSET_PROGRESS', progressHandler);
         console.error('[Stream Sync] Failed to load project:', error);
@@ -513,5 +523,6 @@ export {
     handleProjectStreamStart as handleProjectSyncStart,
     handleProjectStreamData as handleProjectSyncChunk,
     handleProjectStreamEnd,
-    debugTargetStates
+    debugTargetStates,
+    resetSyncState
 };

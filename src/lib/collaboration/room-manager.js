@@ -420,30 +420,31 @@ const handleUserJoin = (service, payload, conn) => {
         return;
     }
     if (payload.id === service.peer.id) return;
-    service.pendingJoinRequests.set(payload.id, {
-        id: payload.id,
-        username: payload.username,
-        connection: conn
-    });
-    service.emit('join-request-received', {
-        requesterId: payload.id,
-        requesterUsername: payload.username
-    });
+
+    const isJoinRequest = payload.sender === payload.id;
+    const isHostBroadcast = conn && conn.peer === service.hostId && payload.sender === service.hostId;
+
     if (service.isHost) {
-        if (service.roomPrivacy === 'private') return;
-        if (service.roomPrivacy === 'public') approveJoinRequest(service, payload.id, payload.username, conn);
-    }
-    service.users.set(payload.id, payload);
-    service.emit('user-joined', payload);
-    if (service.isHost) {
-        const currentUsers = Array.from(service.users.values());
-        service.sendMessage('users-list', {users: currentUsers}, conn ? conn : payload.id);
-        service.connections.forEach(connection => {
-            if (connection !== conn && connection.open) {
-                service.sendMessage('user-join', payload, connection.peer);
-            }
-        });
-        service.emit('users-updated', {users: currentUsers});
+        if (isJoinRequest) {
+            service.pendingJoinRequests.set(payload.id, {
+                id: payload.id,
+                username: payload.username,
+                connection: conn
+            });
+            service.emit('join-request-received', {
+                requesterId: payload.id,
+                requesterUsername: payload.username
+            });
+            if (service.roomPrivacy === 'private') return;
+            if (service.roomPrivacy === 'public') approveJoinRequest(service, payload.id, payload.username, conn);
+        }
+    } else {
+        if (isHostBroadcast) {
+            service.users.set(payload.id, payload);
+            service.emit('user-joined', payload);
+        } else if (isJoinRequest) {
+            // ignore
+        }
     }
 };
 
