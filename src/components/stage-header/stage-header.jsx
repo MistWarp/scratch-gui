@@ -199,7 +199,9 @@ const StageHeaderComponent = function (props) {
             <Box
                 className={styles.stageHeaderWrapper}
                 // + 2 px because the stage will have 2 pixels of border around it
-                style={{minWidth: `${stageDimensions.width + 2}px`}}
+                style={{
+                    minWidth: `${(useContainerWidth ? stageContainerWidth : stageDimensions.width) + 2}px`
+                }}
             >
                 <Box className={styles.stageMenuWrapper}>
                     <Controls

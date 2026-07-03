@@ -2,7 +2,6 @@
 
 .menu {
     position: absolute;
-    border-bottom: 2px solid $looks-secondary;
     border-radius: 0 0 10px 10px;
     background-color: $ui-secondary;
     color: $text-primary;
@@ -12,6 +11,7 @@
     min-width: 240px;
     overflow: visible;
     border: 2px solid transparent;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .menu:not(.submenu)::before {
@@ -56,6 +56,7 @@
     margin: 0;
     font-weight: bold;
     position: relative;
+    transition: background-color 0.15s ease;
 }
 
 .menu-item img {
@@ -122,9 +123,11 @@
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
     scrollbar-color: $menu-bar-foreground $menu-bar-background;
     border-radius: 8px;
-    border: 2px solid $looks-secondary;
+    border: 1px solid $ui-black-transparent;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .menu-item.expanded>.submenu {
@@ -138,15 +141,16 @@
 /* Fallback styling for webkit browsers that don't support scrollbar-color */
 
 .submenu>.menu::-webkit-scrollbar {
-    width: 12px;
+    width: 8px;
 }
 
 .submenu>.menu::-webkit-scrollbar-track {
-    background: $menu-bar-background;
+    background: transparent;
 }
 
 .submenu>.menu::-webkit-scrollbar-thumb {
-    background-color: $menu-bar-foreground;
-    border-radius: 12px;
-    border: 3px solid $menu-bar-background;
+    background-color: $ui-black-transparent;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }

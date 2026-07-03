@@ -27,6 +27,11 @@
     align-self: stretch;
 }
 
+.library-item.library-item-extension {
+    flex-grow: 1;
+    max-width: 420px;
+}
+
 .library-item:hover {
     border-width: 2px;
     border-color: $looks-secondary;
@@ -123,32 +128,32 @@
 
 .featured-text {
     font-weight: bold;
-    padding: 10px;
-    /* height: 140px; */
-    width: 300px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem 1rem 0.5rem;
 }
 
 [dir="ltr"] .featured-extension-text {
     text-align: left;
-    padding-left: 1.25rem;
 }
 
 [dir="rtl"] .featured-extension-text {
     text-align: right;
-    padding-right: 1.25rem;
 }
 
 .featured-description {
     display: block;
     font-weight: normal;
-    line-height: 1.375rem;
-    padding-top: .3125rem;
-    padding-bottom: .25rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    opacity: 0.85;
+    padding-top: 0.25rem;
 }
 
 .featured-extension-metadata {
     width: 100%;
-    padding: 0 1.25rem 1rem 1.25rem;
+    box-sizing: border-box;
+    padding: 0 1rem 1rem 1rem;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
@@ -190,11 +195,14 @@
 }
 
 .extension-links {
-    width: 300px;
-    padding: 0 1.25rem 1rem 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 1rem 0.75rem 1rem;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.75rem;
     opacity: 0.75;
     text-align: left;
 }

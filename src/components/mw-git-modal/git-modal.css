@@ -8,7 +8,7 @@
 .body {
     background: $ui-modal-background;
     padding: 1.25rem 1.5rem;
-    overflow: scroll;
+    overflow: auto;
 }
 
 .section {
@@ -106,9 +106,18 @@
     border-radius: 8px;
     background: $input-background;
     border: 1px solid $ui-black-transparent;
+    color: $text-primary;
     font-weight: 600;
     font-size: 0.85rem;
     white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.primary-button {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
 }
 
 .button:focus-visible,
@@ -123,19 +132,26 @@
 .button[disabled],
 .primary-button[disabled] {
     opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button:not([disabled]):hover {
+    border-color: $looks-secondary;
 }
 
 .primary-button:not([disabled]):hover {
-    filter: brightness(1.05);
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
 }
 
 .danger-button {
-    border-color: $motion-primary;
-    color: $motion-primary;
+    border-color: $red-primary;
+    color: $red-primary;
 }
 
 .danger-button:not([disabled]):hover {
-    filter: brightness(1.05);
+    background: $error-transparent;
+    border-color: $red-primary;
 }
 
 .small-button {
@@ -146,14 +162,17 @@
     border-radius: 8px;
     background: $input-background;
     border: 1px solid $ui-black-transparent;
+    color: $text-primary;
     font-weight: 600;
     font-size: 0.75rem;
     flex: 0 0 auto;
     white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
 }
 
 .small-button:not([disabled]):hover {
-    filter: brightness(1.05);
+    border-color: $looks-secondary;
 }
 
 .commit-list {
@@ -179,7 +198,7 @@
 }
 
 .commit-row:hover {
-    filter: brightness(1.05);
+    background-color: $ui-black-transparent;
 }
 
 .commit-oid {
@@ -201,12 +220,12 @@
 }
 
 .error {
-    border: 1px solid $ui-black-transparent;
+    border: 1px solid $error-primary;
     border-radius: 8px;
-    background: white;
+    background: $error-transparent;
     padding: 0.5rem 0.75rem;
     margin-bottom: 1rem;
-    color: $motion-primary;
+    color: $error-primary;
 }
 
 .busy {

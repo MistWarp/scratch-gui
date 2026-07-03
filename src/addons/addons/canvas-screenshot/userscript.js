@@ -48,14 +48,23 @@ export default async function ({addon, msg}) {
 
     const showPreview = (dataUrl) => {
         if (!addon.settings.get('show_notifications')) return;
-    
+        if (!dataUrl) return;
+
         const preview = document.createElement('div');
         preview.className = 'sa-screenshot-preview';
-    
+
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'sa-screenshot-preview-image';
         const image = document.createElement('img');
         image.src = dataUrl;
-        preview.appendChild(image);
-    
+        imageWrapper.appendChild(image);
+
+        const caption = document.createElement('div');
+        caption.className = 'sa-screenshot-preview-caption';
+        caption.textContent = msg('screenshot-taken');
+
+        preview.append(imageWrapper, caption);
+
         document.body.appendChild(preview);
     
         setTimeout(() => preview.classList.add('sa-screenshot-preview-visible'), 100);
