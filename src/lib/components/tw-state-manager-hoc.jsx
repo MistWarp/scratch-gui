@@ -7,6 +7,7 @@ import log from '../utils/log';
 import {defineMessages, intlShape, injectIntl} from 'react-intl';
 import {initAppearanceSettings} from '../mw-appearance-settings';
 import {initStyleSettings} from '../mw-style-settings';
+import {initMenuBarLayout} from '../mw-menu-bar-layout';
 
 import {
     setUsername
@@ -295,6 +296,7 @@ const TWStateManager = function (WrappedComponent) {
 
             initAppearanceSettings();
             initStyleSettings();
+            initMenuBarLayout();
 
             if (urlParams.has('fps')) {
                 const fps = +urlParams.get('fps');

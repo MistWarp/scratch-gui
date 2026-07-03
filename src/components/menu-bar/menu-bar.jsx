@@ -1213,7 +1213,7 @@ class MenuBar extends React.Component {
                     )}
                 >
                     <div className={styles.fileGroup}>
-                        {this.props.errors.length > 0 && <div>
+                        {this.props.errors.length > 0 && <div data-mw-item="__errors">
                             <MenuLabel
                                 open={this.props.errorsMenuOpen}
                                 onOpen={this.props.onClickErrors}
@@ -1257,6 +1257,7 @@ class MenuBar extends React.Component {
                         </div>}
                         {(this.props.canManageFiles) && (
                             <MenuLabel
+                                dataItem="file"
                                 open={this.props.fileMenuOpen}
                                 onOpen={this.props.onClickFile}
                                 onClose={this.props.onRequestCloseFile}
@@ -1471,6 +1472,7 @@ class MenuBar extends React.Component {
                             </MenuLabel>
                         )}
                         <MenuLabel
+                            dataItem="edit"
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
                             onClose={this.props.onRequestCloseEdit}
@@ -1603,6 +1605,7 @@ class MenuBar extends React.Component {
                         </MenuLabel>
                         {this.props.isTotallyNormal && (
                             <MenuLabel
+                                dataItem="mode"
                                 open={this.props.modeMenuOpen}
                                 onOpen={this.props.onClickMode}
                                 onClose={this.props.onRequestCloseMode}
@@ -1659,6 +1662,7 @@ class MenuBar extends React.Component {
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
                         <MenuLabel
+                            dataItem="tools"
                             open={this.props.toolsMenuOpen}
                             onOpen={this.props.onClickTools}
                             onClose={this.props.onRequestCloseTools}
@@ -1775,6 +1779,7 @@ class MenuBar extends React.Component {
                         </MenuLabel>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
+                                dataItem="bookmarks"
                                 open={this.props.workspaceBookmarksMenuOpen}
                                 onOpen={this.props.onClickWorkspaceBookmarks}
                                 onClose={this.props.onRequestCloseWorkspaceBookmarks}
@@ -1814,10 +1819,18 @@ class MenuBar extends React.Component {
                         )}
                     </div>
 
-                    <Divider className={styles.divider} />
+                    <div
+                        data-mw-item="__divider"
+                        className={styles.menuBarLayoutItem}
+                    >
+                        <Divider className={styles.divider} />
+                    </div>
 
                     {this.props.canEditTitle ? (
-                        <div className={classNames(styles.menuBarItem, styles.growable)}>
+                        <div
+                            data-mw-item="project-title"
+                            className={classNames(styles.menuBarItem, styles.growable)}
+                        >
                             <MenuBarItemTooltip
                                 enable
                                 id="title-field"
@@ -1840,13 +1853,19 @@ class MenuBar extends React.Component {
 
                     {(this.props.isShowingProject || this.props.isUpdating) &&
                         this.props.projectId && this.props.projectId !== '0' ? (
-                            <div className={classNames(styles.menuBarItem, styles.viewCounter)}>
+                            <div
+                                data-mw-item="__view-counter"
+                                className={classNames(styles.menuBarItem, styles.viewCounter)}
+                            >
                                 <TWViewCounter projectId={this.props.projectId} />
                             </div>
                         ) : null}
                     {this.props.canShare ? (
                         (this.props.isShowingProject || this.props.isUpdating) && (
-                            <div className={classNames(styles.menuBarItem)}>
+                            <div
+                                data-mw-item="share"
+                                className={classNames(styles.menuBarItem)}
+                            >
                                 <ProjectWatcher onDoneUpdating={this.props.onSeeCommunity}>
                                     {
                                         waitForUpdate => (
@@ -1865,18 +1884,27 @@ class MenuBar extends React.Component {
                             </div>
                         )
                     ) : this.props.showComingSoon ? (
-                        <div className={classNames(styles.menuBarItem)}>
+                        <div
+                            data-mw-item="share"
+                            className={classNames(styles.menuBarItem)}
+                        >
                             <MenuBarItemTooltip id="share-button">
                                 <ShareButton className={styles.menuBarButton} />
                             </MenuBarItemTooltip>
                         </div>
                     ) : null}
                     {this.props.canRemix && (
-                        <div className={classNames(styles.menuBarItem)}>
+                        <div
+                            data-mw-item="remix"
+                            className={classNames(styles.menuBarItem)}
+                        >
                             {remixButton}
                         </div>
                     )}
-                    <div className={classNames(styles.menuBarItem, styles.communityButtonWrapper)}>
+                    <div
+                        data-mw-item="community"
+                        className={classNames(styles.menuBarItem, styles.communityButtonWrapper)}
+                    >
                         {this.props.enableCommunity ? (
                             (this.props.isShowingProject || this.props.isUpdating) && (
                                 <ProjectWatcher onDoneUpdating={this.props.onSeeCommunity}>
@@ -1906,7 +1934,10 @@ class MenuBar extends React.Component {
                         ) : []))}
                     </div>
                     {/* tw: add a feedback button */}
-                    <div className={styles.menuBarItem}>
+                    <div
+                        data-mw-item="feedback"
+                        className={styles.menuBarItem}
+                    >
                         <a
                             className={styles.feedbackLink}
                             href={FEEDBACK_URL}
@@ -1928,17 +1959,42 @@ class MenuBar extends React.Component {
                     </div>
                 </div>
 
-                <div className={styles.accountInfoGroup}>
-                    <TWSaveStatus
-                        showSaveFilePicker={this.props.showSaveFilePicker}
-                    />
+                <div
+                    data-mw-item="__account-group"
+                    className={styles.accountInfoGroup}
+                >
+                    <div
+                        data-mw-item="save-status"
+                        className={styles.menuBarLayoutItem}
+                    >
+                        <TWSaveStatus
+                            showSaveFilePicker={this.props.showSaveFilePicker}
+                        />
+                    </div>
                     {this.props.onClickAddonSettings && (
-                        <AddonsButton onClick={this.props.onClickAddonSettings} />
+                        <div
+                            data-mw-item="addons"
+                            className={styles.menuBarLayoutItem}
+                        >
+                            <AddonsButton onClick={this.props.onClickAddonSettings} />
+                        </div>
                     )}
                     {this.props.onClickSettingsModal && (
-                        <SettingsButton onClick={this.props.onClickSettingsModal} />
+                        <div
+                            data-mw-item="settings"
+                            className={styles.menuBarLayoutItem}
+                        >
+                            <SettingsButton onClick={this.props.onClickSettingsModal} />
+                        </div>
                     )}
-                    {aboutButton}
+                    {aboutButton && (
+                        <div
+                            data-mw-item="about"
+                            className={styles.menuBarLayoutItem}
+                        >
+                            {aboutButton}
+                        </div>
+                    )}
                 </div>
             </Box>
         );

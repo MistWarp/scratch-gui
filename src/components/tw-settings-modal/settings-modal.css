@@ -215,6 +215,39 @@
     font-size: 0.8125rem;
 }
 
+.menu-bar-hint {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    margin: 0.5rem 0 0.25rem;
+}
+
+.menu-bar-zone-label {
+    font-size: 0.8125rem;
+    font-weight: bold;
+    margin: 0.75rem 0 0.25rem;
+}
+
+.menu-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    margin: 0.25rem 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-primary;
+}
+
+.menu-bar-grip {
+    cursor: grab;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    flex-shrink: 0;
+}
+
+.menu-bar-row-label {
+    flex: 1;
+}
+
 .setting table {
     border-collapse: collapse;
 }

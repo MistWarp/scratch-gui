@@ -109,10 +109,7 @@
 }
 
 .file-group {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
+    display: contents;
 }
 
 .file-group .menu-bar-item {
@@ -201,6 +198,11 @@
     padding: 0 .25rem;
     display: flex;
     flex-direction: row;
+    align-items: center;
+}
+
+.menu-bar-layout-item {
+    display: flex;
     align-items: center;
 }
 
