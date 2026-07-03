@@ -1,6 +1,5 @@
 @import "../../css/colors.css";
 @import "../../css/filters.css";
-@import "../../css/filters.css";
 
 .icon {
     width: 1.5rem;
@@ -75,7 +74,7 @@
     width: 24px;
     height: 24px;
     border: 3px solid $menu-bar-foreground;
-    border-radius: 100%;
+    border-radius: 50%;
     box-sizing: border-box;
     transform-origin: center;
     transform: scale(90%);
@@ -245,55 +244,47 @@
 .accent-submenu > ul {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 0.5rem;
+    gap: 0.25rem;
     padding: 0.5rem;
     margin: 0;
     min-width: 320px;
     max-width: none;
 }
 
-.accent-submenu li {
+.accent-submenu li,
+.accent-submenu .menu-item {
     margin: 0;
-    padding: 0.5rem;
+    padding: 0.5rem 0.25rem;
     min-height: auto;
     min-width: 0;
     width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
     box-sizing: border-box;
-    flex-direction: column;
-    text-align: center;
-}
-
-.accent-submenu .menu-item {
     position: relative;
-    padding: 0.375rem;
-    min-height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: background-color 0.1s ease;
+    border-radius: 8px;
+    line-height: normal;
+    transition: background-color 0.15s ease;
 }
 
 .accent-submenu .menu-item:hover {
-    background-color: hsla(0, 0%, 0%, 0.15);
+    background-color: $ui-black-transparent;
 }
 
 .accent-submenu .option {
     flex-direction: column;
     text-align: center;
     font-size: 0.75rem;
+    gap: 0.375rem;
 }
 
 .accentLabel {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: normal;
     color: $text-primary;
-    line-height: 1;
-    margin-top: 0.125rem;
+    line-height: 1.2;
     text-align: center;
     max-width: 100%;
     overflow: hidden;
@@ -301,43 +292,44 @@
     white-space: nowrap;
 }
 
+.accent-submenu .option:has(.check.selected) .accent-icon-outer {
+    outline: 2px solid $text-primary;
+    outline-offset: 2px;
+}
+
 .accent-submenu .check {
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
     margin: 0;
-    width: 1rem !important;
-    height: 1rem;
-    background-color: rgba(0, 0, 0, 0.85);
+    width: 0.875rem !important;
+    height: 0.875rem;
+    line-height: 0;
+    background-color: $text-primary;
+    color: $ui-secondary;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    color: white;
+    padding: 0.125rem;
+    box-sizing: border-box;
     z-index: 3;
 }
 
 .accent-submenu .check img,
 .accent-submenu .check svg {
     display: block;
-    width: 0.56rem;
-    height: 0.6rem;
-    stroke-width: 1.6px;
+    width: 100%;
+    height: 100%;
+    stroke-width: 3px;
 }
 
-.accent-submenu .check {
-    line-height: 0;
-}
-
-/* Ensure swatch icon sits below the check overlay */
 .accent-submenu .accent-icon-outer {
     z-index: 1;
-}
-
-.accent-submenu .accent-icon-outer {
-    margin: 0 auto 0.125rem auto;
-    transform: scale(125%);
+    margin: 0 auto;
+    width: 28px;
+    height: 28px;
+    transform: none;
 }
 
 /* Responsive adjustments for smaller screens */
@@ -414,7 +406,7 @@
     border-radius: 0.25rem;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: opacity 0.15s ease;
     white-space: nowrap;
 }
 
@@ -525,7 +517,7 @@
 }
 
 .remove-button:hover {
-    background-color: rgba(255, 0, 0, 0.2);
+    background-color: $error-transparent;
 }
 
 .loading,
@@ -593,14 +585,16 @@
     margin-left: 8px;
 }
 
-.customThemeActionButton {
+.customThemeActionButton,
+.customThemeEditButton,
+.customThemeDeleteButton {
     background: none;
     border: none;
     padding: 4px;
     cursor: pointer;
     border-radius: 4px;
     opacity: 0.6;
-    transition: all 0.2s;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -609,42 +603,21 @@
     justify-content: center;
 }
 
-.customThemeActionButton:hover {
-    opacity: 1;
-    background-color: rgba(0, 100, 200, 0.15);
-}
-
-.customThemeEditButton {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 4px;
-    opacity: 0.6;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+.customThemeActionButton:hover,
 .customThemeEditButton:hover {
     opacity: 1;
-    background-color: rgba(0, 100, 200, 0.15);
+    background-color: color-mix(in srgb, $looks-secondary 15%, transparent);
+}
+
+.customThemeActionButton img,
+.customThemeEditButton img,
+.customThemeDeleteButton img {
+    width: 12px;
+    height: 12px;
 }
 
 .customThemeActionButton img {
-    width: 12px;
-    height: 12px;
     filter: $filter-icon-black;
-}
-
-.customThemeEditButton img {
-    width: 12px;
-    height: 12px;
-    /* No filter applied - uses currentColor from SVG */
 }
 
 .customThemeItemName {
@@ -668,30 +641,9 @@
     line-height: 1.2;
 }
 
-.customThemeDeleteButton {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 4px;
-    opacity: 0.6;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .customThemeDeleteButton:hover {
     opacity: 1;
-    background-color: rgba(255, 0, 0, 0.15);
-}
-
-.customThemeDeleteButton img {
-    width: 12px;
-    height: 12px;
+    background-color: $error-transparent;
 }
 
 .customThemeEmpty {
@@ -820,697 +772,344 @@
 }
 
 
-/* Legacy gradient styles (deprecated, kept for compatibility) */
-.gradientPreview {
-    width: 100%;
-    height: 60px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    margin-top: 4px;
-}
-
-.colorStops {
+.gcRoot {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 4px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    background: $ui-white;
-}
-
-.colorStop {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    background: $ui-secondary;
-}
-
-.colorStop:hover {
-    border-color: $ui-black-transparent;
-}
-
-.colorPicker {
-    width: 40px;
-    height: 30px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 0;
-    background: none;
-}
-
-.colorPicker::-webkit-color-swatch-wrapper {
-    padding: 2px;
-}
-
-.colorPicker::-webkit-color-swatch {
-    border: none;
-    border-radius: 2px;
-}
-
-.positionInput {
-    width: 60px;
-    padding: 4px 6px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    font-size: 12px;
-    text-align: center;
-}
-
-.positionInput:focus {
-    outline: none;
-    border-color: $looks-secondary;
-}
-
-.removeColorButton {
-    padding: 4px 8px;
-    background: $ui-white;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
     color: $text-primary;
 }
 
-.removeColorButton:hover {
-    background: #ff4444;
-    color: white;
-    border-color: #ff4444;
-}
-
-.addColorButton {
-    padding: 6px 12px;
-    background: $ui-white;
-    border: 1px solid $looks-secondary;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    color: $looks-secondary;
-    align-self: flex-start;
-}
-
-.addColorButton:hover {
-    background: $looks-secondary;
-    color: white;
-}
-
-.gradientCreatorContainer {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.gradientCreatorMain {
-    display: flex;
-    gap: 10px;
+.gcBody {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    margin-bottom: 80px;
-}
-
-.gradientCreatorLeft {
-    width: 260px;
-    min-width: 260px;
-    max-width: 260px;
+    padding: 1rem 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow-y: auto;
-    box-sizing: border-box;
-    padding: 10px;
-    padding-right: 0;
-}
-
-.gradientCreatorRight {
-    flex: 1;
-    min-width: 0;
-    overflow-y: auto;
-    box-sizing: border-box;
-    padding: 10px;
-    padding-left: 0;
-}
-
-.gradientCreatorSection {
-    background: $ui-white;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    padding: 16px;
+    gap: 1rem;
     box-sizing: border-box;
 }
 
-.gradientSectionTitle {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: $text-primary;
-}
-
-/* Form Fields */
-.formField {
-    margin-bottom: 12px;
-    box-sizing: border-box;
-}
-
-.formField:last-child {
-    margin-bottom: 0;
-}
-
-.formField label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: $text-primary-transparent;
-    margin-bottom: 6px;
-}
-
-.gradientInput {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px 12px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 6px;
-    font-size: 13px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    background: $ui-secondary;
-}
-
-.gradientInput:focus {
-    outline: none;
-    border-color: $looks-secondary;
-    box-shadow: 0 0 0 3px rgba($looks-secondary, 0.1);
-}
-
-.gradientTextarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px 12px;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: inherit;
-    resize: vertical;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    background: $ui-secondary;
-    min-height: 60px;
-}
-
-.gradientTextarea:focus {
-    outline: none;
-    border-color: $looks-secondary;
-    box-shadow: 0 0 0 3px rgba($looks-secondary, 0.1);
-}
-
-/* Preset Grid */
-.presetGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-}
-
-.presetCard {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    border: 2px solid transparent;
-    border-radius: 8px;
-    background: $ui-secondary;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.presetCard:hover {
-    border-color: rgba($looks-secondary, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.presetCardActive {
-    border-color: $looks-secondary;
-    background: rgba($looks-secondary, 0.05);
-}
-
-.presetPreview {
-    width: 100%;
-    height: 40px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-.presetName {
-    font-size: 12px;
-    font-weight: 500;
-    color: $text-primary;
-}
-
-/* Preview Container */
-.previewContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.gradientPreviewLarge {
+.gcPreview {
     position: relative;
     width: 100%;
-    height: 140px;
+    height: 120px;
     border-radius: 8px;
-    overflow: hidden;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.gradientPreviewInner {
-    width: 100%;
-    height: 100%;
-}
-
-.gradientTrack {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-}
-
-.colorStopMarker {
-    position: absolute;
-    top: 50%;
-    transform: translateX(-50%) translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: col-resize;
-    z-index: 10;
-    transition: transform 0.15s ease;
-}
-
-.colorStopMarker:hover {
-    z-index: 20;
-}
-
-.colorStopMarkerDragging {
-    z-index: 30;
-}
-
-.colorStopHandle {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.colorStopMarker:hover .colorStopHandle {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.colorStopMarkerDragging .colorStopHandle {
-    transform: scale(1.2);
-}
-
-.colorStopPosition {
-    margin-top: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    background: rgba(0, 0, 0, 0.6);
-    padding: 2px 6px;
-    border-radius: 8px;
-    white-space: nowrap;
-}
-
-/* Color Stops Palette */
-.colorStopsPalette {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
-.paletteItem {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    background: $ui-secondary;
     border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-}
-
-.paletteItem:hover {
-    border-color: rgba($looks-secondary, 0.4);
-    background: rgba($looks-secondary, 0.05);
-}
-
-.paletteColorWrapper {
-    position: relative;
-}
-
-.paletteColorInput {
-    width: 36px;
-    height: 36px;
-    border: 2px solid $ui-black-transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    padding: 0;
-    background: none;
-    transition: border-color 0.15s ease;
-}
-
-.paletteColorInput:hover {
-    border-color: $looks-secondary;
-}
-
-.paletteColorInput::-webkit-color-swatch-wrapper {
-    padding: 2px;
-}
-
-.paletteColorInput::-webkit-color-swatch {
-    border: none;
-    border-radius: 5px;
-}
-
-.paletteControls {
-    display: flex;
-    gap: 4px;
-}
-
-.paletteBtn {
-    padding: 4px 8px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: $ui-white;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 6px;
-    cursor: pointer;
-    color: $text-primary-transparent;
-    transition: all 0.15s ease;
-}
-
-.paletteBtn:hover {
-    background: $looks-secondary;
-    color: white;
-    border-color: $looks-secondary;
-}
-
-.paletteBtnDanger {
-    color: #dc3545;
-}
-
-.paletteBtnDanger:hover {
-    background: #dc3545;
-    color: white;
-    border-color: #dc3545;
-}
-
-.paletteAddBtn {
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    background: $looks-secondary;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: white;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.paletteAddBtn:hover {
-    background: lighten($looks-secondary, 10%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($looks-secondary, 0.3);
-}
-
-.paletteAddBtn:active {
-    transform: translateY(0);
-}
-
-/* Direction Section */
-.directionSection {
-    margin-bottom: 16px;
-}
-
-.directionSection label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: $text-primary-transparent;
-    margin-bottom: 10px;
-}
-
-.directionControls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.directionWheel {
-    width: 80px;
-    height: 80px;
     flex-shrink: 0;
 }
 
-.dirWheelSvg {
-    width: 100%;
-    height: 100%;
+.gcPreviewFill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
 }
 
-.directionSliderGroup {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-
-
-.directionSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: $looks-secondary;
+.gcStopHandle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    padding: 0;
     border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: col-resize;
     transition: transform 0.1s ease;
 }
 
-.directionSlider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
+.gcStopHandle:hover,
+.gcStopHandleActive {
+    transform: translate(-50%, -50%) scale(1.15);
 }
 
-.directionSlider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: $looks-secondary;
-    border-radius: 50%;
+.gcStops {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gcStopChip {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $input-background;
+}
+
+.gcStopColor {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: none;
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.directionValue {
-    font-size: 14px;
-    font-weight: 600;
-    color: $text-primary;
+.gcStopColor::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.gcStopColor::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.gcStopPos {
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+    min-width: 2rem;
     text-align: center;
 }
 
-.directionPresets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.dirPresetBtn {
-    width: 32px;
-    height: 32px;
+.gcStopRemove {
+    width: 18px;
+    height: 18px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $ui-white;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 6px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.875rem;
+    line-height: 1;
     cursor: pointer;
-    font-size: 14px;
-    color: $text-primary-transparent;
-    transition: all 0.15s ease;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
-.dirPresetBtn:hover {
+.gcStopRemove:hover {
+    opacity: 1;
+    background: $error-transparent;
+    color: $error-primary;
+}
+
+.gcAddStop {
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.gcAddStop:hover {
     border-color: $looks-secondary;
-    background: rgba($looks-secondary, 0.05);
     color: $looks-secondary;
 }
 
-.dirPresetBtnActive {
-    background: $looks-secondary;
-    color: white;
-    border-color: $looks-secondary;
-}
-
-/* Primary Color Section */
-.primaryColorSection {
-    margin-bottom: 16px;
-}
-
-.primaryColorSection label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: $text-primary-transparent;
-    margin-bottom: 10px;
-}
-
-.primaryColorPicker {
+.gcField {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: $ui-secondary;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.gcLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-primary-transparent;
+}
+
+.gcInput,
+.gcTextarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.75rem;
     border: 1px solid $ui-black-transparent;
     border-radius: 8px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    background: $input-background;
+    color: $text-primary;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.primaryColorInput {
-    width: 42px;
-    height: 42px;
-    border: 2px solid $ui-black-transparent;
-    border-radius: 10px;
+.gcTextarea {
+    resize: vertical;
+    min-height: 48px;
+}
+
+.gcInput:focus,
+.gcTextarea:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 3px color-mix(in srgb, $looks-secondary 15%, transparent);
+}
+
+.gcDirectionRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.gcSlider {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: $ui-black-transparent;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.gcSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
     cursor: pointer;
-    padding: 0;
-    background: none;
-    transition: border-color 0.15s ease;
 }
 
-.primaryColorInput:hover {
+.gcSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+    border: none;
+}
+
+.gcDegrees {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.gcDirectionPresets {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.gcDirBtn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: $text-primary;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gcDirBtn:hover {
     border-color: $looks-secondary;
 }
 
-.primaryColorInput::-webkit-color-swatch-wrapper {
-    padding: 3px;
+.gcDirBtnActive {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
 }
 
-.primaryColorInput::-webkit-color-swatch {
-    border: none;
-    border-radius: 7px;
+.gcPresets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
-.primaryColorValue {
+.gcPresetSwatch {
+    width: 44px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.1s ease, outline-color 0.15s ease;
+}
+
+.gcPresetSwatch:hover {
+    transform: scale(1.06);
+}
+
+.gcPresetSwatchActive {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.gcAccentRow {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex: 1;
+    gap: 0.625rem;
 }
 
-.colorPreview {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-}
-
-.colorHex {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-size: 13px;
+.gcHex {
+    font-family: monospace;
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: $text-primary;
     text-transform: uppercase;
 }
 
-/* Footer */
-.gradientCreatorFooter {
+.gcFooter {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 20px;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
     border-top: 1px solid $ui-black-transparent;
     flex-shrink: 0;
-    margin-top: auto;
-    box-sizing: border-box;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    background: $ui-white;
 }
 
-.footerBtn {
-    padding: 10px 20px;
-    font-size: 13px;
+.gcFooterSpacer {
+    flex: 1;
+}
+
+.gcBtn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    background: $ui-white;
+    background: $input-background;
     border: 1px solid $ui-black-transparent;
     border-radius: 8px;
     cursor: pointer;
     color: $text-primary;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.footerBtn:hover {
-    background: $ui-secondary;
-    border-color: $ui-black-transparent;
-}
-
-.footerBtnActive {
-    background: $looks-secondary;
-    color: white;
+.gcBtn:hover:not(:disabled) {
     border-color: $looks-secondary;
 }
 
-.footerBtnActive:hover {
-    background: darken($looks-secondary, 5%);
-}
-
-.footerBtnPrimary {
-    background: $looks-secondary;
-    color: white;
-    border-color: $looks-secondary;
-}
-
-.footerBtnPrimary:hover {
-    background: lighten($looks-secondary, 8%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($looks-secondary, 0.3);
-}
-
-.footerBtnPrimary:active {
-    transform: translateY(0);
-}
-
-.footerBtn:disabled {
+.gcBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
 }
 
-.footerBtnActive:disabled {
-    transform: none !important;
-    box-shadow: none !important;
+.gcBtnActive {
+    background: $looks-transparent;
+    border-color: $looks-secondary;
+    color: $looks-secondary;
+}
+
+.gcBtnPrimary {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
+}
+
+.gcBtnPrimary:hover:not(:disabled) {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
 }
 
 .menuIcon {

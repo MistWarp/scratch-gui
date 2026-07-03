@@ -6,8 +6,13 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
 
   // In optimized graphs everything still looks good
   const fancyGraphs = addon.settings.get("fancy_graphs");
-  const lineWidth = fancyGraphs ? 1 : 2;
-  const lineColor = fancyGraphs ? "hsla(203, 85%, 40%, 0.5)" : "hsla(203, 85%, 40%, 1)";
+  const lineWidth = 2;
+  const themeColor = (name, fallback) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  const accentColor = themeColor("--looks-secondary", "#4c97ff");
+  const gridColor = "rgba(128, 128, 128, 0.15)";
+  const tickColor = "rgba(128, 128, 128, 0.8)";
+  const lineColor = accentColor;
 
   const tab = debug.createHeaderTab({
     text: msg("tab-memory"),
@@ -19,18 +24,49 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
   });
 
   const createChart = ({ title, unit = "" }) => {
+    const card = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-card",
+    });
+    const header = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-header",
+    });
     const titleElement = Object.assign(document.createElement("h2"), {
       textContent: title || "Chart",
+    });
+    const valueElement = Object.assign(document.createElement("span"), {
+      className: "sa-debugger-chart-value",
+      textContent: "",
+    });
+    header.append(titleElement, valueElement);
+    const body = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-body",
     });
     const canvas = Object.assign(document.createElement("canvas"), {
       className: "sa-debugger-chart",
     });
+    body.appendChild(canvas);
+    card.append(header, body);
     return {
-      title: titleElement,
+      card,
       canvas,
       unit,
+      setValue: (text) => {
+        valueElement.textContent = text;
+      },
     };
   };
+
+  const commonScales = () => ({
+    y: {
+      min: 0,
+      grid: { color: gridColor },
+      ticks: { color: tickColor, font: { size: 10 } },
+    },
+    x: {
+      grid: { display: false },
+      ticks: { display: false },
+    },
+  });
 
   const createInfoCard = ({ title, value, unit = "", className = "" }) => {
     const card = Object.assign(document.createElement("div"), {
@@ -108,6 +144,8 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
   const variableDataElements = createChart({
     title: msg("memory-variable-data-chart-title"),
   });
+  const variableDataScales = commonScales();
+  variableDataScales.y.suggestedMax = 1000;
   const variableDataChart = new Chart(variableDataElements.canvas.getContext("2d"), {
     type: "line",
     data: {
@@ -117,19 +155,17 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--control-primary') || "#ff6680",
+          backgroundColor: "rgba(128, 128, 128, 0.08)",
           borderColor: lineColor,
+          pointRadius: 0,
+          tension: 0.3,
         },
       ],
     },
     options: {
       animation: fancyGraphs,
-      scales: {
-        y: {
-          suggestedMax: 1000,
-          min: 0,
-        },
-      },
+      maintainAspectRatio: false,
+      scales: variableDataScales,
       plugins: {
         legend: {
           display: false,
@@ -147,6 +183,8 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
   const listItemsElements = createChart({
     title: msg("memory-list-items-chart-title"),
   });
+  const listItemsScales = commonScales();
+  listItemsScales.y.suggestedMax = 1000;
   const listItemsChart = new Chart(listItemsElements.canvas.getContext("2d"), {
     type: "line",
     data: {
@@ -156,19 +194,17 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--data-primary') || "#ff8c1a",
+          backgroundColor: "rgba(128, 128, 128, 0.08)",
           borderColor: lineColor,
+          pointRadius: 0,
+          tension: 0.3,
         },
       ],
     },
     options: {
       animation: fancyGraphs,
-      scales: {
-        y: {
-          suggestedMax: 1000,
-          min: 0,
-        },
-      },
+      maintainAspectRatio: false,
+      scales: listItemsScales,
       plugins: {
         legend: {
           display: false,
@@ -290,11 +326,13 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
       const variableDataData = variableDataChart.data.datasets[0].data;
       variableDataData.shift();
       variableDataData.push(memoryData.variableDataSize);
+      variableDataElements.setValue(`${memoryData.variableDataSize}`);
 
       // Update list items chart
       const listItemsData = listItemsChart.data.datasets[0].data;
       listItemsData.shift();
       listItemsData.push(memoryData.listItemsCount);
+      listItemsElements.setValue(`${memoryData.listItemsCount}`);
 
       // Auto-scale charts based on data
       const maxVariableData = Math.max(...variableDataData.filter(x => x >= 0));
@@ -330,10 +368,8 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
 
   // Build the content
   content.appendChild(infoSection);
-  content.appendChild(variableDataElements.title);
-  content.appendChild(variableDataElements.canvas);
-  content.appendChild(listItemsElements.title);
-  content.appendChild(listItemsElements.canvas);
+  content.appendChild(variableDataElements.card);
+  content.appendChild(listItemsElements.card);
 
   let pauseTime = 0;
   onPauseChanged((paused) => {

@@ -6,8 +6,13 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
 
   // In optimized graphs everything still looks good
   const fancyGraphs = addon.settings.get("fancy_graphs");
-  const lineWidth = fancyGraphs ? 1 : 2;
-  const lineColor = fancyGraphs ? "hsla(163, 85%, 40%, 0.5)" : "hsla(163, 85%, 40%, 1)";
+  const lineWidth = 2;
+  const themeColor = (name, fallback) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  const accentColor = themeColor("--looks-secondary", "#4c97ff");
+  const gridColor = "rgba(128, 128, 128, 0.15)";
+  const tickColor = "rgba(128, 128, 128, 0.8)";
+  const lineColor = accentColor;
 
   const tab = debug.createHeaderTab({
     text: msg("tab-performance"),
@@ -19,17 +24,48 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
   });
 
   const createChart = ({ title }) => {
+    const card = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-card",
+    });
+    const header = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-header",
+    });
     const titleElement = Object.assign(document.createElement("h2"), {
       textContent: title || "Chart",
+    });
+    const valueElement = Object.assign(document.createElement("span"), {
+      className: "sa-debugger-chart-value",
+      textContent: "",
+    });
+    header.append(titleElement, valueElement);
+    const body = Object.assign(document.createElement("div"), {
+      className: "sa-debugger-chart-body",
     });
     const canvas = Object.assign(document.createElement("canvas"), {
       className: "sa-debugger-chart",
     });
+    body.appendChild(canvas);
+    card.append(header, body);
     return {
-      title: titleElement,
+      card,
       canvas,
+      setValue: (text) => {
+        valueElement.textContent = text;
+      },
     };
   };
+
+  const commonScales = () => ({
+    y: {
+      min: 0,
+      grid: { color: gridColor },
+      ticks: { color: tickColor, font: { size: 10 } },
+    },
+    x: {
+      grid: { display: false },
+      ticks: { display: false },
+    },
+  });
 
   const now = () => performance.now();
 
@@ -43,6 +79,8 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
   const fpsElements = createChart({
     title: msg("performance-framerate-title"),
   });
+  const fpsScales = commonScales();
+  fpsScales.y.suggestedMax = getMaxFps();
   const fpsChart = new Chart(fpsElements.canvas.getContext("2d"), {
     type: "line",
     data: {
@@ -52,19 +90,17 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--looks-secondary') || "#29beb8",
+          backgroundColor: "rgba(128, 128, 128, 0.08)",
           borderColor: lineColor,
+          pointRadius: 0,
+          tension: 0.3,
         },
       ],
     },
     options: {
       animation: fancyGraphs,
-      scales: {
-        y: {
-          suggestedMax: getMaxFps(),
-          min: 0,
-        },
-      },
+      maintainAspectRatio: false,
+      scales: fpsScales,
       plugins: {
         legend: {
           display: false,
@@ -81,6 +117,8 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
   const clonesElements = createChart({
     title: msg("performance-clonecount-title"),
   });
+  const clonesScales = commonScales();
+  clonesScales.y.suggestedMax = 300;
   const performanceClonesChart = new Chart(clonesElements.canvas.getContext("2d"), {
     type: "line",
     data: {
@@ -90,19 +128,17 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--looks-secondary') || "#29beb8",
+          backgroundColor: "rgba(128, 128, 128, 0.08)",
           borderColor: lineColor,
+          pointRadius: 0,
+          tension: 0.3,
         },
       ],
     },
     options: {
       animation: fancyGraphs,
-      scales: {
-        y: {
-          suggestedMax: 300,
-          min: 0,
-        },
-      },
+      maintainAspectRatio: false,
+      scales: clonesScales,
       plugins: {
         legend: {
           display: false,
@@ -153,15 +189,16 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
       clonesData.shift();
       clonesData.push(vm.runtime._cloneCounter);
 
+      fpsElements.setValue(`${Math.min(renderTimes.length, maxFps)} / ${maxFps} FPS`);
+      clonesElements.setValue(`${vm.runtime._cloneCounter}`);
+
       fpsChart.update();
       performanceClonesChart.update();
     }
   });
 
-  content.appendChild(fpsElements.title);
-  content.appendChild(fpsElements.canvas);
-  content.appendChild(clonesElements.title);
-  content.appendChild(clonesElements.canvas);
+  content.appendChild(fpsElements.card);
+  content.appendChild(clonesElements.card);
 
   let pauseTime = 0;
   onPauseChanged((paused) => {

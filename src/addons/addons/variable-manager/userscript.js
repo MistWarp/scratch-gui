@@ -124,24 +124,6 @@ export default async function ({addon, console, msg}) {
     filtersRow.append(searchWrapper, filterTabs);
     topbar.appendChild(filtersRow);
 
-    // Stats bar
-    const statsBar = document.createElement('div');
-    statsBar.className = 'sa-var-manager-stats';
-
-    const createStat = (icon, value) => {
-        const stat = document.createElement('div');
-        stat.className = 'sa-var-manager-stat';
-        stat.innerHTML = `${icon}<span class="sa-var-manager-stat-value">${value}</span>`;
-        return stat;
-    };
-
-    const statsVariables = createStat(VARIABLE_ICON, '0');
-    const statsLists = createStat(LIST_ICON, '0');
-    const statsCloud = createStat(CLOUD_ICON, '0');
-
-    statsBar.append(statsVariables, statsLists, statsCloud);
-    topbar.appendChild(statsBar);
-
     manager.appendChild(topbar);
 
     // Content area
@@ -198,11 +180,6 @@ export default async function ({addon, console, msg}) {
         const lists = allVariables.filter(v => v.type === 'list').length;
         const clouds = allVariables.filter(v => v.isCloud).length;
 
-        statsVariables.querySelector('.sa-var-manager-stat-value').textContent = variables;
-        statsLists.querySelector('.sa-var-manager-stat-value').textContent = lists;
-        statsCloud.querySelector('.sa-var-manager-stat-value').textContent = clouds;
-
-        // Update filter counts
         allFilterTab.querySelector('.sa-var-manager-filter-count').textContent = allVariables.length;
         varFilterTab.querySelector('.sa-var-manager-filter-count').textContent = variables;
         listFilterTab.querySelector('.sa-var-manager-filter-count').textContent = lists;

@@ -121,6 +121,8 @@
 
     user-select: none;
     white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
 .tab svg {

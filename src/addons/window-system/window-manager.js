@@ -9,7 +9,11 @@ const css = `
 }
 
 .addon-window-btn:hover {
-  background: var(--looks-secondary, #4C97FF);
+  background: var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+}
+
+.addon-window-btn-close:hover {
+  background: var(--red-primary, #e64a4a);
   color: white;
 }
 `;
@@ -87,52 +91,25 @@ class AddonWindow {
             width: ${this.width}px;
             height: ${this.height}px;
             z-index: ${this.zIndex};
-            background: linear-gradient(135deg, 
-                var(--ui-modal-background, #ffffff) 0%, 
-                var(--ui-primary, #f8f9fa) 100%);
+            background: var(--ui-modal-background, #ffffff);
             border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
             border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 
-                        0 15px 12px rgba(0, 0, 0, 0.05),
-                        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16),
+                        0 2px 8px rgba(0, 0, 0, 0.08);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
             display: none;
             flex-direction: column;
             overflow: hidden;
-            backdrop-filter: blur(20px);
             transition: none !important;
         `;
-        
+
         this.element.addEventListener('mousedown', () => this.bringToFront());
-        
-        // Add focus enhancement when window becomes active
-        this.element.addEventListener('mouseenter', () => {
-            if (this.isVisible) {
-                this.element.style.boxShadow = `
-                    0 25px 50px rgba(0, 0, 0, 0.15), 
-                    0 20px 20px rgba(0, 0, 0, 0.08),
-                    0 0 0 1px rgba(255, 255, 255, 0.3) inset
-                `;
-            }
-        });
-        
-        this.element.addEventListener('mouseleave', () => {
-            if (this.isVisible && !this.isDragging && !this.isResizing) {
-                this.element.style.boxShadow = `
-                    0 20px 40px rgba(0, 0, 0, 0.1), 
-                    0 15px 12px rgba(0, 0, 0, 0.05),
-                    0 0 0 1px rgba(255, 255, 255, 0.2) inset
-                `;
-            }
-        });
         
         // Create header
         this.headerElement = document.createElement('div');
         this.headerElement.className = 'addon-window-header';
         this.headerElement.style.cssText = `
-            background: linear-gradient(135deg, 
-                var(--ui-secondary, #f8f9fa) 0%, 
-                var(--ui-primary, #ffffff) 100%);
+            background: var(--ui-primary, #f8f9fa);
             border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
             padding: 8px 16px;
             cursor: move;
@@ -142,27 +119,10 @@ class AddonWindow {
             justify-content: space-between;
             min-height: 44px;
             box-sizing: border-box;
-            backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
         `;
-        
-        // Add subtle header gradient overlay
-        const headerOverlay = document.createElement('div');
-        headerOverlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.5) 50%, 
-                transparent 100%);
-            pointer-events: none;
-        `;
-        this.headerElement.appendChild(headerOverlay);
-        
+
         // Title
         const titleElement = document.createElement('div');
         titleElement.className = 'addon-window-title';
@@ -212,9 +172,7 @@ class AddonWindow {
             overflow: auto;
             padding: 0;
             box-sizing: border-box;
-            background: linear-gradient(135deg, 
-                rgba(255, 255, 255, 0.02) 0%, 
-                transparent 100%);
+            background: transparent;
             border-radius: 0 0 12px 12px;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
@@ -578,27 +536,20 @@ class AddonWindow {
             }
             
             .addon-window-content::-webkit-scrollbar-thumb {
-                background: linear-gradient(135deg, 
-                    rgba(0, 0, 0, 0.2) 0%, 
-                    rgba(0, 0, 0, 0.15) 100%);
+                background: rgba(0, 0, 0, 0.2);
                 border-radius: 6px;
                 border: 2px solid transparent;
                 background-clip: content-box;
-                transition: all 0.3s ease;
                 min-height: 20px;
             }
-            
+
             .addon-window-content::-webkit-scrollbar-thumb:hover {
-                background: linear-gradient(135deg, 
-                    rgba(0, 0, 0, 0.35) 0%, 
-                    rgba(0, 0, 0, 0.25) 100%);
+                background: rgba(0, 0, 0, 0.3);
                 background-clip: content-box;
             }
-            
+
             .addon-window-content::-webkit-scrollbar-thumb:active {
-                background: linear-gradient(135deg, 
-                    rgba(0, 0, 0, 0.45) 0%, 
-                    rgba(0, 0, 0, 0.35) 100%);
+                background: rgba(0, 0, 0, 0.4);
                 background-clip: content-box;
             }
             

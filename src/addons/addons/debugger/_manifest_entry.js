@@ -89,6 +89,7 @@ const manifest = {
             default: false
         }
     ],
-    tags: ['MistWarp']
+    tags: ['MistWarp'],
+    enabledByDefault: true
 };
 export default manifest;

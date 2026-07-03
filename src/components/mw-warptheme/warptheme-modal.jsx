@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useState, useEffect, useMemo} from 'react';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
-import {Search, Heart, Download, ExternalLink} from 'lucide-react';
+import {Search, Heart, Download, ExternalLink, Plus} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
@@ -307,7 +307,7 @@ const WarpThemeModal = props => {
     };
 
     const handleOpenInWarpTheme = theme => {
-        const slug = theme.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const slug = theme.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/(^-|-$)/g, '');
         window.open(`https://warptheme.mistium.com/themes/${theme.author}/${slug}`, '_blank');
     };
 
@@ -406,6 +406,14 @@ const WarpThemeModal = props => {
                                 </option>
                             ))}
                         </select>
+
+                        <button
+                            className={styles.createBtn}
+                            onClick={handleCreateTheme}
+                        >
+                            <Plus size={14} />
+                            <FormattedMessage {...messages.createTheme} />
+                        </button>
                     </div>
                 </div>
 
@@ -477,16 +485,6 @@ const WarpThemeModal = props => {
                         ))
                     )}
                 </div>
-                <button
-                    className={styles.floatingCreateBtn}
-                    onClick={handleCreateTheme}
-                    title={props.intl.formatMessage(messages.createTheme)}
-                >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </button>
             </Box>
         </Modal>
     );

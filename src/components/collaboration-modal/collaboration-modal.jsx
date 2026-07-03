@@ -8,7 +8,6 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
-import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -560,18 +559,24 @@ class CollaborationModal extends Component {
         }
     }
 
+    renderAlphaBanner () {
+        return (
+            <div className={styles.alphaBanner}>
+                <div className={styles.bannerIcon}>
+                    <AlertTriangle size={16} />
+                </div>
+                <div className={styles.bannerContent}>
+                    <strong>{'Alpha: '}</strong>
+                    {'This feature is in early development. Your projects may get corrupted or broken.'}
+                </div>
+            </div>
+        );
+    }
+
     renderJoinStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>{'Alpha Warning:'}</strong>
-                        {'This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.'}
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
 
                 <div className={styles.header}>
                     <CollaborationIcon
@@ -682,14 +687,7 @@ class CollaborationModal extends Component {
     renderConnectingStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>Alpha Warning:</strong> This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
                 <div className={styles.connecting}>
                     <div className={styles.spinner} />
                     <FormattedMessage
@@ -721,14 +719,7 @@ class CollaborationModal extends Component {
 
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>Alpha Warning:</strong> This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
 
                 <div className={styles.header}>
                     <CollaborationIcon
@@ -822,7 +813,6 @@ class CollaborationModal extends Component {
 
                 {isHost && this.state.pendingRequests.length > 0 && (
                     <>
-                        <div className={styles.sectionDivider} />
                         <div className={styles.requestsSection}>
                             <h3 className={styles.sectionTitle}>
                                 <FormattedMessage
@@ -876,87 +866,67 @@ class CollaborationModal extends Component {
                 )}
 
                 {isHost && (
-                    <>
-                        <div className={styles.sectionDivider} />
-                        <div className={styles.privacySection}>
-                            <h3 className={styles.sectionTitle}>
-                                <FormattedMessage
-                                    defaultMessage="Room Privacy"
-                                    description="Room privacy section title"
-                                    id="gui.collaboration.roomPrivacySettings"
-                                />
-                            </h3>
+                    <div className={styles.privacySection}>
+                        <h3 className={styles.sectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Room Privacy"
+                                description="Room privacy section title"
+                                id="gui.collaboration.roomPrivacySettings"
+                            />
+                        </h3>
 
-                            {this.props.roomPrivacy === 'public' ? (
-                                <div className={styles.privacyCard}>
-                                    <div className={styles.privacyCardTitle}>
-                                        <FormattedMessage
-                                            defaultMessage="Public Room"
-                                            description="Public room card title"
-                                            id="gui.collaboration.publicRoom"
-                                        />
-                                    </div>
-                                    <div className={styles.privacyCardDesc}>
-                                        <FormattedMessage
-                                            defaultMessage="Anyone can join this room without approval"
-                                            description="Public room explanation"
-                                            id="gui.collaboration.publicRoomDesc"
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            {this.props.roomPrivacy === 'private' ? (
-                                <div className={classNames(styles.privacyCard, styles.private)}>
-                                    <div className={styles.privacyCardTitle}>
-                                        <FormattedMessage
-                                            defaultMessage="Private Room"
-                                            description="Private room card title"
-                                            id="gui.collaboration.privateRoom"
-                                        />
-                                    </div>
-                                    <div className={styles.privacyCardDesc}>
-                                        <FormattedMessage
-                                            defaultMessage="Users must request approval to join this room"
-                                            description="Private room explanation"
-                                            id="gui.collaboration.privateRoomDesc"
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            <div className={styles.privacySelector}>
-                                <label className={styles.radioLabel}>
-                                    <FancyCheckbox
-                                        className={styles.checkbox}
-                                        checked={this.props.roomPrivacy === 'public'}
-                                        onChange={this.togglePublicPrivacy}
+                        <div
+                            className={styles.privacySelector}
+                            role="radiogroup"
+                        >
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'public'
+                                })}
+                                role="radio"
+                                aria-checked={this.props.roomPrivacy === 'public'}
+                                onClick={this.togglePublicPrivacy}
+                            >
+                                <div className={styles.privacyCardTitle}>
+                                    <FormattedMessage
+                                        defaultMessage="Public Room"
+                                        description="Public room card title"
+                                        id="gui.collaboration.publicRoom"
                                     />
-                                    <span className={styles.radioText}>
-                                        <FormattedMessage
-                                            defaultMessage="Make Public"
-                                            description="Make public room option"
-                                            id="gui.collaboration.makePublic"
-                                        />
-                                    </span>
-                                </label>
-                                <label className={styles.radioLabel}>
-                                    <FancyCheckbox
-                                        className={styles.checkbox}
-                                        checked={this.props.roomPrivacy === 'private'}
-                                        onChange={this.togglePrivatePrivacy}
+                                </div>
+                                <div className={styles.privacyCardDesc}>
+                                    <FormattedMessage
+                                        defaultMessage="Anyone can join this room without approval"
+                                        description="Public room explanation"
+                                        id="gui.collaboration.publicRoomDesc"
                                     />
-                                    <span className={styles.radioText}>
-                                        <FormattedMessage
-                                            defaultMessage="Make Private"
-                                            description="Make private room option"
-                                            id="gui.collaboration.makePrivate"
-                                        />
-                                    </span>
-                                </label>
-                            </div>
+                                </div>
+                            </button>
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'private'
+                                })}
+                                role="radio"
+                                aria-checked={this.props.roomPrivacy === 'private'}
+                                onClick={this.togglePrivatePrivacy}
+                            >
+                                <div className={styles.privacyCardTitle}>
+                                    <FormattedMessage
+                                        defaultMessage="Private Room"
+                                        description="Private room card title"
+                                        id="gui.collaboration.privateRoom"
+                                    />
+                                </div>
+                                <div className={styles.privacyCardDesc}>
+                                    <FormattedMessage
+                                        defaultMessage="Users must request approval to join this room"
+                                        description="Private room explanation"
+                                        id="gui.collaboration.privateRoomDesc"
+                                    />
+                                </div>
+                            </button>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 <div className={styles.connectedActions}>
@@ -993,14 +963,7 @@ class CollaborationModal extends Component {
     renderPendingApprovalStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>Alpha Warning:</strong> This feature is in early development. Your projects may get corrupted or broken. Use at your own risk.
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
                 <div className={styles.header}>
                     <CollaborationIcon
                         className={styles.headerIcon}
