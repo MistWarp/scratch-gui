@@ -116,11 +116,9 @@ class VMApplier extends OpApplier {
     _apply (type, payload) {
         switch (type) {
         case OP.BLOCK_EVENT:
-            this._applyBlockEvent(payload);
-            break;
+            return this._applyBlockEvent(payload);
         case OP.TARGET_UPDATE:
-            this._applyTargetUpdate(payload);
-            break;
+            return this._applyTargetUpdate(payload);
         case OP.SPRITE_ADD:
         case OP.SPRITE_DELETE:
         case OP.SPRITE_RENAME:
@@ -130,14 +128,23 @@ class VMApplier extends OpApplier {
         case OP.COSTUME_RENAME:
         case OP.COSTUME_SELECT:
         case OP.COSTUME_REORDER:
+        case OP.COSTUME_DUPLICATE:
+        case OP.COSTUME_UPDATE:
         case OP.SOUND_ADD:
         case OP.SOUND_DELETE:
         case OP.SOUND_RENAME:
+        case OP.SOUND_REORDER:
+        case OP.SOUND_DUPLICATE:
+        case OP.SOUND_UPDATE:
+        case OP.BLOCKS_SHARE:
         case OP.EXTENSION_LOAD:
-            this._applyAssetOp(type, payload);
-            break;
+        case OP.EXTENSION_REMOVE:
+        case OP.EXTENSION_REORDER:
+            // Async; the apply chain awaits the returned promise so ops
+            // keep mutating the VM strictly in sequence order.
+            return this._applyAssetOp(type, payload);
         default:
-            break;
+            return undefined; // eslint-disable-line no-undefined
         }
     }
 
@@ -711,4 +718,37 @@ class VMApplier extends OpApplier {
     }
 }
 
+/**
+ * Adopt the host's target ids after loading a snapshot. sb3 files do not
+ * serialize target ids, so every load regenerates them — without this,
+ * peers address the "same" sprite by different ids and every id-keyed op
+ * and presence signal misses.
+ * @param {VirtualMachine} vm The VM that just loaded the snapshot.
+ * @param {Array.<object>} targetIds Host's [{id, name, isStage}].
+ */
+const remapTargetIds = (vm, targetIds) => {
+    const runtime = vm.runtime;
+    targetIds.forEach(({id, name, isStage}) => {
+        const target = isStage ?
+            runtime.targets.find(t => t.isStage) :
+            runtime.targets.find(t => !t.isStage && t.getName() === name);
+        if (!target || target.id === id) return;
+        const oldId = target.id;
+        target.id = id;
+        // Keep monitors pointing at the renamed target (best effort).
+        try {
+            if (runtime._monitorState && typeof runtime._monitorState.map === 'function') {
+                runtime._monitorState = runtime._monitorState.map(record => (
+                    record.get && record.get('targetId') === oldId ?
+                        record.set('targetId', id) : record
+                ));
+            }
+        } catch (error) {
+            // Monitor bookkeeping is non-critical.
+        }
+    });
+    vm.emitTargetsUpdate(false);
+};
+
 export default VMApplier;
+export {remapTargetIds};
