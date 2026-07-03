@@ -280,7 +280,8 @@ export default async function ({ addon, console, msg }) {
           reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
         });
 
-        let display = topBar.appendChild(document.createElement("span"));
+        const mainMenu = topBar.parentElement || topBar;
+        let display = mainMenu.appendChild(document.createElement("span"));
         display.setAttribute("data-mw-item", "block-count");
         addon.tab.displayNoneWhileDisabled(display);
         display.style.cursor = 'pointer';

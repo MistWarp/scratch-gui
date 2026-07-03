@@ -9,6 +9,7 @@ import {showStandardAlert, showAlertWithTimeout} from '../reducers/alerts';
 import {setFileHandle} from '../reducers/tw';
 import {getIsShowingProject} from '../reducers/project-state';
 import log from '../lib/utils/log';
+import {embedRepoIntoSb3Blob, repoExists} from '../lib/git/browser-git';
 
 // from sb-file-uploader-hoc.jsx
 const getProjectTitleFromFilename = fileInputFilename => {
@@ -133,6 +134,27 @@ class SB3Downloader extends React.Component {
     }
     async saveToHandle (handle) {
         if (!this.props.canSaveProject) {
+            return;
+        }
+
+        // Embedding git history needs the full zip in memory (the streaming path
+        // can't inject extra files), so buffer the save when a repo exists.
+        if (await repoExists()) {
+            const writable = await handle.createWritable();
+            this.startedSaving();
+            try {
+                const blob = await this.props.saveProjectSb3();
+                await writable.write(await blob.arrayBuffer());
+                await writable.close();
+                this.finishedSaving();
+            } catch (e) {
+                try {
+                    await writable.abort();
+                } catch (abortError) {
+                    // ignore
+                }
+                throw e;
+            }
             return;
         }
 
@@ -302,7 +324,10 @@ SB3Downloader.defaultProps = {
 
 const mapStateToProps = state => ({
     fileHandle: state.scratchGui.tw.fileHandle,
-    saveProjectSb3: state.scratchGui.vm.saveProjectSb3.bind(state.scratchGui.vm),
+    // Wrap the VM save so the .sb3 also carries the git repo (fractch tree + .git)
+    // under GIT_EMBED_DIR while keeping the normal project.json/assets at the top level.
+    saveProjectSb3: (...args) =>
+        state.scratchGui.vm.saveProjectSb3(...args).then(content => embedRepoIntoSb3Blob(content)),
     saveProjectSb3Stream: state.scratchGui.vm.saveProjectSb3Stream.bind(state.scratchGui.vm),
     canSaveProject: getIsShowingProject(state.scratchGui.projectState.loadingState),
     projectFilename: getProjectFilename(state.scratchGui.projectTitle, projectTitleInitialState)

@@ -5,44 +5,16 @@ import JSZip from 'jszip';
 
 
 import {
-    clearWorkingTree,
-    writeProjectToWorkingTree
-} from './project-working-tree.js';
+    writeProjectToFractchTree,
+    buildSb3FromFractchTree
+} from './fractch-tree.js';
 
 const FS_NAME = 'mistwarp-git';
 const REPO_DIR = '/repo';
 const SNAPSHOT_FILE = 'project.sb3';
-const EXPORT_VERSION = 1;
-
-let tempGitJsonString = null;
-
-const uint8ToBase64 = uint8 => {
-    if (!uint8 || uint8.length === 0) return '';
-    
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < uint8.length; i += chunkSize) {
-        const chunk = uint8.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
-    }
-    return btoa(binary);
-};
-
-const base64ToUint8 = base64 => {
-    if (!base64 || typeof base64 !== 'string') return new Uint8Array(0);
-    
-    try {
-        const binary = atob(base64);
-        const out = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            out[i] = binary.charCodeAt(i);
-        }
-        return out;
-    } catch (e) {
-        console.error('Failed to decode base64:', e);
-        return new Uint8Array(0);
-    }
-};
+// Folder used to carry the whole git repo (fractch working tree + .git) inside a
+// saved .sb3 zip, alongside the normal top-level project.json/assets.
+const GIT_EMBED_DIR = '.mistwarp-git';
 
 let fsSingleton = null;
 let shouldWipeOnStart = true;
@@ -243,45 +215,6 @@ const listFilesRecursive = async (pfs, rootDir) => {
     return out;
 };
 
-const exportRepoToGitJsonString = async () => {
-    const fs = getFs();
-    const pfs = fs.promises;
-    
-    if (!(await repoExists())) {
-        return null;
-    }
-
-    try {
-        const gitDir = pathJoin(REPO_DIR, '.git');
-        const files = await listFilesRecursive(pfs, gitDir);
-        const entries = await Promise.all(files.map(async filePath => {
-            try {
-                const data = await pfs.readFile(filePath);
-                const view = data instanceof Uint8Array ? data : new Uint8Array(data);
-                return {
-                    path: filePath.replace(`${REPO_DIR}/`, ''),
-                    encoding: 'base64',
-                    data: uint8ToBase64(view)
-                };
-            } catch (e) {
-                console.warn('Failed to read file for export:', filePath, e);
-                return null;
-            }
-        }));
-
-        // Filter out null entries from failed reads
-        const validEntries = entries.filter(entry => entry !== null);
-
-        return JSON.stringify({
-            version: EXPORT_VERSION,
-            repoDir: REPO_DIR,
-            entries: validEntries
-        });
-    } catch (e) {
-        throw new Error(`Failed to export repository: ${e.message}`);
-    }
-};
-
 const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -310,14 +243,8 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
                 if (typeof vm.saveProjectSb3 !== 'function') {
                     throw new Error('VM does not support saveProjectSb3');
                 }
-                
-                const sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
-                if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
-                    throw new Error('Failed to save project snapshot');
-                }
-                
-                await pfs.writeFile(pathJoin(REPO_DIR, SNAPSHOT_FILE), new Uint8Array(sb3ArrayBuffer));
-                await writeProjectToWorkingTree({vm, fs: pfs, dir: REPO_DIR, onProgress});
+
+                await writeProjectToFractchTree({vm, fs: pfs, dir: REPO_DIR, onProgress});
                 await stageAll(fs, REPO_DIR, {onProgress});
             }
 
@@ -327,7 +254,6 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
                 message: 'Initialize repository',
                 author: getDefaultAuthor()
             });
-            tempGitJsonString = await exportRepoToGitJsonString();
         } catch (e) {
             // Clean up partial initialization on error
             try {
@@ -363,35 +289,73 @@ const readSnapshot = async () => {
     }
 };
 
+const buildSb3FromCommit = async oid => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    const tmpDir = `${REPO_DIR}-export-${Date.now()}`;
+    try {
+        await ensureDir(pfs, tmpDir);
+        const files = await git.listFiles({fs, dir: REPO_DIR, ref: oid});
+        for (const filepath of files) {
+            if (filepath === '.gitignore' || filepath === SNAPSHOT_FILE) continue;
+            const {blob} = await git.readBlob({fs, dir: REPO_DIR, oid, filepath});
+            const dest = pathJoin(tmpDir, filepath);
+            await ensureParentDir(pfs, dest);
+            await pfs.writeFile(dest, blob instanceof Uint8Array ? blob : new Uint8Array(blob));
+        }
+        const bytes = await buildSb3FromFractchTree({fs: pfs, dir: tmpDir});
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    } finally {
+        await removeRecursive(pfs, tmpDir);
+    }
+};
+
 const readSnapshotAtCommit = async oid => {
     if (!oid || typeof oid !== 'string') {
         throw new Error('Invalid commit OID');
     }
-    
+
     const fs = getFs();
     try {
         const {blob} = await git.readBlob({fs, dir: REPO_DIR, oid, filepath: SNAPSHOT_FILE});
         const view = blob instanceof Uint8Array ? blob : new Uint8Array(blob);
         return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
     } catch (e) {
-        throw new Error(`Failed to read snapshot at commit ${oid}: ${e.message}`);
+        // New fractch-only commits have no project.sb3 blob; rebuild from the text tree.
+        try {
+            return await buildSb3FromCommit(oid);
+        } catch (rebuildError) {
+            throw new Error(`Failed to read snapshot at commit ${oid}: ${rebuildError.message}`);
+        }
     }
 };
 
 const restoreProjectFromCurrentRef = async vm => {
     if (!vm) throw new Error('VM not provided');
     if (!(await repoExists())) throw new Error('Repository not initialized');
-    
+
     try {
-        const snapshot = await readSnapshot();
-        
+        const fs = getFs();
+        const pfs = fs.promises;
+        const snapshotPath = pathJoin(REPO_DIR, SNAPSHOT_FILE);
+
+        // Old commits carry a binary project.sb3 snapshot; new commits are
+        // fractch-only, so repack the text tree into an sb3.
+        let snapshot;
+        if (await exists(pfs, snapshotPath)) {
+            snapshot = await readSnapshot();
+        } else {
+            const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
+            snapshot = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+        }
+
         if (typeof vm.quit !== 'function') {
             throw new Error('VM does not support quit method');
         }
         if (typeof vm.loadProject !== 'function') {
             throw new Error('VM does not support loadProject method');
         }
-        
+
         vm.quit();
         await vm.loadProject(snapshot, {skipGitImport: true});
     } catch (e) {
@@ -414,7 +378,7 @@ const getRepoChanges = async vm => {
     const fs = getFs();
     const pfs = fs.promises;
     const dir = REPO_DIR;
-    await writeProjectToWorkingTree({vm, fs: pfs, dir});
+    await writeProjectToFractchTree({vm, fs: pfs, dir});
     const status = await git.statusMatrix({
         fs,
         dir
@@ -485,7 +449,6 @@ const createBranch = async ({ref} = {}) => {
     } catch (e) {
         throw new Error(`Failed to create branch ${ref}: ${e.message}`);
     }
-    tempGitJsonString = await exportRepoToGitJsonString();
     return 'ok';
 };
 
@@ -570,13 +533,14 @@ const getRemotes = async vm => {
 
     const remotes = await git.listRemotes({fs, dir: REPO_DIR});
 
+    // isomorphic-git returns {remote, url}; expose it as {name, url}.
     return remotes.map(remote => ({
-        name: remote.name,
+        name: remote.remote || remote.name,
         url: remote.url
     }));
 };
 
-const push = async ({vm, remote, branch, ...options}) => {
+const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ...options}) => {
     if (!vm) {
         throw new Error('VM is required');
     }
@@ -587,7 +551,106 @@ const push = async ({vm, remote, branch, ...options}) => {
         await initRepo({defaultBranch: 'main', vm: vm});
     }
 
-    await git.push({fs, http, corsProxy: 'https://cors.isomorphic-git.org', dir: REPO_DIR, remote, branch, ...options});
+    // isomorphic-git's push uses `ref`/`remoteRef`, not `branch`. Default to the
+    // current branch, and create the same-named branch on the remote.
+    let localRef = ref || branch;
+    if (!localRef) {
+        localRef = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
+    }
+    if (!localRef) {
+        throw new Error('No branch to push. Check out a branch first.');
+    }
+
+    // Make sure the repo identity (name + email) is configured so it travels
+    // with the pushed history.
+    try {
+        const author = getDefaultAuthor();
+        if (author.name) {
+            await git.setConfig({fs, dir: REPO_DIR, path: 'user.name', value: author.name});
+        }
+        if (author.email) {
+            await git.setConfig({fs, dir: REPO_DIR, path: 'user.email', value: author.email});
+        }
+    } catch (e) {
+        // Non-fatal.
+    }
+
+    const result = await git.push({
+        fs,
+        http,
+        corsProxy: 'https://cors.isomorphic-git.org',
+        dir: REPO_DIR,
+        remote,
+        ref: localRef,
+        remoteRef: localRef,
+        onProgress: evt => {
+            if (typeof onProgress === 'function' && evt) {
+                onProgress({
+                    phase: 'push',
+                    message: `Pushing… ${evt.phase || ''}`.trim(),
+                    completed: evt.loaded,
+                    total: evt.total
+                });
+            }
+        },
+        ...options
+    });
+
+    // Emulate `git push -u`: record the upstream so future pulls/pushes track it.
+    if (setUpstream) {
+        try {
+            await git.setConfig({fs, dir: REPO_DIR, path: `branch.${localRef}.remote`, value: remote});
+            await git.setConfig({fs, dir: REPO_DIR, path: `branch.${localRef}.merge`, value: `refs/heads/${localRef}`});
+        } catch (e) {
+            // Non-fatal: the push itself succeeded.
+            console.warn('Failed to set upstream tracking:', e);
+        }
+    }
+
+    return result;
+};
+
+const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
+    if (!vm) {
+        throw new Error('VM is required');
+    }
+    const fs = getFs();
+    if (!(await repoExists())) {
+        throw new Error('Repository not initialized');
+    }
+
+    let localRef = ref;
+    if (!localRef) {
+        localRef = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
+    }
+    if (!localRef) {
+        throw new Error('No branch checked out to pull into');
+    }
+
+    await git.pull({
+        fs,
+        http,
+        corsProxy: 'https://cors.isomorphic-git.org',
+        dir: REPO_DIR,
+        ref: localRef,
+        remote: remote || 'origin',
+        singleBranch: true,
+        fastForward: true,
+        author: author || getDefaultAuthor(),
+        onAuth,
+        onProgress: evt => {
+            if (typeof onProgress === 'function' && evt) {
+                onProgress({
+                    phase: 'pull',
+                    message: `Pulling… ${evt.phase || ''}`.trim(),
+                    completed: evt.loaded,
+                    total: evt.total
+                });
+            }
+        }
+    });
+
+    return 'ok';
 };
 
 const commitProject = async ({vm, message, author, onProgress} = {}) => {
@@ -626,9 +689,7 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
     }
 
     try {
-        await clearWorkingTree({pfs, dir: REPO_DIR});
-        await pfs.writeFile(pathJoin(REPO_DIR, SNAPSHOT_FILE), new Uint8Array(sb3ArrayBuffer));
-        await writeProjectToWorkingTree({vm, fs: pfs, dir: REPO_DIR, onProgress});
+        await writeProjectToFractchTree({vm, sb3ArrayBuffer, fs: pfs, dir: REPO_DIR, onProgress});
 
         // Ensure any new files are discoverable by isomorphic-git (it uses callback fs,
         // but LightningFS mirrors state).
@@ -667,7 +728,6 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
             message: message.trim(),
             author: effectiveAuthor
         });
-        tempGitJsonString = await exportRepoToGitJsonString();
         return ret;
     } catch (e) {
         throw new Error(`Failed to commit: ${e.message}`);
@@ -679,7 +739,6 @@ const deleteRepo = async () => {
     const pfs = fs.promises;
     if (!(await exists(pfs, REPO_DIR))) return;
     await removeRecursive(pfs, REPO_DIR);
-    tempGitJsonString = await exportRepoToGitJsonString();
 };
 
 const deleteBranch = async ref => {
@@ -697,7 +756,6 @@ const deleteBranch = async ref => {
     } catch (e) {
         throw new Error(`Failed to delete branch ${ref}: ${e.message}`);
     }
-    tempGitJsonString = await exportRepoToGitJsonString();
 };
 
 const listBranches = async () => {
@@ -800,76 +858,6 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-const exportRepoToGitJsonStringSync = () => tempGitJsonString || null;
-
-const importRepoFromGitJsonString = async gitJsonString => {
-    if (!gitJsonString || typeof gitJsonString !== 'string') {
-        throw new Error('Invalid git.json data');
-    }
-
-    let parsed;
-    try {
-        parsed = JSON.parse(gitJsonString);
-    } catch (e) {
-        throw new Error(`Invalid git.json format: ${e.message}`);
-    }
-
-    if (!parsed || parsed.version !== EXPORT_VERSION || !Array.isArray(parsed.entries)) {
-        throw new Error('Unsupported git.json format');
-    }
-
-    const hasHeadsRefs = parsed.entries.some(entry => (
-        entry && typeof entry.path === 'string' && entry.path.startsWith('.git/refs/heads/')
-    ));
-    const hasPackedRefs = parsed.entries.some(entry => (
-        entry && typeof entry.path === 'string' && entry.path === '.git/packed-refs'
-    ));
-
-    // If no heads or packed-refs are present, the export is incomplete. Avoid
-    // replacing the existing repo to prevent losing branch information.
-    if (!hasHeadsRefs && !hasPackedRefs) {
-        return;
-    }
-
-    const fs = getFs();
-    const pfs = fs.promises;
-    
-    try {
-        await deleteRepo();
-        await ensureDir(pfs, REPO_DIR);
-
-        for (const entry of parsed.entries) {
-            if (!entry || typeof entry.path !== 'string' || entry.encoding !== 'base64') {
-                console.warn('Skipping invalid entry:', entry);
-                continue;
-            }
-            
-            try {
-                const filePath = pathJoin(REPO_DIR, entry.path);
-                await ensureParentDir(pfs, filePath);
-                await pfs.writeFile(filePath, base64ToUint8(entry.data || ''));
-            } catch (e) {
-                console.warn('Failed to write file during import:', entry.path, e);
-            }
-        }
-
-        const branches = await listBranches();
-        const ref = branches.includes('main') ? 'main' : branches[0];
-
-        if (ref) {
-            await git.checkout({fs, dir: REPO_DIR, ref, force: true});
-        }
-    } catch (e) {
-        // Clean up on import failure
-        try {
-            await deleteRepo();
-        } catch (cleanupError) {
-            console.warn('Failed to clean up after import error:', cleanupError);
-        }
-        throw new Error(`Failed to import repository: ${e.message}`);
-    }
-};
-
 const exportRepoToZip = async ({includeGitDir = true} = {}) => {
     const fs = getFs();
     const pfs = fs.promises;
@@ -940,18 +928,11 @@ const commitSb3 = async ({
     }
 
     if (typeof onProgress === 'function') {
-        onProgress({phase: 'snapshot', message: 'Writing SB3 snapshot…'});
+        onProgress({phase: 'snapshot', message: 'Converting project to fractch…'});
     }
 
-    await clearWorkingTree({pfs, dir: REPO_DIR});
-    await pfs.writeFile(
-        pathJoin(REPO_DIR, SNAPSHOT_FILE),
-        new Uint8Array(sb3ArrayBuffer)
-    );
-
-    // IMPORTANT: this assumes writeProjectToWorkingTree
-    // already supports extracting from project.sb3
-    await writeProjectToWorkingTree({
+    await writeProjectToFractchTree({
+        sb3ArrayBuffer,
         fs: pfs,
         dir: REPO_DIR,
         onProgress,
@@ -970,7 +951,6 @@ const commitSb3 = async ({
         author: authorUsed
     });
 
-    tempGitJsonString = await exportRepoToGitJsonString();
     return oid;
 };
 
@@ -987,6 +967,183 @@ const pickSb3File = () => new Promise((resolve, reject) => {
 
     input.click();
 });
+
+const README_FILE = 'README.md';
+
+const readReadme = async () => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    if (!(await repoExists())) return '';
+    try {
+        const data = await pfs.readFile(pathJoin(REPO_DIR, README_FILE), 'utf8');
+        return typeof data === 'string' ? data : new TextDecoder().decode(data);
+    } catch (e) {
+        return '';
+    }
+};
+
+const writeReadme = async content => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    if (!(await repoExists())) {
+        throw new Error('Initialize a repository first');
+    }
+    const text = content === null || typeof content === 'undefined' ? '' : String(content);
+    if (text.length === 0) {
+        // Empty README: remove the file so it doesn't linger as an empty blob.
+        try {
+            await pfs.unlink(pathJoin(REPO_DIR, README_FILE));
+        } catch (e) {
+            // not present, nothing to do
+        }
+        return;
+    }
+    await pfs.writeFile(pathJoin(REPO_DIR, README_FILE), text);
+};
+
+// Clone a git repository into LightningFS, replacing any existing repo. After
+// this, the working tree holds the cloned files (fractch source + .git).
+const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
+    if (!url || typeof url !== 'string') {
+        throw new Error('Repository URL is required');
+    }
+
+    const fs = getFs();
+    const pfs = fs.promises;
+
+    await deleteRepo();
+    await ensureDir(pfs, REPO_DIR);
+
+    try {
+        const cloneOptions = {
+            fs,
+            http,
+            dir: REPO_DIR,
+            url: url.trim(),
+            corsProxy: 'https://cors.isomorphic-git.org',
+            singleBranch: false,
+            onAuth,
+            onProgress: evt => {
+                if (typeof onProgress === 'function' && evt) {
+                    onProgress({
+                        phase: 'clone',
+                        message: `Cloning… ${evt.phase || ''}`.trim(),
+                        completed: evt.loaded,
+                        total: evt.total
+                    });
+                }
+            }
+        };
+        if (ref) cloneOptions.ref = ref;
+        await git.clone(cloneOptions);
+    } catch (e) {
+        try {
+            await deleteRepo();
+        } catch (cleanupError) {
+            // ignore
+        }
+        throw new Error(`Failed to clone: ${e.message}`);
+    }
+
+    return {fs, dir: REPO_DIR};
+};
+
+// True if the repo working tree contains at least one .fractch source file.
+const repoHasFractch = async () => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    if (!(await repoExists())) return false;
+    try {
+        const files = await listFilesRecursive(pfs, REPO_DIR);
+        return files.some(f => /\.fractch$/i.test(f) && !f.includes('/.git/'));
+    } catch (e) {
+        return false;
+    }
+};
+
+// Copy the entire LightningFS repo (fractch working tree + .git) into an sb3 zip
+// under GIT_EMBED_DIR, leaving the normal project.json/assets at the top level.
+// Returns a new Blob; if there is no repo, the original blob is returned as-is.
+const embedRepoIntoSb3Blob = async blob => {
+    if (!blob) return blob;
+    if (!(await repoExists())) return blob;
+
+    const fs = getFs();
+    const pfs = fs.promises;
+
+    let zip;
+    try {
+        zip = await JSZip.loadAsync(blob);
+    } catch (e) {
+        console.warn('Could not open sb3 to embed git history:', e);
+        return blob;
+    }
+
+    const files = await listFilesRecursive(pfs, REPO_DIR);
+    for (const absPath of files) {
+        const rel = absPath.slice(REPO_DIR.length + 1);
+        if (!rel) continue;
+        try {
+            const data = await pfs.readFile(absPath);
+            zip.file(`${GIT_EMBED_DIR}/${rel}`, data instanceof Uint8Array ? data : new Uint8Array(data));
+        } catch (e) {
+            console.warn('Skipping repo file while embedding:', rel, e);
+        }
+    }
+
+    return zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: {level: 6}
+    });
+};
+
+// Restore a repo previously embedded by embedRepoIntoSb3Blob back into LightningFS.
+// If the sb3 has no embedded repo, any stale repo is cleared so the git panel
+// matches the freshly loaded project. Returns true when a repo was imported.
+const importRepoFromSb3 = async input => {
+    if (!input) return false;
+
+    let zip;
+    try {
+        zip = await JSZip.loadAsync(input);
+    } catch (e) {
+        return false;
+    }
+
+    const prefix = `${GIT_EMBED_DIR}/`;
+    const entryPaths = Object.keys(zip.files).filter(p => p.startsWith(prefix) && !zip.files[p].dir);
+
+    const fs = getFs();
+    const pfs = fs.promises;
+
+    if (entryPaths.length === 0) {
+        try {
+            await deleteRepo();
+        } catch (e) {
+            // ignore
+        }
+        return false;
+    }
+
+    await deleteRepo();
+    await ensureDir(pfs, REPO_DIR);
+
+    for (const p of entryPaths) {
+        const rel = p.slice(prefix.length);
+        if (!rel) continue;
+        try {
+            const data = await zip.files[p].async('uint8array');
+            const dest = pathJoin(REPO_DIR, rel);
+            await ensureParentDir(pfs, dest);
+            await pfs.writeFile(dest, data);
+        } catch (e) {
+            console.warn('Skipping embedded repo file on import:', p, e);
+        }
+    }
+
+    return true;
+};
 
 const pickAndCommitSb3 = async ({
     message,
@@ -1024,9 +1181,6 @@ export {
     readSnapshotAtCommit,
     getBranchLogs,
     computeCommitGraph,
-    exportRepoToGitJsonString,
-    exportRepoToGitJsonStringSync,
-    importRepoFromGitJsonString,
     deleteRepo,
     deleteBranch,
     commitProject,
@@ -1036,10 +1190,17 @@ export {
     removeRemote,
     getRemotes,
     push,
+    pull,
     exportRepoToZip,
     downloadRepoZip,
     commitSb3,
     pickAndCommitSb3,
+    embedRepoIntoSb3Blob,
+    importRepoFromSb3,
+    cloneRepo,
+    repoHasFractch,
+    readReadme,
+    writeReadme,
     REPO_DIR,
     git
 };

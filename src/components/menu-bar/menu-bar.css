@@ -54,12 +54,6 @@
 }
 .main-menu-align-center {
     justify-content: center;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 0;
-    height: 100%;
-    width: max-content
 }
 .main-menu-align-right {
     justify-content: flex-end;
@@ -170,6 +164,9 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+.menu-bar:has(> .main-menu-align-left) > .account-info-group {
     right: 0;
     position: absolute;
     top: 0;
@@ -177,7 +174,7 @@
 }
 
 .account-info-group .menu-bar-item {
-    margin: 0 .25rem;
+    margin: 0;
     padding: 0 0.75rem;
 }
 
@@ -204,6 +201,7 @@
 .menu-bar-layout-item {
     display: flex;
     align-items: center;
+    height: 100%;
 }
 
 .profile-icon {

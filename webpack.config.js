@@ -75,7 +75,8 @@ const base = {
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
                 /node_modules[\\/]pify/,
                 /node_modules[\\/]@vernier[\\/]godirect/,
-                /node_modules[\\/]@chenglou[\\/]pretext/
+                /node_modules[\\/]@chenglou[\\/]pretext/,
+                /node_modules[\\/]fractch[\\/]src/
             ],
             options: {
                 // Explicitly disable babelrc so we don't catch various config

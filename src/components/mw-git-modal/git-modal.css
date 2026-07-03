@@ -1,312 +1,627 @@
 @import "../../css/colors.css";
 
-.modal-content {
-    width: min(720px, calc(100vw - 2rem));
-    max-width: 720px;
+.modalContent {
+    height: 100%;
 }
 
-.body {
+.sidebarLayout {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.sidebar {
+    width: 210px;
+    min-width: 210px;
+    max-width: 210px;
+    border-right: 1px solid $ui-black-transparent;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 100%;
+}
+
+.sidebarItems {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.sidebarFooter {
+    padding: 0.5rem;
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.sidebarItem {
+    display: flex;
+    align-items: center;
+    padding: 0.65rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-primary;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebarItem:hover {
+    background: $ui-tertiary;
+    transform: translateX(2px);
+}
+
+.sidebarItem.selected {
+    background: $looks-transparent;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebarIcon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.75rem;
+}
+
+.sidebarLabel {
+    flex: 1;
+}
+
+.contentArea {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: $ui-modal-background;
-    padding: 1.25rem 1.5rem;
-    overflow: auto;
 }
 
 .section {
-    margin-bottom: 1rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background: $ui-modal-background;
-    padding: 0.9rem 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
-.section-header {
+.sectionTitle {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-
-.section-title {
-    font-weight: 700;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex: 0 0 auto;
-}
-
-.row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.row-wrap {
-    flex-wrap: wrap;
-}
-
-.label {
-    font-weight: 600;
-}
-
-.value {
-    opacity: 0.8;
-}
-
-.text-input {
-    flex: 1;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    padding: 0 0.75rem;
-    height: 2.5rem;
-    color: $text-primary-transparent;
-    font-size: .875rem;
-    background-color: $input-background;
-    min-width: 12rem;
-}
-
-.text-input::placeholder {
-    color: $text-primary-transparent;
-    opacity: 0.7;
-}
-
-.text-input:focus,
-.select:focus {
-    outline: none;
-    border-color: $looks-secondary;
-}
-
-.select {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    padding: 0 0.5rem;
-    height: 2.5rem;
-    background-color: $input-background;
-    color: $text-primary-transparent;
-    min-width: 12rem;
-}
-
-.button-row {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.button,
-.primary-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.6rem 0.9rem;
-    border-radius: 8px;
-    background: $input-background;
-    border: 1px solid $ui-black-transparent;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
     color: $text-primary;
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.primary-button {
-    background: $looks-secondary;
-    border-color: $looks-secondary;
-    color: white;
+.subSection {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid $ui-black-transparent;
+    display: flex;
+    flex-direction: column;
 }
 
-.button:focus-visible,
-.primary-button:focus-visible,
-.small-button:focus-visible,
-.text-input:focus-visible,
-.select:focus-visible {
-    outline: 2px solid $looks-secondary;
-    outline-offset: 2px;
-}
-
-.button[disabled],
-.primary-button[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.button:not([disabled]):hover {
-    border-color: $looks-secondary;
-}
-
-.primary-button:not([disabled]):hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
-}
-
-.danger-button {
-    border-color: $red-primary;
-    color: $red-primary;
-}
-
-.danger-button:not([disabled]):hover {
-    background: $error-transparent;
-    border-color: $red-primary;
-}
-
-.small-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 8px;
-    background: $input-background;
-    border: 1px solid $ui-black-transparent;
-    color: $text-primary;
-    font-weight: 600;
-    font-size: 0.75rem;
-    flex: 0 0 auto;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-}
-
-.small-button:not([disabled]):hover {
-    border-color: $looks-secondary;
-}
-
-.commit-list {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background-color: $input-background;
-    max-height: 200px;
-    overflow: auto;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.commit-row {
+.subTitle {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.25rem;
-    border-radius: 6px;
-}
-
-.commit-row:not(:last-child) {
-    border-bottom: 1px solid $ui-black-transparent;
-}
-
-.commit-row:hover {
-    background-color: $ui-black-transparent;
-}
-
-.commit-oid {
-    font-family: monospace;
-    opacity: 0.8;
-    width: 4.5rem;
-    flex: 0 0 auto;
-}
-
-.commit-msg {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: $text-primary;
 }
 
 .muted {
-    opacity: 0.7;
+    color: $text-primary;
+    opacity: 0.65;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
 }
 
-.error {
-    border: 1px solid $error-primary;
-    border-radius: 8px;
-    background: $error-transparent;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 1rem;
-    color: $error-primary;
-}
-
-.busy {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background: $input-background;
-    padding: 0.6rem 0.75rem;
-    margin-bottom: 1rem;
-    display: flex;
+/* Buttons */
+.button,
+.primaryButton {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
+    color: $text-primary;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+}
+
+.button:hover:not(:disabled),
+.primaryButton:hover:not(:disabled) {
+    filter: brightness(0.97);
+}
+
+.primaryButton {
+    background: $looks-secondary;
+    color: white;
+    border-color: transparent;
+}
+
+.button:disabled,
+.primaryButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.dangerButton {
+    background: color-mix(in srgb, #c62828 12%, transparent);
+    border-color: color-mix(in srgb, #c62828 40%, transparent);
+    color: #c62828;
+}
+
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.iconButton:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.iconButton:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.buttonIcon {
+    width: 15px;
+    height: 15px;
+}
+
+.rowButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
     flex-wrap: wrap;
 }
 
-.busy-text {
+/* Commit box */
+.commitBox {
+    width: 100%;
+    min-height: 64px;
+    resize: vertical;
+    padding: 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-family: inherit;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+/* Fields */
+.field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.85rem;
+}
+
+.fieldLabel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 0.3rem;
+}
+
+.input,
+.inputSmall,
+.select {
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.input {
+    flex: 1;
+    width: 100%;
+}
+
+.inputSmall {
+    width: 90px;
+    flex-shrink: 0;
+}
+
+.inlineForm {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* File lists */
+.fileList,
+.branchList,
+.commitList {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fileRow,
+.branchRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+}
+
+.fileRow:hover,
+.branchRow:hover {
+    background: $ui-tertiary;
+}
+
+.fileRowClickable {
+    cursor: pointer;
+}
+
+.filePath {
+    font-family: monospace;
+    color: $text-primary;
+    word-break: break-all;
+    flex: 1;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    color: white;
+}
+
+.badgeAdd {
+    background: #2e7d32;
+}
+
+.badgeDelete {
+    background: #c62828;
+}
+
+.badgeModify {
+    background: #f9a825;
+}
+
+/* Readme */
+.readmeBox {
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+/* Commit history */
+.commitRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.commitRow:hover {
+    background: $ui-tertiary;
+}
+
+.commitRowSelected {
+    border-color: $looks-secondary;
+    background: color-mix(in srgb, $looks-secondary 8%, transparent);
+}
+
+.commitMain {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.commitMessage {
+    font-size: 0.85rem;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.commitMeta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.commitHash {
+    font-family: monospace;
+    font-size: 0.72rem;
+    opacity: 0.6;
+    color: $text-primary;
+}
+
+.branchChip {
+    font-size: 0.68rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 8px;
+    color: white;
     font-weight: 600;
 }
 
-.busy-percent {
-    opacity: 0.8;
-    font-variant-numeric: tabular-nums;
+.commitActions {
+    display: flex;
+    gap: 0.2rem;
+    flex-shrink: 0;
 }
 
-.progress-bar {
+.currentTag {
+    margin-left: 0.5rem;
+    font-size: 0.68rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 8px;
+    background: $looks-secondary;
+    color: white;
+    font-weight: 600;
+    font-family: sans-serif;
+}
+
+/* Remotes */
+.remoteList {
+    list-style: none;
+    margin: 0.25rem 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.remoteRow {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    transition: border-color 0.15s ease;
+}
+
+.remoteRow:hover {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+}
+
+.remoteIcon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: $looks-secondary;
+}
+
+.remoteInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.remoteName {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: $text-primary;
+}
+
+.remoteUrl {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: $text-primary;
+    opacity: 0.6;
+    word-break: break-all;
+}
+
+.remoteEmpty {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    margin: 0.25rem 0 1.25rem;
+    border-radius: 8px;
+    border: 1px dashed color-mix(in srgb, $text-primary 25%, transparent);
+    color: $text-primary;
+    opacity: 0.75;
+    font-size: 0.85rem;
+}
+
+.remoteEmptyIcon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+/* Merge / conflicts */
+.conflicts {
+    margin: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.conflictRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    background: $ui-tertiary;
+}
+
+.chip {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
+    color: $text-primary;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.chipActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: transparent;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: $text-primary;
+    margin: 0.5rem 0 1rem;
+    cursor: pointer;
+}
+
+.dangerZone {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, #c62828 30%, transparent);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Empty state */
+.emptyState {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+    color: $text-primary;
+}
+
+.emptyIcon {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+}
+
+.emptyDivider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     width: 100%;
-    height: 8px;
-    border-radius: 999px;
+    max-width: 420px;
+    margin: 0.5rem 0;
+    color: $text-primary;
+    opacity: 0.55;
+    font-size: 0.78rem;
+}
+
+.emptyDivider::before,
+.emptyDivider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $ui-black-transparent;
+}
+
+.cloneForm {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 420px;
+    align-items: center;
+}
+
+.cloneConfirm {
+    width: 100%;
+    max-width: 420px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, #c62828 40%, transparent);
+    background: color-mix(in srgb, #c62828 10%, transparent);
+    color: $text-primary;
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Busy / error bars */
+.busyBar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 1.5rem;
+    background: color-mix(in srgb, $looks-secondary 12%, transparent);
+    color: $text-primary;
+    font-size: 0.82rem;
+}
+
+.progressBar {
+    height: 4px;
+    border-radius: 2px;
     background: $ui-black-transparent;
     overflow: hidden;
 }
 
-.progress-bar-fill {
+.progressBarFill {
     height: 100%;
     background: $looks-secondary;
+    transition: width 0.2s ease;
 }
 
-.confirm-dialog {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-}
-
-.confirm-dialog-content {
-    background: $ui-modal-background;
-    border-radius: 8px;
-    padding: 1.5rem;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.confirm-message {
-    margin-bottom: 1.5rem;
-    line-height: 1.4;
-    color: $text-primary-transparent;
-}
-
-.confirm-buttons {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-}
-
-@media (max-width: 640px) {
-    .body {
-        padding: 1rem;
-    }
-
-    .section {
-        padding: 0.75rem;
-    }
-
-    .confirm-dialog-content {
-        margin: 1rem;
-        width: calc(100% - 2rem);
-    }
+.errorBar {
+    padding: 0.6rem 1.5rem;
+    background: color-mix(in srgb, #c62828 15%, transparent);
+    color: #c62828;
+    font-size: 0.82rem;
+    word-break: break-word;
 }

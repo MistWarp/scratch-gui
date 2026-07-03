@@ -6,9 +6,6 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 import AudioEngine from 'scratch-audio';
 
-import * as BrowserGit from '../git/browser-git';
-import JSZip from 'jszip';
-
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import {
     LoadingStates,
@@ -44,7 +41,6 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.vm.initialized) {
                 window.vm = this.props.vm;
 
-                this.installGitProjectFileHooks();
                 try {
                     this.audioEngine = new AudioEngine();
                     this.props.vm.attachAudioEngine(this.audioEngine);
@@ -72,60 +68,6 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();
             }
-        }
-
-        installGitProjectFileHooks () {
-            const vm = this.props.vm;
-            if (vm._mwGit_hooksInstalled) return;
-            vm._mwGit_hooksInstalled = true;
-
-            const originalSaveProjectZip = vm._saveProjectZip;
-            vm._saveProjectZip = (options = {}) => {
-                const zip = originalSaveProjectZip.call(vm, options);
-                zip.file('git.json', JSON.stringify(BrowserGit.exportRepoToGitJsonStringSync()));
-                return zip;
-            };
-
-            const originalLoadProject = vm.loadProject;
-            vm.loadProject = async data => {
-                let gitJson = null;
-
-                try {
-                    let buffer = null;
-                    if (data instanceof ArrayBuffer) {
-                        buffer = data;
-                    } else if (ArrayBuffer.isView(data)) {
-                        buffer = data.buffer.slice(
-                            data.byteOffset,
-                            data.byteOffset + data.byteLength
-                        );
-                    } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
-                        buffer = await data.arrayBuffer();
-                    }
-
-                    if (buffer) {
-                        const zip = await JSZip.loadAsync(buffer);
-                        const file = zip.file('git.json');
-                        if (file) {
-                            gitJson = await file.async('string');
-                        }
-                    }
-                } catch (e) {
-                    // ignore
-                }
-
-                const result = await originalLoadProject.call(vm, data);
-
-                if (gitJson) {
-                    try {
-                        await BrowserGit.importRepoFromGitJsonString(gitJson);
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-
-                return result;
-            };
         }
 
         loadProject () {
@@ -196,8 +138,7 @@ const vmManagerHOC = function (WrappedComponent) {
         projectData: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         username: PropTypes.string,
-        vm: PropTypes.instanceOf(VM).isRequired,
-        gitJson: PropTypes.object
+        vm: PropTypes.instanceOf(VM).isRequired
     };
 
     const mapStateToProps = state => {
