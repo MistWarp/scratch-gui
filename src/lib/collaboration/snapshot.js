@@ -33,11 +33,14 @@ class HostSnapshotService extends Emitter {
      * @param {Function} options.getProjectData Async () => ArrayBuffer of
      * the serialized project. Called once per transfer.
      */
-    constructor ({session, transport, getProjectData}) {
+    constructor ({session, transport, getProjectData, getTargetIds}) {
         super();
         this.session = session;
         this.transport = transport;
         this.getProjectData = getProjectData;
+        // Optional () => [{id, name, isStage}] captured with the snapshot
+        // so receivers can adopt our target ids (sb3 does not keep them).
+        this.getTargetIds = getTargetIds || null;
         this._transfers = new Map(); // peerId -> transfer state
         this._transferCounter = 0;
 
@@ -81,11 +84,13 @@ class HostSnapshotService extends Emitter {
 
         let buffer;
         let atSeq;
+        let targetIds;
         try {
             // Capture the sequence number BEFORE serializing: ops that land
             // during serialization are not in the snapshot, and the client
             // replays everything after atSeq, so it must not skip them.
             atSeq = this.session.seq;
+            targetIds = this.getTargetIds ? this.getTargetIds() : null;
             buffer = toArrayBuffer(await this.getProjectData());
         } catch (error) {
             this._transfers.delete(peerId);
@@ -106,12 +111,14 @@ class HostSnapshotService extends Emitter {
         };
         this._transfers.set(peerId, transfer);
 
-        this.transport.send(peerId, makeSnapshot(SNAPSHOT.BEGIN, {
+        const beginPayload = {
             transferId,
             totalBytes: buffer.byteLength,
             chunkCount,
             atSeq
-        }));
+        };
+        if (targetIds) beginPayload.targetIds = targetIds;
+        this.transport.send(peerId, makeSnapshot(SNAPSHOT.BEGIN, beginPayload));
         for (let i = 0; i < SEND_WINDOW; i++) {
             this._sendNextChunk(peerId, transfer);
         }
@@ -166,11 +173,14 @@ class ClientSnapshotService extends Emitter {
      * @param {Function} options.applyProjectData Async (ArrayBuffer) =>
      * loads the project into the local document.
      */
-    constructor ({session, transport, applyProjectData}) {
+    constructor ({session, transport, applyProjectData, remapTargetIds}) {
         super();
         this.session = session;
         this.transport = transport;
         this.applyProjectData = applyProjectData;
+        // Optional (targetIds) => void, adopts the host's target ids after
+        // the loaded sb3 regenerated them.
+        this.remapTargetIds = remapTargetIds || null;
         this._incoming = null;
         this._timeout = null;
 
@@ -206,12 +216,13 @@ class ClientSnapshotService extends Emitter {
         this.transport.sendToHost(makeSnapshot(SNAPSHOT.REQUEST, {}));
     }
 
-    _onBegin ({transferId, totalBytes, chunkCount, atSeq}) {
+    _onBegin ({transferId, totalBytes, chunkCount, atSeq, targetIds}) {
         this._incoming = {
             transferId,
             totalBytes,
             chunkCount,
             atSeq,
+            targetIds: targetIds || null,
             chunks: new Array(chunkCount),
             receivedCount: 0,
             receivedBytes: 0
@@ -265,6 +276,16 @@ class ClientSnapshotService extends Emitter {
             this.emit('download-error', {error});
             this.requestResync();
             return;
+        }
+
+        // Adopt the host's target ids BEFORE any queued ops replay, so op
+        // targetIds resolve identically on every peer.
+        if (incoming.targetIds && this.remapTargetIds) {
+            try {
+                this.remapTargetIds(incoming.targetIds);
+            } catch (error) {
+                // Ids stay divergent; name-based fallbacks still work.
+            }
         }
 
         this.session.setBaseSeq(incoming.atSeq);

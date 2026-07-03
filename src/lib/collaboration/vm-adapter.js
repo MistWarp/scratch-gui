@@ -4,6 +4,13 @@ import {serializeEvent, shouldSyncEvent} from './block-serialization.js';
 const MOVE_DEBOUNCE_MS = 50;
 const CREATE_DELAY_MS = 150;
 const TEXT_INPUT_DEBOUNCE_MS = 300;
+// After the GUI rebuilds the workspace from VM state (project load, sprite
+// switch, undo, extension add — anything that emits workspaceUpdate),
+// Blockly fires create/move/var events for the rebuilt blocks
+// ASYNCHRONOUSLY via its own setTimeout queue. Those are renders, not
+// edits; capturing them re-proposes the whole workspace. Suppress capture
+// for a window after every workspaceUpdate.
+const WORKSPACE_REBUILD_SUPPRESS_MS = 500;
 
 /**
  * The capture layer: turns local edits into ops. One instance per
@@ -29,12 +36,19 @@ class VMAdapter {
         this.workspace = null;
 
         this._suppressed = false;
+        this._suppressUntil = 0;
         this._pendingCreates = new Map(); // blockId -> {payload, timer}
         this._pendingMoves = new Map(); // blockId -> {payload, timer}
         this._textDebounces = new Map(); // `${blockId}-${fieldName}` -> timer
         this._syncedProcedureBlocks = new Set();
 
         this._blockListener = this._blockListener.bind(this);
+        this._onWorkspaceUpdate = () => {
+            this._suppressUntil = Date.now() + WORKSPACE_REBUILD_SUPPRESS_MS;
+        };
+        if (this.vm) {
+            this.vm.on('workspaceUpdate', this._onWorkspaceUpdate);
+        }
     }
 
     /**
@@ -49,6 +63,9 @@ class VMAdapter {
         if (!workspace || this.workspace === workspace) return;
         this.detach();
         this.workspace = workspace;
+        // The workspace we just attached to may still be flushing render
+        // events from being (re)built; don't capture those.
+        this._suppressUntil = Date.now() + WORKSPACE_REBUILD_SUPPRESS_MS;
         workspace.addChangeListener(this._blockListener);
         // Procedure definitions that already exist should never be
         // re-sent by syncProcedureBlocks.
@@ -73,6 +90,9 @@ class VMAdapter {
 
     destroy () {
         this.detach();
+        if (this.vm) {
+            this.vm.removeListener('workspaceUpdate', this._onWorkspaceUpdate);
+        }
         this._syncedProcedureBlocks.clear();
     }
 
@@ -129,7 +149,9 @@ class VMAdapter {
     }
 
     isSuppressed () {
-        return this._suppressed || this.applier.isApplyingRemote;
+        return this._suppressed ||
+            this.applier.isApplyingRemote ||
+            Date.now() < this._suppressUntil;
     }
 
     _isSuppressed () {

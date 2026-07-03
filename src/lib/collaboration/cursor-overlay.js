@@ -161,6 +161,7 @@ class CursorOverlay {
         const target = this.vm && this.vm.editingTarget;
         return {
             targetId: target ? target.id : null,
+            targetName: target ? target.getName() : null,
             isStage: target ? target.isStage : false
         };
     }
@@ -170,11 +171,12 @@ class CursorOverlay {
         const metrics = this.workspace.getMetrics && this.workspace.getMetrics();
         const scale = this.workspace.scale || 1;
         const {x, y} = this._lastLocalCursor;
-        const {targetId, isStage} = this._editingTargetInfo();
+        const {targetId, targetName, isStage} = this._editingTargetInfo();
         this.presence.sendCursor({
             x: metrics ? (metrics.viewLeft + x) / scale : x,
             y: metrics ? (metrics.viewTop + y) / scale : y,
             targetId,
+            targetName,
             isStage
         });
     }
@@ -304,9 +306,13 @@ class CursorOverlay {
     }
 
     _project (cursor, position) {
-        // Hide cursors of peers editing a different sprite.
-        const {targetId} = this._editingTargetInfo();
-        if (position.targetId && targetId && position.targetId !== targetId) {
+        // Hide cursors of peers editing a different sprite. Ids are the
+        // primary key; fall back to name matching so cursors survive any
+        // id divergence (e.g. a peer onboarded before ids were remapped).
+        const {targetId, targetName} = this._editingTargetInfo();
+        const idMismatch = position.targetId && targetId && position.targetId !== targetId;
+        const nameMatches = position.targetName && targetName && position.targetName === targetName;
+        if (idMismatch && !nameMatches) {
             cursor.el.style.display = 'none';
             return;
         }
@@ -322,7 +328,12 @@ class CursorOverlay {
     _renderRemoteCursor (userId, payload) {
         if (!this.layer || !this.workspace) return;
         const cursor = this._ensureRemoteCursor(userId);
-        const position = {x: payload.x, y: payload.y, targetId: payload.targetId || null};
+        const position = {
+            x: payload.x,
+            y: payload.y,
+            targetId: payload.targetId || null,
+            targetName: payload.targetName || null
+        };
         this.remotePositions.set(userId, position);
         cursor.label.textContent = this.getUsername(userId) || '';
         this._project(cursor, position);
