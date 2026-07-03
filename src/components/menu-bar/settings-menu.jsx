@@ -31,6 +31,7 @@ const SettingsMenu = ({
     settingsMenuOpen
 }) => (
     <MenuLabel
+        dataItem="view"
         open={settingsMenuOpen}
         onOpen={onRequestOpen}
         onClose={onRequestClose}

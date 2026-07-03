@@ -14,8 +14,9 @@ import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
+import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 
-import {Settings, Zap, Blocks, Palette} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -60,6 +61,10 @@ const messages = defineMessages({
     headerStyles: {
         defaultMessage: 'Styles',
         id: 'mw.settings.stylesHeader'
+    },
+    headerMenuBar: {
+        defaultMessage: 'Menu Bar',
+        id: 'mw.settings.menuBarHeader'
     }
 });
 
@@ -810,6 +815,19 @@ const pageConfigurations = {
             }
         ]
     },
+    menuBar: {
+        sections: [
+            {
+                headerMessage: 'headerMenuBar',
+                settings: [
+                    {
+                        component: MenuBarLayoutSetting,
+                        props: () => ({})
+                    }
+                ]
+            }
+        ]
+    },
     experimental: {
         sections: [
             {
@@ -883,6 +901,10 @@ const StylesPage = props => (<PageRenderer
     config={pageConfigurations.styles}
     {...props}
 />);
+const MenuBarPage = props => (<PageRenderer
+    config={pageConfigurations.menuBar}
+    {...props}
+/>);
 
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
@@ -892,6 +914,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <EditorPage {...handlers} />;
     case 'styles':
         return <StylesPage {...handlers} />;
+    case 'menuBar':
+        return <MenuBarPage {...handlers} />;
     case 'experimental':
         return <ExperimentalPage {...handlers} />;
     default:
@@ -941,6 +965,11 @@ class SettingsModalComponent extends React.Component {
                 id: 'styles',
                 label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
                 icon: Palette
+            },
+            {
+                id: 'menuBar',
+                label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
+                icon: PanelTop
             },
             {
                 id: 'experimental',
