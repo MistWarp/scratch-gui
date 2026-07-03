@@ -18,7 +18,12 @@ const DeleteButton = props => {
             onClick={props.onClick}
         >
             <div className={styles.deleteButtonVisible}>
-                <span className={styles.deleteText}>✕</span>
+                <img
+                    className={styles.deleteIcon}
+                    src={deleteIcon}
+                    draggable={false}
+                    alt="Delete"
+                />
             </div>
         </div>
     );

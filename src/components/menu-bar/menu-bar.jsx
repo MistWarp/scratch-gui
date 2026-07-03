@@ -231,6 +231,32 @@ AboutButton.propTypes = {
     onClick: PropTypes.func.isRequired
 };
 
+const SettingsButton = props => (
+    <Button
+        className={classNames(styles.menuBarItem, styles.hoverable)}
+        iconClassName={styles.aboutIcon}
+        iconElem={Settings}
+        onClick={props.onClick}
+    />
+);
+
+SettingsButton.propTypes = {
+    onClick: PropTypes.func.isRequired
+};
+
+const AddonsButton = props => (
+    <Button
+        className={classNames(styles.menuBarItem, styles.hoverable)}
+        iconClassName={styles.aboutIcon}
+        iconElem={Puzzle}
+        onClick={props.onClick}
+    />
+);
+
+AddonsButton.propTypes = {
+    onClick: PropTypes.func.isRequired
+};
+
 // Unlike <MenuItem href="">, this uses an actual <a>
 const MenuItemLink = props => (
     <a
@@ -1505,37 +1531,8 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickSettingsModal();
-                                            this.props.onRequestCloseEdit();
-                                        }}
-                                        shortcut={formatShortcutDisplay('Ctrl+,')}
-                                    >
-                                        <Settings />
-                                        <FormattedMessage
-                                            defaultMessage="Project Settings"
-                                            description="Menu bar item for settings"
-                                            id="tw.menuBar.moreSettings"
-                                        />
-                                    </MenuItem>
                                     {this.props.onClickDesktopSettings &&
                                         <TWDesktopSettings onClick={this.props.onClickDesktopSettings} />}
-                                    {this.props.onClickAddonSettings && (
-                                        <MenuItem
-                                            onClick={() => {
-                                                this.props.onClickAddonSettings();
-                                                this.props.onRequestCloseEdit();
-                                            }}
-                                        >
-                                            <Puzzle />
-                                            <FormattedMessage
-                                                defaultMessage="Addons"
-                                                description="Menu bar item for addon settings"
-                                                id="tw.menuBar.addons"
-                                            />
-                                        </MenuItem>
-                                    )}
                                     <ChangeUsername>{changeUsername => (
                                         <MenuItem onClick={changeUsername}>
                                             <UserPen />
@@ -1935,6 +1932,12 @@ class MenuBar extends React.Component {
                     <TWSaveStatus
                         showSaveFilePicker={this.props.showSaveFilePicker}
                     />
+                    {this.props.onClickAddonSettings && (
+                        <AddonsButton onClick={this.props.onClickAddonSettings} />
+                    )}
+                    {this.props.onClickSettingsModal && (
+                        <SettingsButton onClick={this.props.onClickSettingsModal} />
+                    )}
                     {aboutButton}
                 </div>
             </Box>
