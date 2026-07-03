@@ -24,7 +24,7 @@ import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
 import downloadBlob from '../lib/utils/download-blob';
 import log from '../lib/utils/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
-import CollaborationService from '../lib/collaboration-service.js';
+import CollaborationService from '../lib/collaboration/index.js';
 
 class TargetPane extends React.Component {
     constructor (props) {

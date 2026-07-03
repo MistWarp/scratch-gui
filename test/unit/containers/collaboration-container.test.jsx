@@ -5,10 +5,10 @@ import {createStore, combineReducers} from 'redux';
 import CollaborationContainer from '../../../src/containers/collaboration-container.jsx';
 import renderer from 'react-test-renderer';
 
-jest.mock('../../../src/lib/collaboration-service.js');
+jest.mock('../../../src/lib/collaboration/index.js');
 jest.mock('../../../src/lib/toast-system.js');
 
-import CollaborationService from '../../../src/lib/collaboration-service.js';
+import CollaborationService from '../../../src/lib/collaboration/index.js';
 import ToastSystem from '../../../src/lib/toast-system.js';
 
 const mockCollaborationService = {
@@ -20,7 +20,11 @@ const mockCollaborationService = {
     changeUsername: jest.fn(),
     getConnectedUsers: jest.fn(() => []),
     getRoomPrivacy: jest.fn(() => 'public'),
-    peer: {id: 'current-user-id'},
+    getCurrentUserId: jest.fn(() => 'current-user-id'),
+    approveJoinRequest: jest.fn(),
+    denyJoinRequest: jest.fn(),
+    changeRoomPrivacy: jest.fn(),
+    attachToWorkspace: jest.fn(),
     disconnect: jest.fn(),
     cancelJoinRequest: jest.fn()
 };
@@ -704,7 +708,7 @@ describe('CollaborationContainer', () => {
         expect(onSetErrorMock).toHaveBeenCalledWith('Failed');
     });
 
-    test('getCurrentUserId returns peer ID', () => {
+    test('getCurrentUserId returns the service peer id', () => {
         const wrapper = mount(
             <Provider store={store}>
                 <CollaborationContainer {...defaultProps} />
@@ -716,8 +720,8 @@ describe('CollaborationContainer', () => {
         expect(userId).toBe('current-user-id');
     });
 
-    test('getCurrentUserId returns null when peer is null', () => {
-        mockCollaborationService.peer = null;
+    test('getCurrentUserId returns null when disconnected', () => {
+        mockCollaborationService.getCurrentUserId.mockReturnValueOnce(null);
         const wrapper = mount(
             <Provider store={store}>
                 <CollaborationContainer {...defaultProps} />
