@@ -394,6 +394,20 @@ const PAYLOAD_VALIDATORS = {
                 }
             }
         }
+        // sb3 files only record extensions whose blocks are used, so the
+        // sender also shares its full loaded-extension list.
+        if (typeof payload.extensions !== 'undefined') {
+            if (!Array.isArray(payload.extensions) || payload.extensions.length > 64) {
+                return 'snapshot-begin invalid extensions';
+            }
+            for (const entry of payload.extensions) {
+                if (!isPlainObject(entry) ||
+                    !isNonEmptyString(entry.id, LIMITS.MAX_STRING) ||
+                    !isOptionalString(entry.url, LIMITS.MAX_STRING)) {
+                    return 'snapshot-begin invalid extensions entry';
+                }
+            }
+        }
         return null;
     },
     [SNAPSHOT.CHUNK]: payload => {
