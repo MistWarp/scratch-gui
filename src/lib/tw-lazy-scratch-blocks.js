@@ -17,6 +17,15 @@ const load = () => {
         .then(m => {
             _ScratchBlocks = m.default;
 
+            try {
+                const operatorUtils = _ScratchBlocks.ScratchBlocks && _ScratchBlocks.ScratchBlocks.OperatorUtils;
+                if (operatorUtils) {
+                    operatorUtils.arrowsHidden = localStorage.getItem('mw:hide-operator-arrows') === 'true';
+                }
+            } catch (e) {
+                // ignore
+            }
+
             const FlyoutProto = _ScratchBlocks.Flyout && _ScratchBlocks.Flyout.prototype;
             if (FlyoutProto) {
                 const originalGetWidth = FlyoutProto.getWidth;

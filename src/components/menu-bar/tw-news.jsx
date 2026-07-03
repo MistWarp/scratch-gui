@@ -35,8 +35,11 @@ class TWNews extends React.Component {
         markAsClosedInLocalStorage();
         this.setState({
             closed: true
+        }, () => {
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
         });
-        window.dispatchEvent(new Event('resize'));
     }
     render () {
         if (this.state.closed || isScratchDesktop()) {

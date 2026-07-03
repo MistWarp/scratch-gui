@@ -9,6 +9,7 @@ import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
 import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
+import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
 
 const messages = defineMessages({
     newFramerate: {
@@ -28,6 +29,7 @@ class UsernameModal extends React.Component {
             showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
+            hideOperatorArrows: getHideOperatorArrows(),
             squareStageCorners: getAppearanceSetting('square-stage-corners'),
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
@@ -58,6 +60,7 @@ class UsernameModal extends React.Component {
             'handleShowFPSCounterChange',
             'handleViewCompiledModeChange',
             'handleStoreThemeInProjectChange',
+            'handleHideOperatorArrowsChange',
             'handleSquareStageCornersChange',
             'handleHideDeleteButtonChange',
             'handleHideExtensionButtonChange',
@@ -217,6 +220,11 @@ class UsernameModal extends React.Component {
         }
     }
 
+    handleHideOperatorArrowsChange (e) {
+        this.setState({hideOperatorArrows: e.target.checked});
+        setHideOperatorArrows(e.target.checked);
+    }
+
     setAppearance_ (stateKey, id, checked) {
         this.setState({[stateKey]: checked});
         setAppearanceSetting(id, checked);
@@ -288,6 +296,8 @@ class UsernameModal extends React.Component {
                 onShowFPSCounterChange={this.handleShowFPSCounterChange}
                 onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
+                onHideOperatorArrowsChange={this.handleHideOperatorArrowsChange}
+                hideOperatorArrows={this.state.hideOperatorArrows}
                 onSquareStageCornersChange={this.handleSquareStageCornersChange}
                 squareStageCorners={this.state.squareStageCorners}
                 onHideDeleteButtonChange={this.handleHideDeleteButtonChange}

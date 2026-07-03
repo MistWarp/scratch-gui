@@ -7,6 +7,7 @@ import log from '../utils/log';
 import sharedMessages from '../constants/shared-messages';
 import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
+import {importRepoFromSb3} from '../git/browser-git';
 
 import {
     LoadingStates,
@@ -213,13 +214,23 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                     }
                 }
 
-                this.props.vm.loadProject(projectData)
-                    .then(() => {
+                // Snapshot the resolved bytes so the async handler below reads a
+                // stable value (projectData may have been reassigned for .html).
+                const loadedBytes = projectData;
+                this.props.vm.loadProject(loadedBytes)
+                    .then(async () => {
                         if (filename) {
                             const uploadedProjectTitle = this.getProjectTitleFromFilename(filename);
                             this.props.onSetProjectTitle(uploadedProjectTitle);
                         }
                         this.props.vm.renderer.draw();
+                        // Restore any git history embedded in the .sb3 (fractch tree + .git),
+                        // or clear a stale repo if the loaded project has none.
+                        try {
+                            await importRepoFromSb3(loadedBytes);
+                        } catch (gitError) {
+                            log.error('Failed to restore embedded git history:', gitError);
+                        }
                         loadingSuccess = true;
                     })
                     .catch(error => {

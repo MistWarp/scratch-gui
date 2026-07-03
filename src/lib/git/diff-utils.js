@@ -97,14 +97,13 @@ const MyersDiff = {
         const result = [];
         let D = trace.length - 1;
 
-        const V = trace[D];
-        const k = x - y;
+        let V = trace[D];
+        let k = x - y;
         const offset = linesA.length + linesB.length;
         let prevK; let prevX; let prevY;
 
         while (D > 0) {
             V = trace[D];
-            offset = linesA.length + linesB.length;
 
             if (k === -D || (k !== D && V[offset + k - 1] < V[offset + k + 1])) {
                 prevK = k + 1;

@@ -16,6 +16,12 @@ const AlertLevels = {
     WARN: 'warn'
 };
 
+// Git status toasts replace each other rather than stacking.
+const GIT_ALERT_IDS = [
+    'gitCommitting', 'gitPushing', 'gitPulling',
+    'gitCommitSuccess', 'gitPushSuccess', 'gitPullSuccess'
+];
+
 const alerts = [
     {
         alertId: 'createSuccess',
@@ -186,6 +192,93 @@ const alerts = [
         ),
         iconSpinner: true,
         level: AlertLevels.INFO
+    },
+    {
+        alertId: 'gitCommitting',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Committing to Git…"
+                description="Message shown while a git commit is in progress"
+                id="mw.alerts.gitCommitting"
+            />
+        ),
+        iconSpinner: true,
+        level: AlertLevels.INFO
+    },
+    {
+        alertId: 'gitPushing',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Pushing to remote…"
+                description="Message shown while a git push is in progress"
+                id="mw.alerts.gitPushing"
+            />
+        ),
+        iconSpinner: true,
+        level: AlertLevels.INFO
+    },
+    {
+        alertId: 'gitPulling',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Pulling from remote…"
+                description="Message shown while a git pull is in progress"
+                id="mw.alerts.gitPulling"
+            />
+        ),
+        iconSpinner: true,
+        level: AlertLevels.INFO
+    },
+    {
+        alertId: 'gitCommitSuccess',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Committed to Git."
+                description="Message shown after a successful git commit"
+                id="mw.alerts.gitCommitSuccess"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
+        alertId: 'gitPushSuccess',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Pushed to remote."
+                description="Message shown after a successful git push"
+                id="mw.alerts.gitPushSuccess"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
+        alertId: 'gitPullSuccess',
+        alertType: AlertTypes.INLINE,
+        clearList: GIT_ALERT_IDS,
+        content: (
+            <FormattedMessage
+                defaultMessage="Pulled from remote."
+                description="Message shown after a successful git pull"
+                id="mw.alerts.gitPullSuccess"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
     },
     {
         alertId: 'twCreatingRestorePoint',
