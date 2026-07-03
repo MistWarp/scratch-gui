@@ -112,7 +112,8 @@ class CollabService extends Emitter {
                     id: target.id,
                     name: target.getName(),
                     isStage: Boolean(target.isStage)
-                }))
+                })),
+            getExtensions: () => this._getLoadedExtensions()
         });
         this._assets = new AssetChannel({
             isHost: true,
@@ -162,7 +163,8 @@ class CollabService extends Emitter {
             session,
             transport: this._transport,
             applyProjectData: buffer => this._loadProjectSuppressed(buffer),
-            remapTargetIds: targetIds => remapTargetIds(this.vm, targetIds)
+            remapTargetIds: targetIds => remapTargetIds(this.vm, targetIds),
+            loadExtensions: extensions => this._loadMissingExtensions(extensions)
         });
         this._assets = new AssetChannel({
             isHost: false,
@@ -280,6 +282,42 @@ class CollabService extends Emitter {
             this._assets.sendAssets('host', payload.assetRefs);
         }
         this._session.submitLocal(type, payload);
+    }
+
+    /**
+     * Every loaded extension as {id, url?}. Builtins travel by id; custom
+     * extensions carry the URL they were loaded from.
+     * @returns {Array.<object>} Loaded extensions.
+     */
+    _getLoadedExtensions () {
+        const manager = this.vm.extensionManager;
+        if (!manager || !manager._loadedExtensions) return [];
+        const urls = typeof manager.getExtensionURLs === 'function' ? manager.getExtensionURLs() : {};
+        return Array.from(manager._loadedExtensions.keys()).map(id => {
+            const entry = {id};
+            if (urls[id]) entry.url = urls[id];
+            return entry;
+        });
+    }
+
+    /**
+     * Load whatever the host has that we don't. Capture is naturally
+     * suppressed: clients cannot propose until onboarding completes.
+     * @param {Array.<object>} extensions Host's [{id, url?}].
+     * @returns {Promise} Resolves when all loads settled.
+     */
+    async _loadMissingExtensions (extensions) {
+        const manager = this.vm.extensionManager;
+        if (!manager) return;
+        for (const {id, url} of extensions) {
+            if (manager.isExtensionLoaded(id)) continue;
+            try {
+                await manager.loadExtensionURL(url || id);
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn(`[Collab] Could not load host extension "${id}":`, error);
+            }
+        }
     }
 
     async _loadProjectSuppressed (buffer) {

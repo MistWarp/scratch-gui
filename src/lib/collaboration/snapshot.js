@@ -33,7 +33,7 @@ class HostSnapshotService extends Emitter {
      * @param {Function} options.getProjectData Async () => ArrayBuffer of
      * the serialized project. Called once per transfer.
      */
-    constructor ({session, transport, getProjectData, getTargetIds}) {
+    constructor ({session, transport, getProjectData, getTargetIds, getExtensions}) {
         super();
         this.session = session;
         this.transport = transport;
@@ -41,6 +41,9 @@ class HostSnapshotService extends Emitter {
         // Optional () => [{id, name, isStage}] captured with the snapshot
         // so receivers can adopt our target ids (sb3 does not keep them).
         this.getTargetIds = getTargetIds || null;
+        // Optional () => [{id, url?}]: every loaded extension, including
+        // ones with no blocks in the project (sb3 drops those).
+        this.getExtensions = getExtensions || null;
         this._transfers = new Map(); // peerId -> transfer state
         this._transferCounter = 0;
 
@@ -85,12 +88,14 @@ class HostSnapshotService extends Emitter {
         let buffer;
         let atSeq;
         let targetIds;
+        let extensions;
         try {
             // Capture the sequence number BEFORE serializing: ops that land
             // during serialization are not in the snapshot, and the client
             // replays everything after atSeq, so it must not skip them.
             atSeq = this.session.seq;
             targetIds = this.getTargetIds ? this.getTargetIds() : null;
+            extensions = this.getExtensions ? this.getExtensions() : null;
             buffer = toArrayBuffer(await this.getProjectData());
         } catch (error) {
             this._transfers.delete(peerId);
@@ -118,6 +123,7 @@ class HostSnapshotService extends Emitter {
             atSeq
         };
         if (targetIds) beginPayload.targetIds = targetIds;
+        if (extensions) beginPayload.extensions = extensions;
         this.transport.send(peerId, makeSnapshot(SNAPSHOT.BEGIN, beginPayload));
         for (let i = 0; i < SEND_WINDOW; i++) {
             this._sendNextChunk(peerId, transfer);
@@ -173,7 +179,7 @@ class ClientSnapshotService extends Emitter {
      * @param {Function} options.applyProjectData Async (ArrayBuffer) =>
      * loads the project into the local document.
      */
-    constructor ({session, transport, applyProjectData, remapTargetIds}) {
+    constructor ({session, transport, applyProjectData, remapTargetIds, loadExtensions}) {
         super();
         this.session = session;
         this.transport = transport;
@@ -181,6 +187,9 @@ class ClientSnapshotService extends Emitter {
         // Optional (targetIds) => void, adopts the host's target ids after
         // the loaded sb3 regenerated them.
         this.remapTargetIds = remapTargetIds || null;
+        // Optional async ([{id, url?}]) => void, matches our loaded
+        // extensions to the host's.
+        this.loadExtensions = loadExtensions || null;
         this._incoming = null;
         this._timeout = null;
 
@@ -216,13 +225,14 @@ class ClientSnapshotService extends Emitter {
         this.transport.sendToHost(makeSnapshot(SNAPSHOT.REQUEST, {}));
     }
 
-    _onBegin ({transferId, totalBytes, chunkCount, atSeq, targetIds}) {
+    _onBegin ({transferId, totalBytes, chunkCount, atSeq, targetIds, extensions}) {
         this._incoming = {
             transferId,
             totalBytes,
             chunkCount,
             atSeq,
             targetIds: targetIds || null,
+            extensions: extensions || null,
             chunks: new Array(chunkCount),
             receivedCount: 0,
             receivedBytes: 0
@@ -285,6 +295,16 @@ class ClientSnapshotService extends Emitter {
                 this.remapTargetIds(incoming.targetIds);
             } catch (error) {
                 // Ids stay divergent; name-based fallbacks still work.
+            }
+        }
+
+        // Match the host's loaded extensions (the sb3 only carries the
+        // ones with blocks in use) before ops that may need them replay.
+        if (incoming.extensions && this.loadExtensions) {
+            try {
+                await this.loadExtensions(incoming.extensions);
+            } catch (error) {
+                // A failed extension load shouldn't abort onboarding.
             }
         }
 
