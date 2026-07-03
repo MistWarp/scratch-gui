@@ -150,6 +150,11 @@ class AddonWindow {
         `;
         
         // Control buttons
+        if (this.minimizable) {
+            const minimizeBtn = this.createControlButton('minimize', 'Minimize', () => this.minimize());
+            controlsElement.appendChild(minimizeBtn);
+        }
+
         if (this.maximizable) {
             const maximizeBtn = this.createControlButton('maximize', 'Maximize', () => this.toggleMaximize());
             this.maximizeBtn = maximizeBtn; // Store reference to update icon when maximized
@@ -210,6 +215,12 @@ class AddonWindow {
         // Create SVG icon based on button type
         let svgIcon = '';
         switch (type) {
+        case 'minimize':
+            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>`;
+            break;
         case 'maximize':
             svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

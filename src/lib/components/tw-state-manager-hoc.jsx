@@ -5,6 +5,8 @@ import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import log from '../utils/log';
 import {defineMessages, intlShape, injectIntl} from 'react-intl';
+import {initAppearanceSettings} from '../mw-appearance-settings';
+import {initStyleSettings} from '../mw-style-settings';
 
 import {
     setUsername
@@ -290,6 +292,9 @@ const TWStateManager = function (WrappedComponent) {
         }
         componentDidMount () {
             const urlParams = new URLSearchParams(location.search);
+
+            initAppearanceSettings();
+            initStyleSettings();
 
             if (urlParams.has('fps')) {
                 const fps = +urlParams.get('fps');

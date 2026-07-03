@@ -45,7 +45,11 @@
 
 .close-icon {
     position: relative;
-    margin: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
     user-select: none;
     transform-origin: 50%;
 }
@@ -59,8 +63,8 @@
 }
 
 .large .close-icon {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: 100%;
+    height: 100%;
 }
 
 .back-icon {

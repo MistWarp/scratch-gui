@@ -12,14 +12,16 @@ import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
+import {STYLE_GROUPS} from '../../lib/mw-style-settings';
+import StylePreview from './style-preview.jsx';
 
-import {Settings, Zap} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Project Settings',
+        defaultMessage: 'Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
     },
@@ -46,6 +48,18 @@ const messages = defineMessages({
     headerExperimental: {
         defaultMessage: 'Experimental',
         id: 'mw.settings.experimental'
+    },
+    headerEditor: {
+        defaultMessage: 'Editor',
+        id: 'mw.settings.editor'
+    },
+    headerInterface: {
+        defaultMessage: 'Interface',
+        id: 'mw.settings.interface'
+    },
+    headerStyles: {
+        defaultMessage: 'Styles',
+        id: 'mw.settings.stylesHeader'
     }
 });
 
@@ -290,6 +304,46 @@ const settingDefinitions = {
             description: 'Real Layer Indexes help',
             id: 'tw.settingsModal.realLayerIndexesHelp'
         }
+    },
+    squareStageCorners: {
+        label: {
+            defaultMessage: 'Square Stage Corners',
+            id: 'mw.settingsModal.squareStageCorners'
+        },
+        help: {
+            defaultMessage: 'Removes the rounded corners from the stage.',
+            id: 'mw.settingsModal.squareStageCornersHelp'
+        }
+    },
+    hideDeleteButton: {
+        label: {
+            defaultMessage: 'Hide Delete Button',
+            id: 'mw.settingsModal.hideDeleteButton'
+        },
+        help: {
+            defaultMessage: 'Hides the delete button on sprites, costumes, and sounds.',
+            id: 'mw.settingsModal.hideDeleteButtonHelp'
+        }
+    },
+    hideExtensionButton: {
+        label: {
+            defaultMessage: 'Hide Extension Button',
+            id: 'mw.settingsModal.hideExtensionButton'
+        },
+        help: {
+            defaultMessage: 'Hides the add extension button in the bottom-left of the block palette.',
+            id: 'mw.settingsModal.hideExtensionButtonHelp'
+        }
+    },
+    hideBackpack: {
+        label: {
+            defaultMessage: 'Hide Backpack',
+            id: 'mw.settingsModal.hideBackpack'
+        },
+        help: {
+            defaultMessage: 'Hides the backpack bar at the bottom of the editor.',
+            id: 'mw.settingsModal.hideBackpackHelp'
+        }
     }
 };
 
@@ -321,6 +375,123 @@ const RemoveMiscLimits = createBooleanSetting('RemoveMiscLimits', settingDefinit
 const WarpTimer = createBooleanSetting('WarpTimer', settingDefinitions.warpTimer);
 const CaseSensitiveLists = createBooleanSetting('CaseSensitiveLists', settingDefinitions.caseSensitiveLists);
 const RealLayerIndexes = createBooleanSetting('RealLayerIndexes', settingDefinitions.realLayerIndexes);
+const SquareStageCorners = createBooleanSetting('SquareStageCorners', settingDefinitions.squareStageCorners);
+const HideDeleteButton = createBooleanSetting('HideDeleteButton', settingDefinitions.hideDeleteButton);
+const HideExtensionButton = createBooleanSetting('HideExtensionButton', settingDefinitions.hideExtensionButton);
+const HideBackpack = createBooleanSetting('HideBackpack', settingDefinitions.hideBackpack);
+
+const STYLE_OPTIONS = {
+    'tab-style': [
+        {value: 'mistwarp', label: 'MistWarp'},
+        {value: 'turbowarp', label: 'TurboWarp'},
+        {value: 'scratchbox', label: 'ScratchBox'}
+    ],
+    'tab-looks': [
+        {value: 'default', label: 'Default'},
+        {value: 'icon-only', label: 'Icon Only'},
+        {value: 'text-only', label: 'Text Only'}
+    ],
+    'window-style': [
+        {value: 'mistwarp', label: 'MistWarp'},
+        {value: 'macos', label: 'macOS'},
+        {value: 'windows10', label: 'Windows 10'}
+    ]
+};
+
+const getOptionCss = (groupId, value) => {
+    const group = STYLE_GROUPS.find(g => g.id === groupId);
+    if (!group) return null;
+    const option = group.options.find(o => o.value === value);
+    return option ? option.css : null;
+};
+
+const StyleOption = ({groupId, option, selected, onSelect}) => (
+    <button
+        type="button"
+        className={classNames(styles.styleOption, {[styles.styleOptionSelected]: selected})}
+        onClick={() => onSelect(option.value)}
+    >
+        <div className={styles.stylePreview}>
+            <StylePreview
+                type={groupId === 'window-style' ? 'window' : 'tabs'}
+                variant={option.value}
+                css={getOptionCss(groupId, option.value)}
+            />
+        </div>
+        <span className={styles.styleOptionLabel}>{option.label}</span>
+    </button>
+);
+StyleOption.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    option: PropTypes.shape({
+        value: PropTypes.string,
+        label: PropTypes.string
+    }).isRequired,
+    selected: PropTypes.bool,
+    onSelect: PropTypes.func.isRequired
+};
+
+const StyleSelect = ({groupId, label, value, onChange}) => (
+    <div className={styles.setting}>
+        <div className={styles.label}>{label}</div>
+        <div className={styles.stylePicker}>
+            {STYLE_OPTIONS[groupId].map(option => (
+                <StyleOption
+                    key={option.value}
+                    groupId={groupId}
+                    option={option}
+                    selected={value === option.value}
+                    onSelect={onChange}
+                />
+            ))}
+        </div>
+    </div>
+);
+StyleSelect.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    label: PropTypes.node,
+    value: PropTypes.string,
+    onChange: PropTypes.func.isRequired
+};
+
+const TabStyleSelect = props => (
+    <StyleSelect
+        groupId="tab-style"
+        label={<FormattedMessage
+            defaultMessage="Tab Style"
+            id="mw.settingsModal.tabStyle"
+        />}
+        value={props.value}
+        onChange={props.onChange}
+    />
+);
+TabStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func};
+
+const TabLooksSelect = props => (
+    <StyleSelect
+        groupId="tab-looks"
+        label={<FormattedMessage
+            defaultMessage="Tab Looks"
+            id="mw.settingsModal.tabLooks"
+        />}
+        value={props.value}
+        onChange={props.onChange}
+    />
+);
+TabLooksSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func};
+
+const WindowStyleSelect = props => (
+    <StyleSelect
+        groupId="window-style"
+        label={<FormattedMessage
+            defaultMessage="Window Style"
+            id="mw.settingsModal.windowStyle"
+        />}
+        value={props.value}
+        onChange={props.onChange}
+    />
+);
+WindowStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func};
 
 const CustomFPS = ({framerate, onChange, onCustomizeFramerate}) => (
     <BooleanSetting
@@ -572,6 +743,73 @@ const pageConfigurations = {
             }
         ]
     },
+    editor: {
+        sections: [
+            {
+                headerMessage: 'headerInterface',
+                settings: [
+                    {
+                        component: SquareStageCorners,
+                        props: props => ({
+                            value: props.squareStageCorners,
+                            onChange: props.onSquareStageCornersChange
+                        })
+                    },
+                    {
+                        component: HideDeleteButton,
+                        props: props => ({
+                            value: props.hideDeleteButton,
+                            onChange: props.onHideDeleteButtonChange
+                        })
+                    },
+                    {
+                        component: HideExtensionButton,
+                        props: props => ({
+                            value: props.hideExtensionButton,
+                            onChange: props.onHideExtensionButtonChange
+                        })
+                    },
+                    {
+                        component: HideBackpack,
+                        props: props => ({
+                            value: props.hideBackpack,
+                            onChange: props.onHideBackpackChange
+                        })
+                    }
+                ]
+            }
+        ]
+    },
+    styles: {
+        sections: [
+            {
+                headerMessage: 'headerStyles',
+                settings: [
+                    {
+                        component: TabStyleSelect,
+                        props: props => ({
+                            value: props.tabStyle,
+                            onChange: props.onTabStyleChange
+                        })
+                    },
+                    {
+                        component: TabLooksSelect,
+                        props: props => ({
+                            value: props.tabLooks,
+                            onChange: props.onTabLooksChange
+                        })
+                    },
+                    {
+                        component: WindowStyleSelect,
+                        props: props => ({
+                            value: props.windowStyle,
+                            onChange: props.onWindowStyleChange
+                        })
+                    }
+                ]
+            }
+        ]
+    },
     experimental: {
         sections: [
             {
@@ -637,11 +875,23 @@ const ExperimentalPage = props => (<PageRenderer
     config={pageConfigurations.experimental}
     {...props}
 />);
+const EditorPage = props => (<PageRenderer
+    config={pageConfigurations.editor}
+    {...props}
+/>);
+const StylesPage = props => (<PageRenderer
+    config={pageConfigurations.styles}
+    {...props}
+/>);
 
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
+    case 'editor':
+        return <EditorPage {...handlers} />;
+    case 'styles':
+        return <StylesPage {...handlers} />;
     case 'experimental':
         return <ExperimentalPage {...handlers} />;
     default:
@@ -681,6 +931,16 @@ class SettingsModalComponent extends React.Component {
                 id: 'general',
                 label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
                 icon: Settings
+            },
+            {
+                id: 'editor',
+                label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),
+                icon: Blocks
+            },
+            {
+                id: 'styles',
+                label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
+                icon: Palette
             },
             {
                 id: 'experimental',
@@ -749,6 +1009,20 @@ SettingsModalComponent.propTypes = {
     onCaseSensitiveListsChange: PropTypes.func,
     realLayerIndexes: PropTypes.bool,
     onRealLayerIndexesChange: PropTypes.func,
+    squareStageCorners: PropTypes.bool,
+    onSquareStageCornersChange: PropTypes.func,
+    hideDeleteButton: PropTypes.bool,
+    onHideDeleteButtonChange: PropTypes.func,
+    hideExtensionButton: PropTypes.bool,
+    onHideExtensionButtonChange: PropTypes.func,
+    hideBackpack: PropTypes.bool,
+    onHideBackpackChange: PropTypes.func,
+    tabStyle: PropTypes.string,
+    onTabStyleChange: PropTypes.func,
+    tabLooks: PropTypes.string,
+    onTabLooksChange: PropTypes.func,
+    windowStyle: PropTypes.string,
+    onWindowStyleChange: PropTypes.func,
     customStageSizeEnabled: PropTypes.bool,
     stageWidth: PropTypes.number,
     onStageWidthChange: PropTypes.func,

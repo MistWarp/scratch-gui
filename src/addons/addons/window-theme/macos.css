@@ -1,7 +1,7 @@
 .addon-window {
   border-radius: 16px !important;
   backdrop-filter: blur(30px) saturate(180%) !important;
-  background: linear-gradient(135deg, var(--ui-modal-background, #ffffff) 0%, var(--ui-primary, #f8f9fa) 100%) !important;
+  background: var(--ui-modal-background, #ffffff) !important;
 }
 
 .addon-window:hover {
@@ -9,7 +9,7 @@
 }
 
 .addon-window-header {
-  background: linear-gradient(135deg, var(--ui-secondary, #f8f9fa) 0%, var(--ui-primary, #ffffff) 100%) !important;
+  background: var(--ui-secondary, #f8f9fa) !important;
   border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08)) !important;
   backdrop-filter: blur(20px) !important;
   padding: 12px 16px !important;
@@ -84,7 +84,7 @@
 
 .addon-window-content {
   border-radius: 0 0 16px 16px !important;
-  background: rgba(255, 255, 255, 0.6) !important;
+  background: var(--ui-modal-background, #ffffff) !important;
   backdrop-filter: blur(10px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.06)) !important;
 }

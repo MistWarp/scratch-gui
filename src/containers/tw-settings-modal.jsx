@@ -7,6 +7,8 @@ import {closeSettingsModal} from '../reducers/modals';
 import SettingsModalComponent from '../components/tw-settings-modal/settings-modal.jsx';
 import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
+import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
+import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
 
 const messages = defineMessages({
     newFramerate: {
@@ -25,7 +27,14 @@ class UsernameModal extends React.Component {
             debugMode: localStorage.getItem('mw:debug-mode') === 'true',
             showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
-            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true'
+            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
+            squareStageCorners: getAppearanceSetting('square-stage-corners'),
+            hideDeleteButton: getAppearanceSetting('hide-delete-button'),
+            hideExtensionButton: getAppearanceSetting('hide-extension-button'),
+            hideBackpack: getAppearanceSetting('hide-backpack'),
+            tabStyle: getStyleSetting('tab-style'),
+            tabLooks: getStyleSetting('tab-looks'),
+            windowStyle: getStyleSetting('window-style')
         };
 
         bindAll(this, [
@@ -48,7 +57,14 @@ class UsernameModal extends React.Component {
             'handleDebugModeChange',
             'handleShowFPSCounterChange',
             'handleViewCompiledModeChange',
-            'handleStoreThemeInProjectChange'
+            'handleStoreThemeInProjectChange',
+            'handleSquareStageCornersChange',
+            'handleHideDeleteButtonChange',
+            'handleHideExtensionButtonChange',
+            'handleHideBackpackChange',
+            'handleTabStyleChange',
+            'handleTabLooksChange',
+            'handleWindowStyleChange'
         ]);
     }
 
@@ -200,6 +216,42 @@ class UsernameModal extends React.Component {
             // ignore
         }
     }
+
+    setAppearance_ (stateKey, id, checked) {
+        this.setState({[stateKey]: checked});
+        setAppearanceSetting(id, checked);
+    }
+
+    handleSquareStageCornersChange (e) {
+        this.setAppearance_('squareStageCorners', 'square-stage-corners', e.target.checked);
+    }
+
+    handleHideDeleteButtonChange (e) {
+        this.setAppearance_('hideDeleteButton', 'hide-delete-button', e.target.checked);
+    }
+
+    handleHideExtensionButtonChange (e) {
+        this.setAppearance_('hideExtensionButton', 'hide-extension-button', e.target.checked);
+    }
+
+    handleHideBackpackChange (e) {
+        this.setAppearance_('hideBackpack', 'hide-backpack', e.target.checked);
+    }
+
+    handleTabStyleChange (value) {
+        this.setState({tabStyle: value});
+        setStyleSetting('tab-style', value);
+    }
+
+    handleTabLooksChange (value) {
+        this.setState({tabLooks: value});
+        setStyleSetting('tab-looks', value);
+    }
+
+    handleWindowStyleChange (value) {
+        this.setState({windowStyle: value});
+        setStyleSetting('window-style', value);
+    }
     render () {
         const {
             /* eslint-disable no-unused-vars */
@@ -236,6 +288,20 @@ class UsernameModal extends React.Component {
                 onShowFPSCounterChange={this.handleShowFPSCounterChange}
                 onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
+                onSquareStageCornersChange={this.handleSquareStageCornersChange}
+                squareStageCorners={this.state.squareStageCorners}
+                onHideDeleteButtonChange={this.handleHideDeleteButtonChange}
+                hideDeleteButton={this.state.hideDeleteButton}
+                onHideExtensionButtonChange={this.handleHideExtensionButtonChange}
+                hideExtensionButton={this.state.hideExtensionButton}
+                onHideBackpackChange={this.handleHideBackpackChange}
+                hideBackpack={this.state.hideBackpack}
+                onTabStyleChange={this.handleTabStyleChange}
+                tabStyle={this.state.tabStyle}
+                onTabLooksChange={this.handleTabLooksChange}
+                tabLooks={this.state.tabLooks}
+                onWindowStyleChange={this.handleWindowStyleChange}
+                windowStyle={this.state.windowStyle}
                 optimizeAnimations={this.state.optimizeAnimations}
                 debugMode={this.state.debugMode}
                 showFPSCounter={this.state.showFPSCounter}
@@ -260,6 +326,7 @@ UsernameModal.propTypes = {
         setInterpolation: PropTypes.func,
         setRuntimeOptions: PropTypes.func,
         setStageSize: PropTypes.func,
+        setExtendableOperators: PropTypes.func,
         storeProjectOptions: PropTypes.func
     }),
     isEmbedded: PropTypes.bool,
