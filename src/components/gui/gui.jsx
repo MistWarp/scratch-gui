@@ -506,6 +506,7 @@ const GUIComponent = props => {
         showSaveFilePicker,
         soundsTabVisible,
         stageSizeMode,
+        stageSizeRequestId,
         targetIsStage,
         telemetryModalVisible,
         theme,
