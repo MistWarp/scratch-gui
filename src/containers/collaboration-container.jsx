@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import {compose} from 'redux';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
-import CollaborationService from '../lib/collaboration-service.js';
+import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 
 import {
@@ -15,7 +15,9 @@ import {
     setCollaborationRoomId,
     setCollaborationRoomPrivacy,
     setCollaborationLoading,
-    setCollaborationHostLoadingProgress
+    setCollaborationHostLoadingProgress,
+    setSpriteEditor,
+    removeSpriteEditor
 } from '../reducers/collaboration';
 
 import {
@@ -63,6 +65,9 @@ class CollaborationContainer extends Component {
         this.handleHostLoadingStart = this.handleHostLoadingStart.bind(this);
         this.handleHostLoadingProgress = this.handleHostLoadingProgress.bind(this);
         this.handleHostLoadingComplete = this.handleHostLoadingComplete.bind(this);
+        this.handleProjectSyncWait = this.handleProjectSyncWait.bind(this);
+        this.handleSessionReady = this.handleSessionReady.bind(this);
+        this.handlePresenceEditingChanged = this.handlePresenceEditingChanged.bind(this);
     }
 
     componentDidMount () {
@@ -95,6 +100,7 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.on('session-ready', this.handleSessionReady);
+        this.collaborationService.on('presence-editing-changed', this.handlePresenceEditingChanged);
 
         this.projectSyncProgress = 0;
         this.projectSyncLoadingBar = null;
@@ -122,6 +128,7 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.off('session-ready', this.handleSessionReady);
+        this.collaborationService.off('presence-editing-changed', this.handlePresenceEditingChanged);
 
         // Clear waiting overlay if it exists
         this.clearWaitingOverlay();
@@ -399,7 +406,7 @@ class CollaborationContainer extends Component {
     }
 
     getCurrentUserId () {
-        return this.collaborationService.peer ? this.collaborationService.peer.id : null;
+        return this.collaborationService.getCurrentUserId();
     }
 
     handleProjectSyncDownloadStart () {
@@ -496,6 +503,15 @@ class CollaborationContainer extends Component {
         this.clearWaitingOverlay();
     }
 
+    handlePresenceEditingChanged ({userId, username, targetId, previousTargetId}) {
+        if (previousTargetId) {
+            this.props.onRemoveSpriteEditor(previousTargetId, userId);
+        }
+        if (targetId) {
+            this.props.onSetSpriteEditor(targetId, userId, username, Date.now());
+        }
+    }
+
     render () {
         return (
             <CollaborationModal
@@ -542,6 +558,8 @@ CollaborationContainer.propTypes = {
     onSetUsername: PropTypes.func.isRequired,
     onSetCollabLoading: PropTypes.func.isRequired,
     onSetHostLoadingProgress: PropTypes.func.isRequired,
+    onSetSpriteEditor: PropTypes.func.isRequired,
+    onRemoveSpriteEditor: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired
 };
 
@@ -566,6 +584,9 @@ const mapDispatchToProps = dispatch => ({
     onSetUsername: username => dispatch(setUsername(username)),
     onSetCollabLoading: (isLoading, message) => dispatch(setCollaborationLoading(isLoading, message)),
     onSetHostLoadingProgress: progress => dispatch(setCollaborationHostLoadingProgress(progress)),
+    onSetSpriteEditor: (spriteId, userId, username, timestamp) =>
+        dispatch(setSpriteEditor(spriteId, userId, username, timestamp)),
+    onRemoveSpriteEditor: (spriteId, userId) => dispatch(removeSpriteEditor(spriteId, userId)),
     onOpenChangeUsername: () => dispatch(openUsernameModal())
 });
 

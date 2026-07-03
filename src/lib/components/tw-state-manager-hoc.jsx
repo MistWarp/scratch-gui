@@ -22,6 +22,7 @@ import {
     setFullScreen
 } from '../../reducers/mode';
 import {generateRandomUsername} from '../utils/tw-username';
+import CollaborationService from '../collaboration/index.js';
 import {setSearchParams} from '../utils/navigation';
 import {defaultStageSize} from '../../reducers/custom-stage-size';
 
@@ -408,11 +409,9 @@ const TWStateManager = function (WrappedComponent) {
                 setLocalStorage(USERNAME_KEY, this.props.username);
                 
                 // Sync username with collaboration service if connected
-                if (typeof window !== 'undefined' &&
-                    window.CollaborationService &&
-                    prevProps.username && this.props.username) {
+                if (prevProps.username && this.props.username) {
                     try {
-                        const service = window.CollaborationService.getInstance();
+                        const service = CollaborationService.getInstance();
                         if (service && service.isConnectedToHostPeer()) {
                             service.changeUsername(this.props.username);
                         }

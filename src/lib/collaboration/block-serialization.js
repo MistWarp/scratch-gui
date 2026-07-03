@@ -1,4 +1,10 @@
-const serializeEvent = (service, event) => {
+/**
+ * (De)serialization of Blockly workspace events for the wire.
+ * Ported from the old event-serialization.js; takes vm/workspace
+ * explicitly instead of reaching into a service object.
+ */
+
+const serializeEvent = (vm, event) => {
     const json = event.toJson();
 
     if (event.type === 'move') {
@@ -56,15 +62,7 @@ const serializeEvent = (service, event) => {
         if (event.commentId) json.commentId = event.commentId;
     }
 
-    if (event.type === 'var_create') {
-        if (typeof event.varType !== 'undefined') json.varType = event.varType;
-        if (typeof event.varName !== 'undefined') json.varName = event.varName;
-        if (typeof event.isLocal !== 'undefined') json.isLocal = event.isLocal;
-        if (typeof event.isCloud !== 'undefined') json.isCloud = event.isCloud;
-        if (event.varId) json.varId = event.varId;
-    }
-
-    if (event.type === 'var_delete') {
+    if (event.type === 'var_create' || event.type === 'var_delete') {
         if (typeof event.varType !== 'undefined') json.varType = event.varType;
         if (typeof event.varName !== 'undefined') json.varName = event.varName;
         if (typeof event.isLocal !== 'undefined') json.isLocal = event.isLocal;
@@ -78,30 +76,25 @@ const serializeEvent = (service, event) => {
         if (event.varId) json.varId = event.varId;
     }
 
-    const target = service.vm.editingTarget;
+    const target = vm && vm.editingTarget;
     if (target) {
         json.targetName = target.getName();
     }
     return json;
 };
 
-const reconstructEvent = (service, serializedEvent) => {
-    if (!serializedEvent) {
-        return null;
-    }
-
-    if (!service.workspace) {
+const reconstructEvent = (workspace, serializedEvent) => {
+    if (!serializedEvent || !workspace) {
         return null;
     }
 
     const ScratchBlocks = window.ScratchBlocks;
-
     if (!ScratchBlocks || !ScratchBlocks.Events || !ScratchBlocks.Events.fromJson) {
         return null;
     }
 
     try {
-        const event = ScratchBlocks.Events.fromJson(serializedEvent, service.workspace);
+        const event = ScratchBlocks.Events.fromJson(serializedEvent, workspace);
 
         if (event.type === 'move' && serializedEvent.oldCoordinate) {
             const xy = serializedEvent.oldCoordinate.split(',');
@@ -133,7 +126,7 @@ const reconstructEvent = (service, serializedEvent) => {
                 try {
                     event.xml = ScratchBlocks.Xml.textToDom(`<xml>${serializedEvent.xml}</xml>`).firstChild;
                 } catch (e) {
-                    // XML parsing failed
+                    // XML parsing failed; create will fall back to no-op
                 }
             }
         }
@@ -158,15 +151,7 @@ const reconstructEvent = (service, serializedEvent) => {
             if (serializedEvent.commentId) event.commentId = serializedEvent.commentId;
         }
 
-        if (event.type === 'var_create') {
-            if (typeof serializedEvent.varType !== 'undefined') event.varType = serializedEvent.varType;
-            if (typeof serializedEvent.varName !== 'undefined') event.varName = serializedEvent.varName;
-            if (typeof serializedEvent.isLocal !== 'undefined') event.isLocal = serializedEvent.isLocal;
-            if (typeof serializedEvent.isCloud !== 'undefined') event.isCloud = serializedEvent.isCloud;
-            if (serializedEvent.varId) event.varId = serializedEvent.varId;
-        }
-
-        if (event.type === 'var_delete') {
+        if (event.type === 'var_create' || event.type === 'var_delete') {
             if (typeof serializedEvent.varType !== 'undefined') event.varType = serializedEvent.varType;
             if (typeof serializedEvent.varName !== 'undefined') event.varName = serializedEvent.varName;
             if (typeof serializedEvent.isLocal !== 'undefined') event.isLocal = serializedEvent.isLocal;
@@ -186,33 +171,29 @@ const reconstructEvent = (service, serializedEvent) => {
     }
 };
 
-const shouldSyncEvent = (service, event) => {
+const SYNCABLE_EVENTS = [
+    'create', 'delete', 'change', 'move',
+    'var_create', 'var_delete', 'var_rename',
+    'comment_create', 'comment_delete', 'comment_change', 'comment_move'
+];
+
+const shouldSyncEvent = event => {
     if (!event || !event.type) {
         return false;
     }
-
-    const syncableEvents = [
-        'create', 'delete', 'change', 'move',
-        'var_create', 'var_delete', 'var_rename',
-        'comment_create', 'comment_delete', 'comment_change', 'comment_move'
-    ];
-
-    if (!syncableEvents.includes(event.type)) {
+    if (SYNCABLE_EVENTS.indexOf(event.type) === -1) {
         return false;
     }
-
     if (event.type === 'change') {
         if (event.element === 'select' || event.element === 'click') {
             return false;
         }
     }
-
     if (event.type === 'create') {
         if (event.xml && typeof event.xml === 'object' && event.xml.nodeName === 'shadow') {
             return false;
         }
     }
-
     return true;
 };
 

@@ -47,7 +47,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
-import CollaborationService from '../lib/collaboration-service.js';
+import CollaborationService from '../lib/collaboration/index.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -1239,73 +1239,13 @@ class Blocks extends React.Component {
         this.setState({prompt: null});
     }
     handleCustomProceduresClose (data) {
+        // The custom procedure modal creates blocks with Blockly events
+        // disabled; ask the collaboration engine to capture them.
         const collaborationService = CollaborationService.getInstance();
-        const newProcedureBlocks = [];
-        const allBlocks = this.workspace.getAllBlocks(true);
-        
-        allBlocks.forEach(block => {
-            if (block.type === 'procedures_definition') {
-                const blockId = block.id;
-                if (!window._syncedProcedureBlocks) {
-                    window._syncedProcedureBlocks = new Set();
-                }
-                
-                if (!window._syncedProcedureBlocks.has(blockId)) {
-                    newProcedureBlocks.push(block);
-                    window._syncedProcedureBlocks.add(blockId);
-                }
-            }
-        });
-        
-        if (collaborationService && collaborationService.isConnected) {
-            console.log('[Blocks] Collaboration connected, syncing', newProcedureBlocks.length, 'procedure blocks');
-            
-            if (newProcedureBlocks.length > 0) {
-                newProcedureBlocks.forEach(block => {
-                    try {
-                        const xml = this.ScratchBlocks.Xml.blockToDom(block);
-                        const xmlText = this.ScratchBlocks.Xml.domToText(xml);
-                        
-                        const event = {
-                            type: 'create',
-                            blockId: block.id,
-                            xml: xmlText,
-                            workspaceId: this.workspace.id,
-                            recordUndo: false
-                        };
-                        
-                        const eventOrigin = (collaborationService.peer && collaborationService.peer.id) ?
-                            collaborationService.peer.id : 'local';
-                        
-                        const localTarget = this.props.vm.editingTarget ? this.props.vm.editingTarget : null;
-                        const targetName = localTarget ? localTarget.getName() : null;
-                        
-                        const randomPart = Math.random().toString(36)
-                            .slice(2, 8);
-
-                        const eid = `${eventOrigin}-${Date.now()}-${randomPart}`;
-                        
-                        console.log('[Blocks] Sending procedure block to collaborators:', {
-                            blockId: block.id,
-                            eventId: eid,
-                            xmlLength: xmlText.length
-                        });
-                        
-                        collaborationService.sendMessage('block-event', {
-                            event: event,
-                            targetName: targetName,
-                            eventId: eid,
-                            eventOrigin: eventOrigin,
-                            timestamp: Date.now()
-                        });
-                        
-                    } catch (e) {
-                        console.error('[Blocks] Error syncing procedure block:', e);
-                    }
-                });
-            }
+        if (collaborationService.isConnected) {
+            collaborationService.flushProcedureBlocks();
         }
-        
+
         this.props.onRequestCloseCustomProcedures(data);
         const ws = this.workspace;
         ws.refreshToolboxSelection_();

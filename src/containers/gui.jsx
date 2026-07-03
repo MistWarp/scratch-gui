@@ -23,7 +23,6 @@ import {
 import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
 import {setFullScreen} from '../reducers/mode';
-import collaborationService from '../lib/collaboration-service.js';
 
 import {
     closeCostumeLibrary,
@@ -138,16 +137,6 @@ class GUI extends React.Component {
             this.props.onProjectLoaded();
         }
 
-        // Sync costume when tab changes from costumes tab
-        if (prevProps.activeTabIndex === COSTUMES_TAB_INDEX &&
-            this.props.activeTabIndex !== COSTUMES_TAB_INDEX) {
-            if (collaborationService) {
-                const serviceInstance = collaborationService.getInstance();
-                if (serviceInstance) {
-                    serviceInstance.syncCurrentCostume();
-                }
-            }
-        }
     }
     render () {
         if (this.props.isError) {
