@@ -376,6 +376,14 @@ const vmListenerHOC = function (WrappedComponent) {
         onInterpolationChanged: interpolation => dispatch(setInterpolationState(interpolation)),
         onCompilerOptionsChanged: options => dispatch(setCompilerOptionsState(options)),
         onPlatformMismatch: (platform, callback) => {
+            const isTurboWarp = platform && (
+                platform.name === 'TurboWarp' ||
+                (platform.url && platform.url.includes('turbowarp.org'))
+            );
+            if (isTurboWarp) {
+                callback();
+                return;
+            }
             dispatch(setPlatformMismatchDetails(platform, callback));
             dispatch(openUnknownPlatformModal());
         },

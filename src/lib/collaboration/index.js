@@ -321,11 +321,13 @@ class CollabService extends Emitter {
     }
 
     async _loadProjectSuppressed (buffer) {
+        this.emit('project-sync-apply-start');
         this._adapter.setSuppressed(true);
         try {
             await this.vm.loadProject(buffer);
         } finally {
             this._adapter.setSuppressed(false);
+            this.emit('project-sync-apply-complete');
         }
         // Loading rebuilt the workspace contents; re-hook capture.
         this.emit('request-workspace-reattach');
