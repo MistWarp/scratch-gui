@@ -2,105 +2,347 @@
 
 .container {
     display: flex;
+    flex: 1;
     height: 100%;
+    min-height: 0;
     overflow: hidden;
+    background: $ui-modal-background;
 }
 
 .sidebar {
-    width: 240px;
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
     border-right: 1px solid $ui-black-transparent;
-    background: $ui-secondary;
-    padding: 16px 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-}
-
-.sidebarHeader {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 16px 12px;
-    border-bottom: 1px solid $ui-black-transparent;
-    margin-bottom: 12px;
-}
-
-.sidebarTitle {
-    font-size: 0.875rem;
-    font-weight: bold;
-    opacity: 0.7;
+    flex-shrink: 0;
+    min-height: 100%;
 }
 
 .searchContainer {
     position: relative;
-    margin: 0 16px 12px;
+    padding: 0.75rem;
+    flex-shrink: 0;
 }
 
 .searchIcon {
     position: absolute;
-    left: 8px;
+    left: 1.5rem;
     top: 50%;
     transform: translateY(-50%);
-    color: $text-primary;
-    opacity: 0.5;
+    color: color-mix(in srgb, $text-primary 45%, transparent);
+    pointer-events: none;
+    z-index: 1;
 }
 
-.searchInput {
-    width: calc(100% - 40px);
-    padding-left: 28px;
-    font-size: 0.75rem;
-    height: 28px;
+.searchContainer .searchInput {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 2rem;
+    padding-left: 2.25rem;
+    padding-right: 0.75rem;
+    font-size: 0.8125rem;
 }
 
-.categoryList {
+.sidebarItems {
     flex: 1;
     overflow-y: auto;
-    padding: 0 16px;
+    padding: 0.5rem;
+    height: 100%;
 }
 
-.categoryItem {
+.sidebarItems::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebarItems::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebarItems::-webkit-scrollbar-thumb {
+    background: $ui-black-transparent;
+    border-radius: 3px;
+}
+
+.sidebarItems::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.sidebarItem {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 8px;
-    margin: 2px 0;
-    border-radius: 4px;
+    padding: 0.625rem 0.75rem;
+    margin: 0.25rem 0;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.75rem;
-    transition: background-color 0.1s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-primary;
+    position: relative;
+    overflow: hidden;
 }
 
-.categoryItem:hover {
-    background-color: $ui-black-transparent;
+.sidebarItem:hover {
+    background: $ui-tertiary;
+    transform: translateX(2px);
 }
 
-.categoryItem.selected {
-    background-color: $looks-secondary;
-    color: $ui-primary;
-    font-weight: bold;
+.sidebarItem.selected {
+    background: $looks-transparent;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.categoryLabel {
+.sidebarIcon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.625rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.sidebarLabel {
     flex: 1;
+    position: relative;
+    z-index: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .categoryCount {
+    position: relative;
+    z-index: 1;
+    min-width: 1.25rem;
+    text-align: center;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
     background: $ui-black-transparent;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    opacity: 0.7;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
 }
 
-.categoryItem.selected .categoryCount {
-    background: rgba(255, 255, 255, 0.2);
-    opacity: 1;
+.sidebarItem.selected .categoryCount {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
 }
 
 .content {
     flex: 1;
-    padding: 16px;
     overflow-y: auto;
+    padding: 1.5rem 2rem;
+    min-height: 0;
+}
+
+.content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+    background: $ui-black-transparent;
+    border-radius: 4px;
+}
+
+.section {
+    margin-bottom: 1.5rem;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0 0 0.5rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.sectionIcon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.sectionDivider {
+    flex-grow: 1;
+    margin-left: 0.5rem;
+    border-top: 1px dashed $ui-tertiary;
+}
+
+.shortcutRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.625rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+}
+
+.shortcutRow:hover {
+    background: $badge-border;
+}
+
+.shortcutLabel {
+    font-size: 0.875rem;
+    color: $text-primary;
+}
+
+.shortcutControls {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.shortcutKeys {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    cursor: pointer;
+    opacity: 0;
+    transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.shortcutRow:hover .iconButton {
+    opacity: 1;
+}
+
+.iconButton:hover {
+    background: $ui-black-transparent;
+    color: $text-primary;
+}
+
+.shortcutRowRecording {
+    background: $badge-background;
+}
+
+.recordArea {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.recordPrompt {
+    min-width: 8rem;
+    padding: 0 0.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px dashed $looks-secondary;
+    background: $looks-transparent;
+    color: $text-primary;
+    font-size: 0.8125rem;
+    animation: shortcutRecordPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes shortcutRecordPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
+
+.recordConflict {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.conflictText {
+    font-size: 0.75rem;
+    color: #e6a700;
+    white-space: nowrap;
+}
+
+.recordArea .iconButton {
+    opacity: 1;
+}
+
+.sidebarFooter {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.resetAllButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.resetAllButton:hover {
+    background: $ui-tertiary;
+    color: $text-primary;
+}
+
+.keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-bottom-width: 2px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
+    color: $text-primary;
+}
+
+.keycap.modifier {
+    min-width: 1.75rem;
+    font-size: 0.9375rem;
+    color: color-mix(in srgb, $text-primary 85%, transparent);
 }
 
 .noResults {
@@ -108,247 +350,33 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 200px;
-    gap: 12px;
-    color: $text-primary;
-    opacity: 0.5;
-    font-size: 0.875rem;
-}
-
-.category {
-    margin-bottom: 24px;
-}
-
-.category:last-child {
-    margin-bottom: 0;
-}
-
-.categoryTitle {
-    font-size: 0.875rem;
-    font-weight: bold;
-    margin: 0 0 12px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid $ui-black-transparent;
-    color: $text-primary;
-    opacity: 0.8;
-}
-
-.categoryItems {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.shortcutItem {
-    background: $ui-tertiary;
-    border-radius: 6px;
-    padding: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.1s;
-}
-
-.shortcutItem:hover {
-    background: $ui-black-transparent;
-}
-
-.shortcutInfo {
-    flex: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.shortcutLabel {
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: $text-primary;
-}
-
-.shortcutKey {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.keyDisplay {
-    background: $ui-black-transparent;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-family: monospace;
-    min-width: 60px;
+    height: 100%;
+    min-height: 240px;
+    gap: 0.75rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.9375rem;
     text-align: center;
-    opacity: 0.8;
 }
 
-.resetIcon,
-.editIcon {
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.1s;
-    opacity: 0.5;
+.hint {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
 }
 
-.resetIcon:hover,
-.editIcon:hover {
-    background: $ui-black-transparent;
-    opacity: 1;
-}
-
-.shortcutEditor {
-    flex: 1;
-    max-width: 300px;
-}
-
-.editorDisplay {
-    background: $ui-black-transparent;
-    border: 1px solid $looks-secondary;
-    border-radius: 4px;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    font-family: monospace;
-    font-size: 0.75rem;
-    min-height: 34px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 2px;
-}
-
-.keyPart {
+.hintKey {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-}
-
-.keySeparator {
-    opacity: 0.5;
-    margin-left: 2px;
-}
-
-.instruction {
-    color: $text-primary;
-    opacity: 0.5;
-    font-style: italic;
-}
-
-.editorButtons {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.editorButton {
-    background: $ui-tertiary;
-    border: none;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    margin: 0 0.15rem;
     border-radius: 4px;
-    padding: 6px 12px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    transition: background-color 0.1s;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.editorButton:hover {
-    background: $ui-black-transparent;
-}
-
-.editorButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.saveButton {
-    background: $looks-secondary;
-    color: $ui-primary;
-}
-
-.saveButton:hover {
-    background: $looks-tertiary;
-}
-
-.editorHint {
-    font-size: 0.65rem;
-    opacity: 0.5;
-    text-align: center;
-}
-
-.conflictWarning {
-    padding: 24px;
-}
-
-.conflictHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.conflictIcon {
-    color: #ff9900;
-}
-
-.conflictMessage {
-    margin-bottom: 24px;
-}
-
-.conflictList {
-    margin: 12px 0;
-    padding-left: 20px;
-}
-
-.conflictItem {
-    margin: 6px 0;
-    font-size: 0.875rem;
-}
-
-.conflictQuestion {
-    margin-top: 16px;
-    font-style: italic;
-    opacity: 0.8;
-}
-
-.conflictButtons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-.conflictButton {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.confirmButton {
-    background: $looks-secondary;
-    color: $ui-primary;
-}
-
-.confirmButton:hover {
-    background: $looks-tertiary;
-}
-
-.footer {
-    border-top: 1px solid $ui-black-transparent;
-    padding: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: $ui-secondary;
-}
-
-.resetAllButton {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.doneButton {
-    min-width: 80px;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    font-size: 0.75rem;
+    font-weight: 600;
+    vertical-align: middle;
 }

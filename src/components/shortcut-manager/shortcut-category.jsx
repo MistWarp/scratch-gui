@@ -7,29 +7,42 @@ import styles from './shortcut-manager.css';
 
 const ShortcutCategory = ({
     category,
-    shortcuts
+    icon: Icon,
+    shortcuts,
+    onSave,
+    onReset,
+    getConflict
 }) => (
-    <div className={styles.category}>
-        <h3 className={styles.categoryTitle}>{category}</h3>
-        <div className={styles.categoryItems}>
-            {shortcuts.map(shortcut => (
-                <ShortcutItem
-                    key={shortcut.id}
-                    shortcut={shortcut}
-                />
-            ))}
-        </div>
+    <div className={styles.section}>
+        <h3 className={styles.sectionHeader}>
+            {Icon && <Icon className={styles.sectionIcon} />}
+            <span>{category}</span>
+            <div className={styles.sectionDivider} />
+        </h3>
+        {shortcuts.map(shortcut => (
+            <ShortcutItem
+                key={shortcut.id}
+                shortcut={shortcut}
+                onSave={onSave}
+                onReset={onReset}
+                getConflict={getConflict}
+            />
+        ))}
     </div>
 );
 
 ShortcutCategory.propTypes = {
     category: PropTypes.string.isRequired,
+    icon: PropTypes.elementType,
     shortcuts: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string,
         key: PropTypes.string,
         defaultKey: PropTypes.string,
         label: PropTypes.string
-    })).isRequired
+    })).isRequired,
+    onSave: PropTypes.func.isRequired,
+    onReset: PropTypes.func.isRequired,
+    getConflict: PropTypes.func.isRequired
 };
 
 export default ShortcutCategory;

@@ -16,10 +16,16 @@ import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 
-import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable} from 'lucide-react';
 
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
+import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
+    setSetting as setVariableManagerSetting} from '../../lib/variable-manager/settings.js';
+import {
+    getAuthorName, getAuthorEmail, setAuthorName, setAuthorEmail,
+    getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
+} from '../../lib/git/config.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -80,6 +86,14 @@ const messages = defineMessages({
     headerDebugger: {
         defaultMessage: 'Debugger',
         id: 'mw.settings.debuggerHeader'
+    },
+    headerVersionControl: {
+        defaultMessage: 'Version Control',
+        id: 'mw.settings.versionControlHeader'
+    },
+    headerVariableManager: {
+        defaultMessage: 'Variable Manager',
+        id: 'mw.settings.variableManagerHeader'
     }
 });
 
@@ -442,25 +456,33 @@ const createBooleanSetting = (key, definition) => {
     return SettingComponent;
 };
 
-const createDebuggerSetting = (key, settingId, definition) => {
-    const SettingComponent = () => {
-        const [value, setValue] = React.useState(() => getDebuggerSetting(settingId));
-        const handleChange = e => {
-            const newValue = e.target.checked;
-            setDebuggerSetting(settingId, newValue);
-            setValue(newValue);
-        };
+class DebuggerBooleanSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleChange = this.handleChange.bind(this);
+        this.state = {value: getDebuggerSetting(props.settingId)};
+    }
+    handleChange (e) {
+        const value = e.target.checked;
+        setDebuggerSetting(this.props.settingId, value);
+        this.setState({value});
+    }
+    render () {
         return (
             <BooleanSetting
-                value={value}
-                onChange={handleChange}
-                label={<FormattedMessage {...definition.label} />}
-                help={<FormattedMessage {...definition.help} />}
+                value={this.state.value}
+                onChange={this.handleChange}
+                label={this.props.label}
+                help={this.props.help}
             />
         );
-    };
-    SettingComponent.displayName = key;
-    return SettingComponent;
+    }
+}
+
+DebuggerBooleanSetting.propTypes = {
+    settingId: PropTypes.string.isRequired,
+    label: PropTypes.node.isRequired,
+    help: PropTypes.node
 };
 
 const HighQualityPen = createBooleanSetting('HighQualityPen', settingDefinitions.highQualityPen);
@@ -476,10 +498,6 @@ const HideDeleteButton = createBooleanSetting('HideDeleteButton', settingDefinit
 const HideExtensionButton = createBooleanSetting('HideExtensionButton', settingDefinitions.hideExtensionButton);
 const HideBackpack = createBooleanSetting('HideBackpack', settingDefinitions.hideBackpack);
 const HideOperatorArrows = createBooleanSetting('HideOperatorArrows', settingDefinitions.hideOperatorArrows);
-const ShowPauseButton = createDebuggerSetting(
-    'ShowPauseButton', 'stage_pause_button', settingDefinitions.showPauseButton);
-const ShowStepButton = createDebuggerSetting(
-    'ShowStepButton', 'stage_step_button', settingDefinitions.showStepButton);
 
 const STYLE_OPTIONS = {
     'tab-style': [
@@ -850,12 +868,20 @@ const pageConfigurations = {
                 headerMessage: 'headerStage',
                 settings: [
                     {
-                        component: ShowPauseButton,
-                        props: () => ({})
+                        component: DebuggerBooleanSetting,
+                        props: () => ({
+                            settingId: 'stage_pause_button',
+                            label: <FormattedMessage {...settingDefinitions.showPauseButton.label} />,
+                            help: <FormattedMessage {...settingDefinitions.showPauseButton.help} />
+                        })
                     },
                     {
-                        component: ShowStepButton,
-                        props: () => ({})
+                        component: DebuggerBooleanSetting,
+                        props: () => ({
+                            settingId: 'stage_step_button',
+                            label: <FormattedMessage {...settingDefinitions.showStepButton.label} />,
+                            help: <FormattedMessage {...settingDefinitions.showStepButton.help} />
+                        })
                     },
                     {
                         component: SquareStageCorners,
@@ -1027,35 +1053,6 @@ const MenuBarPage = props => (<PageRenderer
     {...props}
 />);
 
-class DebuggerBooleanSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-        this.state = {value: getDebuggerSetting(props.settingId)};
-    }
-    handleChange (e) {
-        const value = e.target.checked;
-        setDebuggerSetting(this.props.settingId, value);
-        this.setState({value});
-    }
-    render () {
-        return (
-            <BooleanSetting
-                value={this.state.value}
-                onChange={this.handleChange}
-                label={this.props.label}
-                help={this.props.help}
-            />
-        );
-    }
-}
-
-DebuggerBooleanSetting.propTypes = {
-    settingId: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
-    help: PropTypes.node
-};
-
 const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
 
 const UnwrappedDebuggerPage = ({intl}) => (
@@ -1078,12 +1075,245 @@ UnwrappedDebuggerPage.propTypes = {
 
 const DebuggerPage = injectIntl(UnwrappedDebuggerPage);
 
+const TextSetting = ({label, help, value, onSubmit, placeholder}) => (
+    <div className={styles.setting}>
+        <div className={styles.textSettingLabel}>{label}</div>
+        <BufferedInput
+            className={styles.textInput}
+            type="text"
+            value={value}
+            placeholder={placeholder}
+            onSubmit={onSubmit}
+        />
+        {help && <p className={styles.detail}>{help}</p>}
+    </div>
+);
+TextSetting.propTypes = {
+    label: PropTypes.node,
+    help: PropTypes.node,
+    value: PropTypes.string,
+    onSubmit: PropTypes.func.isRequired,
+    placeholder: PropTypes.string
+};
+
+class UnwrappedVersionControlPage extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleNameChange',
+            'handleEmailChange',
+            'handleBranchChange',
+            'handleAutoCommitChange'
+        ]);
+        this.state = {
+            authorName: getAuthorName(),
+            authorEmail: getAuthorEmail(),
+            defaultBranch: getDefaultBranch(),
+            autoCommit: getAutoCommit()
+        };
+    }
+    handleNameChange (value) {
+        setAuthorName(value);
+        this.setState({authorName: getAuthorName()});
+    }
+    handleEmailChange (value) {
+        setAuthorEmail(value);
+        this.setState({authorEmail: getAuthorEmail()});
+    }
+    handleBranchChange (value) {
+        setDefaultBranch(value);
+        this.setState({defaultBranch: getDefaultBranch()});
+    }
+    handleAutoCommitChange (e) {
+        const value = e.target.checked;
+        setAutoCommit(value);
+        this.setState({autoCommit: value});
+    }
+    render () {
+        const {intl} = this.props;
+        return (
+            <Box className={styles.body}>
+                <Header>{intl.formatMessage(messages.headerVersionControl)}</Header>
+                <TextSetting
+                    label={<FormattedMessage
+                        defaultMessage="Author name"
+                        id="mw.settings.vc.authorName"
+                    />}
+                    help={<FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Used as the commit author and as your username when pushing to private repositories."
+                        id="mw.settings.vc.authorNameHelp"
+                    />}
+                    value={this.state.authorName}
+                    onSubmit={this.handleNameChange}
+                    placeholder="User"
+                />
+                <TextSetting
+                    label={<FormattedMessage
+                        defaultMessage="Author email"
+                        id="mw.settings.vc.authorEmail"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Recorded as the email address on each commit you make."
+                        id="mw.settings.vc.authorEmailHelp"
+                    />}
+                    value={this.state.authorEmail}
+                    onSubmit={this.handleEmailChange}
+                    placeholder="user@example.com"
+                />
+                <TextSetting
+                    label={<FormattedMessage
+                        defaultMessage="Default branch name"
+                        id="mw.settings.vc.defaultBranch"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Branch created when a new repository is initialized."
+                        id="mw.settings.vc.defaultBranchHelp"
+                    />}
+                    value={this.state.defaultBranch}
+                    onSubmit={this.handleBranchChange}
+                    placeholder="main"
+                />
+                <BooleanSetting
+                    value={this.state.autoCommit}
+                    onChange={this.handleAutoCommitChange}
+                    label={<FormattedMessage
+                        defaultMessage="Commit automatically when the project is saved"
+                        id="mw.settings.vc.autoCommit"
+                    />}
+                    help={<FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Creates a commit each time you save the project so your history stays up to date without manual commits."
+                        id="mw.settings.vc.autoCommitHelp"
+                    />}
+                />
+            </Box>
+        );
+    }
+}
+UnwrappedVersionControlPage.propTypes = {
+    intl: intlShape.isRequired
+};
+const VersionControlPage = injectIntl(UnwrappedVersionControlPage);
+
+class VmSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, ['handleBooleanChange', 'handleSelectChange', 'handleNumberChange']);
+        this.state = {value: getVariableManagerSetting(props.definition.id)};
+    }
+    commit (value) {
+        setVariableManagerSetting(this.props.definition.id, value);
+        this.setState({value: getVariableManagerSetting(this.props.definition.id)});
+    }
+    handleBooleanChange (e) {
+        this.commit(e.target.checked);
+    }
+    handleSelectChange (e) {
+        this.commit(e.target.value);
+    }
+    handleNumberChange (value) {
+        this.commit(value);
+    }
+    render () {
+        const {definition} = this.props;
+        const {value} = this.state;
+        if (definition.type === 'boolean') {
+            return (
+                <BooleanSetting
+                    value={value}
+                    onChange={this.handleBooleanChange}
+                    label={definition.label}
+                    help={definition.help}
+                />
+            );
+        }
+        if (definition.type === 'select') {
+            return (
+                <Setting
+                    help={definition.help}
+                    primary={
+                        <div className={styles.label}>
+                            <span className={styles.settingText}>{definition.label}</span>
+                            <select
+                                className={styles.select}
+                                value={value}
+                                onChange={this.handleSelectChange}
+                            >
+                                {definition.options.map(option => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    }
+                />
+            );
+        }
+        return (
+            <Setting
+                help={definition.help}
+                primary={
+                    <div className={styles.label}>
+                        <span className={styles.settingText}>{definition.label}</span>
+                        <BufferedInput
+                            className={styles.numberInput}
+                            type="number"
+                            value={value}
+                            min={definition.min}
+                            max={definition.max}
+                            step={definition.step}
+                            onSubmit={this.handleNumberChange}
+                        />
+                    </div>
+                }
+            />
+        );
+    }
+}
+VmSetting.propTypes = {
+    definition: PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        type: PropTypes.string.isRequired,
+        label: PropTypes.string,
+        help: PropTypes.string,
+        min: PropTypes.number,
+        max: PropTypes.number,
+        step: PropTypes.number,
+        options: PropTypes.array
+    }).isRequired
+};
+
+const UnwrappedVariableManagerPage = ({intl}) => (
+    <Box className={styles.body}>
+        <Header>{intl.formatMessage(messages.headerVariableManager)}</Header>
+        {VARIABLE_MANAGER_SETTINGS.map(definition => (
+            <VmSetting
+                key={definition.id}
+                definition={definition}
+            />
+        ))}
+    </Box>
+);
+UnwrappedVariableManagerPage.propTypes = {
+    intl: intlShape.isRequired
+};
+const VariableManagerPage = injectIntl(UnwrappedVariableManagerPage);
+
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
+    case 'versionControl':
+        return <VersionControlPage {...handlers} />;
+    case 'variableManager':
+        return <VariableManagerPage {...handlers} />;
     case 'editor':
         return <EditorPage {...handlers} />;
     case 'styles':
@@ -1171,6 +1401,22 @@ class SettingsModalComponent extends React.Component {
                 id: 'tools',
                 label: intl.formatMessage({id: 'mw.settings.groupTools', defaultMessage: 'Tools'}),
                 items: [
+                    {
+                        id: 'versionControl',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.versionControl',
+                            defaultMessage: 'Version Control'
+                        }),
+                        icon: GitBranch
+                    },
+                    {
+                        id: 'variableManager',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.variableManager',
+                            defaultMessage: 'Variable Manager'
+                        }),
+                        icon: Variable
+                    },
                     {
                         id: 'debugger',
                         label: intl.formatMessage({id: 'mw.settings.debugger', defaultMessage: 'Debugger'}),
