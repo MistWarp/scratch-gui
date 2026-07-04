@@ -42,6 +42,11 @@ const messages = defineMessages({
         defaultMessage: 'Loading assets ({complete}/{total}) …',
         description: 'Appears when loading project assets from a project file on the user\'s computer',
         id: 'tw.loader.loadingAssets'
+    },
+    preparingProject: {
+        defaultMessage: 'Preparing project … (large projects may take a moment)',
+        description: 'Appears after assets are loaded while the project data is being processed',
+        id: 'tw.loader.preparingProject'
     }
 });
 
@@ -115,6 +120,9 @@ class LoaderComponent extends React.Component {
             // Started loading a new project.
             this.barInnerEl.style.width = '0';
             this.messageEl.textContent = this.props.intl.formatMessage(messages.projectData);
+        } else if (finished >= total) {
+            this.barInnerEl.style.width = '100%';
+            this.messageEl.textContent = this.props.intl.formatMessage(messages.preparingProject);
         } else {
             this.barInnerEl.style.width = `${finished / total * 100}%`;
             const message = this.props.isRemote ? messages.downloadingAssets : messages.loadingAssets;
