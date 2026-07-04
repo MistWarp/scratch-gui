@@ -53,6 +53,44 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
+.sidebarGroup {
+    margin-bottom: 0.5rem;
+}
+
+.sidebarGroupHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.75rem 1rem 0.25rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    cursor: pointer;
+    user-select: none;
+}
+
+.sidebarGroupHeader:hover {
+    color: color-mix(in srgb, $text-primary 85%, transparent);
+}
+
+.sidebarGroupChevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.sidebarGroupChevron.collapsed {
+    transform: rotate(-90deg);
+}
+
 .sidebarItem {
     display: flex;
     align-items: center;

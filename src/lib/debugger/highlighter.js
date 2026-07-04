@@ -1,3 +1,4 @@
+/* eslint-disable */
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const containerSvg = document.createElementNS(SVG_NS, "svg");

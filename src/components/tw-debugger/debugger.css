@@ -1,0 +1,619 @@
+  .sa-debugger-window .addon-window-content {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .mw-debugger-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem 0;
+    background: var(--ui-primary);
+  }
+
+  .mw-debugger-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: var(--text-primary-transparent, rgba(0, 0, 0, 0.5));
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .mw-debugger-tab:hover {
+    background: var(--ui-black-transparent);
+    color: var(--text-primary);
+  }
+
+  .mw-debugger-tab-active {
+    background: var(--ui-secondary);
+    color: var(--text-primary);
+  }
+
+  .mw-debugger-tab-icon {
+    width: 14px;
+    height: 14px;
+    background-color: currentColor;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  }
+
+  .mw-debugger-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--ui-secondary);
+    border-bottom: 1px solid var(--ui-black-transparent);
+  }
+
+  .mw-debugger-toolbar-spacer {
+    flex: 1;
+  }
+
+  .mw-debugger-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 8px;
+    background: var(--input-background, #fff);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .mw-debugger-toolbar-btn:hover {
+    border-color: var(--looks-secondary);
+  }
+
+  .mw-debugger-toolbar-icon {
+    width: 12px;
+    height: 12px;
+    background-color: currentColor;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  }
+
+  .mw-debugger-resume {
+    background: var(--pen-primary, #0fbd8c);
+    border-color: transparent;
+    color: white;
+  }
+
+  .mw-debugger-resume:hover {
+    background: var(--pen-tertiary, #0b8e69);
+    border-color: transparent;
+  }
+
+  .mw-debugger-paused {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-right: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--extensions-primary, #e6a100);
+  }
+
+  .mw-debugger-paused-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--extensions-primary, #e6a100);
+  }
+
+  .mw-debugger-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--ui-primary);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mw-debugger-body > * {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .sa-debugger-logs-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--ui-primary);
+  }
+
+  .sa-debugger-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid var(--ui-black-transparent);
+    flex-shrink: 0;
+  }
+
+  .sa-debugger-search {
+    flex: 1;
+    min-width: 0;
+    padding: 0.3125rem 0.5rem;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    background: var(--input-background, #fff);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+  }
+
+  .sa-debugger-search:focus {
+    outline: none;
+    border-color: var(--looks-secondary);
+  }
+
+  .sa-debugger-severity-group {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .sa-debugger-severity {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary-transparent);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
+  }
+
+  .sa-debugger-severity-active {
+    opacity: 1;
+    color: var(--text-primary);
+  }
+
+  .sa-debugger-severity-log.sa-debugger-severity-active {
+    border-color: var(--looks-secondary);
+  }
+
+  .sa-debugger-severity-warn.sa-debugger-severity-active {
+    border-color: var(--extensions-primary);
+    color: var(--extensions-primary);
+  }
+
+  .sa-debugger-severity-error.sa-debugger-severity-active {
+    border-color: var(--error-primary);
+    color: var(--error-primary);
+  }
+
+  .sa-debugger-sprite-select {
+    padding: 0.3125rem 0.5rem;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    background: var(--input-background, #fff);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    max-width: 140px;
+  }
+
+  .sa-debugger-log-outer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--ui-primary);
+  }
+
+  .sa-debugger-log-inner {
+    flex: 1;
+    position: relative;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 0.25rem;
+    font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .sa-debugger-log-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--text-primary-transparent);
+    font-style: italic;
+    font-size: 0.875rem;
+  }
+
+  .sa-debugger-log-end {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  .sa-debugger-log {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 24px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.5rem;
+    border-bottom: 1px solid var(--ui-black-transparent);
+  }
+
+  .sa-debugger-log:hover {
+    background: var(--ui-tertiary);
+  }
+
+  .sa-debugger-log[data-type="warn"] {
+    background: rgba(255, 193, 7, 0.08);
+  }
+
+  .sa-debugger-log[data-type="error"] {
+    background: var(--error-transparent);
+  }
+
+  .sa-debugger-log-time {
+    flex-shrink: 0;
+    color: var(--text-primary-transparent);
+    font-size: 0.625rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sa-debugger-log-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-size: 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .sa-debugger-log[data-type="warn"] .sa-debugger-log-icon {
+    background-image: url(./icons/warning.svg);
+    background-color: var(--extensions-light, #ffbf00);
+  }
+
+  .sa-debugger-log[data-type="error"] .sa-debugger-log-icon {
+    background-image: url(./icons/error.svg);
+    background-color: var(--error-primary, #e64a4a);
+  }
+
+  .sa-debugger-log[data-type="log"] .sa-debugger-log-icon {
+    background-image: url(./icons/info.svg);
+    background-color: var(--ui-tertiary);
+  }
+
+  .sa-debugger-threads .sa-debugger-log-icon {
+    background-image: url(./icons/subthread.svg);
+    background-color: var(--looks-secondary);
+  }
+
+  .sa-debugger-log-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre;
+  }
+
+  .sa-debugger-log-text-empty {
+    font-style: italic;
+    opacity: 0.5;
+  }
+
+  .sa-debugger-log-internal .sa-debugger-log-text {
+    font-style: italic;
+    opacity: 0.75;
+  }
+
+  .sa-debugger-log-link {
+    flex-shrink: 0;
+    max-width: 30%;
+    margin-left: auto;
+    padding: 0.125rem 0.375rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--ui-secondary);
+    color: var(--text-primary);
+    font-size: 0.625rem;
+    text-decoration: none;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sa-debugger-log-link:hover {
+    background: var(--looks-secondary);
+    color: white;
+  }
+
+  .sa-debugger-log-link-unknown {
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  .sa-debugger-block-preview {
+    flex-shrink: 0;
+    padding: 0.125rem 0.375rem;
+    background-color: var(--sa-block-colored-background, var(--looks-secondary));
+    color: var(--sa-block-text, white);
+    border-radius: 4px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sa-debugger-block-preview[data-shape="round"] {
+    border-radius: 12px;
+  }
+
+  .sa-debugger-thread-indent {
+    flex-shrink: 0;
+    width: calc(14px * var(--level));
+    align-self: stretch;
+    position: relative;
+  }
+
+  .sa-debugger-thread-indent::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--ui-black-transparent);
+    transform: translateX(-50%);
+  }
+
+  .sa-debugger-thread-title .sa-debugger-thread-indent::before {
+    display: none;
+  }
+
+  .sa-debugger-thread-target-name {
+    flex-shrink: 0;
+    color: var(--looks-secondary);
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .sa-debugger-thread-id {
+    flex-shrink: 0;
+    padding: 0.0625rem 0.3125rem;
+    border-radius: 4px;
+    background: var(--ui-tertiary);
+    color: var(--text-primary-transparent);
+    font-size: 0.625rem;
+    font-weight: 600;
+  }
+
+  .sa-debugger-thread-running {
+    background: rgba(255, 193, 7, 0.12);
+    box-shadow: inset 2px 0 0 var(--control-primary, #ffab19);
+  }
+
+  .sa-debugger-thread-compiled {
+    font-style: italic;
+    opacity: 0.75;
+    font-size: 0.6875rem;
+  }
+
+  .sa-performance-tab-content,
+  .sa-memory-tab-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: var(--ui-primary);
+  }
+
+  .sa-debugger-chart-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 8px;
+    background: var(--ui-secondary);
+    flex-shrink: 0;
+  }
+
+  .sa-debugger-chart-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .sa-debugger-chart-header h2 {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary-transparent);
+  }
+
+  .sa-debugger-chart-value {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--looks-secondary);
+  }
+
+  .sa-debugger-chart-body {
+    position: relative;
+    height: 130px;
+  }
+
+  .sa-debugger-chart {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .sa-memory-info-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .sa-memory-info-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.125rem;
+    padding: 0.625rem;
+    min-height: 56px;
+    text-align: center;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 8px;
+    background: var(--ui-secondary);
+  }
+
+  .sa-memory-info-title {
+    margin: 0;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary-transparent);
+  }
+
+  .sa-memory-info-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sa-memory-clones .sa-memory-info-value {
+    color: var(--looks-secondary);
+  }
+
+  .sa-memory-variables .sa-memory-info-value,
+  .sa-memory-lists .sa-memory-info-value,
+  .sa-memory-list-items .sa-memory-info-value {
+    color: var(--data-primary);
+  }
+
+  .sa-memory-info-card.sa-memory-warning {
+    border-color: var(--extensions-primary);
+    background: rgba(255, 193, 7, 0.12);
+  }
+
+  .sa-memory-info-card.sa-memory-critical {
+    border-color: var(--error-primary);
+    background: var(--error-transparent);
+  }
+
+  .sa-memory-section-title {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary-transparent);
+    flex-shrink: 0;
+  }
+
+  .sa-memory-variables-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sa-memory-variable-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3125rem 0.5rem;
+    background: var(--ui-secondary);
+    font-size: 0.75rem;
+  }
+
+  .sa-memory-variable-scope {
+    flex-shrink: 0;
+    color: var(--text-primary-transparent);
+    font-size: 0.625rem;
+    font-weight: 600;
+    min-width: 48px;
+  }
+
+  .sa-memory-variable-name {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--looks-secondary);
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sa-memory-variable-list .sa-memory-variable-name {
+    color: var(--data-primary);
+  }
+
+  .sa-memory-variable-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .sa-memory-variables-empty {
+    padding: 0.75rem;
+    text-align: center;
+    font-style: italic;
+    color: var(--text-primary-transparent);
+    background: var(--ui-secondary);
+  }
+
+  .sa-debugger-log-inner::-webkit-scrollbar,
+  .sa-performance-tab-content::-webkit-scrollbar,
+  .sa-memory-tab-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .sa-debugger-log-inner::-webkit-scrollbar-thumb,
+  .sa-performance-tab-content::-webkit-scrollbar-thumb,
+  .sa-memory-tab-content::-webkit-scrollbar-thumb {
+    background-color: var(--ui-black-transparent);
+    border-radius: 4px;
+  }
