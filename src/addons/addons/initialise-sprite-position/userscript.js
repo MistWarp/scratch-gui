@@ -3,22 +3,20 @@ export default async function ({ addon }) {
 
   const oldAddSprite = vm.constructor.prototype.addSprite;
   vm.constructor.prototype.addSprite = function (input) {
-    let spriteObj,
-      stringify = true;
-    if (typeof input === "object") [spriteObj, stringify] = [input, false];
-    else spriteObj = JSON.parse(input);
-    const isEmpty = spriteObj.costumes?.[0]?.baseLayerMD5 === "cd21514d0531fdffb22204e0ec5ed84a.svg";
-    if (!addon.self.disabled && (isEmpty || !spriteObj.tags || !addon.settings.get("library"))) {
-      if (spriteObj.scratchX) {
-        spriteObj.scratchX = addon.settings.get("x");
-        spriteObj.scratchY = addon.settings.get("y");
-      }
-      if (spriteObj.x) {
-        spriteObj.x = addon.settings.get("x");
-        spriteObj.y = addon.settings.get("y");
-      }
+    let spriteObj = null;
+    if (typeof input === "string") {
+      spriteObj = JSON.parse(input);
+    } else if (input && typeof input === "object" && !(input instanceof ArrayBuffer) && !ArrayBuffer.isView(input)) {
+      spriteObj = input;
     }
-    return oldAddSprite.call(this, stringify ? JSON.stringify(spriteObj) : spriteObj);
+    const isEmpty = spriteObj?.costumes?.[0]?.baseLayerMD5 === "cd21514d0531fdffb22204e0ec5ed84a.svg";
+    const shouldPositionSprite = isEmpty || !spriteObj?.tags || !addon.settings.get("library");
+    return oldAddSprite.call(this, input).then((result) => {
+      if (!addon.self.disabled && shouldPositionSprite) {
+        this.editingTarget?.setXY(addon.settings.get("x"), addon.settings.get("y"));
+      }
+      return result;
+    });
   };
 
   const registerDupPrototype = () => {
