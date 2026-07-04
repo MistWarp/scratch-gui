@@ -16,7 +16,10 @@ import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 
-import {Settings, Zap, Blocks, Palette, PanelTop} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown} from 'lucide-react';
+
+import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
+    setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -58,6 +61,14 @@ const messages = defineMessages({
         defaultMessage: 'Interface',
         id: 'mw.settings.interface'
     },
+    headerStage: {
+        defaultMessage: 'Stage',
+        id: 'mw.settings.stageHeader'
+    },
+    headerBlockPalette: {
+        defaultMessage: 'Block Palette',
+        id: 'mw.settings.blockPaletteHeader'
+    },
     headerStyles: {
         defaultMessage: 'Styles',
         id: 'mw.settings.stylesHeader'
@@ -65,6 +76,10 @@ const messages = defineMessages({
     headerMenuBar: {
         defaultMessage: 'Menu Bar',
         id: 'mw.settings.menuBarHeader'
+    },
+    headerDebugger: {
+        defaultMessage: 'Debugger',
+        id: 'mw.settings.debuggerHeader'
     }
 });
 
@@ -107,6 +122,27 @@ SidebarItem.propTypes = {
     icon: PropTypes.elementType,
     onClick: PropTypes.func.isRequired,
     isSelected: PropTypes.bool
+};
+
+const SidebarGroupHeader = ({id, label, collapsed, onClick}) => (
+    <button
+        type="button"
+        className={styles.sidebarGroupHeader}
+        onClick={() => onClick(id)}
+        aria-expanded={!collapsed}
+    >
+        <ChevronDown
+            className={classNames(styles.sidebarGroupChevron, {[styles.collapsed]: collapsed})}
+        />
+        <span>{label}</span>
+    </button>
+);
+
+SidebarGroupHeader.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    collapsed: PropTypes.bool,
+    onClick: PropTypes.func.isRequired
 };
 
 class UnwrappedSetting extends React.Component {
@@ -361,6 +397,28 @@ const settingDefinitions = {
                 'by right-clicking the block.',
             id: 'mw.settingsModal.hideOperatorArrowsHelp'
         }
+    },
+    showPauseButton: {
+        label: {
+            defaultMessage: 'Show Pause Button',
+            id: 'mw.settingsModal.showPauseButton'
+        },
+        help: {
+            defaultMessage: 'Adds a pause/play button between the green flag and stop button that ' +
+                'freezes the project in place. The project can also be paused with Alt+X (Option+X on macOS).',
+            id: 'mw.settingsModal.showPauseButtonHelp'
+        }
+    },
+    showStepButton: {
+        label: {
+            defaultMessage: 'Show Frame Step Button',
+            id: 'mw.settingsModal.showStepButton'
+        },
+        help: {
+            defaultMessage: 'While the project is paused, adds a button that advances it by exactly one ' +
+                'frame so you can watch behavior change step by step.',
+            id: 'mw.settingsModal.showStepButtonHelp'
+        }
     }
 };
 
@@ -384,6 +442,27 @@ const createBooleanSetting = (key, definition) => {
     return SettingComponent;
 };
 
+const createDebuggerSetting = (key, settingId, definition) => {
+    const SettingComponent = () => {
+        const [value, setValue] = React.useState(() => getDebuggerSetting(settingId));
+        const handleChange = e => {
+            const newValue = e.target.checked;
+            setDebuggerSetting(settingId, newValue);
+            setValue(newValue);
+        };
+        return (
+            <BooleanSetting
+                value={value}
+                onChange={handleChange}
+                label={<FormattedMessage {...definition.label} />}
+                help={<FormattedMessage {...definition.help} />}
+            />
+        );
+    };
+    SettingComponent.displayName = key;
+    return SettingComponent;
+};
+
 const HighQualityPen = createBooleanSetting('HighQualityPen', settingDefinitions.highQualityPen);
 const Interpolation = createBooleanSetting('Interpolation', settingDefinitions.interpolation);
 const InfiniteClones = createBooleanSetting('InfiniteClones', settingDefinitions.infiniteClones);
@@ -397,6 +476,10 @@ const HideDeleteButton = createBooleanSetting('HideDeleteButton', settingDefinit
 const HideExtensionButton = createBooleanSetting('HideExtensionButton', settingDefinitions.hideExtensionButton);
 const HideBackpack = createBooleanSetting('HideBackpack', settingDefinitions.hideBackpack);
 const HideOperatorArrows = createBooleanSetting('HideOperatorArrows', settingDefinitions.hideOperatorArrows);
+const ShowPauseButton = createDebuggerSetting(
+    'ShowPauseButton', 'stage_pause_button', settingDefinitions.showPauseButton);
+const ShowStepButton = createDebuggerSetting(
+    'ShowStepButton', 'stage_step_button', settingDefinitions.showStepButton);
 
 const STYLE_OPTIONS = {
     'tab-style': [
@@ -764,22 +847,28 @@ const pageConfigurations = {
     editor: {
         sections: [
             {
-                headerMessage: 'headerInterface',
+                headerMessage: 'headerStage',
                 settings: [
+                    {
+                        component: ShowPauseButton,
+                        props: () => ({})
+                    },
+                    {
+                        component: ShowStepButton,
+                        props: () => ({})
+                    },
                     {
                         component: SquareStageCorners,
                         props: props => ({
                             value: props.squareStageCorners,
                             onChange: props.onSquareStageCornersChange
                         })
-                    },
-                    {
-                        component: HideDeleteButton,
-                        props: props => ({
-                            value: props.hideDeleteButton,
-                            onChange: props.onHideDeleteButtonChange
-                        })
-                    },
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerBlockPalette',
+                settings: [
                     {
                         component: HideExtensionButton,
                         props: props => ({
@@ -788,17 +877,29 @@ const pageConfigurations = {
                         })
                     },
                     {
-                        component: HideBackpack,
-                        props: props => ({
-                            value: props.hideBackpack,
-                            onChange: props.onHideBackpackChange
-                        })
-                    },
-                    {
                         component: HideOperatorArrows,
                         props: props => ({
                             value: props.hideOperatorArrows,
                             onChange: props.onHideOperatorArrowsChange
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerInterface',
+                settings: [
+                    {
+                        component: HideDeleteButton,
+                        props: props => ({
+                            value: props.hideDeleteButton,
+                            onChange: props.onHideDeleteButtonChange
+                        })
+                    },
+                    {
+                        component: HideBackpack,
+                        props: props => ({
+                            value: props.hideBackpack,
+                            onChange: props.onHideBackpackChange
                         })
                     }
                 ]
@@ -926,10 +1027,63 @@ const MenuBarPage = props => (<PageRenderer
     {...props}
 />);
 
+class DebuggerBooleanSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleChange = this.handleChange.bind(this);
+        this.state = {value: getDebuggerSetting(props.settingId)};
+    }
+    handleChange (e) {
+        const value = e.target.checked;
+        setDebuggerSetting(this.props.settingId, value);
+        this.setState({value});
+    }
+    render () {
+        return (
+            <BooleanSetting
+                value={this.state.value}
+                onChange={this.handleChange}
+                label={this.props.label}
+                help={this.props.help}
+            />
+        );
+    }
+}
+
+DebuggerBooleanSetting.propTypes = {
+    settingId: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    help: PropTypes.node
+};
+
+const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
+
+const UnwrappedDebuggerPage = ({intl}) => (
+    <Box className={styles.body}>
+        <Header>{intl.formatMessage(messages.headerDebugger)}</Header>
+        {DEBUGGER_SETTINGS.filter(setting => !STAGE_CONTROL_SETTINGS.includes(setting.id)).map(setting => (
+            <DebuggerBooleanSetting
+                key={setting.id}
+                settingId={setting.id}
+                label={setting.label}
+                help={setting.help}
+            />
+        ))}
+    </Box>
+);
+
+UnwrappedDebuggerPage.propTypes = {
+    intl: intlShape.isRequired
+};
+
+const DebuggerPage = injectIntl(UnwrappedDebuggerPage);
+
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
+    case 'debugger':
+        return <DebuggerPage {...handlers} />;
     case 'editor':
         return <EditorPage {...handlers} />;
     case 'styles':
@@ -951,15 +1105,25 @@ SettingsRouter.propTypes = {
 class SettingsModalComponent extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions']);
+        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions', 'handleToggleGroup']);
 
         this.state = {
-            currentView: 'general'
+            currentView: 'general',
+            collapsedGroups: {}
         };
     }
 
     handleNavigate (category) {
         this.setState({currentView: category});
+    }
+
+    handleToggleGroup (groupId) {
+        this.setState(prevState => ({
+            collapsedGroups: {
+                ...prevState.collapsedGroups,
+                [groupId]: !prevState.collapsedGroups[groupId]
+            }
+        }));
     }
 
     handleStoreProjectOptions () {
@@ -970,31 +1134,60 @@ class SettingsModalComponent extends React.Component {
         const {intl} = this.props;
         const {currentView} = this.state;
 
-        const categories = [
+        const sidebarGroups = [
             {
                 id: 'general',
-                label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
-                icon: Settings
+                label: intl.formatMessage({id: 'mw.settings.groupGeneral', defaultMessage: 'General'}),
+                items: [
+                    {
+                        id: 'general',
+                        label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
+                        icon: Settings
+                    }
+                ]
             },
             {
-                id: 'editor',
-                label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),
-                icon: Blocks
+                id: 'appearance',
+                label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: 'Appearance'}),
+                items: [
+                    {
+                        id: 'editor',
+                        label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),
+                        icon: Blocks
+                    },
+                    {
+                        id: 'styles',
+                        label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
+                        icon: Palette
+                    },
+                    {
+                        id: 'menuBar',
+                        label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
+                        icon: PanelTop
+                    }
+                ]
             },
             {
-                id: 'styles',
-                label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
-                icon: Palette
+                id: 'tools',
+                label: intl.formatMessage({id: 'mw.settings.groupTools', defaultMessage: 'Tools'}),
+                items: [
+                    {
+                        id: 'debugger',
+                        label: intl.formatMessage({id: 'mw.settings.debugger', defaultMessage: 'Debugger'}),
+                        icon: Bug
+                    }
+                ]
             },
             {
-                id: 'menuBar',
-                label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
-                icon: PanelTop
-            },
-            {
-                id: 'experimental',
-                label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
-                icon: Zap
+                id: 'advanced',
+                label: intl.formatMessage({id: 'mw.settings.groupAdvanced', defaultMessage: 'Advanced'}),
+                items: [
+                    {
+                        id: 'experimental',
+                        label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
+                        icon: Zap
+                    }
+                ]
             }
         ];
 
@@ -1010,16 +1203,32 @@ class SettingsModalComponent extends React.Component {
                 <Box className={styles.sidebarLayout}>
                     <div className={styles.sidebar}>
                         <div className={styles.sidebarItems}>
-                            {categories.map(cat => (
-                                <SidebarItem
-                                    key={cat.id}
-                                    id={cat.id}
-                                    label={cat.label}
-                                    icon={cat.icon}
-                                    onClick={this.handleNavigate}
-                                    isSelected={currentView === cat.id}
-                                />
-                            ))}
+                            {sidebarGroups.map(group => {
+                                const collapsed = !!this.state.collapsedGroups[group.id];
+                                return (
+                                    <div
+                                        key={group.id}
+                                        className={styles.sidebarGroup}
+                                    >
+                                        <SidebarGroupHeader
+                                            id={group.id}
+                                            label={group.label}
+                                            collapsed={collapsed}
+                                            onClick={this.handleToggleGroup}
+                                        />
+                                        {!collapsed && group.items.map(cat => (
+                                            <SidebarItem
+                                                key={cat.id}
+                                                id={cat.id}
+                                                label={cat.label}
+                                                icon={cat.icon}
+                                                onClick={this.handleNavigate}
+                                                isSelected={currentView === cat.id}
+                                            />
+                                        ))}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className={styles.contentArea}>

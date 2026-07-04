@@ -183,12 +183,7 @@ const manifest = {
       "id": "sa-color",
       "type": "color",
       "default": "#29BEB8",
-      "allowTransparency": true,
-      "if": {
-        "addonEnabled": [
-          "debugger"
-        ]
-      }
+      "allowTransparency": true
     },
     {
       "dynamic": true,

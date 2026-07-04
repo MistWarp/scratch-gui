@@ -25,6 +25,7 @@ const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_WARPTHEME = 'warpthemeModal';
+const MODAL_DEBUGGER = 'debuggerModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -50,7 +51,8 @@ const initialState = {
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_ONBOARDING]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
-    [MODAL_WARPTHEME]: false
+    [MODAL_WARPTHEME]: false,
+    [MODAL_DEBUGGER]: false
 };
 
 const reducer = function (state, action) {
@@ -155,6 +157,12 @@ const openShortcutManagerModal = function () {
 const openWarpThemeModal = function () {
     return openModal(MODAL_WARPTHEME);
 };
+const openDebuggerModal = function () {
+    return openModal(MODAL_DEBUGGER);
+};
+const closeDebuggerModal = function () {
+    return closeModal(MODAL_DEBUGGER);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -257,6 +265,8 @@ export {
     openOnboardingModal,
     openShortcutManagerModal,
     openWarpThemeModal,
+    openDebuggerModal,
+    closeDebuggerModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,

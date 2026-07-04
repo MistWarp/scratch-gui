@@ -5,7 +5,9 @@
 
 const css = `
 .addon-window-btn {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background: transparent;
+  color: var(--text-primary, #666);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .addon-window-btn:hover {
@@ -247,7 +249,6 @@ class AddonWindow {
         
         // Modern button styling
         button.style.cssText = `
-            background: transparent;
             border: none;
             cursor: pointer;
             width: 28px;
@@ -256,7 +257,6 @@ class AddonWindow {
             align-items: center;
             justify-content: center;
             border-radius: 6px;
-            color: var(--text-primary, #666);
             font-size: 0;
             margin: 0;
             padding: 0;
