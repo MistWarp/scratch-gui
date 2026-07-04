@@ -742,18 +742,7 @@ class Blocks extends React.Component {
                     });
                 }
 
-                // The flyout (block palette) is a separate workspace and is not
-                // included in this.workspace.getAllBlocks(), so its blocks need
-                // to be recoloured explicitly or they keep stale colours.
-                const paletteWorkspace = flyout && flyout.getWorkspace && flyout.getWorkspace();
-                if (paletteWorkspace && paletteWorkspace.getAllBlocks) {
-                    const flyoutBlocks = paletteWorkspace.getAllBlocks();
-                    flyoutBlocks.forEach(block => {
-                        if (block.updateColour) {
-                            block.updateColour();
-                        }
-                    });
-                }
+                this.recolorFlyoutBlocks();
             }
 
             // Update workspace-specific colors directly if available
@@ -954,9 +943,22 @@ class Blocks extends React.Component {
             this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos);
         }
 
+        this.recolorFlyoutBlocks();
+
         const queue = this.toolboxUpdateQueue;
         this.toolboxUpdateQueue = [];
         queue.forEach(fn => fn());
+    }
+
+    recolorFlyoutBlocks () {
+        if (this.flyoutWorkspace && this.flyoutWorkspace.getAllBlocks) {
+            const flyoutBlocks = this.flyoutWorkspace.getAllBlocks();
+            flyoutBlocks.forEach(block => {
+                if (block.updateColour) {
+                    block.updateColour();
+                }
+            });
+        }
     }
 
     withToolboxUpdates (fn) {
