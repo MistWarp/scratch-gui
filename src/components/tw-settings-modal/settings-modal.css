@@ -207,6 +207,61 @@
     align-items: center;
 }
 
+.settingText {
+    flex: 1;
+    min-width: 0;
+    margin-right: 1rem;
+}
+
+.detail {
+    margin: 0.35rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+}
+
+.textSettingLabel {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: $text-primary;
+}
+
+.textInput,
+.numberInput,
+.select {
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: $text-primary;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.textInput {
+    width: 100%;
+    max-width: 340px;
+}
+
+.numberInput {
+    width: 130px;
+}
+
+.select {
+    min-width: 170px;
+    cursor: pointer;
+}
+
+.textInput:focus,
+.numberInput:focus,
+.select:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
 .style-picker {
     display: flex;
     flex-wrap: wrap;

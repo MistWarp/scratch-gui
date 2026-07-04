@@ -8,7 +8,6 @@ import {
     GitCommit,
     FileDiff,
     Cloud,
-    Settings,
     FileText,
     Plus,
     RefreshCcw,
@@ -306,6 +305,27 @@ class GitModalComponent extends React.Component {
                         filepath={this.props.diffFilepath}
                     />
                 )}
+                <Box className={styles.dangerZone}>
+                    <h3 className={styles.subTitle}>
+                        <FormattedMessage
+                            defaultMessage="Danger zone"
+                            description="Danger zone heading"
+                            id="mw.git.settings.danger"
+                        />
+                    </h3>
+                    <button
+                        className={classNames(styles.button, styles.dangerButton)}
+                        disabled={this.props.busy}
+                        onClick={this.props.onDeleteRepo}
+                    >
+                        <Trash className={styles.buttonIcon} />
+                        <FormattedMessage
+                            defaultMessage="Delete repository"
+                            description="Delete repo button"
+                            id="mw.git.settings.deleteRepo"
+                        />
+                    </button>
+                </Box>
             </Box>
         );
     }
@@ -883,98 +903,6 @@ class GitModalComponent extends React.Component {
         );
     }
 
-    renderSettings () {
-        return (
-            <Box className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    <FormattedMessage
-                        defaultMessage="Settings"
-                        description="Settings section heading"
-                        id="mw.git.settings.heading"
-                    />
-                </h2>
-                <Box className={styles.field}>
-                    <label className={styles.fieldLabel}>
-                        <FormattedMessage
-                            defaultMessage="Author name"
-                            description="Author name label"
-                            id="mw.git.settings.authorName"
-                        />
-                    </label>
-                    <input
-                        className={styles.input}
-                        type="text"
-                        value={this.props.authorName}
-                        onChange={this.props.onChangeAuthorName}
-                    />
-                </Box>
-                <Box className={styles.field}>
-                    <label className={styles.fieldLabel}>
-                        <FormattedMessage
-                            defaultMessage="Author email"
-                            description="Author email label"
-                            id="mw.git.settings.authorEmail"
-                        />
-                    </label>
-                    <input
-                        className={styles.input}
-                        type="text"
-                        value={this.props.authorEmail}
-                        onChange={this.props.onChangeAuthorEmail}
-                    />
-                </Box>
-                <Box className={styles.field}>
-                    <label className={styles.fieldLabel}>
-                        <FormattedMessage
-                            defaultMessage="Default branch name"
-                            description="Default branch label"
-                            id="mw.git.settings.defaultBranch"
-                        />
-                    </label>
-                    <input
-                        className={styles.input}
-                        type="text"
-                        value={this.props.defaultBranch}
-                        onChange={this.props.onChangeDefaultBranch}
-                    />
-                </Box>
-                <label className={styles.checkboxRow}>
-                    <input
-                        type="checkbox"
-                        checked={this.props.autoCommit}
-                        onChange={this.props.onToggleAutoCommit}
-                    />
-                    <FormattedMessage
-                        defaultMessage="Commit automatically when the project is saved"
-                        description="Auto-commit toggle"
-                        id="mw.git.settings.autoCommit"
-                    />
-                </label>
-                <Box className={styles.dangerZone}>
-                    <h3 className={styles.subTitle}>
-                        <FormattedMessage
-                            defaultMessage="Danger zone"
-                            description="Danger zone heading"
-                            id="mw.git.settings.danger"
-                        />
-                    </h3>
-                    <button
-                        className={classNames(styles.button, styles.dangerButton)}
-                        disabled={this.props.busy}
-                        onClick={this.props.onDeleteRepo}
-                    >
-                        <Trash className={styles.buttonIcon} />
-                        <FormattedMessage
-                            defaultMessage="Delete repository"
-                            description="Delete repo button"
-                            id="mw.git.settings.deleteRepo"
-                        />
-                    </button>
-                </Box>
-            </Box>
-        );
-    }
-
     renderReadme () {
         return (
             <Box className={styles.section}>
@@ -1021,12 +949,6 @@ class GitModalComponent extends React.Component {
 
     renderContent () {
         if (!this.props.initialized) {
-            // Settings (author name/email, defaults) are useful before a repo
-            // exists — e.g. to set the identity used for cloning. Everything else
-            // needs a repo, so it falls back to the init/clone screen.
-            if (this.state.currentView === 'settings') {
-                return this.renderSettings();
-            }
             return this.renderNotInitialized();
         }
         switch (this.state.currentView) {
@@ -1040,8 +962,6 @@ class GitModalComponent extends React.Component {
             return this.renderDiff();
         case 'remote':
             return this.renderRemote();
-        case 'settings':
-            return this.renderSettings();
         case 'changes':
         default:
             return this.renderChanges();
@@ -1056,8 +976,7 @@ class GitModalComponent extends React.Component {
             {id: 'branches', label: intl.formatMessage(messages.branches), icon: GitBranch},
             {id: 'diff', label: intl.formatMessage(messages.diff), icon: FileDiff},
             {id: 'remote', label: intl.formatMessage(messages.remote), icon: Cloud},
-            {id: 'readme', label: intl.formatMessage(messages.readme), icon: FileText},
-            {id: 'settings', label: intl.formatMessage(messages.settings), icon: Settings}
+            {id: 'readme', label: intl.formatMessage(messages.readme), icon: FileText}
         ];
 
         return (
@@ -1136,8 +1055,6 @@ GitModalComponent.propTypes = {
     graphNodes: PropTypes.arrayOf(PropTypes.object),
     branchColors: PropTypes.object,
     commitMessage: PropTypes.string,
-    authorName: PropTypes.string,
-    authorEmail: PropTypes.string,
     newBranchName: PropTypes.string,
     mergeSourceBranch: PropTypes.string,
     mergeConflicts: PropTypes.arrayOf(PropTypes.string),
@@ -1156,8 +1073,6 @@ GitModalComponent.propTypes = {
     diffContext: PropTypes.string,
     selectedCommitOid: PropTypes.string,
     commitFiles: PropTypes.arrayOf(PropTypes.object),
-    defaultBranch: PropTypes.string,
-    autoCommit: PropTypes.bool,
     readmeContent: PropTypes.string,
     readmeDirty: PropTypes.bool,
     onChangeReadme: PropTypes.func,
@@ -1168,8 +1083,6 @@ GitModalComponent.propTypes = {
     onClone: PropTypes.func,
     onCancelClone: PropTypes.func,
     onChangeCommitMessage: PropTypes.func,
-    onChangeAuthorName: PropTypes.func,
-    onChangeAuthorEmail: PropTypes.func,
     onChangeNewBranchName: PropTypes.func,
     onCheckoutBranch: PropTypes.func,
     onCreateBranch: PropTypes.func,
@@ -1197,8 +1110,6 @@ GitModalComponent.propTypes = {
     onAddRemote: PropTypes.func,
     onRemoveRemote: PropTypes.func,
     onPush: PropTypes.func,
-    onChangeDefaultBranch: PropTypes.func,
-    onToggleAutoCommit: PropTypes.func,
     onClose: PropTypes.func
 };
 

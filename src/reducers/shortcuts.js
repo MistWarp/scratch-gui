@@ -4,11 +4,6 @@ const RESET_ALL_SHORTCUTS = 'scratch-gui/shortcuts/RESET_ALL_SHORTCUTS';
 const ENABLE_SHORTCUTS = 'scratch-gui/shortcuts/ENABLE_SHORTCUTS';
 const LOAD_SHORTCUTS = 'scratch-gui/shortcuts/LOAD_SHORTCUTS';
 
-const initialState = {
-    enabled: true,
-    customShortcuts: {}
-};
-
 const loadFromStorage = () => {
     try {
         const saved = localStorage.getItem('tw:shortcuts');
@@ -21,30 +16,43 @@ const loadFromStorage = () => {
     return null;
 };
 
+const persistToStorage = customShortcuts => {
+    try {
+        localStorage.setItem('tw:shortcuts', JSON.stringify(customShortcuts));
+    } catch (e) {
+        console.warn('Failed to save shortcuts:', e);
+    }
+};
+
+const initialState = {
+    enabled: true,
+    customShortcuts: loadFromStorage() || {}
+};
+
 const reducer = function (state, action) {
     if (typeof state === 'undefined') state = initialState;
     
     switch (action.type) {
-    case SET_SHORTCUT:
+    case SET_SHORTCUT: {
+        const updated = {
+            ...state.customShortcuts,
+            [action.shortcutId]: action.key
+        };
+        persistToStorage(updated);
         return Object.assign({}, state, {
-            customShortcuts: {
-                ...state.customShortcuts,
-                [action.shortcutId]: action.key
-            }
+            customShortcuts: updated
         });
-    case RESET_SHORTCUT:
+    }
+    case RESET_SHORTCUT: {
         const newCustomShortcuts = {...state.customShortcuts};
         delete newCustomShortcuts[action.shortcutId];
-        
-        try {
-            localStorage.setItem('tw:shortcuts', JSON.stringify(newCustomShortcuts));
-        } catch (e) {
-            console.warn('Failed to save shortcuts:', e);
-        }
-        
+
+        persistToStorage(newCustomShortcuts);
+
         return Object.assign({}, state, {
             customShortcuts: newCustomShortcuts
         });
+    }
     case RESET_ALL_SHORTCUTS:
         try {
             localStorage.removeItem('tw:shortcuts');
@@ -55,17 +63,18 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             customShortcuts: {}
         });
-    case LOAD_SHORTCUTS:
+    case LOAD_SHORTCUTS: {
         const loadedShortcuts = action.customShortcuts || {};
         try {
             localStorage.setItem('tw:shortcuts', JSON.stringify(loadedShortcuts));
         } catch (e) {
             console.warn('Failed to save shortcuts:', e);
         }
-        
+
         return Object.assign({}, state, {
             customShortcuts: loadedShortcuts
         });
+    }
     case ENABLE_SHORTCUTS:
         return Object.assign({}, state, {
             enabled: action.enabled
