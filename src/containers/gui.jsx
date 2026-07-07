@@ -60,6 +60,7 @@ import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
 import {initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
+import startFractchLiveReload from '../lib/fractch-live';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -110,6 +111,8 @@ class GUI extends React.Component {
                 }
             }
         );
+
+        this.fractchLiveReloadDispose = startFractchLiveReload(this.props.vm);
     }
     componentDidUpdate (prevProps) {
         if (this.props.projectId !== prevProps.projectId) {
@@ -137,6 +140,12 @@ class GUI extends React.Component {
             this.props.onProjectLoaded();
         }
 
+    }
+    componentWillUnmount () {
+        if (this.fractchLiveReloadDispose) {
+            this.fractchLiveReloadDispose();
+            this.fractchLiveReloadDispose = null;
+        }
     }
     render () {
         if (this.props.isError) {
