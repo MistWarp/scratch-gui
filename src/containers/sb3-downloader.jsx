@@ -90,7 +90,10 @@ class SB3Downloader extends React.Component {
         this.props.saveProjectSb3().then(content => {
             this.finishedSaving();
             downloadBlob(this.props.projectFilename, content);
-        });
+        })
+            .catch(e => {
+                this.handleSaveError(e);
+            });
     }
     async saveAsNew () {
         if (!this.props.canSaveProject) {

@@ -12,6 +12,7 @@ import {
 } from '../lib/rotur/client.js';
 import {subscribeRoturSettings} from '../lib/rotur/settings.js';
 import {onRoturLogin, onRoturLogout} from '../lib/rotur/cloud-sync.js';
+import {clearGitAuth} from '../lib/rotur/git-api.js';
 import {setRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
     setRoturStatus,
@@ -168,6 +169,7 @@ class RoturSession extends React.Component {
 
     handleLogout () {
         onRoturLogout();
+        clearGitAuth();
         roturLogout();
         this.props.onClear();
     }
