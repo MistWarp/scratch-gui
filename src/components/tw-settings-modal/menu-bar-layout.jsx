@@ -10,6 +10,7 @@ import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings-modal.css';
 import {
     ZONES,
+    ALWAYS_SHOW,
     getZoneDisplayOrder,
     getZoneExtras,
     setZoneOrder,
@@ -23,15 +24,13 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 const LABELS = {
     'file': 'File',
-    'view': 'View',
+    'view': 'Settings',
     'bookmarks': 'Bookmarks',
     'edit': 'Edit',
     'tools': 'Tools',
     'mode': 'Mode',
     'block-count': 'Block Count',
     'save-status': 'Save Status',
-    'addons': 'Addons',
-    'settings': 'Settings',
     'about': 'About',
     'project-title': 'Project Title',
     'community': 'View Project Page',
@@ -140,7 +139,7 @@ class MenuBarLayoutSetting extends React.Component {
     }
     renderRow (zoneId, id, draggable) {
         const visible = !this.state.hidden.includes(id);
-        const canHide = id !== 'rotur-account' && id !== 'save-status';
+        const canHide = !ALWAYS_SHOW.includes(id);
         return (
             <div
                 key={id}

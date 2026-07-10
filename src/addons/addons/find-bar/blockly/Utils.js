@@ -65,17 +65,21 @@ export default class Utils {
     let workspace = this.getWorkspace();
     /** @type {Blockly.Block} */
     let block; // or is it really a Blockly.BlockSvg?
+    let blockId = null;
 
     if (blockOrId instanceof BlockInstance) {
       // Switch to sprite
       this.setEditingTarget(blockOrId.targetId);
       // Highlight the block!
+      blockId = blockOrId.id;
       block = workspace.getBlockById(blockOrId.id);
     } else {
       block = blockOrId && blockOrId.id ? blockOrId : workspace.getBlockById(blockOrId);
+      blockId = blockOrId && blockOrId.id ? blockOrId.id : blockOrId;
     }
 
     if (!block) {
+      this.scrollDeferredBlockIntoView(workspace, blockId);
       return;
     }
 
@@ -111,6 +115,38 @@ export default class Utils {
     }
     this.blockly?.hideChaff();
     BlockFlasher.flash(block);
+  }
+
+  scrollDeferredBlockIntoView(workspace, blockId) {
+    if (typeof blockId !== "string" || typeof workspace.findDeferredScriptByBlockId !== "function") {
+      return;
+    }
+    const pending = workspace.findDeferredScriptByBlockId(blockId);
+    if (!pending) {
+      return;
+    }
+    const scale = workspace.scale;
+    const s = workspace.getMetrics();
+    const sx = pending.x * scale - s.contentLeft - this.offsetX;
+    const sy = pending.y * scale - s.contentTop - this.offsetY;
+    this.navigationHistory.storeView(this.navigationHistory.peek(), 64);
+    workspace.scrollbar.set(sx, sy);
+    this.navigationHistory.storeView({ left: sx, top: sy }, 64);
+    this.blockly?.hideChaff();
+
+    let attempts = 30;
+    const retry = () => {
+      const wsNow = this.getWorkspace();
+      const materialized = wsNow.getBlockById(blockId);
+      if (materialized && materialized.rendered) {
+        this.scrollBlockIntoView(materialized);
+        return;
+      }
+      if (--attempts > 0) {
+        setTimeout(retry, 150);
+      }
+    };
+    setTimeout(retry, 150);
   }
 
   /**

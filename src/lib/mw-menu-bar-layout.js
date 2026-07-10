@@ -2,7 +2,7 @@ const ZONES = [
     {
         id: 'left',
         items: [
-            '__errors', 'file', 'edit', 'mode', 'tools', 'bookmarks', 'view', 'settings', 'addons',
+            '__errors', 'file', 'edit', 'mode', 'tools', 'bookmarks', 'view',
             '__divider', 'project-title', '__view-counter', 'community', 'block-count', 'share', 'remix', 'feedback'
         ],
         extras: []
@@ -14,12 +14,12 @@ const ZONES = [
     }
 ];
 
-const ALWAYS_SHOW = ['save-status', 'rotur-account'];
+const ALWAYS_SHOW = ['save-status', 'rotur-account', 'view'];
 
 const ALL_ITEMS = ZONES.reduce((acc, zone) => acc.concat(zone.items, zone.extras), []);
 
 // Bump when default zone membership/order changes so old custom orders reset
-const ORDER_KEY = 'mw:menu-bar-order-v3';
+const ORDER_KEY = 'mw:menu-bar-order-v4';
 const HIDDEN_KEY = 'mw:menu-bar-hidden';
 const CHANGE_EVENT = 'mw-menu-bar-layout-changed';
 const STYLE_ID = 'mw-menu-bar-layout';
@@ -54,37 +54,18 @@ const hasStoredOrder = zoneId => {
     return Array.isArray(stored) && stored.length > 0;
 };
 
-const insertMissing = (stored, id, preferAfter) => {
-    if (stored.includes(id)) return;
-    for (const afterId of preferAfter) {
-        const idx = stored.indexOf(afterId);
-        if (idx !== -1) {
-            stored.splice(idx + 1, 0, id);
-            return;
-        }
-    }
-    stored.push(id);
-};
-
 const getStoredOrder = zoneId => {
     const zone = zoneById(zoneId);
     if (!zone) return [];
     const stored = (readJSON(ORDER_KEY, {})[zoneId] || []).filter(id => zone.items.includes(id));
     for (const id of zone.items) {
-        if (stored.includes(id)) continue;
-        // Insert migrated middle menus near the other menus, not at the end
-        if (id === 'addons') {
-            insertMissing(stored, id, ['tools', 'view', 'edit', 'file']);
-        } else if (id === 'settings') {
-            insertMissing(stored, id, ['addons', 'tools', 'view', 'edit']);
-        } else {
-            stored.push(id);
-        }
+        if (!stored.includes(id)) stored.push(id);
     }
     return stored;
 };
 
-const getHidden = () => readJSON(HIDDEN_KEY, []).filter(id => ALL_ITEMS.includes(id));
+const getHidden = () => readJSON(HIDDEN_KEY, [])
+    .filter(id => ALL_ITEMS.includes(id) && !ALWAYS_SHOW.includes(id));
 
 const isHidden = id => getHidden().includes(id);
 
@@ -169,6 +150,7 @@ const initMenuBarLayout = () => {
 export {
     ZONES,
     ALL_ITEMS,
+    ALWAYS_SHOW,
     CHANGE_EVENT,
     getStoredOrder,
     setZoneOrder,

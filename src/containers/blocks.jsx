@@ -74,6 +74,11 @@ const messages = defineMessages({
         // eslint-disable-next-line max-len
         description: 'Button in extension list to learn how to use the "return" block from the Custom Reporters extension.',
         id: 'tw.blocks.PROCEDURES_DOCS'
+    },
+    WORKSPACE_LOAD_PROGRESS: {
+        defaultMessage: 'Loading blocks ({remaining, number} remaining)',
+        description: 'Indicator shown while the blocks of a project are still being drawn',
+        id: 'tw.blocks.workspaceLoadProgress'
     }
 });
 
@@ -89,6 +94,8 @@ const addFunctionListener = (object, property, callback) => {
 const DroppableBlocks = DropAreaHOC([
     DragConstants.BACKPACK_CODE
 ])(BlocksComponent);
+
+const DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS = 100;
 
 class Blocks extends React.Component {
     constructor (props) {
@@ -128,6 +135,7 @@ class Blocks extends React.Component {
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
+            'setLoadingBar',
             'setLocale',
             'handleEnableProcedureReturns'
         ]);
@@ -163,6 +171,9 @@ class Blocks extends React.Component {
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
+        this.deferredWorkspaceLoad = null;
+        this.loadingBar = null;
+        this.loadingBarCounter = null;
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -291,6 +302,9 @@ class Blocks extends React.Component {
         // Defer attaching hover listeners until ScratchBlocks has finished injecting its DOM.
         setTimeout(() => {
             if (!this.unmounted) this.attachPaletteHoverListeners();
+            if (!this.unmounted && this.ScratchBlocks.Field && this.ScratchBlocks.Field.prewarmFontCache) {
+                this.ScratchBlocks.Field.prewarmFontCache();
+            }
         }, 0);
     }
     shouldComponentUpdate (nextProps, nextState) {
@@ -324,7 +338,8 @@ class Blocks extends React.Component {
             prevTheme.name !== currentTheme.name;
 
         if (themeChanged) {
-            this.updateBlockColors(currentTheme);
+            const blocksThemeChanged = !prevTheme || !currentTheme || prevTheme.blocks !== currentTheme.blocks;
+            this.updateBlockColors(currentTheme, blocksThemeChanged);
         }
 
         // If any modals are open, call hideChaff to close z-indexed field editors
@@ -406,6 +421,7 @@ class Blocks extends React.Component {
         this.detachPaletteHoverListeners();
         this.detachVM();
         this.unmounted = true;
+        this.cancelDeferredWorkspaceLoad();
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
 
@@ -713,7 +729,7 @@ class Blocks extends React.Component {
             });
     }
 
-    updateBlockColors (theme) {
+    updateBlockColors (theme, blocksThemeChanged) {
         if (!this.workspace || !this.ScratchBlocks) return;
 
         const newColors = theme.getBlockColors();
@@ -724,26 +740,26 @@ class Blocks extends React.Component {
                 this.ScratchBlocks.Colours.overrideColours(newColors);
             }
 
+            if (this.ScratchBlocks.Css && this.ScratchBlocks.Css.inject) {
+                this.ScratchBlocks.Css.inject(true, this.ScratchBlocks.Css.mediaPath_ || '');
+            }
+
             // Update flyout background constant (Blockly sets this, not CSS)
             const flyout = this.workspace.getFlyout && this.workspace.getFlyout();
             if (flyout && newColors.flyout && typeof flyout.setBackgroundColour_ === 'function') {
                 flyout.setBackgroundColour_(newColors.flyout);
             }
 
-            // Force update of all cached color lookups
-            if (this.ScratchBlocks.workspace && this.ScratchBlocks.workspace.Workspace) {
-                // Force Blockly to recalculate theme colors
-                if (this.workspace.getAllBlocks) {
-                    const blocks = this.workspace.getAllBlocks();
-                    blocks.forEach(block => {
-                        if (block.updateColour) {
-                            block.updateColour();
-                        }
-                    });
-                }
-
-                this.recolorFlyoutBlocks();
+            if (blocksThemeChanged && this.workspace.getAllBlocks) {
+                const blocks = this.workspace.getAllBlocks();
+                blocks.forEach(block => {
+                    if (block.updateColour) {
+                        block.updateColour();
+                    }
+                });
             }
+
+            this.recolorFlyoutBlocks();
 
             // Update workspace-specific colors directly if available
             const workspace = this.workspace;
@@ -841,7 +857,7 @@ class Blocks extends React.Component {
                 }
             });
 
-            if (this.workspace.getFlyout && this.workspace.setVisible) {
+            if (blocksThemeChanged && this.workspace.getFlyout && this.workspace.setVisible) {
                 this.workspace.setVisible(false);
                 this.workspace.setVisible(this.props.isVisible);
             }
@@ -1041,18 +1057,23 @@ class Blocks extends React.Component {
         }
     }
     onScriptGlowOn (data) {
+        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowStack(data.id, true);
     }
     onScriptGlowOff (data) {
+        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowStack(data.id, false);
     }
     onBlockGlowOn (data) {
+        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowBlock(data.id, true);
     }
     onBlockGlowOff (data) {
+        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowBlock(data.id, false);
     }
     onVisualReport (data) {
+        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.reportValue(data.id, data.value, data.fullValue);
     }
     getToolboxXML () {
@@ -1093,10 +1114,30 @@ class Blocks extends React.Component {
         }
 
         // Remove and reattach the workspace listener (but allow flyout events)
+        this.cancelDeferredWorkspaceLoad();
         this.workspace.removeChangeListener(this.props.vm.blockListener);
         const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
+        const useDeferredLoad = !!this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred &&
+            (dom.getElementsByTagName('block').length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
+                Object.keys(this.workspace.blockDB_ || {}).length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS);
         try {
-            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+            if (useDeferredLoad) {
+                this.deferredWorkspaceLoad = this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred(
+                    dom,
+                    this.workspace,
+                    {
+                        onProgress: (done, total, blocksLoaded, blocksTotal) => {
+                            this.setWorkspaceLoadProgress(total > 0 ? done / total : 1, blocksLoaded, blocksTotal);
+                        },
+                        onDone: () => {
+                            this.deferredWorkspaceLoad = null;
+                            this.setWorkspaceLoadProgress(null);
+                        }
+                    }
+                );
+            } else {
+                this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+            }
         } catch (error) {
             // The workspace is likely incomplete. What did update should be
             // functional.
@@ -1214,6 +1255,30 @@ class Blocks extends React.Component {
     }
     setBlocks (blocks) {
         this.blocks = blocks;
+    }
+    setLoadingBar (loadingBar) {
+        this.loadingBar = loadingBar;
+        this.loadingBarCounter = loadingBar ? loadingBar.firstElementChild : null;
+    }
+    setWorkspaceLoadProgress (fraction, blocksLoaded, blocksTotal) {
+        if (!this.loadingBar || !this.loadingBarCounter) return;
+        if (fraction === null) {
+            delete this.loadingBar.dataset.active;
+            return;
+        }
+        this.loadingBar.dataset.active = 'true';
+        if (typeof blocksTotal === 'number') {
+            this.loadingBarCounter.textContent = this.props.intl.formatMessage(messages.WORKSPACE_LOAD_PROGRESS, {
+                remaining: Math.max(0, blocksTotal - blocksLoaded)
+            });
+        }
+    }
+    cancelDeferredWorkspaceLoad () {
+        if (this.deferredWorkspaceLoad) {
+            this.deferredWorkspaceLoad.cancel();
+            this.deferredWorkspaceLoad = null;
+        }
+        this.setWorkspaceLoadProgress(null);
     }
     handlePromptStart (message, defaultValue, callback, optTitle, optVarType) {
         const p = {prompt: {callback, message, defaultValue}};
@@ -1351,6 +1416,7 @@ class Blocks extends React.Component {
             <React.Fragment>
                 <DroppableBlocks
                     componentRef={this.setBlocks}
+                    loadingBarRef={this.setLoadingBar}
                     onDrop={this.handleDrop}
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
                     paletteWidth={typeof this.state.flyoutWidth === 'number' ?
