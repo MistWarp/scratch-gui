@@ -22,7 +22,7 @@ const showAlert = (message, options = {}) => new Promise(resolve => {
 
     const cleanup = () => {
         if (windowGrabbedHandler) {
-            document.removeEventListener('mousedown', windowGrabbedHandler);
+            document.removeEventListener('pointerdown', windowGrabbedHandler);
             windowGrabbedHandler = null;
         }
     };
@@ -41,7 +41,7 @@ const showAlert = (message, options = {}) => new Promise(resolve => {
 
     windowGrabbedHandler = handleWindowGrabbed;
     setTimeout(() => {
-        document.addEventListener('mousedown', windowGrabbedHandler);
+        document.addEventListener('pointerdown', windowGrabbedHandler);
     }, 100);
 
     const content = document.createElement('div');
