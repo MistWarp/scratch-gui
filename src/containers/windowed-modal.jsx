@@ -32,19 +32,16 @@ class WindowedModal extends React.Component {
     }
     
     componentDidMount () {
-        // Always create window, visibility will be handled separately
+        if (this.props.visible === false) {
+            return;
+        }
         this.createWindow();
         // Add a history event only if it's not currently for our modal. This
         // avoids polluting the history with many entries. We only need one.
         this.pushHistory(this.id, (history.state === null || history.state !== this.id));
-        
-        // Handle initial visibility
+
         if (this.window) {
-            if (this.props.visible === false) {
-                this.window.hide();
-            } else {
-                this.window.show();
-            }
+            this.window.show();
         }
 
         this.resizeToContentIfNeeded();

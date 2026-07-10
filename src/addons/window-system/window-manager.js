@@ -37,6 +37,22 @@ let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
+const IN_PAGE_WINDOW_IDS = new Set([
+    'customProceduresModal',
+    'onboarding-tutorial'
+]);
+
+const canUseNativeWindows = () =>
+    typeof window !== 'undefined' && typeof window.EditorPreload !== 'undefined';
+
+window.addEventListener('pagehide', () => {
+    for (const win of activeWindows.values()) {
+        if (win.closePopup) {
+            win.closePopup();
+        }
+    }
+});
+
 class AddonWindow {
     constructor (options = {}) {
         this.id = options.id || `addon-window-${++windowCount}`;
@@ -751,9 +767,266 @@ class AddonWindow {
     }
 }
 
+class NativeAddonWindow {
+    constructor (options = {}) {
+        this.id = options.id || `addon-window-${++windowCount}`;
+        this.title = options.title || 'Addon Window';
+        this.width = options.width || 400;
+        this.height = options.height || 300;
+        this.minWidth = options.minWidth || 200;
+        this.minHeight = options.minHeight || 150;
+        this.maxWidth = options.maxWidth || null;
+        this.maxHeight = options.maxHeight || null;
+        this.x = options.x || (Math.random() * 100) + 50;
+        this.y = options.y || (Math.random() * 100) + 50;
+        this.resizable = options.resizable !== false;
+        this.modal = options.modal || false;
+        this.closable = options.closable !== false;
+        this.destroyOnMinimize = options.destroyOnMinimize || false;
+        this.alwaysOnTop = options.alwaysOnTop || false;
+        this.className = options.className || '';
+
+        this.isVisible = false;
+        this.isMinimized = false;
+        this.isMaximized = false;
+        this.zIndex = ++nextZIndex;
+
+        this.onClose = options.onClose || (() => {});
+        this.onMinimize = options.onMinimize || (() => {});
+        this.onMaximize = options.onMaximize || (() => {});
+        this.onRestore = options.onRestore || (() => {});
+        this.onResize = options.onResize || (() => {});
+        this.onMove = options.onMove || (() => {});
+
+        this.popup = null;
+        this.centerOnShow = false;
+
+        this.element = document.createElement('div');
+        this.element.className = `addon-window ${this.className}`;
+        this.element.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--ui-modal-background, #ffffff);
+            color: var(--text-primary, #2d3748);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        `;
+
+        this.headerElement = document.createElement('div');
+
+        this.contentElement = document.createElement('div');
+        this.contentElement.className = 'addon-window-content';
+        this.contentElement.style.cssText = `
+            flex: 1;
+            overflow: auto;
+            box-sizing: border-box;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        `;
+        this.element.appendChild(this.contentElement);
+
+        activeWindows.set(this.id, this);
+    }
+
+    show () {
+        if (this.popup && !this.popup.closed) {
+            this.isVisible = true;
+            return this;
+        }
+
+        const width = Math.round(this.width);
+        const height = Math.round(this.height);
+        let left;
+        let top;
+        if (this.centerOnShow) {
+            left = Math.round((window.screen.availWidth - width) / 2);
+            top = Math.round((window.screen.availHeight - height) / 2);
+        } else {
+            left = Math.round(window.screenX + this.x);
+            top = Math.round(window.screenY + this.y);
+        }
+
+        const features = [
+            'mistwarpAddonWindow=1',
+            'popup=1',
+            `width=${width}`,
+            `height=${height}`,
+            `left=${left}`,
+            `top=${top}`,
+            `minWidth=${Math.round(this.minWidth)}`,
+            `minHeight=${Math.round(this.minHeight)}`,
+            `resizable=${this.resizable ? 1 : 0}`,
+            `alwaysOnTop=${this.alwaysOnTop ? 1 : 0}`
+        ].join(',');
+
+        const popup = window.open('about:blank', this.id, features);
+        if (!popup) {
+            return this;
+        }
+        this.popup = popup;
+        this.isVisible = true;
+        this.isMinimized = false;
+        this.zIndex = ++nextZIndex;
+
+        const doc = popup.document;
+        doc.title = this.title;
+
+        const base = doc.createElement('base');
+        base.href = document.baseURI;
+        doc.head.appendChild(base);
+
+        for (const node of document.querySelectorAll('head style, head link[rel="stylesheet"]')) {
+            doc.head.appendChild(doc.importNode(node, true));
+        }
+
+        for (const attr of document.documentElement.attributes) {
+            doc.documentElement.setAttribute(attr.name, attr.value);
+        }
+        doc.body.className = document.body.className;
+        doc.body.style.cssText = 'margin:0;width:100%;height:100vh;overflow:hidden;';
+        doc.body.appendChild(this.element);
+
+        doc.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && this.closable) {
+                this.close();
+            }
+        });
+
+        popup.addEventListener('resize', () => {
+            this.width = popup.innerWidth;
+            this.height = popup.innerHeight;
+            this.onResize(this.width, this.height);
+        });
+
+        popup.addEventListener('pagehide', () => {
+            if (this.popup === popup) {
+                this.popup = null;
+                this.isVisible = false;
+                document.adoptNode(this.element);
+                activeWindows.delete(this.id);
+                this.onClose();
+            }
+        });
+
+        return this;
+    }
+
+    closePopup () {
+        const popup = this.popup;
+        this.popup = null;
+        this.isVisible = false;
+        if (popup && !popup.closed) {
+            document.adoptNode(this.element);
+            popup.close();
+        }
+    }
+
+    hide () {
+        if (this.popup && !this.popup.closed) {
+            this.destroy(true);
+        }
+        this.isVisible = false;
+        return this;
+    }
+
+    destroy (callOnClose = true) {
+        activeWindows.delete(this.id);
+        this.closePopup();
+        if (callOnClose) {
+            this.onClose();
+        }
+    }
+
+    close () {
+        this.destroy(true);
+    }
+
+    minimize () {
+        if (this.destroyOnMinimize) {
+            this.onMinimize();
+            this.destroy(false);
+            return this;
+        }
+        this.isMinimized = true;
+        this.onMinimize();
+        return this;
+    }
+
+    restore () {
+        this.isMinimized = false;
+        this.show();
+        this.onRestore();
+        return this;
+    }
+
+    maximize () {
+        return this;
+    }
+
+    toggleMaximize () {
+        return this;
+    }
+
+    setContent (content) {
+        this.contentElement.innerHTML = '';
+        if (typeof content === 'string') {
+            this.contentElement.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            this.contentElement.appendChild(content);
+        }
+        return this;
+    }
+
+    setTitle (newTitle) {
+        this.title = newTitle;
+        if (this.popup && !this.popup.closed) {
+            this.popup.document.title = newTitle;
+        }
+        return this;
+    }
+
+    getContentElement () {
+        return this.contentElement;
+    }
+
+    center () {
+        if (this.popup && !this.popup.closed) {
+            this.popup.moveTo(
+                Math.round((window.screen.availWidth - this.popup.outerWidth) / 2),
+                Math.round((window.screen.availHeight - this.popup.outerHeight) / 2)
+            );
+        } else {
+            this.centerOnShow = true;
+        }
+        return this;
+    }
+
+    bringToFront () {
+        this.zIndex = ++nextZIndex;
+        if (this.popup && !this.popup.closed) {
+            this.popup.focus();
+        }
+        return this;
+    }
+
+    focus () {
+        return this.bringToFront();
+    }
+
+    isClosed () {
+        return !this.popup || this.popup.closed;
+    }
+}
+
 // Window Manager API
 const WindowManager = {
-    createWindow (options) {
+    createWindow (options = {}) {
+        if (canUseNativeWindows() && !IN_PAGE_WINDOW_IDS.has(options.id)) {
+            return new NativeAddonWindow(options);
+        }
         return new AddonWindow(options);
     },
     

@@ -21,6 +21,14 @@ import * as accentCherry from './accent/cherry';
 import * as accentSky from './accent/sky';
 import * as accentForest from './accent/forest';
 import * as accentCoral from './accent/coral';
+import * as accentBi from './accent/bi';
+import * as accentPan from './accent/pan';
+import * as accentLesbian from './accent/lesbian';
+import * as accentNonbinary from './accent/nonbinary';
+import * as accentAce from './accent/ace';
+import * as accentVaporwave from './accent/vaporwave';
+import * as accentMatrix from './accent/matrix';
+import * as accentHoney from './accent/honey';
 
 const ACCENTS = [
     {
@@ -160,14 +168,80 @@ const ACCENTS = [
         accent: accentCoral,
         description: 'Warm coral to peach gradient',
         id: 'tw.accent.coral'
+    },
+    {
+        name: 'Bi',
+        accent: accentBi,
+        description: 'Bi pride flag accent',
+        id: 'mw.accent.bi'
+    },
+    {
+        name: 'Pan',
+        accent: accentPan,
+        description: 'Pan pride flag accent',
+        id: 'mw.accent.pan'
+    },
+    {
+        name: 'Lesbian',
+        accent: accentLesbian,
+        description: 'Lesbian pride flag accent',
+        id: 'mw.accent.lesbian'
+    },
+    {
+        name: 'Nonbinary',
+        accent: accentNonbinary,
+        description: 'Nonbinary pride flag accent',
+        id: 'mw.accent.nonbinary'
+    },
+    {
+        name: 'Asexual',
+        accent: accentAce,
+        description: 'Asexual pride flag accent',
+        id: 'mw.accent.asexual'
+    },
+    {
+        name: 'Vaporwave',
+        accent: accentVaporwave,
+        description: 'Retro vaporwave gradient',
+        id: 'mw.accent.vaporwave'
+    },
+    {
+        name: 'Matrix',
+        accent: accentMatrix,
+        description: 'Digital rain green on black',
+        id: 'mw.accent.matrix'
+    },
+    {
+        name: 'Honey',
+        accent: accentHoney,
+        description: 'Warm golden honey gradient',
+        id: 'mw.accent.honey'
+    }
+];
+
+const ACCENT_GROUPS = [
+    {
+        label: {id: 'mw.accentGroup.colors', defaultMessage: 'Colors'},
+        accents: ['red', 'orange', 'yellow', 'green', 'purple', 'blue', 'pink']
+    },
+    {
+        label: {id: 'mw.accentGroup.pride', defaultMessage: 'Pride'},
+        accents: ['rainbow', 'trans', 'gay', 'bi', 'pan', 'lesbian', 'nonbinary', 'asexual']
+    },
+    {
+        label: {id: 'mw.accentGroup.themed', defaultMessage: 'Themed'},
+        accents: [
+            'rotur', 'sunset', 'ocean', 'aurora', 'cosmic', 'fire', 'nebula', 'lavender',
+            'mint', 'cherry', 'sky', 'forest', 'coral', 'vaporwave', 'matrix', 'honey'
+        ]
     }
 ];
 
 const ACCENT_MAP = {};
 for (const accent of ACCENTS) {
     ACCENT_MAP[accent.name.toLowerCase()] = {
+        ...accent.accent,
         defaultMessage: accent.name,
-        accent: accent.accent,
         description: accent.description,
         id: accent.id
     };
@@ -177,5 +251,6 @@ const ACCENT_DEFAULT = ACCENTS[0].name.toLowerCase();
 export {
     ACCENTS,
     ACCENT_MAP,
+    ACCENT_GROUPS,
     ACCENT_DEFAULT
 };

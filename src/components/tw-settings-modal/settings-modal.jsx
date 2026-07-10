@@ -15,8 +15,11 @@ import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
+import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
+import CustomThemesPage from './custom-themes-page.jsx';
 
-import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable, Radio} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable, Radio,
+    Globe, SunMoon, Wallpaper, Type, SwatchBook} from 'lucide-react';
 import {connect} from 'react-redux';
 
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
@@ -1447,6 +1450,16 @@ const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
+    case 'language':
+        return <LanguagePage />;
+    case 'theme':
+        return <ThemePage />;
+    case 'wallpaper':
+        return <WallpaperPage />;
+    case 'fonts':
+        return <FontsPage />;
+    case 'customThemes':
+        return <CustomThemesPage />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -1514,6 +1527,11 @@ class SettingsModalComponent extends React.Component {
                         id: 'general',
                         label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
                         icon: Settings
+                    },
+                    {
+                        id: 'language',
+                        label: intl.formatMessage({id: 'gui.menuBar.language', defaultMessage: 'Language'}),
+                        icon: Globe
                     }
                 ]
             },
@@ -1521,6 +1539,26 @@ class SettingsModalComponent extends React.Component {
                 id: 'appearance',
                 label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: 'Appearance'}),
                 items: [
+                    {
+                        id: 'theme',
+                        label: intl.formatMessage({id: 'tw.menuBar.theme', defaultMessage: 'Theme'}),
+                        icon: SunMoon
+                    },
+                    {
+                        id: 'customThemes',
+                        label: intl.formatMessage({id: 'tw.menuBar.customThemes', defaultMessage: 'Custom Themes'}),
+                        icon: SwatchBook
+                    },
+                    {
+                        id: 'wallpaper',
+                        label: intl.formatMessage({id: 'tw.menuBar.wallpaper', defaultMessage: 'Wallpaper'}),
+                        icon: Wallpaper
+                    },
+                    {
+                        id: 'fonts',
+                        label: intl.formatMessage({id: 'tw.menuBar.fonts', defaultMessage: 'Fonts'}),
+                        icon: Type
+                    },
                     {
                         id: 'editor',
                         label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),

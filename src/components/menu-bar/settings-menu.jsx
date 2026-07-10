@@ -1,89 +1,44 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
+import {connect} from 'react-redux';
 
-import LanguageMenu from './language-menu.jsx';
-import MenuBarMenu from './menu-bar-menu.jsx';
-import {MenuSection} from '../menu/menu.jsx';
-import MenuLabel from './tw-menu-label.jsx';
-import TWAccentThemeMenu from './tw-theme-accent.jsx';
-import TWGuiThemeMenu from './tw-theme-gui.jsx';
-import TWWarpThemeMenu from './mw-warptheme-menu.jsx';
-import TWBlocksThemeMenu from './tw-theme-blocks.jsx';
-import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
-import TWFontsThemeMenu from './tw-theme-fonts.jsx';
-import TWCustomThemeMenu from './tw-theme-custom.jsx';
+import {openSettingsModal} from '../../reducers/modals.js';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
 
-import ChevronDown from './ChevronDown.jsx';
-import {Eye} from 'lucide-react';
+import {Settings} from 'lucide-react';
 
-const SettingsMenu = ({
-    canChangeLanguage,
-    canChangeTheme,
-    isRtl,
-    onOpenCustomSettings,
-    onRequestClose,
-    onRequestOpen,
-    settingsMenuOpen
-}) => (
-    <MenuLabel
-        dataItem="view"
-        open={settingsMenuOpen}
-        onOpen={onRequestOpen}
-        onClose={onRequestClose}
+const SettingsMenu = ({onOpenSettings}) => (
+    <div
+        data-mw-item="view"
+        className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
+        onClick={onOpenSettings}
     >
-        <Eye
+        <Settings
             width={20}
             height={20}
             size={20}
         />
         <span className={styles.dropdownLabel}>
             <FormattedMessage
-                defaultMessage="View"
-                description="View menu"
-                id="gui.menuBar.theme"
+                defaultMessage="Settings"
+                description="Button in the menu bar to open the settings window"
+                id="mw.menuBar.settings"
             />
         </span>
-        <ChevronDown />
-        <MenuBarMenu
-            className={menuBarStyles.menuBarMenu}
-            open={settingsMenuOpen}
-            place={isRtl ? 'left' : 'right'}
-        >
-            <MenuSection>
-                {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
-                {canChangeTheme && (
-                    <React.Fragment>
-                        <TWCustomThemeMenu />
-                        <TWGuiThemeMenu />
-                        <TWWallpaperMenu />
-                        <TWFontsThemeMenu />
-                    </React.Fragment>
-                )}
-            </MenuSection>
-            <div className={styles.menuSeparator} />
-            {canChangeTheme && (
-                <MenuSection>
-                    <TWBlocksThemeMenu />
-                    <TWAccentThemeMenu />
-                    <TWWarpThemeMenu />
-                </MenuSection>
-            )}
-        </MenuBarMenu>
-    </MenuLabel>
+    </div>
 );
 
 SettingsMenu.propTypes = {
-    canChangeLanguage: PropTypes.bool,
-    canChangeTheme: PropTypes.bool,
-    isRtl: PropTypes.bool,
-    onOpenCustomSettings: PropTypes.func,
-    onRequestClose: PropTypes.func,
-    onRequestOpen: PropTypes.func,
-    settingsMenuOpen: PropTypes.bool
+    onOpenSettings: PropTypes.func
 };
 
-export default SettingsMenu;
+export default connect(
+    null,
+    dispatch => ({
+        onOpenSettings: () => dispatch(openSettingsModal())
+    })
+)(SettingsMenu);

@@ -589,16 +589,61 @@ export default async function ({ addon, msg, console }) {
         }
       }
 
-      const blocks = this.workspace.getAllBlocks().filter(v => !v.isShadow_);
-      for (const block of blocks) {
-        const blockType = block.type;
-        if (!blockType.startsWith("data_") &&
-          !blockType.startsWith("event_") &&
-          !blockType.startsWith("procedures_") &&
-          blockType !== "control_start_as_clone" &&
-          blockType !== "event_broadcast" &&
-          blockType !== "event_broadcastandwait") {
-          addBlock(blockType, blockType, block);
+      const target = this.utils.getEditingTarget();
+      const vmBlocks = target && target.blocks && target.blocks._blocks;
+      const pendingScripts =
+        typeof workspace.getDeferredScripts === "function" ? workspace.getDeferredScripts() : [];
+      const setPendingY = (item, y) => {
+        if (item.y === null || item.y === undefined) {
+          item.y = y;
+        }
+      };
+      for (const ds of pendingScripts) {
+        const block = vmBlocks && ds.id ? vmBlocks[ds.id] : null;
+        if (!block) continue;
+        if (block.opcode === "procedures_definition") {
+          const protoId = block.inputs?.custom_block?.block;
+          const proto = protoId && vmBlocks[protoId];
+          const procCode = (proto && proto.mutation && proto.mutation.proccode) || "custom block";
+          setPendingY(addBlock("define", `define ${procCode}`, { id: ds.id }), ds.y);
+        } else if (block.opcode === "event_whenflagclicked") {
+          setPendingY(addBlock("flag", `when ${msg("/_general/blocks/green-flag")} clicked`, { id: ds.id }), ds.y);
+        } else if (block.opcode === "event_whenbroadcastreceived") {
+          const eventName = block.fields?.BROADCAST_OPTION?.value || "message";
+          const item = addBlock("receive", msg("event", { name: eventName }), { id: ds.id });
+          item.eventName = eventName;
+          setPendingY(item, ds.y);
+        } else if (block.opcode.startsWith("event_when") || block.opcode === "control_start_as_clone") {
+          setPendingY(addBlock("event", block.opcode.replace("event_when", "when ").replace(/_/g, " "), { id: ds.id }), ds.y);
+        }
+      }
+
+      if (vmBlocks) {
+        for (const blockId of Object.keys(vmBlocks)) {
+          const block = vmBlocks[blockId];
+          if (block.shadow) continue;
+          const blockType = block.opcode;
+          if (!blockType.startsWith("data_") &&
+            !blockType.startsWith("event_") &&
+            !blockType.startsWith("procedures_") &&
+            blockType !== "control_start_as_clone" &&
+            blockType !== "event_broadcast" &&
+            blockType !== "event_broadcastandwait") {
+            addBlock(blockType, blockType, { id: blockId });
+          }
+        }
+      } else {
+        const blocks = this.workspace.getAllBlocks().filter(v => !v.isShadow_);
+        for (const block of blocks) {
+          const blockType = block.type;
+          if (!blockType.startsWith("data_") &&
+            !blockType.startsWith("event_") &&
+            !blockType.startsWith("procedures_") &&
+            blockType !== "control_start_as_clone" &&
+            blockType !== "event_broadcast" &&
+            blockType !== "event_broadcastandwait") {
+            addBlock(blockType, blockType, block);
+          }
         }
       }
 
@@ -715,26 +760,30 @@ export default async function ({ addon, msg, console }) {
     getCallsToEvents() {
       const uses = [];
       const alreadyFound = new Set();
+      const target = this.utils.getEditingTarget();
+      const vmBlocks = target && target.blocks && target.blocks._blocks;
+      if (!vmBlocks) {
+        return uses;
+      }
 
-      for (const block of this.workspace.getAllBlocks()) {
-        if (block.type !== "event_broadcast" && block.type !== "event_broadcastandwait") {
+      for (const blockId of Object.keys(vmBlocks)) {
+        const block = vmBlocks[blockId];
+        if (block.opcode !== "event_broadcast" && block.opcode !== "event_broadcastandwait") {
           continue;
         }
 
-        const broadcastInput = block.getChildren()[0];
-        if (!broadcastInput) {
-          continue;
-        }
+        const inputBlockId = block.inputs?.BROADCAST_INPUT?.block;
+        const inputBlock = inputBlockId && vmBlocks[inputBlockId];
 
         let eventName = "";
-        if (broadcastInput.type === "event_broadcast_menu") {
-          eventName = broadcastInput.inputList[0].fieldRow[0].getText();
+        if (inputBlock && inputBlock.opcode === "event_broadcast_menu") {
+          eventName = inputBlock.fields?.BROADCAST_OPTION?.value || "";
         } else {
           eventName = msg("complex-broadcast");
         }
         if (!alreadyFound.has(eventName)) {
           alreadyFound.add(eventName);
-          uses.push({ eventName: eventName, block: block });
+          uses.push({ eventName: eventName, block: { id: blockId } });
         }
       }
 
@@ -933,7 +982,12 @@ export default async function ({ addon, msg, console }) {
         for (const cloneID of item.data.clones) {
           blocks.push(this.workspace.getBlockById(cloneID));
         }
-        this.carousel.build(item, blocks, instanceBlock);
+        if (blocks.every(Boolean)) {
+          this.carousel.build(item, blocks, instanceBlock);
+        } else {
+          this.utils.scrollBlockIntoView(item.data.labelID);
+          this.carousel.remove();
+        }
       } else {
         this.utils.scrollBlockIntoView(item.data.labelID);
         this.carousel.remove();
@@ -941,19 +995,20 @@ export default async function ({ addon, msg, console }) {
     }
 
     getVariableUsesById(id) {
-      let uses = [];
+      const target = this.utils.getEditingTarget();
+      const vmBlocks = target && target.blocks && target.blocks._blocks;
+      const uses = [];
+      if (!vmBlocks) {
+        return uses;
+      }
 
-      let topBlocks = this.workspace.getTopBlocks();
-      for (const topBlock of topBlocks) {
-        let kids = topBlock.getDescendants();
-        for (const block of kids) {
-          let blockVariables = block.getVarModels();
-          if (blockVariables) {
-            for (const blockVar of blockVariables) {
-              if (blockVar.getId() === id) {
-                uses.push(block);
-              }
-            }
+      for (const blockId of Object.keys(vmBlocks)) {
+        const block = vmBlocks[blockId];
+        const fields = block.fields || {};
+        for (const fieldName of Object.keys(fields)) {
+          if (fields[fieldName] && fields[fieldName].id === id) {
+            uses.push(new BlockInstance(target, block));
+            break;
           }
         }
       }
@@ -962,20 +1017,29 @@ export default async function ({ addon, msg, console }) {
     }
 
     getCallsToProcedureById(id) {
-      let procBlock = this.workspace.getBlockById(id);
-      let label = procBlock.getChildren()[0];
-      let procCode = label.getProcCode();
+      const target = this.utils.getEditingTarget();
+      const vmBlocks = target && target.blocks && target.blocks._blocks;
+      const defBlock = vmBlocks && vmBlocks[id];
+      if (!defBlock) {
+        return [];
+      }
 
-      let uses = [procBlock];
-      let topBlocks = this.workspace.getTopBlocks();
-      for (const topBlock of topBlocks) {
-        let kids = topBlock.getDescendants();
-        for (const block of kids) {
-          if (block.type === "procedures_call") {
-            if (block.getProcCode() === procCode) {
-              uses.push(block);
-            }
-          }
+      const protoId = defBlock.inputs?.custom_block?.block;
+      const proto = protoId && vmBlocks[protoId];
+      const procCode = proto && proto.mutation && proto.mutation.proccode;
+
+      const uses = [new BlockInstance(target, defBlock)];
+      if (!procCode) {
+        return uses;
+      }
+      for (const blockId of Object.keys(vmBlocks)) {
+        const block = vmBlocks[blockId];
+        if (
+          (block.opcode === "procedures_call" || block.opcode === "procedures_call_return") &&
+          block.mutation &&
+          block.mutation.proccode === procCode
+        ) {
+          uses.push(new BlockInstance(target, block));
         }
       }
 
