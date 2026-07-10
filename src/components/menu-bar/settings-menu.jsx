@@ -12,7 +12,6 @@ import TWWarpThemeMenu from './mw-warptheme-menu.jsx';
 import TWBlocksThemeMenu from './tw-theme-blocks.jsx';
 import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
-import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
 
 import menuBarStyles from './menu-bar.css';
@@ -69,7 +68,6 @@ const SettingsMenu = ({
             {canChangeTheme && (
                 <MenuSection>
                     <TWBlocksThemeMenu />
-                    <TWMenuBarAlignMenu />
                     <TWAccentThemeMenu />
                     <TWWarpThemeMenu />
                 </MenuSection>

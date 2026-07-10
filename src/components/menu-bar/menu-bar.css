@@ -160,10 +160,14 @@
     opacity: 0.5;
 }
 
-.menu-bar:not(:has(> .main-menu-align-right)) > .account-info-group {
+/* Always flex so right-align does not stack Login under the bar */
+.account-info-group {
     display: flex;
     flex-direction: row;
     align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+    min-width: 0;
 }
 
 .menu-bar:has(> .main-menu-align-left) > .account-info-group {
@@ -202,6 +206,19 @@
     display: flex;
     align-items: center;
     height: 100%;
+}
+
+.rotur-account-slot {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.rotur-account-slot > * {
+    height: 100%;
+    max-height: 100%;
 }
 
 .profile-icon {

@@ -1,0 +1,219 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.modal-content {
+    max-width: 440px;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.body {
+    flex: 1 1 auto;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0.85rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: $ui-primary;
+    color: $text-primary;
+    box-sizing: border-box;
+}
+
+.hero {
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    object-fit: cover;
+    background: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+}
+
+.hero-text {
+    min-width: 0;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: $text-primary;
+}
+
+.subtitle {
+    margin: 0.15rem 0 0;
+    color: $text-primary;
+    opacity: 0.75;
+    font-size: 0.82rem;
+    line-height: 1.3;
+}
+
+.section-label {
+    margin: 0.15rem 0 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    color: $text-primary;
+}
+
+.feature-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.feature,
+.feature-coming {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    background: $ui-white;
+    border: 1px solid $ui-black-transparent;
+}
+
+.feature-coming {
+    background: $ui-secondary;
+    border-style: dashed;
+    border-color: $looks-transparent;
+}
+
+.feature-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: $looks-secondary;
+    color: $ui-white;
+    margin-top: 0.05rem;
+}
+
+.feature-coming .feature-icon {
+    background: $looks-transparent;
+    color: $looks-secondary;
+}
+
+.feature-icon svg {
+    width: 13px;
+    height: 13px;
+}
+
+.feature-text {
+    min-width: 0;
+}
+
+.feature-title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: $text-primary;
+    line-height: 1.25;
+}
+
+.feature-desc {
+    margin: 0.1rem 0 0;
+    font-size: 0.75rem;
+    opacity: 0.75;
+    line-height: 1.3;
+    color: $text-primary;
+}
+
+.error {
+    margin: 0;
+    padding: 0.4rem 0.55rem;
+    border-radius: 6px;
+    background: $error-transparent;
+    border: 1px solid $error-primary;
+    color: $text-primary;
+    font-size: 0.8rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.45rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 0.15rem;
+}
+
+.button {
+    appearance: none;
+    border: none;
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.primary {
+    background: $looks-secondary;
+    color: $ui-white;
+    border: 1px solid $looks-secondary;
+}
+
+.primary:hover:not(:disabled) {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.secondary {
+    background: $ui-white;
+    color: $text-primary;
+    border: 1px solid $ui-black-transparent;
+}
+
+.secondary:hover:not(:disabled) {
+    background: $ui-secondary;
+    border-color: $looks-transparent;
+}
+
+.footnote {
+    margin: 0;
+    font-size: 0.7rem;
+    opacity: 0.65;
+    line-height: 1.3;
+    color: $text-primary;
+}
+
+.footnote a {
+    color: $looks-secondary;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footnote a:hover {
+    color: $looks-secondary-dark;
+    text-decoration: underline;
+}

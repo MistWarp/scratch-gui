@@ -16,7 +16,8 @@ import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 
-import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable, Radio} from 'lucide-react';
+import {connect} from 'react-redux';
 
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
@@ -26,6 +27,12 @@ import {
     getAuthorName, getAuthorEmail, setAuthorName, setAuthorEmail,
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
+import {
+    getRoturSettings,
+    setRoturSetting,
+    formatActivityTitle,
+    formatActivityStatus
+} from '../../lib/rotur/settings.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -94,6 +101,10 @@ const messages = defineMessages({
     headerVariableManager: {
         defaultMessage: 'Variable Manager',
         id: 'mw.settings.variableManagerHeader'
+    },
+    headerRotur: {
+        defaultMessage: 'Rotur',
+        id: 'mw.settings.roturHeader'
     }
 });
 
@@ -1304,6 +1315,134 @@ UnwrappedVariableManagerPage.propTypes = {
 };
 const VariableManagerPage = injectIntl(UnwrappedVariableManagerPage);
 
+class UnwrappedRoturPage extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handlePresenceChange',
+            'handleIncludeDurationChange'
+        ]);
+        this.state = getRoturSettings();
+    }
+    setSetting (key, value) {
+        setRoturSetting(key, value);
+        this.setState({[key]: value});
+    }
+    handlePresenceChange (e) {
+        this.setSetting('presenceEnabled', e.target.checked);
+    }
+    handleIncludeDurationChange (e) {
+        this.setSetting('includeEditDuration', e.target.checked);
+    }
+    render () {
+        const {intl, loggedIn, username, projectTitle} = this.props;
+        const {presenceEnabled, includeEditDuration} = this.state;
+
+        return (
+            <Box className={styles.body}>
+                <Header>{intl.formatMessage(messages.headerRotur)}</Header>
+                <p className={styles.detail}>
+                    {loggedIn ? (
+                        <FormattedMessage
+                            defaultMessage="Signed in as {username}. These options control how MistWarp appears on your Rotur profile."
+                            id="mw.settings.rotur.signedInAs"
+                            values={{username}}
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Log in with Rotur from the top-right of the menu bar to publish presence."
+                            id="mw.settings.rotur.notSignedIn"
+                        />
+                    )}
+                </p>
+
+                <BooleanSetting
+                    value={presenceEnabled}
+                    onChange={this.handlePresenceChange}
+                    label={<FormattedMessage
+                        defaultMessage="Show MistWarp activity on Rotur"
+                        id="mw.settings.rotur.presenceEnabled"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="When signed in, friends on Rotur can see that you are editing in MistWarp."
+                        id="mw.settings.rotur.presenceEnabledHelp"
+                    />}
+                />
+                <BooleanSetting
+                    value={includeEditDuration}
+                    onChange={this.handleIncludeDurationChange}
+                    label={<FormattedMessage
+                        defaultMessage="Show how long I've been editing"
+                        id="mw.settings.rotur.includeEditDuration"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Uses Rotur's elapsed timer. Not added to the title or status text."
+                        id="mw.settings.rotur.includeEditDurationHelp"
+                    />}
+                />
+
+                <p className={styles.detail}>
+                    <FormattedMessage
+                        defaultMessage="Themes and settings sync to your Rotur account when signed in."
+                        id="mw.settings.rotur.cloudSyncNote"
+                    />
+                </p>
+
+                <div className={styles.setting}>
+                    <div className={styles.textSettingLabel}>
+                        <FormattedMessage
+                            defaultMessage="Preview"
+                            id="mw.settings.rotur.preview"
+                        />
+                    </div>
+                    <p className={styles.detail}>
+                        <strong>MistWarp</strong>
+                        <br />
+                        {formatActivityTitle()}
+                        <br />
+                        {formatActivityStatus(projectTitle)}
+                        {includeEditDuration ? (
+                            <React.Fragment>
+                                <br />
+                                <em>
+                                    <FormattedMessage
+                                        defaultMessage="(+ live edit timer on Rotur)"
+                                        id="mw.settings.rotur.previewTimer"
+                                    />
+                                </em>
+                            </React.Fragment>
+                        ) : null}
+                        {!presenceEnabled ? (
+                            <React.Fragment>
+                                <br />
+                                <em>
+                                    <FormattedMessage
+                                        defaultMessage="(Presence is disabled — nothing is published.)"
+                                        id="mw.settings.rotur.previewDisabled"
+                                    />
+                                </em>
+                            </React.Fragment>
+                        ) : null}
+                    </p>
+                </div>
+            </Box>
+        );
+    }
+}
+UnwrappedRoturPage.propTypes = {
+    intl: intlShape.isRequired,
+    loggedIn: PropTypes.bool,
+    username: PropTypes.string,
+    projectTitle: PropTypes.string
+};
+const RoturPage = injectIntl(connect(
+    state => ({
+        loggedIn: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.username),
+        username: state.scratchGui.rotur ? state.scratchGui.rotur.username : null,
+        projectTitle: state.scratchGui.projectTitle
+    })
+)(UnwrappedRoturPage));
+
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
@@ -1320,6 +1459,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <StylesPage {...handlers} />;
     case 'menuBar':
         return <MenuBarPage {...handlers} />;
+    case 'rotur':
+        return <RoturPage {...handlers} />;
     case 'experimental':
         return <ExperimentalPage {...handlers} />;
     default:
@@ -1421,6 +1562,11 @@ class SettingsModalComponent extends React.Component {
                         id: 'debugger',
                         label: intl.formatMessage({id: 'mw.settings.debugger', defaultMessage: 'Debugger'}),
                         icon: Bug
+                    },
+                    {
+                        id: 'rotur',
+                        label: intl.formatMessage({id: 'mw.settings.rotur', defaultMessage: 'Rotur'}),
+                        icon: Radio
                     }
                 ]
             },

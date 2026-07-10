@@ -12,7 +12,12 @@ class MenuItem extends React.Component {
         ]);
     }
     navigateToHref () {
-        if (this.props.href) window.location.href = this.props.href;
+        if (!this.props.href) return;
+        if (/^https?:\/\//i.test(this.props.href)) {
+            window.open(this.props.href, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        window.location.href = this.props.href;
     }
     render () {
         const {

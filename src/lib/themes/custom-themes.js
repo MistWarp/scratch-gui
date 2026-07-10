@@ -788,6 +788,11 @@ class CustomThemeManager {
             if (themesData.length === 0) {
                 localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
                 console.log('Cleared custom themes storage (no themes)');
+                try {
+                    require('../rotur/cloud-sync.js').notifyLocalChange();
+                } catch (_) {
+                    // cloud sync optional
+                }
                 this._emitChange();
                 return;
             }
@@ -801,6 +806,12 @@ class CustomThemeManager {
             localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, jsonString);
 
             console.log(`Saved ${themesData.length} custom themes to storage (${jsonString.length} bytes)`);
+
+            try {
+                require('../rotur/cloud-sync.js').notifyLocalChange();
+            } catch (_) {
+                // cloud sync optional
+            }
 
             this._emitChange();
         } catch (e) {
