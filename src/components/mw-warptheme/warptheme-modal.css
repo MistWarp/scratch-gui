@@ -1,181 +1,8 @@
 @import "../../css/colors.css";
 @import "../../css/default-colors.css";
 
-/* Layout mirrors tw-settings-modal: flat sidebar + content, theme tokens only. */
-
 .modal-content {
     height: 100%;
-}
-
-.sidebar-layout {
-    position: relative;
-    display: flex;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    background: $ui-modal-background;
-    color: $text-primary;
-}
-
-/* ── Sidebar ── */
-
-.sidebar {
-    display: flex;
-    width: 220px;
-    min-width: 220px;
-    max-width: 220px;
-    min-height: 100%;
-    border-right: 1px solid $ui-black-transparent;
-    background: $ui-modal-background;
-    flex-direction: column;
-    flex-shrink: 0;
-}
-
-.sidebar-items {
-    flex: 1;
-    min-height: 0;
-    padding: 0.5rem;
-    overflow-y: auto;
-}
-
-.sidebar-items::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sidebar-items::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.sidebar-items::-webkit-scrollbar-thumb {
-    background: $ui-black-transparent;
-    border-radius: 3px;
-}
-
-.sidebar-group {
-    margin-bottom: 0.5rem;
-}
-
-.sidebar-group-header {
-    width: 100%;
-    padding: 0.75rem 1rem 0.25rem;
-    color: color-mix(in srgb, $text-primary 55%, transparent);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-align: left;
-    text-transform: uppercase;
-    user-select: none;
-}
-
-.sidebar-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    margin: 0.25rem 0;
-    padding: 0.75rem 1rem;
-    overflow: hidden;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: $text-primary;
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sidebar-item:hover {
-    background: $ui-tertiary;
-}
-
-.sidebar-item.selected {
-    background: $looks-transparent;
-    color: white;
-}
-
-.sidebar-icon {
-    width: 18px;
-    height: 18px;
-    margin-right: 0.75rem;
-    flex-shrink: 0;
-}
-
-.sidebar-label {
-    flex: 1;
-    min-width: 0;
-}
-
-.sidebar-badge {
-    min-width: 1.25rem;
-    padding: 0.1rem 0.35rem;
-    border-radius: 999px;
-    background: $error-primary;
-    color: white;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-align: center;
-}
-
-.sidebar-account {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.75rem 1rem;
-    border-top: 1px solid $ui-black-transparent;
-    min-width: 0;
-}
-
-.sidebar-account img {
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: $ui-tertiary;
-}
-
-.sidebar-account > div {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-}
-
-.sidebar-account strong {
-    overflow: hidden;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sidebar-account span {
-    overflow: hidden;
-    margin-top: 0.05rem;
-    color: color-mix(in srgb, $text-primary 55%, transparent);
-    font-size: 0.625rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sidebar-account > svg {
-    margin-left: auto;
-    flex-shrink: 0;
-    color: $looks-secondary;
-}
-
-/* ── Content ── */
-
-.content-area {
-    display: flex;
-    min-width: 0;
-    min-height: 0;
-    flex: 1;
-    flex-direction: column;
-    overflow: hidden;
-    background: $ui-modal-background;
 }
 
 .page-content {
@@ -432,7 +259,7 @@
 .secondary-button:disabled,
 .danger-button:disabled {
     opacity: 0.5;
-    cursor: wait;
+    cursor: not-allowed;
 }
 
 /* ── Empty / gate / center ── */
@@ -525,20 +352,21 @@
 
 .upload-form {
     display: flex;
-    width: min(480px, 100%);
-    padding: 1.25rem;
+    width: min(520px, 100%);
+    margin: 0 auto;
+    padding: 1.35rem;
     border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
+    border-radius: 12px;
     background: $ui-secondary;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 0.9rem;
 }
 
 .form-intro {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding-bottom: 0.85rem;
+    padding-bottom: 0.9rem;
     border-bottom: 1px solid $ui-black-transparent;
 }
 
@@ -546,17 +374,154 @@
     margin: 0.15rem 0 0;
     color: color-mix(in srgb, $text-primary 60%, transparent);
     font-size: 0.75rem;
+    line-height: 1.4;
 }
 
 .form-icon {
     display: grid;
     width: 2.5rem;
     height: 2.5rem;
-    border-radius: 6px;
-    background: $ui-tertiary;
-    color: $text-primary;
+    border-radius: 8px;
+    background: $looks-transparent;
+    color: $looks-secondary;
     flex: none;
     place-items: center;
+}
+
+.upload-source-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.upload-source-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+    color: $text-primary;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.upload-source-card span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.upload-source-card strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.upload-source-card em {
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.6875rem;
+    font-style: normal;
+    line-height: 1.3;
+}
+
+.upload-source-card:hover {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+}
+
+.upload-source-card svg {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+}
+
+.upload-source-active {
+    border-color: $looks-secondary;
+    background: $looks-transparent;
+    box-shadow: 0 0 0 1px $looks-secondary;
+}
+
+.upload-source-active svg,
+.upload-source-active strong {
+    color: $looks-secondary;
+}
+
+.upload-preview {
+    display: flex;
+    min-height: 5.5rem;
+    overflow: hidden;
+    border-radius: 8px;
+    background: $ui-tertiary;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.upload-preview-body {
+    display: flex;
+    padding: 0.75rem 0.85rem;
+    background: color-mix(in srgb, $ui-secondary 88%, transparent);
+    backdrop-filter: blur(6px);
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.upload-preview-body strong {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.upload-preview-body > span:last-child {
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.6875rem;
+}
+
+.dropzone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    min-height: 7.5rem;
+    padding: 1rem;
+    border: 1.5px dashed $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    flex-direction: column;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.dropzone:hover,
+.dropzone-active {
+    border-color: $looks-secondary;
+    background: $looks-transparent;
+    color: $looks-secondary;
+}
+
+.dropzone-ready {
+    border-style: solid;
+    border-color: $looks-secondary;
+    background: $looks-transparent;
+    color: $looks-secondary;
+}
+
+.dropzone strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.dropzone span {
+    font-size: 0.6875rem;
+    opacity: 0.85;
+}
+
+.dropzone-input {
+    display: none;
 }
 
 .upload-form label,
@@ -580,22 +545,6 @@
 .panel textarea {
     min-height: 5.5rem;
     resize: vertical;
-}
-
-.file-field input {
-    padding: 0.35rem;
-}
-
-.file-ready {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 0.65rem;
-    border-radius: 6px;
-    background: $looks-transparent;
-    color: $looks-secondary;
-    font-size: 0.75rem;
-    font-weight: 600;
 }
 
 .panel-actions,
@@ -744,37 +693,15 @@
 /* ── Responsive ── */
 
 @media (max-width: 720px) {
-    .sidebar {
-        width: 72px;
-        min-width: 72px;
-        max-width: 72px;
-    }
-
-    .sidebar-label,
-    .sidebar-group-header,
-    .sidebar-account > div,
-    .sidebar-account > svg {
-        display: none;
-    }
-
-    .sidebar-item {
-        justify-content: center;
-        padding: 0.75rem;
-    }
-
-    .sidebar-icon {
-        margin: 0;
-    }
-
-    .sidebar-account {
-        justify-content: center;
-        padding: 0.65rem;
-    }
-
     .toolbar,
-    .report {
+    .report,
+    .upload-source-row {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .upload-source-row {
+        display: flex;
     }
 
     .grid {

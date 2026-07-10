@@ -9,6 +9,14 @@ import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
+import {
+    ModalSidebar,
+    ModalSidebarContent,
+    ModalSidebarGroup,
+    ModalSidebarGroupHeader,
+    ModalSidebarItem,
+    ModalSidebarLayout
+} from '../modal-sidebar/modal-sidebar.jsx';
 import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
@@ -17,9 +25,11 @@ import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
 import CustomThemesPage from './custom-themes-page.jsx';
+import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
+import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
-import {Settings, Zap, Blocks, Palette, PanelTop, Bug, ChevronDown, GitBranch, Variable, Radio,
-    Globe, SunMoon, Wallpaper, Type, SwatchBook, Monitor} from 'lucide-react';
+import {Settings, Zap, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Radio,
+    Globe, SunMoon, Wallpaper, Type, SwatchBook, Monitor, Keyboard} from 'lucide-react';
 import {connect} from 'react-redux';
 
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
@@ -131,46 +141,6 @@ const Header = ({children}) => (
 );
 Header.propTypes = {
     children: PropTypes.node
-};
-
-const SidebarItem = ({id, label, icon: Icon, isSelected, onClick}) => (
-    <div
-        className={classNames(styles.sidebarItem, {[styles.selected]: isSelected})}
-        onClick={() => onClick(id)}
-        title={label}
-    >
-        {Icon && <Icon className={styles.sidebarIcon} />}
-        <span className={styles.sidebarLabel}>{label}</span>
-    </div>
-);
-
-SidebarItem.propTypes = {
-    id: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
-    icon: PropTypes.elementType,
-    onClick: PropTypes.func.isRequired,
-    isSelected: PropTypes.bool
-};
-
-const SidebarGroupHeader = ({id, label, collapsed, onClick}) => (
-    <button
-        type="button"
-        className={styles.sidebarGroupHeader}
-        onClick={() => onClick(id)}
-        aria-expanded={!collapsed}
-    >
-        <ChevronDown
-            className={classNames(styles.sidebarGroupChevron, {[styles.collapsed]: collapsed})}
-        />
-        <span>{label}</span>
-    </button>
-);
-
-SidebarGroupHeader.propTypes = {
-    id: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
-    collapsed: PropTypes.bool,
-    onClick: PropTypes.func.isRequired
 };
 
 class UnwrappedSetting extends React.Component {
@@ -1684,6 +1654,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <GeneralPage {...handlers} />;
     case 'language':
         return <LanguagePage />;
+    case 'shortcuts':
+        return <ShortcutManager />;
     case 'theme':
         return <ThemePage />;
     case 'wallpaper':
@@ -1726,7 +1698,7 @@ class SettingsModalComponent extends React.Component {
         bindAll(this, ['handleNavigate', 'handleStoreProjectOptions', 'handleToggleGroup']);
 
         this.state = {
-            currentView: 'general',
+            currentView: takeSettingsModalInitialView() || 'general',
             collapsedGroups: {}
         };
     }
@@ -1766,6 +1738,14 @@ class SettingsModalComponent extends React.Component {
                         id: 'language',
                         label: intl.formatMessage({id: 'gui.menuBar.language', defaultMessage: 'Language'}),
                         icon: Globe
+                    },
+                    {
+                        id: 'shortcuts',
+                        label: intl.formatMessage({
+                            id: 'tw.menuBar.keyboardShortcuts',
+                            defaultMessage: 'Keyboard Shortcuts'
+                        }),
+                        icon: Keyboard
                     }
                 ]
             },
@@ -1878,45 +1858,42 @@ class SettingsModalComponent extends React.Component {
                 width={880}
                 height={550}
             >
-                <Box className={styles.sidebarLayout}>
-                    <div className={styles.sidebar}>
-                        <div className={styles.sidebarItems}>
-                            {sidebarGroups.map(group => {
-                                const collapsed = !!this.state.collapsedGroups[group.id];
-                                return (
-                                    <div
-                                        key={group.id}
-                                        className={styles.sidebarGroup}
-                                    >
-                                        <SidebarGroupHeader
-                                            id={group.id}
-                                            label={group.label}
-                                            collapsed={collapsed}
-                                            onClick={this.handleToggleGroup}
+                <ModalSidebarLayout>
+                    <ModalSidebar
+                        ariaLabel="Settings sections"
+                        width="wide"
+                    >
+                        {sidebarGroups.map(group => {
+                            const collapsed = !!this.state.collapsedGroups[group.id];
+                            return (
+                                <ModalSidebarGroup key={group.id}>
+                                    <ModalSidebarGroupHeader
+                                        collapsible
+                                        collapsed={collapsed}
+                                        label={group.label}
+                                        onClick={() => this.handleToggleGroup(group.id)}
+                                    />
+                                    {!collapsed && group.items.map(cat => (
+                                        <ModalSidebarItem
+                                            key={cat.id}
+                                            icon={cat.icon}
+                                            label={cat.label}
+                                            selected={currentView === cat.id}
+                                            onClick={() => this.handleNavigate(cat.id)}
                                         />
-                                        {!collapsed && group.items.map(cat => (
-                                            <SidebarItem
-                                                key={cat.id}
-                                                id={cat.id}
-                                                label={cat.label}
-                                                icon={cat.icon}
-                                                onClick={this.handleNavigate}
-                                                isSelected={currentView === cat.id}
-                                            />
-                                        ))}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                    <div className={styles.contentArea}>
+                                    ))}
+                                </ModalSidebarGroup>
+                            );
+                        })}
+                    </ModalSidebar>
+                    <ModalSidebarContent className={styles.contentArea}>
                         <SettingsRouter
                             view={currentView}
                             {...this.props}
                             onStoreProjectOptions={this.handleStoreProjectOptions}
                         />
-                    </div>
-                </Box>
+                    </ModalSidebarContent>
+                </ModalSidebarLayout>
             </Modal>
         );
     }
