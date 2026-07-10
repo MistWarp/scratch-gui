@@ -201,12 +201,7 @@ class OnboardingTutorial extends Component {
             return;
         }
 
-        this.onboardingWindow.x = x;
-        this.onboardingWindow.y = y;
-        if (this.onboardingWindow.element) {
-            this.onboardingWindow.element.style.left = `${x}px`;
-            this.onboardingWindow.element.style.top = `${y}px`;
-        }
+        this.onboardingWindow.moveTo(x, y);
     }
 
     handleClose = () => {
