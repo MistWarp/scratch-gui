@@ -1307,6 +1307,70 @@ class CustomThemeManager {
     }
 
     /**
+     * Whether a theme name is already in use
+     * @param {string} name theme name
+     * @returns {boolean} true if taken
+     */
+    isNameTaken (name) {
+        const trimmed = (name || '').trim().toLowerCase();
+        if (!trimmed) return false;
+        for (const theme of this.themes.values()) {
+            if (theme.name.toLowerCase() === trimmed) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Produce a unique library name, appending (2), (3), …
+     * @param {string} baseName preferred name
+     * @returns {string} unique name
+     */
+    uniqueName (baseName) {
+        const base = (baseName || 'Imported Theme').trim() || 'Imported Theme';
+        if (!this.isNameTaken(base)) return base;
+        let n = 2;
+        while (this.isNameTaken(`${base} (${n})`)) n += 1;
+        return `${base} (${n})`;
+    }
+
+    /**
+     * Add a theme from WarpTheme / MistWarp export JSON into the local library.
+     * Always assigns a fresh UUID so marketplace ids never collide with local ones.
+     * @param {object} data export payload ({themes:[…]}) or a single theme object
+     * @param {object} [meta] optional overrides {name, description, author}
+     * @returns {CustomTheme} the saved theme
+     */
+    addFromExportData (data, meta = {}) {
+        let config = data;
+        if (data && Array.isArray(data.themes) && data.themes.length > 0) {
+            config = data.themes[0];
+        }
+        if (!config || typeof config !== 'object') {
+            throw new Error('Invalid theme data');
+        }
+
+        const name = this.uniqueName(meta.name || config.name || 'Imported Theme');
+        const description = typeof meta.description === 'string' ?
+            meta.description :
+            (config.description || '');
+        const author = meta.author || config.author || 'User';
+
+        // Drop marketplace uuid so CustomTheme generates a local one.
+        const rest = Object.assign({}, config);
+        delete rest.uuid;
+        delete rest.createdAt;
+        const theme = CustomTheme.import({
+            ...rest,
+            name,
+            description,
+            author
+        });
+
+        this.addTheme(theme);
+        return theme;
+    }
+
+    /**
      * Get storage diagnostics
      * @returns {object} Storage information
      */
