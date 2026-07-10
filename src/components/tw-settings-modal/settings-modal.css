@@ -185,6 +185,13 @@
     }
 }
 
+:global([data-mw-native-window]) .modal-content {
+    margin: 0;
+}
+:global([data-mw-native-window]) .body {
+    max-height: none;
+}
+
 .setting {
     display: flex;
     flex-direction: column;

@@ -38,8 +38,7 @@ let windowCount = 0;
 const activeWindows = new Map();
 
 const IN_PAGE_WINDOW_IDS = new Set([
-    'customProceduresModal',
-    'onboarding-tutorial'
+    'customProceduresModal'
 ]);
 
 const canUseNativeWindows = () =>
@@ -52,6 +51,49 @@ window.addEventListener('pagehide', () => {
         }
     }
 });
+
+const copyStylesInto = doc => {
+    for (const node of document.querySelectorAll('head style, head link[rel="stylesheet"], body style')) {
+        const clone = doc.importNode(node, true);
+        clone.setAttribute('data-mw-copied-style', '');
+        doc.head.appendChild(clone);
+    }
+};
+
+const copyRootAttributesInto = doc => {
+    for (const attr of document.documentElement.attributes) {
+        doc.documentElement.setAttribute(attr.name, attr.value);
+    }
+    doc.body.className = document.body.className;
+};
+
+let styleObserver = null;
+let resyncScheduled = false;
+
+const scheduleResync = () => {
+    if (resyncScheduled) return;
+    resyncScheduled = true;
+    requestAnimationFrame(() => {
+        resyncScheduled = false;
+        for (const win of activeWindows.values()) {
+            if (win.resyncStyles) {
+                win.resyncStyles();
+            }
+        }
+    });
+};
+
+const ensureStyleObserver = () => {
+    if (styleObserver) return;
+    styleObserver = new MutationObserver(scheduleResync);
+    styleObserver.observe(document.documentElement, {attributes: true});
+    styleObserver.observe(document.head, {childList: true, subtree: true, characterData: true});
+    styleObserver.observe(document.body, {childList: true});
+    const addonStyles = document.querySelector('.addons-styles');
+    if (addonStyles) {
+        styleObserver.observe(addonStyles, {childList: true, subtree: true, characterData: true});
+    }
+};
 
 class AddonWindow {
     constructor (options = {}) {
@@ -755,6 +797,14 @@ class AddonWindow {
         this.element.style.top = `${this.y}px`;
         return this;
     }
+
+    moveTo (x, y) {
+        this.x = x;
+        this.y = y;
+        this.element.style.left = `${x}px`;
+        this.element.style.top = `${y}px`;
+        return this;
+    }
     
     // Compatibility methods for external code
     focus () {
@@ -813,6 +863,9 @@ class NativeAddonWindow {
             color: var(--text-primary, #2d3748);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
         `;
+        this.element.style.setProperty('margin', '0', 'important');
+        this.element.style.setProperty('width', '100%', 'important');
+        this.element.style.setProperty('height', '100%', 'important');
 
         this.headerElement = document.createElement('div');
 
@@ -872,22 +925,21 @@ class NativeAddonWindow {
         this.zIndex = ++nextZIndex;
 
         const doc = popup.document;
+        doc.open();
+        doc.write('<!DOCTYPE html><html><head></head><body></body></html>');
+        doc.close();
+        doc.documentElement.setAttribute('data-mw-native-window', '');
         doc.title = this.title;
 
         const base = doc.createElement('base');
         base.href = document.baseURI;
         doc.head.appendChild(base);
 
-        for (const node of document.querySelectorAll('head style, head link[rel="stylesheet"]')) {
-            doc.head.appendChild(doc.importNode(node, true));
-        }
-
-        for (const attr of document.documentElement.attributes) {
-            doc.documentElement.setAttribute(attr.name, attr.value);
-        }
-        doc.body.className = document.body.className;
+        copyStylesInto(doc);
+        copyRootAttributesInto(doc);
         doc.body.style.cssText = 'margin:0;width:100%;height:100vh;overflow:hidden;';
         doc.body.appendChild(this.element);
+        ensureStyleObserver();
 
         doc.addEventListener('keydown', e => {
             if (e.key === 'Escape' && this.closable) {
@@ -912,6 +964,16 @@ class NativeAddonWindow {
         });
 
         return this;
+    }
+
+    resyncStyles () {
+        if (!this.popup || this.popup.closed) return;
+        const doc = this.popup.document;
+        for (const node of doc.querySelectorAll('[data-mw-copied-style]')) {
+            node.remove();
+        }
+        copyStylesInto(doc);
+        copyRootAttributesInto(doc);
     }
 
     closePopup () {
@@ -1000,6 +1062,19 @@ class NativeAddonWindow {
             );
         } else {
             this.centerOnShow = true;
+        }
+        return this;
+    }
+
+    moveTo (x, y) {
+        this.x = x;
+        this.y = y;
+        if (this.popup && !this.popup.closed) {
+            const chromeHeight = window.outerHeight - window.innerHeight;
+            this.popup.moveTo(
+                Math.round(window.screenX + x),
+                Math.round(window.screenY + chromeHeight + y)
+            );
         }
         return this;
     }
