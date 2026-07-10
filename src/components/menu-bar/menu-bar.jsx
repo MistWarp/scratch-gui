@@ -49,6 +49,7 @@ import {
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
+import RoturAccount from './mw-rotur-account.jsx';
 
 import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
 
@@ -155,7 +156,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard, Send,
-    Download
+    Download, AppWindow, Computer, Shield, Code
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1272,15 +1273,24 @@ class MenuBar extends React.Component {
                     place={this.props.isRtl ? 'right' : 'left'}
                 >
                     {
-                        onClickAbout.map(itemProps => (
-                            <MenuItem
-                                key={itemProps.title}
-                                isRtl={this.props.isRtl}
-                                onClick={this.wrapAboutMenuCallback(itemProps.onClick)}
-                            >
-                                {itemProps.title}
-                            </MenuItem>
-                        ))
+                        onClickAbout.map(itemProps => {
+                            const AboutIcon = {
+                                computer: Computer,
+                                shield: Shield,
+                                info: Info,
+                                code: Code
+                            }[itemProps.icon];
+                            return (
+                                <MenuItem
+                                    key={itemProps.title}
+                                    isRtl={this.props.isRtl}
+                                    onClick={this.wrapAboutMenuCallback(itemProps.onClick)}
+                                >
+                                    {AboutIcon ? <AboutIcon /> : null}
+                                    {itemProps.title}
+                                </MenuItem>
+                            );
+                        })
                     }
                 </MenuBarMenu>
             </MenuLabel>
@@ -1431,6 +1441,7 @@ class MenuBar extends React.Component {
                                             isRtl={this.props.isRtl}
                                             onClick={this.handleClickNewWindow}
                                         >
+                                            <AppWindow />
                                             <FormattedMessage
                                                 defaultMessage="New window"
                                                 // eslint-disable-next-line max-len
@@ -1821,20 +1832,6 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
-                        {(this.props.canChangeTheme || this.props.canChangeLanguage) && (<SettingsMenu
-                            canChangeLanguage={this.props.canChangeLanguage}
-                            canChangeTheme={this.props.canChangeTheme}
-                            isRtl={this.props.isRtl}
-                            onClickDesktopSettings={
-                                this.props.onClickDesktopSettings &&
-                                this.handleClickDesktopSettings
-                            }
-                            // eslint-disable-next-line react/jsx-no-bind
-                            onOpenCustomSettings={this.props.onClickAddonSettings.bind(null, 'editor-theme3')}
-                            onRequestClose={this.props.onRequestCloseSettings}
-                            onRequestOpen={this.props.onClickSettings}
-                            settingsMenuOpen={this.props.settingsMenuOpen}
-                        />)}
                         <MenuLabel
                             dataItem="tools"
                             open={this.props.toolsMenuOpen}
@@ -2004,6 +2001,36 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
+                        {(this.props.canChangeTheme || this.props.canChangeLanguage) && (<SettingsMenu
+                            canChangeLanguage={this.props.canChangeLanguage}
+                            canChangeTheme={this.props.canChangeTheme}
+                            isRtl={this.props.isRtl}
+                            onClickDesktopSettings={
+                                this.props.onClickDesktopSettings &&
+                                this.handleClickDesktopSettings
+                            }
+                            // eslint-disable-next-line react/jsx-no-bind
+                            onOpenCustomSettings={this.props.onClickAddonSettings.bind(null, 'editor-theme3')}
+                            onRequestClose={this.props.onRequestCloseSettings}
+                            onRequestOpen={this.props.onClickSettings}
+                            settingsMenuOpen={this.props.settingsMenuOpen}
+                        />)}
+                        {this.props.onClickSettingsModal && (
+                            <div
+                                data-mw-item="settings"
+                                className={styles.menuBarLayoutItem}
+                            >
+                                <SettingsButton onClick={this.props.onClickSettingsModal} />
+                            </div>
+                        )}
+                        {this.props.onClickAddonSettings && (
+                            <div
+                                data-mw-item="addons"
+                                className={styles.menuBarLayoutItem}
+                            >
+                                <AddonsButton onClick={this.props.onClickAddonSettings} />
+                            </div>
+                        )}
                     </div>
 
                     <div
@@ -2158,22 +2185,6 @@ class MenuBar extends React.Component {
                             showSaveFilePicker={this.props.showSaveFilePicker}
                         />
                     </div>
-                    {this.props.onClickAddonSettings && (
-                        <div
-                            data-mw-item="addons"
-                            className={styles.menuBarLayoutItem}
-                        >
-                            <AddonsButton onClick={this.props.onClickAddonSettings} />
-                        </div>
-                    )}
-                    {this.props.onClickSettingsModal && (
-                        <div
-                            data-mw-item="settings"
-                            className={styles.menuBarLayoutItem}
-                        >
-                            <SettingsButton onClick={this.props.onClickSettingsModal} />
-                        </div>
-                    )}
                     {aboutButton && (
                         <div
                             data-mw-item="about"
@@ -2182,6 +2193,12 @@ class MenuBar extends React.Component {
                             {aboutButton}
                         </div>
                     )}
+                    <div
+                        data-mw-item="rotur-account"
+                        className={classNames(styles.menuBarLayoutItem, styles.roturAccountSlot)}
+                    >
+                        <RoturAccount />
+                    </div>
                 </div>
             </Box>
         );

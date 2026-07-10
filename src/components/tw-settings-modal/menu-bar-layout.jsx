@@ -1,7 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {FormattedMessage} from 'react-intl';
-import {GripVertical} from 'lucide-react';
+import {connect} from 'react-redux';
+import classNames from 'classnames';
+import {AlignLeft, AlignCenter, AlignRight, GripVertical} from 'lucide-react';
+
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings-modal.css';
 import {
@@ -13,6 +17,9 @@ import {
     setHidden,
     getPresentOrderedIds
 } from '../../lib/mw-menu-bar-layout';
+import {Theme} from '../../lib/themes/index.js';
+import {setTheme} from '../../reducers/theme.js';
+import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 const LABELS = {
     'file': 'File',
@@ -27,12 +34,49 @@ const LABELS = {
     'settings': 'Settings',
     'about': 'About',
     'project-title': 'Project Title',
-    'community': 'View Project Page'
+    'community': 'View Project Page',
+    'rotur-account': 'Rotur Profile'
 };
 
 const SECTIONS = [
-    {label: 'Left menus', zones: ['left']},
-    {label: 'Top-right buttons', zones: ['right']}
+    {label: 'Menus', zones: ['left']},
+    {label: 'Top-right', zones: ['right']}
+];
+
+const ALIGN_OPTIONS = [
+    {
+        id: 'left',
+        icon: AlignLeft,
+        label: (
+            <FormattedMessage
+                defaultMessage="Left aligned"
+                description="Menu bar alignment option"
+                id="mw.settings.menuBar.alignLeft"
+            />
+        )
+    },
+    {
+        id: 'center',
+        icon: AlignCenter,
+        label: (
+            <FormattedMessage
+                defaultMessage="Middle aligned"
+                description="Menu bar alignment option"
+                id="mw.settings.menuBar.alignMiddle"
+            />
+        )
+    },
+    {
+        id: 'right',
+        icon: AlignRight,
+        label: (
+            <FormattedMessage
+                defaultMessage="Right aligned"
+                description="Menu bar alignment option"
+                id="mw.settings.menuBar.alignRight"
+            />
+        )
+    }
 ];
 
 const isVisibleItem = id => !id.startsWith('__');
@@ -40,7 +84,7 @@ const isVisibleItem = id => !id.startsWith('__');
 class MenuBarLayoutSetting extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleDragEnd']);
+        bindAll(this, ['handleDragEnd', 'handleAlignChange']);
         const present = getPresentOrderedIds();
         this.state = {
             present,
@@ -88,8 +132,15 @@ class MenuBarLayoutSetting extends React.Component {
             }));
         };
     }
+    handleAlignChange (id) {
+        return () => {
+            if (!this.props.theme || this.props.theme.menuBarAlign === id) return;
+            this.props.onChangeMenuBarAlign(this.props.theme.set('menuBarAlign', id));
+        };
+    }
     renderRow (zoneId, id, draggable) {
         const visible = !this.state.hidden.includes(id);
+        const canHide = id !== 'rotur-account' && id !== 'save-status';
         return (
             <div
                 key={id}
@@ -109,8 +160,9 @@ class MenuBarLayoutSetting extends React.Component {
                 <span className={styles.menuBarRowLabel}>{LABELS[id] || id}</span>
                 <FancyCheckbox
                     className={styles.checkbox}
-                    checked={visible}
-                    onChange={this.handleToggle(id)}
+                    checked={canHide ? visible : true}
+                    disabled={!canHide}
+                    onChange={canHide ? this.handleToggle(id) : null}
                 />
             </div>
         );
@@ -133,8 +185,42 @@ class MenuBarLayoutSetting extends React.Component {
         ), 0);
     }
     render () {
+        const currentAlign = (this.props.theme && this.props.theme.menuBarAlign) || 'center';
         return (
             <div className={styles.setting}>
+                <div className={styles.menuBarZoneLabel}>
+                    <FormattedMessage
+                        defaultMessage="Alignment"
+                        description="Label for menu bar alignment selector in settings"
+                        id="mw.settings.menuBar.alignment"
+                    />
+                </div>
+                <div
+                    className={styles.alignSelector}
+                    role="radiogroup"
+                    aria-label="Menu bar alignment"
+                >
+                    {ALIGN_OPTIONS.map(option => {
+                        const Icon = option.icon;
+                        const selected = currentAlign === option.id;
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={selected}
+                                className={classNames(styles.alignOption, {
+                                    [styles.alignOptionSelected]: selected
+                                })}
+                                onClick={this.handleAlignChange(option.id)}
+                            >
+                                <Icon size={18} />
+                                <span>{option.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
                 <div className={styles.menuBarHint}>
                     <FormattedMessage
                         defaultMessage="Drag to reorder items within each group. Uncheck to hide."
@@ -155,4 +241,23 @@ class MenuBarLayoutSetting extends React.Component {
     }
 }
 
-export default MenuBarLayoutSetting;
+MenuBarLayoutSetting.propTypes = {
+    theme: PropTypes.instanceOf(Theme),
+    onChangeMenuBarAlign: PropTypes.func
+};
+
+const mapStateToProps = state => ({
+    theme: state.scratchGui.theme.theme
+});
+
+const mapDispatchToProps = dispatch => ({
+    onChangeMenuBarAlign: theme => {
+        dispatch(setTheme(theme));
+        applyTheme(theme);
+    }
+});
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(MenuBarLayoutSetting);

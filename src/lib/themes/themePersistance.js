@@ -175,6 +175,12 @@ const persistTheme = theme => {
             // ignore
         }
     }
+
+    try {
+        require('../rotur/cloud-sync.js').notifyLocalChange();
+    } catch (_) {
+        // cloud sync optional
+    }
 };
 
 /**

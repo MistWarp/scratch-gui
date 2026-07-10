@@ -19,15 +19,18 @@
     font-weight: normal;
 }
 
-[dir="ltr"] .user-info .avatar {
+[dir="ltr"] .user-info .avatar,
+[dir="ltr"] .avatar {
     margin-right: calc($space * .8125);
 }
 
-[dir="rtl"] .user-info .avatar {
+[dir="rtl"] .user-info .avatar,
+[dir="rtl"] .avatar {
     margin-left: calc($space * .8125);
 }
 
-.user-info .avatar {
+.user-info .avatar,
+.avatar {
     width: 2rem;
     height: 2rem;
 }
@@ -46,8 +49,13 @@
   vertical-align: middle;
 }
 
-.user-info .profile-name {
+.user-info .profile-name,
+.profile-name {
     font-size: .75rem;
     line-height: .9375rem;
     font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 8rem;
+    margin-right: 0.35rem;
 }

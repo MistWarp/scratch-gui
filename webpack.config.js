@@ -68,7 +68,7 @@ const base = {
     },
     module: {
         rules: [{
-            test: /\.jsx?$/,
+            test: /\.m?jsx?$/,
             loader: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src'),
@@ -77,7 +77,8 @@ const base = {
                 /node_modules[\\/]@vernier[\\/]godirect/,
                 /node_modules[\\/]@chenglou[\\/]pretext/,
                 /node_modules[\\/]fractch[\\/]src/,
-                /node_modules[\\/]isomorphic-git/
+                /node_modules[\\/]isomorphic-git/,
+                /node_modules[\\/]rotur-sdk/
             ],
             options: {
                 // Explicitly disable babelrc so we don't catch various config
