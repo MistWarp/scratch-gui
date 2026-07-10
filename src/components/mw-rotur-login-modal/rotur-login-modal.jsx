@@ -6,7 +6,6 @@ import {Activity, Cloud, GitBranch, Users} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
-import roturLogo from '../menu-bar/rotur.svg';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import styles from './rotur-login-modal.css';
 
@@ -15,6 +14,11 @@ const messages = defineMessages({
         defaultMessage: 'Sign in with Rotur',
         description: 'Title of Rotur login modal',
         id: 'mw.roturLogin.title'
+    },
+    infoTitle: {
+        defaultMessage: 'Rotur in MistWarp',
+        description: 'Title of Rotur info modal when signed in',
+        id: 'mw.roturLogin.infoTitle'
     }
 });
 
@@ -52,27 +56,27 @@ const FEATURES = [
                 id="mw.roturLogin.feature.cloud.desc"
             />
         )
-    }
-];
-
-const COMING_SOON = [
+    },
     {
         icon: GitBranch,
         title: (
             <FormattedMessage
                 defaultMessage="Rotur Git in the Git window"
-                description="Upcoming Rotur feature title"
-                id="mw.roturLogin.coming.git.title"
+                description="Rotur login feature title"
+                id="mw.roturLogin.feature.git.title"
             />
         ),
         description: (
             <FormattedMessage
-                defaultMessage="Create and manage Rotur repos from MistWarp."
-                description="Upcoming Rotur feature description"
-                id="mw.roturLogin.coming.git.desc"
+                defaultMessage="Create repos on git.rotur.dev, push your project, and clone others."
+                description="Rotur login feature description"
+                id="mw.roturLogin.feature.git.desc"
             />
         )
-    },
+    }
+];
+
+const COMING_SOON = [
     {
         icon: Users,
         title: (
@@ -141,11 +145,12 @@ class RoturLoginModal extends React.Component {
     render () {
         const error = this.state.localError || this.props.error;
         const busy = this.state.busy || this.props.status === 'logging-in';
+        const loggedIn = Boolean(this.props.username);
 
         return (
             <Modal
                 className={styles.modalContent}
-                contentLabel={this.props.intl.formatMessage(messages.title)}
+                contentLabel={this.props.intl.formatMessage(loggedIn ? messages.infoTitle : messages.title)}
                 headerClassName={styles.header}
                 id="roturLoginModal"
                 onRequestClose={this.props.onRequestClose}
@@ -162,22 +167,41 @@ class RoturLoginModal extends React.Component {
                             alt=""
                             className={styles.logo}
                             draggable={false}
-                            src={roturLogo}
+                            src="https://rotur.dev/Rotur%20Logo.png"
                         />
                         <div className={styles.heroText}>
                             <h2 className={styles.title}>
-                                <FormattedMessage
-                                    defaultMessage="Connect MistWarp to Rotur"
-                                    description="Headline in Rotur login modal"
-                                    id="mw.roturLogin.headline"
-                                />
+                                {loggedIn ? (
+                                    <FormattedMessage
+                                        defaultMessage="Rotur in MistWarp"
+                                        description="Headline in Rotur info modal when signed in"
+                                        id="mw.roturLogin.infoHeadline"
+                                    />
+                                ) : (
+                                    <FormattedMessage
+                                        defaultMessage="Connect MistWarp to Rotur"
+                                        description="Headline in Rotur login modal"
+                                        id="mw.roturLogin.headline"
+                                    />
+                                )}
                             </h2>
                             <p className={styles.subtitle}>
-                                <FormattedMessage
-                                    defaultMessage="Sign in for presence, your profile picture, and cloud sync of themes and settings."
-                                    description="Subtitle in Rotur login modal"
-                                    id="mw.roturLogin.subtitle"
-                                />
+                                {loggedIn ? (
+                                    <FormattedMessage
+                                        // eslint-disable-next-line max-len
+                                        defaultMessage="You're signed in as {username}. Here's what your account enables."
+                                        description="Subtitle in Rotur info modal when signed in"
+                                        id="mw.roturLogin.infoSubtitle"
+                                        values={{username: this.props.username}}
+                                    />
+                                ) : (
+                                    <FormattedMessage
+                                        // eslint-disable-next-line max-len
+                                        defaultMessage="Sign in for presence, your profile picture, and cloud sync of themes and settings."
+                                        description="Subtitle in Rotur login modal"
+                                        id="mw.roturLogin.subtitle"
+                                    />
+                                )}
                             </p>
                         </div>
                     </div>
@@ -226,42 +250,59 @@ class RoturLoginModal extends React.Component {
                     ) : null}
 
                     <div className={styles.actions}>
-                        <button
-                            className={`${styles.button} ${styles.secondary}`}
-                            onClick={this.props.onRequestClose}
-                            type="button"
-                        >
-                            <FormattedMessage
-                                defaultMessage="Not now"
-                                description="Cancel button on Rotur login modal"
-                                id="mw.roturLogin.notNow"
-                            />
-                        </button>
-                        <button
-                            className={`${styles.button} ${styles.primary}`}
-                            disabled={busy}
-                            onClick={this.handleLogin}
-                            type="button"
-                        >
-                            {busy ? (
+                        {loggedIn ? (
+                            <button
+                                className={`${styles.button} ${styles.primary}`}
+                                onClick={this.props.onRequestClose}
+                                type="button"
+                            >
                                 <FormattedMessage
-                                    defaultMessage="Opening Rotur..."
-                                    description="Loading state for Rotur login button"
-                                    id="mw.roturLogin.opening"
+                                    defaultMessage="Close"
+                                    description="Close button on Rotur info modal"
+                                    id="mw.roturLogin.close"
                                 />
-                            ) : (
-                                <FormattedMessage
-                                    defaultMessage="Continue with Rotur"
-                                    description="Primary button to start Rotur OAuth login"
-                                    id="mw.roturLogin.continue"
-                                />
-                            )}
-                        </button>
+                            </button>
+                        ) : (
+                            <React.Fragment>
+                                <button
+                                    className={`${styles.button} ${styles.secondary}`}
+                                    onClick={this.props.onRequestClose}
+                                    type="button"
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Not now"
+                                        description="Cancel button on Rotur login modal"
+                                        id="mw.roturLogin.notNow"
+                                    />
+                                </button>
+                                <button
+                                    className={`${styles.button} ${styles.primary}`}
+                                    disabled={busy}
+                                    onClick={this.handleLogin}
+                                    type="button"
+                                >
+                                    {busy ? (
+                                        <FormattedMessage
+                                            defaultMessage="Opening Rotur..."
+                                            description="Loading state for Rotur login button"
+                                            id="mw.roturLogin.opening"
+                                        />
+                                    ) : (
+                                        <FormattedMessage
+                                            defaultMessage="Continue with Rotur"
+                                            description="Primary button to start Rotur OAuth login"
+                                            id="mw.roturLogin.continue"
+                                        />
+                                    )}
+                                </button>
+                            </React.Fragment>
+                        )}
                     </div>
 
                     <p className={styles.footnote}>
                         <FormattedMessage
-                            defaultMessage="Secure sign-in on {link}. Only profile access for presence and avatar."
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Secure sign-in on {link}. Your account powers presence, cloud sync, and Rotur Git."
                             description="Privacy footnote under Rotur login"
                             id="mw.roturLogin.footnote"
                             values={{
@@ -287,12 +328,14 @@ RoturLoginModal.propTypes = {
     error: PropTypes.string,
     intl: intlShape,
     onRequestClose: PropTypes.func.isRequired,
-    status: PropTypes.string
+    status: PropTypes.string,
+    username: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     error: state.scratchGui.rotur.error,
-    status: state.scratchGui.rotur.status
+    status: state.scratchGui.rotur.status,
+    username: state.scratchGui.rotur.username
 });
 
 export default injectIntl(connect(mapStateToProps)(RoturLoginModal));

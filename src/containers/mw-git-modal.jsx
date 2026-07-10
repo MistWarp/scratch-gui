@@ -38,6 +38,16 @@ import {
 } from '../lib/git/browser-git.js';
 import {buildSb3FromFractchTree} from '../lib/git/fractch-tree.js';
 import {
+    listMyRepos as listRoturRepos,
+    createRepo as createRoturRepo,
+    deleteRepo as deleteRoturRepoApi,
+    getAuth as getRoturGitAuth,
+    getRemoteUrl as getRoturRemoteUrl,
+    isRoturGitUrl,
+    parseRepoUrl as parseRoturRepoUrl
+} from '../lib/rotur/git-api.js';
+import {getRoturSessionApi} from '../lib/rotur/session-api.js';
+import {
     getFileContentAtCommit,
     getChangedFilesBetweenCommits,
     getCommitParents,
@@ -117,13 +127,23 @@ class TWGitModal extends React.Component {
             commitFiles: [],
             // Settings
             defaultBranch: readLocal(DEFAULT_BRANCH_KEY, 'main'),
-            autoCommit: readLocal(AUTO_COMMIT_KEY, 'false') === 'true'
+            autoCommit: readLocal(AUTO_COMMIT_KEY, 'false') === 'true',
+            // Rotur Git
+            roturRepos: [],
+            roturReposLoaded: false,
+            roturReposLoading: false,
+            roturNewRepoName: '',
+            roturNewRepoDesc: '',
+            roturNewRepoPrivate: false,
+            roturCloneOther: '',
+            roturCloneConfirm: null,
+            roturDeleteConfirm: null
         };
 
         this._lastProgressUpdate = 0;
 
         this._pollTimer = null;
-        this._polling = false;
+        this._pollPromise = null;
         this._openDiffSig = null;
 
         bindAll(this, [
@@ -169,7 +189,18 @@ class TWGitModal extends React.Component {
             'handleChangeDefaultBranch',
             'handleToggleAutoCommit',
             'handleChangeReadme',
-            'handleSaveReadme'
+            'handleSaveReadme',
+            'handleRoturLogin',
+            'handleLoadRoturRepos',
+            'handleChangeRoturNewRepoName',
+            'handleChangeRoturNewRepoDesc',
+            'handleToggleRoturNewRepoPrivate',
+            'handleCreateRoturRepo',
+            'handleRoturPush',
+            'handleRoturClone',
+            'handleRoturDelete',
+            'handleChangeRoturCloneOther',
+            'handleRoturCloneOther'
         ]);
     }
 
@@ -197,11 +228,26 @@ class TWGitModal extends React.Component {
         this._pollTimer = setTimeout(this.pollChanges, 700);
     }
 
-    async pollChanges () {
+    pollChanges () {
         // Skip while another operation is running, before init, or if a poll is
         // still in flight (computing status re-serializes the project).
-        if (this._polling || this.state.busy || !this.state.initialized) return;
-        this._polling = true;
+        if (this._pollPromise || this.state.busy || !this.state.initialized) return;
+        this._pollPromise = this.runPoll().finally(() => {
+            this._pollPromise = null;
+        });
+    }
+
+    async waitForPollIdle () {
+        while (this._pollPromise) {
+            try {
+                await this._pollPromise;
+            } catch (e) {
+                break;
+            }
+        }
+    }
+
+    async runPoll () {
         try {
             const changes = await getRepoChanges(this.props.vm);
             const prev = this.state.changes || [];
@@ -228,8 +274,6 @@ class TWGitModal extends React.Component {
             }
         } catch (e) {
             // silent: polling should never surface transient errors
-        } finally {
-            this._polling = false;
         }
     }
 
@@ -327,6 +371,7 @@ class TWGitModal extends React.Component {
     async handleInit () {
         this.setState({busy: true, busyMessage: 'Initializing repository…', busyProgress: 0, error: null});
         try {
+            await this.waitForPollIdle();
             await initRepo({
                 vm: this.props.vm,
                 defaultBranch: this.state.defaultBranch || 'main',
@@ -365,27 +410,17 @@ class TWGitModal extends React.Component {
         const username = (this.state.authorName || '').trim();
         this.setState({busy: true, busyMessage: 'Cloning…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             const cloneOpts = {url, onProgress: this.handleGitProgress};
-            if (token) {
+            if (isRoturGitUrl(url) && this.props.roturUsername) {
+                cloneOpts.onAuth = getRoturGitAuth;
+            } else if (token) {
                 cloneOpts.onAuth = () => (username ?
                     {username, password: token} :
                     {username: token, password: token});
             }
             await cloneRepo(cloneOpts);
-
-            if (!(await repoHasFractch())) {
-                await deleteRepo();
-                throw new Error('That repository is not a fractch project (no .fractch files found).');
-            }
-
-            const fs = getFs();
-            const pfs = fs.promises;
-            const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
-            const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-
-            this.props.vm.quit();
-            await this.props.vm.loadProject(buffer, {skipGitImport: true});
-            this.props.vm.renderer.draw();
+            await this.loadProjectFromClonedRepo();
 
             this.setState({cloneUrl: ''});
             await this.refresh();
@@ -394,6 +429,22 @@ class TWGitModal extends React.Component {
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
+    }
+
+    async loadProjectFromClonedRepo () {
+        if (!(await repoHasFractch())) {
+            await deleteRepo();
+            throw new Error('That repository is not a fractch project (no .fractch files found).');
+        }
+
+        const fs = getFs();
+        const pfs = fs.promises;
+        const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
+        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+        this.props.vm.quit();
+        await this.props.vm.loadProject(buffer, {skipGitImport: true});
+        this.props.vm.renderer.draw();
     }
 
     async handleCommit () {
@@ -405,6 +456,7 @@ class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Committing…', busyProgress: 0, error: null});
         try {
+            await this.waitForPollIdle();
             await commitProject({
                 vm: this.props.vm,
                 message,
@@ -440,6 +492,7 @@ class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Undoing commit…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             const snapshot = await readSnapshotAtCommit(previous.oid);
             this.props.vm.quit();
             await this.props.vm.loadProject(snapshot);
@@ -474,6 +527,7 @@ class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Creating branch…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             await createBranch({ref, vm: this.props.vm});
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             this.setState({newBranchName: ''});
@@ -491,6 +545,7 @@ class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Checking out branch…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             await this.refresh();
         } catch (err) {
@@ -506,6 +561,7 @@ class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Restoring commit…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             await checkoutCommitAndRestore({vm: this.props.vm, oid});
             await this.refresh();
         } catch (err) {
@@ -538,6 +594,7 @@ class TWGitModal extends React.Component {
     async handleDeleteRepo () {
         this.setState({busy: true, busyMessage: 'Deleting repository…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             await deleteRepo();
             this.setState({diffData: null, diffFilepath: null, selectedCommitOid: null, commitFiles: []});
             await this.refresh();
@@ -846,6 +903,7 @@ class TWGitModal extends React.Component {
         if (!ours || !theirs) return;
         this.setState({busy: true, busyMessage: 'Merging…', busyProgress: null, error: null});
         try {
+            await this.waitForPollIdle();
             await mergeBranchesApply({
                 ours,
                 theirs,
@@ -865,10 +923,202 @@ class TWGitModal extends React.Component {
         }
     }
 
+    async handleRoturLogin () {
+        const api = getRoturSessionApi();
+        if (!api || typeof api.login !== 'function') {
+            this.setState({error: 'Rotur session is not ready yet. Try again in a moment.'});
+            return;
+        }
+        try {
+            const user = await api.login();
+            if (user) {
+                await this.handleLoadRoturRepos();
+            }
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        }
+    }
+
+    async handleLoadRoturRepos () {
+        if (this.state.roturReposLoading) return;
+        this.setState({roturReposLoading: true, error: null});
+        try {
+            const repos = await listRoturRepos();
+            this.setState({roturRepos: repos, roturReposLoaded: true, roturReposLoading: false});
+        } catch (err) {
+            this.setState({
+                roturReposLoading: false,
+                error: err && err.message ? err.message : String(err)
+            });
+        }
+    }
+
+    handleChangeRoturNewRepoName (e) {
+        this.setState({roturNewRepoName: e.target.value});
+    }
+
+    handleChangeRoturNewRepoDesc (e) {
+        this.setState({roturNewRepoDesc: e.target.value});
+    }
+
+    handleToggleRoturNewRepoPrivate () {
+        this.setState(prev => ({roturNewRepoPrivate: !prev.roturNewRepoPrivate}));
+    }
+
+    async handleCreateRoturRepo () {
+        const name = this.state.roturNewRepoName.trim();
+        if (!name) {
+            this.setState({error: 'Repository name is required'});
+            return;
+        }
+        this.setState({busy: true, busyMessage: `Creating ${name}…`, busyProgress: null, error: null});
+        try {
+            await createRoturRepo({
+                name,
+                description: this.state.roturNewRepoDesc.trim(),
+                isPrivate: this.state.roturNewRepoPrivate,
+                defaultBranch: this.state.defaultBranch || 'main'
+            });
+            this.setState({roturNewRepoName: '', roturNewRepoDesc: '', roturNewRepoPrivate: false});
+            await this.handleLoadRoturRepos();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    async handleRoturPush (repo) {
+        if (!repo || !repo.owner || !repo.name) return;
+        this.setState({busy: true, busyMessage: `Pushing to ${repo.fullName}…`, busyProgress: null, error: null});
+        try {
+            await this.waitForPollIdle();
+            let branch = this.state.currentBranch;
+            if (!this.state.initialized) {
+                branch = this.state.defaultBranch || 'main';
+                await initRepo({
+                    vm: this.props.vm,
+                    defaultBranch: branch,
+                    onProgress: this.handleGitProgress
+                });
+            }
+            branch = branch || this.state.defaultBranch || 'main';
+
+            const url = getRoturRemoteUrl(repo.owner, repo.name);
+            const remotes = await getRemotes(this.props.vm);
+            let remoteName = null;
+            const matching = remotes.find(r => r.url === url);
+            if (matching) {
+                remoteName = matching.name;
+            } else {
+                remoteName = 'rotur';
+                if (remotes.some(r => r.name === 'rotur')) {
+                    await removeRemote({vm: this.props.vm, name: 'rotur'});
+                }
+                await addRemote({vm: this.props.vm, name: 'rotur', url});
+            }
+
+            await push({
+                vm: this.props.vm,
+                remote: remoteName,
+                ref: branch,
+                setUpstream: true,
+                onProgress: this.handleGitProgress,
+                onAuth: getRoturGitAuth
+            });
+            await this.handleLoadRoturRepos();
+            await this.refresh();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    async handleRoturClone (repo) {
+        if (!repo || !repo.cloneUrl) return;
+        if (this.props.projectChanged && this.state.roturCloneConfirm !== repo.fullName) {
+            this.setState({roturCloneConfirm: repo.fullName, error: null});
+            return;
+        }
+        this.setState({
+            roturCloneConfirm: null,
+            busy: true,
+            busyMessage: `Cloning ${repo.fullName}…`,
+            busyProgress: null,
+            error: null
+        });
+        try {
+            await this.waitForPollIdle();
+            await cloneRepo({
+                url: repo.cloneUrl,
+                onAuth: getRoturGitAuth,
+                onProgress: this.handleGitProgress
+            });
+            await this.loadProjectFromClonedRepo();
+            this.setState({roturCloneOther: ''});
+            await this.refresh();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    handleChangeRoturCloneOther (e) {
+        this.setState({roturCloneOther: e.target.value, roturCloneConfirm: null});
+    }
+
+    async handleRoturCloneOther () {
+        const parsed = parseRoturRepoUrl(this.state.roturCloneOther.trim());
+        if (!parsed) {
+            this.setState({error: 'Enter a repo as owner/name or a git.rotur.dev URL'});
+            return;
+        }
+        await this.handleRoturClone({
+            fullName: parsed.fullName,
+            cloneUrl: getRoturRemoteUrl(parsed.owner, parsed.name)
+        });
+    }
+
+    async handleRoturDelete (repo) {
+        if (!repo || !repo.owner || !repo.name) return;
+        if (this.state.roturDeleteConfirm !== repo.fullName) {
+            this.setState({roturDeleteConfirm: repo.fullName, error: null});
+            return;
+        }
+        this.setState({
+            roturDeleteConfirm: null,
+            busy: true,
+            busyMessage: `Deleting ${repo.fullName}…`,
+            busyProgress: null,
+            error: null
+        });
+        try {
+            await deleteRoturRepoApi(repo.owner, repo.name);
+            await this.handleLoadRoturRepos();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
     render () {
         const canUndoCommit = Boolean(this.state.currentBranch) &&
             Array.isArray(this.state.commits) &&
             this.state.commits.length >= 2;
+
+        let connectedRoturRepo = null;
+        for (const remote of this.state.remotes || []) {
+            if (isRoturGitUrl(remote.url)) {
+                const parsed = parseRoturRepoUrl(remote.url);
+                if (parsed) {
+                    connectedRoturRepo = {...parsed, remoteName: remote.name};
+                    break;
+                }
+            }
+        }
 
         return (
             <GitModalComponent
@@ -949,6 +1199,28 @@ class TWGitModal extends React.Component {
                 onChangeDefaultBranch={this.handleChangeDefaultBranch}
                 onToggleAutoCommit={this.handleToggleAutoCommit}
                 onClose={this.handleClose}
+                roturUsername={this.props.roturUsername}
+                roturRepos={this.state.roturRepos}
+                roturReposLoaded={this.state.roturReposLoaded}
+                roturReposLoading={this.state.roturReposLoading}
+                roturNewRepoName={this.state.roturNewRepoName}
+                roturNewRepoDesc={this.state.roturNewRepoDesc}
+                roturNewRepoPrivate={this.state.roturNewRepoPrivate}
+                roturCloneOther={this.state.roturCloneOther}
+                roturCloneConfirm={this.state.roturCloneConfirm}
+                roturDeleteConfirm={this.state.roturDeleteConfirm}
+                connectedRoturRepo={connectedRoturRepo}
+                onRoturLogin={this.handleRoturLogin}
+                onLoadRoturRepos={this.handleLoadRoturRepos}
+                onChangeRoturNewRepoName={this.handleChangeRoturNewRepoName}
+                onChangeRoturNewRepoDesc={this.handleChangeRoturNewRepoDesc}
+                onToggleRoturNewRepoPrivate={this.handleToggleRoturNewRepoPrivate}
+                onCreateRoturRepo={this.handleCreateRoturRepo}
+                onRoturPush={this.handleRoturPush}
+                onRoturClone={this.handleRoturClone}
+                onRoturDelete={this.handleRoturDelete}
+                onChangeRoturCloneOther={this.handleChangeRoturCloneOther}
+                onRoturCloneOther={this.handleRoturCloneOther}
             />
         );
     }
@@ -957,12 +1229,14 @@ class TWGitModal extends React.Component {
 TWGitModal.propTypes = {
     onClose: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
-    projectChanged: PropTypes.bool
+    projectChanged: PropTypes.bool,
+    roturUsername: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     vm: state.scratchGui.vm,
-    projectChanged: state.scratchGui.projectChanged
+    projectChanged: state.scratchGui.projectChanged,
+    roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
 });
 
 const mapDispatchToProps = dispatch => ({

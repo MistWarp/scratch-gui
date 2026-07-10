@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {UserRound, LogOut} from 'lucide-react';
+import {UserRound, LogOut, GitBranch, Info} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -20,7 +20,8 @@ import {
     closeAccountMenu,
     accountMenuOpen
 } from '../../reducers/menus.js';
-import {openRoturLoginModal} from '../../reducers/modals.js';
+import {openRoturLoginModal, openGitModal} from '../../reducers/modals.js';
+import {setGitModalInitialView} from '../../lib/git/modal-view.js';
 
 /** Top-right Rotur account control — same MenuLabel pattern as File / Edit. */
 const RoturAccount = props => {
@@ -74,6 +75,32 @@ const RoturAccount = props => {
                         id="gui.accountMenu.profile"
                     />
                 </MenuItemContainer>
+                <MenuItemContainer
+                    onClick={() => {
+                        props.onCloseMenu();
+                        props.onOpenRoturRepos();
+                    }}
+                >
+                    <GitBranch />
+                    <FormattedMessage
+                        defaultMessage="Your repos"
+                        description="Account menu item opening the Rotur Git repo manager"
+                        id="mw.rotur.accountMenu.repos"
+                    />
+                </MenuItemContainer>
+                <MenuItemContainer
+                    onClick={() => {
+                        props.onCloseMenu();
+                        props.onOpenRoturInfo();
+                    }}
+                >
+                    <Info />
+                    <FormattedMessage
+                        defaultMessage="What Rotur unlocks"
+                        description="Account menu item opening the Rotur features window"
+                        id="mw.rotur.accountMenu.info"
+                    />
+                </MenuItemContainer>
                 <MenuSection>
                     <MenuItemContainer
                         onClick={() => {
@@ -101,6 +128,8 @@ RoturAccount.propTypes = {
     onCloseMenu: PropTypes.func.isRequired,
     onOpenLogin: PropTypes.func.isRequired,
     onOpenMenu: PropTypes.func.isRequired,
+    onOpenRoturRepos: PropTypes.func.isRequired,
+    onOpenRoturInfo: PropTypes.func.isRequired,
     username: PropTypes.string
 };
 
@@ -113,7 +142,12 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onOpenLogin: () => dispatch(openRoturLoginModal()),
     onOpenMenu: () => dispatch(openAccountMenu()),
-    onCloseMenu: () => dispatch(closeAccountMenu())
+    onCloseMenu: () => dispatch(closeAccountMenu()),
+    onOpenRoturRepos: () => {
+        setGitModalInitialView('rotur');
+        dispatch(openGitModal());
+    },
+    onOpenRoturInfo: () => dispatch(openRoturLoginModal())
 });
 
 export default connect(

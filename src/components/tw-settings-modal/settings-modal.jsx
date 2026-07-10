@@ -1597,6 +1597,10 @@ class DesktopPage extends React.Component {
                         defaultMessage="Hardware acceleration (requires restart)"
                         id="mw.settingsModal.desktop.hardwareAcceleration"
                     />}
+                    help={<FormattedMessage
+                        defaultMessage="Uses the GPU to speed up rendering. Turn this off if you see graphical glitches or crashes on your system."
+                        id="mw.settingsModal.desktop.hardwareAccelerationHelp"
+                    />}
                 />
                 <BooleanSetting
                     value={!!s.backgroundThrottling}
@@ -1604,6 +1608,10 @@ class DesktopPage extends React.Component {
                     label={<FormattedMessage
                         defaultMessage="Pause when the window is not visible"
                         id="mw.settingsModal.desktop.backgroundThrottling"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Slows down projects while the window is hidden or minimized to save power. Disable this if projects need to keep running in the background."
+                        id="mw.settingsModal.desktop.backgroundThrottlingHelp"
                     />}
                 />
                 <BooleanSetting
@@ -1613,6 +1621,10 @@ class DesktopPage extends React.Component {
                         defaultMessage="Allow projects to access any website (requires restart, dangerous)"
                         id="mw.settingsModal.desktop.bypassCORS"
                     />}
+                    help={<FormattedMessage
+                        defaultMessage="Lets projects fetch data from websites that would normally block them. Only enable this for projects you trust, as it removes a security protection."
+                        id="mw.settingsModal.desktop.bypassCORSHelp"
+                    />}
                 />
                 <BooleanSetting
                     value={!!s.spellchecker}
@@ -1620,6 +1632,10 @@ class DesktopPage extends React.Component {
                     label={<FormattedMessage
                         defaultMessage="Spellchecker (requires restart)"
                         id="mw.settingsModal.desktop.spellchecker"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Underlines misspelled words in text fields like the ask block prompt and costume names."
+                        id="mw.settingsModal.desktop.spellcheckerHelp"
                     />}
                 />
                 <BooleanSetting
@@ -1629,6 +1645,10 @@ class DesktopPage extends React.Component {
                         defaultMessage="Exit fullscreen when escape is pressed"
                         id="mw.settingsModal.desktop.exitFullscreenOnEscape"
                     />}
+                    help={<FormattedMessage
+                        defaultMessage="Lets the Escape key leave fullscreen mode. Disable this if your project uses Escape for its own controls."
+                        id="mw.settingsModal.desktop.exitFullscreenOnEscapeHelp"
+                    />}
                 />
                 {s.richPresenceAvailable ? (
                     <BooleanSetting
@@ -1637,6 +1657,10 @@ class DesktopPage extends React.Component {
                         label={<FormattedMessage
                             defaultMessage="Discord rich presence"
                             id="mw.settingsModal.desktop.richPresence"
+                        />}
+                        help={<FormattedMessage
+                            defaultMessage="Shows that you are using MistWarp on your Discord profile while the app is open."
+                            id="mw.settingsModal.desktop.richPresenceHelp"
                         />}
                     />
                 ) : null}

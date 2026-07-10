@@ -16,12 +16,17 @@ import {
     Trash,
     Check,
     Upload,
-    GitMerge
+    GitMerge,
+    Globe,
+    ExternalLink,
+    Lock
 } from 'lucide-react';
 
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import DiffViewer from '../mw-git-diff-viewer/diff-viewer.jsx';
+import {takeGitModalInitialView} from '../../lib/git/modal-view.js';
+import {GIT_HOST, parseRepoUrl} from '../../lib/rotur/git-api.js';
 
 import styles from './git-modal.css';
 
@@ -65,6 +70,11 @@ const messages = defineMessages({
         defaultMessage: 'Readme',
         description: 'Readme sidebar item',
         id: 'mw.git.nav.readme'
+    },
+    rotur: {
+        defaultMessage: 'Rotur Git',
+        description: 'Rotur Git sidebar item',
+        id: 'mw.git.nav.rotur'
     }
 });
 
@@ -114,13 +124,30 @@ FileBadge.propTypes = {
 class GitModalComponent extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {currentView: 'changes'};
+        this.state = {currentView: takeGitModalInitialView() || 'changes'};
         this.handleNavigate = this.handleNavigate.bind(this);
+    }
+
+    componentDidMount () {
+        this.maybeLoadRoturRepos(this.state.currentView);
+    }
+
+    maybeLoadRoturRepos (view) {
+        if (
+            view === 'rotur' &&
+            this.props.roturUsername &&
+            !this.props.roturReposLoaded &&
+            !this.props.roturReposLoading &&
+            typeof this.props.onLoadRoturRepos === 'function'
+        ) {
+            this.props.onLoadRoturRepos();
+        }
     }
 
     handleNavigate (view) {
         this.setState({currentView: view});
         this.props.onClearDiff();
+        this.maybeLoadRoturRepos(view);
     }
 
     renderNotInitialized () {
@@ -903,6 +930,394 @@ class GitModalComponent extends React.Component {
         );
     }
 
+    renderRoturRepoRow (repo) {
+        const cloneConfirmPending = this.props.roturCloneConfirm === repo.fullName;
+        const deleteConfirmPending = this.props.roturDeleteConfirm === repo.fullName;
+        const isConnected = Boolean(
+            this.props.connectedRoturRepo &&
+            this.props.connectedRoturRepo.fullName === repo.fullName
+        );
+        return (
+            <li
+                key={repo.fullName}
+                className={styles.remoteRow}
+            >
+                <GitBranch className={styles.remoteIcon} />
+                <div className={styles.remoteInfo}>
+                    <span className={styles.remoteName}>
+                        {repo.name}
+                        {isConnected && (
+                            <span className={styles.currentTag}>
+                                <FormattedMessage
+                                    defaultMessage="connected"
+                                    description="Tag on the rotur repo this project is connected to"
+                                    id="mw.git.rotur.connectedTag"
+                                />
+                            </span>
+                        )}
+                        {repo.isPrivate && (
+                            <Lock
+                                className={styles.buttonIcon}
+                                aria-label={this.props.intl.formatMessage({
+                                    defaultMessage: 'Private repository',
+                                    description: 'Private repo badge tooltip',
+                                    id: 'mw.git.rotur.private'
+                                })}
+                            />
+                        )}
+                    </span>
+                    <span className={styles.remoteUrl}>
+                        {repo.description || repo.cloneUrl}
+                    </span>
+                    {cloneConfirmPending && (
+                        <span className={styles.cloneConfirm}>
+                            <FormattedMessage
+                                defaultMessage="This replaces your current project. Click clone again to confirm."
+                                description="Confirm replacing project on rotur clone"
+                                id="mw.git.rotur.cloneConfirm"
+                            />
+                        </span>
+                    )}
+                    {deleteConfirmPending && (
+                        <span className={styles.cloneConfirm}>
+                            <FormattedMessage
+                                // eslint-disable-next-line max-len
+                                defaultMessage="This permanently deletes the repository on Rotur Git. Click delete again to confirm."
+                                description="Confirm deleting rotur repo"
+                                id="mw.git.rotur.deleteConfirm"
+                            />
+                        </span>
+                    )}
+                </div>
+                <button
+                    className={styles.iconButton}
+                    disabled={this.props.busy}
+                    onClick={() => this.props.onRoturPush(repo)}
+                    title={this.props.intl.formatMessage({
+                        defaultMessage: 'Push project to this repo',
+                        description: 'Push to rotur repo tooltip',
+                        id: 'mw.git.rotur.pushRepo'
+                    })}
+                >
+                    <Upload className={styles.buttonIcon} />
+                </button>
+                <button
+                    className={styles.iconButton}
+                    disabled={this.props.busy || repo.isEmpty}
+                    onClick={() => this.props.onRoturClone(repo)}
+                    title={this.props.intl.formatMessage({
+                        defaultMessage: 'Clone this repo as your project',
+                        description: 'Clone rotur repo tooltip',
+                        id: 'mw.git.rotur.cloneRepo'
+                    })}
+                >
+                    <Download className={styles.buttonIcon} />
+                </button>
+                <a
+                    className={styles.iconButton}
+                    href={repo.htmlUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    title={this.props.intl.formatMessage({
+                        defaultMessage: 'Open on git.rotur.dev',
+                        description: 'Open rotur repo in browser tooltip',
+                        id: 'mw.git.rotur.openRepo'
+                    })}
+                >
+                    <ExternalLink className={styles.buttonIcon} />
+                </a>
+                <button
+                    className={styles.iconButton}
+                    disabled={this.props.busy}
+                    onClick={() => this.props.onRoturDelete(repo)}
+                    title={this.props.intl.formatMessage({
+                        defaultMessage: 'Delete repository',
+                        description: 'Delete rotur repo tooltip',
+                        id: 'mw.git.rotur.deleteRepo'
+                    })}
+                >
+                    <Trash className={styles.buttonIcon} />
+                </button>
+            </li>
+        );
+    }
+
+    renderRotur () {
+        const {roturUsername, roturRepos, roturReposLoading} = this.props;
+
+        if (!roturUsername) {
+            return (
+                <Box className={styles.emptyState}>
+                    <Globe className={styles.emptyIcon} />
+                    <p>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Sign in with Rotur to create repos on git.rotur.dev and push your project straight from MistWarp."
+                            description="Shown on the Rotur Git tab when signed out"
+                            id="mw.git.rotur.signedOut"
+                        />
+                    </p>
+                    <button
+                        className={styles.primaryButton}
+                        disabled={this.props.busy}
+                        onClick={this.props.onRoturLogin}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Sign in with Rotur"
+                            description="Sign in button on the Rotur Git tab"
+                            id="mw.git.rotur.signIn"
+                        />
+                    </button>
+                </Box>
+            );
+        }
+
+        const connected = this.props.connectedRoturRepo;
+        return (
+            <Box className={styles.section}>
+                <h2 className={styles.sectionTitle}>
+                    <Globe className={styles.buttonIcon} />
+                    <FormattedMessage
+                        defaultMessage="Your repositories"
+                        description="Rotur Git section heading"
+                        id="mw.git.rotur.heading"
+                    />
+                </h2>
+                <p className={styles.muted}>
+                    <FormattedMessage
+                        defaultMessage="Signed in as {username}. Repos live on {link}."
+                        description="Rotur Git signed-in note"
+                        id="mw.git.rotur.signedInAs"
+                        values={{
+                            username: roturUsername,
+                            link: (
+                                <a
+                                    href={GIT_HOST}
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                >{'git.rotur.dev'}</a>
+                            )
+                        }}
+                    />
+                </p>
+                {connected && (
+                    <ul className={styles.remoteList}>
+                        <li className={styles.remoteRow}>
+                            <Cloud className={styles.remoteIcon} />
+                            <div className={styles.remoteInfo}>
+                                <span className={styles.remoteName}>
+                                    {connected.fullName}
+                                    <span className={styles.currentTag}>
+                                        <FormattedMessage
+                                            defaultMessage="connected"
+                                            description="Tag on the rotur repo this project is connected to"
+                                            id="mw.git.rotur.connectedTag"
+                                        />
+                                    </span>
+                                </span>
+                                <span className={styles.remoteUrl}>
+                                    <FormattedMessage
+                                        defaultMessage="This project pushes to and pulls from this repository."
+                                        description="Connected rotur repo explanation"
+                                        id="mw.git.rotur.connectedDesc"
+                                    />
+                                </span>
+                            </div>
+                            <button
+                                className={styles.iconButton}
+                                disabled={this.props.busy}
+                                onClick={() => this.props.onRoturPush(connected)}
+                                title={this.props.intl.formatMessage({
+                                    defaultMessage: 'Push project to this repo',
+                                    description: 'Push to rotur repo tooltip',
+                                    id: 'mw.git.rotur.pushRepo'
+                                })}
+                            >
+                                <Upload className={styles.buttonIcon} />
+                            </button>
+                            <a
+                                className={styles.iconButton}
+                                href={`${GIT_HOST}/${connected.fullName}`}
+                                rel="noopener noreferrer"
+                                target="_blank"
+                                title={this.props.intl.formatMessage({
+                                    defaultMessage: 'Open on git.rotur.dev',
+                                    description: 'Open rotur repo in browser tooltip',
+                                    id: 'mw.git.rotur.openRepo'
+                                })}
+                            >
+                                <ExternalLink className={styles.buttonIcon} />
+                            </a>
+                        </li>
+                    </ul>
+                )}
+                <Box className={styles.field}>
+                    <label className={styles.fieldLabel}>
+                        <FormattedMessage
+                            defaultMessage="Create a repository"
+                            description="Create rotur repo label"
+                            id="mw.git.rotur.create"
+                        />
+                    </label>
+                    <Box className={styles.inlineForm}>
+                        <input
+                            className={styles.inputSmall}
+                            type="text"
+                            value={this.props.roturNewRepoName}
+                            onChange={this.props.onChangeRoturNewRepoName}
+                            disabled={this.props.busy}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'repo-name',
+                                description: 'Placeholder for new repo name',
+                                id: 'mw.git.rotur.namePlaceholder'
+                            })}
+                        />
+                        <input
+                            className={styles.input}
+                            type="text"
+                            value={this.props.roturNewRepoDesc}
+                            onChange={this.props.onChangeRoturNewRepoDesc}
+                            disabled={this.props.busy}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'Description (optional)',
+                                description: 'Placeholder for new repo description',
+                                id: 'mw.git.rotur.descPlaceholder'
+                            })}
+                        />
+                        <button
+                            className={styles.primaryButton}
+                            disabled={this.props.busy || !this.props.roturNewRepoName.trim()}
+                            onClick={this.props.onCreateRoturRepo}
+                        >
+                            <Plus className={styles.buttonIcon} />
+                            <FormattedMessage
+                                defaultMessage="Create"
+                                description="Create rotur repo button"
+                                id="mw.git.rotur.createButton"
+                            />
+                        </button>
+                    </Box>
+                    <label className={styles.checkboxRow}>
+                        <input
+                            type="checkbox"
+                            checked={this.props.roturNewRepoPrivate}
+                            disabled={this.props.busy}
+                            onChange={this.props.onToggleRoturNewRepoPrivate}
+                        />
+                        <FormattedMessage
+                            defaultMessage="Private repository"
+                            description="Private repo checkbox"
+                            id="mw.git.rotur.privateCheckbox"
+                        />
+                    </label>
+                </Box>
+                <Box className={styles.field}>
+                    <Box className={styles.rowButtons}>
+                        <label className={styles.fieldLabel}>
+                            <FormattedMessage
+                                defaultMessage="Repositories"
+                                description="Rotur repo list label"
+                                id="mw.git.rotur.repoList"
+                            />
+                        </label>
+                        <button
+                            className={styles.iconButton}
+                            disabled={this.props.busy || roturReposLoading}
+                            onClick={this.props.onLoadRoturRepos}
+                            title={this.props.intl.formatMessage({
+                                defaultMessage: 'Reload repositories',
+                                description: 'Reload rotur repos tooltip',
+                                id: 'mw.git.rotur.reload'
+                            })}
+                        >
+                            <RefreshCcw className={styles.buttonIcon} />
+                        </button>
+                    </Box>
+                    {roturReposLoading ? (
+                        <p className={styles.muted}>
+                            <FormattedMessage
+                                defaultMessage="Loading repositories…"
+                                description="Rotur repos loading message"
+                                id="mw.git.rotur.loading"
+                            />
+                        </p>
+                    ) : roturRepos && roturRepos.length > 0 ? (
+                        <ul className={styles.remoteList}>
+                            {roturRepos.map(repo => this.renderRoturRepoRow(repo))}
+                        </ul>
+                    ) : (
+                        <div className={styles.remoteEmpty}>
+                            <Globe className={styles.remoteEmptyIcon} />
+                            <FormattedMessage
+                                defaultMessage="No repositories yet. Create one above, then push your project to it."
+                                description="No rotur repos message"
+                                id="mw.git.rotur.noRepos"
+                            />
+                        </div>
+                    )}
+                    <p className={styles.muted}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Push sends your committed history. Pushing an uninitialized project creates the repo locally and makes an initial commit first."
+                            description="Rotur push help text"
+                            id="mw.git.rotur.pushHelp"
+                        />
+                    </p>
+                </Box>
+                <Box className={styles.field}>
+                    <label className={styles.fieldLabel}>
+                        <FormattedMessage
+                            defaultMessage="Clone any Rotur repo"
+                            description="Clone other rotur repo label"
+                            id="mw.git.rotur.cloneOther"
+                        />
+                    </label>
+                    <Box className={styles.inlineForm}>
+                        <input
+                            className={styles.input}
+                            type="text"
+                            value={this.props.roturCloneOther}
+                            onChange={this.props.onChangeRoturCloneOther}
+                            disabled={this.props.busy}
+                            placeholder="owner/repo"
+                        />
+                        <button
+                            className={styles.button}
+                            disabled={this.props.busy || !this.props.roturCloneOther.trim()}
+                            onClick={this.props.onRoturCloneOther}
+                        >
+                            <Download className={styles.buttonIcon} />
+                            <FormattedMessage
+                                defaultMessage="Clone"
+                                description="Clone button"
+                                id="mw.git.rotur.cloneOtherButton"
+                            />
+                        </button>
+                    </Box>
+                    {this.props.roturCloneOther.trim() &&
+                        this.props.roturCloneConfirm ===
+                        (parseRepoUrl(this.props.roturCloneOther.trim()) || {}).fullName && (
+                        <p className={styles.cloneConfirm}>
+                            <FormattedMessage
+                                defaultMessage="This replaces your current project. Click clone again to confirm."
+                                description="Confirm replacing project on rotur clone"
+                                id="mw.git.rotur.cloneConfirm"
+                            />
+                        </p>
+                    )}
+                    <p className={styles.muted}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Cloning someone else's repo opens it as your project; push it to one of your own repos to keep changes."
+                            description="Clone other rotur repo help text"
+                            id="mw.git.rotur.cloneOtherHelp"
+                        />
+                    </p>
+                </Box>
+            </Box>
+        );
+    }
+
     renderReadme () {
         return (
             <Box className={styles.section}>
@@ -948,6 +1363,9 @@ class GitModalComponent extends React.Component {
     }
 
     renderContent () {
+        if (this.state.currentView === 'rotur') {
+            return this.renderRotur();
+        }
         if (!this.props.initialized) {
             return this.renderNotInitialized();
         }
@@ -976,6 +1394,7 @@ class GitModalComponent extends React.Component {
             {id: 'branches', label: intl.formatMessage(messages.branches), icon: GitBranch},
             {id: 'diff', label: intl.formatMessage(messages.diff), icon: FileDiff},
             {id: 'remote', label: intl.formatMessage(messages.remote), icon: Cloud},
+            {id: 'rotur', label: intl.formatMessage(messages.rotur), icon: Globe},
             {id: 'readme', label: intl.formatMessage(messages.readme), icon: FileText}
         ];
 
@@ -1110,7 +1529,34 @@ GitModalComponent.propTypes = {
     onAddRemote: PropTypes.func,
     onRemoveRemote: PropTypes.func,
     onPush: PropTypes.func,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    roturUsername: PropTypes.string,
+    roturRepos: PropTypes.arrayOf(PropTypes.object),
+    roturReposLoaded: PropTypes.bool,
+    roturReposLoading: PropTypes.bool,
+    roturNewRepoName: PropTypes.string,
+    roturNewRepoDesc: PropTypes.string,
+    roturNewRepoPrivate: PropTypes.bool,
+    roturCloneOther: PropTypes.string,
+    roturCloneConfirm: PropTypes.string,
+    roturDeleteConfirm: PropTypes.string,
+    connectedRoturRepo: PropTypes.shape({
+        owner: PropTypes.string,
+        name: PropTypes.string,
+        fullName: PropTypes.string,
+        remoteName: PropTypes.string
+    }),
+    onRoturLogin: PropTypes.func,
+    onLoadRoturRepos: PropTypes.func,
+    onChangeRoturNewRepoName: PropTypes.func,
+    onChangeRoturNewRepoDesc: PropTypes.func,
+    onToggleRoturNewRepoPrivate: PropTypes.func,
+    onCreateRoturRepo: PropTypes.func,
+    onRoturPush: PropTypes.func,
+    onRoturClone: PropTypes.func,
+    onRoturDelete: PropTypes.func,
+    onChangeRoturCloneOther: PropTypes.func,
+    onRoturCloneOther: PropTypes.func
 };
 
 export default injectIntl(GitModalComponent);

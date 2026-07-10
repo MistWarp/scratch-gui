@@ -215,6 +215,19 @@ const listFilesRecursive = async (pfs, rootDir) => {
     return out;
 };
 
+const clearWorkdirExceptGit = async pfs => {
+    let entries;
+    try {
+        entries = await pfs.readdir(REPO_DIR);
+    } catch (e) {
+        return;
+    }
+    for (const entry of entries) {
+        if (entry === '.git') continue;
+        await removeRecursive(pfs, `${REPO_DIR}/${entry}`);
+    }
+};
+
 const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -456,9 +469,10 @@ const checkoutBranch = async ref => {
     if (!ref || typeof ref !== 'string') {
         throw new Error('Invalid branch reference');
     }
-    
+
     const fs = getFs();
     try {
+        await clearWorkdirExceptGit(fs.promises);
         await git.checkout({fs, dir: REPO_DIR, ref, force: true});
     } catch (e) {
         throw new Error(`Failed to checkout branch ${ref}: ${e.message}`);
@@ -470,9 +484,10 @@ const checkoutCommit = async oid => {
     if (!oid || typeof oid !== 'string') {
         throw new Error('Invalid commit OID');
     }
-    
+
     const fs = getFs();
     try {
+        await clearWorkdirExceptGit(fs.promises);
         await git.checkout({fs, dir: REPO_DIR, ref: oid, force: true});
     } catch (e) {
         throw new Error(`Failed to checkout commit ${oid}: ${e.message}`);
@@ -540,6 +555,33 @@ const getRemotes = async vm => {
     }));
 };
 
+const DEFAULT_CORS_PROXY = 'https://cors.isomorphic-git.org';
+const DIRECT_CORS_HOSTS = ['git.rotur.dev'];
+
+const corsProxyForUrl = url => {
+    try {
+        if (DIRECT_CORS_HOSTS.includes(new URL(url).host)) {
+            return null;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return DEFAULT_CORS_PROXY;
+};
+
+const corsProxyForRemote = async (fs, remoteName) => {
+    try {
+        const remotes = await git.listRemotes({fs, dir: REPO_DIR});
+        const match = remotes.find(r => (r.remote || r.name) === remoteName);
+        if (match && match.url) {
+            return corsProxyForUrl(match.url);
+        }
+    } catch (e) {
+        // ignore
+    }
+    return DEFAULT_CORS_PROXY;
+};
+
 const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ...options}) => {
     if (!vm) {
         throw new Error('VM is required');
@@ -578,7 +620,7 @@ const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ..
     const result = await git.push({
         fs,
         http,
-        corsProxy: 'https://cors.isomorphic-git.org',
+        corsProxy: await corsProxyForRemote(fs, remote),
         dir: REPO_DIR,
         remote,
         ref: localRef,
@@ -630,7 +672,7 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
     await git.pull({
         fs,
         http,
-        corsProxy: 'https://cors.isomorphic-git.org',
+        corsProxy: await corsProxyForRemote(fs, remote || 'origin'),
         dir: REPO_DIR,
         ref: localRef,
         remote: remote || 'origin',
@@ -778,7 +820,7 @@ const mergeBranchesPreview = async ({ours, theirs} = {}) => {
             dir: REPO_DIR,
             ours,
             theirs,
-            abortOnConflict: false,
+            abortOnConflict: true,
             dryRun: true
         });
         return {
@@ -787,7 +829,8 @@ const mergeBranchesPreview = async ({ours, theirs} = {}) => {
         };
     } catch (e) {
         if (Errors && e instanceof Errors.MergeConflictError) {
-            const conflicts = Array.isArray(e.data) ? e.data : [];
+            const data = e.data || {};
+            const conflicts = Array.isArray(data.filepaths) ? data.filepaths : [];
             return {
                 result: null,
                 conflicts
@@ -797,28 +840,91 @@ const mergeBranchesPreview = async ({ours, theirs} = {}) => {
     }
 };
 
+const TEXT_MERGE_RE = /\.(fractch|json|svg|txt|md)$/i;
+
 const mergeBranchesApply = async ({ours, theirs, resolutions, author} = {}) => {
     if (!ours || !theirs || typeof ours !== 'string' || typeof theirs !== 'string') {
         throw new Error('Invalid branches for merge');
     }
     const fs = getFs();
+    const pfs = fs.promises;
     const map = resolutions && typeof resolutions === 'object' ? resolutions : {};
-    const mergeDriver = ({path, contents}) => {
-        const choice = map[path];
-        const useOurs = choice === 'ours';
-        const useTheirs = choice === 'theirs';
-        const mergedText = useOurs ? contents[1] : (useTheirs ? contents[2] : contents[1]);
-        return {cleanMerge: true, mergedText};
-    };
-    const res = await git.merge({
-        fs,
-        dir: REPO_DIR,
-        ours,
-        theirs,
-        abortOnConflict: true,
-        author: author || getDefaultAuthor(),
-        mergeDriver
-    });
+    const mergeAuthor = author || getDefaultAuthor();
+    const message = `Merge branch '${theirs}' into ${ours}`;
+
+    const oursOid = await git.resolveRef({fs, dir: REPO_DIR, ref: ours});
+    const theirsOid = await git.resolveRef({fs, dir: REPO_DIR, ref: theirs});
+    const {conflicts} = await mergeBranchesPreview({ours, theirs});
+
+    let res;
+    if (conflicts.length === 0) {
+        res = await git.merge({
+            fs,
+            dir: REPO_DIR,
+            ours,
+            theirs,
+            abortOnConflict: true,
+            author: mergeAuthor,
+            message
+        });
+    } else {
+        const mergeDriver = ({path, contents}) => {
+            const mergedText = map[path] === 'theirs' ? contents[2] : contents[1];
+            return {cleanMerge: true, mergedText};
+        };
+        try {
+            res = await git.merge({
+                fs,
+                dir: REPO_DIR,
+                ours,
+                theirs,
+                abortOnConflict: false,
+                author: mergeAuthor,
+                message,
+                mergeDriver
+            });
+        } catch (e) {
+            await clearWorkdirExceptGit(pfs);
+            await git.checkout({fs, dir: REPO_DIR, ref: ours, force: true});
+            throw new Error(`Failed to merge: ${e.message}`);
+        }
+    }
+
+    await clearWorkdirExceptGit(pfs);
+    await git.checkout({fs, dir: REPO_DIR, ref: ours, force: true});
+
+    const binaryConflicts = conflicts.filter(p => !TEXT_MERGE_RE.test(p));
+    if (binaryConflicts.length > 0) {
+        for (const filepath of binaryConflicts) {
+            const sideOid = map[filepath] === 'theirs' ? theirsOid : oursOid;
+            let blob = null;
+            try {
+                ({blob} = await git.readBlob({fs, dir: REPO_DIR, oid: sideOid, filepath}));
+            } catch (e) {
+                blob = null;
+            }
+            const dest = pathJoin(REPO_DIR, filepath);
+            if (blob) {
+                await ensureParentDir(pfs, dest);
+                await pfs.writeFile(dest, blob instanceof Uint8Array ? blob : new Uint8Array(blob));
+                await git.add({fs, dir: REPO_DIR, filepath});
+            } else {
+                try {
+                    await pfs.unlink(dest);
+                } catch (e) {
+                    // already absent
+                }
+                await git.remove({fs, dir: REPO_DIR, filepath});
+            }
+        }
+        res = await git.commit({
+            fs,
+            dir: REPO_DIR,
+            message,
+            author: mergeAuthor,
+            parent: [oursOid, theirsOid]
+        });
+    }
     return res;
 };
 
@@ -1003,6 +1109,29 @@ const writeReadme = async content => {
 
 // Clone a git repository into LightningFS, replacing any existing repo. After
 // this, the working tree holds the cloned files (fractch source + .git).
+const moveDir = async (pfs, from, to) => {
+    try {
+        await pfs.rename(from, to);
+        return;
+    } catch (e) {
+        // fall back to copy
+    }
+    await ensureDir(pfs, to);
+    const entries = await pfs.readdir(from);
+    for (const entry of entries) {
+        const src = `${from}/${entry}`;
+        const dest = `${to}/${entry}`;
+        const stat = await pfs.stat(src);
+        if (stat.isDirectory()) {
+            await moveDir(pfs, src, dest);
+        } else {
+            const data = await pfs.readFile(src);
+            await pfs.writeFile(dest, data instanceof Uint8Array ? data : new Uint8Array(data));
+        }
+    }
+    await removeRecursive(pfs, from);
+};
+
 const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
     if (!url || typeof url !== 'string') {
         throw new Error('Repository URL is required');
@@ -1010,17 +1139,16 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
 
     const fs = getFs();
     const pfs = fs.promises;
-
-    await deleteRepo();
-    await ensureDir(pfs, REPO_DIR);
+    const tmpDir = `${REPO_DIR}-clone-${Date.now()}`;
 
     try {
+        await ensureDir(pfs, tmpDir);
         const cloneOptions = {
             fs,
             http,
-            dir: REPO_DIR,
+            dir: tmpDir,
             url: url.trim(),
-            corsProxy: 'https://cors.isomorphic-git.org',
+            corsProxy: corsProxyForUrl(url.trim()),
             singleBranch: false,
             onAuth,
             onProgress: evt => {
@@ -1038,12 +1166,15 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
         await git.clone(cloneOptions);
     } catch (e) {
         try {
-            await deleteRepo();
+            await removeRecursive(pfs, tmpDir);
         } catch (cleanupError) {
             // ignore
         }
         throw new Error(`Failed to clone: ${e.message}`);
     }
+
+    await deleteRepo();
+    await moveDir(pfs, tmpDir, REPO_DIR);
 
     return {fs, dir: REPO_DIR};
 };
@@ -1108,6 +1239,11 @@ const importRepoFromSb3 = async input => {
     try {
         zip = await JSZip.loadAsync(input);
     } catch (e) {
+        try {
+            await deleteRepo();
+        } catch (cleanupError) {
+            // ignore
+        }
         return false;
     }
 
@@ -1132,6 +1268,11 @@ const importRepoFromSb3 = async input => {
     for (const p of entryPaths) {
         const rel = p.slice(prefix.length);
         if (!rel) continue;
+        const segments = rel.split('/');
+        if (segments.some(s => s === '..' || s === '')) {
+            console.warn('Skipping unsafe embedded repo path on import:', p);
+            continue;
+        }
         try {
             const data = await zip.files[p].async('uint8array');
             const dest = pathJoin(REPO_DIR, rel);
