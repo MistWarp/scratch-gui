@@ -40,7 +40,7 @@ const exists = async (pfs, filePath) => {
     if (!filePath || typeof filePath !== 'string') {
         throw new Error('Invalid file path');
     }
-    
+
     try {
         await pfs.stat(filePath);
         return true;
@@ -56,7 +56,7 @@ const ensureDir = async (pfs, dirPath) => {
     if (!dirPath || typeof dirPath !== 'string') {
         throw new Error('Invalid directory path');
     }
-    
+
     try {
         await pfs.mkdir(dirPath);
     } catch (e) {
@@ -70,7 +70,7 @@ const removeRecursive = async (pfs, filePath) => {
     if (!pfs || !filePath || typeof filePath !== 'string') {
         return;
     }
-    
+
     let stat;
     try {
         stat = await pfs.stat(filePath);
@@ -113,7 +113,7 @@ const stageAll = async (fs, dir, {onProgress} = {}) => {
     if (!fs || !dir || typeof dir !== 'string') {
         throw new Error('Invalid filesystem or directory');
     }
-    
+
     if (typeof onProgress === 'function') {
         onProgress({phase: 'status', message: 'Computing file status…', completed: 0, total: 1});
     }
@@ -138,17 +138,17 @@ const stageAll = async (fs, dir, {onProgress} = {}) => {
     };
 
     report();
-    
+
     // Process files in batches to avoid overwhelming the system
     const batchSize = 10;
     for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
         await Promise.all(batch.map(async row => {
             if (!row || row.length < 3) return;
-            
+
             const [filepath, head, workdir] = row;
             if (!filepath) return;
-            
+
             try {
                 if (workdir === 0) {
                     if (head !== 0) {
@@ -163,7 +163,7 @@ const stageAll = async (fs, dir, {onProgress} = {}) => {
             report();
         }));
         completed += batch.length;
-        
+
         // Yield control to browser between batches
         if (i + batchSize < rows.length) {
             await new Promise(resolve => setTimeout(resolve, 0));
@@ -232,7 +232,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
     }
-    
+
     const fs = getFs();
     const pfs = fs.promises;
     await ensureDir(pfs, REPO_DIR);
@@ -242,7 +242,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
         if (typeof onProgress === 'function') {
             onProgress({phase: 'init', message: 'Initializing repository…', completed: 0, total: 1});
         }
-        
+
         try {
             await git.init({fs, dir: REPO_DIR, defaultBranch});
             await pfs.writeFile(pathJoin(REPO_DIR, '.gitignore'), '');
@@ -252,7 +252,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
                 if (typeof onProgress === 'function') {
                     onProgress({phase: 'snapshot', message: 'Saving project snapshot…', completed: 0, total: 1});
                 }
-                
+
                 if (typeof vm.saveProjectSb3 !== 'function') {
                     throw new Error('VM does not support saveProjectSb3');
                 }
@@ -288,11 +288,11 @@ const readSnapshot = async () => {
     const fs = getFs();
     const pfs = fs.promises;
     const snapshotPath = pathJoin(REPO_DIR, SNAPSHOT_FILE);
-    
+
     if (!(await exists(pfs, snapshotPath))) {
         throw new Error('Project snapshot not found');
     }
-    
+
     try {
         const data = await pfs.readFile(snapshotPath);
         const view = data instanceof Uint8Array ? data : new Uint8Array(data);
@@ -439,11 +439,11 @@ const createBranch = async ({ref} = {}) => {
     if (!ref || typeof ref !== 'string') {
         throw new Error('Invalid branch name');
     }
-    
+
     if (!/^[a-zA-Z0-9._/-]+$/.test(ref) || ref.startsWith('/') || ref.endsWith('/') || ref.includes('//')) {
         throw new Error('Invalid branch name format');
     }
-    
+
     const fs = getFs();
     const pfs = fs.promises;
 
@@ -556,7 +556,7 @@ const getRemotes = async vm => {
 };
 
 const DEFAULT_CORS_PROXY = 'https://cors.isomorphic-git.org';
-const DIRECT_CORS_HOSTS = ['git.rotur.dev'];
+const DIRECT_CORS_HOSTS = [];
 
 const corsProxyForUrl = url => {
     try {
@@ -699,11 +699,11 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
     if (!message || typeof message !== 'string' || !message.trim()) {
         throw new Error('Commit message is required');
     }
-    
+
     if (!vm) {
         throw new Error('VM is required');
     }
-    
+
     const fs = getFs();
     const pfs = fs.promises;
 
@@ -716,7 +716,7 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
     }
 
     let sb3ArrayBuffer;
-    
+
     try {
         sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
         if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
@@ -763,7 +763,7 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
             onProgress({phase: 'commit', message: 'Creating commit…', completed: 1, total: 1});
         }
 
-        
+
         const ret = await git.commit({
             fs,
             dir: REPO_DIR,
@@ -787,7 +787,7 @@ const deleteBranch = async ref => {
     if (!ref || typeof ref !== 'string') {
         throw new Error('Invalid branch name');
     }
-    
+
     const fs = getFs();
     try {
         const currentBranch = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
