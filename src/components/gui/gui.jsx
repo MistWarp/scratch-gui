@@ -47,7 +47,6 @@ import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import WarpThemeModal from '../../containers/mw-warptheme-modal.jsx';
-import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import {closeRoturLoginModal} from '../../reducers/modals.js';
@@ -524,7 +523,6 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
-        shortcutManagerModalVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
         vm,
@@ -582,7 +580,6 @@ const GUIComponent = props => {
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
             <WarpThemeModal />
-            <ShortcutManager visible={shortcutManagerModalVisible} />
             {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
             {settingsModalVisible && (
                 <TWSettingsModal
@@ -611,7 +608,6 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
-        shortcutManagerModalVisible,
         onboardingVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin
@@ -1019,7 +1015,6 @@ GUIComponent.propTypes = {
     roturLoginModalVisible: PropTypes.bool,
     onRequestCloseRoturLogin: PropTypes.func,
     settingsModalVisible: PropTypes.bool,
-    shortcutManagerModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
@@ -1060,7 +1055,6 @@ const mapStateToProps = state => ({
     theme: state.scratchGui.theme.theme,
     locale: state.locales.locale,
     onboardingVisible: state.scratchGui.onboarding.visible,
-    shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal,
     roturLoginModalVisible: state.scratchGui.modals.roturLoginModal
 });
 

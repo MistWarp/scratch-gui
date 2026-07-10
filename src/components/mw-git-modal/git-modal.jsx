@@ -25,6 +25,13 @@ import {
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import DiffViewer from '../mw-git-diff-viewer/diff-viewer.jsx';
+import {
+    ModalSidebar,
+    ModalSidebarContent,
+    ModalSidebarFooter,
+    ModalSidebarItem,
+    ModalSidebarLayout
+} from '../modal-sidebar/modal-sidebar.jsx';
 import {takeGitModalInitialView} from '../../lib/git/modal-view.js';
 import {GIT_HOST, parseRepoUrl} from '../../lib/rotur/git-api.js';
 
@@ -77,25 +84,6 @@ const messages = defineMessages({
         id: 'mw.git.nav.rotur'
     }
 });
-
-const SidebarItem = ({id, label, icon: Icon, isSelected, onClick}) => (
-    <div
-        className={classNames(styles.sidebarItem, {[styles.selected]: isSelected})}
-        onClick={() => onClick(id)}
-        title={label}
-    >
-        {Icon && <Icon className={styles.sidebarIcon} />}
-        <span className={styles.sidebarLabel}>{label}</span>
-    </div>
-);
-
-SidebarItem.propTypes = {
-    id: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
-    icon: PropTypes.elementType,
-    onClick: PropTypes.func.isRequired,
-    isSelected: PropTypes.bool
-};
 
 const changeTypeClass = (styleMap, description) => {
     switch (description) {
@@ -1407,36 +1395,39 @@ class GitModalComponent extends React.Component {
                 width={880}
                 height={560}
             >
-                <Box className={styles.sidebarLayout}>
-                    <div className={styles.sidebar}>
-                        <div className={styles.sidebarItems}>
-                            {categories.map(cat => (
-                                <SidebarItem
-                                    key={cat.id}
-                                    id={cat.id}
-                                    label={cat.label}
-                                    icon={cat.icon}
-                                    onClick={this.handleNavigate}
-                                    isSelected={this.state.currentView === cat.id}
-                                />
-                            ))}
-                        </div>
-                        <div className={styles.sidebarFooter}>
-                            <button
-                                className={styles.button}
-                                disabled={this.props.busy}
-                                onClick={this.props.onRefresh}
-                            >
-                                <RefreshCcw className={styles.buttonIcon} />
-                                <FormattedMessage
-                                    defaultMessage="Refresh"
-                                    description="Refresh button"
-                                    id="mw.git.refresh"
-                                />
-                            </button>
-                        </div>
-                    </div>
-                    <div className={styles.contentArea}>
+                <ModalSidebarLayout>
+                    <ModalSidebar
+                        ariaLabel="Version control sections"
+                        width="narrow"
+                        footer={
+                            <ModalSidebarFooter>
+                                <button
+                                    className={classNames(styles.button, styles.sidebarRefresh)}
+                                    disabled={this.props.busy}
+                                    onClick={this.props.onRefresh}
+                                    type="button"
+                                >
+                                    <RefreshCcw className={styles.buttonIcon} />
+                                    <FormattedMessage
+                                        defaultMessage="Refresh"
+                                        description="Refresh button"
+                                        id="mw.git.refresh"
+                                    />
+                                </button>
+                            </ModalSidebarFooter>
+                        }
+                    >
+                        {categories.map(cat => (
+                            <ModalSidebarItem
+                                key={cat.id}
+                                icon={cat.icon}
+                                label={cat.label}
+                                selected={this.state.currentView === cat.id}
+                                onClick={() => this.handleNavigate(cat.id)}
+                            />
+                        ))}
+                    </ModalSidebar>
+                    <ModalSidebarContent className={styles.contentArea}>
                         {this.props.busy && (
                             <Box className={styles.busyBar}>
                                 <span>{this.props.busyMessage || 'Working…'}</span>
@@ -1454,8 +1445,8 @@ class GitModalComponent extends React.Component {
                             <Box className={styles.errorBar}>{this.props.error}</Box>
                         )}
                         {this.renderContent()}
-                    </div>
-                </Box>
+                    </ModalSidebarContent>
+                </ModalSidebarLayout>
             </Modal>
         );
     }

@@ -38,7 +38,6 @@ import {
     openSoundLibrary,
     openSettingsModal,
     openRestorePointModal,
-    openShortcutManagerModal,
     openSimpleDialog
 } from '../reducers/modals';
 

@@ -1,15 +1,23 @@
 /* eslint-disable max-len, no-alert, no-negated-condition, react/jsx-no-bind, react/jsx-no-literals */
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {
-    ArrowLeft, BookmarkPlus, Check, Download, Edit3, Flag, Heart, LogIn,
-    Search, Shield, Trash2, Upload, User, X
+    ArrowLeft, BookmarkPlus, Check, Download, Edit3, FileJson, Flag, Heart, LogIn,
+    Palette, Search, Shield, Trash2, Upload, User, X
 } from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
-import Box from '../box/box.jsx';
 import Spinner from '../spinner/spinner.jsx';
+import {
+    ModalSidebar,
+    ModalSidebarAccount,
+    ModalSidebarContent,
+    ModalSidebarGroup,
+    ModalSidebarGroupHeader,
+    ModalSidebarItem,
+    ModalSidebarLayout
+} from '../modal-sidebar/modal-sidebar.jsx';
 import {getRotur} from '../../lib/rotur/client.js';
 // eslint-disable-next-line import/no-commonjs
 const {needsValidatorPermission} = require('../../lib/warptheme-auth.js');
@@ -98,13 +106,19 @@ const openSession = async expectedUsername => {
 };
 
 const gradientStyle = theme => {
-    const colors = theme.colors && theme.colors.gradient;
+    if (!theme) return {};
+    // Marketplace themes: colors.gradient; exports: accent.colors
+    const colors = (theme.colors && theme.colors.gradient) ||
+        (theme.accent && theme.accent.colors);
     if (!Array.isArray(colors) || colors.length < 1) return {};
+    const direction = (theme.colors && theme.colors.gradientDirection) ||
+        (theme.accent && theme.accent.direction) ||
+        135;
     const stops = [...colors]
         .sort((a, b) => Number(a.position) - Number(b.position))
         .map(color => `${color.color} ${color.position}%`)
         .join(', ');
-    return {background: `linear-gradient(${theme.colors.gradientDirection || 135}deg, ${stops})`};
+    return {background: `linear-gradient(${direction}deg, ${stops})`};
 };
 
 const exportCurrentTheme = theme => {
@@ -158,30 +172,6 @@ ThemeCard.propTypes = {
     theme: PropTypes.object.isRequired
 };
 
-const SidebarItem = ({active, badge, icon: Icon, label, onClick}) => (
-    <button
-        className={`${styles.sidebarItem}${active ? ` ${styles.selected}` : ''}`}
-        onClick={onClick}
-        title={label}
-        type="button"
-    >
-        <Icon
-            className={styles.sidebarIcon}
-            size={18}
-        />
-        <span className={styles.sidebarLabel}>{label}</span>
-        {badge > 0 && <span className={styles.sidebarBadge}>{badge}</span>}
-    </button>
-);
-
-SidebarItem.propTypes = {
-    active: PropTypes.bool,
-    badge: PropTypes.number,
-    icon: PropTypes.elementType.isRequired,
-    label: PropTypes.string.isRequired,
-    onClick: PropTypes.func.isRequired
-};
-
 const WarpThemeModal = props => {
     const [account, setAccount] = useState(null);
     const [token, setToken] = useState(null);
@@ -200,6 +190,9 @@ const WarpThemeModal = props => {
     const [uploadName, setUploadName] = useState('');
     const [uploadDescription, setUploadDescription] = useState('');
     const [uploadFile, setUploadFile] = useState(null);
+    const [uploadSource, setUploadSource] = useState('current'); // 'current' | 'file'
+    const [uploadDragOver, setUploadDragOver] = useState(false);
+    const fileInputRef = useRef(null);
     const [editing, setEditing] = useState(null);
     const [reporting, setReporting] = useState(null);
     const [reportReason, setReportReason] = useState('');
@@ -292,8 +285,41 @@ const WarpThemeModal = props => {
         }
     };
 
+    const currentExport = useMemo(
+        () => exportCurrentTheme(props.currentTheme),
+        [props.currentTheme]
+    );
+
+    const parseThemeFile = async file => {
+        if (!file) return;
+        try {
+            const parsed = JSON.parse(await file.text());
+            setUploadFile(parsed);
+            setUploadSource('file');
+            setError('');
+            const first = Array.isArray(parsed.themes) ? parsed.themes[0] : parsed;
+            if (first && first.name && !uploadName.trim()) {
+                setUploadName(String(first.name).slice(0, 100));
+            }
+            if (first && first.description && !uploadDescription.trim()) {
+                setUploadDescription(String(first.description).slice(0, 500));
+            }
+        } catch (_) {
+            setUploadFile(null);
+            setError('That file is not valid theme JSON.');
+        }
+    };
+
+    const clearUploadFile = () => {
+        setUploadFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const uploadTheme = () => run(async () => {
-        const source = uploadFile || exportCurrentTheme(props.currentTheme);
+        if (uploadSource === 'file' && !uploadFile) {
+            throw new Error('Choose a theme JSON file, or switch to “Current theme”.');
+        }
+        const source = uploadSource === 'file' ? uploadFile : currentExport;
         const sourceThemes = Array.isArray(source.themes) ? source.themes : [source];
         const items = sourceThemes.map((item, index) => ({
             name: (index === 0 && uploadName.trim()) || item.name || `Theme ${index + 1}`,
@@ -302,9 +328,10 @@ const WarpThemeModal = props => {
             themeJson: Array.isArray(source.themes) ? {...source, themes: [item]} : source
         }));
         await request('/theme', token, {method: 'POST', body: JSON.stringify({themes: items})});
-        setUploadFile(null);
+        clearUploadFile();
         setUploadName('');
         setUploadDescription('');
+        setUploadSource('current');
         setTab('mine');
         await refresh();
     });
@@ -409,6 +436,14 @@ const WarpThemeModal = props => {
         </div>
     );
 
+    const uploadPreviewSource = uploadSource === 'file' && uploadFile ?
+        (Array.isArray(uploadFile.themes) ? uploadFile.themes[0] : uploadFile) :
+        currentExport;
+    const uploadPreviewName = uploadName.trim() ||
+        (uploadPreviewSource && uploadPreviewSource.name) ||
+        'Untitled theme';
+    const uploadCanSubmit = uploadSource === 'current' || Boolean(uploadFile);
+
     const uploadPage = tab === 'upload' && (
         <div className={styles.pageContent}>
             <form
@@ -422,12 +457,55 @@ const WarpThemeModal = props => {
                     <div className={styles.formIcon}><Upload size={18} /></div>
                     <div>
                         <h2>Upload a theme</h2>
-                        <p>Share the theme currently applied, or choose an exported JSON file.</p>
+                        <p>Publish your current look to the marketplace, or import an exported JSON file.</p>
                     </div>
                 </div>
+
+                <div className={styles.uploadSourceRow}>
+                    <button
+                        className={`${styles.uploadSourceCard}${uploadSource === 'current' ? ` ${styles.uploadSourceActive}` : ''}`}
+                        onClick={() => setUploadSource('current')}
+                        type="button"
+                    >
+                        <Palette size={18} />
+                        <span>
+                            <strong>Current theme</strong>
+                            <em>Share what you have applied right now</em>
+                        </span>
+                    </button>
+                    <button
+                        className={`${styles.uploadSourceCard}${uploadSource === 'file' ? ` ${styles.uploadSourceActive}` : ''}`}
+                        onClick={() => setUploadSource('file')}
+                        type="button"
+                    >
+                        <FileJson size={18} />
+                        <span>
+                            <strong>JSON file</strong>
+                            <em>Upload an exported WarpTheme file</em>
+                        </span>
+                    </button>
+                </div>
+
+                <div
+                    className={styles.uploadPreview}
+                    style={gradientStyle(uploadPreviewSource)}
+                >
+                    <div className={styles.uploadPreviewBody}>
+                        <span className={styles.platform}>mistwarp</span>
+                        <strong>{uploadPreviewName}</strong>
+                        <span>
+                            {uploadSource === 'file' ?
+                                (uploadFile ? 'Ready from JSON' : 'Select a file below') :
+                                'From your editor theme'}
+                        </span>
+                    </div>
+                </div>
+
                 <label>Name<input
                     maxLength="100"
-                    placeholder="Current theme name"
+                    placeholder={
+                        (currentExport && currentExport.name) || 'Theme name'
+                    }
                     value={uploadName}
                     onChange={e => setUploadName(e.target.value)}
                 /></label>
@@ -437,28 +515,86 @@ const WarpThemeModal = props => {
                     value={uploadDescription}
                     onChange={e => setUploadDescription(e.target.value)}
                 /></label>
-                <label className={styles.fileField}>Theme JSON (optional)<input
-                    accept="application/json,.json"
-                    type="file"
-                    onChange={async e => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        try {
-                            setUploadFile(JSON.parse(await file.text()));
-                            setError('');
-                        } catch (_) {
-                            setUploadFile(null);
-                            setError('That file is not valid JSON.');
-                        }
-                    }}
-                /></label>
-                {uploadFile && <div className={styles.fileReady}><Check size={14} /> JSON ready to upload</div>}
+
+                {uploadSource === 'file' && (
+                    <div
+                        className={`${styles.dropzone}${uploadDragOver ? ` ${styles.dropzoneActive}` : ''}${uploadFile ? ` ${styles.dropzoneReady}` : ''}`}
+                        onClick={() => {
+                            if (!uploadFile && fileInputRef.current) fileInputRef.current.click();
+                        }}
+                        onDragEnter={e => {
+                            e.preventDefault();
+                            setUploadDragOver(true);
+                        }}
+                        onDragLeave={e => {
+                            e.preventDefault();
+                            setUploadDragOver(false);
+                        }}
+                        onDragOver={e => {
+                            e.preventDefault();
+                            setUploadDragOver(true);
+                        }}
+                        onDrop={e => {
+                            e.preventDefault();
+                            setUploadDragOver(false);
+                            const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                            parseThemeFile(file);
+                        }}
+                        role={uploadFile ? undefined : 'button'}
+                        tabIndex={uploadFile ? undefined : 0}
+                        onKeyDown={e => {
+                            if (uploadFile) return;
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                if (fileInputRef.current) fileInputRef.current.click();
+                            }
+                        }}
+                    >
+                        <input
+                            ref={fileInputRef}
+                            accept="application/json,.json"
+                            className={styles.dropzoneInput}
+                            type="file"
+                            onChange={e => parseThemeFile(e.target.files[0])}
+                        />
+                        {uploadFile ? (
+                            <React.Fragment>
+                                <Check size={20} />
+                                <strong>JSON ready to upload</strong>
+                                <span>
+                                    {(Array.isArray(uploadFile.themes) ?
+                                        uploadFile.themes[0] && uploadFile.themes[0].name :
+                                        uploadFile.name) || 'Theme package'}
+                                </span>
+                                <button
+                                    className={styles.secondaryButton}
+                                    onClick={e => {
+                                        e.stopPropagation();
+                                        clearUploadFile();
+                                        if (fileInputRef.current) fileInputRef.current.click();
+                                    }}
+                                    type="button"
+                                >Choose another file</button>
+                            </React.Fragment>
+                        ) : (
+                            <React.Fragment>
+                                <FileJson size={20} />
+                                <strong>Drop a .json theme file here</strong>
+                                <span>or click to browse</span>
+                            </React.Fragment>
+                        )}
+                    </div>
+                )}
+
                 <div className={styles.panelActions}>
                     <button
                         className={styles.primaryButton}
-                        disabled={busy}
+                        disabled={busy || !uploadCanSubmit}
                         type="submit"
-                    ><Upload size={14} /> Upload {uploadFile ? 'JSON' : 'current theme'}</button>
+                    >
+                        <Upload size={14} />
+                        {uploadSource === 'file' ? 'Upload JSON' : 'Upload current theme'}
+                    </button>
                 </div>
             </form>
         </div>
@@ -736,59 +872,53 @@ const WarpThemeModal = props => {
                     >Retry</button>
                 </div>
             ) : (
-                <Box className={styles.sidebarLayout}>
-                    <div className={styles.sidebar}>
-                        <nav
-                            className={styles.sidebarItems}
-                            aria-label="WarpTheme sections"
-                        >
-                            <div className={styles.sidebarGroup}>
-                                <div className={styles.sidebarGroupHeader}>Marketplace</div>
-                                <SidebarItem
-                                    active={tab === 'browse'}
-                                    icon={Search}
-                                    label="Browse"
-                                    onClick={() => goToTab('browse')}
-                                />
-                                <SidebarItem
-                                    active={tab === 'mine'}
-                                    icon={User}
-                                    label="My themes"
-                                    onClick={() => goToTab('mine')}
-                                />
-                                <SidebarItem
-                                    active={tab === 'upload'}
-                                    icon={Upload}
-                                    label="Upload"
-                                    onClick={() => goToTab('upload')}
-                                />
-                            </div>
-                            {account.isAdmin && (
-                                <div className={styles.sidebarGroup}>
-                                    <div className={styles.sidebarGroupHeader}>Administration</div>
-                                    <SidebarItem
-                                        active={tab === 'admin'}
-                                        badge={reports.length}
-                                        icon={Shield}
-                                        label="Reports"
-                                        onClick={() => goToTab('admin')}
-                                    />
-                                </div>
-                            )}
-                        </nav>
-                        <div className={styles.sidebarAccount}>
-                            <img
-                                alt=""
-                                src={`https://avatars.rotur.dev/${encodeURIComponent(account.user.username)}`}
+                <ModalSidebarLayout>
+                    <ModalSidebar
+                        ariaLabel="WarpTheme sections"
+                        footer={
+                            <ModalSidebarAccount
+                                avatarUrl={`https://avatars.rotur.dev/${encodeURIComponent(account.user.username)}`}
+                                badge={account.isAdmin ? <Shield size={14} /> : null}
+                                name={account.user.username}
+                                subtitle="Rotur"
                             />
-                            <div>
-                                <strong>{account.user.username}</strong>
-                                <span>Rotur</span>
-                            </div>
-                            {account.isAdmin && <Shield size={14} />}
-                        </div>
-                    </div>
-                    <div className={styles.contentArea}>
+                        }
+                    >
+                        <ModalSidebarGroup>
+                            <ModalSidebarGroupHeader label="Marketplace" />
+                            <ModalSidebarItem
+                                icon={Search}
+                                label="Browse"
+                                selected={tab === 'browse'}
+                                onClick={() => goToTab('browse')}
+                            />
+                            <ModalSidebarItem
+                                icon={User}
+                                label="My themes"
+                                selected={tab === 'mine'}
+                                onClick={() => goToTab('mine')}
+                            />
+                            <ModalSidebarItem
+                                icon={Upload}
+                                label="Upload"
+                                selected={tab === 'upload'}
+                                onClick={() => goToTab('upload')}
+                            />
+                        </ModalSidebarGroup>
+                        {account.isAdmin && (
+                            <ModalSidebarGroup>
+                                <ModalSidebarGroupHeader label="Administration" />
+                                <ModalSidebarItem
+                                    badge={reports.length}
+                                    icon={Shield}
+                                    label="Reports"
+                                    selected={tab === 'admin'}
+                                    onClick={() => goToTab('admin')}
+                                />
+                            </ModalSidebarGroup>
+                        )}
+                    </ModalSidebar>
+                    <ModalSidebarContent>
                         {error && (
                             <div className={styles.error}>
                                 {error}
@@ -799,10 +929,10 @@ const WarpThemeModal = props => {
                             </div>
                         )}
                         {detail || browserPage || uploadPage || reportsPage}
-                    </div>
+                    </ModalSidebarContent>
                     {editPanel}
                     {reportPanel}
-                </Box>
+                </ModalSidebarLayout>
             )}
         </Modal>
     );
