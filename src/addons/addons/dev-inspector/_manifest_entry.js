@@ -2,7 +2,7 @@
 const manifest = {
   "editorOnly": true,
   "name": "Dev Inspector",
-  "description": "Adds a right-click option to inspect blocks and view their JSON representation with useful debugging information.",
+  "description": "Right-click a block to inspect it: identity, connections, inputs, stack outline, running threads, and editable block/project JSON.",
   "credits": [
     {
         "name": "Mistium",
@@ -15,6 +15,9 @@ const manifest = {
     }
   ],
   "userstyles": [
+    {
+      "url": "jsoneditor.css"
+    },
     {
       "url": "style.css"
     }

@@ -1,283 +1,987 @@
-/* Dev Inspector Styles */
+/* Dev Inspector - flat sidebar layout */
+
 .dev-inspector-hidden {
   display: none !important;
 }
 
-.dev-inspector-json-editor,
-.dev-inspector-project-editor {
-  position: relative;
-  flex: 1;
+.dev-inspector-container {
+  display: flex;
+  flex: 1 1 0%;
+  align-self: stretch;
   width: 100%;
   height: 100%;
   min-height: 0;
-  min-width: 0;
-  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  border-radius: 6px;
   overflow: hidden;
-  background: var(--ui-secondary, #f9f9f9);
-}
-
-.dev-inspector-json-editor {
-  min-height: 300px;
-}
-
-.dev-inspector-project-editor {
-  min-height: 400px;
-}
-
-.dev-inspector-content-panel {
-  flex: 1;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-  gap: 16px;
-}
-
-.dev-inspector-container {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  height: 100%;
-  overflow: hidden;
-  background: var(--ui-primary, #ffffff);
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
   color: var(--text-primary, #575e75);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Sidebar (mirrors modal-sidebar) ── */
+
+.dev-inspector-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
+}
+
+.dev-inspector-sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.dev-inspector-sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dev-inspector-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 3px;
+}
+
+.dev-inspector-group {
+  margin-bottom: 0.5rem;
+}
+
+.dev-inspector-group-header {
+  padding: 0.75rem 0.75rem 0.25rem;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 55%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.dev-inspector-nav-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 0.2rem 0;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dev-inspector-nav-item:hover {
+  background: var(--ui-tertiary, #e9eef2);
+}
+
+.dev-inspector-nav-item-active {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.2));
+  color: var(--looks-secondary, #855cd6);
+  font-weight: 600;
+}
+
+.dev-inspector-nav-item-active:hover {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.2));
+  color: var(--looks-secondary, #855cd6);
+}
+
+/* ── Main content ── */
+
+.dev-inspector-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.dev-inspector-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dev-inspector-panel-active {
+  display: flex;
+}
+
+/* JSON panels: toolbar (auto) + editor (fill rest) */
+.dev-inspector-panel-active[data-panel="block-json"],
+.dev-inspector-panel-active[data-panel="project-json"] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dev-inspector-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.dev-inspector-panel-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dev-inspector-panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+}
+
+/* ── Section headers ── */
+
+.dev-inspector-section-title {
+  margin: 0 0 12px;
+  padding: 0;
+  color: var(--text-primary, #575e75);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.dev-inspector-section-sub {
+  margin: -6px 0 14px;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 55%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dev-inspector-block {
+  margin-bottom: 20px;
+}
+
+.dev-inspector-block:last-child {
+  margin-bottom: 0;
+}
+
+.dev-inspector-block-label {
+  margin: 0 0 8px;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 55%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Property table (flat rows) ── */
+
+.dev-inspector-props {
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dev-inspector-prop {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
+}
+
+.dev-inspector-prop:last-child {
+  border-bottom: none;
+}
+
+.dev-inspector-prop:nth-child(even) {
+  background: var(--ui-secondary, #f9f9f9);
+}
+
+.dev-inspector-prop-key {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 65%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  user-select: none;
+}
+
+.dev-inspector-prop-val {
+  min-width: 0;
+  color: var(--text-primary, #575e75);
+  font-size: 12px;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  line-height: 1.45;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.dev-inspector-prop-val-plain {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.dev-inspector-muted {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 45%, transparent);
+}
+
+.dev-inspector-linkish {
+  color: var(--looks-secondary, #855cd6);
+  cursor: default;
+}
+
+/* ── Block navigation (filesystem-style) ── */
+
+.dev-inspector-pathbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+  background: var(--ui-secondary, #f9f9f9);
   min-height: 0;
 }
 
-.dev-inspector-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-}
-
-.dev-inspector-tab {
-  padding: 8px 16px;
-  background: transparent;
-  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.6));
-  border: none;
-  border-bottom: 2px solid transparent;
+.dev-inspector-path-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin-bottom: -1px;
+  flex-shrink: 0;
 }
 
-.dev-inspector-tab:hover {
+.dev-inspector-path-btn:hover:not(:disabled) {
+  background: var(--ui-tertiary, #e9eef2);
+}
+
+.dev-inspector-path-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.dev-inspector-crumbs {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.dev-inspector-crumbs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dev-inspector-crumb {
+  display: inline-flex;
+  align-items: center;
+  max-width: 160px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--looks-secondary, #855cd6);
+  font: inherit;
+  font-size: 12px;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.dev-inspector-crumb:hover {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.15));
+}
+
+.dev-inspector-crumb-current {
+  color: var(--text-primary, #575e75);
+  font-weight: 600;
+  cursor: default;
+}
+
+.dev-inspector-crumb-current:hover {
+  background: transparent;
+}
+
+.dev-inspector-crumb-sep {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 40%, transparent);
+  font-size: 12px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.dev-inspector-block-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--looks-secondary, #855cd6);
+  font: inherit;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--looks-secondary, #855cd6) 35%, transparent);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.dev-inspector-block-link:hover {
+  color: var(--looks-secondary-dark, #714eb6);
+  text-decoration-color: currentColor;
+}
+
+.dev-inspector-block-link-id {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.dev-inspector-table tr.dev-inspector-row-link {
+  cursor: pointer;
+}
+
+.dev-inspector-table tr.dev-inspector-row-link:hover {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.1));
+}
+
+.dev-inspector-table tr.dev-inspector-row-link:hover td {
+  color: var(--looks-secondary, #855cd6);
+}
+
+.dev-inspector-tree {
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 12px;
+}
+
+.dev-inspector-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dev-inspector-tree-row:last-child {
+  border-bottom: none;
+}
+
+.dev-inspector-tree-row:hover {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.1));
+  color: var(--looks-secondary, #855cd6);
+}
+
+.dev-inspector-tree-row-current {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.12));
+  font-weight: 600;
+  cursor: default;
+}
+
+.dev-inspector-tree-row-current:hover {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.12));
   color: var(--text-primary, #575e75);
 }
 
-.dev-inspector-tab-active {
-  color: var(--ui-blue, #4c97ff);
-  border-bottom-color: var(--ui-blue, #4c97ff);
+.dev-inspector-tree-indent {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 35%, transparent);
+  flex-shrink: 0;
+  white-space: pre;
+  user-select: none;
 }
 
-.dev-inspector-info {
-  flex: 0 0 auto;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-}
-
-.dev-inspector-json {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 200px;
+.dev-inspector-tree-label {
   min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dev-inspector-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
+.dev-inspector-tree-meta {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 50%, transparent);
+  font-size: 11px;
 }
 
-.dev-inspector-info-item {
+/* ── Flags ── */
+
+.dev-inspector-flags {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.dev-inspector-info-item label {
-  font-weight: 600;
+.dev-inspector-flag {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+  border-radius: 4px;
+  background: var(--ui-secondary, #f9f9f9);
+  color: color-mix(in srgb, var(--text-primary, #575e75) 70%, transparent);
   font-size: 11px;
-  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.75));
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
-.dev-inspector-info-item span {
-  padding: 8px 10px;
-  background: var(--ui-secondary, #f9f9f9);
-  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+.dev-inspector-flag-on {
+  border-color: color-mix(in srgb, var(--looks-secondary, #855cd6) 35%, transparent);
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.12));
+  color: var(--looks-secondary, #855cd6);
+}
+
+/* ── Tables (inputs, stack) ── */
+
+.dev-inspector-table-wrap {
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
   border-radius: 6px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  overflow: auto;
+}
+
+.dev-inspector-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 12px;
+}
+
+.dev-inspector-table th,
+.dev-inspector-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  text-align: left;
+  vertical-align: top;
+}
+
+.dev-inspector-table th {
+  background: var(--ui-secondary, #f9f9f9);
+  color: color-mix(in srgb, var(--text-primary, #575e75) 65%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dev-inspector-table td {
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
   color: var(--text-primary, #575e75);
   word-break: break-all;
-  overflow-wrap: anywhere;
-  min-height: 20px;
-  box-sizing: border-box;
 }
 
-.dev-inspector-json {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 200px;
-  min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
+.dev-inspector-table tr:last-child th,
+.dev-inspector-table tr:last-child td {
+  border-bottom: none;
 }
 
-.dev-inspector-actions {
+.dev-inspector-table tr.dev-inspector-row-current {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.1));
+}
+
+.dev-inspector-table tr.dev-inspector-row-current td {
+  font-weight: 600;
+}
+
+.dev-inspector-empty {
+  padding: 16px;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 50%, transparent);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Actions bar ── */
+
+.dev-inspector-toolbar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
   flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+  background: var(--ui-secondary, #f9f9f9);
 }
 
-.dev-inspector-actions button {
-  padding: 8px 16px;
-  background: var(--ui-blue, #4c97ff);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.dev-inspector-toolbar button {
+  padding: 6px 12px;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff));
+  color: var(--text-primary, #575e75);
+  font: inherit;
   font-size: 12px;
   font-weight: 500;
-  transition: all 0.2s ease;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  cursor: pointer;
 }
 
-.dev-inspector-actions button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.dev-inspector-toolbar button:hover {
+  background: var(--ui-tertiary, #e9eef2);
 }
 
-.dev-inspector-actions button[class*="download"] {
-  background: var(--ui-green, #0fbd8c);
+.dev-inspector-toolbar button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
-.dev-inspector-actions button[class*="reload"] {
+.dev-inspector-toolbar button.dev-inspector-btn-primary {
+  border-color: var(--ui-blue, #4c97ff);
+  background: var(--ui-blue, #4c97ff);
+  color: #fff;
+}
+
+.dev-inspector-toolbar button.dev-inspector-btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.dev-inspector-toolbar button.dev-inspector-btn-danger {
+  border-color: var(--ui-orange, #ff8c42);
   background: var(--ui-orange, #ff8c42);
+  color: #fff;
 }
 
-.dev-inspector-actions button[class*="refresh"] {
-  background: var(--ui-gray, #8e8e93);
+.dev-inspector-toolbar button.dev-inspector-btn-danger:hover {
+  filter: brightness(0.95);
 }
 
-/* JSONEditor library styles */
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-outer,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-outer {
+/* ── JSON editors ── */
+/*
+ * jsoneditor.css must be injected as a userstyle (see manifest) or none of
+ * the library menu/button/icon rules apply. Layout: flex column host so the
+ * editor fills the panel; keep library button metrics intact.
+ */
+
+.dev-inspector-editor-wrap {
+  position: relative;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+}
+
+.dev-inspector-json-editor,
+.dev-inspector-project-editor {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
   border: none;
   background: var(--ui-primary, #ffffff);
-  color: var(--text-primary, #575e75);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu {
-  background: var(--ui-secondary, #f9f9f9);
-  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu a,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu button,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu input,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-menu select,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu a,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu button,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu input,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-menu select {
-  color: var(--text-primary, #575e75);
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-navigation-bar,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-navigation-bar {
-  background: var(--ui-primary, #ffffff);
-  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  color: var(--text-primary, #575e75);
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-statusbar,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-statusbar {
-  background: var(--ui-secondary, #f9f9f9);
-  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-  color: var(--text-primary, #575e75);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-tree,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-tree,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text {
-  background: var(--ui-primary, #ffffff);
-  color: var(--text-primary, #575e75);
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-field,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value,
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-preview,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-field,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-preview {
-  color: var(--text-primary, #575e75);
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-field[contenteditable="true"],
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value[contenteditable="true"],
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text textarea,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-field[contenteditable="true"],
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value[contenteditable="true"],
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text textarea {
-  background: var(--input-background, var(--ui-secondary, #f9f9f9));
-  color: var(--text-primary, #575e75);
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text textarea,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text textarea {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px !important;
-  line-height: 1.5 !important;
-  tab-size: 2;
-  letter-spacing: normal;
   box-sizing: border-box;
 }
 
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-text,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-text {
-  line-height: 1.5;
-}
-
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-search input,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-search input {
-  background: var(--input-background, var(--ui-secondary, #f9f9f9));
+/* Fill host; flex column for menu / body / status only */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: var(--ui-primary, #ffffff);
   color: var(--text-primary, #575e75);
-  border-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Keep library line-height so tree field floats size correctly */
+  line-height: 100%;
 }
 
-.dev-inspector-container .dev-inspector-project-editor .jsoneditor-separator,
-.dev-inspector-container .dev-inspector-json-editor .jsoneditor-separator {
-  border-left-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+/* ── Menu bar only (direct child of .jsoneditor — not context menus) ── */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu {
+  position: relative;
+  flex: 0 0 35px;
+  width: 100%;
+  height: 35px !important;
+  min-height: 35px;
+  max-height: 35px;
+  padding: 2px !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 2;
+  /* Keep library blue so white sprite icons stay visible */
+  background-color: var(--ui-blue, #4c97ff) !important;
+  border-bottom: 1px solid var(--ui-blue, #4c97ff) !important;
+  color: #fff !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Restore library button metrics (global/theme CSS often collapses these) */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > button,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > button,
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button {
+  display: block !important;
+  float: left !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  margin: 2px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 2px !important;
+  background-color: transparent !important;
+  background-repeat: no-repeat !important;
+  color: #fff !important;
+  opacity: 0.9;
+  font-family: arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: normal !important;
+  line-height: 26px !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > button:hover,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > button:hover,
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button:hover,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+
+/* Mode switcher ("Tree ▾") needs width for its label */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes {
+  display: block;
+  float: left;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu > .jsoneditor-modes > button {
+  width: auto !important;
+  min-width: 60px !important;
+  padding: 0 8px !important;
+  background-image: none !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-align: center;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search {
+  float: right;
+  margin: 2px 4px;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search input,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search input {
+  height: 22px !important;
+  margin: 2px 0 !important;
+  padding: 0 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search input::placeholder,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-search input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Mode / node context dropdowns (must be opaque) ── */
+.dev-inspector-container .jsoneditor-contextmenu,
+.dev-inspector-container .jsoneditor-contextmenu-root {
+  z-index: 20 !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu {
+  position: relative !important;
+  left: 0;
+  top: 0;
+  width: 140px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 4px 0 !important;
+  list-style: none !important;
+  flex: none !important;
+  overflow: visible !important;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)) !important;
+  border-radius: 6px !important;
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff)) !important;
+  background-color: var(--ui-modal-background, var(--ui-primary, #ffffff)) !important;
+  color: var(--text-primary, #575e75) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  opacity: 1 !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu li {
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu button {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 6px 12px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu button:hover,
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu button:focus {
+  background: var(--ui-tertiary, #e9eef2) !important;
+  border: none !important;
+  color: var(--text-primary, #575e75) !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu button.jsoneditor-selected {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.15)) !important;
+  color: var(--looks-secondary, #855cd6) !important;
+  font-weight: 600 !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu .jsoneditor-text {
+  color: inherit !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+}
+
+.dev-inspector-container .jsoneditor-contextmenu .jsoneditor-menu .jsoneditor-icon {
+  display: none; /* cleaner flat menu; labels are enough */
+}
+
+/* ── Navigation bar (tree path) ── */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-navigation-bar,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-navigation-bar {
+  position: relative;
+  flex: 0 0 26px;
+  width: 100%;
+  height: 26px !important;
+  line-height: 26px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--ui-secondary, #f9f9f9) !important;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12)) !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
 }
 
 .dev-inspector-container .dev-inspector-project-editor .jsoneditor-treepath a,
 .dev-inspector-container .dev-inspector-json-editor .jsoneditor-treepath a {
-  color: var(--link-color, var(--text-primary, #575e75));
+  color: var(--looks-secondary, #855cd6);
+}
+
+/*
+ * Outer body: fill remaining height only.
+ * Do NOT set display:flex here for tree mode — the library uses a table
+ * layout with float:left fields/values. Flex on outer broke the columns
+ * (narrow cells, character wrapping, icons detached from labels).
+ */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-outer,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-outer {
+  position: relative !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dev-inspector-container .dev-inspector-project-editor textarea.jsoneditor-text,
+.dev-inspector-container .dev-inspector-json-editor textarea.jsoneditor-text,
+.dev-inspector-container .dev-inspector-project-editor .ace-jsoneditor,
+.dev-inspector-container .dev-inspector-json-editor .ace-jsoneditor,
+.dev-inspector-container .dev-inspector-project-editor .ace_editor,
+.dev-inspector-container .dev-inspector-json-editor .ace_editor {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  resize: none !important;
+  box-sizing: border-box !important;
+  background: var(--ui-primary, #ffffff) !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  tab-size: 4;
+}
+
+/* Ace gutter / content for code mode */
+.dev-inspector-container .dev-inspector-project-editor .ace_editor,
+.dev-inspector-container .dev-inspector-json-editor .ace_editor {
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* ── Tree mode: leave table / field / button layout to jsoneditor.css ── */
+/* Only make the scroll container fill height. Never target table.jsoneditor-tree
+   with flex, or field/value floats will collapse into a tiny column. */
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor.jsoneditor-mode-tree > .jsoneditor-outer > .jsoneditor-tree,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor.jsoneditor-mode-tree > .jsoneditor-outer > .jsoneditor-tree {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  overflow: auto !important;
+  background: var(--ui-primary, #ffffff) !important;
+}
+
+/* Theme colors only — do not change float, min-width, display, or sizing */
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-field,
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-field,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value {
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value.jsoneditor-string,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value.jsoneditor-string {
+  color: #006000;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value.jsoneditor-number,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value.jsoneditor-number {
+  color: #ee422e;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value.jsoneditor-boolean,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value.jsoneditor-boolean {
+  color: #ff8c00;
+}
+
+.dev-inspector-container .dev-inspector-project-editor .jsoneditor-value.jsoneditor-null,
+.dev-inspector-container .dev-inspector-json-editor .jsoneditor-value.jsoneditor-null {
+  color: #004ed0;
+}
+
+/* ── Status bar ── */
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-statusbar,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-statusbar {
+  position: relative;
+  flex: 0 0 26px;
+  width: 100%;
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 8px;
+  box-sizing: border-box;
+  background: var(--ui-secondary, #f9f9f9) !important;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12)) !important;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 70%, transparent) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-separator,
+.dev-inspector-container .dev-inspector-json-editor > .jsoneditor > .jsoneditor-menu .jsoneditor-separator {
+  border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Narrow window ── */
+
+@media (max-width: 520px) {
+  .dev-inspector-sidebar {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+  }
+
+  .dev-inspector-prop {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .dev-inspector-group-header {
+    padding-left: 0.5rem;
+  }
+
+  .dev-inspector-nav-item {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
 }
