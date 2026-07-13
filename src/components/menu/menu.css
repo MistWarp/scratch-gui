@@ -84,12 +84,17 @@
     cursor: pointer;
 }
 
+.menu-item:has(.shortcut) {
+    display: flex;
+    align-items: center;
+}
+
 .menu-item .shortcut {
-    float: right;
+    margin-left: auto;
+    padding-left: 20px;
     opacity: 0.6;
     font-size: 0.9em;
     font-weight: normal;
-    margin-left: 20px;
     letter-spacing: -0.5px;
 }
 
