@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
-import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette} from 'lucide-react';
+import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette, Github} from 'lucide-react';
 import {getLoaderSettings} from '../../lib/mw/loader-settings';
 import styles from './loader.css';
 import {getIsLoadingWithId} from '../../reducers/project-state';
@@ -379,6 +379,22 @@ class LoaderComponent extends React.Component {
                         >
                             {this.randomMessage}
                         </div>
+                    ) : null}
+
+                    {settings.showGithub ? (
+                        <a
+                            className={styles.githubCta}
+                            href="https://github.com/mistwarp"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
+                            <Github size={14} />
+                            <FormattedMessage
+                                defaultMessage="Follow MistWarp on GitHub"
+                                description="Link on the loading screen to the MistWarp GitHub organisation"
+                                id="mw.loader.github"
+                            />
+                        </a>
                     ) : null}
                 </div>
             </div>

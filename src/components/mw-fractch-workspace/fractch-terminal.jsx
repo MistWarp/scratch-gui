@@ -7,7 +7,7 @@ import '@xterm/xterm/css/xterm.css';
 import '@fontsource/jetbrains-mono/latin-400.css';
 import '!!style-loader!css-loader!./code-font.css';
 
-import {runBrowserCommand} from '../../lib/git/browser-terminal';
+import {runBrowserCommand, setShellUser} from '../../lib/git/browser-terminal';
 
 const TERMINAL_FONT_FAMILY = '"JetBrains Mono"';
 const CODE_FONT = `${TERMINAL_FONT_FAMILY}, ui-monospace, Menlo, Consolas, monospace`;
@@ -34,7 +34,7 @@ const terminalTheme = () => {
     };
 };
 
-const FractchTerminal = ({className, onWorktreeChanged, style, themeId}) => {
+const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => {
     const element = useRef(null);
     const terminal = useRef(null);
     const commandBusy = useRef(false);
@@ -43,6 +43,10 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId}) => {
     const commandHistoryIndex = useRef(0);
     const worktreeChanged = useRef(onWorktreeChanged);
     worktreeChanged.current = onWorktreeChanged;
+
+    useEffect(() => {
+        if (vm) setShellUser({local: vm.runtime.ioDevices.userData.getUsername()});
+    }, [vm]);
 
     useEffect(() => {
         let disposed = false;
@@ -54,8 +58,8 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId}) => {
                 convertEol: true,
                 cursorBlink: true,
                 fontFamily: CODE_FONT,
-                fontSize: 13,
-                lineHeight: 1.2,
+                fontSize: 12,
+                lineHeight: 1,
                 theme: terminalTheme()
             });
             const fit = new FitAddon();
@@ -142,7 +146,7 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId}) => {
             };
         };
 
-        document.fonts.load(`13px ${TERMINAL_FONT_FAMILY}`).then(start, start);
+        document.fonts.load(`12px ${TERMINAL_FONT_FAMILY}`).then(start, start);
 
         return () => {
             disposed = true;
@@ -167,7 +171,10 @@ FractchTerminal.propTypes = {
     className: PropTypes.string,
     onWorktreeChanged: PropTypes.func,
     style: PropTypes.object,
-    themeId: PropTypes.number
+    themeId: PropTypes.number,
+    vm: PropTypes.shape({
+        runtime: PropTypes.object
+    })
 };
 
 export {CODE_FONT, TERMINAL_FONT_FAMILY, terminalTheme};

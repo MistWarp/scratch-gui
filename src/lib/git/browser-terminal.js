@@ -105,10 +105,119 @@ const SHELL_HELP = `MistWarp Fractch shell
   data       base64 gzip jq md5sum
   shell      alias bash clear date du echo env expr history hostname printf pwd readlink
              seq sleep timeout which whoami
-  project    git (see: git help)
+  project    git (see: git help), info, whoami
 
 Not available in the browser: curl, python3, sqlite3, tar and other host-only tools.
 `;
+
+const LOGO = [
+    '++++++++++++++++++++++++++++++++++++',
+    '++++++++++++++++++++++++++++++++++++',
+    '++++++++++++++++++++++++++++++++++++',
+    '++++++++++==--::-=-      -=+++++++++',
+    '+++++++=                    -+++++++',
+    '++++++-    :-===: :+++++=    -++++++',
+    '+++++=   :++++=+++++---=++:   =+++++',
+    '+++++=   =++-:  +++  --=++:   =+++++',
+    '++++++    -+++   =+   ++=    -++++++',
+    '+++++++    -++ :  =   ++=    -++++++',
+    '++++++    :++= :+   : =+++:   =+++++',
+    '+++++=   =++-    -  :   ++=   -+++++',
+    '+++++=   -+++++++++==++++=    =+++++',
+    '++++++:    :--:   -++=:      +++++++',
+    '+++++++=                  :=++++++++',
+    '++++++++++=---===-:  :-=++++++++++++',
+    '++++++++++++++++++++++++++++++++++++',
+    '++++++++++++++++++++++++++++++++++++',
+    '++++++++++++++++++++++++++++++++++++'
+];
+
+const LOGO_WIDTH = Math.max(...LOGO.map(line => line.length));
+
+// The lavender accent's menu bar gradient, converted from oklab to rgb.
+const LAVENDER_STOPS = [
+    [191, 133, 249],
+    [193, 150, 248],
+    [200, 167, 234],
+    [225, 168, 214],
+    [250, 169, 193],
+    [255, 184, 175]
+];
+
+const BOLD = '\x1b[1m';
+const RESET = '\x1b[0m';
+
+const gradientAt = position => {
+    const scaled = Math.max(0, Math.min(1, position)) * (LAVENDER_STOPS.length - 1);
+    const index = Math.min(LAVENDER_STOPS.length - 2, Math.floor(scaled));
+    const ratio = scaled - index;
+    const [r, g, b] = LAVENDER_STOPS[index].map(
+        (channel, i) => Math.round(channel + ((LAVENDER_STOPS[index + 1][i] - channel) * ratio))
+    );
+    return `\x1b[38;2;${r};${g};${b}m`;
+};
+
+const gradientLine = (text, row, rows) => {
+    let out = '';
+    for (let column = 0; column < text.length; column++) {
+        // Diagonal sweep, so the gradient runs across the logo rather than down it.
+        const position = ((column / Math.max(1, text.length - 1)) + (row / Math.max(1, rows - 1))) / 2;
+        out += `${gradientAt(position)}${text[column]}`;
+    }
+    return `${out}${RESET}`;
+};
+
+const formatSize = bytes => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const BROWSER_RULES = [
+    [/Edg\/(\d+)/, 'Edge'],
+    [/OPR\/(\d+)/, 'Opera'],
+    [/Firefox\/(\d+)/, 'Firefox'],
+    [/Chrome\/(\d+)/, 'Chrome'],
+    [/Version\/(\d+).*Safari/, 'Safari']
+];
+
+const browserName = () => {
+    const agent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+    for (const [pattern, name] of BROWSER_RULES) {
+        const match = agent.match(pattern);
+        if (match) return `${name} ${match[1]}`;
+    }
+    return 'unknown';
+};
+
+// performance.now() is already milliseconds since the page loaded, which is the session uptime.
+const formatUptime = () => {
+    const total = Math.floor((typeof performance === 'undefined' ? 0 : performance.now()) / 1000);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    return `${hours}hrs, ${minutes}mins, ${total % 60}secs`;
+};
+
+const osName = () => {
+    const agent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+    if (/Windows NT 10/.test(agent)) return 'Windows 10/11';
+    if (/Windows/.test(agent)) return 'Windows';
+    if (/Mac OS X/.test(agent)) return 'macOS';
+    if (/CrOS/.test(agent)) return 'ChromeOS';
+    if (/Android/.test(agent)) return 'Android';
+    if (/iPhone|iPad/.test(agent)) return 'iOS';
+    if (/Linux/.test(agent)) return 'Linux';
+    return 'unknown';
+};
+
+// The rotur handle wins over whatever username the VM was given for the cloud/username block.
+let shellUser = {local: null, rotur: null};
+
+const setShellUser = patch => {
+    shellUser = {...shellUser, ...patch};
+};
+
+const currentUser = () => shellUser.rotur || shellUser.local || 'player';
 
 const gitHelp = `Supported git commands:
   status, add, rm, commit, log, branch, checkout, diff --name-only,
@@ -234,22 +343,106 @@ const createGitCommand = state => defineCommand('git', async args => {
     }
 });
 
+const createInfoCommand = () => defineCommand('info', async () => {
+    const fs = getFs();
+    const files = await listWorktreeFiles();
+    let bytes = 0;
+    for (const filepath of files) {
+        bytes += (await readWorktreeFile(filepath)).length;
+    }
+
+    let branch = '(none)';
+    let commits = 0;
+    try {
+        branch = (await git.currentBranch({fs, dir: REPO_DIR, fullname: false})) || '(detached)';
+        commits = (await git.log({fs, dir: REPO_DIR, depth: 1000})).length;
+    } catch (e) {
+        // A repo with no commits yet still deserves an info screen.
+    }
+
+    const fractch = files.filter(filepath => /\.fractch$/i.test(filepath)).length;
+    const assets = files.filter(filepath => /\.(svg|png|jpe?g|gif|wav|mp3)$/i.test(filepath)).length;
+    const targets = new Set(
+        files.filter(filepath => filepath.includes('/')).map(filepath => filepath.split('/')[0])
+    );
+    const dirs = new Set(
+        files.filter(filepath => filepath.includes('/'))
+            .map(filepath => filepath.slice(0, filepath.lastIndexOf('/')))
+    );
+
+    let head = '(none)';
+    try {
+        head = (await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'})).slice(0, 7);
+    } catch (e) {
+        // No commits yet.
+    }
+
+    const ratio = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
+    const screen = typeof window === 'undefined' ?
+        'unknown' :
+        `${window.screen.width}x${window.screen.height}@${ratio}x`;
+    const host = typeof location === 'undefined' ? 'unknown' : location.host;
+
+    const fields = [
+        ['User', `${currentUser()}@mistwarp`],
+        ['Host', host],
+        ['Uptime', formatUptime()],
+        ['Shell', 'just-bash (browser)'],
+        ['OS', osName()],
+        ['Browser', browserName()],
+        ['Screen', screen],
+        ['Branch', branch],
+        ['HEAD', head],
+        ['Commits', String(commits)],
+        ['Targets', String(targets.size)],
+        ['Folders', String(dirs.size)],
+        ['Files', String(files.length)],
+        ['Fractch', String(fractch)],
+        ['Assets', String(assets)],
+        ['Worktree', formatSize(bytes)]
+    ];
+    const labelWidth = Math.max(...fields.map(([label]) => label.length));
+    const user = currentUser();
+    const rows = [
+        `${BOLD}${gradientLine(`${user}@mistwarp`, 0, 1)}`,
+        gradientLine('-'.repeat(user.length + 9), 0, 1),
+        ...fields.map(([label, value]) => (
+            `${gradientAt(0.25)}${label.padEnd(labelWidth)}${RESET}  ${gradientAt(0.75)}|${RESET}  ${value}`
+        ))
+    ];
+
+    const height = Math.max(LOGO.length, rows.length);
+    const top = Math.max(0, Math.floor((LOGO.length - rows.length) / 2));
+    const lines = [];
+    for (let i = 0; i < height; i++) {
+        const art = LOGO[i] ?
+            gradientLine(LOGO[i], i, LOGO.length) :
+            ' '.repeat(LOGO_WIDTH);
+        lines.push(`${art}   ${rows[i - top] || ''}`.trimEnd());
+    }
+    return {stdout: `${lines.join('\n')}\n`, stderr: '', exitCode: 0};
+});
+
 const runBrowserCommand = async command => {
     // just-bash's builtin help lists bash builtins it does not implement, and it wins over
     // customCommands, so answer help ourselves before the line reaches the shell.
     if (/^help\s*$/.test(String(command).trim())) {
         return {stdout: SHELL_HELP, stderr: '', exitCode: 0, worktreeChanged: false};
     }
+    // just-bash's builtin whoami answers with its own sandbox user and wins over customCommands.
+    if (/^whoami\s*$/.test(String(command).trim())) {
+        return {stdout: `${currentUser()}\n`, stderr: '', exitCode: 0, worktreeChanged: false};
+    }
     const files = await readWorkspace();
     const state = {usedGit: false, worktreeChanged: false};
     const bash = new Bash({
         cwd: REPO_DIR,
         files,
-        customCommands: [createGitCommand(state)]
+        customCommands: [createGitCommand(state), createInfoCommand()]
     });
     const result = await bash.exec(command);
     const changed = state.usedGit ? state.worktreeChanged : await syncWorkspace(files, bash);
     return {...result, worktreeChanged: changed};
 };
 
-export {runBrowserCommand};
+export {runBrowserCommand, setShellUser};
