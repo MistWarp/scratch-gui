@@ -61,7 +61,7 @@
     "copy-webpack-plugin": "6.4.1",
     "css-loader": "^1.0.0",
     "dapjs": "2.3.0",
-    "fractch": "^0.7.4",
+    "fractch": "^0.7.5",
     "get-user-media-promise": "1.1.4",
     "immutable": "3.8.2",
     "intl-messageformat": "^2.2.0",

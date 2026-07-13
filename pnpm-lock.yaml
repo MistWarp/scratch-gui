@@ -88,8 +88,8 @@ importers:
         specifier: 2.3.0
         version: 2.3.0
       fractch:
-        specifier: ^0.7.4
-        version: 0.7.4
+        specifier: ^0.7.5
+        version: 0.7.5
       get-user-media-promise:
         specifier: 1.1.4
         version: 1.1.4
@@ -3088,8 +3088,8 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
-  fractch@0.7.4:
-    resolution: {integrity: sha512-cgXIS2blh5iaEts+pVemI3vNdVUyGSpsIYva/OW1VobUbEPqdjR06gX83vHXOi6scgN6bSiBU+bwgfIE77RrVw==}
+  fractch@0.7.5:
+    resolution: {integrity: sha512-PU7ph1wBlAi4E5Zap59wTyxtcgjWP4G9gMChwIR0VCk0BZdpInKc/M4OVp9SPcnLttaNAtJjXHI+rSKyHCRGFw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -10151,7 +10151,7 @@ snapshots:
 
   forwarded@0.2.0: {}
 
-  fractch@0.7.4:
+  fractch@0.7.5:
     dependencies:
       adm-zip: 0.5.18
       yargs: 17.7.3
