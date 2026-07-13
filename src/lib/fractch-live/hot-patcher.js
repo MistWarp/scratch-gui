@@ -325,26 +325,30 @@ const patchVisibleWorkspaceStacks = ({vm, liveTarget, sourceTarget, blocks, comm
     const workspace = getVisibleWorkspace();
     if (!ScratchBlocks || !ScratchBlocks.Xml || !workspace) return false;
 
-    withBlocklyEventsDisabled(ScratchBlocks, () => {
-        if (workspace.setResizesEnabled) workspace.setResizesEnabled(false);
-        if (workspace.setToolboxRefreshEnabled) workspace.setToolboxRefreshEnabled(false);
-        try {
-            for (const topId of [...workspacePatch.removedTopIds, ...workspacePatch.changedTopIds]) {
-                const existing = workspace.getBlockById(topId);
-                if (existing) existing.dispose(false, true);
+    try {
+        withBlocklyEventsDisabled(ScratchBlocks, () => {
+            if (workspace.setResizesEnabled) workspace.setResizesEnabled(false);
+            if (workspace.setToolboxRefreshEnabled) workspace.setToolboxRefreshEnabled(false);
+            try {
+                for (const topId of [...workspacePatch.removedTopIds, ...workspacePatch.changedTopIds]) {
+                    const existing = workspace.getBlockById(topId);
+                    if (existing) existing.dispose(false, true);
+                }
+                for (const topId of workspacePatch.changedTopIds) {
+                    if (!sourceTarget.blocks || !sourceTarget.blocks[topId]) continue;
+                    const xml = blocks.blockToXML(topId, comments);
+                    if (!xml) continue;
+                    const dom = ScratchBlocks.Xml.textToDom(`<xml xmlns="http://www.w3.org/1999/xhtml">${xml}</xml>`);
+                    ScratchBlocks.Xml.domToWorkspace(dom, workspace);
+                }
+            } finally {
+                if (workspace.setToolboxRefreshEnabled) workspace.setToolboxRefreshEnabled(true);
+                if (workspace.setResizesEnabled) workspace.setResizesEnabled(true);
             }
-            for (const topId of workspacePatch.changedTopIds) {
-                if (!sourceTarget.blocks || !sourceTarget.blocks[topId]) continue;
-                const xml = blocks.blockToXML(topId, comments);
-                if (!xml) continue;
-                const dom = ScratchBlocks.Xml.textToDom(`<xml xmlns="http://www.w3.org/1999/xhtml">${xml}</xml>`);
-                ScratchBlocks.Xml.domToWorkspace(dom, workspace);
-            }
-        } finally {
-            if (workspace.setToolboxRefreshEnabled) workspace.setToolboxRefreshEnabled(true);
-            if (workspace.setResizesEnabled) workspace.setResizesEnabled(true);
-        }
-    });
+        });
+    } catch (e) {
+        return false;
+    }
 
     if (workspace.toolbox_ && workspace.toolbox_.refreshSelection) {
         workspace.toolbox_.refreshSelection();
