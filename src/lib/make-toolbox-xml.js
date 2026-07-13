@@ -1,5 +1,6 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
 import {defaultBlockColors} from './themes';
+import {getVanillaPalette} from './mw-vanilla-palette';
 
 const categorySeparator = '<sep gap="36"/>';
 
@@ -13,7 +14,7 @@ const translate = (id, english) => {
 };
 
 /* eslint-disable no-unused-vars */
-const motion = function (isInitialSetup, isStage, targetId, colors) {
+const motion = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     const stageSelected = translate(
         'MOTION_STAGE_SELECTED',
         'Stage selected: no motion blocks'
@@ -106,6 +107,7 @@ const motion = function (isInitialSetup, isStage, targetId, colors) {
                 </shadow>
             </value>
         </block>
+        ${vanilla ? '' : `
         <block type="motion_pointtowards_xy">
             <value name="X">
                 <shadow id="pointx" type="math_number">
@@ -140,6 +142,7 @@ const motion = function (isInitialSetup, isStage, targetId, colors) {
                 </shadow>
             </value>
         </block>
+        `}
         ${blockSeparator}
         <block type="motion_changexby">
             <value name="DX">
@@ -429,7 +432,7 @@ const events = function (isInitialSetup, isStage, targetId, colors) {
     `;
 };
 
-const control = function (isInitialSetup, isStage, targetId, colors) {
+const control = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
     <category
@@ -470,6 +473,7 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
                 </shadow>
             </value>
         </block>
+        ${vanilla ? '' : `
         ${blockSeparator}
         <block type="control_switch">
             <value name="VALUE">
@@ -494,6 +498,7 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
         </block>
         <block type="control_default"/>
         <block type="control_break"/>
+        `}
         ${blockSeparator}
         <block type="control_stop"/>
         ${blockSeparator}
@@ -915,6 +920,7 @@ const xmlClose = '</xml>';
 const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categoriesXML = [],
     costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors, assetName = '') {
     isStage = isInitialSetup || isStage;
+    const vanilla = getVanillaPalette();
     const gap = [categorySeparator];
 
     costumeName = xmlEscape(costumeName);
@@ -931,15 +937,16 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         }
         // return `undefined`
     };
-    const motionXML = moveCategory('motion') || motion(isInitialSetup, isStage, targetId, colors.motion);
+    const motionXML = moveCategory('motion') || motion(isInitialSetup, isStage, targetId, colors.motion, vanilla);
     const looksXML = moveCategory('looks') ||
         looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks);
     const soundXML = moveCategory('sound') || sound(isInitialSetup, isStage, targetId, soundName, colors.sounds);
     const assetsXML = moveCategory('assets') || assets(isInitialSetup, isStage, targetId, assetName, colors.assets);
     const eventsXML = moveCategory('event') || events(isInitialSetup, isStage, targetId, colors.event);
-    const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control);
+    const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control, vanilla);
     const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing);
-    const operatorsXML = moveCategory('operators') || operators(isInitialSetup, isStage, targetId, colors.operators);
+    const operatorsXML = moveCategory('operators') ||
+        operators(isInitialSetup, isStage, targetId, colors.operators);
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
 
@@ -955,7 +962,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         motionXML, gap,
         looksXML, gap,
         soundXML, gap,
-        assetsXML, gap,
+        ...(vanilla ? [] : [assetsXML, gap]),
         eventsXML, gap,
         controlXML, gap,
         sensingXML, gap,
@@ -964,7 +971,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         myBlocksXML
     ];
 
-    if (turbowarpXML) {
+    if (turbowarpXML && !vanilla) {
         everything.push(gap, turbowarpXML);
     }
 

@@ -10,6 +10,7 @@ import {CustomTheme} from '../lib/themes/custom-themes.js';
 import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
 import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
 import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
+import {getVanillaPalette, setVanillaPalette} from '../lib/mw-vanilla-palette';
 
 const messages = defineMessages({
     newFramerate: {
@@ -30,6 +31,7 @@ class UsernameModal extends React.Component {
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
             hideOperatorArrows: getHideOperatorArrows(),
+            vanillaPalette: getVanillaPalette(),
             squareStageCorners: getAppearanceSetting('square-stage-corners'),
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
@@ -62,6 +64,7 @@ class UsernameModal extends React.Component {
             'handleViewCompiledModeChange',
             'handleStoreThemeInProjectChange',
             'handleHideOperatorArrowsChange',
+            'handleVanillaPaletteChange',
             'handleSquareStageCornersChange',
             'handleHideDeleteButtonChange',
             'handleHideExtensionButtonChange',
@@ -227,6 +230,11 @@ class UsernameModal extends React.Component {
         setHideOperatorArrows(e.target.checked);
     }
 
+    handleVanillaPaletteChange (e) {
+        this.setState({vanillaPalette: e.target.checked});
+        setVanillaPalette(e.target.checked);
+    }
+
     setAppearance_ (stateKey, id, checked) {
         this.setState({[stateKey]: checked});
         setAppearanceSetting(id, checked);
@@ -304,6 +312,8 @@ class UsernameModal extends React.Component {
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
                 onHideOperatorArrowsChange={this.handleHideOperatorArrowsChange}
                 hideOperatorArrows={this.state.hideOperatorArrows}
+                onVanillaPaletteChange={this.handleVanillaPaletteChange}
+                vanillaPalette={this.state.vanillaPalette}
                 onSquareStageCornersChange={this.handleSquareStageCornersChange}
                 squareStageCorners={this.state.squareStageCorners}
                 onHideDeleteButtonChange={this.handleHideDeleteButtonChange}

@@ -1,3 +1,5 @@
+import {getVanillaPalette} from './mw-vanilla-palette';
+
 let _ScratchBlocks = null;
 
 const isLoaded = () => !!_ScratchBlocks;
@@ -24,6 +26,14 @@ const load = () => {
                 }
             } catch (e) {
                 // ignore
+            }
+
+            const Procedures = _ScratchBlocks.Procedures;
+            if (Procedures && typeof Procedures.flyoutCategory === 'function') {
+                const originalFlyoutCategory = Procedures.flyoutCategory;
+                Procedures.flyoutCategory = workspace => originalFlyoutCategory(workspace).filter(node => !(
+                    getVanillaPalette() && node.getAttribute('type') === 'procedures_return'
+                ));
             }
 
             const FlyoutProto = _ScratchBlocks.Flyout && _ScratchBlocks.Flyout.prototype;
