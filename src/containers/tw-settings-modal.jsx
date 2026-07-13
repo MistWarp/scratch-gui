@@ -33,6 +33,7 @@ class UsernameModal extends React.Component {
             squareStageCorners: getAppearanceSetting('square-stage-corners'),
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
+            unclipPalette: getAppearanceSetting('unclip-palette'),
             hideBackpack: getAppearanceSetting('hide-backpack'),
             tabStyle: getStyleSetting('tab-style'),
             tabLooks: getStyleSetting('tab-looks'),
@@ -64,6 +65,7 @@ class UsernameModal extends React.Component {
             'handleSquareStageCornersChange',
             'handleHideDeleteButtonChange',
             'handleHideExtensionButtonChange',
+            'handleUnclipPaletteChange',
             'handleHideBackpackChange',
             'handleTabStyleChange',
             'handleTabLooksChange',
@@ -246,6 +248,10 @@ class UsernameModal extends React.Component {
         this.setAppearance_('hideBackpack', 'hide-backpack', e.target.checked);
     }
 
+    handleUnclipPaletteChange (e) {
+        this.setAppearance_('unclipPalette', 'unclip-palette', e.target.checked);
+    }
+
     handleTabStyleChange (value) {
         this.setState({tabStyle: value});
         setStyleSetting('tab-style', value);
@@ -304,6 +310,8 @@ class UsernameModal extends React.Component {
                 hideDeleteButton={this.state.hideDeleteButton}
                 onHideExtensionButtonChange={this.handleHideExtensionButtonChange}
                 hideExtensionButton={this.state.hideExtensionButton}
+                onUnclipPaletteChange={this.handleUnclipPaletteChange}
+                unclipPalette={this.state.unclipPalette}
                 onHideBackpackChange={this.handleHideBackpackChange}
                 hideBackpack={this.state.hideBackpack}
                 onTabStyleChange={this.handleTabStyleChange}

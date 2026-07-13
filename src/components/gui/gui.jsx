@@ -40,6 +40,7 @@ import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
+import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
@@ -651,6 +652,7 @@ const GUIComponent = props => {
         settingsModalVisible,
         customExtensionModalVisible,
         fontsModalVisible,
+        assetsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
@@ -720,6 +722,7 @@ const GUIComponent = props => {
             )}
             {customExtensionModalVisible && <TWCustomExtensionModal />}
             {fontsModalVisible && <TWFontsModal />}
+            {assetsModalVisible && <MWAssetsModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
@@ -736,6 +739,7 @@ const GUIComponent = props => {
         isRtl,
         customExtensionModalVisible,
         fontsModalVisible,
+        assetsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
@@ -1189,6 +1193,7 @@ GUIComponent.propTypes = {
     settingsModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
+    assetsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
     gitModalVisible: PropTypes.bool,

@@ -29,7 +29,8 @@ import {
     closeExtensionLibrary,
     openSoundRecorder,
     openConnectionModal,
-    openCustomExtensionModal
+    openCustomExtensionModal,
+    openAssetsModal
 } from '../reducers/modals';
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
@@ -152,11 +153,6 @@ class Blocks extends React.Component {
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
-        this.handlePaletteHoverEnter = this.handlePaletteHoverEnter.bind(this);
-        this.handlePaletteHoverLeave = this.handlePaletteHoverLeave.bind(this);
-        this.attachPaletteHoverListeners = this.attachPaletteHoverListeners.bind(this);
-        this.detachPaletteHoverListeners = this.detachPaletteHoverListeners.bind(this);
-
         this.state = {
             prompt: null,
             flyoutWidth: null,
@@ -166,8 +162,6 @@ class Blocks extends React.Component {
         this.paletteResizeSession = null;
         this.paletteResizeRaf = null;
 
-        this.paletteHoverCount = 0;
-        this._paletteHoverEls = null;
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
@@ -247,6 +241,9 @@ class Blocks extends React.Component {
         toolboxWorkspace.registerButtonCallback('MAKE_A_VARIABLE', varListButtonCallback(''));
         toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
+        toolboxWorkspace.registerButtonCallback('OPEN_ASSETS_MODAL', () => {
+            this.props.onOpenAssetsModal();
+        });
         toolboxWorkspace.registerButtonCallback('EXTENSION_CALLBACK', block => {
             this.props.vm.handleExtensionButtonPress(block.callbackData_);
         });
@@ -299,9 +296,7 @@ class Blocks extends React.Component {
 
         gentlyRequestPersistentStorage();
 
-        // Defer attaching hover listeners until ScratchBlocks has finished injecting its DOM.
         setTimeout(() => {
-            if (!this.unmounted) this.attachPaletteHoverListeners();
             if (!this.unmounted && this.ScratchBlocks.Field && this.ScratchBlocks.Field.prewarmFontCache) {
                 this.ScratchBlocks.Field.prewarmFontCache();
             }
@@ -418,7 +413,6 @@ class Blocks extends React.Component {
     }
     componentWillUnmount () {
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
-        this.detachPaletteHoverListeners();
         this.detachVM();
         this.unmounted = true;
         this.cancelDeferredWorkspaceLoad();
@@ -437,79 +431,6 @@ class Blocks extends React.Component {
         collaborationService.detachFromWorkspace();
 
         AddonHooks.blocklyWorkspace = null;
-    }
-
-    attachPaletteHoverListeners () {
-        if (!this.blocks) return;
-        if (!this.workspace || !this.workspace.getFlyout) return;
-
-        // toolbox div and flyout svg are siblings inside the injection container.
-        const toolboxDiv = this.blocks.querySelector('.blocklyToolboxDiv');
-        const flyoutSvgGroup = this.blocks.querySelector('.blocklyFlyout');
-        const els = [toolboxDiv, flyoutSvgGroup].filter(Boolean);
-        if (els.length === 0) return;
-
-        // Avoid double-binding.
-        if (this._paletteHoverEls) return;
-
-        for (const el of els) {
-            el.addEventListener('mouseenter', this.handlePaletteHoverEnter);
-            el.addEventListener('mouseleave', this.handlePaletteHoverLeave);
-        }
-        this._paletteHoverEls = els;
-
-        try {
-            const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
-            if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
-            }
-        } catch (e) {
-            // ignore
-        }
-    }
-
-    detachPaletteHoverListeners () {
-        if (!this._paletteHoverEls) return;
-        for (const el of this._paletteHoverEls) {
-            el.removeEventListener('mouseenter', this.handlePaletteHoverEnter);
-            el.removeEventListener('mouseleave', this.handlePaletteHoverLeave);
-        }
-        this._paletteHoverEls = null;
-        this.paletteHoverCount = 0;
-        // Default to no clipping when not hovered.
-        try {
-            const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
-            if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
-            }
-        } catch (e) {
-            // ignore
-        }
-    }
-
-    handlePaletteHoverEnter () {
-        this.paletteHoverCount += 1;
-        try {
-            const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
-            if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(false);
-            }
-        } catch (e) {
-            // ignore
-        }
-    }
-
-    handlePaletteHoverLeave () {
-        this.paletteHoverCount = Math.max(0, this.paletteHoverCount - 1);
-        if (this.paletteHoverCount !== 0) return;
-        try {
-            const flyout = this.workspace && this.workspace.getFlyout && this.workspace.getFlyout();
-            if (flyout && typeof flyout.twSetClippingEnabled === 'function') {
-                flyout.twSetClippingEnabled(true);
-            }
-        } catch (e) {
-            // ignore
-        }
     }
 
     setFlyoutWidth (flyoutWidth) {
@@ -1092,11 +1013,13 @@ class Blocks extends React.Component {
                 this.props.vm.runtime.getBlocksXML(target),
                 this.props.theme
             );
+            const customAssets = runtime.assetManager.assets;
             return makeToolboxXML(false, target.isStage, target.id, dynamicBlocksXML,
                 targetCostumes[targetCostumes.length - 1].name,
                 stageCostumes[stageCostumes.length - 1].name,
                 targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
-                this.props.theme.getBlockColors()
+                this.props.theme.getBlockColors(),
+                customAssets.length > 0 ? customAssets[0].name : ''
             );
         } catch {
             return null;
@@ -1396,6 +1319,7 @@ class Blocks extends React.Component {
             isRtl,
             isVisible,
             onActivateColorPicker,
+            onOpenAssetsModal,
             onOpenConnectionModal,
             onOpenSoundRecorder,
             onOpenCustomExtensionModal,
@@ -1470,6 +1394,7 @@ Blocks.propTypes = {
     onActivateColorPicker: PropTypes.func,
     onActivateCustomProcedures: PropTypes.func,
     onActivateBlocksTab: PropTypes.func,
+    onOpenAssetsModal: PropTypes.func,
     onOpenConnectionModal: PropTypes.func,
     onOpenSoundRecorder: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
@@ -1550,6 +1475,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(openSoundRecorder());
     },
     reduxOnOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal()),
+    onOpenAssetsModal: () => dispatch(openAssetsModal()),
     onRequestCloseExtensionLibrary: () => {
         dispatch(closeExtensionLibrary());
     },
