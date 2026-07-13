@@ -216,13 +216,6 @@
     min-width: 0;
 }
 
-.menu-bar:has(> .main-menu-align-left) > .account-info-group {
-    right: 0;
-    position: absolute;
-    top: 0;
-    height: 100%;
-}
-
 .account-info-group .menu-bar-item {
     margin: 0;
     padding: 0 0.75rem;

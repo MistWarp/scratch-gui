@@ -804,7 +804,116 @@ export default class FindBarController {
             item.isTextInputEntry = true;
         }
 
+        // The workspace only renders the scripts you are near, but searching has
+        // to cover the whole sprite, so pick up whatever is not rendered from the
+        // VM, which holds all of it either way.
+        this.addUnrenderedBlocks(workspace, addBlock);
+
         return myBlocks;
+    }
+
+    /**
+     * Index the blocks the workspace has not rendered, straight from the VM.
+     * @param {object} workspace The Blockly workspace.
+     * @param {Function} addBlock Adds an entry, as used by addBlocksFromWorkspace.
+     */
+    addUnrenderedBlocks (workspace, addBlock) {
+        const target = this.utils.getEditingTarget();
+        const vmBlocks = target && target.blocks && target.blocks._blocks;
+        if (!vmBlocks) return;
+
+        const scriptY = new Map();
+        if (typeof workspace.getDeferredScripts === 'function') {
+            for (const script of workspace.getDeferredScripts()) {
+                scriptY.set(script.id, script.y);
+            }
+        }
+
+        const textOf = value => (
+            value === null || typeof value === 'undefined' ? '' : String(value).trim()
+        );
+        const fieldValuesOf = block => {
+            const values = [];
+            for (const name of Object.keys(block.fields || {})) {
+                const text = textOf(block.fields[name].value);
+                if (text) values.push(text);
+            }
+            // A block's numbers and strings live in the shadow blocks in its inputs.
+            for (const name of Object.keys(block.inputs || {})) {
+                const shadow = vmBlocks[block.inputs[name].shadow];
+                if (!shadow || !shadow.fields) continue;
+                for (const fieldName of Object.keys(shadow.fields)) {
+                    const text = textOf(shadow.fields[fieldName].value);
+                    if (text) values.push(text);
+                }
+            }
+            return values;
+        };
+
+        for (const blockId of Object.keys(vmBlocks)) {
+            // Anything rendered was already indexed above, with better labels.
+            if (workspace.getBlockById(blockId)) continue;
+            const block = vmBlocks[blockId];
+            if (!block || block.shadow || !block.opcode) continue;
+            const opcode = block.opcode;
+            const stub = {id: blockId};
+            let item = null;
+
+            if (block.topLevel) {
+                if (opcode === 'procedures_definition') {
+                    const protoId = block.inputs && block.inputs.custom_block &&
+                        block.inputs.custom_block.block;
+                    const proto = protoId && vmBlocks[protoId];
+                    const procCode = (proto && proto.mutation && proto.mutation.proccode) ||
+                        'custom block';
+                    item = addBlock('define', `define ${procCode}`, stub, opcode);
+                } else if (opcode === 'event_whenflagclicked') {
+                    const flag = this.msgAny('/_general/blocks/green-flag');
+                    item = addBlock('flag', `when ${flag} clicked`, stub, opcode);
+                } else if (opcode === 'event_whenbroadcastreceived') {
+                    const eventName = (block.fields && block.fields.BROADCAST_OPTION &&
+                        block.fields.BROADCAST_OPTION.value) || 'message';
+                    item = addBlock('receive', this.msg('event', {name: eventName}), stub, opcode);
+                    item.eventName = eventName;
+                } else if (opcode.startsWith('event_when') || opcode === 'control_start_as_clone') {
+                    const label = opcode.replace('event_when', 'when ').replace(/_/g, ' ');
+                    item = addBlock('event', label, stub, opcode);
+                }
+                if (item && (item.y === null || typeof item.y === 'undefined')) {
+                    item.y = scriptY.has(blockId) ? scriptY.get(blockId) : block.y;
+                }
+            }
+
+            if (
+                !opcode.startsWith('data_') &&
+                !opcode.startsWith('event_') &&
+                !opcode.startsWith('procedures_') &&
+                opcode !== 'control_start_as_clone' &&
+                opcode !== 'event_broadcast' &&
+                opcode !== 'event_broadcastandwait'
+            ) {
+                addBlock(opcode, opcode, stub, opcode);
+            }
+
+            // getCallsToEvents only sees rendered blocks, so pick up the
+            // broadcasts sent from scripts that are not.
+            if (opcode === 'event_broadcast' || opcode === 'event_broadcastandwait') {
+                const menuId = block.inputs && block.inputs.BROADCAST_INPUT &&
+                    (block.inputs.BROADCAST_INPUT.block || block.inputs.BROADCAST_INPUT.shadow);
+                const menu = menuId && vmBlocks[menuId];
+                const eventName = menu && menu.fields && menu.fields.BROADCAST_OPTION ?
+                    menu.fields.BROADCAST_OPTION.value :
+                    this.msg('complex-broadcast');
+                const sender = addBlock('receive', this.msg('event', {name: eventName}), stub, opcode);
+                sender.eventName = eventName;
+            }
+
+            const values = fieldValuesOf(block);
+            if (values.length) {
+                const entry = addBlock(opcode, `${opcode}: ${values.join(', ')}`, stub, opcode);
+                entry.isTextInputEntry = true;
+            }
+        }
     }
 
     addBlocksFromTarget (target, myBlocks, myBlocksByProcCode, spriteName) {

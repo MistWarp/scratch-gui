@@ -4,6 +4,7 @@ import {connect} from 'react-redux';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
+import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette} from 'lucide-react';
 import styles from './loader.css';
 import {getIsLoadingWithId} from '../../reducers/project-state';
 import topBlock from './top-block.svg';
@@ -47,8 +48,60 @@ const messages = defineMessages({
         defaultMessage: 'Preparing project … (large projects may take a moment)',
         description: 'Appears after assets are loaded while the project data is being processed',
         id: 'tw.loader.preparingProject'
+    },
+    unzipping: {
+        defaultMessage: 'Unzipping project …',
+        description: 'Appears while the project file is being decompressed',
+        id: 'mw.loader.unzipping'
+    },
+    parsing: {
+        defaultMessage: 'Parsing project data …',
+        description: 'Appears while the project json is being parsed',
+        id: 'mw.loader.parsing'
+    },
+    checking: {
+        defaultMessage: 'Checking project …',
+        description: 'Appears while the project is being validated',
+        id: 'mw.loader.checking'
+    },
+    building: {
+        defaultMessage: 'Building blocks …',
+        description: 'Appears while the project data is being turned into blocks and sprites',
+        id: 'mw.loader.building'
+    },
+    installing: {
+        defaultMessage: 'Adding sprites …',
+        description: 'Appears while the sprites are being added to the project',
+        id: 'mw.loader.installing'
     }
 });
+
+const STAGE_ICONS = {
+    unzipping: PackageOpen,
+    parsing: FileJson,
+    checking: ShieldCheck,
+    building: Blocks,
+    installing: Cat,
+    assets: Palette
+};
+
+const STAGE_PROGRESS = {
+    unzipping: [0, 20],
+    parsing: [20, 75],
+    checking: [75, 80],
+    building: [80, 85],
+    assets: [85, 97],
+    installing: [97, 100]
+};
+
+const formatBytes = bytes => {
+    if (!bytes || bytes < 1024) return `${bytes || 0} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+// How often the quote at the bottom changes, in ms.
+const QUOTE_INTERVAL = 5000;
 
 // Array of random loading messages
 const randomMessages = [
@@ -89,15 +142,29 @@ class LoaderComponent extends React.Component {
         super(props);
         bindAll(this, [
             'handleAssetProgress',
+            'handleLoadProgress',
             'handleProjectLoaded',
+            'rotateQuote',
             'barInnerRef',
-            'messageRef'
+            'messageRef',
+            'detailRef',
+            'quoteRef'
         ]);
         this.barInnerEl = null;
         this.messageEl = null;
+        this.detailEl = null;
+        this.quoteEl = null;
+        this.overallProgress = 0;
         this.ignoreProgress = false;
-        // Select a random message when the component is created
-        this.randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+        this.quoteTimer = null;
+        // Shuffle so a session does not repeat quotes until it has run out.
+        this.quotes = randomMessages
+            .map(text => ({text, order: Math.random()}))
+            .sort((a, b) => a.order - b.order)
+            .map(entry => entry.text);
+        this.quoteIndex = 0;
+        this.randomMessage = this.quotes[0];
+        this.state = {stage: null};
     }
     componentDidMount () {
         this.handleAssetProgress(
@@ -105,11 +172,71 @@ class LoaderComponent extends React.Component {
             this.props.vm.runtime.totalAssetRequests
         );
         this.props.vm.on('ASSET_PROGRESS', this.handleAssetProgress);
+        this.props.vm.on('LOAD_PROGRESS', this.handleLoadProgress);
         this.props.vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
+        this.quoteTimer = setInterval(this.rotateQuote, QUOTE_INTERVAL);
     }
     componentWillUnmount () {
         this.props.vm.off('ASSET_PROGRESS', this.handleAssetProgress);
+        this.props.vm.off('LOAD_PROGRESS', this.handleLoadProgress);
         this.props.vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
+        clearInterval(this.quoteTimer);
+    }
+    setStage (stage) {
+        if (this.state.stage !== stage) {
+            this.setState({stage});
+        }
+    }
+    setOverallProgress (progress) {
+        if (!this.barInnerEl) {
+            return;
+        }
+        this.overallProgress = Math.max(this.overallProgress, Math.min(100, progress));
+        this.barInnerEl.style.width = `${this.overallProgress}%`;
+    }
+    rotateQuote () {
+        if (!this.quoteEl) {
+            return;
+        }
+        this.quoteIndex = (this.quoteIndex + 1) % this.quotes.length;
+        const next = this.quotes[this.quoteIndex];
+        this.quoteEl.classList.add(styles.quoteLeaving);
+        setTimeout(() => {
+            if (!this.quoteEl) {
+                return;
+            }
+            this.quoteEl.textContent = next;
+            this.quoteEl.classList.remove(styles.quoteLeaving);
+        }, 400);
+    }
+    // What the VM is doing right now: unzipping, parsing, and so on. These all
+    // happen before any asset request, so they cannot fight over the message.
+    handleLoadProgress ({stage, loaded, total}) {
+        if (this.ignoreProgress || !this.messageEl) {
+            return;
+        }
+        const message = messages[stage];
+        if (!message) {
+            return;
+        }
+        this.setStage(stage);
+        this.messageEl.textContent = this.props.intl.formatMessage(message);
+        const range = STAGE_PROGRESS[stage];
+        if (range) {
+            const fraction = loaded && total ? Math.min(1, loaded / total) : 0;
+            this.setOverallProgress(range[0] + ((range[1] - range[0]) * fraction));
+        }
+
+        if (!this.detailEl) {
+            return;
+        }
+        if (stage === 'unzipping' && total) {
+            this.detailEl.textContent = `${formatBytes(loaded)} of ${formatBytes(total)}`;
+        } else if (total) {
+            this.detailEl.textContent = formatBytes(total);
+        } else {
+            this.detailEl.textContent = '';
+        }
     }
     handleAssetProgress (finished, total) {
         if (this.ignoreProgress || !this.barInnerEl || !this.messageEl) {
@@ -118,18 +245,31 @@ class LoaderComponent extends React.Component {
 
         if (total === 0) {
             // Started loading a new project.
-            this.barInnerEl.style.width = '0';
-            this.messageEl.textContent = this.props.intl.formatMessage(messages.projectData);
+            if (this.overallProgress === 0) {
+                this.setOverallProgress(0);
+                this.messageEl.textContent = this.props.intl.formatMessage(messages.projectData);
+                if (this.detailEl) {
+                    this.detailEl.textContent = '';
+                }
+            }
         } else if (finished >= total) {
-            this.barInnerEl.style.width = '100%';
+            this.setOverallProgress(STAGE_PROGRESS.assets[1]);
             this.messageEl.textContent = this.props.intl.formatMessage(messages.preparingProject);
+            if (this.detailEl) {
+                this.detailEl.textContent = '';
+            }
         } else {
-            this.barInnerEl.style.width = `${finished / total * 100}%`;
+            this.setStage('assets');
+            const range = STAGE_PROGRESS.assets;
+            this.setOverallProgress(range[0] + ((range[1] - range[0]) * (finished / total)));
             const message = this.props.isRemote ? messages.downloadingAssets : messages.loadingAssets;
             this.messageEl.textContent = this.props.intl.formatMessage(message, {
                 complete: finished,
                 total
             });
+            if (this.detailEl) {
+                this.detailEl.textContent = '';
+            }
         }
     }
     handleProjectLoaded () {
@@ -137,6 +277,7 @@ class LoaderComponent extends React.Component {
             return;
         }
 
+        this.setOverallProgress(100);
         this.ignoreProgress = true;
         this.props.vm.runtime.resetProgress();
     }
@@ -146,7 +287,14 @@ class LoaderComponent extends React.Component {
     messageRef (message) {
         this.messageEl = message;
     }
+    detailRef (detail) {
+        this.detailEl = detail;
+    }
+    quoteRef (quote) {
+        this.quoteEl = quote;
+    }
     render () {
+        const StageIcon = STAGE_ICONS[this.state.stage];
         return (
             <div
                 className={classNames(styles.background, {
@@ -176,10 +324,19 @@ class LoaderComponent extends React.Component {
                         {mainMessages[this.props.messageId]}
                     </div>
 
-                    <div
-                        className={styles.message}
-                        ref={this.messageRef}
-                    />
+                    <div className={styles.status}>
+                        {StageIcon ? (
+                            <StageIcon
+                                className={styles.stageIcon}
+                                size={18}
+                                strokeWidth={2.25}
+                            />
+                        ) : null}
+                        <div
+                            className={styles.message}
+                            ref={this.messageRef}
+                        />
+                    </div>
 
                     <div className={styles.barOuter}>
                         <div
@@ -187,8 +344,16 @@ class LoaderComponent extends React.Component {
                             ref={this.barInnerRef}
                         />
                     </div>
-                    
-                    <div className={styles.randomMessage}>
+
+                    <div
+                        className={styles.detail}
+                        ref={this.detailRef}
+                    />
+
+                    <div
+                        className={styles.randomMessage}
+                        ref={this.quoteRef}
+                    >
                         {this.randomMessage}
                     </div>
                 </div>

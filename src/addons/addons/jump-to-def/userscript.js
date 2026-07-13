@@ -1,8 +1,8 @@
-import Utils from "../../../addons/addons/find-bar/blockly/Utils.js";
-export default async function ({ addon, msg, console }) {
-  const utils = new Utils(addon);
+import Utils from "../../../lib/find-bar/Utils.js";
 
+export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
+  const utils = new Utils(addon.tab.traps.vm, Blockly);
 
   Object.defineProperty(Blockly.Gesture.prototype, "jumpToDef", {
     get() {

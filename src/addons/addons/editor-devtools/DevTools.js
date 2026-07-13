@@ -392,6 +392,8 @@ export default class DevTools {
    */
     getOrderedTopBlockColumns (separateOrphans) {
         const w = this.getWorkspace();
+        // Tidying only the rendered scripts would stack them onto the rest.
+        if (w.materializeAllScripts) w.materializeAllScripts();
         const topBlocks = w.getTopBlocks();
         const maxWidths = {};
 
@@ -480,6 +482,10 @@ export default class DevTools {
    */
     getVariableUsesById (id) {
         const uses = [];
+
+        // A use in a script that is not rendered is still a use.
+        const workspace = this.getWorkspace();
+        if (workspace && workspace.materializeAllScripts) workspace.materializeAllScripts();
 
         const topBlocks = this.getTopBlocks(true); // todo: Confirm this was the right getTopBlocks?
         for (const topBlock of topBlocks) {

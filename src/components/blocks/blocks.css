@@ -7,35 +7,6 @@
     position: relative;
 }
 
-.loadingProgress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: $z-index-grab-handles;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-}
-
-.loadingProgress[data-active="true"] {
-    opacity: 1;
-}
-
-.loadingProgressCounter {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.625rem;
-    font-weight: bold;
-    color: $text-primary;
-}
-
-[dir="rtl"] .loadingProgressCounter {
-    right: auto;
-    left: 0.5rem;
-}
-
 .paletteResizer {
     position: absolute;
     top: 0;

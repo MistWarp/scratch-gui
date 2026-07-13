@@ -127,16 +127,30 @@ export default class Utils {
         const workspace = this.getWorkspace();
         if (!workspace) return;
 
-        let block;
+        let block = null;
+        let blockId = null;
 
         if (blockOrId instanceof BlockInstance) {
             this.setEditingTarget(blockOrId.targetId);
-            block = workspace.getBlockById(blockOrId.id);
-        } else {
-            block = blockOrId && blockOrId.id ? blockOrId : workspace.getBlockById(blockOrId);
+            blockId = blockOrId.id;
+        } else if (typeof blockOrId === 'string') {
+            blockId = blockOrId;
+        } else if (blockOrId && blockOrId.id) {
+            blockId = blockOrId.id;
+            // Search results for scripts that are not rendered are plain {id}
+            // stubs rather than Blockly blocks.
+            if (typeof blockOrId.getRootBlock === 'function') {
+                block = blockOrId;
+            }
+        }
+        if (!block && blockId) {
+            block = workspace.getBlockById(blockId);
         }
 
-        if (!block) return;
+        if (!block) {
+            this.scrollUnrenderedBlockIntoView(workspace, blockId);
+            return;
+        }
 
         const root = block.getRootBlock();
         const base = this.getTopOfStackFor(block);
@@ -167,6 +181,45 @@ export default class Utils {
             this.ScratchBlocks.hideChaff();
         }
         BlockFlasher.flash(block);
+    }
+
+    /**
+     * Scroll to a block whose script the workspace has not rendered yet. Getting
+     * near it is what makes it render, so scroll first and flash it once it is
+     * there.
+     * @param {object} workspace The Blockly workspace.
+     * @param {?string} blockId The block to go to.
+     */
+    scrollUnrenderedBlockIntoView (workspace, blockId) {
+        if (!blockId || typeof workspace.findDeferredScriptByBlockId !== 'function') return;
+        const pending = workspace.findDeferredScriptByBlockId(blockId);
+        if (!pending) return;
+
+        const scale = workspace.scale;
+        const s = workspace.getMetrics();
+        const sx = (pending.x * scale) - s.contentLeft - this.offsetX;
+        const sy = (pending.y * scale) - s.contentTop - this.offsetY;
+
+        this.navigationHistory.storeView(this.navigationHistory.peek(), 64);
+        workspace.scrollbar.set(sx, sy);
+        this.navigationHistory.storeView({left: sx, top: sy}, 64);
+
+        if (this.ScratchBlocks.hideChaff) {
+            this.ScratchBlocks.hideChaff();
+        }
+
+        let attempts = 90;
+        const flashWhenRendered = () => {
+            const block = workspace.getBlockById(blockId);
+            if (block) {
+                BlockFlasher.flash(block);
+                return;
+            }
+            if (attempts-- > 0) {
+                requestAnimationFrame(flashWhenRendered);
+            }
+        };
+        requestAnimationFrame(flashWhenRendered);
     }
 
     /**

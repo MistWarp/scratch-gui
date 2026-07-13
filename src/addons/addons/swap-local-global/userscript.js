@@ -38,6 +38,9 @@ export default async function ({ addon, msg, console }) {
 
   const syncBlockVariableNameWithActualVariableName = (workspace, id) => {
     const variable = workspace.getVariableById(id);
+    // The workspace only renders the scripts you are near; every block that uses
+    // the variable has to be updated, not just the visible ones.
+    if (workspace.materializeAllScripts) workspace.materializeAllScripts();
     for (const block of workspace.getAllBlocks()) {
       block.updateVarName(variable);
     }

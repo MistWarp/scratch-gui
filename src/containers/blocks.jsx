@@ -76,11 +76,6 @@ const messages = defineMessages({
         // eslint-disable-next-line max-len
         description: 'Button in extension list to learn how to use the "return" block from the Custom Reporters extension.',
         id: 'tw.blocks.PROCEDURES_DOCS'
-    },
-    WORKSPACE_LOAD_PROGRESS: {
-        defaultMessage: 'Loading blocks ({remaining, number} remaining)',
-        description: 'Indicator shown while the blocks of a project are still being drawn',
-        id: 'tw.blocks.workspaceLoadProgress'
     }
 });
 
@@ -137,7 +132,6 @@ class Blocks extends React.Component {
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
-            'setLoadingBar',
             'setLocale',
             'handleEnableProcedureReturns'
         ]);
@@ -168,8 +162,6 @@ class Blocks extends React.Component {
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
         this.deferredWorkspaceLoad = null;
-        this.loadingBar = null;
-        this.loadingBarCounter = null;
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -988,20 +980,18 @@ class Blocks extends React.Component {
             });
         }
     }
+    // The workspace records glow state by id whether or not the block is
+    // rendered, so a script that is offscreen still comes back glowing.
     onScriptGlowOn (data) {
-        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowStack(data.id, true);
     }
     onScriptGlowOff (data) {
-        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowStack(data.id, false);
     }
     onBlockGlowOn (data) {
-        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowBlock(data.id, true);
     }
     onBlockGlowOff (data) {
-        if (!this.workspace.getBlockById(data.id)) return;
         this.workspace.glowBlock(data.id, false);
     }
     onVisualReport (data) {
@@ -1050,9 +1040,15 @@ class Blocks extends React.Component {
         // Remove and reattach the workspace listener (but allow flyout events)
         this.cancelDeferredWorkspaceLoad();
         this.workspace.removeChangeListener(this.props.vm.blockListener);
-        const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
+        // The VM hands us its block objects directly. Reading data.xml instead
+        // would serialize them to a string just so we could parse them back
+        // into a DOM, which costs more than building the blocks does.
+        const descs = data.blocks && data.headerXml &&
+            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromDescs ? data.blocks : null;
+        const blockCount = descs ? Object.keys(descs.blocks).length : 0;
+        const dom = this.ScratchBlocks.Xml.textToDom(descs ? data.headerXml : data.xml);
         const useDeferredLoad = !!this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred &&
-            (dom.getElementsByTagName('block').length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
+            ((descs ? blockCount : dom.getElementsByTagName('block').length) >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
                 Object.keys(this.workspace.blockDB_ || {}).length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS);
         try {
             if (useDeferredLoad) {
@@ -1060,15 +1056,14 @@ class Blocks extends React.Component {
                     dom,
                     this.workspace,
                     {
-                        onProgress: (done, total, blocksLoaded, blocksTotal) => {
-                            this.setWorkspaceLoadProgress(total > 0 ? done / total : 1, blocksLoaded, blocksTotal);
-                        },
                         onDone: () => {
                             this.deferredWorkspaceLoad = null;
-                            this.setWorkspaceLoadProgress(null);
                         }
-                    }
+                    },
+                    descs
                 );
+            } else if (descs) {
+                this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromDescs(dom, descs, this.workspace);
             } else {
                 this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
             }
@@ -1190,29 +1185,11 @@ class Blocks extends React.Component {
     setBlocks (blocks) {
         this.blocks = blocks;
     }
-    setLoadingBar (loadingBar) {
-        this.loadingBar = loadingBar;
-        this.loadingBarCounter = loadingBar ? loadingBar.firstElementChild : null;
-    }
-    setWorkspaceLoadProgress (fraction, blocksLoaded, blocksTotal) {
-        if (!this.loadingBar || !this.loadingBarCounter) return;
-        if (fraction === null) {
-            delete this.loadingBar.dataset.active;
-            return;
-        }
-        this.loadingBar.dataset.active = 'true';
-        if (typeof blocksTotal === 'number') {
-            this.loadingBarCounter.textContent = this.props.intl.formatMessage(messages.WORKSPACE_LOAD_PROGRESS, {
-                remaining: Math.max(0, blocksTotal - blocksLoaded)
-            });
-        }
-    }
     cancelDeferredWorkspaceLoad () {
-        if (this.deferredWorkspaceLoad) {
-            this.deferredWorkspaceLoad.cancel();
-            this.deferredWorkspaceLoad = null;
+        this.deferredWorkspaceLoad = null;
+        if (this.workspace && this.workspace.cancelDeferredRender) {
+            this.workspace.cancelDeferredRender();
         }
-        this.setWorkspaceLoadProgress(null);
     }
     handlePromptStart (message, defaultValue, callback, optTitle, optVarType) {
         const p = {prompt: {callback, message, defaultValue}};
@@ -1351,7 +1328,6 @@ class Blocks extends React.Component {
             <React.Fragment>
                 <DroppableBlocks
                     componentRef={this.setBlocks}
-                    loadingBarRef={this.setLoadingBar}
                     onDrop={this.handleDrop}
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
                     paletteWidth={typeof this.state.flyoutWidth === 'number' ?
