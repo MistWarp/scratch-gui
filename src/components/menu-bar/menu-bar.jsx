@@ -1101,7 +1101,7 @@ class MenuBar extends React.Component {
         const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
 
         if (isAutosaveAddonEnabled) {
-            return SettingsStore.getAddonSetting('autosave', 'enabled');
+            return SettingsStore.getAddonSetting('autosave', 'autosaveEnabled');
         }
         return this.props.autosaveEnabled;
     }

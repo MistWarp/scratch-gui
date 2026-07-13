@@ -139,7 +139,7 @@ class AutosaveService {
     updateFromAddonSettings () {
         if (SettingsStore.getAddonEnabled('autosave')) {
             const wasEnabled = this.enabled;
-            this.enabled = SettingsStore.getAddonSetting('autosave', 'enabled');
+            this.enabled = SettingsStore.getAddonSetting('autosave', 'autosaveEnabled');
             this.interval = SettingsStore.getAddonSetting('autosave', 'interval');
             this.showNotifications = SettingsStore.getAddonSetting('autosave', 'showNotifications');
             this.onlyWhenChanged = SettingsStore.getAddonSetting('autosave', 'saveOnlyWhenChanged');
