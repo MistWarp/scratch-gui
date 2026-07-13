@@ -1,0 +1,22 @@
+diff --git a/node_modules/scratch-parser/lib/unzip.js b/node_modules/scratch-parser/lib/unzip.js
+index 4bf2085..8d71254 100644
+--- a/node_modules/scratch-parser/lib/unzip.js
++++ b/node_modules/scratch-parser/lib/unzip.js
+@@ -13,6 +13,17 @@ module.exports = function (input, isSprite, callback) {
+ 
+     return JSZip.loadAsync(input)
+         .then(function (zip) {
++            if (!isSprite) {
++                // look for scsf.json in the zip first
++                const scsfFile = zip.file(/^([^/]*\/)?scsf\.json$/)[0];
++                if (scsfFile) {
++                    return scsfFile.async('string')
++                        .then(function (scsfContent) {
++                            return callback(null, [scsfContent, zip]);
++                        });
++                }
++            }
++
+             // look for json in the list of files, or in a subdirectory
+             // assumes there is only one sprite or project json in the zipfile
+             const file = isSprite ?
