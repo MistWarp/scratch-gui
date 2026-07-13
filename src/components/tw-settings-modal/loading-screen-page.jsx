@@ -102,6 +102,23 @@ const TOGGLES = [
         )
     },
     {
+        key: 'showGithub',
+        label: (
+            <FormattedMessage
+                defaultMessage="GitHub link"
+                description="Loading screen setting"
+                id="mw.settings.loader.github"
+            />
+        ),
+        help: (
+            <FormattedMessage
+                defaultMessage="A link on the loading screen inviting you to follow MistWarp on GitHub."
+                description="Loading screen setting help"
+                id="mw.settings.loader.githubHelp"
+            />
+        )
+    },
+    {
         key: 'showQuotes',
         label: (
             <FormattedMessage

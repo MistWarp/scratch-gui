@@ -278,3 +278,22 @@
         transform: translateY(0);
     }
 }
+
+.github-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 1rem;
+    color: inherit;
+    font-size: 0.75rem;
+    text-decoration: none;
+    opacity: 0.75;
+    transition: opacity 0.15s ease;
+}
+
+.github-cta:hover {
+    opacity: 1;
+}

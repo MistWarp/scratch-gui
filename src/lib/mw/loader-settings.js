@@ -7,6 +7,7 @@ const DEFAULTS = {
     showProgress: true,
     showDetail: true,
     showQuotes: true,
+    showGithub: true,
     customQuotes: []
 };
 

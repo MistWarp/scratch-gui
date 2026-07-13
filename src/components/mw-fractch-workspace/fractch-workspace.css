@@ -128,6 +128,15 @@
     background: $ui-tertiary;
 }
 
+.sidebar.drop-target {
+    box-shadow: inset 0 0 0 2px $looks-secondary;
+}
+
+.folder.drop-target {
+    background: $looks-transparent;
+    box-shadow: inset 0 0 0 1px $looks-secondary;
+}
+
 .file.selected {
     background: $looks-secondary;
     color: $accent-foreground;
@@ -458,6 +467,58 @@
     overflow: hidden;
     text-align: end;
     text-overflow: ellipsis;
+}
+
+.context-menu {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    min-width: 8rem;
+    margin: 0;
+    padding: 4px 0;
+    outline: none;
+    border: 1px solid var(--mw-menu-border);
+    border-radius: 4px;
+    background: var(--mw-menu-background);
+    color: var(--mw-menu-foreground);
+    box-shadow: 0 2px 8px $shadow;
+    font: normal 13px "Helvetica Neue", Helvetica, sans-serif;
+    cursor: default;
+    z-index: 10;
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 4px 2em 4px 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.context-item:hover {
+    background: var(--mw-menu-active-background);
+}
+
+.context-item.danger {
+    color: $red-primary;
+}
+
+.context-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 6px;
+    border: 1px solid $looks-secondary;
+    border-radius: 3px;
+    background: $input-background;
+    color: $text-primary;
+    font: inherit;
 }
 
 .loading {

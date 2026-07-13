@@ -9,9 +9,12 @@ import {
     ChevronUp,
     File,
     Folder,
+    FilePlus,
     FolderOpen,
     GitCompare,
     GitMerge,
+    Pencil,
+    Trash2,
     TerminalSquare,
     X
 } from 'lucide-react';
@@ -27,6 +30,7 @@ import {
     abortEditorMerge,
     applyFractchWorkspace,
     completeEditorMerge,
+    deleteWorktreeFile,
     getPendingMerge,
     listWorktreeFiles,
     prepareFractchWorkspace,
@@ -205,6 +209,12 @@ const tabLabels = paths => Object.fromEntries(
 
 const errorMessage = error => (error && error.message ? error.message : String(error));
 
+const joinPath = (directory, name) => (directory ? `${directory}/${name}` : name);
+
+const dirnameOf = filepath => (filepath.includes('/') ? filepath.slice(0, filepath.lastIndexOf('/')) : '');
+
+const stopEvent = event => event.stopPropagation();
+
 const buildFileTree = paths => {
     const root = {};
     for (const filepath of paths) {
@@ -240,16 +250,35 @@ Indents.propTypes = {
     depth: PropTypes.number.isRequired
 };
 
-const FileTree = ({activeFile, depth, expandedFolders, nodes, onOpenFile, onToggleFolder}) => (
+const FileTree = ({
+    activeFile,
+    depth,
+    dropTarget,
+    expandedFolders,
+    nodes,
+    onContextMenu,
+    onDragStart,
+    onDragOverFolder,
+    onDropOnFolder,
+    onOpenFile,
+    onToggleFolder
+}) => (
     <div className={styles.tree}>
         {nodes.map(node => (node.type === 'folder' ? (
             <div key={node.path}>
                 <button
-                    className={styles.folder}
+                    className={classNames(styles.folder, {[styles.dropTarget]: dropTarget === node.path})}
                     data-folder={node.path}
+                    data-path={node.path}
+                    data-type="folder"
+                    draggable
                     title={node.path}
                     type="button"
                     onClick={onToggleFolder}
+                    onContextMenu={onContextMenu}
+                    onDragOver={onDragOverFolder}
+                    onDragStart={onDragStart}
+                    onDrop={onDropOnFolder}
                 >
                     <Indents depth={depth} />
                     {expandedFolders[node.path] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -259,9 +288,14 @@ const FileTree = ({activeFile, depth, expandedFolders, nodes, onOpenFile, onTogg
                 {expandedFolders[node.path] ? (
                     <FileTree
                         activeFile={activeFile}
-                        expandedFolders={expandedFolders}
                         depth={depth + 1}
+                        dropTarget={dropTarget}
+                        expandedFolders={expandedFolders}
                         nodes={node.children}
+                        onContextMenu={onContextMenu}
+                        onDragOverFolder={onDragOverFolder}
+                        onDragStart={onDragStart}
+                        onDropOnFolder={onDropOnFolder}
                         onOpenFile={onOpenFile}
                         onToggleFolder={onToggleFolder}
                     />
@@ -271,11 +305,16 @@ const FileTree = ({activeFile, depth, expandedFolders, nodes, onOpenFile, onTogg
             <button
                 className={classNames(styles.file, {[styles.selected]: node.path === activeFile})}
                 data-file={node.path}
+                data-path={node.path}
+                data-type="file"
                 disabled={!TEXT_FILE_RE.test(node.path)}
+                draggable
                 key={node.path}
                 title={node.path}
                 type="button"
                 onClick={onOpenFile}
+                onContextMenu={onContextMenu}
+                onDragStart={onDragStart}
             >
                 <Indents depth={depth} />
                 {/\.fractch$/i.test(node.path) ? <Braces size={14} /> : <File size={14} />}
@@ -287,16 +326,139 @@ const FileTree = ({activeFile, depth, expandedFolders, nodes, onOpenFile, onTogg
 
 FileTree.propTypes = {
     activeFile: PropTypes.string,
-    expandedFolders: PropTypes.objectOf(PropTypes.bool).isRequired,
     depth: PropTypes.number.isRequired,
+    dropTarget: PropTypes.string,
+    expandedFolders: PropTypes.objectOf(PropTypes.bool).isRequired,
     nodes: PropTypes.arrayOf(PropTypes.shape({
         children: PropTypes.array,
         name: PropTypes.string.isRequired,
         path: PropTypes.string.isRequired,
         type: PropTypes.string.isRequired
     })).isRequired,
+    onContextMenu: PropTypes.func.isRequired,
+    onDragOverFolder: PropTypes.func.isRequired,
+    onDragStart: PropTypes.func.isRequired,
+    onDropOnFolder: PropTypes.func.isRequired,
     onOpenFile: PropTypes.func.isRequired,
     onToggleFolder: PropTypes.func.isRequired
+};
+
+const ContextMenu = ({colors, menu, onClose, onCreate, onDelete, onRename}) => {
+    const [renaming, setRenaming] = useState(false);
+    const [confirming, setConfirming] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [value, setValue] = useState('');
+
+    const startRename = useCallback(() => {
+        setValue(basename(menu.path));
+        setRenaming(true);
+    }, [menu.path]);
+
+    const startCreate = useCallback(() => {
+        setValue('');
+        setCreating(true);
+    }, []);
+
+    const handleChange = useCallback(event => setValue(event.target.value), []);
+
+    const handleSubmit = useCallback(event => {
+        event.preventDefault();
+        const name = value.trim();
+        if (!name) return;
+        if (renaming) onRename(menu, name);
+        if (creating) onCreate(menu, name);
+        onClose();
+    }, [creating, menu, onClose, onCreate, onRename, renaming, value]);
+
+    const handleDelete = useCallback(() => {
+        if (!confirming) {
+            setConfirming(true);
+            return;
+        }
+        onDelete(menu);
+        onClose();
+    }, [confirming, menu, onClose, onDelete]);
+
+    return (
+        <div
+            className={styles.contextMenu}
+            role="presentation"
+            style={{
+                'left': menu.x,
+                'top': menu.y,
+                '--mw-menu-active-background': colors.contextMenuActiveBackground,
+                '--mw-menu-background': colors.contextMenuBackground,
+                '--mw-menu-border': colors.contextMenuBorder,
+                '--mw-menu-foreground': colors.contextMenuForeground
+            }}
+            onClick={stopEvent}
+            onContextMenu={stopEvent}
+        >
+            {renaming || creating ? (
+                <form onSubmit={handleSubmit}>
+                    <input
+                        autoFocus
+                        className={styles.contextInput}
+                        placeholder={creating ? 'name.fractch' : ''}
+                        value={value}
+                        onChange={handleChange}
+                    />
+                </form>
+            ) : (
+                <React.Fragment>
+                    <button
+                        className={styles.contextItem}
+                        type="button"
+                        onClick={startCreate}
+                    >
+                        <FilePlus size={14} />
+                        {'New file'}
+                    </button>
+                    {menu.path ? (
+                        <React.Fragment>
+                            <button
+                                className={styles.contextItem}
+                                type="button"
+                                onClick={startRename}
+                            >
+                                <Pencil size={14} />
+                                {'Rename'}
+                            </button>
+                            <button
+                                className={classNames(styles.contextItem, {
+                                    [styles.danger]: confirming
+                                })}
+                                type="button"
+                                onClick={handleDelete}
+                            >
+                                <Trash2 size={14} />
+                                {confirming ? `Delete ${basename(menu.path)}?` : 'Delete'}
+                            </button>
+                        </React.Fragment>
+                    ) : null}
+                </React.Fragment>
+            )}
+        </div>
+    );
+};
+
+ContextMenu.propTypes = {
+    colors: PropTypes.shape({
+        contextMenuActiveBackground: PropTypes.string,
+        contextMenuBackground: PropTypes.string,
+        contextMenuBorder: PropTypes.string,
+        contextMenuForeground: PropTypes.string
+    }).isRequired,
+    menu: PropTypes.shape({
+        path: PropTypes.string,
+        type: PropTypes.string,
+        x: PropTypes.number.isRequired,
+        y: PropTypes.number.isRequired
+    }).isRequired,
+    onClose: PropTypes.func.isRequired,
+    onCreate: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
+    onRename: PropTypes.func.isRequired
 };
 
 const EditorGroup = ({
@@ -592,6 +754,8 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
     const [groups, setGroups] = useState([{active: null, files: [], id: 1, row: 0}]);
     const [focusedGroup, setFocusedGroup] = useState(1);
     const [dragging, setDragging] = useState(false);
+    const [dropTarget, setDropTarget] = useState(null);
+    const [menu, setMenu] = useState(null);
     const [dirtyFiles, setDirtyFiles] = useState([]);
     const [cursor, setCursor] = useState({column: 1, line: 1});
     const [loading, setLoading] = useState(true);
@@ -919,7 +1083,13 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
     const handleDropOnTabs = useCallback((groupId, raw) => {
         setDragging(false);
         const payload = parsePayload(raw);
-        if (!payload || payload.from === groupId) return;
+        if (!payload) return;
+        // A file dragged out of the explorer opens in the pane it was dropped on.
+        if (payload.kind === 'explorer') {
+            if (payload.type === 'file') openFile(payload.path, groupId);
+            return;
+        }
+        if (payload.from === groupId) return;
         setGroups(previous => {
             const next = previous.map(group => {
                 if (group.id === payload.from) {
@@ -941,12 +1111,16 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
         focusedGroupRef.current = groupId;
         activeFileRef.current = payload.path;
         setFocusedGroup(groupId);
-    }, []);
+    }, [openFile]);
 
     const handleSplit = useCallback((groupId, raw, direction) => {
         setDragging(false);
         const payload = parsePayload(raw);
         if (!payload) return;
+        if (payload.kind === 'explorer') {
+            if (payload.type === 'file') openFile(payload.path, groupId);
+            return;
+        }
         setGroups(previous => {
             const source = previous.find(group => group.id === payload.from);
             if (!source) return previous;
@@ -1000,7 +1174,7 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
         });
         activeFileRef.current = payload.path;
         setFocusedGroup(focusedGroupRef.current);
-    }, []);
+    }, [openFile]);
 
     openFileRef.current = openFile;
 
@@ -1008,6 +1182,179 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
         await syncFromWorktree();
         await applyProject();
     }, [applyProject, syncFromWorktree]);
+
+    const importFiles = useCallback(async (fileList, directory) => {
+        setWorking(true);
+        try {
+            for (const file of fileList) {
+                const bytes = new Uint8Array(await file.arrayBuffer());
+                await writeWorktreeFile(joinPath(directory, file.name), bytes);
+            }
+            setStatus(`Added ${fileList.length} file(s)`);
+            await handleWorktreeChanged();
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setWorking(false);
+        }
+    }, [handleWorktreeChanged]);
+
+    const movePath = useCallback(async (source, type, directory) => {
+        const parent = source.includes('/') ? source.slice(0, source.lastIndexOf('/')) : '';
+        if (parent === directory) return;
+        // Moving a folder into itself or one of its own children would delete it as it copies.
+        if (type === 'folder' && (directory === source || directory.startsWith(`${source}/`))) return;
+
+        const moving = type === 'folder' ?
+            filesRef.current.filter(file => file.startsWith(`${source}/`)) :
+            [source];
+        if (!moving.length) return;
+
+        setWorking(true);
+        try {
+            const base = source.includes('/') ? source.slice(0, source.lastIndexOf('/') + 1) : '';
+            for (const filepath of moving) {
+                const destination = joinPath(directory, filepath.slice(base.length));
+                if (destination === filepath) continue;
+                await writeWorktreeFile(destination, await readWorktreeFile(filepath));
+                await deleteWorktreeFile(filepath);
+                if (models.current.has(filepath)) {
+                    disposeModel(filepath);
+                    await openFile(destination);
+                }
+            }
+            setStatus(`Moved ${source}`);
+            await handleWorktreeChanged();
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setWorking(false);
+        }
+    }, [disposeModel, handleWorktreeChanged, openFile]);
+
+    const handleTreeDragStart = useCallback(event => {
+        const {path, type} = event.currentTarget.dataset;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', JSON.stringify({kind: 'explorer', path, type}));
+    }, []);
+
+    const handleDragOverFolder = useCallback(event => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'move';
+        setDropTarget(event.currentTarget.dataset.path || '');
+    }, []);
+
+    const handleDragOverRoot = useCallback(event => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setDropTarget('');
+    }, []);
+
+    const handleDragLeaveTree = useCallback(() => setDropTarget(null), []);
+
+    const dropInto = useCallback((event, directory) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDropTarget(null);
+        if (event.dataTransfer.files && event.dataTransfer.files.length) {
+            importFiles([...event.dataTransfer.files], directory);
+            return;
+        }
+        const payload = parsePayload(event.dataTransfer.getData('text/plain'));
+        if (payload && payload.kind === 'explorer') movePath(payload.path, payload.type, directory);
+    }, [importFiles, movePath]);
+
+    const handleDropOnFolder = useCallback(
+        event => dropInto(event, event.currentTarget.dataset.path),
+        [dropInto]
+    );
+
+    const handleDropOnRoot = useCallback(event => dropInto(event, ''), [dropInto]);
+
+    const handleContextMenu = useCallback(event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const {path, type} = event.currentTarget.dataset;
+        setMenu({path: path || '', type: type || 'root', x: event.clientX, y: event.clientY});
+    }, []);
+
+    const handleCloseMenu = useCallback(() => setMenu(null), []);
+
+    const handleCreateFile = useCallback(async (target, name) => {
+        const directory = target.type === 'folder' ? target.path : dirnameOf(target.path);
+        const filepath = joinPath(directory, name);
+        setWorking(true);
+        try {
+            await writeWorktreeFile(filepath, encoder.encode(''));
+            await syncFromWorktree();
+            setStatus(`Created ${filepath}`);
+            if (TEXT_FILE_RE.test(filepath)) await openFile(filepath);
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setWorking(false);
+        }
+    }, [openFile, syncFromWorktree]);
+
+    const handleRename = useCallback(async (target, name) => {
+        const destination = joinPath(dirnameOf(target.path), name);
+        if (destination === target.path) return;
+        setWorking(true);
+        try {
+            const moving = target.type === 'folder' ?
+                filesRef.current.filter(file => file.startsWith(`${target.path}/`)) :
+                [target.path];
+            for (const filepath of moving) {
+                const next = target.type === 'folder' ?
+                    joinPath(destination, filepath.slice(target.path.length + 1)) :
+                    destination;
+                await writeWorktreeFile(next, await readWorktreeFile(filepath));
+                await deleteWorktreeFile(filepath);
+                if (models.current.has(filepath)) {
+                    disposeModel(filepath);
+                    await openFile(next);
+                }
+            }
+            setStatus(`Renamed to ${destination}`);
+            await handleWorktreeChanged();
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setWorking(false);
+        }
+    }, [disposeModel, handleWorktreeChanged, openFile]);
+
+    const handleDelete = useCallback(async target => {
+        setWorking(true);
+        try {
+            const removing = target.type === 'folder' ?
+                filesRef.current.filter(file => file.startsWith(`${target.path}/`)) :
+                [target.path];
+            for (const filepath of removing) {
+                await deleteWorktreeFile(filepath);
+                if (models.current.has(filepath)) disposeModel(filepath);
+            }
+            setStatus(`Deleted ${target.path}`);
+            await handleWorktreeChanged();
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setWorking(false);
+        }
+    }, [disposeModel, handleWorktreeChanged]);
+
+    useEffect(() => {
+        const close = () => setMenu(null);
+        if (menu) {
+            window.addEventListener('click', close);
+            window.addEventListener('blur', close);
+        }
+        return () => {
+            window.removeEventListener('click', close);
+            window.removeEventListener('blur', close);
+        };
+    }, [menu]);
 
     const handleCompleteMerge = useCallback(async () => {
         setWorking(true);
@@ -1131,14 +1478,24 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
             <div className={styles.main}>
                 <aside
                     aria-label="Project files"
-                    className={styles.sidebar}
+                    className={classNames(styles.sidebar, {[styles.dropTarget]: dropTarget === ''})}
+                    data-type="root"
+                    onContextMenu={handleContextMenu}
+                    onDragLeave={handleDragLeaveTree}
+                    onDragOver={handleDragOverRoot}
+                    onDrop={handleDropOnRoot}
                 >
                     <div className={styles.sidebarTitle}>{'Explorer'}</div>
                     <FileTree
                         activeFile={activeFile}
                         depth={0}
+                        dropTarget={dropTarget}
                         expandedFolders={expandedFolders}
                         nodes={tree}
+                        onContextMenu={handleContextMenu}
+                        onDragOverFolder={handleDragOverFolder}
+                        onDragStart={handleTreeDragStart}
+                        onDropOnFolder={handleDropOnFolder}
                         onOpenFile={handleOpenFile}
                         onToggleFolder={handleToggleFolder}
                     />
@@ -1204,6 +1561,7 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
                         className={classNames(styles.terminal, {[styles.hidden]: !terminalVisible})}
                         style={{height: terminalHeight}}
                         themeId={theme.id}
+                        vm={vm}
                         onWorktreeChanged={handleWorktreeChanged}
                     />
                 </div>
@@ -1230,6 +1588,16 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
                     </React.Fragment>
                 ) : null}
             </div>
+            {menu ? (
+                <ContextMenu
+                    colors={theme.getBlockColors()}
+                    menu={menu}
+                    onClose={handleCloseMenu}
+                    onCreate={handleCreateFile}
+                    onDelete={handleDelete}
+                    onRename={handleRename}
+                />
+            ) : null}
             {loading ? <div className={styles.loading}>{'Preparing Fractch source…'}</div> : null}
         </div>
     );

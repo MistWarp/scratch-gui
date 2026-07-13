@@ -21,7 +21,7 @@ const openFractchTerminalWindow = ({vm}) => {
         id: 'mw-fractch-terminal-window',
         title: 'Terminal',
         width: 640,
-        height: 380,
+        height: 430,
         minWidth: 360,
         minHeight: 200,
         className: 'mw-fractch-terminal-window',
@@ -43,7 +43,8 @@ const openFractchTerminalWindow = ({vm}) => {
         ReactDOM.render(
             React.createElement(FractchTerminal, {
                 onWorktreeChanged: handleWorktreeChanged,
-                style: {flex: '1 1 auto', minHeight: 0, padding: '0.35rem 0.5rem 0'}
+                style: {flex: '1 1 auto', minHeight: 0, padding: '0.35rem 0.5rem 0'},
+                vm
             }),
             container
         );

@@ -26,6 +26,7 @@ import {setTheme} from '../reducers/theme.js';
 import {detectTheme, applyTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
+import {setShellUser} from '../lib/git/browser-terminal';
 
 /**
  * Headless container: restores Rotur session, exposes login/logout, and
@@ -47,6 +48,7 @@ class RoturSession extends React.Component {
 
     componentDidMount () {
         this.editingSince = Date.now();
+        setShellUser({rotur: this.props.roturUsername});
         setRoturSessionApi({
             login: this.handleLogin,
             logout: this.handleLogout
@@ -56,6 +58,9 @@ class RoturSession extends React.Component {
     }
 
     componentDidUpdate (prevProps) {
+        if (this.props.roturUsername !== prevProps.roturUsername) {
+            setShellUser({rotur: this.props.roturUsername});
+        }
         if (
             this.props.loggedIn &&
             (
@@ -190,12 +195,14 @@ RoturSession.propTypes = {
     onSetError: PropTypes.func.isRequired,
     onClear: PropTypes.func.isRequired,
     onCloseLoginModal: PropTypes.func.isRequired,
-    onSetTheme: PropTypes.func.isRequired
+    onSetTheme: PropTypes.func.isRequired,
+    roturUsername: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     loggedIn: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.username),
-    projectTitle: state.scratchGui.projectTitle
+    projectTitle: state.scratchGui.projectTitle,
+    roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
 });
 
 const mapDispatchToProps = dispatch => ({
