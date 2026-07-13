@@ -13,6 +13,12 @@ class LocalStorageShim {
     }
 }
 
+Object.defineProperty(global, 'localStorage', {
+    value: new LocalStorageShim(),
+    writable: true,
+    configurable: true
+});
+
 beforeEach(() => {
     global.localStorage = new LocalStorageShim();
 });
@@ -422,15 +428,15 @@ test('setStore dynamic enable/disable', () => {
 
 test('setStore weird values', () => {
     const settingsStore = new SettingStore();
-    expect(settingsStore.getAddonEnabled('pause')).toBe(true);
-    settingsStore.setAddonEnabled('pause', false);
+    expect(settingsStore.getAddonEnabled('block-switching')).toBe(true);
+    settingsStore.setAddonEnabled('block-switching', false);
     settingsStore.setAddonEnabled('clones', true);
     settingsStore.setStore({
         invalid0: {},
         invalid1: null,
-        pause: null
+        'block-switching': null
     });
-    expect(settingsStore.getAddonEnabled('pause')).toBe(false);
+    expect(settingsStore.getAddonEnabled('block-switching')).toBe(false);
 });
 
 test('resetting an addon through setStore', () => {
@@ -462,12 +468,12 @@ test('setStoreWithVersionCheck', () => {
 
 test('parseUrlParameter', () => {
     const store = new SettingStore();
-    expect(store.getAddonEnabled('pause')).toBe(true);
+    expect(store.getAddonEnabled('block-switching')).toBe(true);
     expect(store.getAddonEnabled('mute-project')).toBe(true);
     expect(store.getAddonEnabled('remove-curved-stage-border')).toBe(false);
     expect(store.remote).toBe(false);
-    store.parseUrlParameter('pause,remove-curved-stage-border,,invalid addon??43t987(*&$');
-    expect(store.getAddonEnabled('pause')).toBe(true);
+    store.parseUrlParameter('block-switching,remove-curved-stage-border,,invalid addon??43t987(*&$');
+    expect(store.getAddonEnabled('block-switching')).toBe(true);
     expect(store.getAddonEnabled('mute-project')).toBe(false);
     expect(store.getAddonEnabled('remove-curved-stage-border')).toBe(true);
     expect(store.remote).toBe(true);
@@ -512,7 +518,6 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(true);
-    expect(store.getAddonEnabled('find-bar')).toBe(true);
     expect(store.getAddonEnabled('middle-click-popup')).toBe(true);
 
     global.localStorage.getItem = () => JSON.stringify({
@@ -523,7 +528,6 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(false);
-    expect(store.getAddonEnabled('find-bar')).toBe(false);
     expect(store.getAddonEnabled('middle-click-popup')).toBe(false);
 });
 

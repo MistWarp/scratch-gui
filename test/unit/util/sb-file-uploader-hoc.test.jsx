@@ -6,7 +6,7 @@ import {mountWithIntl, shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 import {LoadingState} from '../../../src/reducers/project-state';
 import VM from 'scratch-vm';
 
-import SBFileUploaderHOC from '../../../src/lib/sb-file-uploader-hoc.jsx';
+import SBFileUploaderHOC from '../../../src/lib/components/sb-file-uploader-hoc.jsx';
 
 describe('SBFileUploaderHOC', () => {
     const mockStore = configureStore();

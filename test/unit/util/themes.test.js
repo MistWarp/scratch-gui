@@ -1,47 +1,46 @@
-import {
-    DARK_THEME,
-    defaultColors,
-    DEFAULT_THEME,
-    getColorsForTheme,
-    HIGH_CONTRAST_THEME
-} from '../../../src/lib/themes';
+import {Theme, BLOCKS_THREE, BLOCKS_DARK} from '../../../src/lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../../../src/lib/themes/blockHelpers';
 import {detectTheme, persistTheme} from '../../../src/lib/themes/themePersistance';
 
-jest.mock('../../../src/lib/themes/default');
-jest.mock('../../../src/lib/themes/dark');
+const STORAGE_KEY = 'tw:theme';
 
 describe('themes', () => {
-    let serializeToString;
+    beforeEach(() => {
+        localStorage.removeItem(STORAGE_KEY);
+    });
 
     describe('core functionality', () => {
-        test('provides the default theme colors', () => {
-            expect(defaultColors.motion.primary).toEqual('#111111');
+        test('a default Theme falls back to the default accent, gui and blocks', () => {
+            const theme = new Theme();
+
+            expect(theme.gui).toBe('light');
+            expect(theme.blocks).toBe(BLOCKS_THREE);
+            expect(theme.isDark()).toBe(false);
         });
 
-        test('returns the dark mode', () => {
-            const colors = getColorsForTheme(DARK_THEME);
-
-            expect(colors.motion.primary).toEqual('#AAAAAA');
+        test('exposes a default theme per gui option', () => {
+            expect(Theme.defaults.light.isDark()).toBe(false);
+            expect(Theme.defaults.dark.isDark()).toBe(true);
         });
 
-        test('uses default theme colors when not specified', () => {
-            const colors = getColorsForTheme(DARK_THEME);
+        test('set() returns a new theme and leaves the original alone', () => {
+            const theme = Theme.defaults.light;
+            const dark = theme.set('blocks', BLOCKS_DARK);
 
-            expect(colors.motion.secondary).toEqual('#222222');
+            expect(dark.blocks).toBe(BLOCKS_DARK);
+            expect(theme.blocks).toBe(BLOCKS_THREE);
+        });
+
+        test('invalid values fall back to the defaults', () => {
+            const theme = new Theme('not-an-accent', 'not-a-gui', 'not-a-blocks-theme');
+
+            expect(theme.gui).toBe('light');
+            expect(theme.blocks).toBe(BLOCKS_THREE);
         });
     });
 
     describe('block helpers', () => {
-        beforeEach(() => {
-            serializeToString = jest.fn(() => 'mocked xml');
-
-            global.XMLSerializer = () => ({
-                serializeToString
-            });
-        });
-
-        test('updates extension block colors based on theme', () => {
+        test('leaves extension block colors alone for the default block theme', () => {
             const blockInfoJson = {
                 type: 'dummy_block',
                 colour: '#0FBD8C',
@@ -49,51 +48,12 @@ describe('themes', () => {
                 colourTertiary: '#0B8E69'
             };
 
-            const updated = injectExtensionBlockTheme(blockInfoJson, DARK_THEME);
+            const updated = injectExtensionBlockTheme(blockInfoJson, Theme.defaults.light);
 
-            expect(updated).toEqual({
-                type: 'dummy_block',
-                colour: '#FFFFFF',
-                colourSecondary: '#EEEEEE',
-                colourTertiary: '#DDDDDD'
-            });
-            // The original value was not modified
-            expect(blockInfoJson.colour).toBe('#0FBD8C');
+            expect(updated).toEqual(blockInfoJson);
         });
 
-        test('updates extension block icon based on theme', () => {
-            const blockInfoJson = {
-                type: 'pen_block',
-                args0: [
-                    {
-                        type: 'field_image',
-                        src: 'original'
-                    }
-                ],
-                colour: '#0FBD8C',
-                colourSecondary: '#0DA57A',
-                colourTertiary: '#0B8E69'
-            };
-
-            const updated = injectExtensionBlockTheme(blockInfoJson, DARK_THEME);
-
-            expect(updated).toEqual({
-                type: 'pen_block',
-                args0: [
-                    {
-                        type: 'field_image',
-                        src: 'darkPenIcon'
-                    }
-                ],
-                colour: '#FFFFFF',
-                colourSecondary: '#EEEEEE',
-                colourTertiary: '#DDDDDD'
-            });
-            // The original value was not modified
-            expect(blockInfoJson.args0[0].src).toBe('original');
-        });
-
-        test('bypasses updates if using the default theme', () => {
+        test('updates extension block colors for a non-default block theme', () => {
             const blockInfoJson = {
                 type: 'dummy_block',
                 colour: '#0FBD8C',
@@ -101,17 +61,14 @@ describe('themes', () => {
                 colourTertiary: '#0B8E69'
             };
 
-            const updated = injectExtensionBlockTheme(blockInfoJson, DEFAULT_THEME);
+            const darkBlocks = Theme.defaults.light.set('blocks', BLOCKS_DARK);
+            const updated = injectExtensionBlockTheme(blockInfoJson, darkBlocks);
 
-            expect(updated).toEqual({
-                type: 'dummy_block',
-                colour: '#0FBD8C',
-                colourSecondary: '#0DA57A',
-                colourTertiary: '#0B8E69'
-            });
+            expect(updated.colour).not.toEqual(blockInfoJson.colour);
+            expect(updated.type).toBe('dummy_block');
         });
 
-        test('updates extension category based on theme', () => {
+        test('leaves the extension category XML alone for the default block theme', () => {
             const dynamicBlockXML = [
                 {
                     id: 'pen',
@@ -119,47 +76,57 @@ describe('themes', () => {
                 }
             ];
 
-            injectExtensionCategoryTheme(dynamicBlockXML, DARK_THEME);
+            const result = injectExtensionCategoryTheme(dynamicBlockXML, Theme.defaults.light);
 
-            // XMLSerializer is not available outside the browser.
-            // Verify the mocked XMLSerializer.serializeToString is called with updated colors.
-            expect(serializeToString.mock.calls[0][0].documentElement.getAttribute('colour')).toBe('#FFFFFF');
-            expect(serializeToString.mock.calls[0][0].documentElement.getAttribute('secondaryColour')).toBe('#DDDDDD');
-            expect(serializeToString.mock.calls[0][0].documentElement.getAttribute('iconURI')).toBe('darkPenIcon');
+            expect(result).toEqual(dynamicBlockXML);
+        });
+
+        test('rewrites the extension category XML for a non-default block theme', () => {
+            const dynamicBlockXML = [
+                {
+                    id: 'pen',
+                    xml: '<category name="Pen" id="pen" colour="#0FBD8C" secondaryColour="#0DA57A"></category>'
+                }
+            ];
+
+            const darkBlocks = Theme.defaults.light.set('blocks', BLOCKS_DARK);
+            const result = injectExtensionCategoryTheme(dynamicBlockXML, darkBlocks);
+
+            expect(result[0].id).toBe('pen');
+            expect(result[0].xml).not.toEqual(dynamicBlockXML[0].xml);
+            expect(result[0].xml).toContain('<category');
         });
     });
 
     describe('theme persistance', () => {
-        test('returns the theme stored in a cookie', () => {
-            window.document.cookie = `scratchtheme=${HIGH_CONTRAST_THEME}`;
+        test('persists a non-default theme to local storage', () => {
+            persistTheme(Theme.defaults.dark);
 
-            const theme = detectTheme();
-
-            expect(theme).toEqual(HIGH_CONTRAST_THEME);
+            expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).gui).toBe('dark');
         });
 
-        test('returns the system theme when no cookie', () => {
-            window.document.cookie = 'scratchtheme=';
+        test('reads a persisted theme back', () => {
+            persistTheme(Theme.defaults.dark);
 
-            const theme = detectTheme();
-
-            expect(theme).toEqual(DEFAULT_THEME);
+            expect(detectTheme().gui).toBe('dark');
+            expect(detectTheme().isDark()).toBe(true);
         });
 
-        test('persists theme to cookie', () => {
-            window.document.cookie = 'scratchtheme=';
+        test('clears storage when the theme matches system preferences', () => {
+            persistTheme(Theme.defaults.dark);
+            persistTheme(Theme.defaults.light);
 
-            persistTheme(HIGH_CONTRAST_THEME);
-
-            expect(window.document.cookie).toEqual(`scratchtheme=${HIGH_CONTRAST_THEME}`);
+            expect(localStorage.getItem(STORAGE_KEY)).toBe(null);
         });
 
-        test('clears theme when matching system preferences', () => {
-            window.document.cookie = `scratchtheme=${HIGH_CONTRAST_THEME}`;
+        test('migrates the legacy "dark" string value', () => {
+            localStorage.setItem(STORAGE_KEY, 'dark');
 
-            persistTheme(DEFAULT_THEME);
+            expect(detectTheme().isDark()).toBe(true);
+        });
 
-            expect(window.document.cookie).toEqual('scratchtheme=');
+        test('falls back to system preferences when storage is empty', () => {
+            expect(detectTheme().gui).toBe('light');
         });
     });
 });

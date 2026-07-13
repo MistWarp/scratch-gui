@@ -1,7 +1,7 @@
-diff --git a/node_modules/scratch-parser/lib/unzip.js b/node_modules/scratch-parser/lib/unzip.js
+diff --git a/lib/unzip.js b/lib/unzip.js
 index 4bf2085..8d71254 100644
---- a/node_modules/scratch-parser/lib/unzip.js
-+++ b/node_modules/scratch-parser/lib/unzip.js
+--- a/lib/unzip.js
++++ b/lib/unzip.js
 @@ -13,6 +13,17 @@ module.exports = function (input, isSprite, callback) {
  
      return JSZip.loadAsync(input)

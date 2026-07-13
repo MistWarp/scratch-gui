@@ -6,7 +6,7 @@ import {compose} from 'redux';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
-import bowser from 'bowser';
+import {isMac} from '../../lib/utils/browser';
 import React from 'react';
 
 import VM from 'scratch-vm';
@@ -262,7 +262,7 @@ MenuItemLink.propTypes = {
 
 const formatShortcutDisplay = keyCombo => {
     if (!keyCombo) return '';
-    const platform = bowser.mac ? 'mac' : 'windows';
+    const platform = isMac ? 'mac' : 'windows';
     return keyCombo
         .replace(/Ctrl/g, platform === 'mac' ? '⌘' : 'Ctrl')
         .replace(/Cmd/g, '⌘')
@@ -708,7 +708,7 @@ class MenuBar extends React.Component {
             }
         }
 
-        const modifier = bowser.mac ? event.metaKey : event.ctrlKey;
+        const modifier = isMac ? event.metaKey : event.ctrlKey;
         if (modifier) {
             if (event.key.toLowerCase() === 's') {
                 this.props.handleSaveProject();

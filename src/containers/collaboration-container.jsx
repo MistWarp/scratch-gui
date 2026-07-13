@@ -126,6 +126,9 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('connected-to-host', this.handleConnectedToHost);
         this.collaborationService.off('disconnected', this.handleDisconnected);
         this.collaborationService.off('connection-failed', this.handleConnectionFailed);
+        this.collaborationService.off('join-request-received', this.handleJoinRequestReceived);
+        this.collaborationService.off('join-approved', this.handleJoinApproved);
+        this.collaborationService.off('join-denied', this.handleJoinDenied);
         this.collaborationService.off('room-privacy-changed', this.handleRoomPrivacyChanged);
         this.collaborationService.off('request-workspace-reattach', this.handleWorkspaceReattach);
         this.collaborationService.off('project-sync-download-start', this.handleProjectSyncDownloadStart);

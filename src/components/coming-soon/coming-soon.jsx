@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactTooltip from 'react-tooltip';
+import {Tooltip} from 'react-tooltip';
 
 import styles from './coming-soon.css';
 
@@ -69,22 +69,20 @@ class ComingSoonContent extends React.Component {
     }
     render () {
         return (
-            <ReactTooltip
+            <Tooltip
                 afterHide={this.setHide}
                 afterShow={this.setShow}
                 className={classNames(
                     styles.comingSoon,
                     this.props.className,
                     {
-                        [styles.show]: (this.state.isShowing),
-                        [styles.left]: (this.props.place === 'left'),
-                        [styles.right]: (this.props.place === 'right'),
-                        [styles.top]: (this.props.place === 'top'),
-                        [styles.bottom]: (this.props.place === 'bottom')
+                        [styles.show]: (this.state.isShowing)
                     }
                 )}
-                getContent={this.getRandomMessage}
+                classNameArrow={styles.comingSoonArrow}
                 id={this.props.tooltipId}
+                place={this.props.place}
+                render={this.getRandomMessage}
             />
         );
     }
@@ -106,12 +104,10 @@ const ComingSoon = injectIntl(ComingSoonContent);
 const ComingSoonTooltip = props => (
     <div className={props.className}>
         <div
-            data-delay-hide={props.delayHide}
-            data-delay-show={props.delayShow}
-            data-effect="solid"
-            data-for={props.tooltipId}
-            data-place={props.place}
-            data-tip="tooltip"
+            data-tooltip-delay-hide={props.delayHide}
+            data-tooltip-delay-show={props.delayShow}
+            data-tooltip-id={props.tooltipId}
+            data-tooltip-place={props.place}
         >
             {props.children}
         </div>

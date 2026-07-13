@@ -15,7 +15,9 @@ const settle = async hub => {
 
 const encodeDoc = doc => {
     const bytes = Buffer.from(JSON.stringify(doc));
-    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    const copy = new Uint8Array(bytes.length);
+    copy.set(bytes);
+    return copy.buffer;
 };
 const decodeDoc = arrayBuffer => JSON.parse(Buffer.from(arrayBuffer).toString());
 

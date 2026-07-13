@@ -1,4 +1,4 @@
-import opcodeLabels from '../../../src/lib/opcode-labels';
+import opcodeLabels from '../../../src/lib/constants/opcode-labels';
 
 describe('Opcode Labels', () => {
     test('day of week label', () => {

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import queryString from 'query-string';
 import {connect} from 'react-redux';
 
 import {detectTutorialId} from '../tutorial-from-url';
@@ -16,7 +15,7 @@ const QueryParserHOC = function (WrappedComponent) {
     class QueryParserComponent extends React.Component {
         constructor (props) {
             super(props);
-            const queryParams = queryString.parse(location.search);
+            const queryParams = Object.fromEntries(new URLSearchParams(location.search));
             const tutorialId = detectTutorialId(queryParams);
             if (tutorialId) {
                 if (tutorialId === 'all') {

@@ -1,10 +1,10 @@
 import StartAudioContext from '@turbowarp/startaudiocontext';
-import bowser from 'bowser';
+import {isInternetExplorer} from '../utils/browser';
 import log from '../utils/log';
 
 let AUDIO_CONTEXT;
 
-if (!bowser.msie) {
+if (!isInternetExplorer) {
     /**
      * AudioContext can be initialized only when user interaction event happens
      */

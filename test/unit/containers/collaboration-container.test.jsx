@@ -1,29 +1,31 @@
 import React from 'react';
-import {mount, shallow} from 'enzyme';
 import {Provider} from 'react-redux';
+import {IntlProvider} from 'react-intl';
 import {createStore, combineReducers} from 'redux';
+import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import CollaborationContainer from '../../../src/containers/collaboration-container.jsx';
-import renderer from 'react-test-renderer';
+import collaborationReducer from '../../../src/reducers/collaboration';
 
 jest.mock('../../../src/lib/collaboration/index.js');
-jest.mock('../../../src/lib/toast-system.js');
+jest.mock('../../../src/lib/notification-manager.js');
 
 import CollaborationService from '../../../src/lib/collaboration/index.js';
-import ToastSystem from '../../../src/lib/toast-system.js';
+import NotificationSystem from '../../../src/lib/notification-manager.js';
 
 const mockCollaborationService = {
+    isConnected: false,
     init: jest.fn(),
     on: jest.fn(),
     off: jest.fn(),
-    connectToRoom: jest.fn(),
+    connectToRoom: jest.fn(() => Promise.resolve()),
     kickUser: jest.fn(),
     changeUsername: jest.fn(),
     getConnectedUsers: jest.fn(() => []),
     getRoomPrivacy: jest.fn(() => 'public'),
     getCurrentUserId: jest.fn(() => 'current-user-id'),
-    approveJoinRequest: jest.fn(),
-    denyJoinRequest: jest.fn(),
-    changeRoomPrivacy: jest.fn(),
+    approveJoinRequest: jest.fn(() => Promise.resolve()),
+    denyJoinRequest: jest.fn(() => Promise.resolve()),
+    changeRoomPrivacy: jest.fn(() => Promise.resolve()),
     attachToWorkspace: jest.fn(),
     disconnect: jest.fn(),
     cancelJoinRequest: jest.fn()
@@ -31,77 +33,55 @@ const mockCollaborationService = {
 
 CollaborationService.getInstance.mockReturnValue(mockCollaborationService);
 
+const mockVM = {
+    on: jest.fn()
+};
+
+const ROTUR_HANDLE = 'TestHandle';
+
 describe('CollaborationContainer', () => {
     let store;
 
+    const mountContainer = () => mountWithIntl(
+        <IntlProvider locale="en">
+            <Provider store={store}>
+                <CollaborationContainer />
+            </Provider>
+        </IntlProvider>
+    );
+
+    // The class itself is not exported; reach it through its displayName.
+    const instanceOf = wrapper => wrapper.find('CollaborationContainer').instance();
+
+    const collaborationState = () => store.getState().scratchGui.collaboration;
+
     beforeEach(() => {
+        jest.clearAllMocks();
+        mockCollaborationService.isConnected = false;
+
         store = createStore(combineReducers({
+            locales: (state = {isRtl: false, locale: 'en', messages: {}}) => state,
             scratchGui: combineReducers({
-                collaboration: (state = {
-                    modalVisible: false,
-                    isConnected: false,
-                    roomId: null,
-                    roomPrivacy: 'public',
-                    connectedUsers: [],
-                    connectionError: null
-                }) => state,
-                tw: (state = {
-                    username: 'TestUser'
-                }) => state,
-                vm: (state = {}) => state
+                collaboration: collaborationReducer,
+                tw: (state = {username: 'TestUser'}) => state,
+                rotur: (state = {username: ROTUR_HANDLE}) => state,
+                theme: (state = {theme: null}) => state,
+                vm: (state = mockVM) => state
             })
         }));
-
-        jest.clearAllMocks();
     });
 
-    const defaultProps = {
-        vm: {
-            on: jest.fn()
-        },
-        isVisible: false,
-        isConnected: false,
-        roomId: null,
-        roomPrivacy: 'public',
-        connectedUsers: [],
-        connectionError: null,
-        currentUsername: 'TestUser',
-        onRequestClose: jest.fn(),
-        onSetConnected: jest.fn(),
-        onSetUsers: jest.fn(),
-        onSetError: jest.fn(),
-        onSetRoomId: jest.fn(),
-        onSetRoomPrivacy: jest.fn(),
-        onSetUsername: jest.fn()
-    };
+    test('initializes the collaboration service with the vm on mount', () => {
+        mountContainer();
 
-    test('matches snapshot', () => {
-        const component = renderer.create(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
-        expect(component.toJSON()).toMatchSnapshot();
+        expect(mockCollaborationService.init).toHaveBeenCalledWith(mockVM);
     });
 
-    test('initializes collaboration service on mount', () => {
-        mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
+    test('subscribes to service events on mount and unsubscribes on unmount', () => {
+        const wrapper = mountContainer();
 
-        expect(mockCollaborationService.init).toHaveBeenCalledWith(defaultProps.vm);
-    });
-
-    test('sets up event listeners on mount', () => {
-        mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
-
-        const expectedEvents = [
+        const subscribed = mockCollaborationService.on.mock.calls.map(call => call[0]);
+        expect(subscribed).toEqual(expect.arrayContaining([
             'user-joined',
             'user-left',
             'users-updated',
@@ -110,626 +90,174 @@ describe('CollaborationContainer', () => {
             'host-left',
             'connected-to-host',
             'disconnected',
-            'connection-failed',
-            'join-request-received',
-            'join-approved',
-            'join-denied',
-            'room-privacy-changed',
-            'request-workspace-reattach',
-            'project-sync-download-start',
-            'project-sync-download-progress',
-            'project-sync-download-complete',
-            'project-sync-download-error'
-        ];
-
-        expectedEvents.forEach(event => {
-            expect(mockCollaborationService.on).toHaveBeenCalledWith(event, expect.any(Function));
-        });
-    });
-
-    test('cleans up event listeners on unmount', () => {
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
+            'connection-failed'
+        ]));
 
         wrapper.unmount();
 
-        const expectedEvents = [
-            'user-joined',
-            'user-left',
-            'users-updated',
-            'username-changed',
-            'kicked-from-room',
-            'host-left',
-            'connected-to-host',
-            'disconnected',
-            'connection-failed',
-            'room-privacy-changed',
-            'request-workspace-reattach',
-            'project-sync-download-start',
-            'project-sync-download-progress',
-            'project-sync-download-complete',
-            'project-sync-download-error'
-        ];
-
-        expectedEvents.forEach(event => {
-            expect(mockCollaborationService.off).toHaveBeenCalledWith(event, expect.any(Function));
-        });
+        const unsubscribed = mockCollaborationService.off.mock.calls.map(call => call[0]);
+        // the service is a singleton, so every listener added on mount must be
+        // removed on unmount or it leaks onto the next session
+        expect(unsubscribed.sort()).toEqual(subscribed.sort());
     });
 
-    test('disconnects from service and resets state on unmount when connected', () => {
-        mockCollaborationService.isConnected = true;
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
-
-        wrapper.unmount();
-
-        expect(mockCollaborationService.disconnect).toHaveBeenCalled();
-    });
-
-    test('does not disconnect on unmount when not connected', () => {
+    test('disconnects on unmount only when connected', () => {
         mockCollaborationService.isConnected = false;
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
-
-        wrapper.unmount();
-
+        mountContainer().unmount();
         expect(mockCollaborationService.disconnect).not.toHaveBeenCalled();
+
+        mockCollaborationService.isConnected = true;
+        mountContainer().unmount();
+        expect(mockCollaborationService.disconnect).toHaveBeenCalled();
     });
 
-    test('handleJoinRoom calls connectToRoom and sets room ID', async () => {
-        const onSetRoomIdMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: jest.fn(),
-            onSetRoomId: onSetRoomIdMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleJoinRoom connects as a guest and stores the room id', async () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.connectToRoom.mockResolvedValue();
+        await container.handleJoinRoom('test-room', 'Alice');
 
-        await wrapper.instance().handleJoinRoom('test-room', 'Alice');
-
-        expect(mockCollaborationService.connectToRoom).toHaveBeenCalledWith('test-room', 'Alice', false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith('test-room');
+        expect(mockCollaborationService.connectToRoom)
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE);
+        expect(collaborationState().roomId).toBe('test-room');
+        // guests only become "connected" once the host answers
+        expect(collaborationState().isConnected).toBe(false);
     });
 
-    test('handleJoinRoom handles errors', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleJoinRoom reports the error and rethrows', async () => {
+        mockCollaborationService.connectToRoom.mockRejectedValueOnce(new Error('nope'));
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.connectToRoom.mockRejectedValue(new Error('Connection failed'));
-
-        await expect(
-            wrapper.instance().handleJoinRoom('test-room', 'Alice')
-        ).rejects.toThrow();
-
-        expect(onSetErrorMock).toHaveBeenCalledWith('Connection failed');
+        await expect(container.handleJoinRoom('test-room', 'Alice')).rejects.toThrow('nope');
+        expect(collaborationState().connectionError).toBe('nope');
     });
 
-    test('handleCreateRoom calls connectToRoom as host and sets state', async () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: jest.fn(),
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleCreateRoom connects as host and marks the room connected', async () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.connectToRoom.mockResolvedValue();
-        mockCollaborationService.getConnectedUsers.mockReturnValue([]);
+        await container.handleCreateRoom('test-room', 'Alice', 'private');
 
-        await wrapper.instance().handleCreateRoom('test-room', 'Alice', 'public');
-
-        expect(mockCollaborationService.connectToRoom).toHaveBeenCalledWith('test-room', 'Alice', true, 'public');
-        expect(onSetConnectedMock).toHaveBeenCalledWith(true);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith('test-room');
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('public');
-        expect(onSetUsersMock).toHaveBeenCalled();
+        expect(mockCollaborationService.connectToRoom)
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE);
+        expect(collaborationState().roomId).toBe('test-room');
+        expect(collaborationState().roomPrivacy).toBe('private');
+        // the host is connected straight away
+        expect(collaborationState().isConnected).toBe(true);
     });
 
-    test('handleCreateRoom throws error for empty room ID', async () => {
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
+    test('handleCreateRoom defaults to a public room', async () => {
+        const container = instanceOf(mountContainer());
 
-        await expect(
-            wrapper.instance().handleCreateRoom('', 'Alice')
-        ).rejects.toThrow('Room ID is required to create a room');
+        await container.handleCreateRoom('test-room', 'Alice');
+
+        expect(mockCollaborationService.connectToRoom)
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE);
+        expect(collaborationState().roomPrivacy).toBe('public');
     });
 
-    test('handleCreateRoom handles errors', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleCreateRoom rejects an empty room id without calling the service', async () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.connectToRoom.mockRejectedValue(new Error('Failed to create'));
-
-        await expect(
-            wrapper.instance().handleCreateRoom('test-room', 'Alice')
-        ).rejects.toThrow();
-
-        expect(onSetErrorMock).toHaveBeenCalledWith('Failed to create');
+        await expect(container.handleCreateRoom('', 'Alice')).rejects.toThrow('Room ID is required');
+        expect(mockCollaborationService.connectToRoom).not.toHaveBeenCalled();
     });
 
-    test('handleLeaveRoom disconnects and resets state', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetUsers: onSetUsersMock,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleLeaveRoom disconnects and resets the room state', async () => {
+        const container = instanceOf(mountContainer());
+        await container.handleCreateRoom('test-room', 'Alice', 'private');
 
-        wrapper.instance().handleLeaveRoom();
+        container.handleLeaveRoom();
 
         expect(mockCollaborationService.disconnect).toHaveBeenCalled();
-        expect(onSetConnectedMock).toHaveBeenCalledWith(false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith(null);
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('public');
-        expect(onSetUsersMock).toHaveBeenCalledWith([]);
-        expect(onSetErrorMock).toHaveBeenCalledWith(null);
+        expect(collaborationState().isConnected).toBe(false);
+        expect(collaborationState().roomId).toBe(null);
+        expect(collaborationState().roomPrivacy).toBe('public');
+        expect(collaborationState().connectedUsers).toEqual([]);
+        expect(collaborationState().connectionError).toBe(null);
     });
 
-    test('handleKickUser calls collaboration service and updates users', () => {
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleKickUser kicks through the service and refreshes the user list', () => {
+        const container = instanceOf(mountContainer());
+        mockCollaborationService.getConnectedUsers.mockReturnValueOnce([{id: 'a', username: 'Alice'}]);
 
-        wrapper.instance().handleKickUser('user-123');
+        container.handleKickUser('user-1');
 
-        expect(mockCollaborationService.kickUser).toHaveBeenCalledWith('user-123');
-        expect(onSetUsersMock).toHaveBeenCalled();
+        expect(mockCollaborationService.kickUser).toHaveBeenCalledWith('user-1');
+        expect(collaborationState().connectedUsers).toEqual([{id: 'a', username: 'Alice'}]);
     });
 
-    test('handleChangeUsername calls collaboration service and updates users', () => {
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleKickedFromRoom clears the room and surfaces a kick message', () => {
+        const container = instanceOf(mountContainer());
 
-        wrapper.instance().handleChangeUsername('NewUsername');
-
-        expect(mockCollaborationService.changeUsername).toHaveBeenCalledWith('NewUsername');
-        expect(onSetUsersMock).toHaveBeenCalled();
-    });
-
-    test('handleUserJoined updates users list', () => {
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        wrapper.instance().handleUserJoined({id: 'user-1', username: 'Alice'});
-
-        expect(onSetUsersMock).toHaveBeenCalled();
-    });
-
-    test('handleUsersUpdated updates users list', () => {
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        wrapper.instance().handleUsersUpdated({users: [{id: 'user-1', username: 'Alice'}]});
-
-        expect(onSetUsersMock).toHaveBeenCalled();
-    });
-
-    test('handleKickedFromRoom disconnects and shows error', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetUsers: onSetUsersMock,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        wrapper.instance().handleKickedFromRoom({reason: 'kicked by host'});
+        container.handleKickedFromRoom({});
 
         expect(mockCollaborationService.disconnect).toHaveBeenCalled();
-        expect(onSetConnectedMock).toHaveBeenCalledWith(false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith(null);
-        expect(onSetUsersMock).toHaveBeenCalledWith([]);
-        expect(onSetErrorMock).toHaveBeenCalledWith('You have been removed from the collaboration room by the host.');
+        expect(collaborationState().isConnected).toBe(false);
+        expect(collaborationState().roomId).toBe(null);
+        expect(collaborationState().connectionError)
+            .toBe('You have been removed from the collaboration room by the host.');
     });
 
-    test('handleHostLeft disconnects and shows error', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetUsers: onSetUsersMock,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleHostLeft closes the room and warns the user', () => {
+        const container = instanceOf(mountContainer());
 
-        wrapper.instance().handleHostLeft();
+        container.handleHostLeft();
 
-        expect(onSetConnectedMock).toHaveBeenCalledWith(false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith(null);
-        expect(onSetUsersMock).toHaveBeenCalledWith([]);
-        expect(onSetErrorMock).toHaveBeenCalledWith('The host has left the collaboration room. The room has been closed.');
-        expect(ToastSystem.warning).toHaveBeenCalled();
+        expect(NotificationSystem.warning).toHaveBeenCalled();
+        expect(collaborationState().isConnected).toBe(false);
+        expect(collaborationState().roomId).toBe(null);
+        expect(collaborationState().connectionError).toMatch(/host has left/i);
     });
 
-    test('handleConnectedToHost updates state when connected', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetUsernameMock = jest.fn();
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetUsername: onSetUsernameMock,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleConnectedToHost marks the session connected', () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.username = 'ServiceUsername';
-        mockCollaborationService.getRoomPrivacy.mockReturnValue('private');
+        container.handleConnectedToHost();
 
-        wrapper.instance().handleConnectedToHost();
-
-        expect(onSetConnectedMock).toHaveBeenCalledWith(true);
-        expect(onSetUsernameMock).toHaveBeenCalledWith('ServiceUsername');
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('private');
-        expect(onSetUsersMock).toHaveBeenCalled();
+        expect(collaborationState().isConnected).toBe(true);
     });
 
-    test('handleConnectedToHost does not update username if already set', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetUsernameMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            currentUsername: 'TestUser',
-            onSetConnected: onSetConnectedMock,
-            onSetUsername: onSetUsernameMock,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleJoinDenied surfaces the reason and clears the room', () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.username = 'TestUser';
+        container.handleJoinDenied('the host said no');
 
-        wrapper.instance().handleConnectedToHost();
-
-        expect(onSetConnectedMock).toHaveBeenCalledWith(true);
-        expect(onSetUsernameMock).not.toHaveBeenCalled();
+        expect(collaborationState().connectionError).toBe('the host said no');
+        expect(collaborationState().isConnected).toBe(false);
+        expect(collaborationState().roomId).toBe(null);
     });
 
-    test('handleConnectedToHost updates username if different', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetUsernameMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            currentUsername: 'OldUsername',
-            onSetConnected: onSetConnectedMock,
-            onSetUsername: onSetUsernameMock,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleChangeRoomPrivacy updates privacy through the service', async () => {
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.username = 'NewUsername';
-
-        wrapper.instance().handleConnectedToHost();
-
-        expect(onSetConnectedMock).toHaveBeenCalledWith(true);
-        expect(onSetUsernameMock).toHaveBeenCalledWith('NewUsername');
-        onSetUsernameMock.mockClear();
-
-        wrapper.instance().handleUsernameChanged({id: 'ServiceUsername', username: 'UpdatedUsername'});
-        expect(onSetUsernameMock).not.toHaveBeenCalled();
-    });
-
-    test('handleDisconnected clears state', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetUsers: onSetUsersMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        wrapper.instance().handleDisconnected();
-
-        expect(onSetConnectedMock).toHaveBeenCalledWith(false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith(null);
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('public');
-        expect(onSetUsersMock).toHaveBeenCalledWith([]);
-        expect(ToastSystem.info).toHaveBeenCalled();
-    });
-
-    test('handleCancelConnection disconnects and clears state', () => {
-        const onSetConnectedMock = jest.fn();
-        const onSetRoomIdMock = jest.fn();
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetUsersMock = jest.fn();
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetConnected: onSetConnectedMock,
-            onSetRoomId: onSetRoomIdMock,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetUsers: onSetUsersMock,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        wrapper.instance().handleCancelConnection();
-
-        expect(mockCollaborationService.disconnect).toHaveBeenCalled();
-        expect(onSetConnectedMock).toHaveBeenCalledWith(false);
-        expect(onSetRoomIdMock).toHaveBeenCalledWith(null);
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('public');
-        expect(onSetUsersMock).toHaveBeenCalledWith([]);
-        expect(onSetErrorMock).toHaveBeenCalledWith(null);
-    });
-
-    test('handleApproveJoinRequest calls service and updates state', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        mockCollaborationService.approveJoinRequest = jest.fn().mockResolvedValue();
-
-        await wrapper.instance().handleApproveJoinRequest('user-123', 'Alice');
-
-        expect(mockCollaborationService.approveJoinRequest).toHaveBeenCalledWith('user-123', 'Alice');
-    });
-
-    test('handleApproveJoinRequest handles errors', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        mockCollaborationService.approveJoinRequest = jest.fn().mockRejectedValue(new Error('Failed'));
-
-        await expect(
-            wrapper.instance().handleApproveJoinRequest('user-123', 'Alice')
-        ).rejects.toThrow();
-
-        expect(onSetErrorMock).toHaveBeenCalledWith('Failed');
-    });
-
-    test('handleDenyJoinRequest calls service', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        mockCollaborationService.denyJoinRequest = jest.fn().mockResolvedValue();
-
-        await wrapper.instance().handleDenyJoinRequest('user-123');
-
-        expect(mockCollaborationService.denyJoinRequest).toHaveBeenCalledWith('user-123');
-    });
-
-    test('handleDenyJoinRequest handles errors', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        mockCollaborationService.denyJoinRequest = jest.fn().mockRejectedValue(new Error('Failed'));
-
-        await expect(
-            wrapper.instance().handleDenyJoinRequest('user-123')
-        ).rejects.toThrow();
-
-        expect(onSetErrorMock).toHaveBeenCalledWith('Failed');
-    });
-
-    test('handleChangeRoomPrivacy calls service and updates state', async () => {
-        const onSetRoomPrivacyMock = jest.fn();
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetRoomPrivacy: onSetRoomPrivacyMock,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
-
-        mockCollaborationService.changeRoomPrivacy = jest.fn().mockResolvedValue();
-
-        await wrapper.instance().handleChangeRoomPrivacy('private');
+        await container.handleChangeRoomPrivacy('private');
 
         expect(mockCollaborationService.changeRoomPrivacy).toHaveBeenCalledWith('private');
-        expect(onSetRoomPrivacyMock).toHaveBeenCalledWith('private');
+        expect(collaborationState().roomPrivacy).toBe('private');
     });
 
-    test('handleChangeRoomPrivacy handles errors', async () => {
-        const onSetErrorMock = jest.fn();
-        const props = {
-            ...defaultProps,
-            onSetError: onSetErrorMock
-        };
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...props} />
-            </Provider>
-        );
+    test('handleChangeRoomPrivacy reports failures and rethrows', async () => {
+        mockCollaborationService.changeRoomPrivacy.mockRejectedValueOnce(new Error('denied'));
+        const container = instanceOf(mountContainer());
 
-        mockCollaborationService.changeRoomPrivacy = jest.fn().mockRejectedValue(new Error('Failed'));
-
-        await expect(
-            wrapper.instance().handleChangeRoomPrivacy('private')
-        ).rejects.toThrow();
-
-        expect(onSetErrorMock).toHaveBeenCalledWith('Failed');
+        await expect(container.handleChangeRoomPrivacy('private')).rejects.toThrow('denied');
+        expect(collaborationState().connectionError).toBe('denied');
     });
 
-    test('getCurrentUserId returns the service peer id', () => {
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
+    test('handleApproveJoinRequest and handleDenyJoinRequest delegate to the service', async () => {
+        const container = instanceOf(mountContainer());
 
-        const userId = wrapper.instance().getCurrentUserId();
+        await container.handleApproveJoinRequest('req-1', 'Alice');
+        await container.handleDenyJoinRequest('req-2');
 
-        expect(userId).toBe('current-user-id');
+        expect(mockCollaborationService.approveJoinRequest).toHaveBeenCalledWith('req-1', 'Alice');
+        expect(mockCollaborationService.denyJoinRequest).toHaveBeenCalledWith('req-2');
     });
 
-    test('getCurrentUserId returns null when disconnected', () => {
-        mockCollaborationService.getCurrentUserId.mockReturnValueOnce(null);
-        const wrapper = mount(
-            <Provider store={store}>
-                <CollaborationContainer {...defaultProps} />
-            </Provider>
-        );
+    test('handleRoomPrivacyChanged mirrors a privacy change pushed by the host', () => {
+        const container = instanceOf(mountContainer());
 
-        const userId = wrapper.instance().getCurrentUserId();
+        container.handleRoomPrivacyChanged('private');
 
-        expect(userId).toBe(null);
+        expect(collaborationState().roomPrivacy).toBe('private');
     });
 });

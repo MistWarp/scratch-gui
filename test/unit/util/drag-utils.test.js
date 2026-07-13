@@ -1,4 +1,4 @@
-import {indexForPositionOnList} from '../../../src/lib/drag-utils';
+import {indexForPositionOnList} from '../../../src/lib/utils/drag';
 
 const box = (top, right, bottom, left) => ({top, right, bottom, left});
 

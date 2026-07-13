@@ -1,5 +1,4 @@
 import classNames from 'classnames';
-import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
@@ -659,8 +658,9 @@ const GUIComponent = props => {
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
         vm,
+        dispatch,
         ...componentProps
-    } = omit(props, 'dispatch');
+    } = props;
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
@@ -1100,6 +1100,21 @@ const GUIComponent = props => {
 GUIComponent.propTypes = {
     accountNavOpen: PropTypes.bool,
     activeTabIndex: PropTypes.number,
+    alertsVisible: PropTypes.bool,
+    connectionModalVisible: PropTypes.bool,
+    dispatch: PropTypes.func,
+    isTelemetryEnabled: PropTypes.bool,
+    locale: PropTypes.string,
+    onClickAbout: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.arrayOf(
+            PropTypes.shape({
+                title: PropTypes.string,
+                onClick: PropTypes.func
+            })
+        )
+    ]),
+    onProjectTelemetryEvent: PropTypes.func,
     authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),

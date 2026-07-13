@@ -105,7 +105,7 @@ describe('joining', () => {
             const joinPromise = transport.join('room1', {});
             peers[0].simulateOpen();
             await flush();
-            jest.runTimersToTime(15001);
+            jest.advanceTimersByTime(15001);
             let error = null;
             await joinPromise.catch(e => {
                 error = e;
@@ -271,13 +271,13 @@ describe('heartbeat', () => {
             transport.on('peer-disconnected', gone);
 
             now += 10000;
-            jest.runTimersToTime(10000);
+            jest.advanceTimersByTime(10000);
             expect(conn.sent.some(m => m.type === CTRL.PING)).toBe(true);
             expect(gone).not.toHaveBeenCalled();
 
             // No inbound data for > deadPeerTimeoutMs
             now += 31000;
-            jest.runTimersToTime(31000);
+            jest.advanceTimersByTime(31000);
             expect(gone).toHaveBeenCalledWith('client-1');
             transport.destroy();
         } finally {
@@ -306,7 +306,7 @@ describe('heartbeat', () => {
             for (let i = 0; i < 5; i++) {
                 now += 10000;
                 conn.simulateData(makeCtrl(CTRL.PONG, {}));
-                jest.runTimersToTime(10000);
+                jest.advanceTimersByTime(10000);
             }
             expect(gone).not.toHaveBeenCalled();
             transport.destroy();
@@ -340,7 +340,7 @@ describe('client reconnection', () => {
             peers[0].lastConnection.close();
             expect(reconnecting).toHaveBeenCalledWith({attempt: 1, delayMs: 1000});
 
-            jest.runTimersToTime(1000);
+            jest.advanceTimersByTime(1000);
             await flush();
             const redialConn = peers[0].lastConnection;
             expect(redialConn.peer).toBe(generateHostPeerId('room1'));
@@ -364,7 +364,7 @@ describe('client reconnection', () => {
 
             peers[0].lastConnection.close();
             for (let attempt = 1; attempt <= 10; attempt++) {
-                jest.runTimersToTime(16000);
+                jest.advanceTimersByTime(16000);
                 await flush();
                 if (attempt < 10) {
                     peers[0].lastConnection.simulateError(new Error('still down'));
@@ -391,7 +391,7 @@ describe('client reconnection', () => {
 
             peers[0].lastConnection.close();
             for (let i = 0; i < 6; i++) {
-                jest.runTimersToTime(16000);
+                jest.advanceTimersByTime(16000);
                 await flush();
                 peers[0].lastConnection.simulateError(new Error('down'));
                 await flush();
@@ -412,7 +412,7 @@ describe('client reconnection', () => {
             peers[0].lastConnection.close();
             expect(reconnecting).toHaveBeenCalledTimes(1);
             transport.destroy();
-            jest.runTimersToTime(60000);
+            jest.advanceTimersByTime(60000);
             await flush();
             // No further dials happened after destroy
             expect(peers[0].connections.length).toBe(1);

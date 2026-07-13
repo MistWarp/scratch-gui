@@ -1,7 +1,6 @@
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
-import omit from 'lodash.omit';
 import {connect} from 'react-redux';
 
 /**
@@ -78,7 +77,7 @@ const DropAreaHOC = function (dragTypes) {
                 }
             }
             render () {
-                const componentProps = omit(this.props, ['onDrop', 'dragInfo', 'componentRef']);
+                const {onDrop, dragInfo, componentRef, ...componentProps} = this.props;
                 return (
                     <WrappedComponent
                         containerRef={this.setRef}

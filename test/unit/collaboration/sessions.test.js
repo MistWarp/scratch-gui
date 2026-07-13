@@ -340,7 +340,7 @@ describe('gap recovery', () => {
             expect(clientA.session.lastAppliedSeq).toBe(3);
 
             // Gap timer fires -> ops-request -> host replays from its log.
-            jest.runTimersToTime(3000);
+            jest.advanceTimersByTime(3000);
             room.hub.flush();
             expect(clientB.session.lastAppliedSeq).toBe(3);
             room.expectConverged();
@@ -370,7 +370,7 @@ describe('gap recovery', () => {
             room.host.session.submitLocal(OP.BLOCK_EVENT, changeField('stage', 'b1', 'last'));
             room.hub.flush();
 
-            jest.runTimersToTime(3000);
+            jest.advanceTimersByTime(3000);
             room.hub.flush();
             expect(resync).toHaveBeenCalledWith(expect.stringMatching(/no longer covers/));
             room.destroy();

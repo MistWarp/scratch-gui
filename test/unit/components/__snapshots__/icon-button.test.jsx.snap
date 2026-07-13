@@ -3,17 +3,36 @@
 exports[`IconButtonComponent matches snapshot 1`] = `
 <div
   className="custom-class-name"
-  onClick={[Function]}
+  onClick={[MockFunction]}
   role="button"
 >
   <img
-    className={undefined}
     draggable={false}
     src="imgSrc"
+    theme={
+      Theme {
+        "accent": "red",
+        "blocks": "three",
+        "fonts": {
+          "google": [],
+          "history": [],
+          "system": [],
+        },
+        "gui": "light",
+        "id": 4,
+        "menuBarAlign": "center",
+        "name": undefined,
+        "wallpaper": {
+          "darkness": 0,
+          "gridVisible": true,
+          "history": [],
+          "opacity": 0.3,
+          "url": "",
+        },
+      }
+    }
   />
-  <div
-    className={undefined}
-  >
+  <div>
     <div>
       Text
     </div>

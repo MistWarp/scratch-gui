@@ -8,7 +8,7 @@ import {mountWithIntl} from '../../helpers/intl-helpers';
 import MenuBar from '../../../src/components/menu-bar/menu-bar';
 import {menuInitialState} from '../../../src/reducers/menus';
 import {LoadingState} from '../../../src/reducers/project-state';
-import {DEFAULT_THEME} from '../../../src/lib/themes';
+import {Theme} from '../../../src/lib/themes';
 
 import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
@@ -26,7 +26,7 @@ describe('MenuBar Component', () => {
                 loadingState: LoadingState.NOT_LOADED
             },
             theme: {
-                theme: DEFAULT_THEME
+                theme: new Theme()
             },
             timeTravel: {
                 year: 'NOW'

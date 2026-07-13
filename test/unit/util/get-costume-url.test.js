@@ -1,4 +1,4 @@
-import {HAS_FONT_REGEXP} from '../../../src/lib/get-costume-url';
+import {HAS_FONT_REGEXP} from '../../../src/lib/utils/get-costume-url';
 
 describe('SVG Font Parsing', () => {
     test('Has font regexp works', () => {

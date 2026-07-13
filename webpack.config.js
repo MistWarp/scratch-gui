@@ -61,8 +61,8 @@ const base = {
         alias: {
             'react': require.resolve('react'),
             'react-dom': require.resolve('react-dom'),
-            'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts'),
+            'react-tooltip$': path.resolve(__dirname, 'node_modules/react-tooltip/dist/react-tooltip.min.cjs'),
             'exports-loader': require.resolve('exports-loader')
         }
     },
