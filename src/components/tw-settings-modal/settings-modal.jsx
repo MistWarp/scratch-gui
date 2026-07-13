@@ -401,6 +401,18 @@ const settingDefinitions = {
             id: 'mw.settingsModal.hideOperatorArrowsHelp'
         }
     },
+    vanillaPalette: {
+        label: {
+            defaultMessage: 'Vanilla Compatible Blocks Only',
+            id: 'mw.settingsModal.vanillaPalette'
+        },
+        help: {
+            defaultMessage: 'Hides blocks that vanilla Scratch cannot run, such as the return block, ' +
+                'the switch/case blocks and the whole Assets category. Extendable operators stay ' +
+                'visible because they are saved in a vanilla compatible way.',
+            id: 'mw.settingsModal.vanillaPaletteHelp'
+        }
+    },
     unclipPalette: {
         label: {
             defaultMessage: 'Unclip Block Palette',
@@ -499,6 +511,7 @@ const HideExtensionButton = createBooleanSetting('HideExtensionButton', settingD
 const HideBackpack = createBooleanSetting('HideBackpack', settingDefinitions.hideBackpack);
 const HideOperatorArrows = createBooleanSetting('HideOperatorArrows', settingDefinitions.hideOperatorArrows);
 const UnclipPalette = createBooleanSetting('UnclipPalette', settingDefinitions.unclipPalette);
+const VanillaPalette = createBooleanSetting('VanillaPalette', settingDefinitions.vanillaPalette);
 
 const STYLE_OPTIONS = {
     'tab-style': [
@@ -927,6 +940,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: props.unclipPalette,
                             onChange: props.onUnclipPaletteChange
+                        })
+                    },
+                    {
+                        component: VanillaPalette,
+                        props: props => ({
+                            value: props.vanillaPalette,
+                            onChange: props.onVanillaPaletteChange
                         })
                     }
                 ]
@@ -1988,6 +2008,8 @@ SettingsModalComponent.propTypes = {
     onHideBackpackChange: PropTypes.func,
     hideOperatorArrows: PropTypes.bool,
     onHideOperatorArrowsChange: PropTypes.func,
+    vanillaPalette: PropTypes.bool,
+    onVanillaPaletteChange: PropTypes.func,
     tabStyle: PropTypes.string,
     onTabStyleChange: PropTypes.func,
     tabLooks: PropTypes.string,
