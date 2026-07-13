@@ -1,85 +1,13 @@
 // Rendering and block preview utilities
 
 import {renderBlock, getBlockHeight} from './BlockRenderer.js';
-import {createSpritePreviewItem, createCostumePreviewItem, createSectionHeader, createSoundPreviewItem} from './uiComponents.js';
-
-/**
- * Render a custom block to SVG
- * @param {any} customBlockData Custom block data
- * @param {any} svgBlock SVG group element
- * @param {any} Blockly Blockly instance
- * @param {any} vm VM instance
- * @returns {{width: number, height: number} | null} Rendered block dimensions or null on failure
- */
-const renderCustomBlock = (customBlockData, svgBlock, Blockly, vm) => {
-    const currentEditingTarget = vm.editingTarget;
-    const targetWithBlock = vm.runtime.getTargetById(customBlockData.targetId);
-    
-    if (!targetWithBlock) {
-        return null;
-    }
-    
-    vm.setEditingTarget(customBlockData.targetId);
-        
-    try {
-        const workspace = Blockly.getMainWorkspace();
-        if (workspace) {
-            // Use blockId to get the full definition hat block, not just the prototype
-            const blocklyBlock = workspace.getBlockById(customBlockData.blockId);
-            if (blocklyBlock) {
-                const blockXml = Blockly.Xml.blockToDom(blocklyBlock);
-
-                const nextEl = blockXml.querySelector('next');
-                if (nextEl) nextEl.remove();
-
-                Blockly.Events.disable();
-                let tempBlock = null;
-                try {
-                    tempBlock = Blockly.Xml.domToBlock(blockXml, workspace);
-                    
-                    if (tempBlock && tempBlock.getSvgRoot()) {
-                        const svgClone = tempBlock.getSvgRoot().cloneNode(true);
-                        svgBlock.appendChild(svgClone);
-                        
-                        const bbox = tempBlock.getBoundingRectangle();
-                        const blockWidth = bbox.right - bbox.left;
-                        const blockHeight = bbox.bottom - bbox.top;
-                        
-                        if (!isNaN(blockWidth) && !isNaN(blockHeight) &&
-                            isFinite(blockWidth) && isFinite(blockHeight) &&
-                            blockWidth > 0 && blockHeight > 0) {
-                            return {
-                                width: blockWidth,
-                                height: blockHeight
-                            };
-                        }
-                    }
-                } finally {
-                    // Re-enable events before disposing
-                    Blockly.Events.enable();
-                    
-                    // Dispose temp block safely
-                    if (tempBlock) {
-                        try {
-                            tempBlock.dispose(false);
-                        } catch (disposeError) {
-                            // Ignore dispose errors for temp blocks
-                            console.warn('Error disposing temp block:', disposeError);
-                        }
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        console.error('Error rendering custom block:', e);
-    } finally {
-        if (currentEditingTarget) {
-            vm.setEditingTarget(currentEditingTarget.id);
-        }
-    }
-    
-    return null;
-};
+import {
+    createSpritePreviewItem,
+    createCostumePreviewItem,
+    createSectionHeader,
+    createSoundPreviewItem,
+    createCustomBlockPreviewItem
+} from './uiComponents.js';
 
 /**
  * Render a menu item to SVG
@@ -106,7 +34,7 @@ const renderMenuItem = (result, svgBlock, previewWidth, previewScale, Blockly, v
         svgBlock.appendChild(foreignObject);
         
         renderedBlock = {width: previewWidth / previewScale, height: height};
-    } else if (result.isSprite || result.isCostume || result.isSound) {
+    } else if (result.isSprite || result.isCostume || result.isSound || result.isCustomBlock) {
         height = 60;
         const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         foreignObject.setAttribute('width', `${previewWidth / previewScale}`);
@@ -119,20 +47,13 @@ const renderMenuItem = (result, svgBlock, previewWidth, previewScale, Blockly, v
             item = createCostumePreviewItem(result.costumeData);
         } else if (result.isSound) {
             item = createSoundPreviewItem(result.soundData);
+        } else if (result.isCustomBlock) {
+            item = createCustomBlockPreviewItem(result.customBlockData);
         }
 
         if (item) {
             foreignObject.appendChild(item);
             svgBlock.appendChild(foreignObject);
-            renderedBlock = {width: previewWidth / previewScale, height: height};
-        }
-    } else if (result.isCustomBlock) {
-        renderedBlock = renderCustomBlock(result.customBlockData, svgBlock, Blockly, vm);
-        
-        if (renderedBlock && renderedBlock.height) {
-            height = renderedBlock.height;
-        } else {
-            height = 120;
             renderedBlock = {width: previewWidth / previewScale, height: height};
         }
     } else if (result.block) {
@@ -173,7 +94,6 @@ const calculateActualHeight = (result, renderedBlock, fallbackHeight) => {
 };
 
 export {
-    renderCustomBlock,
     renderMenuItem,
     calculateActualHeight
 };

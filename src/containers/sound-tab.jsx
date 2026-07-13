@@ -11,7 +11,6 @@ import addSoundFromLibraryIcon from '../components/asset-panel/icon--add-sound-l
 import addSoundFromRecordingIcon from '../components/asset-panel/icon--add-sound-record.svg';
 import fileUploadIcon from '../components/action-menu/icon--file-upload.svg';
 import surpriseIcon from '../components/action-menu/icon--surprise.svg';
-import searchIcon from '../components/action-menu/icon--search.svg';
 
 import RecordModal from './record-modal.jsx';
 import SoundEditor from './sound-editor.jsx';
@@ -40,6 +39,29 @@ import {
 
 import {setRestore} from '../reducers/restore-deletion';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
+
+const messages = defineMessages({
+    fileUploadSound: {
+        defaultMessage: 'Upload Sound',
+        description: 'Button to upload sound from file in the editor tab',
+        id: 'gui.soundTab.fileUploadSound'
+    },
+    surpriseSound: {
+        defaultMessage: 'Surprise',
+        description: 'Button to get a random sound in the editor tab',
+        id: 'gui.soundTab.surpriseSound'
+    },
+    recordSound: {
+        defaultMessage: 'Record',
+        description: 'Button to record a sound in the editor tab',
+        id: 'gui.soundTab.recordSound'
+    },
+    addSound: {
+        defaultMessage: 'Choose a Sound',
+        description: 'Button to add a sound in the editor tab',
+        id: 'gui.soundTab.addSoundFromLibrary'
+    }
+});
 
 class SoundTab extends React.Component {
     constructor (props) {
@@ -188,7 +210,7 @@ class SoundTab extends React.Component {
             return null;
         }
 
-        const isSupported = !!(vm.runtime.audioEngine && new SharedAudioContext());
+        const isSupported = !!(vm.runtime.audioEngine && SharedAudioContext());
 
         const sprite = vm.editingTarget.sprite;
 
@@ -200,29 +222,6 @@ class SoundTab extends React.Component {
                 dragPayload: sound
             }
         )) : [];
-
-        const messages = defineMessages({
-            fileUploadSound: {
-                defaultMessage: 'Upload Sound',
-                description: 'Button to upload sound from file in the editor tab',
-                id: 'gui.soundTab.fileUploadSound'
-            },
-            surpriseSound: {
-                defaultMessage: 'Surprise',
-                description: 'Button to get a random sound in the editor tab',
-                id: 'gui.soundTab.surpriseSound'
-            },
-            recordSound: {
-                defaultMessage: 'Record',
-                description: 'Button to record a sound in the editor tab',
-                id: 'gui.soundTab.recordSound'
-            },
-            addSound: {
-                defaultMessage: 'Choose a Sound',
-                description: 'Button to add a sound in the editor tab',
-                id: 'gui.soundTab.addSoundFromLibrary'
-            }
-        });
 
         return (
             <AssetPanel

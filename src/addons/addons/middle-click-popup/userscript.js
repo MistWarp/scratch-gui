@@ -2,6 +2,9 @@
 /* eslint-disable */
 
 import WorkspaceQuerier, { QueryResult } from "./WorkspaceQuerier.js";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {Search} from 'lucide-react';
 import { getBlockHeight, BlockComponent } from "./BlockRenderer.js";
 import { BlockInstance, BlockShape, BlockTypeInfo } from "./BlockTypeInfo.js";
 import { onClearTextWidthCache } from "./module.js";
@@ -15,6 +18,7 @@ import {
     handleSoundSelection,
     handleBlockSelection
 } from "./selectionUtils.js";
+import {updateCallbacks} from '../../../lib/shortcuts/event-router.js';
 
 /**
  * @param {{addon: any, msg: any}} param0
@@ -23,10 +27,8 @@ export default async function ({ addon, msg }) {
     const Blockly = await addon.tab.traps.getBlockly();
     const vm = addon.tab.traps.vm;
 
-    const PREVIEW_LIMIT = 100;
-    const SEARCH_DEBOUNCE_MS = 100;
-    /** @type {ReturnType<typeof setTimeout> | null} */
-    let searchDebounceTimer = null;
+    const PREVIEW_LIMIT = 32;
+    let searchFrame = null;
 
     const popupRoot = document.body.appendChild(document.createElement('div'));
     popupRoot.classList.add('sa-mcp-root');
@@ -36,23 +38,16 @@ export default async function ({ addon, msg }) {
     const popupContainer = popupRoot.appendChild(document.createElement('div'));
     popupContainer.classList.add('sa-mcp-container');
     popupContainer.classList.add('sa-mcp-container-collapsed');
+    popupContainer.setAttribute('aria-label', 'Spotlight search');
+    popupContainer.setAttribute('role', 'dialog');
 
     const popupInputContainer = popupContainer.appendChild(document.createElement('div'));
     popupInputContainer.classList.add(addon.tab.scratchClass('input_input-form'));
     popupInputContainer.classList.add('sa-mcp-input-wrapper');
 
-    const popupSearchIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    popupSearchIcon.setAttribute('viewBox', '0 0 24 24');
-    popupSearchIcon.setAttribute('fill', 'none');
-    popupSearchIcon.setAttribute('stroke', '#999');
-    popupSearchIcon.setAttribute('stroke-width', '2');
-    popupSearchIcon.setAttribute('stroke-linecap', 'round');
-    popupSearchIcon.setAttribute('stroke-linejoin', 'round');
+    const popupSearchIcon = popupInputContainer.appendChild(document.createElement('span'));
     popupSearchIcon.classList.add('sa-mcp-search-icon');
-    const searchIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    searchIconPath.setAttribute('d', 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z');
-    popupSearchIcon.appendChild(searchIconPath);
-    popupInputContainer.appendChild(popupSearchIcon);
+    ReactDOM.render(React.createElement(Search, {size: 20, strokeWidth: 2}), popupSearchIcon);
 
     const popupInputSuggestion = popupInputContainer.appendChild(document.createElement('input'));
     popupInputSuggestion.classList.add('sa-mcp-input-suggestion');
@@ -60,6 +55,9 @@ export default async function ({ addon, msg }) {
     const popupInput = popupInputContainer.appendChild(document.createElement('input'));
     popupInput.classList.add('sa-mcp-input');
     popupInput.setAttribute('autocomplete', 'off');
+    popupInput.setAttribute('aria-label', 'Search blocks and project assets');
+    popupInput.setAttribute('placeholder', 'Search blocks, sprites, costumes, and sounds');
+    popupInput.setAttribute('role', 'searchbox');
 
     const popupResultBox = popupContainer.appendChild(document.createElement('div'));
     popupResultBox.classList.add('sa-mcp-result-box');
@@ -70,32 +68,9 @@ export default async function ({ addon, msg }) {
 
     const popupStatusBar = popupContainer.appendChild(document.createElement('div'));
     popupStatusBar.classList.add('sa-mcp-status-bar');
-    popupStatusBar.style.display = 'none';
-
-    const popupPreviewScrollbarSVG = popupContainer.appendChild(
-        document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    );
-    popupPreviewScrollbarSVG.classList.add(
-        'sa-mcp-preview-scrollbar',
-        'blocklyScrollbarVertical',
-        'blocklyMainWorkspaceScrollbar'
-    );
-    popupPreviewScrollbarSVG.style.display = 'none';
-
-    const popupPreviewScrollbarBackground = popupPreviewScrollbarSVG.appendChild(
-        document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    );
-    popupPreviewScrollbarBackground.setAttribute('width', '11');
-    popupPreviewScrollbarBackground.classList.add('blocklyScrollbarBackground');
-
-    const popupPreviewScrollbarHandle = popupPreviewScrollbarSVG.appendChild(
-        document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    );
-    popupPreviewScrollbarHandle.setAttribute('rx', '3');
-    popupPreviewScrollbarHandle.setAttribute('ry', '3');
-    popupPreviewScrollbarHandle.setAttribute('width', '6');
-    popupPreviewScrollbarHandle.setAttribute('x', '2.5');
-    popupPreviewScrollbarHandle.classList.add('blocklyScrollbarHandle');
+    popupStatusBar.setAttribute('aria-live', 'polite');
+    const popupStatusText = popupStatusBar.appendChild(document.createElement('span'));
+    popupStatusText.textContent = 'Type to search';
 
     const popupPreviewBlocks = popupPreviewContainer.appendChild(
         document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -139,6 +114,7 @@ export default async function ({ addon, msg }) {
     let selectedPreviewIdx = 0;
     /** @type {BlockTypeInfo[]?} */
     let blockTypes = null;
+    let indexedTargetId = null;
     let limited = false;
 
     let allowMenuClose = true;
@@ -173,6 +149,8 @@ export default async function ({ addon, msg }) {
 
         isCenteredMode = centered;
         searchMode = centered ? 'everything' : 'blocks';
+        popupRoot.classList.toggle('sa-mcp-centered', centered);
+        popupContainer.setAttribute('aria-modal', `${centered}`);
 
         previewScale = window.innerWidth * 0.00005 + addon.settings.get('popup_scale') / 100;
 
@@ -182,7 +160,7 @@ export default async function ({ addon, msg }) {
         }
 
         if (centered) {
-            previewWidth = Math.min(window.innerWidth * 0.6, 600);
+            previewWidth = Math.min(window.innerWidth - 32, 680);
         } else {
             previewWidth = (window.innerWidth * addon.settings.get('popup_width')) / 100;
         }
@@ -192,7 +170,9 @@ export default async function ({ addon, msg }) {
             previewWidth = 480; // Default width
         }
 
-        previewMaxHeight = (window.innerHeight * addon.settings.get('popup_max_height')) / 100;
+        previewMaxHeight = centered ?
+            Math.min(window.innerHeight * 0.62, 620) :
+            (window.innerHeight * addon.settings.get('popup_max_height')) / 100;
 
         // Validate previewMaxHeight
         if (isNaN(previewMaxHeight) || !isFinite(previewMaxHeight) || previewMaxHeight <= 0) {
@@ -202,38 +182,43 @@ export default async function ({ addon, msg }) {
         popupContainer.style.width = `${previewWidth}px`;
 
         if (centered) {
-            previewWidth = 600;
             popupOrigin = {
-                x: window.innerWidth / 2 - previewWidth / 2,
-                y: window.innerHeight / 2
+                x: window.innerWidth / 2,
+                y: Math.min(96, window.innerHeight * 0.12)
             };
             popupPosition = {
-                x: (window.innerWidth - previewWidth) / 2 - 30,
-                y: (window.innerHeight - 50) / 2 - 300
+                x: (window.innerWidth - previewWidth) / 2,
+                y: Math.min(96, window.innerHeight * 0.12)
             };
+            popupRoot.style.top = '';
+            popupRoot.style.left = '';
         } else {
             popupOrigin = { x: mousePosition.x, y: mousePosition.y };
             popupPosition = { x: mousePosition.x + 16, y: mousePosition.y - 8 };
+            popupRoot.style.top = `${popupPosition.y}px`;
+            popupRoot.style.left = `${popupPosition.x}px`;
         }
 
-        // Set initial position immediately
-        popupRoot.style.top = `${popupPosition.y}px`;
-        popupRoot.style.left = `${popupPosition.x}px`;
-
         popupInput.value = '';
+        popupInputSuggestion.value = '';
+        popupStatusText.textContent = 'Type to search';
 
         // Show the popup immediately
         popupRoot.style.display = '';
         popupInput.focus();
 
-        // Load blocks asynchronously
+        if (blockTypes && indexedTargetId === (vm.editingTarget && vm.editingTarget.id)) {
+            doPerformSearch();
+            return;
+        }
+
+        // Indexing is deferred so the shell appears immediately.
         requestAnimationFrame(() => {
             const toolbox = workspace.getToolbox();
             if (!toolbox || !toolbox.flyout_ || !toolbox.flyout_.getWorkspace()) {
                 console.warn('Middle-click popup: Toolbox not ready yet, retrying...');
                 // Show a loading message
-                popupStatusBar.textContent = 'Loading blocks...';
-                popupStatusBar.style.display = '';
+                popupStatusText.textContent = 'Loading blocks...';
 
                 // Retry after a short delay
                 setTimeout(() => {
@@ -252,12 +237,12 @@ export default async function ({ addon, msg }) {
     function loadBlockTypes(workspace) {
         try {
             blockTypes = BlockTypeInfo.getBlocks(Blockly, vm, workspace, msg);
+            indexedTargetId = vm.editingTarget && vm.editingTarget.id;
 
             if (!blockTypes || blockTypes.length === 0) {
                 console.warn('Middle-click popup: No block types available, showing empty search');
                 blockTypes = [];
-                popupStatusBar.textContent = 'No blocks available';
-                popupStatusBar.style.display = '';
+                popupStatusText.textContent = 'No blocks available';
                 return;
             }
 
@@ -276,8 +261,7 @@ export default async function ({ addon, msg }) {
             doPerformSearch();
         } catch (error) {
             console.error('Middle-click popup: Error loading blocks', error);
-            popupStatusBar.textContent = 'Error loading blocks';
-            popupStatusBar.style.display = '';
+            popupStatusText.textContent = 'Error loading blocks';
         }
     }
 
@@ -286,17 +270,15 @@ export default async function ({ addon, msg }) {
             popupOrigin = null;
             popupPosition = null;
             popupRoot.style.display = 'none';
-            blockTypes = null;
-            querier.clearWorkspaceIndex();
+            if (searchFrame) cancelAnimationFrame(searchFrame);
+            searchFrame = null;
         }
     }
 
     popupInput.addEventListener('input', updateInput);
 
     function updateInput() {
-        if (searchDebounceTimer) {
-            clearTimeout(searchDebounceTimer);
-        }
+        if (searchFrame) cancelAnimationFrame(searchFrame);
 
         if (popupInput.value.trim().length === 0) {
             popupContainer.classList.add('sa-mcp-container-collapsed');
@@ -306,25 +288,22 @@ export default async function ({ addon, msg }) {
 
         popupContainer.classList.remove('sa-mcp-container-collapsed');
 
-        popupStatusBar.textContent = 'Searching...';
-        popupStatusBar.style.display = '';
-
-        searchDebounceTimer = setTimeout(doPerformSearch, SEARCH_DEBOUNCE_MS);
+        popupStatusText.textContent = 'Searching...';
+        searchFrame = requestAnimationFrame(() => {
+            searchFrame = null;
+            doPerformSearch();
+        });
     }
 
     function doPerformSearch() {
-        const searchStartTime = performance.now();
-
         // Check if blocks are loaded and workspace is indexed
         if (!blockTypes) {
-            popupStatusBar.textContent = 'Loading blocks...';
-            popupStatusBar.style.display = '';
+            popupStatusText.textContent = 'Loading blocks...';
             return;
         }
 
         if (blockTypes.length === 0) {
-            popupStatusBar.textContent = 'No blocks available';
-            popupStatusBar.style.display = '';
+            popupStatusText.textContent = 'No blocks available';
             return;
         }
 
@@ -335,7 +314,7 @@ export default async function ({ addon, msg }) {
 
         // Handle math/conversion results display
         if (popupInput.value.trim().length === 0) {
-            popupStatusBar.style.display = 'none';
+            popupStatusText.textContent = 'Type to search';
             popupResultBox.style.display = 'none';
         } else {
             if (searchResult.mathResult !== null) {
@@ -354,30 +333,11 @@ export default async function ({ addon, msg }) {
                 popupResultBox.classList.remove('sa-mcp-result-math', 'sa-mcp-result-conversion');
             }
 
-            const searchTime = (performance.now() - searchStartTime).toFixed(1);
             const hasComputed = popupResultBox.style.display !== 'none';
-            const searchCount = blockList.length;
-
-            let statusText = '';
-            if (hasComputed && searchCount > 0) {
-                statusText = `${searchCount} result${searchCount !== 1 ? 's' : ''}`;
-            } else if (searchCount > 0) {
-                statusText = `${searchCount} result${searchCount !== 1 ? 's' : ''}`;
-            } else {
-                statusText = 'No results found';
-            }
-            statusText += ` (${searchTime}ms)`;
-
-            if (limited) {
-                popupStatusBar.textContent = statusText + ' - Results limited';
-                popupStatusBar.style.display = '';
-            } else if (blockList.length === 0 && !hasComputed) {
-                popupStatusBar.textContent = statusText;
-                popupStatusBar.style.display = '';
-            } else {
-                popupStatusBar.textContent = statusText;
-                popupStatusBar.style.display = '';
-            }
+            const searchCount = blockList.filter(result => !result.isHeader).length;
+            popupStatusText.textContent = searchCount > 0 ?
+                `${searchCount} result${searchCount === 1 ? '' : 's'}${limited ? ' · best matches shown' : ''}` :
+                (hasComputed ? 'Calculated result' : 'No results found');
         }
 
         // @ts-ignore Delete the old previews
@@ -424,6 +384,8 @@ export default async function ({ addon, msg }) {
             }
 
             svgBackground.classList.add('sa-mcp-preview-block-bg');
+            svgBackground.setAttribute('x', '8');
+            svgBackground.setAttribute('width', `${previewWidth - 16}`);
             svgBackground.addEventListener('mousemove', mouseMoveListener);
             svgBackground.addEventListener('mousedown', mouseDownListener);
             svgBlock.addEventListener('mousemove', mouseMoveListener);
@@ -432,7 +394,8 @@ export default async function ({ addon, msg }) {
 
             // For custom blocks, headers, sprites, and costumes, position background at y
             // For regular blocks, add some offset
-            const bgOffset = (result.isHeader || result.isSprite || result.isCostume || result.isSound) ? 0 : actualHeight / 10;
+            const bgOffset = (result.isHeader || result.isSprite || result.isCostume ||
+                result.isSound || result.isCustomBlock) ? 0 : actualHeight / 10;
             svgBackground.setAttribute('transform', `translate(0, ${(y + bgOffset) * previewScale})`);
             svgBackground.setAttribute('height', `${actualHeight * previewScale}px`);
 
@@ -475,8 +438,6 @@ export default async function ({ addon, msg }) {
 
         popupPreviewBlocks.setAttribute('height', `${isNaN(totalHeight) ? previewMinHeight : totalHeight}px`);
         popupPreviewContainer.style.height = `${previewHeight}px`;
-        popupPreviewScrollbarSVG.style.height = `${previewHeight}px`;
-        popupPreviewScrollbarBackground.setAttribute('height', `${previewHeight}`);
         popupInputContainer.dataset.error = `${limited}`;
 
         // Adjust position if it goes off screen (only for non-centered mode)
@@ -499,7 +460,6 @@ export default async function ({ addon, msg }) {
         selectedPreviewIdx = -1;
         updateSelection(0);
         updateCursor();
-        updateScrollbar();
     }
 
     function updateSelection(/** @type {number} */ newIdx) {
@@ -532,10 +492,9 @@ export default async function ({ addon, msg }) {
             newSelection.svgBackground.classList.add('sa-mcp-preview-block-bg-selection');
             newSelection.svgBlock.classList.add('sa-mcp-preview-block-selection');
 
-            // Smooth scroll with better behavior
             newSelection.svgBackground.scrollIntoView({
                 block: 'nearest',
-                behavior: 'smooth'
+                behavior: 'auto'
             });
 
             if (newSelection.autocompleteFactory) {
@@ -564,15 +523,10 @@ export default async function ({ addon, msg }) {
             let blockX = 12;
             let blockY = 0;
 
-            if (preview.isHeader || preview.isSprite || preview.isCostume || preview.isSound) {
+            if (preview.isHeader || preview.isSprite || preview.isCostume || preview.isSound ||
+                preview.isCustomBlock) {
+                blockX = 0;
                 blockY = y * previewScale;
-            } else if (preview.isCustomBlock) {
-                // Custom blocks need more left padding and more top padding
-                blockX = 22;
-                if (blockX + preview.renderedBlock.width > previewWidth / previewScale) {
-                    blockX += (previewWidth / previewScale - blockX - preview.renderedBlock.width) * previewScale * cursorPosRel;
-                }
-                blockY = (y + 45) * previewScale;
             } else {
                 // Regular blocks
                 if (blockX + preview.renderedBlock.width > previewWidth / previewScale) {
@@ -585,13 +539,8 @@ export default async function ({ addon, msg }) {
 
             if (preview.isHeader) {
                 y += 40;
-            } else if (preview.isSprite || preview.isCostume || preview.isSound) {
+            } else if (preview.isSprite || preview.isCostume || preview.isSound || preview.isCustomBlock) {
                 y += 60;
-            } else if (preview.isCustomBlock) {
-                const customHeight = (preview.renderedBlock && typeof preview.renderedBlock === 'object' && 'height' in preview.renderedBlock)
-                    ? preview.renderedBlock.height
-                    : undefined;
-                y += (customHeight && !isNaN(customHeight)) ? (customHeight + 10) : 60;
             } else if (preview.block) {
                 const blockHeight = getBlockHeight(preview.block);
                 y += (blockHeight && !isNaN(blockHeight)) ? blockHeight : 40;
@@ -599,30 +548,6 @@ export default async function ({ addon, msg }) {
         }
 
         popupInputSuggestion.scrollLeft = popupInput.scrollLeft;
-    }
-
-    popupPreviewContainer.addEventListener('scroll', updateScrollbar);
-
-    function updateScrollbar() {
-        const scrollTop = popupPreviewContainer.scrollTop;
-        const scrollY = popupPreviewContainer.scrollHeight;
-
-        if (scrollY <= previewHeight || !previewHeight || isNaN(previewHeight) || isNaN(scrollY)) {
-            popupPreviewScrollbarSVG.style.display = 'none';
-            return;
-        }
-
-        const scrollbarHeight = (previewHeight / scrollY) * previewHeight;
-        const scrollbarY = (scrollTop / scrollY) * previewHeight;
-
-        // Ensure values are valid numbers before setting attributes
-        if (!isNaN(scrollbarHeight) && !isNaN(scrollbarY) && scrollbarHeight > 0) {
-            popupPreviewScrollbarSVG.style.display = '';
-            popupPreviewScrollbarHandle.setAttribute('height', `${scrollbarHeight}`);
-            popupPreviewScrollbarHandle.setAttribute('y', `${scrollbarY}`);
-        } else {
-            popupPreviewScrollbarSVG.style.display = 'none';
-        }
     }
 
     function selectBlock() {
@@ -745,20 +670,21 @@ export default async function ({ addon, msg }) {
 
     popupInput.addEventListener('focusout', closePopup);
 
-    // Open on ctrl + space (centered mode)
-    document.addEventListener('keydown', e => {
-        if (e.key === ' ' && (e.ctrlKey || e.metaKey)) {
-            openPopup(true);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        // Open on shift + ctrl/cmd + p (centered mode, like VSCode command palette)
-        if (e.key === 'p' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-            openPopup(true);
-            e.preventDefault();
-            e.stopPropagation();
-        }
+    popupRoot.addEventListener('mousedown', e => {
+        if (e.target === popupRoot) closePopup();
     });
+
+    updateCallbacks({openSpotlight: () => openPopup(true)});
+
+    const invalidateIndex = () => {
+        blockTypes = null;
+        indexedTargetId = null;
+        querier.clearWorkspaceIndex();
+    };
+    vm.on('EXTENSION_ADDED', invalidateIndex);
+    vm.on('EXTENSION_REMOVED', invalidateIndex);
+    vm.on('EXTENSIONS_REORDERED', invalidateIndex);
+    vm.on('BLOCKSINFO_UPDATE', invalidateIndex);
 
     // Open on mouse wheel button
     const _doWorkspaceClick_ = Blockly.Gesture.prototype.doWorkspaceClick_;

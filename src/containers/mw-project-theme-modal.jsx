@@ -67,7 +67,9 @@ class MWProjectThemeModal extends React.Component {
                     d.blocks,
                     d.menuBarAlign,
                     d.wallpaper,
-                    d.fonts
+                    d.fonts,
+                    null,
+                    d.appearance || {}
                 );
                 this.props.onSetTheme(theme);
             }

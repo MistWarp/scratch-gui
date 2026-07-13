@@ -75,6 +75,16 @@ export const getDefaultShortcuts = () => [
         label: 'Restore Points'
     },
     {
+        id: 'spotlightSearch',
+        key: 'Ctrl+K',
+        defaultKey: 'Ctrl+K',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'openSpotlight',
+        params: [],
+        label: 'Spotlight Search'
+    },
+    {
         id: 'settings',
         key: 'Ctrl+,',
         defaultKey: 'Ctrl+,',

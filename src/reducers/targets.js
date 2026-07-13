@@ -11,21 +11,24 @@ const initialState = {
 const reducer = function (state, action) {
     if (typeof state === 'undefined') state = initialState;
     switch (action.type) {
-    case UPDATE_TARGET_LIST:
+    case UPDATE_TARGET_LIST: {
+        const sprites = {};
+        let stage = null;
+        let spriteOrder = 0;
+        for (const target of action.targets) {
+            if (target.isStage && !stage) {
+                stage = target;
+            } else if (!target.isStage) {
+                sprites[target.id] = {order: spriteOrder, ...target};
+                spriteOrder += 1;
+            }
+        }
         return Object.assign({}, state, {
-            sprites: action.targets
-                .filter(target => !target.isStage)
-                .reduce(
-                    (targets, target, listId) => Object.assign(
-                        targets,
-                        {[target.id]: {order: listId, ...target}}
-                    ),
-                    {}
-                ),
-            stage: action.targets
-                .filter(target => target.isStage)[0] || {},
+            sprites,
+            stage: stage || {},
             editingTarget: action.editingTarget
         });
+    }
     case HIGHLIGHT_TARGET:
         return Object.assign({}, state, {
             highlightedTargetId: action.targetId,

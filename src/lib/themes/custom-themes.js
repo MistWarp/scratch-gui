@@ -4,6 +4,7 @@
  */
 
 import {Theme, GUI_MAP} from './index.js';
+import {mergeStoredAppearance} from './appearance.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
@@ -322,11 +323,14 @@ class GradientUtils {
  * CustomTheme class extends Theme with additional metadata
  */
 class CustomTheme extends Theme {
-    constructor (name, description, accent, gui, blocks, menuBarAlign, wallpaper, fonts, author = 'User') {
+    constructor (
+        name, description, accent, gui, blocks, menuBarAlign, wallpaper, fonts, author = 'User',
+        appearance = {}
+    ) {
         // If accent is an object (custom gradient),
         // pass a default string to parent and store the custom accent separately
         const accentKey = typeof accent === 'object' ? 'red' : accent; // Default to 'red' as fallback
-        super(accentKey, gui, blocks, menuBarAlign, wallpaper, fonts);
+        super(accentKey, gui, blocks, menuBarAlign, wallpaper, fonts, null, appearance);
 
         /** @readonly */
         this.name = name;
@@ -390,51 +394,26 @@ class CustomTheme extends Theme {
         return super.getGuiColors();
     }
 
-    /**
-     * @param {string} what - The property to change (e.g., 'gui', 'blocks', 'accent')
-     * @param {*} to - The new value for the property
-     * @returns {Theme|CustomTheme} A new theme instance with the updated property
-     */
-    set (what, to) {
-        if (what === 'accent') {
-            return super.set(what, to);
-        }
+    _getOptions () {
+        return {
+            ...super._getOptions(),
+            accent: this.originalAccent || this.accent
+        };
+    }
 
-        if (this.customAccent) {
-            const next = {
-                name: this.name,
-                description: this.description,
-                author: this.author,
-                accent: this.customAccent,
-                gui: this.gui,
-                blocks: this.blocks,
-                menuBarAlign: this.menuBarAlign,
-                wallpaper: this.wallpaper,
-                fonts: this.fonts
-            };
-
-            if (Object.prototype.hasOwnProperty.call(next, what)) {
-                next[what] = to;
-            } else if (what === 'name') {
-                next.name = to;
-            } else {
-                return super.set(what, to);
-            }
-
-            return new CustomTheme(
-                next.name,
-                next.description,
-                next.accent,
-                next.gui,
-                next.blocks,
-                next.menuBarAlign,
-                next.wallpaper,
-                next.fonts,
-                next.author
-            );
-        }
-
-        return super.set(what, to);
+    _create (options) {
+        return new CustomTheme(
+            options.name,
+            this.description,
+            options.accent,
+            options.gui,
+            options.blocks,
+            options.menuBarAlign,
+            options.wallpaper,
+            options.fonts,
+            this.author,
+            options.appearance
+        );
     }
 
     /**
@@ -509,6 +488,7 @@ class CustomTheme extends Theme {
             gui: this.gui,
             blocks: this.blocks,
             menuBarAlign: this.menuBarAlign,
+            appearance: this.appearance,
             wallpaper: this.wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
             fonts: this.fonts || {system: [], google: [], history: []}
         };
@@ -711,7 +691,11 @@ class CustomTheme extends Theme {
             data.menuBarAlign,
             data.wallpaper,
             data.fonts,
-            data.author || 'Unknown'
+            data.author || 'Unknown',
+            data.appearance || {
+                menuBarLayout: data.menuBarLayout || null,
+                styles: data.styleSettings || null
+            }
         );
 
         // Preserve original UUID and creation date if available
@@ -915,13 +899,14 @@ class CustomThemeManager {
         const updatedTheme = new CustomTheme(
             updates.name || existingTheme.name,
             typeof updates.description === 'undefined' ? existingTheme.description : updates.description,
-            updates.accent || existingTheme.accent,
+            updates.accent || existingTheme.originalAccent || existingTheme.accent,
             updates.gui || existingTheme.gui,
             updates.blocks || existingTheme.blocks,
             updates.menuBarAlign || existingTheme.menuBarAlign,
             updates.wallpaper || existingTheme.wallpaper,
             updates.fonts || existingTheme.fonts,
-            existingTheme.author
+            existingTheme.author,
+            updates.appearance || existingTheme.appearance
         );
 
         // Preserve original UUID and creation date
@@ -961,7 +946,8 @@ class CustomThemeManager {
             existingTheme.menuBarAlign,
             existingTheme.wallpaper,
             existingTheme.fonts,
-            existingTheme.author
+            existingTheme.author,
+            existingTheme.appearance
         );
 
         // Preserve original UUID and creation date
@@ -1280,7 +1266,9 @@ class CustomThemeManager {
             currentTheme.blocks,
             currentTheme.menuBarAlign,
             currentTheme.wallpaper,
-            currentTheme.fonts
+            currentTheme.fonts,
+            'User',
+            mergeStoredAppearance(currentTheme.appearance)
         );
 
         this.addTheme(customTheme);
@@ -1313,7 +1301,9 @@ class CustomThemeManager {
             baseTheme?.blocks || 'three',
             baseTheme?.menuBarAlign || 'left',
             baseTheme?.wallpaper || null,
-            baseTheme?.fonts || null
+            baseTheme?.fonts || null,
+            'User',
+            mergeStoredAppearance(baseTheme?.appearance)
         );
 
         this.addTheme(customTheme);

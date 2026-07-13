@@ -52,7 +52,7 @@
     position: relative;
     min-height: 0;
     height: calc(100% - 40px);
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 /* Absolute position the inner list to allow scrolling inside flex sized container */
@@ -86,10 +86,12 @@
 }
 
 .status-message {
+    padding: 1.25rem;
     width: 100%;
     text-align: center;
     font-size: 0.85rem;
     color: $text-primary;
+    box-sizing: border-box;
 }
 
 .error-message {

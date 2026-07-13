@@ -47,6 +47,25 @@ const writeJSON = (key, value) => {
     }
 };
 
+const normalizeLayout = layout => {
+    if (!layout || typeof layout !== 'object') return null;
+    const orders = {};
+    for (const zone of ZONES) {
+        const order = layout.orders && Array.isArray(layout.orders[zone.id]) ? layout.orders[zone.id] : [];
+        orders[zone.id] = [...new Set(order.filter(id => zone.items.includes(id)))];
+    }
+    const hidden = Array.isArray(layout.hidden) ?
+        [...new Set(layout.hidden.filter(id => ALL_ITEMS.includes(id) && !ALWAYS_SHOW.includes(id)))] : [];
+    return {orders, hidden};
+};
+
+const getMenuBarLayout = () => {
+    const orders = readJSON(ORDER_KEY, {});
+    const hidden = readJSON(HIDDEN_KEY, []);
+    if (Object.keys(orders).length === 0 && hidden.length === 0) return null;
+    return normalizeLayout({orders, hidden});
+};
+
 const zoneById = zoneId => ZONES.find(z => z.id === zoneId);
 
 const hasStoredOrder = zoneId => {
@@ -123,6 +142,23 @@ const applyLayout = () => {
     style.textContent = parts.join('');
 };
 
+const applyMenuBarLayout = layout => {
+    const normalized = normalizeLayout(layout);
+    try {
+        if (normalized) {
+            localStorage.setItem(ORDER_KEY, JSON.stringify(normalized.orders));
+            localStorage.setItem(HIDDEN_KEY, JSON.stringify(normalized.hidden));
+        } else {
+            localStorage.removeItem(ORDER_KEY);
+            localStorage.removeItem(HIDDEN_KEY);
+        }
+    } catch (err) {
+        // ignore
+    }
+    applyLayout();
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+};
+
 const setZoneOrder = (zoneId, order) => {
     const all = readJSON(ORDER_KEY, {});
     all[zoneId] = order;
@@ -162,6 +198,8 @@ export {
     isHidden,
     setHidden,
     getPresentOrderedIds,
+    getMenuBarLayout,
+    applyMenuBarLayout,
     applyLayout,
     initMenuBarLayout
 };

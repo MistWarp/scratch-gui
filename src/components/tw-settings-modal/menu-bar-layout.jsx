@@ -16,7 +16,8 @@ import {
     setZoneOrder,
     getHidden,
     setHidden,
-    getPresentOrderedIds
+    getPresentOrderedIds,
+    getMenuBarLayout
 } from '../../lib/mw-menu-bar-layout';
 import {Theme} from '../../lib/themes/index.js';
 import {setTheme} from '../../reducers/theme.js';
@@ -83,7 +84,7 @@ const isVisibleItem = id => !id.startsWith('__');
 class MenuBarLayoutSetting extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleDragEnd', 'handleAlignChange']);
+        bindAll(this, ['handleDragEnd', 'handleDragOver', 'handleAlignChange', 'persistAppearance']);
         const present = getPresentOrderedIds();
         this.state = {
             present,
@@ -100,10 +101,14 @@ class MenuBarLayoutSetting extends React.Component {
         }
         return orders;
     }
+    persistAppearance () {
+        if (!this.props.theme) return;
+        this.props.onChangeTheme(this.props.theme.setAppearance({menuBarLayout: getMenuBarLayout()}));
+    }
     handleToggle (id) {
         return e => {
             setHidden(id, !e.target.checked);
-            this.setState({hidden: getHidden()});
+            this.setState({hidden: getHidden()}, this.persistAppearance);
         };
     }
     handleDragStart (zoneId, id) {
@@ -111,6 +116,9 @@ class MenuBarLayoutSetting extends React.Component {
     }
     handleDragEnd () {
         this.setState({dragId: null, dragZone: null});
+    }
+    handleDragOver (e) {
+        e.preventDefault();
     }
     handleDrop (zoneId, overId) {
         return e => {
@@ -128,13 +136,13 @@ class MenuBarLayoutSetting extends React.Component {
                 orders: {...prev.orders, [zoneId]: order},
                 dragId: null,
                 dragZone: null
-            }));
+            }), this.persistAppearance);
         };
     }
     handleAlignChange (id) {
         return () => {
             if (!this.props.theme || this.props.theme.menuBarAlign === id) return;
-            this.props.onChangeMenuBarAlign(this.props.theme.set('menuBarAlign', id));
+            this.props.onChangeTheme(this.props.theme.set('menuBarAlign', id));
         };
     }
     renderRow (zoneId, id, draggable) {
@@ -147,7 +155,7 @@ class MenuBarLayoutSetting extends React.Component {
                 draggable={draggable}
                 onDragStart={draggable ? this.handleDragStart(zoneId, id) : null}
                 onDragEnd={draggable ? this.handleDragEnd : null}
-                onDragOver={draggable ? (e => e.preventDefault()) : null}
+                onDragOver={draggable ? this.handleDragOver : null}
                 onDrop={draggable ? this.handleDrop(zoneId, id) : null}
             >
                 {draggable && (
@@ -242,7 +250,7 @@ class MenuBarLayoutSetting extends React.Component {
 
 MenuBarLayoutSetting.propTypes = {
     theme: PropTypes.instanceOf(Theme),
-    onChangeMenuBarAlign: PropTypes.func
+    onChangeTheme: PropTypes.func
 };
 
 const mapStateToProps = state => ({
@@ -250,7 +258,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onChangeMenuBarAlign: theme => {
+    onChangeTheme: theme => {
         dispatch(setTheme(theme));
         applyTheme(theme);
     }

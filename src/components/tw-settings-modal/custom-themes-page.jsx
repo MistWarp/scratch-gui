@@ -140,7 +140,9 @@ class UnconnectedCustomThemesPage extends React.Component {
             currentTheme.blocks || 'three',
             currentTheme.menuBarAlign || 'left',
             currentTheme.wallpaper,
-            currentTheme.fonts
+            currentTheme.fonts,
+            'User',
+            currentTheme.appearance
         );
 
         this.setState({originalThemeBeforePreview: currentTheme});
@@ -225,7 +227,8 @@ class UnconnectedCustomThemesPage extends React.Component {
                     updatedTheme.menuBarAlign,
                     updatedTheme.wallpaper,
                     updatedTheme.fonts,
-                    updatedTheme.author
+                    updatedTheme.author,
+                    updatedTheme.appearance
                 );
                 Object.defineProperty(newTheme, 'uuid', {value: editingThemeUuid, writable: false});
                 Object.defineProperty(newTheme, 'createdAt', {value: updatedTheme.createdAt, writable: false});

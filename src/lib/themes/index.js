@@ -49,7 +49,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts, name) {
+    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts, name, appearance = {}) {
         if (!name) name = gui;
         // do not modify these directly
         /** @readonly */
@@ -70,6 +70,8 @@ class Theme {
         this.wallpaper = wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
         /** @readonly */
         this.fonts = fonts || {system: [], google: [], history: []};
+        /** @readonly */
+        this.appearance = appearance || {};
 
         /** @readonly */
         this.name = name;
@@ -77,23 +79,41 @@ class Theme {
 
     static defaults = Object.create(null);
 
+    _getOptions () {
+        return {
+            accent: this.accent,
+            gui: this.gui,
+            blocks: this.blocks,
+            menuBarAlign: this.menuBarAlign,
+            wallpaper: this.wallpaper,
+            fonts: this.fonts,
+            name: this.name,
+            appearance: this.appearance
+        };
+    }
+
+    _create (options) {
+        return new Theme(
+            options.accent,
+            options.gui,
+            options.blocks,
+            options.menuBarAlign,
+            options.wallpaper,
+            options.fonts,
+            options.name,
+            options.appearance
+        );
+    }
+
     set (what, to) {
-        if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'wallpaper') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts, this.name);
-        } else if (what === 'fonts') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to, this.name);
-        } else if (what === 'name') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, to);
-        }
-        throw new Error(`Unknown theme property: ${what}`);
+        const next = this._getOptions();
+        if (!Object.prototype.hasOwnProperty.call(next, what)) throw new Error(`Unknown theme property: ${what}`);
+        next[what] = to;
+        return this._create(next);
+    }
+
+    setAppearance (changes) {
+        return this.set('appearance', {...this.appearance, ...changes});
     }
 
     getBlocksMediaFolder () {
