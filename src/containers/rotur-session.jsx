@@ -11,12 +11,13 @@ import {
     clearActivity
 } from '../lib/rotur/client.js';
 import {subscribeRoturSettings} from '../lib/rotur/settings.js';
-import {onRoturLogin, onRoturLogout} from '../lib/rotur/cloud-sync.js';
+import {onRoturLogin, onRoturLogout, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
 import {clearGitAuth} from '../lib/rotur/git-api.js';
 import {setRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
     setRoturStatus,
     setRoturUser,
+    setRoturUsernameOverride,
     setRoturError,
     clearRoturUser
 } from '../reducers/rotur.js';
@@ -89,6 +90,7 @@ class RoturSession extends React.Component {
     async applyCloudPreferences () {
         try {
             const {applied} = await onRoturLogin();
+            this.props.onSetUsernameOverride(getUsernameOverride());
             if (!applied) return;
 
             try {
@@ -184,6 +186,7 @@ RoturSession.propTypes = {
     projectTitle: PropTypes.string,
     onSetStatus: PropTypes.func.isRequired,
     onSetUser: PropTypes.func.isRequired,
+    onSetUsernameOverride: PropTypes.func.isRequired,
     onSetError: PropTypes.func.isRequired,
     onClear: PropTypes.func.isRequired,
     onCloseLoginModal: PropTypes.func.isRequired,
@@ -198,6 +201,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onSetStatus: status => dispatch(setRoturStatus(status)),
     onSetUser: user => dispatch(setRoturUser(user)),
+    onSetUsernameOverride: username => dispatch(setRoturUsernameOverride(username)),
     onSetError: error => dispatch(setRoturError(error)),
     onClear: () => dispatch(clearRoturUser()),
     onCloseLoginModal: () => dispatch(closeModal('roturLoginModal')),

@@ -1,4 +1,10 @@
-import {Theme, GUI_MAP} from './index.js';
+import {Theme, GUI_MAP, ACCENT_MAP, ACCENT_DEFAULT} from './index.js';
+import {
+    getAccentMenuBar,
+    getMenuBarText,
+    MENU_BAR_TEXT_LIGHT,
+    MENU_BAR_TEXT_DARK
+} from './menu-bar-accent.js';
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
 import './global-styles.css';
@@ -18,6 +24,71 @@ const BLOCK_COLOR_NAMES = [
     'more',
     'addons'
 ];
+
+const hslToRgb = (h, s, l) => {
+    const chroma = (1 - Math.abs((2 * l) - 1)) * s;
+    const huePrime = ((h % 360) + 360) % 360 / 60;
+    const x = chroma * (1 - Math.abs((huePrime % 2) - 1));
+    const [r, g, b] = huePrime < 1 ? [chroma, x, 0] :
+        huePrime < 2 ? [x, chroma, 0] :
+            huePrime < 3 ? [0, chroma, x] :
+                huePrime < 4 ? [0, x, chroma] :
+                    huePrime < 5 ? [x, 0, chroma] : [chroma, 0, x];
+    const m = l - (chroma / 2);
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+};
+
+/**
+ * @param {string} color A CSS color (hex, rgb(a) or hsl(a)).
+ * @returns {?Array.<number>} [r, g, b] in 0-255, or null when unparseable.
+ */
+const parseColor = color => {
+    if (typeof color !== 'string') return null;
+    const value = color.trim();
+
+    const hex = value.match(/^#([0-9a-f]{3,8})$/i);
+    if (hex) {
+        let digits = hex[1];
+        if (digits.length === 3 || digits.length === 4) {
+            digits = digits.split('').map(c => c + c)
+                .join('');
+        }
+        if (digits.length < 6) return null;
+        return [0, 2, 4].map(i => parseInt(digits.substr(i, 2), 16));
+    }
+
+    const rgb = value.match(/^rgba?\(([^)]+)\)$/i);
+    if (rgb) {
+        const parts = rgb[1].split(/[\s,/]+/).filter(Boolean);
+        if (parts.length < 3) return null;
+        return parts.slice(0, 3).map(part => (
+            part.endsWith('%') ? (parseFloat(part) / 100) * 255 : parseFloat(part)
+        ));
+    }
+
+    const hsl = value.match(/^hsla?\(([^)]+)\)$/i);
+    if (hsl) {
+        const parts = hsl[1].split(/[\s,/]+/).filter(Boolean);
+        if (parts.length < 3) return null;
+        return hslToRgb(parseFloat(parts[0]), parseFloat(parts[1]) / 100, parseFloat(parts[2]) / 100);
+    }
+
+    return null;
+};
+
+/**
+ * @param {string} color A CSS color.
+ * @returns {number} WCAG relative luminance, 0 (black) to 1 (white).
+ */
+const relativeLuminance = color => {
+    const rgb = parseColor(color);
+    if (!rgb) return 0;
+    const [r, g, b] = rgb.map(channel => {
+        const c = Math.min(Math.max(channel, 0), 255) / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+};
 
 /**
  * @param {string} css CSS color or var(--...)
@@ -336,6 +407,42 @@ const applyGuiColors = theme => {
         doc.style.setProperty('--editorTheme3-grid-color', blockColors.gridColor);
     }
 
+    const accentMenuBar = getAccentMenuBar();
+    let menuBarBackground;
+    if (accentMenuBar) {
+        menuBarBackground = guiColors['looks-secondary'] || guiColors['menu-bar-background'];
+    } else {
+        const baseColors = (GUI_MAP[theme.gui] && GUI_MAP[theme.gui].guiColors) || {};
+        menuBarBackground = baseColors['menu-bar-background'] || guiColors['menu-bar-background'];
+        if (menuBarBackground === 'var(--looks-secondary)') {
+            menuBarBackground = ACCENT_MAP[ACCENT_DEFAULT].guiColors['looks-secondary'];
+        }
+        doc.style.setProperty('--menu-bar-background-image', 'none');
+    }
+    doc.style.setProperty('--menu-bar-background', menuBarBackground);
+
+    const themeMenuBarText = theme.customAccent && theme.customAccent.guiColors &&
+        theme.customAccent.guiColors['menu-bar-foreground'];
+    const menuBarTextPreference = getMenuBarText();
+    let menuBarForeground;
+    if (menuBarTextPreference === 'light') {
+        menuBarForeground = MENU_BAR_TEXT_LIGHT;
+    } else if (menuBarTextPreference === 'dark') {
+        menuBarForeground = MENU_BAR_TEXT_DARK;
+    } else if (themeMenuBarText) {
+        menuBarForeground = themeMenuBarText;
+    } else {
+        menuBarForeground = relativeLuminance(evaluateCSS(menuBarBackground)) > 0.5 ?
+            MENU_BAR_TEXT_DARK :
+            MENU_BAR_TEXT_LIGHT;
+    }
+    doc.style.setProperty('--menu-bar-foreground', menuBarForeground);
+
+    const accentForeground = relativeLuminance(evaluateCSS(guiColors['looks-secondary'])) > 0.5 ?
+        MENU_BAR_TEXT_DARK :
+        MENU_BAR_TEXT_LIGHT;
+    doc.style.setProperty('--accent-foreground', accentForeground);
+
     // Some browsers will color their interfaces to match theme-color, so if we make it the same color as our
     // menu bar, it'll look pretty cool.
     let metaThemeColor = document.head.querySelector('meta[name=theme-color]');
@@ -344,7 +451,7 @@ const applyGuiColors = theme => {
         metaThemeColor.setAttribute('name', 'theme-color');
         document.head.appendChild(metaThemeColor);
     }
-    metaThemeColor.setAttribute('content', evaluateCSS(guiColors['menu-bar-background']));
+    metaThemeColor.setAttribute('content', evaluateCSS(menuBarBackground));
 
     // a horrible hack for icons...
     window.Recolor = {

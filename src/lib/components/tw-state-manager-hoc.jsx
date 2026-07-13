@@ -414,24 +414,30 @@ const TWStateManager = function (WrappedComponent) {
             if (this.props.username !== prevProps.username && this.props.username !== this.doNotPersistUsername) {
                 // TODO: this always restores the current username once at startup, which is unnecessary
                 setLocalStorage(USERNAME_KEY, this.props.username);
-                
-                // Sync username with collaboration service if connected
-                if (prevProps.username && this.props.username) {
-                    try {
-                        const service = CollaborationService.getInstance();
-                        if (service && service.isConnectedToHostPeer()) {
-                            service.changeUsername(this.props.username);
-                        }
-                    } catch (error) {
-                        console.warn('Could not sync username with collaboration service:', error);
-                    }
-                }
-                
+
                 // Check if we have a pending room code to handle now that username is available
                 if (this.pendingRoomCode && this.props.username && !prevProps.username) {
                     this.handleRoomCode(this.pendingRoomCode);
                     this.pendingRoomCode = null; // Clear the pending room code
                 }
+            }
+
+            if (this.props.username !== prevProps.username && this.props.username) {
+                try {
+                    const service = CollaborationService.getInstance();
+                    if (service && service.isConnectedToHostPeer()) {
+                        service.changeUsername(this.props.username);
+                    }
+                } catch (error) {
+                    console.warn('Could not sync username with collaboration service:', error);
+                }
+            }
+
+            if (
+                this.props.roturUsername !== prevProps.roturUsername ||
+                this.props.usernameOverride !== prevProps.usernameOverride
+            ) {
+                this.applyRoturIdentity();
             }
 
             if (
@@ -567,6 +573,16 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsFullScreen (isFullScreen) {
             this.props.onSetIsFullScreen(isFullScreen);
         }
+        applyRoturIdentity () {
+            if (this.props.roturUsername) {
+                const name = this.props.usernameOverride || `@${this.props.roturUsername}`;
+                this.doNotPersistUsername = name;
+                this.props.onSetUsername(name);
+                return;
+            }
+            const nickname = getLocalStorage(USERNAME_KEY);
+            this.props.onSetUsername(nickname === null ? generateRandomUsername() : nickname);
+        }
         handleRoomCode (roomCode) {
             const username = this.props.username;
             if (username && roomCode) {
@@ -604,6 +620,8 @@ const TWStateManager = function (WrappedComponent) {
                 reduxProjectId,
                 routingStyle,
                 username,
+                roturUsername,
+                usernameOverride,
                 vm,
                 /* eslint-enable no-unused-vars */
                 ...props
@@ -643,6 +661,8 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsPlayerOnly: PropTypes.func,
         onSetProjectId: PropTypes.func,
         onSetUsername: PropTypes.func,
+        roturUsername: PropTypes.string,
+        usernameOverride: PropTypes.string,
         onSetCollaborationRoomId: PropTypes.func,
         onOpenCollaborationModal: PropTypes.func,
         confirmWithMessage: PropTypes.func,
@@ -668,6 +688,8 @@ const TWStateManager = function (WrappedComponent) {
         interpolation: state.scratchGui.tw.interpolation,
         turbo: state.scratchGui.vmStatus.turbo,
         username: state.scratchGui.tw.username,
+        roturUsername: state.scratchGui.rotur.username,
+        usernameOverride: state.scratchGui.rotur.usernameOverride,
         vm: state.scratchGui.vm
     });
     const mapDispatchToProps = dispatch => ({

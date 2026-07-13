@@ -15,6 +15,7 @@ import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-
 import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
 import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
 import fullStageIcon from '!../../lib/tw-recolor/build!./icon--full-stage.svg';
+import hideStageIcon from '!../../lib/tw-recolor/build!./icon--hide-stage.svg';
 import settingsIcon from './icon--settings.svg';
 
 import {
@@ -36,6 +37,11 @@ const messages = defineMessages({
         defaultMessage: 'Switch to small stage',
         description: 'Button to change stage size to small',
         id: 'gui.stageHeader.stageSizeSmall'
+    },
+    hideStageMessage: {
+        defaultMessage: 'Hide the stage',
+        description: 'Button to hide the stage entirely',
+        id: 'gui.stageHeader.stageHidden'
     },
     fullStageSizeMessage: {
         defaultMessage: 'Switch to full stage',
@@ -78,6 +84,7 @@ const StageHeaderComponent = function (props) {
         onSetStageLarge,
         onSetStageSmall,
         onSetStageFull,
+        onSetStageHidden,
         onOpenSettings,
         isEmbedded,
         stageContainerWidth,
@@ -169,6 +176,13 @@ const StageHeaderComponent = function (props) {
                     <ToggleButtons
                         buttons={[
                             {
+                                handleClick: onSetStageHidden,
+                                icon: hideStageIcon,
+                                iconClassName: styles.stageButtonIcon,
+                                isSelected: stageSizeMode === STAGE_SIZE_MODES.hidden,
+                                title: props.intl.formatMessage(messages.hideStageMessage)
+                            },
+                            {
                                 handleClick: onSetStageSmall,
                                 icon: smallStageIcon,
                                 iconClassName: styles.stageButtonIcon,
@@ -200,7 +214,9 @@ const StageHeaderComponent = function (props) {
                 className={styles.stageHeaderWrapper}
                 // + 2 px because the stage will have 2 pixels of border around it
                 style={{
-                    minWidth: `${(useContainerWidth ? stageContainerWidth : stageDimensions.width) + 2}px`
+                    minWidth: stageSizeMode === STAGE_SIZE_MODES.hidden ?
+                        'auto' :
+                        `${(useContainerWidth ? stageContainerWidth : stageDimensions.width) + 2}px`
                 }}
             >
                 <Box className={styles.stageMenuWrapper}>
@@ -254,6 +270,7 @@ StageHeaderComponent.propTypes = {
     onSetStageLarge: PropTypes.func.isRequired,
     onSetStageSmall: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
+    onSetStageHidden: PropTypes.func,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,
     stageContainerWidth: PropTypes.number,

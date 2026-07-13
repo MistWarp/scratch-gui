@@ -31,7 +31,18 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 16 * 1000;
 
-const sanitizeRoomId = roomId => roomId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+const sanitizeRoomId = roomId => String(roomId || '').replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase();
+
+const collabError = (code, message) => {
+    const error = new Error(message);
+    error.collabCode = code;
+    return error;
+};
+
+const roomIdError = roomId => (sanitizeRoomId(roomId) ?
+    null :
+    collabError('INVALID_ROOM', 'A room code needs at least one letter or number.'));
 
 const generateHostPeerId = roomId => `${APP_NAME}-collab-${sanitizeRoomId(roomId)}-host`;
 
@@ -82,6 +93,32 @@ class Transport extends Emitter {
         this._reconnectTimer = null;
         this._reconnectAttempts = 0;
         this._joinMetadata = null;
+        this._onPeerUnavailable = null;
+    }
+
+    _describeError (error) {
+        switch (error && error.type) {
+        case 'unavailable-id':
+            return collabError(
+                'ROOM_TAKEN',
+                `Room "${this.roomId}" is already being hosted. Join it instead of creating it.`
+            );
+        case 'network':
+        case 'server-error':
+        case 'socket-error':
+        case 'socket-closed':
+            return collabError(
+                'SERVER_UNREACHABLE',
+                'Could not reach the collaboration server. Check your connection and try again.'
+            );
+        case 'browser-incompatible':
+            return collabError(
+                'BROWSER_UNSUPPORTED',
+                'This browser cannot use collaboration; it does not support WebRTC data channels.'
+            );
+        default:
+            return error instanceof Error ? error : new Error(String(error));
+        }
     }
 
     get id () {
@@ -103,6 +140,8 @@ class Transport extends Emitter {
      * @returns {Promise<string>} Resolves with our peer id.
      */
     host (roomId) {
+        const invalid = roomIdError(roomId);
+        if (invalid) return Promise.reject(invalid);
         this.isHost = true;
         this.roomId = roomId;
         return this._openPeer(generateHostPeerId(roomId)).then(id => {
@@ -121,6 +160,8 @@ class Transport extends Emitter {
      * channel to the host is open.
      */
     join (roomId, metadata) {
+        const invalid = roomIdError(roomId);
+        if (invalid) return Promise.reject(invalid);
         this.isHost = false;
         this.roomId = roomId;
         this.hostPeerId = generateHostPeerId(roomId);
@@ -189,6 +230,7 @@ class Transport extends Emitter {
 
     destroy () {
         this.destroyed = true;
+        this._onPeerUnavailable = null;
         this._stopHeartbeat();
         if (this._reconnectTimer) {
             clearTimeout(this._reconnectTimer);
@@ -229,14 +271,15 @@ class Transport extends Emitter {
             peer.on('error', error => {
                 if (!settled) {
                     settled = true;
-                    reject(error);
+                    reject(this._describeError(error));
                     return;
                 }
                 if (this.destroyed) return;
-                const type = error && error.type;
-                // Transient errors PeerJS recovers from on its own.
-                if (type === 'peer-unavailable') return;
-                this.emit('fatal', {error});
+                if (error && error.type === 'peer-unavailable') {
+                    if (this._onPeerUnavailable) this._onPeerUnavailable();
+                    return;
+                }
+                this.emit('fatal', {error: this._describeError(error)});
             });
 
             // The broker connection dropped. PeerJS keeps datachannels
@@ -254,20 +297,38 @@ class Transport extends Emitter {
 
     _dialHost () {
         return new Promise((resolve, reject) => {
-            let settled = false;
             let conn = null;
-            const timeout = setTimeout(() => {
-                if (settled) return;
-                settled = true;
+            let timeout = null;
+            const settle = (error, openConn) => {
+                if (timeout === null) return;
+                clearTimeout(timeout);
+                timeout = null;
+                this._onPeerUnavailable = null;
+                if (!error) {
+                    this._registerConnection(openConn);
+                    this.emit('connected');
+                    resolve();
+                    return;
+                }
                 if (conn) {
                     try {
                         conn.close();
-                    } catch (error) {
+                    } catch (closeError) {
                         // Ignore.
                     }
                 }
-                reject(new Error(`Connection to room "${this.roomId}" timed out. Host may not be available.`));
-            }, this._dialTimeoutMs);
+                reject(error);
+            };
+
+            timeout = setTimeout(() => settle(collabError(
+                'DIAL_TIMEOUT',
+                `Room "${this.roomId}" did not respond. The host may have a slow or blocked connection.`
+            )), this._dialTimeoutMs);
+
+            this._onPeerUnavailable = () => settle(collabError(
+                'ROOM_NOT_FOUND',
+                `Nobody is hosting room "${this.roomId}" right now.`
+            ));
 
             try {
                 conn = this.peer.connect(this.hostPeerId, {
@@ -276,27 +337,14 @@ class Transport extends Emitter {
                     reliable: true
                 });
             } catch (error) {
-                clearTimeout(timeout);
-                settled = true;
-                reject(error);
+                settle(this._describeError(error));
                 return;
             }
 
-            conn.on('open', () => {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timeout);
-                this._registerConnection(conn);
-                this.emit('connected');
-                resolve();
-            });
-
-            conn.on('error', error => {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timeout);
-                reject(error || new Error(`Could not connect to room "${this.roomId}".`));
-            });
+            conn.on('open', () => settle(null, conn));
+            conn.on('error', error => settle(this._describeError(
+                error || new Error(`Could not connect to room "${this.roomId}".`)
+            )));
         });
     }
 
@@ -437,6 +485,7 @@ class Transport extends Emitter {
 export {
     Transport,
     DEFAULT_PEER_CONFIG,
+    sanitizeRoomId,
     generateHostPeerId,
     generateClientPeerId,
     HEARTBEAT_INTERVAL_MS,

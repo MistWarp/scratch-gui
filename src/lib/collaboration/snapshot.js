@@ -280,6 +280,8 @@ class ClientSnapshotService extends Emitter {
             return;
         }
 
+        this.emit('download-complete');
+
         try {
             await this.applyProjectData(combined.buffer);
         } catch (error) {
@@ -312,7 +314,6 @@ class ClientSnapshotService extends Emitter {
         this.transport.sendToHost(makeSnapshot(SNAPSHOT.COMPLETE, {
             transferId: incoming.transferId
         }));
-        this.emit('download-complete');
     }
 
     _armTimeout () {

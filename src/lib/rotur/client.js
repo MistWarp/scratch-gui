@@ -42,7 +42,7 @@ const storeToken = token => {
 
 /** Stable avatar URL derived only from username. */
 const getAvatarUrl = username => (
-    `https://avatars.rotur.dev/${encodeURIComponent(username)}`
+    `https://avatars.rotur.dev/${encodeURIComponent(String(username).toLowerCase())}`
 );
 
 /**

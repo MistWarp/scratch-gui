@@ -17,6 +17,7 @@ const StageWrapperComponent = function (props) {
         isFullScreen,
         isRtl,
         isRendererSupported,
+        isStageHidden,
         loading,
         stageContainerWidth,
         stageSize,
@@ -43,17 +44,19 @@ const StageWrapperComponent = function (props) {
                     vm={vm}
                 />
             </Box>
-            <Box className={styles.stageCanvasWrapper}>
-                {
-                    isRendererSupported ?
-                        <Stage
-                            stageContainerWidth={stageContainerWidth}
-                            stageSize={stageSize}
-                            vm={vm}
-                        /> :
-                        null
-                }
-            </Box>
+            {isStageHidden ? null : (
+                <Box className={styles.stageCanvasWrapper}>
+                    {
+                        isRendererSupported ?
+                            <Stage
+                                stageContainerWidth={stageContainerWidth}
+                                stageSize={stageSize}
+                                vm={vm}
+                            /> :
+                            null
+                    }
+                </Box>
+            )}
             {loading ? (
                 <Loader isFullScreen={isFullScreen} />
             ) : null}
@@ -66,6 +69,7 @@ StageWrapperComponent.propTypes = {
     isFullScreen: PropTypes.bool,
     isRendererSupported: PropTypes.bool.isRequired,
     isRtl: PropTypes.bool.isRequired,
+    isStageHidden: PropTypes.bool,
     loading: PropTypes.bool,
     stageContainerWidth: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,

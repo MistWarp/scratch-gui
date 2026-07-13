@@ -12,11 +12,13 @@ class CursorOverlay {
      * @param {VirtualMachine} options.vm The VM (for the editing target).
      * @param {PresenceChannel} options.presence Presence send/receive.
      * @param {Function} options.getUsername (userId) => display name.
+     * @param {Function} [options.getAvatarUrl] (userId) => avatar URL or null.
      */
-    constructor ({vm, presence, getUsername}) {
+    constructor ({vm, presence, getUsername, getAvatarUrl}) {
         this.vm = vm;
         this.presence = presence;
         this.getUsername = getUsername;
+        this.getAvatarUrl = getAvatarUrl || (() => null);
 
         this.workspace = null;
         this.layer = null;
@@ -267,14 +269,30 @@ class CursorOverlay {
         label.style.position = 'absolute';
         label.style.top = '26px';
         label.style.left = '0';
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '4px';
         label.style.padding = '3px 7px';
         label.style.background = 'var(--looks-secondary)';
-        label.style.color = 'var(--ui-white, white)';
+        label.style.color = 'var(--accent-foreground, white)';
         label.style.fontSize = '11px';
         label.style.fontWeight = '600';
         label.style.borderRadius = '4px';
         label.style.whiteSpace = 'nowrap';
         label.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+
+        const labelAvatar = document.createElement('img');
+        labelAvatar.className = 'collaboration-cursor-avatar';
+        labelAvatar.style.width = '14px';
+        labelAvatar.style.height = '14px';
+        labelAvatar.style.borderRadius = '50%';
+        labelAvatar.style.objectFit = 'cover';
+        labelAvatar.style.display = 'none';
+        labelAvatar.draggable = false;
+        label.appendChild(labelAvatar);
+
+        const labelName = document.createElement('span');
+        label.appendChild(labelName);
         el.appendChild(label);
 
         const chat = document.createElement('div');
@@ -300,7 +318,7 @@ class CursorOverlay {
         el.appendChild(chat);
 
         this.layer.appendChild(el);
-        cursor = {el, label, chat};
+        cursor = {el, label, labelAvatar, labelName, chat};
         this.remoteCursors.set(userId, cursor);
         return cursor;
     }
@@ -335,7 +353,16 @@ class CursorOverlay {
             targetName: payload.targetName || null
         };
         this.remotePositions.set(userId, position);
-        cursor.label.textContent = this.getUsername(userId) || '';
+        cursor.labelName.textContent = this.getUsername(userId) || '';
+        const avatarUrl = this.getAvatarUrl(userId);
+        if (avatarUrl) {
+            if (cursor.labelAvatar.getAttribute('src') !== avatarUrl) {
+                cursor.labelAvatar.src = avatarUrl;
+            }
+            cursor.labelAvatar.style.display = 'block';
+        } else {
+            cursor.labelAvatar.style.display = 'none';
+        }
         this._project(cursor, position);
     }
 

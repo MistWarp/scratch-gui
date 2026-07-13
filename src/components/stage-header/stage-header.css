@@ -97,3 +97,9 @@
     /* relied on by addons */
     display: flex;
 }
+
+@media only screen and (max-width: 900px) {
+    .stage-size-toggle-group {
+        display: none;
+    }
+}

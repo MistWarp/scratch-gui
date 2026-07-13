@@ -495,6 +495,9 @@ class CustomTheme extends Theme {
     export () {
         const accentExport = this._exportGradient();
 
+        const menuBarForeground = this.customAccent && this.customAccent.guiColors &&
+            this.customAccent.guiColors['menu-bar-foreground'];
+
         return {
             uuid: this.uuid,
             createdAt: this.createdAt,
@@ -502,6 +505,7 @@ class CustomTheme extends Theme {
             description: this.description,
             author: this.author,
             accent: accentExport || null,
+            menuBarForeground: menuBarForeground || null,
             gui: this.gui,
             blocks: this.blocks,
             menuBarAlign: this.menuBarAlign,
@@ -686,6 +690,16 @@ class CustomTheme extends Theme {
             const direction = accentToUse.direction || '90';
             const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
             accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+        }
+
+        if (data.menuBarForeground && accentToUse && typeof accentToUse === 'object') {
+            accentToUse = {
+                ...accentToUse,
+                guiColors: {
+                    ...(accentToUse.guiColors || {}),
+                    'menu-bar-foreground': data.menuBarForeground
+                }
+            };
         }
 
         const theme = new CustomTheme(

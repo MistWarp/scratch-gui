@@ -47,12 +47,13 @@ class ClientSession extends Emitter {
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */
-    constructor ({transport, applier, roomId, username, hasAsset}) {
+    constructor ({transport, applier, roomId, username, handle, hasAsset}) {
         super();
         this.transport = transport;
         this.applier = applier;
         this.roomId = roomId;
         this.username = username;
+        this.handle = handle || null;
         // Optional md5ext => boolean; when provided, ops carrying assetRefs
         // block the apply queue until their assets are locally present.
         this._hasAsset = hasAsset || null;
@@ -200,6 +201,7 @@ class ClientSession extends Emitter {
             username: this.username,
             roomId: this.roomId
         };
+        if (this.handle) payload.handle = this.handle;
         if (this.lastAppliedSeq !== null) {
             payload.lastAppliedSeq = this.lastAppliedSeq;
         }

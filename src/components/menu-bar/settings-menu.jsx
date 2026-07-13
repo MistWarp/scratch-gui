@@ -22,7 +22,7 @@ const SettingsMenu = ({onOpenSettings}) => (
             height={20}
             size={20}
         />
-        <span className={styles.dropdownLabel}>
+        <span className={classNames(styles.dropdownLabel, menuBarStyles.collapsibleLabel)}>
             <FormattedMessage
                 defaultMessage="Settings"
                 description="Button in the menu bar to open the settings window"

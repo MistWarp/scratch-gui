@@ -41,12 +41,13 @@ class HostSession extends Emitter {
      * @param {string} options.username Host's display name.
      * @param {string} [options.privacy] 'public' or 'private'.
      */
-    constructor ({transport, applier, roomId, username, privacy}) {
+    constructor ({transport, applier, roomId, username, handle, privacy}) {
         super();
         this.transport = transport;
         this.applier = applier;
         this.roomId = roomId;
         this.username = username;
+        this.handle = handle || null;
         this.privacy = privacy === 'private' ? 'private' : 'public';
 
         this.seq = 0;
@@ -72,6 +73,7 @@ class HostSession extends Emitter {
         this.transport.on('peer-disconnected', this._onPeerDisconnected);
 
         const hostUser = {id, username: this.username, isHost: true};
+        if (this.handle) hostUser.handle = this.handle;
         this.users.set(id, hostUser);
         this.emit('user-joined', hostUser);
         this._emitUsersUpdated();
@@ -106,7 +108,7 @@ class HostSession extends Emitter {
 
     getPendingJoinRequests () {
         return Array.from(this.pendingJoinRequests.values())
-            .map(({id, username}) => ({id, username}));
+            .map(({id, username, handle}) => ({id, username, handle}));
     }
 
     isClientApproved (peerId) {
@@ -146,7 +148,7 @@ class HostSession extends Emitter {
         const request = this.pendingJoinRequests.get(requesterId);
         if (!request) return;
         this.pendingJoinRequests.delete(requesterId);
-        this._admitClient(requesterId, request.username, request.lastAppliedSeq);
+        this._admitClient(requesterId, request.username, request.lastAppliedSeq, request.handle);
     }
 
     denyJoinRequest (requesterId, reason = 'Host denied your request') {
@@ -306,14 +308,18 @@ class HostSession extends Emitter {
             this.transport.closeConnection(peerId);
             return;
         }
-        if (this.users.has(peerId)) return; // duplicate hello
+        if (this.users.has(peerId)) {
+            this._admitClient(peerId, payload.username, payload.lastAppliedSeq, payload.handle);
+            return;
+        }
 
         if (this.privacy === 'public') {
-            this._admitClient(peerId, payload.username, payload.lastAppliedSeq);
+            this._admitClient(peerId, payload.username, payload.lastAppliedSeq, payload.handle);
         } else {
             this.pendingJoinRequests.set(peerId, {
                 id: peerId,
                 username: payload.username,
+                handle: payload.handle || null,
                 lastAppliedSeq: payload.lastAppliedSeq
             });
             this.emit('join-request-received', {
@@ -323,8 +329,9 @@ class HostSession extends Emitter {
         }
     }
 
-    _admitClient (peerId, username, lastAppliedSeq) {
+    _admitClient (peerId, username, lastAppliedSeq, handle) {
         const user = {id: peerId, username, isHost: false};
+        if (handle) user.handle = handle;
         this.users.set(peerId, user);
 
         this.transport.send(peerId, makeCtrl(CTRL.JOIN_APPROVED, {hostUsername: this.username}));

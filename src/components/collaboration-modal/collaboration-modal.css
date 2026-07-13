@@ -471,6 +471,20 @@
     position: relative;
 }
 
+.avatar {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.75rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background: $ui-black-transparent;
+    flex-shrink: 0;
+}
+
+.description .avatar {
+    margin-right: 0;
+}
+
 .userIcon > svg,
 .userIcon svg {
     width: 20px;

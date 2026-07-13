@@ -161,3 +161,15 @@
 .blocks.hide-grid :global([id*="grid"]) {
     opacity: 0 !important;
 }
+
+.blocks :global(.scratchCategoryMenu) {
+    box-sizing: border-box;
+    padding-bottom: 3.4rem;
+    overflow-y: auto;
+}
+
+@media only screen and (max-width: 900px) {
+    .blocks :global(.scratchCategoryMenu) {
+        padding-bottom: 6.8rem;
+    }
+}

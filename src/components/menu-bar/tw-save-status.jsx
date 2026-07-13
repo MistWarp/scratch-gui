@@ -6,6 +6,8 @@ import InlineMessages from '../../containers/inline-messages.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 
+import {Save} from 'lucide-react';
+
 import styles from './save-status.css';
 
 const TWSaveStatus = ({
@@ -25,22 +27,28 @@ const TWSaveStatus = ({
                     onClick={smartSave}
                     className={styles.saveNow}
                 >
-                    {fileHandle ? (
-                        <FormattedMessage
-                            defaultMessage="Save as {file}"
-                            description="Menu bar item to save project to an existing file on the user's computer"
-                            id="tw.menuBar.saveAs"
-                            values={{
-                                file: fileHandle.name
-                            }}
-                        />
-                    ) : (
-                        <FormattedMessage
-                            defaultMessage="Save to your computer"
-                            description="Menu bar item for downloading a project to your computer"
-                            id="gui.menuBar.downloadToComputer"
-                        />
-                    )}
+                    <Save
+                        className={styles.saveIcon}
+                        size={18}
+                    />
+                    <span className={styles.saveLabel}>
+                        {fileHandle ? (
+                            <FormattedMessage
+                                defaultMessage="Save as {file}"
+                                description="Menu bar item to save project to an existing file on the user's computer"
+                                id="tw.menuBar.saveAs"
+                                values={{
+                                    file: fileHandle.name
+                                }}
+                            />
+                        ) : (
+                            <FormattedMessage
+                                defaultMessage="Save to your computer"
+                                description="Menu bar item for downloading a project to your computer"
+                                id="gui.menuBar.downloadToComputer"
+                            />
+                        )}
+                    </span>
                 </div>
             )}
         </SB3Downloader>

@@ -11,6 +11,7 @@ $ui-modal-header-background: var(--ui-modal-header-background);
 $ui-modal-header-foreground: var(--ui-modal-header-foreground);
 
 $ui-white: var(--ui-white);
+$accent-foreground: var(--accent-foreground);
 $ui-white-dim: var(--ui-white-dim);
 $ui-white-transparent: var(--ui-white-transparent);
 $ui-transparent: var(--ui-transparent);

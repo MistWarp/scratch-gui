@@ -11,3 +11,30 @@
 .save-now:hover {
     background-color: $ui-black-transparent;
 }
+
+.save-icon {
+    display: none;
+    flex-shrink: 0;
+}
+
+.save-label {
+    white-space: nowrap;
+}
+
+@media only screen and (max-width: 900px) {
+    .save-icon {
+        display: block;
+    }
+
+    .save-label {
+        display: none;
+    }
+}
+
+:global(.mw-compact-save) .save-icon {
+    display: block;
+}
+
+:global(.mw-compact-save) .save-label {
+    display: none;
+}

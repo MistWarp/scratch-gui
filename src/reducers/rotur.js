@@ -1,6 +1,7 @@
 const SET_USER = 'scratch-gui/rotur/SET_USER';
 const SET_STATUS = 'scratch-gui/rotur/SET_STATUS';
 const SET_ERROR = 'scratch-gui/rotur/SET_ERROR';
+const SET_USERNAME_OVERRIDE = 'scratch-gui/rotur/SET_USERNAME_OVERRIDE';
 const CLEAR = 'scratch-gui/rotur/CLEAR';
 
 const initialState = {
@@ -8,6 +9,7 @@ const initialState = {
     username: null,
     avatarUrl: null,
     bio: null,
+    usernameOverride: null,
     error: null
 };
 
@@ -26,6 +28,10 @@ const reducer = function (state, action) {
             avatarUrl: action.avatarUrl,
             bio: action.bio || null,
             error: null
+        });
+    case SET_USERNAME_OVERRIDE:
+        return Object.assign({}, state, {
+            usernameOverride: action.username || null
         });
     case SET_ERROR:
         return Object.assign({}, state, {
@@ -51,6 +57,11 @@ const setRoturUser = ({username, avatarUrl, bio}) => ({
     bio: bio || null
 });
 
+const setRoturUsernameOverride = username => ({
+    type: SET_USERNAME_OVERRIDE,
+    username: username || null
+});
+
 const setRoturError = error => ({
     type: SET_ERROR,
     error: error ? String(error) : 'Unknown error'
@@ -65,6 +76,7 @@ export {
     initialState as roturInitialState,
     setRoturStatus,
     setRoturUser,
+    setRoturUsernameOverride,
     setRoturError,
     clearRoturUser
 };

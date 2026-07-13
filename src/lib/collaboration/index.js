@@ -11,6 +11,7 @@ import AssetChannel from './assets.js';
 import PresenceChannel from './presence.js';
 import CursorOverlay from './cursor-overlay.js';
 import {getAssetData, storeAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
+import {avatarForCollabUser} from './avatar.js';
 
 /**
  * The collaboration engine facade — the only module the React layer talks
@@ -26,6 +27,7 @@ class CollabService extends Emitter {
         this.isHost = false;
         this.roomId = null;
         this.username = null;
+        this.handle = null;
 
         this._transport = null;
         this._session = null;
@@ -50,15 +52,17 @@ class CollabService extends Emitter {
      * @param {string} username Display name.
      * @param {boolean} isHost Create (true) or join (false).
      * @param {string} [privacy] 'public' | 'private' (host only).
+     * @param {string} [handle] Rotur handle, for avatars.
      * @returns {Promise<string>} Our peer id.
      */
-    async connectToRoom (roomId, username, isHost = false, privacy = 'public') {
+    async connectToRoom (roomId, username, isHost = false, privacy = 'public', handle = null) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
         if (this._transport) this.disconnect();
 
         this.roomId = roomId;
         this.username = username || `User${Math.floor(Math.random() * 1000)}`;
+        this.handle = handle || null;
         this.isHost = isHost;
 
         this._transport = new Transport();
@@ -98,6 +102,7 @@ class CollabService extends Emitter {
             applier: this._applier,
             roomId,
             username: this.username,
+            handle: this.handle,
             privacy
         });
         this._session = session;
@@ -155,6 +160,7 @@ class CollabService extends Emitter {
             applier: this._applier,
             roomId,
             username: this.username,
+            handle: this.handle,
             hasAsset: md5ext => hasAssetData(this.vm, md5ext)
         });
         this._session = session;
@@ -255,7 +261,8 @@ class CollabService extends Emitter {
             getUsername: userId => {
                 const user = session.users.get(userId);
                 return user ? user.username : '';
-            }
+            },
+            getAvatarUrl: userId => avatarForCollabUser(session.users.get(userId))
         });
         // The container turns these into spriteEditors Redux updates —
         // the engine itself never touches the store.

@@ -1,4 +1,5 @@
 import BlockItem from '../../lib/find-bar/BlockItem';
+import {setFindBarApi} from '../../lib/find-bar/api';
 
 import Dropdown from './Dropdown';
 
@@ -41,6 +42,13 @@ export default class FindBarController {
 
         this._onDocumentKeyDown = e => this.eventKeyDown(e);
         document.addEventListener('keydown', this._onDocumentKeyDown, true);
+
+        this._onDocumentPointerDown = e => {
+            if (!this.findBarOuter || !this.findBarOuter.classList.contains('mw-find-expanded')) return;
+            if (this.findBarOuter.contains(e.target)) return;
+            this.collapseMobileSearch();
+        };
+        document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
 
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
@@ -121,6 +129,15 @@ export default class FindBarController {
             </svg>
         `;
 
+        this.searchIcon.addEventListener('click', () => {
+            if (this.findBarOuter.classList.contains('mw-find-expanded')) {
+                this.collapseMobileSearch();
+            } else {
+                this.findBarOuter.classList.add('mw-find-expanded');
+                if (this.findInput) this.findInput.focus();
+            }
+        });
+
         this.dropdownOut = this.findWrapper.appendChild(document.createElement('label'));
         this.dropdownOut.className = 'sa-find-dropdown-out';
 
@@ -167,10 +184,17 @@ export default class FindBarController {
         this.bindEvents();
         this._setupWorkspaceListener();
         this.tabChanged();
+
+        setFindBarApi({
+            expand: () => this.expandMobileSearch(),
+            collapse: () => this.collapseMobileSearch()
+        });
     }
 
     destroy () {
+        setFindBarApi(null);
         document.removeEventListener('keydown', this._onDocumentKeyDown, true);
+        document.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
         this._removeWorkspaceListener();
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
@@ -416,10 +440,22 @@ export default class FindBarController {
                 this.inputChange();
             } else {
                 this.findInput.blur();
+                this.collapseMobileSearch();
             }
             e.preventDefault();
             return;
         }
+    }
+
+    collapseMobileSearch () {
+        if (!this.findBarOuter) return;
+        this.findBarOuter.classList.remove('mw-find-expanded');
+    }
+
+    expandMobileSearch () {
+        if (!this.findBarOuter) return;
+        this.findBarOuter.classList.add('mw-find-expanded');
+        if (this.findInput) this.findInput.focus();
     }
 
     toggleCaseSensitive () {

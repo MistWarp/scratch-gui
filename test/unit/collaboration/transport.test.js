@@ -111,11 +111,46 @@ describe('joining', () => {
                 error = e;
             });
             expect(error).not.toBeNull();
-            expect(error.message).toMatch(/timed out/);
+            expect(error.collabCode).toBe('DIAL_TIMEOUT');
             transport.destroy();
         } finally {
             jest.useRealTimers();
         }
+    });
+
+    test('join() rejects immediately when nobody hosts the room', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = makeTransport();
+            const joinPromise = transport.join('room1', {});
+            peers[0].simulateOpen();
+            await flush();
+
+            peers[0].trigger('error', Object.assign(new Error('Could not connect to peer'), {
+                type: 'peer-unavailable'
+            }));
+
+            let error = null;
+            await joinPromise.catch(e => {
+                error = e;
+            });
+            expect(error).not.toBeNull();
+            expect(error.collabCode).toBe('ROOM_NOT_FOUND');
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('join() rejects a room code with no usable characters', async () => {
+        const {transport} = makeTransport();
+        let error = null;
+        await transport.join('!!!', {}).catch(e => {
+            error = e;
+        });
+        expect(error).not.toBeNull();
+        expect(error.collabCode).toBe('INVALID_ROOM');
+        transport.destroy();
     });
 
     test('join() rejects on connection error', async () => {

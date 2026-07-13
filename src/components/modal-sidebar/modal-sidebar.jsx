@@ -5,15 +5,21 @@ import {ChevronDown} from 'lucide-react';
 
 import styles from './modal-sidebar.css';
 
-const ModalSidebarLayout = ({children, className}) => (
-    <div className={classNames(styles.layout, className)}>
+const ModalSidebarLayout = ({children, className, mobileView}) => (
+    <div
+        className={classNames(styles.layout, className, {
+            [styles.mobileContent]: mobileView === 'content',
+            [styles.mobileList]: mobileView === 'list'
+        })}
+    >
         {children}
     </div>
 );
 
 ModalSidebarLayout.propTypes = {
     children: PropTypes.node,
-    className: PropTypes.string
+    className: PropTypes.string,
+    mobileView: PropTypes.oneOf(['list', 'content'])
 };
 
 const ModalSidebar = ({

@@ -135,7 +135,17 @@ export default async function ({ addon, console, msg }) {
       if (closeOnMouseUp) {
         onmouseleave();
         closeOnMouseUp = false;
+        toggle = false;
       }
+    });
+
+    Blockly.getMainWorkspace().addChangeListener((e) => {
+      if (addon.self.disabled || flyoutLock) return;
+      if (e.type !== Blockly.Events.CREATE) return;
+      if (flyOut.classList.contains("sa-flyoutClose")) return;
+      closeOnMouseUp = false;
+      toggle = false;
+      onmouseleave(null);
     });
 
     if (addon.self.enabledLate && getToggleSetting() === "category" && !addon.settings.get("lockLoad")) {
@@ -284,7 +294,12 @@ export default async function ({ addon, console, msg }) {
       };
       element.onmouseleave = (e) => {
         const toggleSetting = getToggleSetting();
-        if (!addon.self.disabled && (toggleSetting === "hover" || toggleSetting === "cathover")) onmouseleave(e);
+        if (addon.self.disabled) return;
+        if (toggleSetting === "hover" || toggleSetting === "cathover") {
+          onmouseleave(e);
+        } else if (toggleSetting === "category" && e && e.buttons) {
+          onmouseleave(e);
+        }
       };
     }
     placeHolderDiv.onmouseenter = (e) => {

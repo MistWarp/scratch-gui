@@ -25,6 +25,17 @@ describe('join flow', () => {
         room.destroy();
     });
 
+    test('a rotur handle reaches every peer, so avatars survive a renamed display name', async () => {
+        const room = await createRoom({clientCount: 0});
+        const client = await room.addClient('Sophie', 'sophie');
+        room.hub.flush();
+
+        const seenByHost = room.host.session.getUsers().find(user => user.id === client.id);
+        expect(seenByHost.handle).toBe('sophie');
+        expect(client.session.users.get(client.id).handle).toBe('sophie');
+        room.destroy();
+    });
+
     test('session-ready fires once all joiners are synced', async () => {
         const room = await createRoom({clientCount: 0});
         const ready = jest.fn();

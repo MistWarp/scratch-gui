@@ -154,3 +154,50 @@
     border: 2px solid transparent;
     background-clip: content-box;
 }
+@media only screen and (max-width: 900px) {
+    .menu {
+        min-width: 260px;
+        max-width: calc(100vw - 1rem);
+        max-height: 70vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 12px;
+        padding-bottom: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        line-height: 1.2;
+        min-height: 44px;
+        padding: 0 1rem;
+        font-size: 0.875rem;
+        white-space: normal;
+    }
+
+    .menu-item .shortcut {
+        display: none;
+    }
+
+    .submenu {
+        position: static;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    .submenu.left,
+    .submenu.right {
+        left: auto;
+        right: auto;
+    }
+
+    .submenu > .menu {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        max-height: none;
+        border-radius: 8px;
+        box-shadow: none;
+    }
+}

@@ -7,12 +7,14 @@ const SET_COLLABORATION_ROOM_ID = 'scratch-gui/collaboration/SET_COLLABORATION_R
 const SET_COLLABORATION_ROOM_PRIVACY = 'scratch-gui/collaboration/SET_COLLABORATION_ROOM_PRIVACY';
 const SET_COLLABORATION_LOADING = 'scratch-gui/collaboration/SET_COLLABORATION_LOADING';
 const SET_COLLABORATION_HOST_LOADING_PROGRESS = 'scratch-gui/collaboration/SET_HOST_LOADING_PROGRESS';
+const SET_COLLABORATION_RECONNECTING = 'scratch-gui/collaboration/SET_RECONNECTING';
 const SET_SPRITE_EDITOR = 'scratch-gui/collaboration/SET_SPRITE_EDITOR';
 const REMOVE_SPRITE_EDITOR = 'scratch-gui/collaboration/REMOVE_SPRITE_EDITOR';
 
 const initialState = {
     modalVisible: false,
     isConnected: false,
+    isReconnecting: false,
     roomId: null,
     roomPrivacy: 'public',
     connectedUsers: [],
@@ -41,7 +43,13 @@ const reducer = function (state, action) {
     case SET_COLLABORATION_CONNECTED:
         return Object.assign({}, state, {
             isConnected: action.connected,
+            isReconnecting: action.connected ? state.isReconnecting : false,
             connectionError: action.connected ? null : state.connectionError
+        });
+
+    case SET_COLLABORATION_RECONNECTING:
+        return Object.assign({}, state, {
+            isReconnecting: action.isReconnecting
         });
     
     case SET_COLLABORATION_USERS:
@@ -199,6 +207,13 @@ const setCollaborationHostLoadingProgress = function (progress) {
     };
 };
 
+const setCollaborationReconnecting = function (isReconnecting) {
+    return {
+        type: SET_COLLABORATION_RECONNECTING,
+        isReconnecting
+    };
+};
+
 const setSpriteEditor = function (spriteId, userId, username, timestamp) {
     return {
         type: SET_SPRITE_EDITOR,
@@ -229,6 +244,7 @@ export {
     setCollaborationRoomPrivacy,
     setCollaborationLoading,
     setCollaborationHostLoadingProgress,
+    setCollaborationReconnecting,
     setSpriteEditor,
     removeSpriteEditor
 };

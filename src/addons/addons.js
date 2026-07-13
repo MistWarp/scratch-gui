@@ -73,7 +73,6 @@ const addons = [
     'editor-number-arrow-keys',
     'script-snap',
     'fullscreen',
-    'hide-stage',
     'tw-straighten-comments',
     'tw-remove-backpack',
     'tw-remove-feedback',

@@ -18,6 +18,79 @@ const css = `
   background: var(--red-primary, #e64a4a);
   color: white;
 }
+
+.addon-window-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.addon-window-content::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.addon-window-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+  margin: 2px;
+}
+
+.addon-window-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 20px;
+}
+
+.addon-window-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  background-clip: content-box;
+}
+
+.addon-window-content::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 0, 0, 0.4);
+  background-clip: content-box;
+}
+
+.addon-window-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@media only screen and (max-width: 900px) {
+  .addon-window {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .addon-window .resize-handle {
+    display: none !important;
+  }
+
+  .addon-window-header {
+    cursor: default !important;
+    touch-action: auto !important;
+  }
+
+  .addon-window-btn-maximize,
+  .addon-window-btn-minimize {
+    display: none !important;
+  }
+
+  .addon-window-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
 `;
 
 const style = document.createElement('style');
@@ -253,9 +326,6 @@ class AddonWindow {
             scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
         `;
         
-        // Add custom scrollbar styling
-        this.addScrollbarStyling(this.contentElement);
-        
         this.element.appendChild(this.headerElement);
         this.element.appendChild(this.contentElement);
         
@@ -398,7 +468,7 @@ class AddonWindow {
         const minVisiblePixels = 50;
         const minX = -(this.width - minVisiblePixels);
         const maxX = window.innerWidth - minVisiblePixels;
-        const minY = -this.height;
+        const minY = 0;
         const maxY = window.innerHeight - minVisiblePixels;
         
         this.x = Math.max(minX, Math.min(newX, maxX));
@@ -635,53 +705,6 @@ class AddonWindow {
         this.resizeHandle = null;
     };
     
-    addScrollbarStyling () {
-        const newStyle = document.createElement('style');
-        
-        newStyle.textContent = `
-            .addon-window-content {
-                scrollbar-width: thin;
-                scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-            }
-            
-            .addon-window-content::-webkit-scrollbar {
-                width: 12px;
-                height: 12px;
-            }
-            
-            .addon-window-content::-webkit-scrollbar-track {
-                background: rgba(0, 0, 0, 0.03);
-                border-radius: 6px;
-                margin: 2px;
-            }
-            
-            .addon-window-content::-webkit-scrollbar-thumb {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 6px;
-                border: 2px solid transparent;
-                background-clip: content-box;
-                min-height: 20px;
-            }
-
-            .addon-window-content::-webkit-scrollbar-thumb:hover {
-                background: rgba(0, 0, 0, 0.3);
-                background-clip: content-box;
-            }
-
-            .addon-window-content::-webkit-scrollbar-thumb:active {
-                background: rgba(0, 0, 0, 0.4);
-                background-clip: content-box;
-            }
-            
-            .addon-window-content::-webkit-scrollbar-corner {
-                background: transparent;
-            }
-        `;
-        
-        document.head.appendChild(newStyle);
-        this.scrollbarStyle = newStyle;
-    }
-    
     bringToFront () {
         const isOnTopTier = this.alwaysOnTop;
         const baseZ = isOnTopTier ? WINDOW_ON_TOP_Z_INDEX_BASE : WINDOW_Z_INDEX_BASE;
@@ -713,9 +736,15 @@ class AddonWindow {
     }
     
     show () {
+        activeWindows.set(this.id, this);
+        // Callers re-show on every render, so only raise when actually becoming visible.
+        // Explicit focus still goes through pointerdown, focus() and the drag/resize handlers.
+        const wasVisible = this.isVisible;
         this.isVisible = true;
         this.element.style.display = 'flex';
-        this.bringToFront();
+        if (!wasVisible) {
+            this.bringToFront();
+        }
         return this;
     }
     
@@ -731,9 +760,6 @@ class AddonWindow {
             this.onClose();
         }
         activeWindows.delete(this.id);
-        if (this.scrollbarStyle && this.scrollbarStyle.parentNode) {
-            this.scrollbarStyle.parentNode.removeChild(this.scrollbarStyle);
-        }
         if (this.element && this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
@@ -936,6 +962,7 @@ class NativeAddonWindow {
     }
 
     show () {
+        activeWindows.set(this.id, this);
         if (this.popup && !this.popup.closed) {
             this.isVisible = true;
             return this;
