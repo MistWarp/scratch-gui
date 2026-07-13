@@ -8,6 +8,7 @@ import GitModalComponent from '../components/mw-git-modal/git-modal.jsx';
 import {closeGitModal} from '../reducers/modals.js';
 
 import downloadBlob from '../lib/utils/download-blob.js';
+import {openFractchMode} from '../lib/git/fractch-mode.js';
 
 import {
     getDefaultAuthor,
@@ -25,6 +26,7 @@ import {
     commitProject,
     mergeBranchesPreview,
     mergeBranchesApply,
+    startEditorMerge,
     restoreProjectFromCurrentRef,
     computeCommitGraph,
     getRemotes,
@@ -172,6 +174,7 @@ class TWGitModal extends React.Component {
             'handleGitProgress',
             'handleChangeMergeSourceBranch',
             'handlePreviewMerge',
+            'handleResolveInEditor',
             'handleSetMergeResolution',
             'handleApplyMerge',
             'handleDiffChangedFile',
@@ -897,6 +900,40 @@ class TWGitModal extends React.Component {
         this.setState(prev => ({mergeResolutions: {...prev.mergeResolutions, [path]: c}}));
     }
 
+    async handleResolveInEditor () {
+        const ours = this.state.currentBranch;
+        const theirs = this.state.mergeSourceBranch;
+        if (!ours || !theirs) return;
+        this.setState({busy: true, busyMessage: 'Preparing merge…', busyProgress: null, error: null});
+        try {
+            await this.waitForPollIdle();
+            const {conflicts, merged} = await startEditorMerge({
+                ours,
+                theirs,
+                author: {
+                    name: this.state.authorName || 'User',
+                    email: this.state.authorEmail || 'user@example.com'
+                }
+            });
+            if (merged) {
+                await restoreProjectFromCurrentRef(this.props.vm);
+                this.setState({mergeConflicts: [], mergeResolutions: {}, mergeSourceBranch: ''});
+                await this.refresh();
+                return;
+            }
+            if (conflicts.length === 0) {
+                this.setState({error: 'Only binary files conflict here; pick a side for each file instead.'});
+                return;
+            }
+            this.props.onClose();
+            openFractchMode();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
     async handleApplyMerge () {
         const ours = this.state.currentBranch;
         const theirs = this.state.mergeSourceBranch;
@@ -1182,6 +1219,7 @@ class TWGitModal extends React.Component {
                 onDeleteBranch={this.handleDeleteBranch}
                 onChangeMergeSourceBranch={this.handleChangeMergeSourceBranch}
                 onPreviewMerge={this.handlePreviewMerge}
+                onResolveInEditor={this.handleResolveInEditor}
                 onSetMergeResolution={this.handleSetMergeResolution}
                 onApplyMerge={this.handleApplyMerge}
                 onDiffChangedFile={this.handleDiffChangedFile}

@@ -25,12 +25,14 @@ import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import AccentMenuBarToggle from './accent-menu-bar-toggle.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
+import LoadingScreenPage from './loading-screen-page.jsx';
 import CustomThemesPage from './custom-themes-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
 import {Settings, Zap, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Radio,
-    Globe, SunMoon, Wallpaper, Type, SwatchBook, Monitor, Keyboard, ChevronLeft} from 'lucide-react';
+    Globe, SunMoon, Wallpaper, Type, SwatchBook, Monitor, Keyboard, ChevronLeft,
+    Hourglass} from 'lucide-react';
 import {connect} from 'react-redux';
 
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
@@ -1715,6 +1717,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <WallpaperPage />;
     case 'fonts':
         return <FontsPage />;
+    case 'loadingScreen':
+        return <LoadingScreenPage />;
     case 'customThemes':
         return <CustomThemesPage />;
     case 'debugger':
@@ -1850,6 +1854,14 @@ class SettingsModalComponent extends React.Component {
                         id: 'menuBar',
                         label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
                         icon: PanelTop
+                    },
+                    {
+                        id: 'loadingScreen',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.loadingScreen',
+                            defaultMessage: 'Loading Screen'
+                        }),
+                        icon: Hourglass
                     }
                 ]
             },

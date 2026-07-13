@@ -1,0 +1,473 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.workspace {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0 $space $space 0;
+    background: $ui-white;
+    color: $text-primary;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.8125rem;
+}
+
+.workspace.resizing {
+    cursor: ns-resize;
+    user-select: none;
+}
+
+.main {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.merge-banner {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid $ui-black-transparent;
+    background: $error-transparent;
+    color: $text-primary;
+    font-size: 0.75rem;
+}
+
+.merge-message {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    width: 13rem;
+    min-width: 0;
+    overflow: hidden;
+    border-right: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    height: 2.125rem;
+    padding: 0 0.75rem;
+    color: $text-primary-transparent;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tree {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 0.5rem;
+}
+
+.tree .tree {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding-bottom: 0;
+}
+
+.folder,
+.file {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+    height: 1.375rem;
+    min-width: 0;
+    padding: 0 0.5rem;
+    border: 0;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.8125rem;
+    text-align: start;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.folder span,
+.file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder svg,
+.file svg,
+.editor-tab svg,
+.panel-header svg {
+    flex: 0 0 auto;
+}
+
+.panel-header > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.folder:hover,
+.file:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.file.selected {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+.file:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.indent {
+    flex: 0 0 auto;
+    width: 0.75rem;
+    height: 100%;
+    border-inline-start: 1px solid $ui-black-transparent;
+}
+
+.editor-and-terminal {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: $ui-white;
+}
+
+.groups {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+.group-row {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+}
+
+.group-row + .group-row {
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.group {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.group + .group {
+    border-left: 1px solid $ui-black-transparent;
+}
+
+.group-body {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.split-zone {
+    position: absolute;
+    background: $looks-transparent;
+    opacity: 0;
+    z-index: 2;
+}
+
+.split-zone.left {
+    inset: 0 auto 0 0;
+    width: 30%;
+    border-right: 2px dashed $looks-secondary;
+}
+
+.split-zone.right {
+    inset: 0 0 0 auto;
+    width: 30%;
+    border-left: 2px dashed $looks-secondary;
+}
+
+.split-zone.down {
+    inset: auto 0 0 0;
+    height: 30%;
+    border-top: 2px dashed $looks-secondary;
+}
+
+.split-zone.hover {
+    opacity: 1;
+}
+
+.tab-strip {
+    display: flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    height: 2.125rem;
+    border-bottom: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+}
+
+.tab-strip-tabs {
+    display: flex;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.tab-strip-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.editor-tab {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.35rem;
+    max-width: 12rem;
+    padding: 0 0.5rem 0 0.6rem;
+    border: 0;
+    border-right: 1px solid $ui-black-transparent;
+    background: transparent;
+    color: $text-primary-transparent;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.editor-tab:hover {
+    background: $ui-tertiary;
+}
+
+.editor-tab.active {
+    background: $ui-white;
+    color: $text-primary;
+    box-shadow: inset 0 2px 0 $looks-secondary;
+}
+
+.group:not(.focused) .editor-tab.active {
+    box-shadow: inset 0 2px 0 $ui-black-transparent;
+}
+
+.editor-tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.editor-tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: inherit;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.editor-tab:hover .editor-tab-close,
+.editor-tab.active .editor-tab-close,
+.editor-tab-close.dirty {
+    opacity: 0.8;
+}
+
+.editor-tab-close:hover {
+    background: $ui-black-transparent;
+    opacity: 1;
+}
+
+.editor-tab-dot {
+    flex: 0 0 auto;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.editor-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.25rem;
+    padding: 0 0.4rem;
+    border-left: 1px solid $ui-black-transparent;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    height: 1.5rem;
+    padding: 0 0.45rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.action-button:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.action-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.action-button.toggled {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+.editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.empty-editor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 0;
+    color: $text-primary-transparent;
+    font-size: 0.8125rem;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+    height: 2.125rem;
+    padding: 0 0.35rem 0 0.75rem;
+    border-top: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary-transparent;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    touch-action: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+.panel-header.draggable {
+    cursor: ns-resize;
+}
+
+.panel-header.open {
+    color: $text-primary;
+    box-shadow: inset 0 -1px 0 $looks-secondary;
+}
+
+.panel-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.panel-toggle:hover {
+    background: $ui-tertiary;
+}
+
+.terminal {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 0.35rem 0.5rem 0;
+    overflow: hidden;
+}
+
+.terminal.hidden {
+    display: none;
+}
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.75rem;
+    height: 1.375rem;
+    padding: 0 0.6rem;
+    background: $looks-secondary;
+    color: $accent-foreground;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+}
+
+.status-bar.error {
+    background: $error-primary;
+}
+
+.status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 0 0 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-message {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-align: end;
+    text-overflow: ellipsis;
+}
+
+.loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $ui-white;
+    color: $text-primary;
+    font-size: 0.875rem;
+    z-index: 3;
+}

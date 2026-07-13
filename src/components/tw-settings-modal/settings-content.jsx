@@ -621,4 +621,5 @@ SettingsContent.propTypes = {
     onStoreProjectOptions: PropTypes.func
 };
 
+export {BooleanSetting};
 export default injectIntl(SettingsContent);

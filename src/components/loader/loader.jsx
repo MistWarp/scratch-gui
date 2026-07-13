@@ -5,6 +5,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette} from 'lucide-react';
+import {getLoaderSettings} from '../../lib/mw/loader-settings';
 import styles from './loader.css';
 import {getIsLoadingWithId} from '../../reducers/project-state';
 import topBlock from './top-block.svg';
@@ -162,6 +163,13 @@ class LoaderComponent extends React.Component {
             .map(text => ({text, order: Math.random()}))
             .sort((a, b) => a.order - b.order)
             .map(entry => entry.text);
+        this.settings = getLoaderSettings();
+        if (this.settings.customQuotes.length) {
+            this.quotes = this.settings.customQuotes
+                .map(text => ({text, order: Math.random()}))
+                .sort((a, b) => a.order - b.order)
+                .map(entry => entry.text);
+        }
         this.quoteIndex = 0;
         this.randomMessage = this.quotes[0];
         this.state = {stage: null};
@@ -174,7 +182,9 @@ class LoaderComponent extends React.Component {
         this.props.vm.on('ASSET_PROGRESS', this.handleAssetProgress);
         this.props.vm.on('LOAD_PROGRESS', this.handleLoadProgress);
         this.props.vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
-        this.quoteTimer = setInterval(this.rotateQuote, QUOTE_INTERVAL);
+        if (this.settings.showQuotes) {
+            this.quoteTimer = setInterval(this.rotateQuote, QUOTE_INTERVAL);
+        }
     }
     componentWillUnmount () {
         this.props.vm.off('ASSET_PROGRESS', this.handleAssetProgress);
@@ -295,6 +305,7 @@ class LoaderComponent extends React.Component {
     }
     render () {
         const StageIcon = STAGE_ICONS[this.state.stage];
+        const settings = this.settings;
         return (
             <div
                 className={classNames(styles.background, {
@@ -302,29 +313,36 @@ class LoaderComponent extends React.Component {
                 })}
             >
                 <div className={styles.container}>
-                    <div className={styles.blockAnimation}>
-                        <img
-                            className={styles.topBlock}
-                            src={topBlock}
-                            draggable={false}
-                        />
-                        <img
-                            className={styles.middleBlock}
-                            src={middleBlock}
-                            draggable={false}
-                        />
-                        <img
-                            className={styles.bottomBlock}
-                            src={bottomBlock}
-                            draggable={false}
-                        />
-                    </div>
+                    {settings.showAnimation ? (
+                        <div className={styles.blockAnimation}>
+                            <img
+                                className={styles.topBlock}
+                                src={topBlock}
+                                draggable={false}
+                            />
+                            <img
+                                className={styles.middleBlock}
+                                src={middleBlock}
+                                draggable={false}
+                            />
+                            <img
+                                className={styles.bottomBlock}
+                                src={bottomBlock}
+                                draggable={false}
+                            />
+                        </div>
+                    ) : null}
 
-                    <div className={styles.title}>
-                        {mainMessages[this.props.messageId]}
-                    </div>
+                    {settings.showTitle ? (
+                        <div className={styles.title}>
+                            {mainMessages[this.props.messageId]}
+                        </div>
+                    ) : null}
 
-                    <div className={styles.status}>
+                    <div
+                        className={styles.status}
+                        hidden={!settings.showStatus}
+                    >
                         {StageIcon ? (
                             <StageIcon
                                 className={styles.stageIcon}
@@ -338,7 +356,10 @@ class LoaderComponent extends React.Component {
                         />
                     </div>
 
-                    <div className={styles.barOuter}>
+                    <div
+                        className={styles.barOuter}
+                        hidden={!settings.showProgress}
+                    >
                         <div
                             className={styles.barInner}
                             ref={this.barInnerRef}
@@ -347,15 +368,18 @@ class LoaderComponent extends React.Component {
 
                     <div
                         className={styles.detail}
+                        hidden={!settings.showDetail}
                         ref={this.detailRef}
                     />
 
-                    <div
-                        className={styles.randomMessage}
-                        ref={this.quoteRef}
-                    >
-                        {this.randomMessage}
-                    </div>
+                    {settings.showQuotes ? (
+                        <div
+                            className={styles.randomMessage}
+                            ref={this.quoteRef}
+                        >
+                            {this.randomMessage}
+                        </div>
+                    ) : null}
                 </div>
             </div>
         );

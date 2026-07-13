@@ -939,6 +939,89 @@ const getBranchLogs = async ({depth = 50} = {}) => {
     return out;
 };
 
+const CONFLICT_MARKER_RE = /^(?:<{7}|={7}|>{7})/m;
+
+let pendingMerge = null;
+
+const getPendingMerge = () => (pendingMerge ? {...pendingMerge} : null);
+
+const setPendingMerge = value => {
+    pendingMerge = value;
+};
+
+const startEditorMerge = async ({ours, theirs, author} = {}) => {
+    if (!ours || !theirs || typeof ours !== 'string' || typeof theirs !== 'string') {
+        throw new Error('Invalid branches for merge');
+    }
+    const fs = getFs();
+    const oursOid = await git.resolveRef({fs, dir: REPO_DIR, ref: ours});
+    const theirsOid = await git.resolveRef({fs, dir: REPO_DIR, ref: theirs});
+    const message = `Merge branch '${theirs}' into ${ours}`;
+    try {
+        const result = await git.merge({
+            fs,
+            dir: REPO_DIR,
+            ours,
+            theirs,
+            abortOnConflict: false,
+            author: author || getDefaultAuthor(),
+            message
+        });
+        setPendingMerge(null);
+        return {conflicts: [], merged: true, result};
+    } catch (e) {
+        if (!(Errors && e instanceof Errors.MergeConflictError)) throw e;
+        const data = e.data || {};
+        const conflicts = Array.isArray(data.filepaths) ? data.filepaths : [];
+        const text = conflicts.filter(filepath => TEXT_MERGE_RE.test(filepath));
+        setPendingMerge({
+            binary: conflicts.filter(filepath => !TEXT_MERGE_RE.test(filepath)),
+            conflicts: text,
+            message,
+            ours,
+            oursOid,
+            theirs,
+            theirsOid
+        });
+        return {conflicts: text, merged: false};
+    }
+};
+
+const abortEditorMerge = async () => {
+    if (!pendingMerge) return;
+    const fs = getFs();
+    const {ours} = pendingMerge;
+    setPendingMerge(null);
+    await clearWorkdirExceptGit(fs.promises);
+    await git.checkout({fs, dir: REPO_DIR, ref: ours, force: true});
+};
+
+const completeEditorMerge = async ({author} = {}) => {
+    if (!pendingMerge) throw new Error('No merge in progress');
+    const fs = getFs();
+    const pfs = fs.promises;
+    const unresolved = [];
+    for (const filepath of pendingMerge.conflicts) {
+        const data = await pfs.readFile(pathJoin(REPO_DIR, filepath), 'utf8');
+        if (CONFLICT_MARKER_RE.test(String(data))) unresolved.push(filepath);
+    }
+    if (unresolved.length > 0) {
+        throw new Error(`Still has conflict markers: ${unresolved.join(', ')}`);
+    }
+    for (const filepath of pendingMerge.conflicts) {
+        await git.add({fs, dir: REPO_DIR, filepath});
+    }
+    const oid = await git.commit({
+        fs,
+        dir: REPO_DIR,
+        message: pendingMerge.message,
+        author: author || getDefaultAuthor(),
+        parent: [pendingMerge.oursOid, pendingMerge.theirsOid]
+    });
+    setPendingMerge(null);
+    return oid;
+};
+
 const computeCommitGraph = async ({depth = 50} = {}) => {
     const fs = getFs();
     const branches = await git.listBranches({fs, dir: REPO_DIR});
@@ -1192,6 +1275,71 @@ const repoHasFractch = async () => {
     }
 };
 
+const normalizeWorktreePath = filepath => {
+    if (!filepath || typeof filepath !== 'string' || filepath.includes('\\')) {
+        throw new Error('Invalid workspace path');
+    }
+    const parts = filepath.replace(/^\.\//, '').split('/');
+    if (filepath.startsWith('/') || parts.some(part => !part || part === '.' || part === '..') || parts[0] === '.git') {
+        throw new Error('Invalid workspace path');
+    }
+    return parts.join('/');
+};
+
+const listWorktreeFiles = async () => {
+    if (!(await repoExists())) return [];
+    const files = await listFilesRecursive(getFs().promises, REPO_DIR);
+    return files
+        .filter(file => !file.startsWith(`${REPO_DIR}/.git/`))
+        .map(file => file.slice(REPO_DIR.length + 1))
+        .sort();
+};
+
+const readWorktreeFile = async filepath => {
+    const relative = normalizeWorktreePath(filepath);
+    const data = await getFs().promises.readFile(pathJoin(REPO_DIR, relative));
+    return data instanceof Uint8Array ? data : new TextEncoder().encode(data);
+};
+
+const writeWorktreeFile = async (filepath, data) => {
+    const relative = normalizeWorktreePath(filepath);
+    const destination = pathJoin(REPO_DIR, relative);
+    await ensureParentDir(getFs().promises, destination);
+    await getFs().promises.writeFile(destination, data);
+};
+
+const deleteWorktreeFile = async filepath => {
+    const relative = normalizeWorktreePath(filepath);
+    await removeRecursive(getFs().promises, pathJoin(REPO_DIR, relative));
+};
+
+const readHeadFile = async filepath => {
+    const relative = normalizeWorktreePath(filepath);
+    const fs = getFs();
+    try {
+        const oid = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
+        const {blob} = await git.readBlob({fs, dir: REPO_DIR, oid, filepath: relative});
+        return new TextDecoder().decode(blob instanceof Uint8Array ? blob : new Uint8Array(blob));
+    } catch (e) {
+        return null;
+    }
+};
+
+const prepareFractchWorkspace = async vm => {
+    await initRepo({vm});
+    await writeProjectToFractchTree({vm, fs: getFs().promises, dir: REPO_DIR});
+    return listWorktreeFiles();
+};
+
+const applyFractchWorkspace = async vm => {
+    if (!vm) throw new Error('VM not provided');
+    const bytes = await buildSb3FromFractchTree({fs: getFs().promises, dir: REPO_DIR});
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    vm.quit();
+    await vm.loadProject(buffer, {skipGitImport: true});
+    if (vm.renderer) vm.renderer.draw();
+};
+
 // Copy the entire LightningFS repo (fractch working tree + .git) into an sb3 zip
 // under GIT_EMBED_DIR, leaving the normal project.json/assets at the top level.
 // Returns a new Blob; if there is no repo, the original blob is returned as-is.
@@ -1340,6 +1488,17 @@ export {
     importRepoFromSb3,
     cloneRepo,
     repoHasFractch,
+    startEditorMerge,
+    completeEditorMerge,
+    abortEditorMerge,
+    getPendingMerge,
+    listWorktreeFiles,
+    readWorktreeFile,
+    readHeadFile,
+    writeWorktreeFile,
+    deleteWorktreeFile,
+    prepareFractchWorkspace,
+    applyFractchWorkspace,
     readReadme,
     writeReadme,
     REPO_DIR,
