@@ -335,6 +335,11 @@ const executeCallbackAction = shortcut => {
                 callbacks.toggleBackpack();
             }
             break;
+        case 'openSpotlight':
+            if (callbacks.openSpotlight) {
+                callbacks.openSpotlight();
+            }
+            break;
         case 'toggleStageSize':
             if (callbacks.toggleStageSize) {
                 callbacks.toggleStageSize();

@@ -18,7 +18,7 @@ const getAllSprites = vm => {
             targets.push({
                 id: target.id,
                 name: target.sprite.name,
-                costume: costumes.length > 0 ? costumes[0] : null,
+                costume: costumes[target.currentCostume] || costumes[0] || null,
                 isStage: target.isStage
             });
         }

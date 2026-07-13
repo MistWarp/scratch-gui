@@ -21,6 +21,16 @@ const UNDO_STACK_SIZE = 99;
 
 const MAX_RMS = 1.2;
 
+const chunkLevelsCache = new WeakMap();
+const getChunkLevels = samples => {
+    let levels = chunkLevelsCache.get(samples);
+    if (!levels) {
+        levels = computeChunkedRMS(samples);
+        chunkLevelsCache.set(samples, levels);
+    }
+    return levels;
+};
+
 class SoundEditor extends React.Component {
     constructor (props) {
         super(props);
@@ -49,7 +59,7 @@ class SoundEditor extends React.Component {
         ]);
         this.state = {
             copyBuffer: null,
-            chunkLevels: computeChunkedRMS(this.props.samples),
+            chunkLevels: getChunkLevels(this.props.samples),
             playhead: null, // null is not playing, [0 -> 1] is playing percent
             trimStart: null,
             trimEnd: null
@@ -137,7 +147,7 @@ class SoundEditor extends React.Component {
         this.audioBufferPlayer.stop();
         this.audioBufferPlayer = new AudioBufferPlayer(samples, sampleRate);
         this.setState({
-            chunkLevels: computeChunkedRMS(samples),
+            chunkLevels: getChunkLevels(samples),
             playhead: null
         });
     }

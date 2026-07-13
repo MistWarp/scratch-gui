@@ -1,6 +1,7 @@
 import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
+import {captureStoredAppearance, mergeStoredAppearance, applyAppearance} from './appearance.js';
 
 const matchMedia = query => (window.matchMedia ? window.matchMedia(query) : null);
 const PREFERS_HIGH_CONTRAST_QUERY = matchMedia('(prefers-contrast: more)');
@@ -62,16 +63,22 @@ const onSystemPreferenceChange = onChange => {
  */
 const detectTheme = () => {
     const systemPreferences = systemPreferencesTheme();
+    const storedAppearance = captureStoredAppearance();
+    const addStoredAppearance = theme => {
+        const missingStoredValue = Object.keys(storedAppearance)
+            .some(key => typeof theme.appearance[key] === 'undefined');
+        return missingStoredValue ? theme.set('appearance', mergeStoredAppearance(theme.appearance)) : theme;
+    };
 
     try {
         const local = localStorage.getItem(STORAGE_KEY);
 
         // Migrate legacy preferences
         if (local === 'dark') {
-            return Theme.defaults.dark;
+            return addStoredAppearance(Theme.defaults.dark);
         }
         if (local === 'light') {
-            return Theme.defaults.light;
+            return addStoredAppearance(Theme.defaults.light);
         }
 
         const parsed = JSON.parse(local);
@@ -80,7 +87,9 @@ const detectTheme = () => {
         if (parsed.isCustom && parsed.customThemeUuid) {
             const customTheme = customThemeManager.getTheme(parsed.customThemeUuid);
             if (customTheme) {
-                return customTheme;
+                const migratedTheme = addStoredAppearance(customTheme);
+                return migratedTheme === customTheme ? customTheme :
+                    customThemeManager.updateTheme(customTheme.uuid, {appearance: migratedTheme.appearance});
             }
             // Fall back to system preferences if custom theme not found
             console.warn(`Custom theme ${parsed.customThemeUuid} not found, falling back to system preferences`);
@@ -88,7 +97,7 @@ const detectTheme = () => {
 
         if (parsed.inlineCustomTheme && typeof parsed.inlineCustomTheme === 'object') {
             try {
-                return CustomTheme.import(parsed.inlineCustomTheme);
+                return addStoredAppearance(CustomTheme.import(parsed.inlineCustomTheme));
             } catch (e) {
                 console.warn('Failed to import inline custom theme, falling back to system preferences', e);
             }
@@ -102,19 +111,26 @@ const detectTheme = () => {
             wallpaper.gridVisible = true;
         }
 
+        const legacyAppearance = {
+            ...(parsed.menuBarLayout ? {menuBarLayout: parsed.menuBarLayout} : {}),
+            ...(parsed.styleSettings ? {styles: parsed.styleSettings} : {})
+        };
+
         return new Theme(
             parsed.accent || systemPreferences.accent,
             parsed.gui || systemPreferences.gui,
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
             wallpaper,
-            parsed.fonts || {system: [], google: [], history: []}
+            parsed.fonts || {system: [], google: [], history: []},
+            null,
+            {...storedAppearance, ...legacyAppearance, ...(parsed.appearance || {})}
         );
     } catch (e) {
         // ignore
     }
 
-    return systemPreferences;
+    return addStoredAppearance(systemPreferences);
 };
 
 /**
@@ -147,6 +163,9 @@ const persistTheme = theme => {
         }
         if (theme.menuBarAlign !== systemPreferences.menuBarAlign) {
             nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
+        }
+        if (Object.keys(theme.appearance).length > 0) {
+            nonDefaultSettings.appearance = theme.appearance;
         }
         // Always save wallpaper settings if they exist
         if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
@@ -195,6 +214,8 @@ const applyTheme = theme => {
         // Don't let GUI application failures block persistence
         console.error('Failed to apply GUI colors for theme:', e);
     }
+
+    applyAppearance(theme.appearance);
 
     persistTheme(theme);
 };

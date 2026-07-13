@@ -103,13 +103,18 @@ const Backpack = ({
             >
                 <div className={styles.searchContainer}>
                     <input
+                        aria-label={intl.formatMessage({
+                            id: 'gui.backpack.searchPlaceholder',
+                            defaultMessage: 'Search backpack...'
+                        })}
+                        autoComplete="off"
                         className={styles.searchInput}
                         placeholder={intl.formatMessage({
                             id: 'gui.backpack.searchPlaceholder',
                             defaultMessage: 'Search backpack...'
                         })}
                         value={searchQuery}
-                        onChange={e => onSearchChange(e.target.value)}
+                        onChange={onSearchChange}
                     />
                 </div>
                 <div className={styles.itemsScroller}>
@@ -167,11 +172,18 @@ const Backpack = ({
                                 </div>
                             ) : (
                                 <div className={styles.statusMessage}>
-                                    <FormattedMessage
-                                        defaultMessage="Backpack is empty"
-                                        description="Empty backpack message"
-                                        id="gui.backpack.emptyBackpack"
-                                    />
+                                    {searchQuery ? (
+                                        <FormattedMessage
+                                            defaultMessage="No matching backpack items"
+                                            id="gui.backpack.noSearchResults"
+                                        />
+                                    ) : (
+                                        <FormattedMessage
+                                            defaultMessage="Backpack is empty"
+                                            description="Empty backpack message"
+                                            id="gui.backpack.emptyBackpack"
+                                        />
+                                    )}
                                 </div>
                             )
                         )

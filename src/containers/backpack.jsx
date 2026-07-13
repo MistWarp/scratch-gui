@@ -33,6 +33,37 @@ const messages = defineMessages({
     }
 });
 
+const normalizeSearch = value => `${value || ''}`.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const filterBackpackContents = (contents, value) => {
+    const query = normalizeSearch(value).trim();
+    if (!query) return contents;
+
+    const terms = query.split(/\s+/);
+    const aliases = {
+        costume: 'costumes image images',
+        script: 'scripts block blocks code',
+        sound: 'sounds audio',
+        sprite: 'sprites character characters'
+    };
+
+    return contents.map((item, index) => {
+        const name = normalizeSearch(item.name || item.type || 'script');
+        const searchable = `${name} ${item.type} ${aliases[item.type] || ''}`;
+        if (!terms.every(term => searchable.includes(term))) return null;
+
+        let score = 3;
+        if (name === query) score = 0;
+        else if (name.startsWith(query)) score = 1;
+        else if (name.split(/\s+/).some(word => word.startsWith(query))) score = 2;
+        return {item, index, score};
+    }).filter(Boolean)
+        .sort((a, b) => a.score - b.score || a.index - b.index)
+        .map(result => result.item);
+};
+
 class Backpack extends React.Component {
     constructor (props) {
         super(props);
@@ -60,6 +91,8 @@ class Backpack extends React.Component {
         this.dropAreaRef = null;
         this.lastPointer = {x: null, y: null};
         this.resizeSession = null;
+        this.contentsRequest = null;
+        this.loadAllContents = false;
 
         const DEFAULT_HEIGHT = 5.5 * 16;
         const MIN_HEIGHT = DEFAULT_HEIGHT;
@@ -81,7 +114,7 @@ class Backpack extends React.Component {
             blockDragOutsideWorkspace: false,
             blockDragOverBackpack: false,
             error: false,
-            itemsPerPage: 20,
+            itemsPerPage: 100,
             moreToLoad: false,
             loading: false,
             expanded: false,
@@ -269,28 +302,41 @@ class Backpack extends React.Component {
                 });
         });
     }
-    getContents () {
-        if ((this.props.token && this.props.username) || this.props.host === LOCAL_API) {
-            this.setState({loading: true, error: false}, () => {
-                getBackpackContents({
-                    host: this.props.host,
-                    token: this.props.token,
-                    username: this.props.username,
-                    offset: this.state.contents.length,
-                    limit: this.state.itemsPerPage
-                })
-                    .then(contents => {
-                        this.setState({
-                            contents: this.state.contents.concat(contents),
-                            moreToLoad: contents.length === this.state.itemsPerPage,
-                            loading: false
-                        });
-                    })
-                    .catch(error => {
-                        this.handleError(error);
-                    });
+    getContents (loadAll = false) {
+        if ((!this.props.token || !this.props.username) && this.props.host !== LOCAL_API) return;
+
+        this.loadAllContents = this.loadAllContents || loadAll;
+        if (this.contentsRequest) return;
+
+        this.setState({loading: true, error: false});
+        const loaded = this.state.contents.slice();
+        const loadPage = () => getBackpackContents({
+            host: this.props.host,
+            token: this.props.token,
+            username: this.props.username,
+            offset: loaded.length,
+            limit: this.state.itemsPerPage
+        }).then(contents => {
+            loaded.push(...contents);
+            if (this.loadAllContents && contents.length === this.state.itemsPerPage) {
+                return loadPage();
+            }
+            return contents.length === this.state.itemsPerPage;
+        });
+
+        this.contentsRequest = loadPage()
+            .then(moreToLoad => {
+                this.setState({contents: loaded, moreToLoad, loading: false});
+            })
+            .catch(error => {
+                this.contentsRequest = null;
+                this.loadAllContents = false;
+                this.handleError(error);
+            })
+            .then(() => {
+                this.contentsRequest = null;
+                this.loadAllContents = false;
             });
-        }
     }
     handleBlockDragUpdate (isOutsideWorkspace) {
         this.setState({
@@ -368,18 +414,13 @@ class Backpack extends React.Component {
     handleMore () {
         this.getContents();
     }
-    handleSearchChange (value) {
+    handleSearchChange (event) {
+        const value = event.target.value;
         this.setState({searchQuery: value});
+        if (value.trim() && (this.state.moreToLoad || this.contentsRequest)) this.getContents(true);
     }
     getFilteredContents () {
-        const query = this.state.searchQuery.toLowerCase().trim();
-        if (!query) {
-            return this.state.contents;
-        }
-        return this.state.contents.filter(item => {
-            const name = item.name || 'script';
-            return name.toLowerCase().includes(query);
-        });
+        return filterBackpackContents(this.state.contents, this.state.searchQuery);
     }
     render () {
         return (
@@ -389,10 +430,10 @@ class Backpack extends React.Component {
                 error={this.state.error}
                 expanded={this.state.expanded}
                 height={this.state.height}
-                loading={this.state.loading}
+                loading={this.state.loading && this.state.contents.length === 0}
                 searchQuery={this.state.searchQuery}
                 onSearchChange={this.handleSearchChange}
-                showMore={!this.props.searchQuery && this.state.moreToLoad}
+                showMore={!this.state.searchQuery && this.state.moreToLoad}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}
@@ -444,4 +485,5 @@ const mapStateToProps = state => Object.assign(
 
 const mapDispatchToProps = () => ({});
 
+export {filterBackpackContents};
 export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(Backpack));

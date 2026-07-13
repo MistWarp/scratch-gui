@@ -1,360 +1,132 @@
-// Search and filtering utilities
+import {getAllSprites, getAllCostumes, getAllCustomBlocks, getAllSounds} from './vmHelpers.js';
+import {evaluateMath, tryUnitConversion} from './mathUtils.js';
 
-import { getAllSprites, getAllCostumes, getAllCustomBlocks, getAllSounds } from './vmHelpers.js';
-import { evaluateMath, tryUnitConversion } from './mathUtils.js';
+const normalize = value => `${value || ''}`.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
-/**
- * @typedef MenuItem
- * @property {any | null} block
- * @property {(endOnly: boolean) => string} [autocompleteFactory]
- * @property {number} [score] Search relevance score
- * @property {any} [spriteData] Sprite data if this is a sprite item
- * @property {boolean} [isSprite] Whether this is a sprite item
- * @property {any} [costumeData] Costume data if this is a costume item
- * @property {boolean} [isCostume] Whether this is a costume item
- * @property {boolean} [isHeader] Whether this is a section header
- * @property {string} [headerText] Text for the section header
- * @property {boolean} [isCustomBlock] Whether this is a custom block item
- * @property {any} [customBlockData] Custom block data if this is a custom block item
- * @property {any} [soundData] Sound data if this is a sound item
- * @property {boolean} [isSound] Whether this is a sound item
- */
-
-
-/**
- * Perform search and generate menu items
- * @param {string} searchValue Search value
- * @param {any} querier Querier instance
- * @param {BlockTypeInfo[]} blockTypes Block types
- * @param {any} vm VM instance
- * @param {number} PREVIEW_LIMIT Maximum number of results
- * @param {string} searchMode 'blocks' or 'everything'
- * @returns {{
- *     blockList: MenuItem[],
- *     queryIllegalResult: any,
- *     limited: boolean,
- *     mathResult: (number | null),
- *     conversionResult: any
- *   }} Search results
- */
-const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, searchMode = 'everything') => {
-    /** @type {MenuItem[]} */
-    const blockList = [];
-    let queryIllegalResult = null;
-    let limited = false;
-    let mathResult = null;
-    let conversionResult = null;
-
-    if (searchValue.trim().length === 0) {
-        if (blockTypes) {
-            for (const blockType of blockTypes) {
-                blockList.push({
-                    block: blockType.createBlock(),
-                    score: 0,
-                    isSprite: false
-                });
-            }
-        }
-    } else {
-        const searchEverything = searchMode === 'everything';
-        const queryResultObj = querier.queryWorkspace(searchValue);
-        const queryResults = queryResultObj.results;
-        queryIllegalResult = queryResultObj.illegalResult;
-        limited = queryResultObj.limited;
-
-        const searchTerms = searchValue.toLowerCase().split(/\s+/)
-            .filter(t => t.length > 0);
-
-        let spriteResults = [];
-        if (searchEverything) {
-            const sprites = getAllSprites(vm);
-
-            for (const sprite of sprites) {
-                const spriteName = sprite.name.toLowerCase();
-                let score = 0;
-
-                if (spriteName === searchValue.toLowerCase()) {
-                    score += 2000;
-                }
-
-                if (spriteName.startsWith(searchValue.toLowerCase())) {
-                    score += 1500;
-                }
-
-                if (spriteName.includes(searchValue.toLowerCase())) {
-                    score += 1000;
-                }
-
-                const containsAll = searchTerms.every(term => spriteName.includes(term));
-                if (containsAll) {
-                    score += 200;
-                }
-
-                if (score > 0) {
-                    spriteResults.push({
-                        spriteData: sprite,
-                        score: score
-                    });
-                }
-            }
-        }
-
-        spriteResults.sort((a, b) => b.score - a.score);
-
-        // Search costumes (only in everything mode)
-        let costumeResults = [];
-        if (searchEverything) {
-            const costumes = getAllCostumes(vm);
-
-            for (const costume of costumes) {
-                const costumeName = costume.name.toLowerCase();
-                let score = 0;
-
-                if (costumeName === searchValue.toLowerCase()) {
-                    score += 2000;
-                }
-
-                if (costumeName.startsWith(searchValue.toLowerCase())) {
-                    score += 1500;
-                }
-
-                if (costumeName.includes(searchValue.toLowerCase())) {
-                    score += 1000;
-                }
-
-                const containsAll = searchTerms.every(term => costumeName.includes(term));
-                if (containsAll) {
-                    score += 200;
-                }
-
-                if (score > 0) {
-                    costumeResults.push({
-                        costumeData: costume,
-                        score: score
-                    });
-                }
-            }
-        }
-
-        costumeResults.sort((a, b) => b.score - a.score);
-
-        // Search sounds (only in everything mode)
-        let soundResults = [];
-        if (searchEverything) {
-            const sounds = getAllSounds(vm);
-
-            for (const sound of sounds) {
-                const soundName = sound.name.toLowerCase();
-                let score = 0;
-
-                if (soundName === searchValue.toLowerCase()) {
-                    score += 2000;
-                }
-
-                if (soundName.startsWith(searchValue.toLowerCase())) {
-                    score += 1500;
-                }
-
-                if (soundName.includes(searchValue.toLowerCase())) {
-                    score += 1000;
-                }
-
-                const containsAll = searchTerms.every(term => soundName.includes(term));
-                if (containsAll) {
-                    score += 200;
-                }
-
-                if (score > 0) {
-                    soundResults.push({
-                        soundData: sound,
-                        score: score
-                    });
-                }
-            }
-        }
-
-        soundResults.sort((a, b) => b.score - a.score);
-
-        // Search custom blocks (only in everything mode)
-        let customBlockResults = [];
-        if (searchEverything) {
-            const customBlocks = getAllCustomBlocks(vm);
-
-            for (const customBlock of customBlocks) {
-                const blockName = customBlock.displayName.toLowerCase();
-                let score = 0;
-
-                if (blockName === searchValue.toLowerCase()) {
-                    score += 2000;
-                }
-
-                if (blockName.startsWith(searchValue.toLowerCase())) {
-                    score += 1500;
-                }
-
-                if (blockName.includes(searchValue.toLowerCase())) {
-                    score += 1000;
-                }
-
-                const containsAll = searchTerms.every(term => blockName.includes(term));
-                if (containsAll) {
-                    score += 200;
-                }
-
-                if (score > 0) {
-                    customBlockResults.push({
-                        customBlockData: customBlock,
-                        score: score
-                    });
-                }
-            }
-        }
-
-        customBlockResults.sort((a, b) => b.score - a.score);
-
-        // Score regular blocks
-        const scoredResults = queryResults.map(queryResult => {
-            const blockText = queryResult.toText(false).toLowerCase();
-
-            let score = 0;
-
-            if (blockText === searchValue.toLowerCase()) {
-                score += 1000;
-            }
-
-            if (blockText.startsWith(searchValue.toLowerCase())) {
-                score += 500;
-            }
-
-            const containsAll = searchTerms.every(term => blockText.includes(term));
-            if (containsAll) {
-                score += 200;
-            }
-
-            const words = blockText.split(/\s+/);
-            for (const term of searchTerms) {
-                for (const word of words) {
-                    if (word.startsWith(term)) {
-                        score += 100;
-                    }
-                    if (word === term) {
-                        score += 50;
-                    }
-                }
-            }
-
-            score -= blockText.length * 0.5;
-
-            const inputCount = (blockText.match(/\(\)/g) || []).length;
-            score -= inputCount * 10;
-
-            return {
-                queryResult,
-                score,
-                blockText
-            };
-        });
-
-        scoredResults.sort((a, b) => b.score - a.score);
-
-        const topResults = scoredResults.slice(0, PREVIEW_LIMIT);
-
-        // Build the menu with sections
-        if (spriteResults.length > 0) {
-            blockList.push({
-                block: null,
-                isHeader: true,
-                headerText: 'Sprites',
-                score: 10000
-            });
-            for (const result of spriteResults) {
-                blockList.push({
-                    block: null,
-                    spriteData: result.spriteData,
-                    isSprite: true,
-                    score: result.score
-                });
-            }
-        }
-
-        if (costumeResults.length > 0) {
-            blockList.push({
-                block: null,
-                isHeader: true,
-                headerText: 'Costumes',
-                score: 9000
-            });
-            for (const result of costumeResults) {
-                blockList.push({
-                    block: null,
-                    costumeData: result.costumeData,
-                    isCostume: true,
-                    score: result.score
-                });
-            }
-        }
-
-        if (soundResults.length > 0) {
-            blockList.push({
-                block: null,
-                isHeader: true,
-                headerText: 'Sounds',
-                score: 9500
-            });
-            for (const result of soundResults) {
-                blockList.push({
-                    block: null,
-                    soundData: result.soundData,
-                    isSound: true,
-                    score: result.score
-                });
-            }
-        }
-
-        if (customBlockResults.length > 0) {
-            blockList.push({
-                block: null,
-                isHeader: true,
-                headerText: 'Custom Blocks',
-                score: 8500
-            });
-            for (const result of customBlockResults) {
-                blockList.push({
-                    block: null,
-                    customBlockData: result.customBlockData,
-                    isCustomBlock: true,
-                    score: result.score
-                });
-            }
-        }
-
-        if (topResults.length > 0) {
-            blockList.push({
-                block: null,
-                isHeader: true,
-                headerText: 'Blocks',
-                score: 8000
-            });
-            for (const result of topResults) {
-                blockList.push({
-                    block: result.queryResult.getBlock(),
-                    autocompleteFactory: endOnly => result.queryResult.toText(endOnly),
-                    score: result.score,
-                    isSprite: false
-                });
-            }
-        }
-
-        // Calculate math/conversion results
-        mathResult = evaluateMath(searchValue);
-        if (!mathResult) {
-            conversionResult = tryUnitConversion(searchValue);
-        }
+const isSubsequence = (needle, haystack) => {
+    let index = 0;
+    for (const character of haystack) {
+        if (character === needle[index]) index++;
+        if (index === needle.length) return true;
     }
+    return false;
+};
+
+const scoreText = (value, rawQuery) => {
+    const text = normalize(value);
+    const query = normalize(rawQuery);
+    if (!text || !query) return 0;
+    if (text === query) return 4000;
+    if (text.startsWith(query)) return 3200 - text.length;
+
+    const words = text.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    if (words.some(word => word.startsWith(query))) return 2600 - text.length;
+    if (text.includes(query)) return 2000 - text.length;
+
+    const terms = query.split(/\s+/);
+    if (terms.every(term => words.some(word => word.includes(term)))) return 1400 - text.length;
+    if (terms.every(term => words.some(word => isSubsequence(term, word)))) return 600 - text.length;
+    return 0;
+};
+
+const rankNamed = (items, query, getText, toResult) => items.map((item, index) => ({
+    item,
+    index,
+    score: scoreText(getText(item), query)
+})).filter(result => result.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map(result => ({...toResult(result.item), score: result.score}));
+
+const appendSection = (blockList, title, results) => {
+    if (results.length === 0) return;
+    blockList.push({block: null, isHeader: true, headerText: title});
+    blockList.push(...results);
+};
+
+/**
+ * Search blocks and project assets, returning a short ranked result list.
+ * @param {string} searchValue Search value
+ * @param {any} querier WorkspaceQuerier instance
+ * @param {any[]} blockTypes Indexed block types
+ * @param {any} vm VM instance
+ * @param {number} previewLimit Maximum block results
+ * @param {string} searchMode 'blocks' or 'everything'
+ * @returns {object} Search results and computed value metadata
+ */
+const performSearch = (searchValue, querier, blockTypes, vm, previewLimit, searchMode = 'everything') => {
+    const query = normalize(searchValue);
+    const blockList = [];
+    if (!query) {
+        return {
+            blockList,
+            queryIllegalResult: null,
+            limited: false,
+            mathResult: null,
+            conversionResult: null
+        };
+    }
+
+    const queryResultObj = querier.queryWorkspace(searchValue);
+    const queryResults = queryResultObj.results;
+    const entityLimit = Math.max(4, Math.min(8, Math.floor(previewLimit / 4)));
+    let limited = queryResultObj.limited || queryResults.length > previewLimit;
+
+    if (searchMode === 'everything') {
+        const sprites = rankNamed(
+            getAllSprites(vm),
+            query,
+            item => `${item.name} sprite character`,
+            item => ({block: null, spriteData: item, isSprite: true})
+        );
+        const costumes = rankNamed(
+            getAllCostumes(vm),
+            query,
+            item => `${item.name} costume image`,
+            item => ({block: null, costumeData: item, isCostume: true})
+        );
+        const sounds = rankNamed(
+            getAllSounds(vm),
+            query,
+            item => `${item.name} sound audio`,
+            item => ({block: null, soundData: item, isSound: true})
+        );
+        const customBlocks = rankNamed(
+            getAllCustomBlocks(vm),
+            query,
+            item => `${item.displayName} ${item.targetName} custom block procedure`,
+            item => ({block: null, customBlockData: item, isCustomBlock: true})
+        );
+
+        limited = limited || [sprites, costumes, sounds, customBlocks]
+            .some(results => results.length > entityLimit);
+        appendSection(blockList, 'Sprites', sprites.slice(0, entityLimit));
+        appendSection(blockList, 'Costumes', costumes.slice(0, entityLimit));
+        appendSection(blockList, 'Sounds', sounds.slice(0, entityLimit));
+        appendSection(blockList, 'Custom Blocks', customBlocks.slice(0, entityLimit));
+    }
+
+    const blocks = queryResults.map((queryResult, index) => ({
+        queryResult,
+        index,
+        score: scoreText(queryResult.toText(false), query) || 1
+    })).sort((a, b) => b.score - a.score || a.index - b.index)
+        .slice(0, previewLimit)
+        .map(result => ({
+            block: result.queryResult.getBlock(),
+            autocompleteFactory: endOnly => result.queryResult.toText(endOnly),
+            score: result.score
+        }));
+    appendSection(blockList, 'Blocks', blocks);
+
+    const mathResult = evaluateMath(searchValue);
+    const conversionResult = mathResult === null ? tryUnitConversion(searchValue) : null;
 
     return {
         blockList,
-        queryIllegalResult,
+        queryIllegalResult: queryResultObj.illegalResult,
         limited,
         mathResult,
         conversionResult
@@ -362,5 +134,6 @@ const performSearch = (searchValue, querier, blockTypes, vm, PREVIEW_LIMIT, sear
 };
 
 export {
-    performSearch
+    performSearch,
+    scoreText
 };

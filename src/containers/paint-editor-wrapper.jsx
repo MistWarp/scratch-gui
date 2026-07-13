@@ -10,6 +10,18 @@ import {openFontsModal} from '../reducers/modals';
 import {connect} from 'react-redux';
 import {Theme} from '../lib/themes/index.js';
 
+let cachedSvgId = null;
+let cachedSvgSource = null;
+let cachedSanitizedSvg = null;
+const sanitizeSvgOnce = (imageId, source) => {
+    if (imageId !== cachedSvgId || source !== cachedSvgSource) {
+        cachedSvgId = imageId;
+        cachedSvgSource = source;
+        cachedSanitizedSvg = sanitizeSvg.sanitizeSvgText(source);
+    }
+    return cachedSanitizedSvg;
+};
+
 class PaintEditorWrapper extends React.Component {
     constructor (props) {
         super(props);
@@ -75,7 +87,7 @@ class PaintEditorWrapper extends React.Component {
         return (
             <PaintEditor
                 {...componentProps}
-                image={this.props.imageFormat === 'svg' ? sanitizeSvg.sanitizeSvgText(costume) : costume}
+                image={this.props.imageFormat === 'svg' ? sanitizeSvgOnce(this.props.imageId, costume) : costume}
                 onUpdateImage={this.handleUpdateImage}
                 onUpdateName={this.handleUpdateName}
                 fontInlineFn={this.fontInlineFn}

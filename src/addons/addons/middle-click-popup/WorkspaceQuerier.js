@@ -1180,17 +1180,17 @@ export default class WorkspaceQuerier {
   /**
    * The maximum number of results to find before we give up searching sub-blocks.
    */
-  static MAX_RESULTS = 5000; // Increased from 2000
+  static MAX_RESULTS = 1000;
 
   /**
    * The maximum number of tokens to find before giving up.
    */
-  static MAX_TOKENS = 20000; // Increased from 10000
+  static MAX_TOKENS = 8000;
   
   /**
    * The maximum number of combinations per block type.
    */
-  static MAX_COMBINATIONS_PER_BLOCK = 20;
+  static MAX_COMBINATIONS_PER_BLOCK = 12;
 
   /**
    * Indexes a workspace in preparation for querying it.
@@ -1219,7 +1219,8 @@ export default class WorkspaceQuerier {
     
     // Set a start time to prevent hanging
     const startTime = Date.now();
-    const MAX_EXECUTION_TIME = 3000; // Increased to 3 seconds for better results
+    // ponytail: keep typing responsive; move parsing to a worker if deeper searches need more time.
+    const MAX_EXECUTION_TIME = 250;
 
     let bestIllegalResult = null;
     let bestIllegalResultText = "";

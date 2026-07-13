@@ -2,9 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
-import {applyGuiColors} from '../lib/themes/guiHelpers';
 import {BLOCKS_CUSTOM, Theme} from '../lib/themes';
-import {detectTheme, onSystemPreferenceChange, persistTheme} from '../lib/themes/themePersistance';
+import {applyTheme, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance';
 import {setTheme} from '../reducers/theme';
 
 const TWThemeManagerHOC = function (WrappedComponent) {
@@ -14,7 +13,7 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             bindAll(this, [
                 'handleSystemThemeChange'
             ]);
-            applyGuiColors(props.reduxTheme);
+            applyTheme(props.reduxTheme);
         }
         componentDidMount () {
             this.removeListeners = onSystemPreferenceChange(this.handleSystemThemeChange);
@@ -30,12 +29,12 @@ const TWThemeManagerHOC = function (WrappedComponent) {
                 prevTheme.gui !== currentTheme.gui ||
                 prevTheme.blocks !== currentTheme.blocks ||
                 prevTheme.menuBarAlign !== currentTheme.menuBarAlign ||
+                prevTheme.appearance !== currentTheme.appearance ||
                 prevTheme.iconPack !== currentTheme.iconPack ||
                 prevTheme.name !== currentTheme.name;
 
             if (themeChanged) {
-                applyGuiColors(currentTheme);
-                persistTheme(currentTheme);
+                applyTheme(currentTheme);
             }
         }
         componentWillUnmount () {

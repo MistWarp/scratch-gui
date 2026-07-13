@@ -39,12 +39,14 @@ const findGroup = id => STYLE_GROUPS.find(g => g.id === id);
 
 const storageKey = id => `mw:style-${id}`;
 
+const isValidValue = (group, value) => group.options.some(option => option.value === value);
+
 const getStyleSetting = id => {
     const group = findGroup(id);
     if (!group) return null;
     try {
         const stored = localStorage.getItem(storageKey(id));
-        if (stored && group.options.some(o => o.value === stored)) {
+        if (stored && isValidValue(group, stored)) {
             return stored;
         }
     } catch (err) {
@@ -70,12 +72,41 @@ const applyStyleSetting = (id, value) => {
 };
 
 const setStyleSetting = (id, value) => {
+    const group = findGroup(id);
+    if (!group || !isValidValue(group, value)) return;
     try {
         localStorage.setItem(storageKey(id), value);
     } catch (err) {
         // ignore
     }
     applyStyleSetting(id, value);
+};
+
+const getStyleSettings = () => Object.fromEntries(
+    STYLE_GROUPS.map(group => [group.id, getStyleSetting(group.id)])
+);
+
+const getStoredStyleSettings = () => {
+    try {
+        if (!STYLE_GROUPS.some(group => localStorage.getItem(storageKey(group.id)) !== null)) return null;
+    } catch (err) {
+        return null;
+    }
+    return getStyleSettings();
+};
+
+const applyStyleSettings = settings => {
+    for (const group of STYLE_GROUPS) {
+        const value = settings && isValidValue(group, settings[group.id]) ?
+            settings[group.id] : group.defaultValue;
+        try {
+            if (settings) localStorage.setItem(storageKey(group.id), value);
+            else localStorage.removeItem(storageKey(group.id));
+        } catch (err) {
+            // ignore
+        }
+        applyStyleSetting(group.id, value);
+    }
 };
 
 const initStyleSettings = () => {
@@ -87,7 +118,10 @@ const initStyleSettings = () => {
 export {
     STYLE_GROUPS,
     getStyleSetting,
+    getStyleSettings,
+    getStoredStyleSettings,
     setStyleSetting,
     applyStyleSetting,
+    applyStyleSettings,
     initStyleSettings
 };

@@ -162,6 +162,8 @@ class Blocks extends React.Component {
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
         this.deferredWorkspaceLoad = null;
+        this.toolboxStateUpdateTimeout = null;
+        this.workspaceVisibilityRaf = null;
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -380,29 +382,30 @@ class Blocks extends React.Component {
                     }, 100);
                 }
                 
-                // Defer expensive operations to next tick
-                setTimeout(() => {
-                    if (this.workspace) {
-                        this.workspace.resize();
-                    }
-                }, 0);
             }
-            if (prevProps.locale !== this.props.locale || this.props.locale !== this.props.vm.getLocale()) {
+            const localeChanged = prevProps.locale !== this.props.locale ||
+                this.props.locale !== this.props.vm.getLocale();
+            if (localeChanged) {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
-            } else {
-                // Defer workspace refresh to next tick for better performance
-                setTimeout(() => {
-                    if (this.workspace && !this.unmounted) {
-                        this.workspace.refreshToolboxSelection_();
-                        this.workspace.resize();
-                    }
-                }, 0);
             }
 
-            window.dispatchEvent(new Event('resize'));
+            // Visibility changes used to resize Blockly up to three times. Refresh
+            // and lay it out once, immediately before the next paint.
+            window.cancelAnimationFrame(this.workspaceVisibilityRaf);
+            this.workspaceVisibilityRaf = window.requestAnimationFrame(() => {
+                this.workspaceVisibilityRaf = null;
+                if (this.workspace && !this.unmounted) {
+                    if (!localeChanged) {
+                        this.workspace.refreshToolboxSelection_();
+                    }
+                    this.workspace.resize();
+                }
+            });
         } else {
+            window.cancelAnimationFrame(this.workspaceVisibilityRaf);
+            this.workspaceVisibilityRaf = null;
             this.workspace.setVisible(false);
         }
     }
@@ -414,6 +417,8 @@ class Blocks extends React.Component {
         this.cancelDeferredWorkspaceLoad();
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
+        clearTimeout(this.toolboxStateUpdateTimeout);
+        window.cancelAnimationFrame(this.workspaceVisibilityRaf);
 
         // Cancel any pending debounced calls
         this.onTargetsUpdate.cancel();
@@ -719,7 +724,10 @@ class Blocks extends React.Component {
 
             // Update flyout background element (the path element ScratchBlocks creates)
             if (newColors.flyout) {
-                const flyoutBackground = document.querySelector('svg.blocklyFlyout > path.blocklyFlyoutBackground, svg.blocklyFlyout > rect.blocklyFlyoutBackground');
+                const flyoutBackground = document.querySelector(
+                    'svg.blocklyFlyout > path.blocklyFlyoutBackground, ' +
+                    'svg.blocklyFlyout > rect.blocklyFlyoutBackground'
+                );
                 if (flyoutBackground) {
                     flyoutBackground.setAttribute('fill', newColors.flyout);
                 }
@@ -798,7 +806,9 @@ class Blocks extends React.Component {
                     // Update toolbox and flyout elements again after they re-render
                     if (newColors.toolbox) {
                         const toolboxSvg = document.querySelector('svg.blocklyToolbox');
-                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        const toolboxBackground = document.querySelector(
+                            'svg.blocklyToolbox > path.blocklyToolboxBackground'
+                        );
                         if (toolboxSvg) {
                             toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
                         }
@@ -808,7 +818,10 @@ class Blocks extends React.Component {
                     }
                     if (newColors.flyout) {
                         const flyoutSvg = document.querySelector('svg.blocklyFlyout');
-                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        const flyoutBackground = document.querySelector(
+                            'svg.blocklyFlyout > rect.blocklyFlyoutBackground, ' +
+                            'svg.blocklyFlyout > path.blocklyFlyoutBackground'
+                        );
                         if (flyoutSvg) {
                             flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
                         }
@@ -824,7 +837,9 @@ class Blocks extends React.Component {
                         });
                     }
                     if (newColors.scrollbar) {
-                        const scrollbarElements = document.querySelectorAll('.blocklyScrollbarBackground, .blocklyScrollbarThumb');
+                        const scrollbarElements = document.querySelectorAll(
+                            '.blocklyScrollbarBackground, .blocklyScrollbarThumb'
+                        );
                         scrollbarElements.forEach(el => {
                             el.style.setProperty('fill', newColors.scrollbar, 'important');
                         });
@@ -837,7 +852,9 @@ class Blocks extends React.Component {
                 if (this.workspace && !this.unmounted) {
                     if (newColors.toolbox) {
                         const toolboxSvg = document.querySelector('svg.blocklyToolbox');
-                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        const toolboxBackground = document.querySelector(
+                            'svg.blocklyToolbox > path.blocklyToolboxBackground'
+                        );
                         if (toolboxSvg) {
                             toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
                         }
@@ -847,7 +864,10 @@ class Blocks extends React.Component {
                     }
                     if (newColors.flyout) {
                         const flyoutSvg = document.querySelector('svg.blocklyFlyout');
-                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        const flyoutBackground = document.querySelector(
+                            'svg.blocklyFlyout > rect.blocklyFlyoutBackground, ' +
+                            'svg.blocklyFlyout > path.blocklyFlyoutBackground'
+                        );
                         if (flyoutSvg) {
                             flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
                         }
@@ -903,7 +923,7 @@ class Blocks extends React.Component {
 
     withToolboxUpdates (fn) {
         // if there is a queued toolbox update, we need to wait
-        if (this.toolboxUpdateTimeout) {
+        if (this.toolboxStateUpdateTimeout || this.toolboxUpdateTimeout) {
             this.toolboxUpdateQueue.push(fn);
         } else {
             fn();
@@ -1027,11 +1047,9 @@ class Blocks extends React.Component {
         }
     }
     onWorkspaceUpdate (data) {
-        // When we change sprites, update the toolbox to have the new sprite's blocks
-        const toolboxXML = this.getToolboxXML();
-        if (toolboxXML) {
-            this.props.updateToolboxState(toolboxXML);
-        }
+        // Batch this with target-dependent extension updates. A sprite switch
+        // should describe and rebuild the toolbox once, not once per event.
+        this.requestToolboxStateUpdate();
 
         if (this.props.vm.editingTarget && !this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             this.onWorkspaceMetricsChange();
@@ -1155,11 +1173,7 @@ class Blocks extends React.Component {
         defineBlocks(categoryInfo.menus);
         defineBlocks(categoryInfo.blocks);
 
-        // Update the toolbox with new blocks if possible
-        const toolboxXML = this.getToolboxXML();
-        if (toolboxXML) {
-            this.props.updateToolboxState(toolboxXML);
-        }
+        this.requestToolboxStateUpdate();
     }
     handleBlocksInfoUpdate (categoryInfo) {
         // @todo Later we should replace this to avoid all the warnings from redefining blocks.
@@ -1167,10 +1181,18 @@ class Blocks extends React.Component {
     }
 
     handleExtensionsChanged () {
-        const toolboxXML = this.getToolboxXML();
-        if (toolboxXML) {
-            this.props.updateToolboxState(toolboxXML);
-        }
+        this.requestToolboxStateUpdate();
+    }
+    requestToolboxStateUpdate () {
+        clearTimeout(this.toolboxStateUpdateTimeout);
+        this.toolboxStateUpdateTimeout = setTimeout(() => {
+            this.toolboxStateUpdateTimeout = null;
+            if (this.unmounted) return;
+            const toolboxXML = this.getToolboxXML();
+            if (toolboxXML) {
+                this.props.updateToolboxState(toolboxXML);
+            }
+        }, 0);
     }
     handleCategorySelected (categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);

@@ -4,11 +4,13 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import {connect} from 'react-redux';
 import {closeSettingsModal} from '../reducers/modals';
+import {setTheme} from '../reducers/theme';
 import SettingsModalComponent from '../components/tw-settings-modal/settings-modal.jsx';
 import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
-import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
+import {getStyleSetting, getStyleSettings, setStyleSetting} from '../lib/mw-style-settings';
+import {applyTheme} from '../lib/themes/themePersistance';
 import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
 import {getVanillaPalette, setVanillaPalette} from '../lib/mw-vanilla-palette';
 
@@ -36,10 +38,7 @@ class UsernameModal extends React.Component {
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
             unclipPalette: getAppearanceSetting('unclip-palette'),
-            hideBackpack: getAppearanceSetting('hide-backpack'),
-            tabStyle: getStyleSetting('tab-style'),
-            tabLooks: getStyleSetting('tab-looks'),
-            windowStyle: getStyleSetting('window-style')
+            hideBackpack: getAppearanceSetting('hide-backpack')
         };
 
         bindAll(this, [
@@ -170,7 +169,8 @@ class UsernameModal extends React.Component {
                     blocks: theme.blocks,
                     menuBarAlign: theme.menuBarAlign,
                     wallpaper: theme.wallpaper,
-                    fonts: theme.fonts
+                    fonts: theme.fonts,
+                    appearance: theme.appearance
                 }
             };
         })();
@@ -260,19 +260,23 @@ class UsernameModal extends React.Component {
         this.setAppearance_('unclipPalette', 'unclip-palette', e.target.checked);
     }
 
+    setStyle_ (id, value) {
+        setStyleSetting(id, value);
+        if (this.props.theme) {
+            this.props.onChangeTheme(this.props.theme.setAppearance({styles: getStyleSettings()}));
+        }
+    }
+
     handleTabStyleChange (value) {
-        this.setState({tabStyle: value});
-        setStyleSetting('tab-style', value);
+        this.setStyle_('tab-style', value);
     }
 
     handleTabLooksChange (value) {
-        this.setState({tabLooks: value});
-        setStyleSetting('tab-looks', value);
+        this.setStyle_('tab-looks', value);
     }
 
     handleWindowStyleChange (value) {
-        this.setState({windowStyle: value});
-        setStyleSetting('window-style', value);
+        this.setStyle_('window-style', value);
     }
     render () {
         const {
@@ -325,11 +329,11 @@ class UsernameModal extends React.Component {
                 onHideBackpackChange={this.handleHideBackpackChange}
                 hideBackpack={this.state.hideBackpack}
                 onTabStyleChange={this.handleTabStyleChange}
-                tabStyle={this.state.tabStyle}
+                tabStyle={getStyleSetting('tab-style')}
                 onTabLooksChange={this.handleTabLooksChange}
-                tabLooks={this.state.tabLooks}
+                tabLooks={getStyleSetting('tab-looks')}
                 onWindowStyleChange={this.handleWindowStyleChange}
-                windowStyle={this.state.windowStyle}
+                windowStyle={getStyleSetting('window-style')}
                 optimizeAnimations={this.state.optimizeAnimations}
                 debugMode={this.state.debugMode}
                 showFPSCounter={this.state.showFPSCounter}
@@ -347,7 +351,8 @@ UsernameModal.propTypes = {
     onClose: PropTypes.func,
     vm: PropTypes.shape({
         renderer: PropTypes.shape({
-            setUseHighQualityRender: PropTypes.func
+            setUseHighQualityRender: PropTypes.func,
+            useRealLayerIndexes: PropTypes.bool
         }),
         setFramerate: PropTypes.func,
         setCompilerOptions: PropTypes.func,
@@ -372,7 +377,8 @@ UsernameModal.propTypes = {
     disableCompiler: PropTypes.bool,
     caseSensitiveLists: PropTypes.bool,
     realLayerIndexes: PropTypes.bool,
-    theme: PropTypes.any
+    theme: PropTypes.any,
+    onChangeTheme: PropTypes.func
 };
 
 const mapStateToProps = state => ({
@@ -393,7 +399,11 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeSettingsModal())
+    onClose: () => dispatch(closeSettingsModal()),
+    onChangeTheme: theme => {
+        dispatch(setTheme(theme));
+        applyTheme(theme);
+    }
 });
 
 export default injectIntl(connect(
