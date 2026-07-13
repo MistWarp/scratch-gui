@@ -14,6 +14,7 @@ module.exports = {
         'react/no-unknown-property': 'off',
         // END: these caused trouble after upgrading eslint-plugin-react from 7.24.0 to 7.33.2
         'no-warning-comments': 'off',
+        'no-unused-vars': ['error', {args: 'after-used', varsIgnorePattern: '^_', ignoreRestSiblings: true}],
         'import/no-mutable-exports': 'error',
         'import/no-commonjs': 'error',
         'import/no-amd': 'error',

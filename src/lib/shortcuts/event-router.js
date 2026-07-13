@@ -1,4 +1,4 @@
-import bowser from 'bowser';
+import {isMac} from '../utils/browser';
 import {getDefaultShortcuts, applyCustomShortcuts} from './registry.js';
 import WindowManager from '../../addons/window-system/window-manager.js';
 
@@ -125,7 +125,7 @@ const shouldIgnoreEvent = event => {
 };
 
 const getModifierKeys = event => ({
-    ctrl: bowser.mac ? event.metaKey : event.ctrlKey,
+    ctrl: isMac ? event.metaKey : event.ctrlKey,
     alt: event.altKey,
     shift: event.shiftKey
 });

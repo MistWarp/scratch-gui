@@ -1,5 +1,4 @@
 import bindAll from 'lodash.bindall';
-import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {intlShape, injectIntl} from 'react-intl';
@@ -166,11 +165,12 @@ class StageSelector extends React.Component {
         this.ref = ref;
     }
     render () {
-        const componentProps = omit(this.props, [
-            'asset', 'dispatchSetHoveredSprite', 'id', 'intl',
-            'onActivateTab', 'onSelect', 'onShowImporting', 'onCloseImporting',
-            'isRtl', 'getWorkspaceMetrics'
-        ]);
+        const {
+            asset, dispatchSetHoveredSprite, id, intl,
+            onActivateTab, onSelect, onShowImporting, onCloseImporting,
+            isRtl, getWorkspaceMetrics,
+            ...componentProps
+        } = this.props;
         return (
             <DroppableThrottledStage
                 componentRef={this.setRef}

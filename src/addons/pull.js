@@ -21,7 +21,6 @@
 
 const fs = require('fs');
 const childProcess = require('child_process');
-const rimraf = require('rimraf');
 const pathUtil = require('path');
 const {addons, newAddons} = require('./addons.js');
 
@@ -47,18 +46,18 @@ const clone = obj => JSON.parse(JSON.stringify(obj));
 
 const repoPath = pathUtil.resolve(__dirname, 'ScratchAddons');
 if (!process.argv.includes('-')) {
-    rimraf.sync(repoPath);
+    fs.rmSync(repoPath, {recursive: true, force: true});
     childProcess.execSync(`git clone --depth=1 --branch=tw https://github.com/TurboWarp/addons ${repoPath}`);
 }
 
 for (const folder of ['addons', 'addons-l10n', 'addons-l10n-settings', 'libraries']) {
     const path = pathUtil.resolve(__dirname, folder);
-    rimraf.sync(path);
+    fs.rmSync(path, {recursive: true, force: true});
     fs.mkdirSync(path, {recursive: true});
 }
 
 const generatedPath = pathUtil.resolve(__dirname, 'generated');
-rimraf.sync(generatedPath);
+fs.rmSync(generatedPath, {recursive: true, force: true});
 fs.mkdirSync(generatedPath, {recursive: true});
 
 process.chdir(repoPath);

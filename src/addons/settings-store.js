@@ -48,9 +48,9 @@ const migrateSettings = settings => {
     // tw-interface-customization split into tw-remove-backpack and tw-remove-feedback
     if (oldVersion < 2) {
         const projectInfo = settings['tw-project-info'];
-        if (projectInfo && projectInfo.enabled) {
+        if (projectInfo && typeof projectInfo.enabled === 'boolean') {
             settings['block-count'] = {
-                enabled: true
+                enabled: projectInfo.enabled
             };
         }
         const interfaceCustomization = settings['tw-interface-customization'];
@@ -79,14 +79,11 @@ const migrateSettings = settings => {
     }
 
     // Migrate 3 -> 4
-    // editor-devtools was broken up into find-bar and middle-click-popup.
+    // editor-devtools was broken up into middle-click-popup (find-bar is native here).
     // If someone disabled editor-devtools, we want to keep these disabled.
     if (oldVersion < 4) {
         const editorDevtools = settings['editor-devtools'];
         if (editorDevtools && editorDevtools.enabled === false) {
-            settings['find-bar'] = {
-                enabled: false
-            };
             settings['middle-click-popup'] = {
                 enabled: false
             };

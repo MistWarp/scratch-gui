@@ -1,5 +1,4 @@
 import bindAll from 'lodash.bindall';
-import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -27,7 +26,7 @@ class Watermark extends React.Component {
     }
 
     render () {
-        const componentProps = omit(this.props, ['asset', 'vm']);
+        const {asset, vm, ...componentProps} = this.props;
         return (
             <WatermarkComponent
                 costumeURL={this.getCostumeData()}

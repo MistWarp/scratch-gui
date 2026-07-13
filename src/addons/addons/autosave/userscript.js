@@ -8,7 +8,7 @@ export default async function ({ addon, console, msg }) {
   
   let autosaveInterval = null;
   let lastSaveTime = 0;
-  let isAutosaveEnabled = addon.settings.get("enabled");
+  let isAutosaveEnabled = addon.settings.get("autosaveEnabled");
   let intervalMinutes = addon.settings.get("interval");
   let showNotifications = addon.settings.get("showNotifications");
   let saveOnlyWhenChanged = addon.settings.get("saveOnlyWhenChanged");
@@ -156,7 +156,7 @@ export default async function ({ addon, console, msg }) {
 
   function toggleAutosave() {
     isAutosaveEnabled = !isAutosaveEnabled;
-    addon.settings.set("enabled", isAutosaveEnabled);
+    addon.settings.set("autosaveEnabled", isAutosaveEnabled);
     updateSettings();
   }
 
@@ -314,7 +314,7 @@ export default async function ({ addon, console, msg }) {
   // Handle settings changes
   function updateSettings() {
     const wasEnabled = isAutosaveEnabled;
-    isAutosaveEnabled = addon.settings.get("enabled");
+    isAutosaveEnabled = addon.settings.get("autosaveEnabled");
     intervalMinutes = addon.settings.get("interval");
     showNotifications = addon.settings.get("showNotifications");
     saveOnlyWhenChanged = addon.settings.get("saveOnlyWhenChanged");

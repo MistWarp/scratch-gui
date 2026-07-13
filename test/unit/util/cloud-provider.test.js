@@ -1,4 +1,4 @@
-import CloudProvider from '../../../src/lib/cloud-provider';
+import CloudProvider from '../../../src/lib/api/cloud-provider';
 
 let websocketConstructorCount = 0;
 

@@ -127,7 +127,7 @@ describe('churn under adverse delivery', () => {
             }
 
             // Let gap recovery fire and replay.
-            jest.runTimersToTime(3000);
+            jest.advanceTimersByTime(3000);
             room.hub.flush();
 
             room.expectConverged();

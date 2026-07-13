@@ -5,16 +5,16 @@ import configureStore from 'redux-mock-store';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import VM from 'scratch-vm';
 import {LoadingState} from '../../../src/reducers/project-state';
-import CloudProvider from '../../../src/lib/cloud-provider';
+import CloudProvider from '../../../src/lib/api/cloud-provider';
 const mockCloudProviderInstance = {
     connection: true,
     requestCloseConnection: jest.fn()
 };
-jest.mock('../../../src/lib/cloud-provider', () =>
+jest.mock('../../../src/lib/api/cloud-provider', () =>
     jest.fn().mockImplementation(() => mockCloudProviderInstance)
 );
 
-import cloudManagerHOC from '../../../src/lib/cloud-manager-hoc.jsx';
+import cloudManagerHOC from '../../../src/lib/components/cloud-manager-hoc.jsx';
 
 describe.skip('CloudManagerHOC', () => {
     const mockStore = configureStore();

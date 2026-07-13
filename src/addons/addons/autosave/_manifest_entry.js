@@ -23,7 +23,7 @@ const manifest = {
     {
       "dynamic": true,
       "name": "Enable autosave",
-      "id": "enabled",
+      "id": "autosaveEnabled",
       "type": "boolean",
       "default": true
     },

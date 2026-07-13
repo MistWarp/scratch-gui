@@ -10,7 +10,7 @@ import {mount} from 'enzyme';
 import VM from 'scratch-vm';
 import {LoadingState} from '../../../src/reducers/project-state';
 
-import vmManagerHOC from '../../../src/lib/vm-manager-hoc.jsx';
+import vmManagerHOC from '../../../src/lib/components/vm-manager-hoc.jsx';
 
 describe('VMManagerHOC', () => {
     const mockStore = configureStore();

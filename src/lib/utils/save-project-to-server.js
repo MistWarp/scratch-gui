@@ -1,4 +1,3 @@
-import queryString from 'query-string';
 import xhr from 'xhr';
 import storage from '../persistence/storage';
 
@@ -29,7 +28,7 @@ export default function (projectId, vmState, params) {
     if (Object.prototype.hasOwnProperty.call(params, 'isCopy')) queryParams.is_copy = params.isCopy;
     if (Object.prototype.hasOwnProperty.call(params, 'isRemix')) queryParams.is_remix = params.isRemix;
     if (Object.prototype.hasOwnProperty.call(params, 'title')) queryParams.title = params.title;
-    let qs = queryString.stringify(queryParams);
+    let qs = new URLSearchParams(queryParams).toString();
     if (qs) qs = `?${qs}`;
     if (creatingProject) {
         Object.assign(opts, {

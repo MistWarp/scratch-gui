@@ -4,7 +4,7 @@ import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import MonitorList from '../../../src/components/monitor-list/monitor-list.jsx';
-import {DEFAULT_THEME} from '../../../src/lib/themes';
+import {Theme} from '../../../src/lib/themes';
 
 describe('MonitorListComponent', () => {
     const store = configureStore()({scratchGui: {
@@ -13,7 +13,7 @@ describe('MonitorListComponent', () => {
             savedMonitorPositions: {}
         },
         theme: {
-            theme: DEFAULT_THEME
+            theme: new Theme()
         },
         toolbox: {
             toolboxXML: ''

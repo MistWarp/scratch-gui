@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
-import ReactTooltip from 'react-tooltip';
+import {Tooltip} from 'react-tooltip';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {defaultProjectId} from '../../reducers/project-state';
 import styles from './project-input.css';
@@ -27,11 +27,13 @@ class ProjectInput extends React.Component {
             'handleBlur',
             'handleFocus',
             'inputRef',
-            'tooltipRef'
+            'setTooltipOpen'
         ]);
         this.state = {
-            projectId: this.props.projectId
+            projectId: this.props.projectId,
+            tooltipOpen: false
         };
+        this.tooltipId = 'tw-project-input-tooltip';
     }
     componentDidUpdate (prevProps) {
         if (this.props.projectId !== prevProps.projectId) {
@@ -69,30 +71,32 @@ class ProjectInput extends React.Component {
         if (this.state.projectId && this.state.projectId !== this.props.projectId) {
             this.props.setProjectId(this.state.projectId);
         }
-        ReactTooltip.hide(this.tooltip);
+        this.setTooltipOpen(false);
     }
     handleFocus (e) {
         if (this.extractProjectId(e.target.value)) {
             e.target.select();
         }
-        ReactTooltip.show(this.tooltip);
+        this.setTooltipOpen(true);
     }
     inputRef (el) {
         this.input = el;
     }
-    tooltipRef (el) {
-        this.tooltip = el;
+    setTooltipOpen (tooltipOpen) {
+        this.setState({tooltipOpen});
     }
     render () {
         const projectId = this.state.projectId === defaultProjectId ? '' : this.state.projectId || '';
         return (
             <div
-                ref={this.tooltipRef}
-                data-tip={this.props.intl.formatMessage(messages.tooltip)}
+                data-tooltip-content={this.props.intl.formatMessage(messages.tooltip)}
+                data-tooltip-id={this.tooltipId}
             >
-                <ReactTooltip
+                <Tooltip
                     className={styles.tooltip}
-                    effect="solid"
+                    id={this.tooltipId}
+                    isOpen={this.state.tooltipOpen}
+                    setIsOpen={this.setTooltipOpen}
                 />
                 <input
                     ref={this.inputRef}

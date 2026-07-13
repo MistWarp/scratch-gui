@@ -17,13 +17,7 @@ const defaultProject = translator => {
         }];
     }
 
-    let _TextEncoder;
-    if (typeof TextEncoder === 'undefined') {
-        _TextEncoder = require('text-encoding').TextEncoder;
-    } else {
-        _TextEncoder = TextEncoder;
-    }
-    const encoder = new _TextEncoder();
+    const encoder = new TextEncoder();
 
     const projectJson = projectData(translator);
     return [{

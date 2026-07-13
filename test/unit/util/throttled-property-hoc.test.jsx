@@ -1,7 +1,7 @@
 import React from 'react';
 import {mount} from 'enzyme';
 
-import ThrottledPropertyHOC from '../../../src/lib/throttled-property-hoc.jsx';
+import ThrottledPropertyHOC from '../../../src/lib/components/throttled-property-hoc.jsx';
 
 describe('VMListenerHOC', () => {
     let mounted;

@@ -208,7 +208,7 @@ test('unknown action types return unchanged state', () => {
 test('full collaboration workflow', () => {
     const initialState = collaborationInitialState;
 
-    state = collaborationReducer(initialState, openCollaborationModal());
+    let state = collaborationReducer(initialState, openCollaborationModal());
     expect(state.modalVisible).toBe(true);
 
     state = collaborationReducer(state, setCollaborationConnected(true));

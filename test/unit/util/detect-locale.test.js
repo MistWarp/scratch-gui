@@ -1,86 +1,63 @@
-import {detectLocale} from '../../../src/lib/detect-locale.js';
+import {detectLocale} from '../../../src/lib/utils/detect-locale.js';
 
 const supportedLocales = ['en', 'es', 'pt-br', 'de', 'it'];
 
-Object.defineProperty(window.location,
-    'search',
-    {value: '?name=val', configurable: true}
-);
-Object.defineProperty(window.navigator,
-    'language',
-    {value: 'en-US', configurable: true}
-);
+const setSearch = search => {
+    window.history.replaceState({}, '', `/${search}`);
+};
+
+const setLanguage = language => {
+    Object.defineProperty(window.navigator, 'language', {value: language, configurable: true});
+};
 
 describe('detectLocale', () => {
+    beforeEach(() => {
+        setSearch('?name=val');
+        setLanguage('en-US');
+    });
+
     test('uses locale from the URL when present', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?locale=pt-br'}
-        );
+        setSearch('?locale=pt-br');
         expect(detectLocale(supportedLocales)).toEqual('pt-br');
     });
 
     test('is case insensitive', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?locale=pt-BR'}
-        );
+        setSearch('?locale=pt-BR');
         expect(detectLocale(supportedLocales)).toEqual('pt-br');
     });
 
     test('also accepts lang from the URL when present', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?lang=it'}
-        );
+        setSearch('?lang=it');
         expect(detectLocale(supportedLocales)).toEqual('it');
     });
 
     test('ignores unsupported locales', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?lang=sv'}
-        );
+        setSearch('?lang=sv');
         expect(detectLocale(supportedLocales)).toEqual('en');
     });
 
     test('ignores other parameters', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?enable=language'}
-        );
+        setSearch('?enable=language');
         expect(detectLocale(supportedLocales)).toEqual('en');
     });
 
     test('uses navigator language property for default if supported', () => {
-        Object.defineProperty(window.navigator,
-            'language',
-            {value: 'pt-BR'}
-        );
+        setLanguage('pt-BR');
         expect(detectLocale(supportedLocales)).toEqual('pt-br');
     });
 
     test('ignores navigator language property if unsupported', () => {
-        Object.defineProperty(window.navigator,
-            'language',
-            {value: 'da'}
-        );
+        setLanguage('da');
         expect(detectLocale(supportedLocales)).toEqual('en');
     });
 
     test('works with an empty locale', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?locale='}
-        );
+        setSearch('?locale=');
         expect(detectLocale(supportedLocales)).toEqual('en');
     });
 
     test('if multiple, uses the first locale', () => {
-        Object.defineProperty(window.location,
-            'search',
-            {value: '?locale=de&locale=en'}
-        );
+        setSearch('?locale=de&locale=en');
         expect(detectLocale(supportedLocales)).toEqual('de');
     });
 });
