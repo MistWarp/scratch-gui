@@ -35,6 +35,7 @@ import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 import searchIcon from '../components/action-menu/icon--search.svg';
 
 import {getCostumeLibrary, getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
+import CollaborationService from '../lib/collaboration/index.js';
 
 let messages = defineMessages({
     addLibraryBackdropMsg: {
@@ -131,6 +132,7 @@ class CostumeTab extends React.Component {
     handleSelectCostume (costumeIndex) {
         this.props.vm.editingTarget.setCostume(costumeIndex);
         this.setState({selectedCostumeIndex: costumeIndex});
+        CollaborationService.getInstance().setActivity({assetIndex: costumeIndex});
     }
     handleDeleteCostume (costumeIndex) {
         const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);

@@ -22,28 +22,21 @@ const sanitizeSound = sound => ({
 });
 
 /**
- * Strip live Asset objects out of a target JSON so it can travel as a
- * plain op payload; the bytes go through the asset channel instead.
- * @param {object} json target.toJSON() output.
- * @returns {{spriteJson: object, assetRefs: Array.<string>}} Clean payload parts.
+ * Serialize a target into a payload the receiving peer can hand straight
+ * to vm.addSprite. It must be a real sprite3 JSON — target.toJSON() is a
+ * runtime dump that fails the VM's sprite schema — so go through the VM's
+ * own sb3 serializer, which also leaves the Asset bytes behind (they can
+ * be megabytes; they travel on the asset channel instead).
+ * @param {VirtualMachine} vm The VM.
+ * @param {string} targetId The sprite to serialize.
+ * @returns {{spriteJson: object, assetRefs: Array.<string>}} Payload parts.
  */
-const sanitizeSpriteJson = json => {
-    // Serialize with Asset objects nulled out (they can be megabytes),
-    // then drop the placeholder keys entirely.
-    const spriteJson = JSON.parse(JSON.stringify(json, (key, value) => (key === 'asset' ? null : value)));
-    (spriteJson.costumes || []).forEach(costume => {
-        delete costume.asset;
-    });
-    (spriteJson.sounds || []).forEach(sound => {
-        delete sound.asset;
-    });
-    const assetRefs = [];
-    (spriteJson.costumes || []).forEach(costume => {
-        if (costume.md5) assetRefs.push(costume.md5);
-    });
-    (spriteJson.sounds || []).forEach(sound => {
-        if (sound.md5) assetRefs.push(sound.md5);
-    });
+const serializeSprite = (vm, targetId) => {
+    const spriteJson = JSON.parse(vm.toJSON(targetId));
+    const assetRefs = []
+        .concat(spriteJson.costumes || [], spriteJson.sounds || [])
+        .map(item => item.md5ext)
+        .filter(Boolean);
     return {spriteJson, assetRefs};
 };
 
@@ -89,8 +82,8 @@ const wrapVmMethods = ({vm, patcher, isSuppressed, onLocalOp}) => {
     const captureNewTarget = () => {
         // After addSprite/duplicateSprite the VM selects the new target.
         const target = vm.editingTarget;
-        if (!target || !target.sprite) return;
-        const {spriteJson, assetRefs} = sanitizeSpriteJson(target.toJSON());
+        if (!target || !target.sprite || target.isStage) return;
+        const {spriteJson, assetRefs} = serializeSprite(vm, target.id);
         onLocalOp(OP.SPRITE_ADD, {targetId: target.id, spriteJson, assetRefs});
     };
 

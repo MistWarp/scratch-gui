@@ -8,6 +8,7 @@ const COLOR_CLASSES = [
     'control',
     'sensing',
     'operators',
+    'strings',
     'data',
     'data-lists',
     'list',

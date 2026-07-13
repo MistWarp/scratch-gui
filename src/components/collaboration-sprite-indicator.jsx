@@ -1,10 +1,16 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
+import {avatarForCollabUser} from '../lib/collaboration/avatar.js';
 import styles from './collaboration-sprite-indicator.css';
+
+const MAX_SHOWN = 2;
+const BADGE_STRIDE_PX = 14;
 
 const getUsernameInitials = username => {
     if (!username) return '??';
-    return username.substring(0, 2).toUpperCase();
+    return username.replace(/^@/, '').substring(0, 2)
+        .toUpperCase();
 };
 
 const hashUsername = username => {
@@ -17,40 +23,55 @@ const hashUsername = username => {
     return Math.abs(hash);
 };
 
-const getUserColor = username => {
-    const hash = hashUsername(username);
-    const hue = hash % 360;
-    return `hsl(${hue}, 70%, 45%)`;
-};
+const getUserColor = username => `hsl(${hashUsername(username) % 360}, 70%, 45%)`;
 
-const CollaborationSpriteIndicator = ({editingUsers}) => {
-    if (!editingUsers || editingUsers.length === 0) {
-        return null;
-    }
+/**
+ * The stack of little "who else is here" avatars. Used on sprites, on editor
+ * tabs, and on individual costumes and sounds — same badges everywhere, so a
+ * face means the same thing wherever it shows up.
+ * @param {object} props Props.
+ * @param {Array.<object>} props.users Users to show ({userId, username, handle}).
+ * @param {string} [props.verb] What they are doing, for the tooltip.
+ * @param {boolean} [props.inline] Sit in the layout instead of overlaying a tile.
+ * @returns {React.ReactElement|null} The badges, or nothing when nobody is here.
+ */
+const CollaborationSpriteIndicator = ({users, verb = 'is editing this', inline = false}) => {
+    if (!users || users.length === 0) return null;
 
-    const displayUsers = editingUsers.slice(0, 2);
-    const overflowCount = editingUsers.length - 2;
+    const shown = users.slice(0, MAX_SHOWN);
+    const overflowCount = users.length - shown.length;
+    const offset = index => (inline ? {} : {left: `${index * BADGE_STRIDE_PX}px`});
 
     return (
-        <div className={styles.indicator}>
-            {displayUsers.map((user, index) => (
-                <div
-                    key={user.userId}
-                    className={styles.badge}
-                    style={{
-                        backgroundColor: getUserColor(user.username),
-                        left: `${index * 14}px`
-                    }}
-                    title={`${user.username} is editing this sprite`}
-                >
-                    {getUsernameInitials(user.username)}
-                </div>
-            ))}
+        <div className={classNames(styles.indicator, {[styles.inline]: inline})}>
+            {shown.map((user, index) => {
+                const avatarUrl = avatarForCollabUser(user);
+                return (
+                    <div
+                        key={user.userId}
+                        className={styles.badge}
+                        style={Object.assign(
+                            {backgroundColor: getUserColor(user.username || '')},
+                            offset(index)
+                        )}
+                        title={`${user.username} ${verb}`}
+                    >
+                        {avatarUrl ? (
+                            <img
+                                className={styles.avatar}
+                                src={avatarUrl}
+                                alt=""
+                                draggable={false}
+                            />
+                        ) : getUsernameInitials(user.username)}
+                    </div>
+                );
+            })}
             {overflowCount > 0 && (
                 <div
                     className={styles.overflowBadge}
-                    style={{left: `${displayUsers.length * 14}px`}}
-                    title={`${overflowCount} more user${overflowCount > 1 ? 's' : ''} editing this sprite`}
+                    style={offset(shown.length)}
+                    title={`${overflowCount} more here`}
                 >
                     {`+${overflowCount}`}
                 </div>
@@ -60,10 +81,13 @@ const CollaborationSpriteIndicator = ({editingUsers}) => {
 };
 
 CollaborationSpriteIndicator.propTypes = {
-    editingUsers: PropTypes.arrayOf(PropTypes.shape({
+    inline: PropTypes.bool,
+    users: PropTypes.arrayOf(PropTypes.shape({
         userId: PropTypes.string,
-        username: PropTypes.string
-    }))
+        username: PropTypes.string,
+        handle: PropTypes.string
+    })),
+    verb: PropTypes.string
 };
 
 export default CollaborationSpriteIndicator;

@@ -47,6 +47,12 @@ const blockColors = {
         tertiary: '#389438',
         quaternary: '#389438'
     },
+    strings: {
+        primary: '#00A6A6',
+        secondary: '#009292',
+        tertiary: '#007A7A',
+        quaternary: '#007A7A'
+    },
     data: {
         primary: '#FF8C1A',
         secondary: '#FF8000',

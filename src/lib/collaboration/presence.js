@@ -3,6 +3,11 @@ import {PRESENCE, makePresence} from './protocol.js';
 
 const CURSOR_MIN_INTERVAL_MS = 50; // 20Hz
 
+const sameActivity = (a, b) => (
+    a === b ||
+    Boolean(a && b && a.targetId === b.targetId && a.tab === b.tab && a.assetIndex === b.assetIndex)
+);
+
 /**
  * The unsequenced presence channel: live cursors, cursor chat, and
  * which-sprite-is-being-edited badges. Latest state wins per peer; no
@@ -13,7 +18,8 @@ const CURSOR_MIN_INTERVAL_MS = 50; // 20Hz
  *  - 'cursor-move' (userId, {x, y, targetId, isStage})
  *  - 'cursor-leave' (userId)
  *  - 'cursor-chat' (userId, text|null)
- *  - 'editing-changed' (userId, targetId|null, previousTargetId|null)
+ *  - 'editing-changed' (userId, activity|null, previousActivity|null) where
+ *    an activity is {targetId, tab, assetIndex}
  *  - 'user-gone' (userId) — peer left; drop all their presence state
  */
 class PresenceChannel extends Emitter {
@@ -24,7 +30,7 @@ class PresenceChannel extends Emitter {
     constructor ({session}) {
         super();
         this.session = session;
-        this.editingTargets = new Map(); // userId -> targetId
+        this.activities = new Map(); // userId -> {targetId, tab, assetIndex}
 
         this._lastCursorSentAt = 0;
         this._pendingCursor = null;
@@ -44,13 +50,17 @@ class PresenceChannel extends Emitter {
                 this.emit('cursor-chat', userId, payload.text || null);
                 break;
             case PRESENCE.EDITING_TARGET: {
-                const previous = this.editingTargets.get(userId) || null;
-                const next = payload.targetId || null;
-                if (previous === next) break;
+                const previous = this.activities.get(userId) || null;
+                const next = payload.targetId ? {
+                    targetId: payload.targetId,
+                    tab: payload.tab || 0,
+                    assetIndex: payload.assetIndex || 0
+                } : null;
+                if (sameActivity(previous, next)) break;
                 if (next === null) {
-                    this.editingTargets.delete(userId);
+                    this.activities.delete(userId);
                 } else {
-                    this.editingTargets.set(userId, next);
+                    this.activities.set(userId, next);
                 }
                 this.emit('editing-changed', userId, next, previous);
                 break;
@@ -60,8 +70,8 @@ class PresenceChannel extends Emitter {
             }
         };
         this._onUserLeft = user => {
-            const previous = this.editingTargets.get(user.id) || null;
-            this.editingTargets.delete(user.id);
+            const previous = this.activities.get(user.id) || null;
+            this.activities.delete(user.id);
             if (previous) this.emit('editing-changed', user.id, null, previous);
             this.emit('user-gone', user.id);
         };
@@ -76,12 +86,12 @@ class PresenceChannel extends Emitter {
             clearTimeout(this._cursorTimer);
             this._cursorTimer = null;
         }
-        this.editingTargets.clear();
+        this.activities.clear();
         this.removeAllListeners();
     }
 
-    getEditingTargets () {
-        return new Map(this.editingTargets);
+    getActivities () {
+        return new Map(this.activities);
     }
 
     _send (type, payload) {
@@ -126,11 +136,15 @@ class PresenceChannel extends Emitter {
     }
 
     /**
-     * Announce which sprite we are editing (null to clear).
-     * @param {string|null} targetId The sprite id.
+     * Announce where we are working (null targetId to clear).
+     * @param {object} activity {targetId, tab, assetIndex}.
      */
-    sendEditingTarget (targetId) {
-        this._send(PRESENCE.EDITING_TARGET, targetId ? {targetId} : {});
+    sendActivity (activity) {
+        this._send(PRESENCE.EDITING_TARGET, activity && activity.targetId ? {
+            targetId: activity.targetId,
+            tab: activity.tab || 0,
+            assetIndex: activity.assetIndex || 0
+        } : {});
     }
 }
 

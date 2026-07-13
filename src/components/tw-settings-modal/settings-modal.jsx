@@ -410,7 +410,8 @@ const settingDefinitions = {
         },
         help: {
             defaultMessage: 'Hides blocks that vanilla Scratch cannot run, such as the return block, ' +
-                'the switch/case blocks and the whole Assets category. Extendable operators stay ' +
+                'the switch/case blocks, extra Strings blocks and the whole Assets category. ' +
+                'Extendable operators stay ' +
                 'visible because they are saved in a vanilla compatible way.',
             id: 'mw.settingsModal.vanillaPaletteHelp'
         }

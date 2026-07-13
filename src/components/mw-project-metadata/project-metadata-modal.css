@@ -1,0 +1,73 @@
+@import "../../css/colors.css";
+
+.modal-content {
+    height: 100%;
+}
+
+.page-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    color: $text-primary;
+    background: $ui-modal-background;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 0.5rem 0 0.75rem;
+    font-weight: bold;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.divider {
+    flex-grow: 1;
+    margin-left: 1rem;
+    border-top: 1px dashed $ui-tertiary;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    margin: 0.25rem 0;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.row:hover {
+    background: $badge-border;
+}
+
+.label {
+    width: 8rem;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.value {
+    min-width: 0;
+    margin-left: 1rem;
+    overflow-wrap: anywhere;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    user-select: text;
+}
+
+.empty-value {
+    font-style: italic;
+}
+
+.detail {
+    margin: 0.75rem 1rem 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+}

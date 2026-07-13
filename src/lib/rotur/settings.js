@@ -63,19 +63,26 @@ const updateRoturSettings = patch => {
     writeAll(next);
 };
 
-/** @returns {string} */
-const formatActivityTitle = () => `Editing In ${APP_NAME}`;
+/**
+ * @param {{collaborating?: boolean}|string|null|undefined} [ctx] Activity context.
+ * @returns {string}
+ */
+const formatActivityTitle = ctx =>
+    ((ctx && typeof ctx === 'object' && ctx.collaborating) ?
+        `Collaborating In ${APP_NAME}` :
+        `Editing In ${APP_NAME}`);
 
 /**
- * @param {string|{projectTitle?: string}|null|undefined} projectTitleOrCtx
+ * @param {string|{projectTitle?: string, doing?: string}|null|undefined} projectTitleOrCtx
  * @returns {string}
  */
 const formatActivityStatus = projectTitleOrCtx => {
-    const raw = typeof projectTitleOrCtx === 'object' && projectTitleOrCtx !== null ?
-        (projectTitleOrCtx.projectTitle || '') :
-        (projectTitleOrCtx || '');
-    const name = (raw && String(raw).trim()) || 'Untitled Project';
-    return `Working on ${name}`;
+    const ctx = typeof projectTitleOrCtx === 'object' && projectTitleOrCtx !== null ?
+        projectTitleOrCtx :
+        {projectTitle: projectTitleOrCtx};
+    const name = (ctx.projectTitle && String(ctx.projectTitle).trim()) || 'Untitled Project';
+    // e.g. "Working on My Game · Editing costume "walk-a" in Sprite1"
+    return ctx.doing ? `Working on ${name} · ${ctx.doing}` : `Working on ${name}`;
 };
 
 /**

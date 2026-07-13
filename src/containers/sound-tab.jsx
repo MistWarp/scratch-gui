@@ -39,6 +39,7 @@ import {
 
 import {setRestore} from '../reducers/restore-deletion';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
+import CollaborationService from '../lib/collaboration/index.js';
 
 const messages = defineMessages({
     fileUploadSound: {
@@ -103,6 +104,7 @@ class SoundTab extends React.Component {
 
     handleSelectSound (soundIndex) {
         this.setState({selectedSoundIndex: soundIndex});
+        CollaborationService.getInstance().setActivity({assetIndex: soundIndex});
     }
 
     handleDeleteSound (soundIndex) {

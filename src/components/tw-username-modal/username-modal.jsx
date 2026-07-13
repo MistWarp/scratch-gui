@@ -80,23 +80,23 @@ const UsernameModalComponent = props => (
                     <p className={styles.helpText}>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="You are signed in as {handle}, so that is the name everyone sees. Setting a different one here overrides it everywhere in {APP_NAME}: in collaboration rooms, in the username block, and in cloud variables."
+                            defaultMessage="You are signed in as {handle}. A name set here overrides {handle} inside projects — in the username block and in cloud variables."
                             description="Text in change username modal when signed into Rotur"
                             id="tw.usernameModal.roturHelp"
                             values={{
-                                handle: `@${props.roturUsername}`,
-                                APP_NAME
+                                handle: `@${props.roturUsername}`
                             }}
                         />
                     </p>
                     <p className={styles.helpText}>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="It is saved to your account rather than this browser, so it follows you to every device you sign in on. Reset goes back to {handle}."
-                            description="Text in change username modal about where the override is stored"
+                            defaultMessage="Online in {APP_NAME}, such as in collaboration rooms, other people always see you as {handle}; the name here is only used as a fallback when you are signed out. It is saved to your account rather than this browser, so it follows you to every device you sign in on. Reset goes back to {handle}."
+                            description="Text in change username modal about where the override applies and is stored"
                             id="tw.usernameModal.roturHelp2"
                             values={{
-                                handle: `@${props.roturUsername}`
+                                handle: `@${props.roturUsername}`,
+                                APP_NAME
                             }}
                         />
                     </p>
