@@ -422,7 +422,13 @@ const TWStateManager = function (WrappedComponent) {
                 }
             }
 
-            if (this.props.username !== prevProps.username && this.props.username) {
+            // Signed-in users are known online by their Rotur handle, which never changes mid-session,
+            // so only a guest's custom name gets pushed to the room.
+            if (
+                !this.props.roturUsername &&
+                this.props.username !== prevProps.username &&
+                this.props.username
+            ) {
                 try {
                     const service = CollaborationService.getInstance();
                     if (service && service.isConnectedToHostPeer()) {

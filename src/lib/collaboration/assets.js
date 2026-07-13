@@ -3,6 +3,13 @@ import {ASSET, makeAsset} from './protocol.js';
 
 const CHUNK_SIZE = 64 * 1024;
 
+// Ops, presence and asset bytes share one ordered data channel, so anything
+// queued ahead of an op delays it. Stop feeding chunks once this much is
+// already waiting: the transfer still uses the whole link, but a block edit
+// made mid-transfer waits for a small backlog instead of the entire asset.
+const MAX_BUFFERED_BYTES = 128 * 1024;
+const DRAIN_POLL_MS = 50;
+
 const toArrayBuffer = data => {
     if (data instanceof ArrayBuffer) return data;
     if (ArrayBuffer.isView(data)) {
@@ -44,6 +51,7 @@ class AssetChannel extends Emitter {
         this.storeAsset = storeAsset;
         this._incoming = new Map(); // `${peerId}:${md5ext}` -> receive state
         this._requestedFromHost = new Set();
+        this._destroyed = false;
 
         if (isHost) {
             this._onAssetMessage = (peerId, envelope) => this._onMessage(peerId, envelope);
@@ -54,6 +62,7 @@ class AssetChannel extends Emitter {
     }
 
     destroy () {
+        this._destroyed = true;
         this.session.off('asset-message', this._onAssetMessage);
         this._incoming.clear();
         this._requestedFromHost.clear();
@@ -62,12 +71,14 @@ class AssetChannel extends Emitter {
 
     /**
      * Push an asset's bytes to a peer (client -> host before a proposal,
-     * or host -> client when serving a request).
+     * or host -> client when serving a request). Chunks are paced against
+     * the channel backlog, so this resolves only once every chunk has been
+     * handed to the transport.
      * @param {string} peerId Destination ('host' allowed on clients).
      * @param {string} md5ext Asset id.
-     * @returns {boolean} Whether the asset was found and sent.
+     * @returns {Promise<boolean>} Whether the asset was found and sent.
      */
-    sendAsset (peerId, md5ext) {
+    async sendAsset (peerId, md5ext) {
         const raw = this.getAsset(md5ext);
         if (!raw) return false;
         const buffer = toArrayBuffer(raw);
@@ -78,6 +89,8 @@ class AssetChannel extends Emitter {
         );
         send(makeAsset(ASSET.BEGIN, {md5ext, totalBytes: buffer.byteLength, chunkCount}));
         for (let index = 0; index < chunkCount; index++) {
+            await this._waitForDrain(peerId);
+            if (this._destroyed) return false;
             const start = index * CHUNK_SIZE;
             send(makeAsset(ASSET.CHUNK, {
                 md5ext,
@@ -89,14 +102,31 @@ class AssetChannel extends Emitter {
     }
 
     /**
-     * Push every asset in a list to the host, skipping already-sent ones
-     * is the caller's concern. Used by the capture layer right before
-     * proposing an asset-bearing op.
+     * Push every asset in a list, one at a time so concurrent transfers do
+     * not defeat the pacing. Skipping already-sent ones is the caller's
+     * concern. Used right before proposing an asset-bearing op.
      * @param {string} peerId Destination.
      * @param {Array.<string>} md5exts Assets to send.
+     * @returns {Promise} Resolves once all of them are on the wire.
      */
-    sendAssets (peerId, md5exts) {
-        md5exts.forEach(md5ext => this.sendAsset(peerId, md5ext));
+    async sendAssets (peerId, md5exts) {
+        for (const md5ext of md5exts) {
+            await this.sendAsset(peerId, md5ext);
+        }
+    }
+
+    _waitForDrain (peerId) {
+        if (this.transport.bufferedAmount(peerId) < MAX_BUFFERED_BYTES) return Promise.resolve();
+        return new Promise(resolve => {
+            const check = () => {
+                if (this._destroyed || this.transport.bufferedAmount(peerId) < MAX_BUFFERED_BYTES) {
+                    resolve();
+                    return;
+                }
+                setTimeout(check, DRAIN_POLL_MS);
+            };
+            setTimeout(check, DRAIN_POLL_MS);
+        });
     }
 
     /**
@@ -113,14 +143,14 @@ class AssetChannel extends Emitter {
 
     _onMessage (peerId, envelope) {
         switch (envelope.type) {
-        case ASSET.REQUEST:
+        case ASSET.REQUEST: {
             if (!this.isHost) return;
-            envelope.payload.md5exts.forEach(md5ext => {
-                if (!this.sendAsset(peerId, md5ext)) {
-                    this.emit('asset-unavailable', {peerId, md5ext});
-                }
-            });
+            const {md5exts} = envelope.payload;
+            md5exts.filter(md5ext => !this.getAsset(md5ext))
+                .forEach(md5ext => this.emit('asset-unavailable', {peerId, md5ext}));
+            this.sendAssets(peerId, md5exts.filter(md5ext => this.getAsset(md5ext)));
             break;
+        }
         case ASSET.BEGIN: {
             const {md5ext, totalBytes, chunkCount} = envelope.payload;
             this._incoming.set(`${peerId}:${md5ext}`, {

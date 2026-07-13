@@ -8,8 +8,8 @@ const SET_COLLABORATION_ROOM_PRIVACY = 'scratch-gui/collaboration/SET_COLLABORAT
 const SET_COLLABORATION_LOADING = 'scratch-gui/collaboration/SET_COLLABORATION_LOADING';
 const SET_COLLABORATION_HOST_LOADING_PROGRESS = 'scratch-gui/collaboration/SET_HOST_LOADING_PROGRESS';
 const SET_COLLABORATION_RECONNECTING = 'scratch-gui/collaboration/SET_RECONNECTING';
-const SET_SPRITE_EDITOR = 'scratch-gui/collaboration/SET_SPRITE_EDITOR';
-const REMOVE_SPRITE_EDITOR = 'scratch-gui/collaboration/REMOVE_SPRITE_EDITOR';
+const SET_USER_ACTIVITY = 'scratch-gui/collaboration/SET_USER_ACTIVITY';
+const REMOVE_USER_ACTIVITY = 'scratch-gui/collaboration/REMOVE_USER_ACTIVITY';
 
 const initialState = {
     modalVisible: false,
@@ -22,7 +22,9 @@ const initialState = {
     isCollabLoading: false,
     collabLoadingMessage: null,
     hostLoadingProgress: 0,
-    spriteEditors: {}
+    // Where each remote peer is working, keyed by user id:
+    // {username, handle, targetId, tab, assetIndex}. Never contains us.
+    activity: {}
 };
 
 const reducer = function (state, action) {
@@ -84,62 +86,28 @@ const reducer = function (state, action) {
             hostLoadingProgress: action.progress
         });
 
-    case SET_SPRITE_EDITOR: {
-        const spriteId = action.spriteId;
-        const existingEditors = state.spriteEditors[spriteId] || [];
-
-        const existingIndex = existingEditors.findIndex(editor => editor.userId === action.userId);
-
-        let newEditors;
-        if (existingIndex >= 0) {
-            newEditors = existingEditors.map((editor, index) => {
-                if (index === existingIndex) {
-                    return {
-                        userId: action.userId,
-                        username: action.username,
-                        timestamp: action.timestamp
-                    };
-                }
-                return editor;
-            });
-        } else {
-            newEditors = [
-                ...existingEditors,
-                {
+    case SET_USER_ACTIVITY:
+        return Object.assign({}, state, {
+            activity: Object.assign({}, state.activity, {
+                [action.userId]: {
                     userId: action.userId,
                     username: action.username,
-                    timestamp: action.timestamp
+                    handle: action.handle || null,
+                    targetId: action.targetId,
+                    tab: action.tab,
+                    assetIndex: action.assetIndex
                 }
-            ];
-        }
-
-        return Object.assign({}, state, {
-            spriteEditors: Object.assign({}, state.spriteEditors, {
-                [spriteId]: newEditors
             })
         });
+
+    case REMOVE_USER_ACTIVITY: {
+        if (!state.activity[action.userId]) return state;
+        const activity = Object.assign({}, state.activity);
+        delete activity[action.userId];
+        return Object.assign({}, state, {activity});
     }
 
-    case REMOVE_SPRITE_EDITOR: {
-        const spriteId = action.spriteId;
-        const existingEditors = state.spriteEditors[spriteId] || [];
-        const newEditors = existingEditors.filter(editor => editor.userId !== action.userId);
 
-        if (newEditors.length === 0) {
-            const newSpriteEditors = Object.assign({}, state.spriteEditors);
-            delete newSpriteEditors[spriteId];
-            return Object.assign({}, state, {
-                spriteEditors: newSpriteEditors
-            });
-        }
-
-        return Object.assign({}, state, {
-            spriteEditors: Object.assign({}, state.spriteEditors, {
-                [spriteId]: newEditors
-            })
-        });
-    }
-    
     default:
         return state;
     }
@@ -214,20 +182,21 @@ const setCollaborationReconnecting = function (isReconnecting) {
     };
 };
 
-const setSpriteEditor = function (spriteId, userId, username, timestamp) {
+const setUserActivity = function ({userId, username, handle, targetId, tab, assetIndex}) {
     return {
-        type: SET_SPRITE_EDITOR,
-        spriteId,
+        type: SET_USER_ACTIVITY,
         userId,
         username,
-        timestamp
+        handle,
+        targetId,
+        tab,
+        assetIndex
     };
 };
 
-const removeSpriteEditor = function (spriteId, userId) {
+const removeUserActivity = function (userId) {
     return {
-        type: REMOVE_SPRITE_EDITOR,
-        spriteId,
+        type: REMOVE_USER_ACTIVITY,
         userId
     };
 };
@@ -245,6 +214,6 @@ export {
     setCollaborationLoading,
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,
-    setSpriteEditor,
-    removeSpriteEditor
+    setUserActivity,
+    removeUserActivity
 };

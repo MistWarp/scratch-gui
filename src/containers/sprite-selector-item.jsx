@@ -9,6 +9,7 @@ import VM from 'scratch-vm';
 import getCostumeUrl from '../lib/utils/get-costume-url';
 import DragRecognizer from '../lib/utils/drag-recognizer.js';
 import {getEventXY} from '../lib/utils/touch';
+import {usersInSprite, usersOnAsset} from '../lib/collaboration/presence-selectors.js';
 
 import SpriteSelectorItemComponent from '../components/sprite-selector-item/sprite-selector-item.jsx';
 
@@ -133,7 +134,6 @@ class SpriteSelectorItem extends React.PureComponent {
             receivedBlocks,
             costumeURL,
             vm,
-            editingUsers,
             /* eslint-enable no-unused-vars */
             ...props
         } = this.props;
@@ -167,7 +167,8 @@ SpriteSelectorItem.propTypes = {
     dragging: PropTypes.bool,
     editingUsers: PropTypes.arrayOf(PropTypes.shape({
         userId: PropTypes.string,
-        username: PropTypes.string
+        username: PropTypes.string,
+        handle: PropTypes.string
     })),
     // eslint-disable-next-line react/forbid-prop-types
     id: PropTypes.any,
@@ -186,15 +187,28 @@ SpriteSelectorItem.propTypes = {
 };
 
 const mapStateToProps = (state, {id}) => {
-    const spriteId = typeof id === 'string' ? id : String(id);
-    const spriteEditors = state.scratchGui.collaboration.spriteEditors[spriteId] || [];
-    
+    const activity = state.scratchGui.collaboration.activity;
+    const vm = state.scratchGui.vm;
+
+    // The same component backs the sprite list (string id) and the costume and
+    // sound lists (numeric index). For an asset, "who else is on it" means
+    // whoever has the open sprite's list at this index — and since only the
+    // active tab's list is on screen, that tab identifies which list it is.
+    const editingUsers = typeof id === 'string' ?
+        usersInSprite(activity, id) :
+        usersOnAsset(
+            activity,
+            vm.editingTarget ? vm.editingTarget.id : null,
+            state.scratchGui.editorTab.activeTabIndex,
+            id
+        );
+
     return {
         dragging: state.scratchGui.assetDrag.dragging,
         receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
                 state.scratchGui.hoveredTarget.sprite === id,
-        editingUsers: spriteEditors,
-        vm: state.scratchGui.vm
+        editingUsers,
+        vm
     };
 };
 const mapDispatchToProps = dispatch => ({

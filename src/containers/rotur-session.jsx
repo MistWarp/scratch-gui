@@ -27,6 +27,8 @@ import {detectTheme, applyTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setShellUser} from '../lib/git/browser-terminal';
+import describeActivity from '../lib/collaboration/describe-activity.js';
+import {setProjectAuthor} from '../lib/mw-project-metadata.js';
 
 /**
  * Headless container: restores Rotur session, exposes login/logout, and
@@ -39,6 +41,7 @@ class RoturSession extends React.Component {
             'handleLogin',
             'handleLogout',
             'syncCurrentActivity',
+            'syncProjectAuthor',
             'handleSettingsChanged',
             'applyCloudPreferences'
         ]);
@@ -49,6 +52,7 @@ class RoturSession extends React.Component {
     componentDidMount () {
         this.editingSince = Date.now();
         setShellUser({rotur: this.props.roturUsername});
+        this.syncProjectAuthor();
         setRoturSessionApi({
             login: this.handleLogin,
             logout: this.handleLogout
@@ -62,9 +66,18 @@ class RoturSession extends React.Component {
             setShellUser({rotur: this.props.roturUsername});
         }
         if (
+            this.props.roturUsername !== prevProps.roturUsername ||
+            this.props.roturId !== prevProps.roturId
+        ) {
+            this.syncProjectAuthor();
+        }
+        if (
             this.props.loggedIn &&
             (
                 this.props.projectTitle !== prevProps.projectTitle ||
+                this.props.isCollaborating !== prevProps.isCollaborating ||
+                this.props.activeTabIndex !== prevProps.activeTabIndex ||
+                this.props.editingTargetId !== prevProps.editingTargetId ||
                 !prevProps.loggedIn
             )
         ) {
@@ -143,12 +156,35 @@ class RoturSession extends React.Component {
         }
     }
 
+    /** Keep the byline on saved projects in step with who is signed in. */
+    syncProjectAuthor () {
+        setProjectAuthor(this.props.roturUsername ? {
+            username: this.props.roturUsername,
+            id: this.props.roturId
+        } : null);
+    }
+
+    /**
+     * What to publish as our Rotur presence right now.
+     * @returns {object} The activity context.
+     */
+    currentActivityContext () {
+        const vm = this.props.vm;
+        const target = vm && vm.editingTarget;
+        return {
+            projectTitle: this.props.projectTitle,
+            collaborating: this.props.isCollaborating,
+            doing: describeActivity(vm, target ? {
+                targetId: target.id,
+                tab: this.props.activeTabIndex
+            } : null),
+            editingSince: this.editingSince
+        };
+    }
+
     syncCurrentActivity () {
         if (!this.props.loggedIn) return;
-        syncActivity({
-            projectTitle: this.props.projectTitle,
-            editingSince: this.editingSince
-        });
+        syncActivity(this.currentActivityContext());
     }
 
     async handleLogin () {
@@ -189,6 +225,12 @@ class RoturSession extends React.Component {
 RoturSession.propTypes = {
     loggedIn: PropTypes.bool,
     projectTitle: PropTypes.string,
+    isCollaborating: PropTypes.bool,
+    activeTabIndex: PropTypes.number,
+    editingTargetId: PropTypes.string,
+    roturId: PropTypes.string,
+    // eslint-disable-next-line react/forbid-prop-types
+    vm: PropTypes.object,
     onSetStatus: PropTypes.func.isRequired,
     onSetUser: PropTypes.func.isRequired,
     onSetUsernameOverride: PropTypes.func.isRequired,
@@ -202,7 +244,12 @@ RoturSession.propTypes = {
 const mapStateToProps = state => ({
     loggedIn: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.username),
     projectTitle: state.scratchGui.projectTitle,
-    roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
+    roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null,
+    roturId: (state.scratchGui.rotur && state.scratchGui.rotur.id) || null,
+    isCollaborating: state.scratchGui.collaboration.isConnected,
+    activeTabIndex: state.scratchGui.editorTab.activeTabIndex,
+    editingTargetId: state.scratchGui.targets.editingTarget,
+    vm: state.scratchGui.vm
 });
 
 const mapDispatchToProps = dispatch => ({

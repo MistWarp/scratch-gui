@@ -604,9 +604,6 @@ const sensing = function (isInitialSetup, isStage, targetId, colors) {
 };
 
 const operators = function (isInitialSetup, isStage, targetId, colors) {
-    const apple = translate('OPERATORS_JOIN_APPLE', 'apple');
-    const banana = translate('OPERATORS_JOIN_BANANA', 'banana');
-    const letter = translate('OPERATORS_LETTEROF_APPLE', 'a');
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
     <category
@@ -717,52 +714,6 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
         <block type="operator_or"/>
         <block type="operator_not"/>
         ${blockSeparator}
-        ${isInitialSetup ? '' : `
-            <block type="operator_join">
-                <value name="STRING1">
-                    <shadow type="text">
-                        <field name="TEXT">${apple} </field>
-                    </shadow>
-                </value>
-                <value name="STRING2">
-                    <shadow type="text">
-                        <field name="TEXT">${banana}</field>
-                    </shadow>
-                </value>
-            </block>
-            <block type="operator_letter_of">
-                <value name="LETTER">
-                    <shadow type="math_whole_number">
-                        <field name="NUM">1</field>
-                    </shadow>
-                </value>
-                <value name="STRING">
-                    <shadow type="text">
-                        <field name="TEXT">${apple}</field>
-                    </shadow>
-                </value>
-            </block>
-            <block type="operator_length">
-                <value name="STRING">
-                    <shadow type="text">
-                        <field name="TEXT">${apple}</field>
-                    </shadow>
-                </value>
-            </block>
-            <block type="operator_contains" id="operator_contains">
-              <value name="STRING1">
-                <shadow type="text">
-                  <field name="TEXT">${apple}</field>
-                </shadow>
-              </value>
-              <value name="STRING2">
-                <shadow type="text">
-                  <field name="TEXT">${letter}</field>
-                </shadow>
-              </value>
-            </block>
-        `}
-        ${blockSeparator}
         <block type="operator_mod">
             <value name="NUM1">
                 <shadow type="math_number">
@@ -792,7 +743,72 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
         </block>
         ${categorySeparator}
         <block type="operator_pi"/>
+    </category>
+    `;
+};
+
+const strings = function (isInitialSetup, isStage, targetId, colors, vanilla) {
+    const apple = translate('OPERATORS_JOIN_APPLE', 'apple');
+    const banana = translate('OPERATORS_JOIN_BANANA', 'banana');
+    const letter = translate('OPERATORS_LETTEROF_APPLE', 'a');
+    const text = (name, value) => `
+        <value name="${name}">
+            <shadow type="text"><field name="TEXT">${value}</field></shadow>
+        </value>`;
+    const number = (name, value) => `
+        <value name="${name}">
+            <shadow type="math_whole_number"><field name="NUM">${value}</field></shadow>
+        </value>`;
+    return `
+    <category
+        name="%{BKY_CATEGORY_STRINGS}"
+        id="mwStrings"
+        colour="${colors.primary}"
+        secondaryColour="${colors.tertiary}">
+        ${isInitialSetup ? '' : `
+        <block type="operator_join">
+            ${text('STRING1', `${apple} `)}
+            ${text('STRING2', banana)}
+        </block>
+        <block type="operator_letter_of">
+            ${number('LETTER', 1)}
+            ${text('STRING', apple)}
+        </block>
+        <block type="operator_length">${text('STRING', apple)}</block>
+        <block type="operator_contains" id="operator_contains">
+            ${text('STRING1', apple)}
+            ${text('STRING2', letter)}
+        </block>
+        ${vanilla ? '' : `
+        ${blockSeparator}
+        <block type="operator_letters_of">
+            ${number('LETTER1', 2)}
+            ${number('LETTER2', 4)}
+            ${text('STRING', apple)}
+        </block>
+        <block type="operator_index_of">
+            ${text('SUBSTRING', 'p')}
+            ${text('STRING', apple)}
+        </block>
+        <block type="operator_replace">
+            ${text('SUBSTRING', 'world')}
+            ${text('STRING', 'Hello world!')}
+            ${text('REPLACE', 'fellow Scratchers')}
+        </block>
+        <block type="operator_repeat">
+            ${text('STRING', `${apple} `)}
+            ${number('REPEAT', 3)}
+        </block>
+        <block type="operator_change_case">
+            ${text('STRING', apple)}
+            <field name="CASE">uppercase</field>
+        </block>
+        <block type="operator_trim">${text('STRING', `  ${apple}  `)}</block>
+        ${blockSeparator}
         <block type="operator_newline"/>
+        `}
+        `}
+        ${categorySeparator}
     </category>
     `;
 };
@@ -947,6 +963,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing);
     const operatorsXML = moveCategory('operators') ||
         operators(isInitialSetup, isStage, targetId, colors.operators);
+    const stringsXML = strings(isInitialSetup, isStage, targetId, colors.strings, vanilla);
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
 
@@ -967,6 +984,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         controlXML, gap,
         sensingXML, gap,
         operatorsXML, gap,
+        stringsXML, gap,
         variablesXML, gap,
         myBlocksXML
     ];

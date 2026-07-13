@@ -58,6 +58,7 @@ import {
     openTipsLibrary,
     openSettingsModal,
     openRestorePointModal,
+    openProjectMetadataModal,
     openGitModal,
     openExtensionManagerModal,
     openSimpleDialog
@@ -310,6 +311,7 @@ class MenuBar extends React.Component {
             'handleClickSaveAsCopy',
             'handleClickPackager',
             'handleClickRestorePoints',
+            'handleClickProjectMetadata',
             'handleClickSeeCommunity',
             'handleClickShare',
             'handleClickUndo',
@@ -498,6 +500,10 @@ class MenuBar extends React.Component {
     }
     handleClickRestorePoints () {
         this.props.onClickRestorePoints();
+        this.props.onRequestCloseFile();
+    }
+    handleClickProjectMetadata () {
+        this.props.onClickProjectMetadata();
         this.props.onRequestCloseFile();
     }
     handleClickAddRestorePoint = () => {
@@ -1635,6 +1641,15 @@ class MenuBar extends React.Component {
                                                 id="tw.menuBar.createRestorePoint"
                                             />
                                         </MenuItem>
+                                        <MenuItem onClick={this.handleClickProjectMetadata}>
+                                            <Info />
+                                            <FormattedMessage
+                                                defaultMessage="Project metadata"
+                                                // eslint-disable-next-line max-len
+                                                description="Menu bar item to view the open project's metadata (author, dates, contents)"
+                                                id="mw.menuBar.projectMetadata"
+                                            />
+                                        </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
                                         <MenuSection>
@@ -2322,6 +2337,7 @@ MenuBar.propTypes = {
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
+    onClickProjectMetadata: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
     openSimpleDialog: PropTypes.func.isRequired,
@@ -2464,6 +2480,7 @@ const mapDispatchToProps = dispatch => ({
     onRequestOpenAbout: () => dispatch(openAboutMenu()),
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
+    onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickGitModal: () => {
         dispatch(closeEditMenu());

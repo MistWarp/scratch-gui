@@ -40,6 +40,7 @@ import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.j
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
+import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
@@ -61,7 +62,8 @@ import {getFindBarApi} from '../../lib/find-bar/api';
 import {setFractchModeOpener} from '../../lib/git/fractch-mode';
 import {Theme} from '../../lib/themes';
 
-import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
+import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
+import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
 
@@ -677,6 +679,7 @@ const GUIComponent = props => {
         customExtensionModalVisible,
         fontsModalVisible,
         assetsModalVisible,
+        projectMetadataModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
@@ -748,6 +751,7 @@ const GUIComponent = props => {
             {customExtensionModalVisible && <TWCustomExtensionModal />}
             {fontsModalVisible && <TWFontsModal />}
             {assetsModalVisible && <MWAssetsModal />}
+            {projectMetadataModalVisible && <MWProjectMetadataModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
@@ -765,6 +769,7 @@ const GUIComponent = props => {
         customExtensionModalVisible,
         fontsModalVisible,
         assetsModalVisible,
+        projectMetadataModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
@@ -983,6 +988,7 @@ const GUIComponent = props => {
                                             description="Button to get to the code panel"
                                             id="gui.gui.codeTab"
                                         />
+                                        <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
@@ -1002,6 +1008,7 @@ const GUIComponent = props => {
                                                 id="gui.gui.costumesTab"
                                             />
                                         )}
+                                        <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
@@ -1013,6 +1020,7 @@ const GUIComponent = props => {
                                             description="Button to get to the sounds panel"
                                             id="gui.gui.soundsTab"
                                         />
+                                        <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
                                     </Tab>
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
@@ -1252,6 +1260,7 @@ GUIComponent.propTypes = {
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
     assetsModalVisible: PropTypes.bool,
+    projectMetadataModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
     gitModalVisible: PropTypes.bool,

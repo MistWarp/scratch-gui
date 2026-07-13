@@ -28,6 +28,7 @@ const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_WARPTHEME = 'warpthemeModal';
 const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
+const MODAL_PROJECT_METADATA = 'projectMetadataModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -56,7 +57,8 @@ const initialState = {
     [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_WARPTHEME]: false,
     [MODAL_DEBUGGER]: false,
-    [MODAL_ROTUR_LOGIN]: false
+    [MODAL_ROTUR_LOGIN]: false,
+    [MODAL_PROJECT_METADATA]: false
 };
 
 const reducer = function (state, action) {
@@ -179,6 +181,12 @@ const openRoturLoginModal = function () {
 const closeRoturLoginModal = function () {
     return closeModal(MODAL_ROTUR_LOGIN);
 };
+const openProjectMetadataModal = function () {
+    return openModal(MODAL_PROJECT_METADATA);
+};
+const closeProjectMetadataModal = function () {
+    return closeModal(MODAL_PROJECT_METADATA);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -289,6 +297,8 @@ export {
     closeDebuggerModal,
     openRoturLoginModal,
     closeRoturLoginModal,
+    openProjectMetadataModal,
+    closeProjectMetadataModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,

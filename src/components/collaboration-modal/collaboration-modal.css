@@ -503,6 +503,17 @@
     font-size: 0.875rem;
 }
 
+.userActivity {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: normal;
+    font-size: 0.75rem;
+    color: $text-primary-transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .hostBadge {
     background: $motion-primary;
     color: white;

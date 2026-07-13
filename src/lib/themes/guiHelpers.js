@@ -19,6 +19,7 @@ const BLOCK_COLOR_NAMES = [
     'sensing',
     'pen',
     'operators',
+    'strings',
     'data',
     'data_lists',
     'more',

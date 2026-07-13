@@ -265,6 +265,7 @@ const _renderBlock = (block, container, parentCategory, isVertical) => {
         'control',
         'sensing',
         'operators',
+        'strings',
         'data',
         'data-lists',
         'list',

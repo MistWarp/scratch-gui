@@ -45,7 +45,10 @@ const SpriteSelectorItem = props => (
         ) : null}
         {props.editingUsers && props.editingUsers.length > 0 ? (
             <div className={styles.collaborationIndicator}>
-                <CollaborationSpriteIndicator editingUsers={props.editingUsers} />
+                <CollaborationSpriteIndicator
+                    users={props.editingUsers}
+                    verb="is here"
+                />
             </div>
         ) : null}
         <div className={styles.spriteInfo}>
@@ -110,7 +113,8 @@ SpriteSelectorItem.propTypes = {
     details: PropTypes.string,
     editingUsers: PropTypes.arrayOf(PropTypes.shape({
         userId: PropTypes.string,
-        username: PropTypes.string
+        username: PropTypes.string,
+        handle: PropTypes.string
     })),
     // eslint-disable-next-line react/forbid-prop-types
     name: PropTypes.any,

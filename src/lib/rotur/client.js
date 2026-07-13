@@ -47,7 +47,7 @@ const getAvatarUrl = username => (
 
 /**
  * Normalize me.get() / profile payloads into a stable shape.
- * @returns {{username: string, avatarUrl: string, bio: string|null}|null}
+ * @returns {{username: string, id: string|null, avatarUrl: string, bio: string|null}|null}
  */
 const normalizeUser = data => {
     if (!data || typeof data !== 'object' || data.error) {
@@ -57,8 +57,10 @@ const normalizeUser = data => {
     if (!username || typeof username !== 'string') {
         return null;
     }
+    const id = data['sys.id'] || data.id || data.key || data.sys_id || null;
     return {
         username,
+        id: id === null ? null : String(id),
         avatarUrl: getAvatarUrl(username),
         bio: typeof data.bio === 'string' ? data.bio : null
     };
@@ -177,7 +179,7 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
         ctx.editingSince = Date.now();
     }
 
-    const title = formatActivityTitle();
+    const title = formatActivityTitle(ctx);
     const status = formatActivityStatus(ctx);
 
     const activity = {

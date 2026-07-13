@@ -7,6 +7,7 @@ const CLEAR = 'scratch-gui/rotur/CLEAR';
 const initialState = {
     status: 'idle', // idle | restoring | logging-in | ready | error
     username: null,
+    id: null,
     avatarUrl: null,
     bio: null,
     usernameOverride: null,
@@ -25,6 +26,7 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             status: 'ready',
             username: action.username,
+            id: action.id || null,
             avatarUrl: action.avatarUrl,
             bio: action.bio || null,
             error: null
@@ -50,9 +52,10 @@ const setRoturStatus = status => ({
     status
 });
 
-const setRoturUser = ({username, avatarUrl, bio}) => ({
+const setRoturUser = ({username, id, avatarUrl, bio}) => ({
     type: SET_USER,
     username,
+    id: id || null,
     avatarUrl,
     bio: bio || null
 });

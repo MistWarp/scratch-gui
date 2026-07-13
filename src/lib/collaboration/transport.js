@@ -197,6 +197,21 @@ class Transport extends Emitter {
     }
 
     /**
+     * Bytes still queued on a peer's data channel. Bulk senders use this to
+     * pace themselves, so a large transfer does not park ops and presence
+     * behind megabytes of backlog on the same ordered channel.
+     * @param {string} peerId Peer, or 'host' from a client.
+     * @returns {number} Queued bytes (0 when the channel is unknown).
+     */
+    bufferedAmount (peerId) {
+        const entry = this._connections.get(peerId === 'host' ? this.hostPeerId : peerId);
+        if (!entry) return 0;
+        // PeerJS buffers internally before the channel exists; count both.
+        const channel = entry.conn.dataChannel;
+        return (channel ? channel.bufferedAmount : 0) + (entry.conn.bufferSize || 0);
+    }
+
+    /**
      * Send an envelope to every open connection except one.
      * @param {object} envelope Protocol envelope.
      * @param {string} [exceptPeerId] Peer to skip.
