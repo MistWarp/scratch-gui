@@ -1,5 +1,5 @@
 import BlockItem from '../../lib/find-bar/BlockItem';
-import {setFindBarApi} from '../../lib/find-bar/api';
+import {getCodeSearch, setFindBarApi} from '../../lib/find-bar/api';
 
 import Dropdown from './Dropdown';
 
@@ -36,6 +36,9 @@ export default class FindBarController {
         this.findBarOuter = null;
         this.findWrapper = null;
         this.findInput = null;
+        this.codeResults = [];
+        this.codeIndex = 0;
+        this.codeSearchToken = 0;
         this.dropdownOut = null;
         this.dropdown = new Dropdown({ScratchBlocks, utils, vm, msg});
         this.searchControls = null;
@@ -213,6 +216,10 @@ export default class FindBarController {
     bindEvents () {
         this.findInput.addEventListener('focus', () => {
             this.updateModifierVisibility();
+            if (getCodeSearch()) {
+                if (this.findInput.value) this.inputChange({skipDebounce: true});
+                return;
+            }
             this.showDropDown();
             if (this.findInput.value) {
                 this.inputChange({skipDebounce: true});
@@ -342,6 +349,21 @@ export default class FindBarController {
     }
 
     inputChange (options = {}) {
+        const codeSearch = getCodeSearch();
+        if (codeSearch) {
+            const query = this.findInput.value;
+            codeSearch.search(query, this.isCaseSensitive);
+            if (!query) {
+                this.showCodeResults([]);
+                return;
+            }
+            const token = ++this.codeSearchToken;
+            codeSearch.searchAll(query, this.isCaseSensitive).then(results => {
+                if (token === this.codeSearchToken) this.showCodeResults(results);
+            });
+            return;
+        }
+
         if (!this.findInput.value) {
             this.showAllItems();
             return;
@@ -420,7 +442,81 @@ export default class FindBarController {
         }
     }
 
+    showCodeResults (results) {
+        this.dropdown.empty();
+        this.codeResults = results;
+        this.codeIndex = 0;
+        if (!results.length) {
+            this.hideDropDown();
+            return;
+        }
+        for (const result of results) {
+            const item = document.createElement('li');
+            item.className = 'sa-find-code-result';
+
+            const where = document.createElement('span');
+            where.className = 'sa-find-code-where';
+            where.textContent = `${result.filepath}:${result.line}`;
+
+            const preview = document.createElement('span');
+            preview.className = 'sa-find-code-preview';
+            preview.textContent = result.preview;
+
+            item.appendChild(where);
+            item.appendChild(preview);
+            item.addEventListener('mousedown', e => {
+                e.preventDefault();
+                const codeSearch = getCodeSearch();
+                if (codeSearch) codeSearch.open(result);
+                this.findInput.blur();
+            });
+
+            this.dropdown.items.push(item);
+            this.dropdown.el.appendChild(item);
+        }
+        this.selectCodeResult(0);
+        this.showDropDown();
+    }
+
+    selectCodeResult (index) {
+        const items = this.dropdown.items;
+        if (!items.length) return;
+        const wrapped = ((index % items.length) + items.length) % items.length;
+        this.codeIndex = wrapped;
+        items.forEach((item, i) => item.classList.toggle('sel', i === wrapped));
+        items[wrapped].scrollIntoView({block: 'nearest'});
+    }
+
     inputKeyDown (e) {
+        const codeSearch = getCodeSearch();
+        if (codeSearch) {
+            const results = this.codeResults || [];
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (results.length) {
+                    this.selectCodeResult(this.codeIndex + (e.key === 'ArrowDown' ? 1 : -1));
+                    e.preventDefault();
+                }
+            } else if (e.key === 'Enter') {
+                if (results[this.codeIndex]) {
+                    codeSearch.open(results[this.codeIndex]);
+                    this.findInput.blur();
+                } else {
+                    codeSearch.step(e.shiftKey ? -1 : 1);
+                }
+                e.preventDefault();
+            } else if (e.key === 'F3') {
+                codeSearch.step(e.shiftKey ? -1 : 1);
+                e.preventDefault();
+            } else if (e.key === 'Escape') {
+                this.findInput.value = '';
+                codeSearch.search('', this.isCaseSensitive);
+                this.showCodeResults([]);
+                this.findInput.blur();
+                e.preventDefault();
+            }
+            return;
+        }
+
         this.dropdown.inputKeyDown(e);
 
         if (e.key === 'F3') {

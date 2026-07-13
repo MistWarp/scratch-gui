@@ -1,0 +1,27 @@
+/*
+    src/lib/themes/fonts.js injects `*:not(...) { font-family: ... !important }`, which forces the
+    proportional UI font onto xterm and Monaco. xterm still measures its cell grid with the font it
+    was configured with, so the glyphs and the grid disagree and the text renders unevenly spaced.
+    These selectors are more specific than that rule, so the code surfaces keep a real monospace font.
+*/
+
+html body .xterm,
+html body .xterm *,
+html body .monaco-editor .view-lines,
+html body .monaco-editor .view-line,
+html body .monaco-editor .view-line *,
+html body .monaco-editor .margin-view-overlays,
+html body .monaco-editor .margin-view-overlays *,
+html body .monaco-editor textarea.inputarea {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace !important;
+    font-variant-ligatures: none !important;
+    letter-spacing: normal !important;
+}
+
+.mw-conflict-ours {
+    background: rgba(64, 200, 64, 0.16);
+}
+
+.mw-conflict-theirs {
+    background: rgba(80, 140, 255, 0.16);
+}
