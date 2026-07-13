@@ -9,7 +9,6 @@ const BlocksComponent = props => {
         containerRef,
         dragOver,
         gridVisible,
-        loadingBarRef,
         paletteResizingEnabled,
         onPaletteResizePointerDown,
         paletteWidth,
@@ -36,12 +35,6 @@ const BlocksComponent = props => {
                     onMouseDown={onPaletteResizePointerDown}
                 />
             ) : null}
-            <div
-                className={styles.loadingProgress}
-                ref={loadingBarRef}
-            >
-                <div className={styles.loadingProgressCounter} />
-            </div>
         </Box>
     );
 };
@@ -49,7 +42,6 @@ BlocksComponent.propTypes = {
     containerRef: PropTypes.func,
     dragOver: PropTypes.bool,
     gridVisible: PropTypes.bool,
-    loadingBarRef: PropTypes.func,
     paletteResizingEnabled: PropTypes.bool,
     onPaletteResizePointerDown: PropTypes.func,
     paletteWidth: PropTypes.number,

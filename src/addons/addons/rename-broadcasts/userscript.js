@@ -96,6 +96,8 @@ export default async function ({ addon, msg, console }) {
     // Merge in editor. Undo/redo will work automatically for this.
     // Use group so that everything here is undone/redone at the same time.
     Blockly.Events.setGroup(true);
+    // Blocks in scripts that are not rendered reference the broadcast too.
+    if (workspace.materializeAllScripts) workspace.materializeAllScripts();
     for (const block of workspace.getAllBlocks()) {
       for (const input of block.inputList) {
         for (const field of input.fieldRow) {

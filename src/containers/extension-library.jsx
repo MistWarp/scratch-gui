@@ -11,6 +11,7 @@ import extensionLibraryContent, {
     galleryMore
 } from '../lib/libraries/extensions/index.jsx';
 import extensionTags from '../lib/libraries/tw-extension-tags';
+import {getVanillaPalette} from '../lib/mw-vanilla-palette';
 
 import LibraryComponent from '../components/library/library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
@@ -220,23 +221,28 @@ class ExtensionLibrary extends React.PureComponent {
         }
     }
     render () {
+        const vanilla = getVanillaPalette();
         let library = null;
-        if (this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
-            library = extensionLibraryContent.map(toLibraryItem);
-            library.push('---');
-            if (this.state.gallery) {
-                library.push(toLibraryItem(galleryMore));
-                const locale = this.props.intl.locale;
-                library.push(
-                    ...this.state.gallery
-                        .filter(i => i.extensionId !== 'faceSensing')
-                        .map(i => translateGalleryItem(i, locale))
-                        .map(toLibraryItem)
-                );
-            } else if (this.state.galleryError) {
-                library.push(toLibraryItem(galleryError));
-            } else {
-                library.push(toLibraryItem(galleryLoading));
+        if (vanilla || this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
+            library = extensionLibraryContent
+                .filter(extension => !vanilla || (extension.tags.includes('scratch') && !extension.extensionURL))
+                .map(toLibraryItem);
+            if (!vanilla) {
+                library.push('---');
+                if (this.state.gallery) {
+                    library.push(toLibraryItem(galleryMore));
+                    const locale = this.props.intl.locale;
+                    library.push(
+                        ...this.state.gallery
+                            .filter(i => i.extensionId !== 'faceSensing')
+                            .map(i => translateGalleryItem(i, locale))
+                            .map(toLibraryItem)
+                    );
+                } else if (this.state.galleryError) {
+                    library.push(toLibraryItem(galleryError));
+                } else {
+                    library.push(toLibraryItem(galleryLoading));
+                }
             }
         }
 
