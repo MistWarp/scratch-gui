@@ -9,6 +9,12 @@ import defaultProject from '../default-project';
 class Storage extends ScratchStorage {
     constructor () {
         super();
+        this.AssetType.CustomAsset = {
+            contentType: 'application/octet-stream',
+            name: 'CustomAsset',
+            runtimeFormat: 'bin',
+            immutable: true
+        };
         this.cacheDefaultProject();
     }
     addOfficialScratchWebStores () {
@@ -19,7 +25,13 @@ class Storage extends ScratchStorage {
             this.getProjectUpdateConfig.bind(this)
         );
         this.addWebStore(
-            [this.AssetType.ImageVector, this.AssetType.ImageBitmap, this.AssetType.Sound, this.AssetType.Font],
+            [
+                this.AssetType.ImageVector,
+                this.AssetType.ImageBitmap,
+                this.AssetType.Sound,
+                this.AssetType.Font,
+                this.AssetType.CustomAsset
+            ],
             this.getAssetGetConfig.bind(this),
             // We set both the create and update configs to the same method because
             // storage assumes it should update if there is an assetId, but the

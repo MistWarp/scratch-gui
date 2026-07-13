@@ -1,5 +1,61 @@
 import JSZip from '@turbowarp/jszip';
 import {convertProject, buildProjectFromBuildDir, toPromiseFs} from 'fractch';
+import storage from '../persistence/storage';
+
+// Custom assets are mirrored into the repo as a real tracked folder with real
+// filenames instead of md5 blobs. Identity is recovered by re-hashing on pack,
+// exactly like fractch does for costumes and sounds.
+const CUSTOM_ASSETS_DIR = 'assets';
+
+const extensionOf = path => {
+    const base = path.substring(path.lastIndexOf('/') + 1);
+    const dot = base.lastIndexOf('.');
+    return dot > 0 ? base.substring(dot + 1).toLowerCase() : 'bin';
+};
+
+const writeCustomAssets = async ({zip, projectJson, vfs, dir}) => {
+    const customAssets = Array.isArray(projectJson.customAssets) ? projectJson.customAssets : [];
+    for (const {name, md5ext} of customAssets) {
+        const entry = zip.file(md5ext);
+        if (!entry) {
+            console.warn('[fractch-tree] missing custom asset in sb3:', md5ext);
+            continue;
+        }
+        const path = `${dir}/${CUSTOM_ASSETS_DIR}/${name}`;
+        await vfs.mkdirp(path.substring(0, path.lastIndexOf('/')));
+        await vfs.writeFile(path, await entry.async('uint8array'));
+    }
+};
+
+const readCustomAssets = async ({vfs, pfs, dir}) => {
+    const found = [];
+
+    const walk = async relative => {
+        const absolute = `${dir}/${CUSTOM_ASSETS_DIR}${relative}`;
+        let entries;
+        try {
+            entries = await pfs.readdir(absolute);
+        } catch (e) {
+            return;
+        }
+        for (const entry of entries) {
+            const childRelative = `${relative}/${entry}`;
+            const stat = await pfs.stat(`${absolute}/${entry}`);
+            if (stat.isDirectory()) {
+                await walk(childRelative);
+            } else {
+                const data = await vfs.readFile(`${absolute}/${entry}`);
+                found.push({
+                    name: childRelative.substring(1),
+                    data: data instanceof Uint8Array ? data : new Uint8Array(data)
+                });
+            }
+        }
+    };
+
+    await walk('');
+    return found;
+};
 
 // Mirrors fractch's internal emit.targetAssetFiles: the map of md5ext -> the
 // "assets/<name>.<ext>" path each costume/sound declaration references. Kept
@@ -131,6 +187,9 @@ const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgres
     await convertProject(projectJson, {outDir: dir, fs});
 
     const vfs = toPromiseFs(fs);
+
+    await writeCustomAssets({zip, projectJson, vfs, dir});
+
     const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
     let completed = 0;
     for (const target of targets) {
@@ -173,9 +232,29 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
     const {manifest, assetFiles} = await buildProjectFromBuildDir({buildDir: dir, fs});
 
     const zip = new JSZip();
+    const vfs = toPromiseFs(fs);
+
+    const customAssets = await readCustomAssets({vfs, pfs: fs, dir});
+    if (customAssets.length) {
+        manifest.customAssets = customAssets.map(({name, data}) => {
+            const dataFormat = extensionOf(name);
+            const asset = storage.createAsset(
+                storage.AssetType.CustomAsset,
+                dataFormat,
+                data,
+                null,
+                true
+            );
+            const md5ext = `${asset.assetId}.${dataFormat}`;
+            zip.file(md5ext, data);
+            return {name, md5ext};
+        });
+    } else {
+        delete manifest.customAssets;
+    }
+
     zip.file('project.json', JSON.stringify(manifest));
 
-    const vfs = toPromiseFs(fs);
     const written = new Set();
     for (const [md5ext, srcRel] of assetFiles) {
         if (written.has(md5ext)) continue;

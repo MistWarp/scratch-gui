@@ -792,6 +792,73 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
     `;
 };
 
+const assets = function (isInitialSetup, isStage, targetId, assetName, colors) {
+    const asset = function (name) {
+        return `
+        <value name="ASSET">
+            <shadow type="assets_menu">
+                <field name="ASSET">${name}</field>
+            </shadow>
+        </value>
+        `;
+    };
+    const text = function (name, value) {
+        return `
+        <value name="${name}">
+            <shadow type="text">
+                <field name="TEXT">${value}</field>
+            </shadow>
+        </value>
+        `;
+    };
+    const number = function (name, value) {
+        return `
+        <value name="${name}">
+            <shadow type="math_number">
+                <field name="NUM">${value}</field>
+            </shadow>
+        </value>
+        `;
+    };
+    return `
+    <category
+        name="%{BKY_CATEGORY_ASSETS}"
+        id="assets"
+        colour="${colors.primary}"
+        secondaryColour="${colors.tertiary}">
+        ${isInitialSetup ? '' : '<button text="Manage assets" callbackKey="OPEN_ASSETS_MODAL"></button>'}
+        <block type="assets_load">
+            ${asset(assetName)}
+        </block>
+        <block type="assets_unload">
+            ${asset(assetName)}
+        </block>
+        <block type="assets_unloadall"/>
+        <block type="assets_check">
+            ${asset(assetName)}
+        </block>
+        <block type="assets_get">
+            ${asset(assetName)}
+        </block>
+        <block type="assets_byte">
+            ${number('INDEX', 1)}
+            ${asset(assetName)}
+        </block>
+        <block type="assets_set">
+            ${asset(assetName)}
+            ${text('VALUE', 'hello')}
+        </block>
+        <block type="assets_delete">
+            ${asset(assetName)}
+        </block>
+        <block type="assets_allnames"/>
+        <block type="assets_infolder">
+            ${text('FOLDER', '')}
+        </block>
+    </category>
+    `;
+};
+
 const variables = function (isInitialSetup, isStage, targetId, colors) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
@@ -842,10 +909,11 @@ const xmlClose = '</xml>';
  * @param {?string} backdropName - The name of the default selected backdrop dropdown.
  * @param {?string} soundName -  The name of the default selected sound dropdown.
  * @param {?object} colors - The colors for the theme.
+ * @param {?string} assetName - The name of the default selected custom asset dropdown.
  * @returns {string} - a ScratchBlocks-style XML document for the contents of the toolbox.
  */
 const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categoriesXML = [],
-    costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors) {
+    costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors, assetName = '') {
     isStage = isInitialSetup || isStage;
     const gap = [categorySeparator];
 
@@ -867,6 +935,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     const looksXML = moveCategory('looks') ||
         looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks);
     const soundXML = moveCategory('sound') || sound(isInitialSetup, isStage, targetId, soundName, colors.sounds);
+    const assetsXML = moveCategory('assets') || assets(isInitialSetup, isStage, targetId, assetName, colors.assets);
     const eventsXML = moveCategory('event') || events(isInitialSetup, isStage, targetId, colors.event);
     const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control);
     const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing);
@@ -886,6 +955,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         motionXML, gap,
         looksXML, gap,
         soundXML, gap,
+        assetsXML, gap,
         eventsXML, gap,
         controlXML, gap,
         sensingXML, gap,

@@ -1,0 +1,313 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+
+.modal-content {
+    width: 100%;
+    height: 100%;
+}
+
+.body {
+    background: $ui-modal-background;
+    padding: 1rem 1.25rem;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.add-button,
+.folder-button {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid $motion-primary;
+    border-radius: 0.25rem;
+    background: $motion-primary;
+    color: $ui-white;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.folder-button {
+    background: none;
+    color: $motion-primary;
+}
+
+.add-button:hover {
+    background: color-mix(in srgb, $motion-primary 85%, black);
+}
+
+.folder-button:hover {
+    background: color-mix(in srgb, $motion-primary 15%, transparent);
+}
+
+.file-input {
+    display: none;
+}
+
+.destination {
+    flex-grow: 1;
+    color: $text-primary-transparent;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.total {
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.columns {
+    display: flex;
+    gap: 0.75rem;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.tree-column {
+    flex: 1 1 55%;
+    min-width: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.empty {
+    padding: 0.75rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 0.5rem;
+    color: $text-primary-transparent;
+    text-align: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.tree {
+    flex-grow: 1;
+    min-height: 6rem;
+    padding: 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+}
+
+.folder {
+    border-radius: 0.25rem;
+}
+
+.folder-children {
+    padding-left: 1rem;
+    border-left: 1px solid $ui-black-transparent;
+    margin-left: 0.6rem;
+}
+
+.folder-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.folder-row:hover {
+    background: $ui-black-transparent;
+}
+
+.folder-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.folder-icon,
+.file-icon {
+    flex-shrink: 0;
+}
+
+.folder-name {
+    color: $text-primary;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    cursor: grab;
+}
+
+.file:hover {
+    background: $ui-black-transparent;
+}
+
+.file-name {
+    flex-grow: 1;
+    min-width: 0;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    background: none;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.125rem 0.25rem;
+}
+
+.file-name:focus {
+    border-color: $motion-primary;
+    background: $ui-white;
+}
+
+.file-size {
+    flex-shrink: 0;
+    color: $text-primary-transparent;
+    font-size: 0.7rem;
+}
+
+.drop-target {
+    outline: 2px dashed $motion-primary;
+    outline-offset: -2px;
+    border-radius: 0.25rem;
+}
+
+.selected.file,
+.selected > .folder-row {
+    background: color-mix(in srgb, $motion-primary 25%, transparent);
+}
+
+.tree.selected {
+    border-color: $motion-primary;
+}
+
+.preview {
+    flex: 1 1 45%;
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.preview-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 8rem;
+    max-height: 16rem;
+    border-radius: 0.25rem;
+    background: $ui-black-transparent;
+    overflow: hidden;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 16rem;
+    object-fit: contain;
+}
+
+.preview-audio {
+    width: 100%;
+    padding: 0 0.5rem;
+}
+
+.preview-text {
+    width: 100%;
+    max-height: 16rem;
+    margin: 0;
+    padding: 0.5rem;
+    overflow: auto;
+    color: $text-primary;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.preview-none {
+    margin: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: $text-primary-transparent;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.metadata {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.metadata dt {
+    color: $text-primary-transparent;
+    font-weight: bold;
+}
+
+.metadata dd {
+    margin: 0;
+    color: $text-primary;
+}
+
+.metadata-path {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+}
+
+.preview-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.preview-button {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    background: none;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.preview-button:hover {
+    background: $ui-black-transparent;
+}
