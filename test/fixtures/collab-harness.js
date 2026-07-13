@@ -312,14 +312,15 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
 
     const host = {session: hostSession, applier: hostApplier, transport: hostTransport, id: hostTransport.id};
 
-    const addClient = async username => {
+    const addClient = async (username, handle) => {
         const applier = new DocApplier();
         const transport = new FakeCollabTransport(hub, nextPeerId('client'));
         const session = new ClientSession({
             transport,
             applier,
             roomId: 'room',
-            username
+            username,
+            handle
         });
         const client = {session, applier, transport, id: transport.id, username};
         clientsById.set(transport.id, client);

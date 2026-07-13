@@ -9,17 +9,17 @@ const ZONES = [
     },
     {
         id: 'right',
-        items: ['save-status', 'about', 'rotur-account'],
+        items: ['save-status', 'about', 'collab-presence', 'rotur-account'],
         extras: []
     }
 ];
 
-const ALWAYS_SHOW = ['save-status', 'rotur-account', 'view'];
+const ALWAYS_SHOW = ['save-status', 'rotur-account', 'collab-presence', 'view'];
 
 const ALL_ITEMS = ZONES.reduce((acc, zone) => acc.concat(zone.items, zone.extras), []);
 
 // Bump when default zone membership/order changes so old custom orders reset
-const ORDER_KEY = 'mw:menu-bar-order-v4';
+const ORDER_KEY = 'mw:menu-bar-order-v5';
 const HIDDEN_KEY = 'mw:menu-bar-hidden';
 const CHANGE_EVENT = 'mw-menu-bar-layout-changed';
 const STYLE_ID = 'mw-menu-bar-layout';
@@ -152,6 +152,8 @@ export {
     ALL_ITEMS,
     ALWAYS_SHOW,
     CHANGE_EVENT,
+    ORDER_KEY,
+    HIDDEN_KEY,
     getStoredOrder,
     setZoneOrder,
     getZoneDisplayOrder,

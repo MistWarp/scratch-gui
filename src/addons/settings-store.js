@@ -18,6 +18,22 @@ import addons from './generated/addon-manifests';
 import upstreamMeta from './generated/upstream-meta.json';
 import EventTargetShim from './event-target';
 
+const NARROW_SCREEN_WIDTH = 900;
+
+const NARROW_SCREEN_ADDONS = ['hide-flyout'];
+
+const NARROW_SCREEN_SETTINGS = {
+    'hide-flyout': {
+        toggle: 'category'
+    }
+};
+
+const isNarrowScreen = () => (
+    typeof window !== 'undefined' &&
+    typeof window.innerWidth === 'number' &&
+    window.innerWidth < NARROW_SCREEN_WIDTH
+);
+
 const SETTINGS_KEY = 'tw:addons';
 const VERSION = 5;
 
@@ -229,6 +245,9 @@ class SettingsStore extends EventTargetShim {
         if (Object.prototype.hasOwnProperty.call(storage, 'enabled')) {
             return storage.enabled;
         }
+        if (NARROW_SCREEN_ADDONS.includes(addonId) && isNarrowScreen()) {
+            return true;
+        }
         return !!manifest.enabledByDefault;
     }
 
@@ -247,6 +266,10 @@ class SettingsStore extends EventTargetShim {
         }
         if (Object.prototype.hasOwnProperty.call(storage, settingId)) {
             return storage[settingId];
+        }
+        const narrowDefaults = NARROW_SCREEN_SETTINGS[addonId];
+        if (narrowDefaults && Object.prototype.hasOwnProperty.call(narrowDefaults, settingId) && isNarrowScreen()) {
+            return narrowDefaults[settingId];
         }
         return settingObject.default;
     }

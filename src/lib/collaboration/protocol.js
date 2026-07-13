@@ -164,6 +164,7 @@ const isUserInfo = value =>
     isPlainObject(value) &&
     isNonEmptyString(value.id, LIMITS.MAX_ID) &&
     isNonEmptyString(value.username, LIMITS.MAX_USERNAME) &&
+    isOptionalString(value.handle, LIMITS.MAX_USERNAME) &&
     typeof value.isHost === 'boolean';
 
 const isMd5Ext = value =>
@@ -333,6 +334,7 @@ const PAYLOAD_VALIDATORS = {
     [CTRL.HELLO]: payload => {
         if (!isNonNegativeInt(payload.protocolVersion)) return 'hello requires protocolVersion';
         if (!isNonEmptyString(payload.username, LIMITS.MAX_USERNAME)) return 'hello requires username';
+        if (!isOptionalString(payload.handle, LIMITS.MAX_USERNAME)) return 'hello handle must be a string';
         if (!isNonEmptyString(payload.roomId, LIMITS.MAX_ROOM_ID)) return 'hello requires roomId';
         if (typeof payload.lastAppliedSeq !== 'undefined' && !isNonNegativeInt(payload.lastAppliedSeq)) {
             return 'hello lastAppliedSeq must be a non-negative integer';

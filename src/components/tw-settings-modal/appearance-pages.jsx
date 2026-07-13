@@ -345,6 +345,7 @@ class UnconnectedWallpaperPage extends React.Component {
                         </span>
                         <input
                             type="range"
+                            className={styles.gcSlider}
                             min="0.1"
                             max="1"
                             step="0.1"
@@ -363,6 +364,7 @@ class UnconnectedWallpaperPage extends React.Component {
                         </span>
                         <input
                             type="range"
+                            className={styles.gcSlider}
                             min="0"
                             max="0.8"
                             step="0.1"

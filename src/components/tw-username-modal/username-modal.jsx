@@ -7,6 +7,7 @@ import classNames from 'classnames';
 
 import styles from './username-modal.css';
 import isScratchDesktop from '../../lib/utils/isScratchDesktop.js';
+import {APP_NAME} from '../../lib/constants/brand.js';
 
 const messages = defineMessages({
     title: {
@@ -69,12 +70,38 @@ const UsernameModalComponent = props => (
                     onChange={props.onChange}
                     onFocus={props.onFocus}
                     onKeyPress={props.onKeyPress}
-                    pattern="[a-zA-Z0-9_\-]*"
+                    pattern="[@a-zA-Z0-9_\-]*"
                     maxLength="20"
                     spellCheck="false"
                 />
             </Box>
-            {isScratchDesktop() ? (
+            {props.roturUsername ? (
+                <React.Fragment>
+                    <p className={styles.helpText}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="You are signed in as {handle}, so that is the name everyone sees. Setting a different one here overrides it everywhere in {APP_NAME}: in collaboration rooms, in the username block, and in cloud variables."
+                            description="Text in change username modal when signed into Rotur"
+                            id="tw.usernameModal.roturHelp"
+                            values={{
+                                handle: `@${props.roturUsername}`,
+                                APP_NAME
+                            }}
+                        />
+                    </p>
+                    <p className={styles.helpText}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="It is saved to your account rather than this browser, so it follows you to every device you sign in on. Reset goes back to {handle}."
+                            description="Text in change username modal about where the override is stored"
+                            id="tw.usernameModal.roturHelp2"
+                            values={{
+                                handle: `@${props.roturUsername}`
+                            }}
+                        />
+                    </p>
+                </React.Fragment>
+            ) : (isScratchDesktop() ? (
                 null
             ) : (
                 <React.Fragment>
@@ -95,17 +122,26 @@ const UsernameModalComponent = props => (
                         />
                     </p>
                 </React.Fragment>
-            )}
+            ))}
             <Box className={styles.buttonRow}>
                 <button
                     className={styles.cancelButton}
                     onClick={props.onReset}
                 >
-                    <FormattedMessage
-                        defaultMessage="Reset"
-                        description="Button in username modal to reset username to random"
-                        id="tw.usernameModal.reset"
-                    />
+                    {props.roturUsername ? (
+                        <FormattedMessage
+                            defaultMessage="Use {handle}"
+                            description="Button in username modal to go back to the Rotur username"
+                            id="tw.usernameModal.useRoturName"
+                            values={{handle: `@${props.roturUsername}`}}
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Reset"
+                            description="Button in username modal to reset username to random"
+                            id="tw.usernameModal.reset"
+                        />
+                    )}
                 </button>
                 <button
                     className={styles.cancelButton}
@@ -136,6 +172,7 @@ const UsernameModalComponent = props => (
 UsernameModalComponent.propTypes = {
     intl: intlShape,
     mustChangeUsername: PropTypes.bool.isRequired,
+    roturUsername: PropTypes.string,
     value: PropTypes.string.isRequired,
     valueValid: PropTypes.bool.isRequired,
     onCancel: PropTypes.func.isRequired,

@@ -127,13 +127,13 @@
 
 .itemSelected {
     background: $looks-transparent;
-    color: $looks-secondary;
+    color: color-mix(in srgb, $looks-secondary 35%, $text-primary);
     font-weight: 600;
 }
 
 .itemSelected:hover {
     background: $looks-transparent;
-    color: $looks-secondary-dark;
+    color: $text-primary;
 }
 
 .icon {
@@ -281,5 +281,28 @@
         min-width: 0.9rem;
         padding: 0.05rem 0.25rem;
         font-size: 0.55rem;
+    }
+}
+
+@media only screen and (max-width: 900px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .sidebar,
+    .sidebarWide,
+    .sidebarNarrow {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-right: none;
+    }
+
+    .layout.mobile-content > .sidebar {
+        display: none;
+    }
+
+    .layout.mobile-list > .content {
+        display: none;
     }
 }

@@ -6,15 +6,13 @@ import classNames from 'classnames';
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
-import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
-
-const BufferedInput = BufferedInputHOC(Input);
 
 import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine} from 'lucide-react';
 
 import showAlert from '../../addons/window-system/alert';
 import CollaborationService from '../../lib/collaboration/index.js';
+import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 
 import styles from './collaboration-modal.css';
 
@@ -31,13 +29,11 @@ class CollaborationModal extends Component {
             showJoinRequest: false
         };
 
-        this.autoJoinAttempted = new Set();
-        this.autoJoinInProgress = false;
-        this._autoJoinTimer = null;
-        this._lastAutoJoinAttempt = new Map();
-        this._autoJoinFailures = new Map();
+        this._autoJoinKey = null;
 
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
+        this.handleRoomIdKeyPress = this.handleRoomIdKeyPress.bind(this);
+        this.maybeAutoJoin = this.maybeAutoJoin.bind(this);
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
         this.handleLeaveRoom = this.handleLeaveRoom.bind(this);
@@ -62,24 +58,7 @@ class CollaborationModal extends Component {
     }
 
     componentDidMount () {
-        console.log('[COLLAB MODAL] ComponentDidMount - props:', {
-            roomId: this.props.roomId,
-            isConnected: this.props.isConnected,
-            currentUsername: this.props.currentUsername
-        });
-
-        if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer && !this.autoJoinInProgress) {
-            console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
-
-            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
-            this.autoJoinAttempted.add(roomIdKey);
-            this.autoJoinInProgress = true;
-            this._autoJoinTimer = setTimeout(() => {
-                this._autoJoinTimer = null;
-                this.autoJoinInProgress = false;
-                this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
-            }, 100);
-        }
+        this.maybeAutoJoin();
 
         if (CollaborationService) {
             try {
@@ -98,32 +77,20 @@ class CollaborationModal extends Component {
 
     componentDidUpdate (prevProps) {
         if (prevProps.isConnected !== this.props.isConnected) {
-            const newConnectionStep = this.props.isConnected ? 'connected' : 'join';
             this.setState({
-                connectionStep: newConnectionStep,
+                connectionStep: this.props.isConnected ? 'connected' : 'join',
                 isConnecting: false,
                 error: null
             });
-
-            if (!this.props.isConnected) {
-                this.autoJoinInProgress = false;
-                if (this._autoJoinTimer) {
-                    clearTimeout(this._autoJoinTimer);
-                    this._autoJoinTimer = null;
-                }
-                return;
-            }
-            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
-            this._autoJoinFailures.delete(roomIdKey);
         }
 
-        const shouldResetToJoin =
-            prevProps.roomId !== this.props.roomId &&
-            this.props.roomId === null &&
-            !this.props.isConnected;
-
-        if (shouldResetToJoin) {
-            this.resetToJoinScreen();
+        if (prevProps.roomId !== this.props.roomId) {
+            if (this.props.roomId) {
+                this.setState({roomId: this.props.roomId});
+            } else {
+                this._autoJoinKey = null;
+                if (!this.props.isConnected) this.resetToJoinScreen();
+            }
         }
 
         if (prevProps.connectionError !== this.props.connectionError && this.props.connectionError) {
@@ -134,53 +101,7 @@ class CollaborationModal extends Component {
             });
         }
 
-        if (prevProps.roomId !== this.props.roomId && this.props.roomId && !this.props.isConnected) {
-            console.log('Room ID prop changed, updating local state:', this.props.roomId);
-            this.setState({
-                roomId: this.props.roomId
-            });
-
-            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
-            const now = Date.now();
-            const lastAttempt = this._lastAutoJoinAttempt.get(roomIdKey) || 0;
-            const timeSinceLastAttempt = now - lastAttempt;
-            const cooldownPeriod = 30000;
-            const failureCount = this._autoJoinFailures.get(roomIdKey) || 0;
-            const hasNoPreviousRoomId = prevProps.roomId === null || prevProps.roomId === undefined;
-            const hasCurrentUsername = this.props.currentUsername != null;
-            const shouldAttemptAutoJoin =
-                hasNoPreviousRoomId &&
-                this.props.roomId &&
-                hasCurrentUsername &&
-                !this._autoJoinTimer &&
-                !this.autoJoinInProgress &&
-                timeSinceLastAttempt > cooldownPeriod &&
-                failureCount < 5;
-
-            if (shouldAttemptAutoJoin) {
-                console.log('Auto-joining room after prop update:', this.props.roomId);
-                this.autoJoinAttempted.add(roomIdKey);
-                this._lastAutoJoinAttempt.set(roomIdKey, now);
-                this.autoJoinInProgress = true;
-                this._autoJoinTimer = setTimeout(() => {
-                    this._autoJoinTimer = null;
-                    this.autoJoinInProgress = false;
-                    this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
-                }, 100);
-            } else if (failureCount >= 5) {
-                console.log(
-                    `[COLLAB MODAL] Too many consecutive failures (${failureCount}), skipping auto-join`
-                );
-                this.setState({
-                    error: 'Unable to connect to the room. Please try again later.',
-                    connectionStep: 'join'
-                });
-            } else if (timeSinceLastAttempt <= cooldownPeriod) {
-                const elapsedSeconds = Math.round(timeSinceLastAttempt / 1000);
-                const cooldownSeconds = cooldownPeriod / 1000;
-                console.log(`[COLLAB MODAL] Auto-join cooldown in effect (${elapsedSeconds}s / ${cooldownSeconds}s)`);
-            }
-        }
+        this.maybeAutoJoin();
 
         if (this.props.visible && CollaborationService) {
             try {
@@ -215,14 +136,7 @@ class CollaborationModal extends Component {
             }
         }
 
-        this.autoJoinAttempted.clear();
-        this.autoJoinInProgress = false;
-        this._lastAutoJoinAttempt.clear();
-        this._autoJoinFailures.clear();
-        if (this._autoJoinTimer) {
-            clearTimeout(this._autoJoinTimer);
-            this._autoJoinTimer = null;
-        }
+        this._autoJoinKey = null;
     }
 
     resetToJoinScreen () {
@@ -246,15 +160,21 @@ class CollaborationModal extends Component {
         this.handleChangeCurrentRoomPrivacy('private');
     }
 
-    handleRoomIdChange (roomId) {
-        this.setState({roomId});
+    handleRoomIdChange (event) {
+        this.setState({roomId: event.target.value});
+    }
+
+    handleRoomIdKeyPress (event) {
+        if (event.key === 'Enter') this.handleJoinRoom();
     }
 
     async handleJoinRoom () {
-        if (!this.state.roomId.trim()) {
+        const roomId = this.state.roomId.trim();
+        if (!roomId) {
             this.setState({error: 'Please enter a room ID'});
             return;
         }
+        this._autoJoinKey = `${roomId}-${this.props.currentUsername}`;
 
         this.setState({
             isConnecting: true,
@@ -263,10 +183,12 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onJoinRoom(this.state.roomId.trim(), this.props.currentUsername);
+            await this.props.onJoinRoom(roomId, this.props.currentUsername);
         } catch (error) {
             this.setState({
-                error: error.message || 'Failed to join room',
+                error: error.collabCode === 'ROOM_NOT_FOUND' ?
+                    `Nobody is hosting room "${roomId}" yet. You can create it below.` :
+                    error.message || 'Failed to join room',
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -274,7 +196,8 @@ class CollaborationModal extends Component {
     }
 
     async handleCreateRoom () {
-        const roomCode = this.generateRoomCode();
+        const roomCode = this.state.roomId.trim() || this.generateRoomCode();
+        this._autoJoinKey = `${roomCode}-${this.props.currentUsername}`;
 
         this.setState({
             isConnecting: true,
@@ -380,76 +303,34 @@ class CollaborationModal extends Component {
         return `${randomAdjective}-${randomNoun}-${randomNum}`;
     }
 
+    maybeAutoJoin () {
+        const {roomId, currentUsername, isConnected} = this.props;
+        if (!roomId || !currentUsername || isConnected) return;
+        if (CollaborationService.getInstance().roomId) return;
+        const key = `${roomId}-${currentUsername}`;
+        if (this._autoJoinKey === key) return;
+        this._autoJoinKey = key;
+        this.attemptAutoJoin(roomId, currentUsername);
+    }
+
     async attemptAutoJoin (roomCode, username) {
-        console.log(`Attempting to auto-join room "${roomCode}" as "${username}"`);
+        this.setState({
+            isConnecting: true,
+            connectionStep: 'connecting',
+            error: null
+        });
 
         try {
-            if (!roomCode) {
-                console.error('attemptAutoJoin called with null/undefined roomCode');
-                this.autoJoinInProgress = false;
-                this.setState({
-                    error: 'No room code provided',
-                    isConnecting: false,
-                    connectionStep: 'join'
-                });
-                return;
-            }
-
-            if (!username) {
-                console.error('attemptAutoJoin called with null/undefined username');
-                this.autoJoinInProgress = false;
-                this.setState({
-                    error: 'Username not available',
-                    isConnecting: false,
-                    connectionStep: 'join'
-                });
-                return;
-            }
-
-            this.setState({
-                isConnecting: true,
-                connectionStep: 'connecting',
-                error: null
-            });
-
             await this.props.onJoinRoom(roomCode, username);
-            console.log(`Successfully joined room "${roomCode}"`);
-
-            const roomIdKey = `${roomCode}-${username}`;
-            this._autoJoinFailures.delete(roomIdKey);
         } catch (error) {
-            console.log(`Failed to join room "${roomCode}":`, error.message);
-
-            const roomIdKey = `${roomCode}-${username}`;
-            const failureCount = (this._autoJoinFailures.get(roomIdKey) || 0) + 1;
-            this._autoJoinFailures.set(roomIdKey, failureCount);
-            console.log(`[COLLAB MODAL] Update failure count for "${roomCode}": ${failureCount}`);
-
-            try {
-                console.log(`Auto-creating room "${roomCode}" since it doesn't exist`);
-                await this.props.onCreateRoom(roomCode, username);
-                console.log(`Successfully created room "${roomCode}"`);
-
-                this._autoJoinFailures.delete(roomIdKey);
-            } catch (createError) {
-                console.error(`Failed to create room "${roomCode}":`, createError.message);
-
-                this.autoJoinInProgress = false;
-
-                if (failureCount < 3) {
-                    this.setState({
-                        error: `Room "${roomCode}" doesn't exist and couldn't be created: ${createError.message || 'Unknown error'}`,
-                        isConnecting: false,
-                        connectionStep: 'join'
-                    });
-                } else {
-                    this.setState({
-                        error: `Unable to connect. Will retry in a moment... (${failureCount} attempts)`,
-                        isConnecting: false,
-                        connectionStep: 'join'
-                    });
-                }
-            }
+            this.setState({
+                roomId: roomCode,
+                error: error.collabCode === 'ROOM_NOT_FOUND' ?
+                    `Nobody is hosting room "${roomCode}" yet. You can create it below.` :
+                    error.message || 'Failed to join room',
+                isConnecting: false,
+                connectionStep: 'join'
+            });
         }
     }
 
@@ -560,6 +441,25 @@ class CollaborationModal extends Component {
         }
     }
 
+    renderUserIcon (user, isHost) {
+        const avatarUrl = avatarForCollabUser(user);
+        if (avatarUrl) {
+            return (
+                <img
+                    className={styles.avatar}
+                    src={avatarUrl}
+                    alt=""
+                    draggable={false}
+                />
+            );
+        }
+        return (
+            <div className={styles.userIcon}>
+                {isHost ? <Crown /> : <User />}
+            </div>
+        );
+    }
+
     renderAlphaBanner () {
         return (
             <div className={styles.alphaBanner}>
@@ -575,6 +475,7 @@ class CollaborationModal extends Component {
     }
 
     renderJoinStep () {
+        const typedRoomId = this.state.roomId.trim();
         return (
             <Box className={styles.content}>
                 {this.renderAlphaBanner()}
@@ -594,19 +495,22 @@ class CollaborationModal extends Component {
                 </div>
 
                 <div className={styles.description}>
+                    {this.renderUserIcon({handle: this.props.roturHandle}, false)}
                     <FormattedMessage
                         defaultMessage="You will be known as: {username}"
                         description="Shows current username"
                         id="gui.collaboration.currentUsername"
                         values={{username: this.props.currentUsername}}
                     />
-                    <button
-                        className={styles.editUsernameButton}
-                        onClick={this.props.onOpenChangeUsername}
-                        title="Change username"
-                    >
-                        <PenLine size={16} />
-                    </button>
+                    {!this.props.roturHandle && (
+                        <button
+                            className={styles.editUsernameButton}
+                            onClick={this.props.onOpenChangeUsername}
+                            title="Change username"
+                        >
+                            <PenLine size={16} />
+                        </button>
+                    )}
                 </div>
 
                 <div className={styles.roomActions}>
@@ -626,11 +530,12 @@ class CollaborationModal extends Component {
                                     id="gui.collaboration.roomId"
                                 />
                             </label>
-                            <BufferedInput
+                            <Input
                                 className={styles.input}
                                 placeholder="Enter room ID..."
                                 value={this.state.roomId}
-                                onSubmit={this.handleRoomIdChange}
+                                onChange={this.handleRoomIdChange}
+                                onKeyPress={this.handleRoomIdKeyPress}
                             />
                         </div>
                         <Button
@@ -675,7 +580,7 @@ class CollaborationModal extends Component {
                         </h3>
                         <div className={styles.createDescription}>
                             <FormattedMessage
-                                defaultMessage="Generate a new room ID to start collaborating with others. Share the room URL to invite people."
+                                defaultMessage="Host a room and share its URL to invite people."
                                 description="Create room description"
                                 id="gui.collaboration.createDescription"
                             />
@@ -685,11 +590,13 @@ class CollaborationModal extends Component {
                             onClick={this.handleCreateRoom}
                             disabled={this.state.isConnecting}
                         >
-                            <FormattedMessage
-                                defaultMessage="Create New Room"
-                                description="Button to create new collaboration room"
-                                id="gui.collaboration.createRoom"
-                            />
+                            {typedRoomId ? `Host room "${typedRoomId}"` : (
+                                <FormattedMessage
+                                    defaultMessage="Create New Room"
+                                    description="Button to create new collaboration room"
+                                    id="gui.collaboration.createRoom"
+                                />
+                            )}
                         </Button>
                         <div className={styles.privacyNotice}>
                             <div className={styles.privacyNoticeIcon}>
@@ -791,9 +698,7 @@ class CollaborationModal extends Component {
                                         [styles.currentUser]: user.id === this.props.currentUserId
                                     })}
                                 >
-                                    <div className={styles.userIcon}>
-                                        {user.isHost ? <Crown /> : <User />}
-                                    </div>
+                                    {this.renderUserIcon(user, user.isHost)}
                                     <span className={styles.username}>
                                         {user.username}
                                         {user.isHost && (
@@ -855,7 +760,7 @@ class CollaborationModal extends Component {
                                         className={styles.requestItem}
                                     >
                                         <div className={styles.requesterInfo}>
-                                            <User className={styles.userIcon} />
+                                            {this.renderUserIcon(request, false)}
                                             <span className={styles.username}>
                                                 {request.username}
                                             </span>
@@ -1081,9 +986,11 @@ CollaborationModal.propTypes = {
     connectedUsers: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
         username: PropTypes.string.isRequired,
+        handle: PropTypes.string,
         isHost: PropTypes.bool
     })),
     connectionError: PropTypes.string,
+    roturHandle: PropTypes.string,
     onRequestClose: PropTypes.func.isRequired,
     onJoinRoom: PropTypes.func.isRequired,
     onCreateRoom: PropTypes.func.isRequired,

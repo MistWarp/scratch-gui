@@ -78,6 +78,37 @@ describe('snapshot streaming', () => {
         room.destroy();
     });
 
+    test('download-complete fires before the project is applied, not after', async () => {
+        const room = await createRoom({clientCount: 0, autoSnapshot: false});
+        const hostService = new HostSnapshotService({
+            session: room.host.session,
+            transport: room.host.transport,
+            getProjectData: () => Promise.resolve(encodeDoc(room.host.applier.doc))
+        });
+        room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
+
+        const client = await room.addClient('anna');
+        const order = [];
+        const service = new ClientSnapshotService({
+            session: client.session,
+            transport: client.transport,
+            applyProjectData: arrayBuffer => {
+                order.push('apply');
+                client.applier.loadSnapshot(decodeDoc(arrayBuffer));
+                return Promise.resolve();
+            }
+        });
+        service.on('download-complete', () => order.push('download-complete'));
+
+        await settle(room.hub);
+
+        expect(order).toEqual(['download-complete', 'apply']);
+
+        hostService.destroy();
+        service.destroy();
+        room.destroy();
+    });
+
     test('two concurrent joiners both get complete transfers', async () => {
         const room = await createRoom({clientCount: 0, autoSnapshot: false});
         const {hostService, wireClient} = wireSnapshots(room);

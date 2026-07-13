@@ -1032,3 +1032,26 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+
+.mobile-back-button {
+    display: none;
+}
+
+@media only screen and (max-width: 900px) {
+    .mobile-back-button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        width: 100%;
+        min-height: 44px;
+        padding: 0 0.75rem;
+        border: 0;
+        border-bottom: 1px solid $ui-black-transparent;
+        background: transparent;
+        color: $text-primary;
+        font: inherit;
+        font-weight: bold;
+        text-align: left;
+        cursor: pointer;
+    }
+}

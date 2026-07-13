@@ -368,3 +368,34 @@
 
 
 }
+
+@media only screen and (max-width: 900px) {
+    :global(.mw-native-find-bar:not(.mw-find-expanded)) {
+        display: none;
+    }
+
+    :global(.mw-native-find-bar.mw-find-expanded) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        padding: 6px 8px;
+        background: var(--ui-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    :global(.mw-native-find-bar.mw-find-expanded .sa-find-wrapper) {
+        max-width: none;
+        width: 100%;
+        flex: 1;
+    }
+
+    :global(.mw-native-find-bar.mw-find-expanded .sa-find-dropdown-out) {
+        display: block;
+        flex: 1;
+    }
+}

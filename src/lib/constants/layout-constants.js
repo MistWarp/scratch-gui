@@ -18,7 +18,12 @@ const STAGE_SIZE_MODES = keyMirror({
     /**
      * Display the stage at its full size.
      */
-    full: null
+    full: null,
+
+    /**
+     * Collapse the stage away entirely, giving the editor the full width.
+     */
+    hidden: null
 });
 
 /**

@@ -59,3 +59,9 @@
     max-width: 8rem;
     margin-right: 0.35rem;
 }
+
+@media only screen and (max-width: 900px) {
+    .profile-name {
+        display: none;
+    }
+}

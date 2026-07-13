@@ -27,3 +27,21 @@
 .spinner {
     margin-right: $space;
 }
+
+@media only screen and (max-width: 900px) {
+    .content {
+        display: none;
+    }
+
+    .spinner {
+        margin-right: 0;
+    }
+}
+
+:global(.mw-compact-save) .content {
+    display: none;
+}
+
+:global(.mw-compact-save) .spinner {
+    margin-right: 0;
+}

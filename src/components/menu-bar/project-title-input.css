@@ -24,7 +24,8 @@ can set a width for example or what it should do in a flex box (eg. grow).
     color: $menu-bar-foreground;
     font-weight: bold;
     font-size: .8rem;
-    min-width: 150px;
+    min-width: 0;
+    width: 100%;
 }
 
 .title-field::placeholder {

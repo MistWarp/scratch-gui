@@ -32,11 +32,13 @@ const SaveStatus = ({
             className={styles.saveNow}
             onClick={onClickSave}
         >
-            <FormattedMessage
-                defaultMessage="Save Now"
-                description="Title bar link for saving now"
-                id="gui.menuBar.saveNowLink"
-            />
+            <span className={styles.saveLabel}>
+                <FormattedMessage
+                    defaultMessage="Save Now"
+                    description="Title bar link for saving now"
+                    id="gui.menuBar.saveNowLink"
+                />
+            </span>
         </div>
     ));
 

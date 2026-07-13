@@ -23,7 +23,7 @@ const InlineMessageComponent = ({
                 level={'info'}
             />
         )}
-        {content}
+        <span className={styles.content}>{content}</span>
     </div>
 );
 
