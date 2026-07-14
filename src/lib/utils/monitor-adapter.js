@@ -35,13 +35,15 @@ export default function ({id, spriteName, opcode, params, value, vm}) {
 
     // Anything that isn't a string or number, such as a boolean or object, should be converted to string.
     if (Array.isArray(value)) {
-        value = value.slice();
+        let converted = null;
         for (let i = 0; i < value.length; i++) {
             const item = value[i];
             if (typeof item !== 'string' && typeof item !== 'number') {
-                value[i] = safeStringify(item);
+                if (converted === null) converted = value.slice();
+                converted[i] = safeStringify(item);
             }
         }
+        if (converted !== null) value = converted;
     } else if (typeof value !== 'string' && typeof value !== 'number') {
         value = safeStringify(value);
     }

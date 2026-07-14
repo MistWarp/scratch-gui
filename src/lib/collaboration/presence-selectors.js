@@ -5,7 +5,13 @@
 
 const EMPTY = [];
 
-const asList = activity => (activity ? Object.values(activity) : EMPTY);
+const asList = activity => {
+    if (!activity) return EMPTY;
+    const users = Object.values(activity);
+    return users.length ? users : EMPTY;
+};
+
+const orEmpty = users => (users.length ? users : EMPTY);
 
 /**
  * Who is in a given sprite, whatever they are doing inside it.
@@ -14,7 +20,7 @@ const asList = activity => (activity ? Object.values(activity) : EMPTY);
  * @returns {Array.<object>} Users, possibly empty.
  */
 const usersInSprite = (activity, targetId) =>
-    asList(activity).filter(user => user.targetId === targetId);
+    orEmpty(asList(activity).filter(user => user.targetId === targetId));
 
 /**
  * Who is on a given editor tab (code / costumes / sounds).
@@ -23,7 +29,7 @@ const usersInSprite = (activity, targetId) =>
  * @returns {Array.<object>} Users, possibly empty.
  */
 const usersOnTab = (activity, tab) =>
-    asList(activity).filter(user => user.tab === tab);
+    orEmpty(asList(activity).filter(user => user.tab === tab));
 
 /**
  * Who has a given costume or sound open. The tab disambiguates the two, so
@@ -35,9 +41,9 @@ const usersOnTab = (activity, tab) =>
  * @returns {Array.<object>} Users, possibly empty.
  */
 const usersOnAsset = (activity, targetId, tab, assetIndex) =>
-    asList(activity).filter(user =>
+    orEmpty(asList(activity).filter(user =>
         user.targetId === targetId &&
         user.tab === tab &&
-        user.assetIndex === assetIndex);
+        user.assetIndex === assetIndex));
 
 export {usersInSprite, usersOnTab, usersOnAsset};

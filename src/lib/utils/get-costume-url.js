@@ -5,16 +5,16 @@ import {inlineSvgFonts} from '@turbowarp/scratch-svg-renderer';
 const HAS_FONT_REGEXP = 'font-family(?!="none")';
 
 const getCostumeUrl = (function () {
-    let cachedAssetId;
-    let cachedUrl;
+    const MAX_ENTRIES = 512;
+    const cache = new Map();
 
     return function (asset) {
-
-        if (cachedAssetId === asset.assetId) {
-            return cachedUrl;
+        const cached = cache.get(asset.assetId);
+        if (typeof cached !== 'undefined') {
+            return cached;
         }
 
-        cachedAssetId = asset.assetId;
+        let url;
 
         // If the SVG refers to fonts, they must be inlined in order to display correctly in the img tag.
         // Avoid parsing the SVG when possible, since it's expensive.
@@ -22,15 +22,20 @@ const getCostumeUrl = (function () {
             const svgString = asset.decodeText();
             if (svgString.match(HAS_FONT_REGEXP)) {
                 const svgText = inlineSvgFonts(svgString);
-                cachedUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+                url = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
             } else {
-                cachedUrl = asset.encodeDataURI();
+                url = asset.encodeDataURI();
             }
         } else {
-            cachedUrl = asset.encodeDataURI();
+            url = asset.encodeDataURI();
         }
 
-        return cachedUrl;
+        if (cache.size >= MAX_ENTRIES) {
+            cache.clear();
+        }
+        cache.set(asset.assetId, url);
+
+        return url;
     };
 }());
 
