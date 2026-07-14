@@ -3,8 +3,15 @@
     proportional UI font onto xterm and Monaco. xterm still measures its cell grid with the font it
     was configured with, so the glyphs and the grid disagree and the text renders unevenly spaced.
     These selectors are more specific than that rule, so the code surfaces keep a real monospace font.
+
+    The `-50000px` selector is Monaco's off-screen font-measuring container (charWidthReader), which it
+    appends to <body> with the font as an inline style. `!important` beats inline styles, so without
+    this Monaco measures the proportional UI font, decides the font is not monospace, and renders
+    selected whitespace with an explicit, too-narrow width.
 */
 
+html body > div[style*="-50000px"],
+html body > div[style*="-50000px"] *,
 html body .xterm,
 html body .xterm *,
 html body .monaco-editor .view-lines,
