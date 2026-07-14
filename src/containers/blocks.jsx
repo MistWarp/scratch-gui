@@ -1139,6 +1139,8 @@ class Blocks extends React.Component {
                 const staticBlocksJson = [];
                 const dynamicBlocksInfo = [];
                 blockInfoArray.forEach(blockInfo => {
+                    // Patching uses native extendable Scratch Blocks definitions.
+                    if (categoryInfo.id === 'patching') return;
                     if (blockInfo.info && blockInfo.info.isDynamic) {
                         dynamicBlocksInfo.push(blockInfo);
                     } else if (blockInfo.json) {
