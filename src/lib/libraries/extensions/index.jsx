@@ -80,6 +80,15 @@ export default [
         featured: true
     },
     {
+        name: 'Patching',
+        extensionId: 'patching',
+        iconURL: twIcon,
+        description: 'Inject JavaScript into compiled projects.',
+        incompatibleWithScratch: true,
+        tags: ['tw'],
+        featured: true
+    },
+    {
         name: (
             <FormattedMessage
                 defaultMessage="Custom Extension"
