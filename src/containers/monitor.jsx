@@ -265,15 +265,9 @@ Monitor.propTypes = {
     targetId: PropTypes.string,
     theme: PropTypes.instanceOf(Theme),
     toolboxXML: PropTypes.string, // eslint-disable-line react/no-unused-prop-types
-    value: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.number,
-        PropTypes.object,
-        PropTypes.arrayOf(PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.number
-        ]))
-    ]), // eslint-disable-line react/no-unused-prop-types
+    // Extension reporters and injected projects can return any JavaScript value;
+    // monitorAdapter normalizes it before rendering.
+    value: PropTypes.any, // eslint-disable-line react/no-unused-prop-types, react/forbid-prop-types
     vm: PropTypes.instanceOf(VM),
     width: PropTypes.number,
     x: PropTypes.number,
