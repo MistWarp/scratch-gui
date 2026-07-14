@@ -72,7 +72,7 @@ const CloudVariableBadge = props => {
                     />
                     {hosts.map(i => (
                         <CloudServerButton
-                            key={i.ws}
+                            key={i.cloudHost}
                             name={i.name}
                             cloudHost={i.cloudHost}
                             selected={props.cloudHost === i.cloudHost}

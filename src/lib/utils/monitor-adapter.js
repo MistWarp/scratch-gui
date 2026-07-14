@@ -38,11 +38,11 @@ export default function ({id, spriteName, opcode, params, value, vm}) {
         value = value.slice();
         for (let i = 0; i < value.length; i++) {
             const item = value[i];
-            if (typeof item !== 'string' || typeof item !== 'number') {
+            if (typeof item !== 'string' && typeof item !== 'number') {
                 value[i] = safeStringify(item);
             }
         }
-    } else if (typeof value !== 'string' || typeof value !== 'number') {
+    } else if (typeof value !== 'string' && typeof value !== 'number') {
         value = safeStringify(value);
     }
 
