@@ -197,7 +197,7 @@ const xmlEscape = function (unsafe) {
     });
 };
 
-const looks = function (isInitialSetup, isStage, targetId, costumeName, backdropName, colors) {
+const looks = function (isInitialSetup, isStage, targetId, costumeName, backdropName, colors, vanilla) {
     const hello = translate('LOOKS_HELLO', 'Hello!');
     const hmm = translate('LOOKS_HMM', 'Hmm...');
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
@@ -329,7 +329,7 @@ const looks = function (isInitialSetup, isStage, targetId, costumeName, backdrop
             <block id="${targetId}_costumenumbername" type="looks_costumenumbername"/>
             <block id="backdropnumbername" type="looks_backdropnumbername"/>
             <block id="${targetId}_size" type="looks_size"/>
-            <block id="${targetId}_costumes" type="looks_costumes"/>
+            ${vanilla ? '' : `<block id="${targetId}_costumes" type="looks_costumes"/>`}
         `}
         ${categorySeparator}
     </category>
@@ -522,7 +522,7 @@ const control = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     `;
 };
 
-const sensing = function (isInitialSetup, isStage, targetId, colors) {
+const sensing = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     const name = translate('SENSING_ASK_TEXT', 'What\'s your name?');
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
@@ -576,6 +576,10 @@ const sensing = function (isInitialSetup, isStage, targetId, colors) {
         <block type="sensing_mousedown"/>
         <block type="sensing_mousex"/>
         <block type="sensing_mousey"/>
+        ${vanilla ? '' : `
+            <block type="sensing_stagewidth"/>
+            <block type="sensing_stageheight"/>
+        `}
         ${isStage ? '' : `
             ${blockSeparator}
             '<block type="sensing_setdragmode" id="sensing_setdragmode"></block>'+
@@ -603,7 +607,7 @@ const sensing = function (isInitialSetup, isStage, targetId, colors) {
     `;
 };
 
-const operators = function (isInitialSetup, isStage, targetId, colors) {
+const operators = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
     <category
@@ -659,6 +663,21 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
                 </shadow>
             </value>
         </block>
+        ${vanilla ? '' : `
+        <block type="operator_min">
+            <value name="NUM1"><shadow type="math_number"><field name="NUM"/></shadow></value>
+            <value name="NUM2"><shadow type="math_number"><field name="NUM"/></shadow></value>
+        </block>
+        <block type="operator_max">
+            <value name="NUM1"><shadow type="math_number"><field name="NUM"/></shadow></value>
+            <value name="NUM2"><shadow type="math_number"><field name="NUM"/></shadow></value>
+        </block>
+        <block type="operator_clamp">
+            <value name="NUM"><shadow type="math_number"><field name="NUM">50</field></shadow></value>
+            <value name="MIN"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+            <value name="MAX"><shadow type="math_number"><field name="NUM">100</field></shadow></value>
+        </block>
+        `}
         ${blockSeparator}
         <block type="operator_random">
             <value name="FROM">
@@ -955,15 +974,16 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     };
     const motionXML = moveCategory('motion') || motion(isInitialSetup, isStage, targetId, colors.motion, vanilla);
     const looksXML = moveCategory('looks') ||
-        looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks);
+        looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks, vanilla);
     const soundXML = moveCategory('sound') || sound(isInitialSetup, isStage, targetId, soundName, colors.sounds);
     const assetsXML = moveCategory('assets') || assets(isInitialSetup, isStage, targetId, assetName, colors.assets);
     const eventsXML = moveCategory('event') || events(isInitialSetup, isStage, targetId, colors.event);
     const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control, vanilla);
-    const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing);
+    const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing, vanilla);
     const operatorsXML = moveCategory('operators') ||
-        operators(isInitialSetup, isStage, targetId, colors.operators);
+        operators(isInitialSetup, isStage, targetId, colors.operators, vanilla);
     const stringsXML = strings(isInitialSetup, isStage, targetId, colors.strings, vanilla);
+    const patchingXML = moveCategory('patching');
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
 
@@ -985,6 +1005,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         sensingXML, gap,
         operatorsXML, gap,
         stringsXML, gap,
+        ...(patchingXML ? [patchingXML, gap] : []),
         variablesXML, gap,
         myBlocksXML
     ];
