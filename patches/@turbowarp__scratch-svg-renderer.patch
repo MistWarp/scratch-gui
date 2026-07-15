@@ -1,0 +1,89 @@
+diff --git a/src/tw-svg-sandbox.js b/src/tw-svg-sandbox.js
+index 0000000..1111111 100644
+--- a/src/tw-svg-sandbox.js
++++ b/src/tw-svg-sandbox.js
+@@ -1,12 +1,12 @@
+-/** @type {HTMLIFrameElement|null} */
+-let iframe = null;
++/** @type {HTMLElement|null} */
++let sandbox = null;
+ 
+ /**
+  * @returns {HTMLElement} Safe place to insert possibly dangerous SVG.
+  */
+ const getSandbox = () => {
+-    if (!iframe) {
+-        iframe = document.createElement('iframe');
++    if (!sandbox) {
++        const iframe = document.createElement('iframe');
+         iframe.className = 'scratch-svg-renderer-sandbox';
+ 
+         // iframe must be same-origin so we can append elements into it directly.
+@@ -29,27 +29,48 @@
+         iframe.ariaHidden = true;
+         document.body.appendChild(iframe);
+ 
+-        // Use <meta> with a strict CSP so that the elements inside the iframe can't make any requests.
+-        // Code execution is already blocked by the sandbox attribute but it's also blocked here for an extra layer.
+-        // It would be better to use srcdoc instead of document.write(), but srcdoc would make us wait until the load
+-        // event so we would have to become async.
+-        iframe.contentDocument.open();
+-        /* eslint-disable max-len */
+-        iframe.contentDocument.write(`
+-        <!DOCTYPE html>
+-        <html>
+-            <head>
+-                <meta charset="utf-8">
+-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' data:; font-src data:; img-src data:">
+-            </head>
+-            <body></body>
+-        </html>
+-        `);
+-        /* eslint-enable max-len */
+-        iframe.contentDocument.close();
++        if (iframe.contentDocument) {
++            // Use <meta> with a strict CSP so that the elements inside the iframe can't make any requests.
++            // Code execution is already blocked by the sandbox attribute but it's also blocked here for an extra layer.
++            // It would be better to use srcdoc instead of document.write(), but srcdoc would make us wait until the load
++            // event so we would have to become async.
++            iframe.contentDocument.open();
++            /* eslint-disable max-len */
++            iframe.contentDocument.write(`
++            <!DOCTYPE html>
++            <html>
++                <head>
++                    <meta charset="utf-8">
++                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' data:; font-src data:; img-src data:">
++                </head>
++                <body></body>
++            </html>
++            `);
++            /* eslint-enable max-len */
++            iframe.contentDocument.close();
++            sandbox = iframe.contentDocument.body;
++        } else {
++            // If this document itself is sandboxed with an opaque origin (eg. running inside an iframe
++            // without allow-same-origin), the child iframe above is cross-origin and inaccessible.
++            // Fall back to a hidden container in this document; the page is already sandboxed as a whole.
++            document.body.removeChild(iframe);
++            const div = document.createElement('div');
++            div.className = 'scratch-svg-renderer-sandbox';
++            div.style.position = 'absolute';
++            div.style.top = '-10000px';
++            div.style.left = '-10000px';
++            div.style.width = '0';
++            div.style.height = '0';
++            div.style.opacity = '0';
++            div.style.visibility = 'hidden';
++            div.style.pointerEvents = 'none';
++            div.ariaHidden = true;
++            document.body.appendChild(div);
++            sandbox = div;
++        }
+     }
+ 
+-    return iframe.contentDocument.body;
++    return sandbox;
+ };
+ 
+ module.exports = getSandbox;
