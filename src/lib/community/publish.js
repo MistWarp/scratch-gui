@@ -76,9 +76,11 @@ const captureThumbnailDataUri = vm => new Promise(resolve => {
         }
         if (typeof renderer.requestSnapshot === 'function') {
             renderer.requestSnapshot(dataURI => resolve(dataURI));
+            renderer.draw();
             return;
         }
         if (renderer.canvas) {
+            renderer.dirty = true;
             renderer.draw();
             resolve(renderer.canvas.toDataURL('image/png'));
             return;

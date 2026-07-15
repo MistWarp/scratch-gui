@@ -74,14 +74,14 @@ const NavBar = () => {
                         className={styles.link}
                     >
                         <Plus size={17} />
-                        Create
+                        <span className={styles.linkLabel}>Create</span>
                     </a>
                     <Link
                         to="/explore"
                         className={styles.link}
                     >
                         <Compass size={17} />
-                        Explore
+                        <span className={styles.linkLabel}>Explore</span>
                     </Link>
                 </nav>
 

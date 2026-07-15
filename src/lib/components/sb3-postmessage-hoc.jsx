@@ -79,12 +79,20 @@ const SB3PostMessageHOC = function (WrappedComponent) {
         }
 
         handleMessage (e) {
+            const message = e.data;
+
+            // Check if this is an SB3 loading message before validating the
+            // origin so unrelated messages do not log warnings.
+            if (!message || message.type !== 'LOAD_SB3') {
+                return;
+            }
+
             // Allow messages from various sources:
             // 1. Same origin (iframe scenarios)
             // 2. Localhost development servers
             // 3. Parent pages that opened this tab/window
             // 4. File protocol for local testing
-            
+
             const allowedOrigins = [
                 window.location.origin,
                 'http://localhost:3000',
@@ -102,13 +110,6 @@ const SB3PostMessageHOC = function (WrappedComponent) {
                 // Allow parent pages (more permissive for cross-origin scenarios)
             } else {
                 log.warn(`Blocked postMessage from unauthorized origin: ${e.origin}`);
-                return;
-            }
-
-            const message = e.data;
-            
-            // Check if this is an SB3 loading message
-            if (!message || message.type !== 'LOAD_SB3') {
                 return;
             }
 

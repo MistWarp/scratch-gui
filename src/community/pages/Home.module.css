@@ -167,11 +167,37 @@
     }
 }
 
+.homeFeeds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 40px;
+}
+
+.homeFeeds:empty {
+    display: none;
+}
+
+.feedBox {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 340px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.feedScroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .activityList {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 680px;
 }
 
 .activityItem {

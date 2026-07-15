@@ -11,8 +11,6 @@ import NewsItem from '../components/NewsItem.jsx';
 import logo from '../assets/mistwarp-logo.png';
 import styles from './Home.module.css';
 
-const HOME_NEWS_COUNT = 3;
-
 const ACTIVITY_ICONS = {
     love: Heart,
     favorite: Star,
@@ -79,7 +77,7 @@ const ActivitySection = ({user}) => {
     }
 
     return (
-        <section className={styles.row}>
+        <section className={styles.feedBox}>
             <div className={styles.rowHead}>
                 <h2>
                     <Users
@@ -89,7 +87,7 @@ const ActivitySection = ({user}) => {
                     From people you follow
                 </h2>
             </div>
-            <div className={styles.activityList}>
+            <div className={`${styles.activityList} ${styles.feedScroll}`}>
                 {items.map((item, index) => {
                     const Icon = ACTIVITY_ICONS[item.type] || Heart;
                     return (
@@ -137,10 +135,9 @@ const NewsSection = () => {
     if (!items || !items.length) {
         return null;
     }
-    const news = items.slice(0, HOME_NEWS_COUNT);
 
     return (
-        <section className={styles.row}>
+        <section className={styles.feedBox}>
             <div className={styles.rowHead}>
                 <h2>
                     <Megaphone
@@ -154,8 +151,8 @@ const NewsSection = () => {
                     className={styles.seeAll}
                 >All updates</Link>
             </div>
-            <div className={styles.newsList}>
-                {news.map(item => (
+            <div className={`${styles.newsList} ${styles.feedScroll}`}>
+                {items.map(item => (
                     <NewsItem
                         key={item.id}
                         item={item}
@@ -190,7 +187,7 @@ const Home = () => {
                 <div className={styles.heroText}>
                     <h1>Build, share, and remix projects together.</h1>
                     <p>
-                        A visual coding community on the MistWarp editor, with real git history,
+                        A visual coding community on the MistWarp editor, with version control,
                         forking, and pull requests behind every project.
                     </p>
                     <div className={styles.heroActions}>
@@ -229,9 +226,10 @@ const Home = () => {
                 </div>
             </section>
 
-            <NewsSection />
-
-            {user ? <ActivitySection user={user} /> : null}
+            <div className={styles.homeFeeds}>
+                <NewsSection />
+                {user ? <ActivitySection user={user} /> : null}
+            </div>
 
             <Row
                 title="Trending"

@@ -93,6 +93,12 @@
     flex-direction: column;
 }
 
+@media (max-width: 620px) {
+    .replies {
+        margin-left: 18px;
+    }
+}
+
 .inlineComposer,
 .inlineComposerSmall {
     display: flex;

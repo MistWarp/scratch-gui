@@ -7,6 +7,7 @@ import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import Avatar from '../components/Avatar.jsx';
+import RichText from '../components/RichText.jsx';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -112,11 +113,11 @@ const Profile = () => {
                     <div className={styles.identity}>
                         <h1>{profile.username || name}</h1>
                         {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
-                        <p className={styles.bio}>{profile.bio || 'No bio yet.'}</p>
+                        <p className={styles.bio}>{profile.bio ? <RichText text={profile.bio} /> : 'No bio yet.'}</p>
                         {profile.status ? (
                             <span className={styles.userStatus}>
                                 <span className={statusDotClass} />
-                                {profile.status.status || profile.status.presence}
+                                <RichText text={profile.status.status || profile.status.presence} />
                             </span>
                         ) : null}
                         <div className={styles.meta}>

@@ -11,6 +11,8 @@ import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import DiffView from '../components/DiffView.jsx';
+import RichText from '../components/RichText.jsx';
+import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
 const formatDate = ms => {
@@ -61,7 +63,7 @@ const getCustomExtensions = data => {
     for (const target of data.targets || []) {
         Object.assign(urls, target.extensionURLs || {});
     }
-    return Object.keys(urls);
+    return Object.values(urls).filter(url => typeof url === 'string' && !isTrustedExtensionUrl(url));
 };
 
 const analyzeBlocks = data => {
@@ -628,7 +630,7 @@ const InfoPanel = ({project, onSaved}) => {
                             onChange={e => setInstructions(e.target.value)}
                         />
                     ) : project.instructions ? (
-                        <p className={styles.panelText}>{project.instructions}</p>
+                        <p className={styles.panelText}><RichText text={project.instructions} /></p>
                     ) : <p className={styles.panelEmpty}>No instructions provided.</p>
                 )}
 
@@ -642,7 +644,7 @@ const InfoPanel = ({project, onSaved}) => {
                             onChange={e => setNotes(e.target.value)}
                         />
                     ) : project.notes ? (
-                        <p className={styles.panelText}>{project.notes}</p>
+                        <p className={styles.panelText}><RichText text={project.notes} /></p>
                     ) : <p className={styles.panelEmpty}>No notes yet.</p>
                 )}
 
@@ -691,7 +693,12 @@ const InfoPanel = ({project, onSaved}) => {
                                         to={`/users/${c.who}`}
                                         className={styles.creditName}
                                     >{c.who}</Link>
-                                    {c.role ? <span className={styles.creditRoleText}> {c.role}</span> : null}
+                                    {c.role ? (
+                                        <span className={styles.creditRoleText}>
+                                            {' '}
+                                            <RichText text={c.role} />
+                                        </span>
+                                    ) : null}
                                 </li>
                             ))}
                         </ul>

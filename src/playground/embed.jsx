@@ -8,6 +8,7 @@ import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx'
 import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import runAddons from '../addons/entry';
 import {detectTheme} from '../lib/themes/themePersistance';
+import {captureThumbnailDataUri} from '../lib/community/publish';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -61,13 +62,14 @@ render(<WrappedGUI
 
 window.addEventListener('message', event => {
     if (!event.data || event.data.type !== 'mw:capture-stage' || !event.source) return;
-    try {
-        const canvas = document.querySelector('canvas');
-        if (!canvas) throw new Error('no canvas');
-        event.source.postMessage({type: 'mw:stage-capture', dataURL: canvas.toDataURL('image/png')}, '*');
-    } catch (e) {
-        event.source.postMessage({type: 'mw:stage-capture', error: true}, '*');
-    }
+    const source = event.source;
+    captureThumbnailDataUri(vm).then(dataURL => {
+        if (dataURL) {
+            source.postMessage({type: 'mw:stage-capture', dataURL}, '*');
+        } else {
+            source.postMessage({type: 'mw:stage-capture', error: true}, '*');
+        }
+    });
 });
 
 if (urlParams.has('addons')) {

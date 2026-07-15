@@ -629,6 +629,44 @@
     }
 }
 
+@media (max-width: 620px) {
+    .page {
+        padding: 14px 12px 64px;
+    }
+
+    .topBar {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .topActions {
+        width: 100%;
+    }
+
+    .topActions > * {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .titleInput {
+        max-width: calc(100vw - 140px);
+    }
+
+    .statsBar {
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
+
+    .panelTabs {
+        overflow-x: auto;
+    }
+
+    .panelTab,
+    .panelTabActive {
+        white-space: nowrap;
+    }
+}
+
 .chartStack {
     display: flex;
     flex-direction: column;
