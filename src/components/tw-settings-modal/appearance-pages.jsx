@@ -8,9 +8,9 @@ import locales from '@turbowarp/scratch-l10n';
 import Box from '../box/box.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import {Theme, GUI_MAP, ACCENT_MAP, BLOCKS_CUSTOM, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_THREE}
+import {Theme, BLOCKS_CUSTOM, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_THREE}
     from '../../lib/themes/index.js';
-import {ACCENT_GROUPS} from '../../lib/themes/accents.js';
+import {PageHeader} from './theme-accent-panel.jsx';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {selectLocale} from '../../reducers/locales.js';
@@ -24,16 +24,6 @@ import highContrastIcon from '../menu-bar/tw-blocks-high-contrast.svg';
 import darkIcon from '../menu-bar/tw-blocks-dark.svg';
 
 import {ExternalLink, Trash} from 'lucide-react';
-
-const PageHeader = ({children}) => (
-    <div className={styles.header}>
-        {children}
-        <div className={styles.divider} />
-    </div>
-);
-PageHeader.propTypes = {
-    children: PropTypes.node
-};
 
 const themeStateToProps = state => ({
     theme: state.scratchGui.theme.theme
@@ -87,28 +77,6 @@ export const LanguagePage = connect(
     dispatch => ({onChangeLanguage: locale => dispatch(selectLocale(locale))})
 )(UnconnectedLanguagePage);
 
-const ACCENT_MESSAGES = {};
-for (const key of Object.keys(ACCENT_MAP)) {
-    ACCENT_MESSAGES[key] = {
-        id: ACCENT_MAP[key].id,
-        defaultMessage: ACCENT_MAP[key].defaultMessage,
-        description: ACCENT_MAP[key].description
-    };
-}
-
-const GuiThemeIcon = ({id}) => (
-    <svg
-        className={styles.themeCardIcon}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        dangerouslySetInnerHTML={{__html: GUI_MAP[id].icon}}
-    />
-);
-GuiThemeIcon.propTypes = {
-    id: PropTypes.string
-};
-
 const BLOCKS_OPTIONS = [
     {
         id: BLOCKS_THREE,
@@ -154,61 +122,27 @@ const UnconnectedThemePage = ({theme, onChangeTheme}) => (
                 id="tw.menuBar.theme"
             />
         </PageHeader>
-        <div className={styles.stylePicker}>
-            {Object.entries(Theme.defaults).map(([themeId, t]) => (
-                <button
-                    key={themeId}
-                    type="button"
-                    className={classNames(styles.styleOption, {
-                        [styles.styleOptionSelected]: theme.gui === themeId
-                    })}
-                    onClick={() => onChangeTheme(theme.set('gui', themeId))}
-                >
-                    <div className={styles.themeCardPreview}>
-                        <GuiThemeIcon id={themeId} />
-                    </div>
-                    <span className={styles.styleOptionLabel}>{t.name || t.gui}</span>
-                </button>
-            ))}
-        </div>
-
-        <PageHeader>
+        <div className={styles.setting}>
             <FormattedMessage
-                defaultMessage="Accent"
-                description="Label for menu to choose accent color (eg. TurboWarp's red, Scratch's purple)"
-                id="tw.menuBar.accent"
+                defaultMessage="Theme and accent colors apply across all of MistWarp and live in your MistWarp settings."
+                description="Explains that global theming moved to the MistWarp site settings"
+                id="mw.settings.themeMoved"
             />
-        </PageHeader>
-        {ACCENT_GROUPS.map(group => (
-            <React.Fragment key={group.label.id}>
-                <div className={styles.accentGroupLabel}>
-                    <FormattedMessage {...group.label} />
-                </div>
-                <div className={styles.accentGrid}>
-                    {group.accents.filter(accentId => ACCENT_MAP[accentId]).map(accentId => (
-                        <button
-                            key={accentId}
-                            type="button"
-                            className={classNames(styles.accentOption, {
-                                [styles.accentOptionSelected]: theme.accent === accentId
-                            })}
-                            onClick={() => onChangeTheme(theme.set('accent', accentId))}
-                        >
-                            <div
-                                className={styles.accentSwatch}
-                                style={{
-                                    backgroundColor: ACCENT_MAP[accentId].guiColors['looks-secondary'],
-                                    backgroundImage: ACCENT_MAP[accentId].guiColors['menu-bar-background-image']
-                                }}
-                            />
-                            <span className={styles.accentName}>
-                                <FormattedMessage {...ACCENT_MESSAGES[accentId]} />
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </React.Fragment>
-        ))}
+        </div>
+        <div className={styles.setting}>
+            <button
+                type="button"
+                className={styles.button}
+                onClick={() => window.open('/settings', '_blank')}
+            >
+                <FormattedMessage
+                    defaultMessage="Edit my MistWarp settings"
+                    id="mw.settings.editCommunitySettings"
+                />
+                {' '}
+                <ExternalLink size={14} />
+            </button>
+        </div>
 
         <PageHeader>
             <FormattedMessage

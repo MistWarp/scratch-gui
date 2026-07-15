@@ -1,0 +1,38 @@
+.banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent-soft);
+    color: var(--mw-text);
+    font-size: 13px;
+    padding: 7px 14px;
+}
+
+.icon {
+    color: var(--accent-strong);
+    flex-shrink: 0;
+}
+
+.text a {
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.text a:hover {
+    text-decoration: underline;
+}
+
+.dismiss {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 2px;
+    margin-left: 6px;
+}
+
+.dismiss:hover {
+    color: var(--mw-text);
+}

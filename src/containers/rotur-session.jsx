@@ -4,15 +4,19 @@ import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 
 import {
-    restoreSession,
-    login as roturLogin,
-    logout as roturLogout,
     syncActivity,
     clearActivity
 } from '../lib/rotur/client.js';
+import {
+    subscribe as subscribeIdentity,
+    restore as identityRestore,
+    login as identityLogin,
+    logout as identityLogout
+} from '../lib/rotur/identity.js';
 import {subscribeRoturSettings} from '../lib/rotur/settings.js';
-import {onRoturLogin, onRoturLogout, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
-import {clearGitAuth} from '../lib/rotur/git-api.js';
+import {onRoturLogin, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
+import {getRememberedPlatformProject} from '../lib/community/publish.js';
+import {getProject as getMistWarpProject} from '../lib/community/api.js';
 import {setRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
     setRoturStatus,
@@ -23,7 +27,7 @@ import {
 } from '../reducers/rotur.js';
 import {closeModal} from '../reducers/modals.js';
 import {setTheme} from '../reducers/theme.js';
-import {detectTheme, applyTheme} from '../lib/themes/themePersistance.js';
+import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setShellUser} from '../lib/git/browser-terminal';
@@ -40,13 +44,18 @@ class RoturSession extends React.Component {
         bindAll(this, [
             'handleLogin',
             'handleLogout',
+            'handleIdentityChange',
             'syncCurrentActivity',
+            'refreshPlatformProjectLink',
             'syncProjectAuthor',
             'handleSettingsChanged',
             'applyCloudPreferences'
         ]);
         this.unsubscribeSettings = null;
+        this.unsubscribeIdentity = null;
         this.editingSince = Date.now();
+        this.platformProjectUrl = null;
+        this.checkedPlatformId = null;
     }
 
     componentDidMount () {
@@ -58,6 +67,7 @@ class RoturSession extends React.Component {
             logout: this.handleLogout
         });
         this.unsubscribeSettings = subscribeRoturSettings(this.handleSettingsChanged);
+        this.unsubscribeIdentity = subscribeIdentity(this.handleIdentityChange);
         this.restore();
     }
 
@@ -96,7 +106,24 @@ class RoturSession extends React.Component {
             this.unsubscribeSettings();
             this.unsubscribeSettings = null;
         }
+        if (this.unsubscribeIdentity) {
+            this.unsubscribeIdentity();
+            this.unsubscribeIdentity = null;
+        }
         setRoturSessionApi(null);
+    }
+
+    handleIdentityChange (next) {
+        this.props.onSetStatus(next.status);
+        const hadUser = this.props.loggedIn;
+        if (next.user && !hadUser) {
+            this.editingSince = Date.now();
+            this.props.onSetUser(next.user);
+            this.applyCloudPreferences().then(() => this.syncCurrentActivity());
+        } else if (!next.user && hadUser) {
+            clearActivity();
+            this.props.onClear();
+        }
     }
 
     handleSettingsChanged () {
@@ -121,7 +148,7 @@ class RoturSession extends React.Component {
             try {
                 const theme = detectTheme();
                 this.props.onSetTheme(theme);
-                applyTheme(theme);
+                applyThemeVisuals(theme);
             } catch (e) {
                 // eslint-disable-next-line no-console
                 console.warn('[Rotur] Failed to re-apply theme from cloud', e);
@@ -138,17 +165,8 @@ class RoturSession extends React.Component {
     }
 
     async restore () {
-        this.props.onSetStatus('restoring');
         try {
-            const user = await restoreSession();
-            if (user) {
-                this.editingSince = Date.now();
-                this.props.onSetUser(user);
-                await this.applyCloudPreferences();
-                this.syncCurrentActivity();
-            } else {
-                this.props.onClear();
-            }
+            await identityRestore();
         } catch (error) {
             // eslint-disable-next-line no-console
             console.warn('[Rotur] restore failed', error);
@@ -164,6 +182,28 @@ class RoturSession extends React.Component {
         } : null);
     }
 
+    refreshPlatformProjectLink () {
+        const platformId = getRememberedPlatformProject();
+        if (!platformId) {
+            this.platformProjectUrl = null;
+            this.checkedPlatformId = null;
+            return Promise.resolve();
+        }
+        if (platformId === this.checkedPlatformId) {
+            return Promise.resolve();
+        }
+        this.checkedPlatformId = platformId;
+        return getMistWarpProject(platformId)
+            .then(data => {
+                this.platformProjectUrl = data.project && data.project.shared ?
+                    `${window.location.origin}/project/${platformId}` :
+                    null;
+            })
+            .catch(() => {
+                this.platformProjectUrl = null;
+            });
+    }
+
     /**
      * What to publish as our Rotur presence right now.
      * @returns {object} The activity context.
@@ -172,6 +212,7 @@ class RoturSession extends React.Component {
         const vm = this.props.vm;
         const target = vm && vm.editingTarget;
         return {
+            url: this.platformProjectUrl,
             projectTitle: this.props.projectTitle,
             collaborating: this.props.isCollaborating,
             doing: describeActivity(vm, target ? {
@@ -184,18 +225,15 @@ class RoturSession extends React.Component {
 
     syncCurrentActivity () {
         if (!this.props.loggedIn) return;
-        syncActivity(this.currentActivityContext());
+        this.refreshPlatformProjectLink().then(() => {
+            syncActivity(this.currentActivityContext());
+        });
     }
 
     async handleLogin () {
-        this.props.onSetStatus('logging-in');
         try {
-            const user = await roturLogin();
-            this.editingSince = Date.now();
-            this.props.onSetUser(user);
+            const user = await identityLogin();
             this.props.onCloseLoginModal();
-            await this.applyCloudPreferences();
-            this.syncCurrentActivity();
             return user;
         } catch (error) {
             const message = error && error.message ? error.message : String(error);
@@ -210,11 +248,8 @@ class RoturSession extends React.Component {
         }
     }
 
-    handleLogout () {
-        onRoturLogout();
-        clearGitAuth();
-        roturLogout();
-        this.props.onClear();
+    async handleLogout () {
+        await identityLogout();
     }
 
     render () {

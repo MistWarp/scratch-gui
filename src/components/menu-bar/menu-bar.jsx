@@ -15,6 +15,13 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
 import ShareButton from './share-button.jsx';
+import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import {
+    getRememberedPlatformProjectState,
+    getMistWarpAction,
+    rememberPlatformProject
+} from '../../lib/community/publish.js';
+import {getProject as getMistWarpProject} from '../../lib/community/api.js';
 import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import Divider from '../divider/divider.jsx';
 // import SaveStatus from './save-status.jsx';
@@ -146,6 +153,7 @@ import styles from './menu-bar.css';
 
 import ChevronDown from './ChevronDown.jsx';
 
+import mistwarpLogo from '../../community/assets/mistwarp-logo.png';
 import ninetiesLogo from './nineties_logo.svg';
 import catLogo from './cat_logo.svg';
 import prehistoricLogo from './prehistoric-logo.svg';
@@ -157,7 +165,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Send,
     Download, AppWindow, Computer, Shield, Code, Code2, MessageCircle, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -293,7 +301,8 @@ class MenuBar extends React.Component {
             gitRepoExists: false,
             gitRemotes: [],
             menuCollapsed: false,
-            moreMenuOpen: false
+            moreMenuOpen: false,
+            mistwarpProject: getRememberedPlatformProjectState()
         };
         this.menuBarRef = React.createRef();
         this.menuResizeObserver = null;
@@ -312,8 +321,10 @@ class MenuBar extends React.Component {
             'handleClickPackager',
             'handleClickRestorePoints',
             'handleClickProjectMetadata',
-            'handleClickSeeCommunity',
             'handleClickShare',
+            'handleClickMistWarpShare',
+            'handleClickSeeMistWarpPage',
+            'refreshMistWarpShared',
             'handleClickUndo',
             'handleClickRedo',
             'handleClickCollaboration',
@@ -354,6 +365,7 @@ class MenuBar extends React.Component {
         document.addEventListener('mousedown', this.handleDocumentMouseDown);
         this.observeMenuBarWidth();
         this.startAutosaveCountdown();
+        this.refreshMistWarpShared();
 
         // Prevent the legacy addon from also injecting a bookmarks menu.
         window.__mistwarpNativeWorkspaceBookmarks = true;
@@ -362,6 +374,7 @@ class MenuBar extends React.Component {
         if (this.props.vm && this.props.vm.runtime) {
             this.workspaceBookmarksProjectListener = () => {
                 this.loadWorkspaceBookmarksFromProject();
+                this.refreshMistWarpShared();
             };
             this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
@@ -511,14 +524,6 @@ class MenuBar extends React.Component {
             this.props.vm.emit('TRIGGER_MANUAL_RESTORE_POINT');
         }
     };
-    handleClickSeeCommunity (waitForUpdate) {
-        if (this.props.shouldSaveBeforeTransition()) {
-            this.props.autoUpdateProject(); // save before transitioning to project page
-            waitForUpdate(true); // queue the transition to project page
-        } else {
-            waitForUpdate(false); // immediately transition to project page
-        }
-    }
     handleClickShare (waitForUpdate) {
         if (!this.props.isShared) {
             if (this.props.canShare) { // save before transitioning to project page
@@ -535,9 +540,51 @@ class MenuBar extends React.Component {
     handleClickCollaboration () {
         this.props.onClickCollaboration();
     }
+    refreshMistWarpShared () {
+        const remembered = getRememberedPlatformProjectState();
+        if (!remembered) {
+            this.setState({mistwarpProject: null});
+            return;
+        }
+        this.setState({mistwarpProject: remembered});
+        getMistWarpProject(remembered.id)
+            .then(data => {
+                const current = getRememberedPlatformProjectState();
+                if (!current || String(current.id) !== String(remembered.id)) return;
+                rememberPlatformProject(data.project);
+                this.setState({mistwarpProject: data.project});
+            })
+            .catch(e => {
+                if (e && e.status === 404) {
+                    const current = getRememberedPlatformProjectState();
+                    if (!current || String(current.id) !== String(remembered.id)) return;
+                    rememberPlatformProject(null);
+                    this.setState({mistwarpProject: null});
+                }
+            });
+    }
+    handleClickMistWarpShare () {
+        this.props.onRequestCloseFile();
+        openMistWarpShareWindow({
+            vm: this.props.vm,
+            initialTitle: this.props.projectTitle,
+            action: getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged),
+            onPublished: result => {
+                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: true}});
+                window.open(result.url, '_blank', 'noopener');
+            }
+        });
+    }
+    handleClickSeeMistWarpPage () {
+        this.props.onRequestCloseFile();
+        if (this.state.mistwarpProject) {
+            window.location.href = `/project/${this.state.mistwarpProject.id}`;
+        }
+    }
 
     handleClickFile () {
         this.props.onClickFile();
+        this.refreshMistWarpShared();
         this.refreshGitMenuState();
     }
 
@@ -1316,6 +1363,7 @@ class MenuBar extends React.Component {
         };
     }
     render () {
+        const mistwarpAction = getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged);
         const saveNowMessage = (
             <FormattedMessage
                 defaultMessage="Save now"
@@ -1375,6 +1423,21 @@ class MenuBar extends React.Component {
                         }
                     )}
                 >
+                    <a
+                        href="/"
+                        className={classNames(styles.menuBarItem, styles.hoverable, styles.homeLink)}
+                        title="MistWarp home"
+                        data-mw-item="__home"
+                    >
+                        <img
+                            src={mistwarpLogo}
+                            alt="MistWarp"
+                            className={styles.homeLogo}
+                        />
+                        <span className={styles.homeWordmark}>
+                            {'MistWarp'}
+                        </span>
+                    </a>
                     {this.state.menuCollapsed && (
                         <div
                             className={classNames(styles.menuBarItem, styles.hoverable, styles.moreMenuButton, {
@@ -1508,6 +1571,44 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuSection>
                                     )}
+                                    {this.props.roturReady ? (
+                                        <MenuSection>
+                                            {mistwarpAction ? (
+                                                <MenuItem onClick={this.handleClickMistWarpShare}>
+                                                    <Globe />
+                                                    {mistwarpAction === 'remix' ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Remix to MistWarp"
+                                                            description="File menu item to remix a MistWarp project"
+                                                            id="mw.menuBar.remix"
+                                                        />
+                                                    ) : mistwarpAction === 'update' ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Update MistWarp project"
+                                                            description="File menu item to update a MistWarp project"
+                                                            id="mw.menuBar.update"
+                                                        />
+                                                    ) : (
+                                                        <FormattedMessage
+                                                            defaultMessage="Share to MistWarp"
+                                                            description="File menu item to share on MistWarp"
+                                                            id="mw.menuBar.share"
+                                                        />
+                                                    )}
+                                                </MenuItem>
+                                            ) : null}
+                                            {this.state.mistwarpProject ? (
+                                                <MenuItem onClick={this.handleClickSeeMistWarpPage}>
+                                                    <ExternalLink />
+                                                    <FormattedMessage
+                                                        defaultMessage="See project page"
+                                                        description="File menu item opening the MistWarp project page"
+                                                        id="mw.menuBar.projectPage"
+                                                    />
+                                                </MenuItem>
+                                            ) : null}
+                                        </MenuSection>
+                                    ) : null}
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.props.onStartSelectingFileUpload}
@@ -2168,22 +2269,13 @@ class MenuBar extends React.Component {
                         className={classNames(styles.menuBarItem, styles.communityButtonWrapper)}
                     >
                         {this.props.enableCommunity ? (
-                            (this.props.isShowingProject || this.props.isUpdating) && (
-                                <ProjectWatcher onDoneUpdating={this.props.onSeeCommunity}>
-                                    {
-                                        waitForUpdate => (
-                                            <CommunityButton
-                                                className={styles.menuBarButton}
-                                                /* eslint-disable react/jsx-no-bind */
-                                                onClick={() => {
-                                                    this.handleClickSeeCommunity(waitForUpdate);
-                                                }}
-                                            /* eslint-enable react/jsx-no-bind */
-                                            />
-                                        )
-                                    }
-                                </ProjectWatcher>
-                            )
+                            this.state.mistwarpProject ? (
+                                <CommunityButton
+                                    className={styles.menuBarButton}
+                                    /* eslint-disable-next-line react/jsx-no-bind */
+                                    onClick={this.handleClickSeeMistWarpPage}
+                                />
+                            ) : null
                         ) : (this.props.showComingSoon ? (
                             <MenuBarItemTooltip id="community-button">
                                 <CommunityButton className={styles.menuBarButton} />
@@ -2386,13 +2478,13 @@ MenuBar.propTypes = {
     projectId: PropTypes.string,
     projectTitle: PropTypes.string,
     projectChanged: PropTypes.bool,
+    roturReady: PropTypes.bool,
     onProjectUnchanged: PropTypes.func,
     onShowGitStatus: PropTypes.func,
     onCloseGitStatus: PropTypes.func,
     onGitStatusDone: PropTypes.func,
     renderLogin: PropTypes.func,
     sessionExists: PropTypes.bool,
-    shouldSaveBeforeTransition: PropTypes.func,
     showSaveFilePicker: PropTypes.func,
     showComingSoon: PropTypes.bool,
     theme: PropTypes.shape({
@@ -2438,6 +2530,7 @@ const mapStateToProps = (state, ownProps) => {
         modeMenuOpen: modeMenuOpen(state),
         projectTitle: state.scratchGui.projectTitle,
         projectChanged: state.scratchGui.projectChanged,
+        roturReady: state.scratchGui.rotur && state.scratchGui.rotur.status === 'ready',
         sessionExists: state.session && typeof state.session.session !== 'undefined',
         theme: state.scratchGui.theme.theme,
         username: user ? user.username : null,

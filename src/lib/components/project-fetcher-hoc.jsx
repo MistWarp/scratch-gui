@@ -25,6 +25,32 @@ import storage from '../persistence/storage.js';
 
 import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
+import {cloneRepo} from '../git/browser-git.js';
+import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
+import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
+import {rememberPlatformProject} from '../community/publish.js';
+import {getProject as getMistWarpProject} from '../community/api.js';
+
+const cloneProjectFromRepo = async url => {
+    const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
+    const sb3 = await buildSb3FromFractchTree({fs, dir});
+    return {data: sb3 instanceof ArrayBuffer ? sb3 : await sb3.arrayBuffer()};
+};
+
+const isHttpUrl = url => /^https?:\/\//.test(url);
+
+const loadPlatformProject = async id => {
+    const {project} = await getMistWarpProject(id);
+    if (project.assetsBase && isHttpUrl(project.assetsBase)) {
+        storage.addMistWarpAssetStore(project.assetsBase);
+    }
+    rememberPlatformProject(project);
+    const response = await fetch(project.projectJsonUrl);
+    if (!response.ok) {
+        throw new Error(`Request returned status ${response.status}`);
+    }
+    return {data: await response.arrayBuffer()};
+};
 
 // TW: Temporary hack for project tokens
 const fetchProjectToken = async projectId => {
@@ -66,6 +92,11 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             storage.setProjectToken(props.projectToken);
             storage.setAssetHost(props.assetHost);
             storage.setTranslatorFunction(props.intl.formatMessage);
+            if (typeof location !== 'undefined' && typeof URLSearchParams !== 'undefined') {
+                const initialPlatformId = new URLSearchParams(location.search).get('platform_project') ||
+                    (location.hash.match(/^#mw-([\w-]+)/) || [])[1];
+                rememberPlatformProject(initialPlatformId ? {id: initialPlatformId} : null);
+            }
             // props.projectId might be unset, in which case we use our default;
             // or it may be set by an even higher HOC, and passed to us.
             // Either way, we now know what the initial projectId should be, so
@@ -106,11 +137,26 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             this.props.vm.quit();
 
             let assetPromise;
-            // In case running in node...
-            let projectUrl = typeof URLSearchParams === 'undefined' ?
+            const searchParams = typeof URLSearchParams === 'undefined' ?
                 null :
-                new URLSearchParams(location.search).get('project_url');
-            if (projectUrl) {
+                new URLSearchParams(location.search);
+            const cloneUrl = searchParams && searchParams.get('clone');
+            const platformProject = searchParams && searchParams.get('platform_project');
+            const hashMatch = typeof location === 'undefined' ?
+                null :
+                location.hash.match(/^#mw-([\w-]+)/);
+            const hashProjectId = hashMatch && hashMatch[1];
+            rememberPlatformProject(platformProject ? {id: platformProject} : null);
+            const mistwarpAssets = searchParams && searchParams.get('mw_assets');
+            if (mistwarpAssets && isHttpUrl(mistwarpAssets)) {
+                storage.addMistWarpAssetStore(mistwarpAssets);
+            }
+            let projectUrl = searchParams && searchParams.get('project_url');
+            if (hashProjectId) {
+                assetPromise = loadPlatformProject(hashProjectId);
+            } else if (cloneUrl) {
+                assetPromise = cloneProjectFromRepo(cloneUrl);
+            } else if (projectUrl) {
                 if (
                     !projectUrl.startsWith('http:') &&
                     !projectUrl.startsWith('https:') &&

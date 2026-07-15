@@ -1,0 +1,33 @@
+.row,
+.rowSmall {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.button,
+.buttonOn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: var(--radius-xs);
+}
+
+.button:hover:enabled,
+.buttonOn:hover:enabled {
+    background: var(--accent-softer);
+}
+
+.button:disabled,
+.buttonOn:disabled {
+    cursor: default;
+}
+
+.buttonOn {
+    color: var(--accent-strong);
+}

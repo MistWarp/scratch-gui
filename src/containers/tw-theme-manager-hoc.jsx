@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 import {BLOCKS_CUSTOM, Theme} from '../lib/themes';
-import {applyTheme, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance';
+import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance';
 import {setTheme} from '../reducers/theme';
 
 const TWThemeManagerHOC = function (WrappedComponent) {
@@ -13,7 +13,7 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             bindAll(this, [
                 'handleSystemThemeChange'
             ]);
-            applyTheme(props.reduxTheme);
+            applyThemeVisuals(props.reduxTheme);
         }
         componentDidMount () {
             this.removeListeners = onSystemPreferenceChange(this.handleSystemThemeChange);
@@ -34,7 +34,7 @@ const TWThemeManagerHOC = function (WrappedComponent) {
                 prevTheme.name !== currentTheme.name;
 
             if (themeChanged) {
-                applyTheme(currentTheme);
+                applyThemeVisuals(currentTheme);
             }
         }
         componentWillUnmount () {

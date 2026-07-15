@@ -33,6 +33,19 @@ module.exports = {
             rules: {
                 'import/no-commonjs': 'off'
             }
+        },
+        {
+            files: ['community/**/*.js', 'community/**/*.jsx', 'components/mw-share-modal/**/*.jsx'],
+            rules: {
+                'react/jsx-no-literals': 'off',
+                'react/jsx-no-bind': 'off',
+                'react/prop-types': 'off',
+                'react/jsx-max-props-per-line': 'off',
+                'react/no-multi-comp': 'off',
+                'no-negated-condition': 'off',
+                'no-alert': 'off',
+                'newline-per-chained-call': 'off'
+            }
         }
     ],
     settings: {

@@ -23,7 +23,6 @@ import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
-import AccentMenuBarToggle from './accent-menu-bar-toggle.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
 import CustomThemesPage from './custom-themes-page.jsx';
@@ -105,10 +104,6 @@ const messages = defineMessages({
     headerMenuBar: {
         defaultMessage: 'Menu Bar',
         id: 'mw.settings.menuBarHeader'
-    },
-    headerMenuBarAppearance: {
-        defaultMessage: 'Menu Bar Appearance',
-        id: 'mw.settings.menuBarAppearanceHeader'
     },
     headerDebugger: {
         defaultMessage: 'Debugger',
@@ -1007,15 +1002,6 @@ const pageConfigurations = {
     },
     menuBar: {
         sections: [
-            {
-                headerMessage: 'headerMenuBarAppearance',
-                settings: [
-                    {
-                        component: AccentMenuBarToggle,
-                        props: () => ({})
-                    }
-                ]
-            },
             {
                 headerMessage: 'headerMenuBar',
                 settings: [

@@ -3,6 +3,7 @@ import React from 'react';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 import UserAvatar from './user-avatar.jsx';
+import Avatar from '../mw-avatar/avatar.jsx';
 
 import styles from './author-info.css';
 
@@ -20,10 +21,18 @@ const ActualAuthorInfo = ({
             styles.authorInfo
         )}
     >
-        <UserAvatar
-            className={styles.avatar}
-            imageUrl={imageUrl}
-        />
+        {imageUrl ? (
+            <UserAvatar
+                className={styles.avatar}
+                imageUrl={imageUrl}
+            />
+        ) : (
+            <Avatar
+                className={styles.avatar}
+                username={typeof username === 'string' ? username : ''}
+                size={32}
+            />
+        )}
         <div className={styles.titleAuthor}>
             <h1 className={styles.projectTitle}>
                 {projectTitle}

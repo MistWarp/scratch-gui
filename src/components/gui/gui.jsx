@@ -694,16 +694,6 @@ const GUIComponent = props => {
     }
 
     useEffect(() => {
-        const hasSeenOnboarding = localStorage.getItem('mw:has-seen-onboarding');
-        if (!hasSeenOnboarding && !isEmbedded && !isPlayerOnly && typeof onOpenOnboarding === 'function') {
-            const timer = setTimeout(() => {
-                onOpenOnboarding();
-            }, 500);
-            return () => clearTimeout(timer);
-        }
-    }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
-
-    useEffect(() => {
         if (onStartSelectingFileUpload || onClickPackager) {
             const {updateCallbacks: updateShortcutsCallbacks} = require('../../lib/shortcuts/event-router.js');
             const newCallbacks = {};

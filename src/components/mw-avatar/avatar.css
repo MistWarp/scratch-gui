@@ -1,0 +1,26 @@
+.wrapper {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--ui-secondary, rgba(0, 0, 0, 0.15));
+    display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: scale(1.2);
+    overflow: visible;
+    pointer-events: none;
+}

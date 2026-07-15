@@ -20,7 +20,7 @@
 .buttons :disabled {
     opacity: 0.8;
 }
-.deny-button, .allow-button {
+.deny-button, .load-all-button, .allow-button {
     flex-grow: 1;
     font: inherit;
     color: inherit;
@@ -29,6 +29,10 @@
     border: 1px solid $ui-black-transparent;
     font-weight: 600;
     font-size: 0.85rem;
+}
+.load-all-button {
+    background-color: $ui-white;
+    margin-right: 8px;
 }
 .deny-button {
     background-color: rgb(255, 92, 92);

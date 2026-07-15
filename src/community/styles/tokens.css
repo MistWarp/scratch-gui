@@ -1,0 +1,77 @@
+:root {
+    --accent: var(--motion-primary, hsl(260, 60%, 60%));
+    --accent-strong: var(--looks-secondary, var(--accent));
+    --accent-dim: var(--motion-tertiary, var(--accent));
+    --accent-soft: var(--looks-light-transparent, rgba(133, 92, 214, 0.15));
+    --accent-softer: var(--looks-light-transparent, rgba(133, 92, 214, 0.08));
+    --accent-border: var(--looks-transparent, rgba(133, 92, 214, 0.35));
+    --accent-shadow: rgba(0, 0, 0, 0.3);
+    --accent-contrast: var(--accent-foreground, #ffffff);
+
+    --bg: var(--page-background, #111111);
+    --bg-raised: var(--ui-tertiary, #1a1a1a);
+    --bg-card: var(--ui-secondary, #1e1e1e);
+    --bg-header: var(--ui-secondary, #1c1c22);
+    --border: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    --border-soft: var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+    --mw-text: var(--text-primary, #eeeeee);
+    --text-dim: color-mix(in srgb, var(--text-primary, #eeeeee) 80%, transparent);
+    --text-faint: color-mix(in srgb, var(--text-primary, #eeeeee) 62%, transparent);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+    --maxw: 1180px;
+
+    --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--mw-text);
+    font-family: var(--sans);
+}
+
+#app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.mw-app-content {
+    flex: 1;
+}
+
+body[data-splash-theme] {
+    background: var(--bg);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

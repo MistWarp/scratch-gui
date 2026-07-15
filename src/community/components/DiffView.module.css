@@ -1,0 +1,44 @@
+.diff {
+    margin: 16px 0 0;
+    background: #0c0c10;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 0;
+    overflow-x: auto;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.diff > div {
+    padding: 0 14px;
+    white-space: pre;
+}
+
+.add {
+    background: rgba(60, 180, 90, 0.16);
+    color: #9be3ac;
+}
+
+.del {
+    background: rgba(220, 70, 70, 0.16);
+    color: #f0a3a3;
+}
+
+.hunk {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+}
+
+.meta {
+    color: var(--text-faint);
+}
+
+.ctx {
+    color: var(--text-dim);
+}
+
+.empty {
+    color: var(--text-dim);
+    padding: 16px 0;
+}

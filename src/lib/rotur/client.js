@@ -1,4 +1,4 @@
-import {Rotur} from 'rotur-sdk';
+import {Rotur, resolvePermissions} from 'rotur-sdk';
 import {
     getRoturSettings,
     formatActivityTitle,
@@ -112,7 +112,12 @@ const login = async () => {
     await rotur.login({
         system: 'rotur',
         timeout: 120000,
-        requires: ['account:view', 'account:profile', 'files:view', 'files:manage']
+        requires: resolvePermissions([
+            'me.checkAuth',
+            'following.follow',
+            'following.unfollow',
+            'validators.generate'
+        ])
     });
     storeToken(rotur.token);
     const user = await fetchCurrentUser();
@@ -187,10 +192,10 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
         title,
         status,
         image: APP_IMAGE,
-        url: APP_URL,
+        url: ctx.url || APP_URL,
         application: {
             name: ACTIVITY_ID,
-            url: APP_URL
+            url: ctx.url || APP_URL
         }
     };
     if (settings.includeEditDuration) {

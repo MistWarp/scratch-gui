@@ -1,0 +1,221 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 28px 22px 88px;
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+    align-items: center;
+    background: var(--bg-header);
+    border-radius: var(--radius);
+    padding: 44px 44px;
+    overflow: hidden;
+}
+
+.heroText h1 {
+    margin: 0 0 14px;
+    font-size: 38px;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    max-width: 15ch;
+}
+
+.heroText p {
+    margin: 0 0 26px;
+    color: var(--text-dim);
+    font-size: 16px;
+    max-width: 46ch;
+    line-height: 1.55;
+}
+
+.heroActions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+}
+
+.primaryButton {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+}
+
+.primaryButton:hover {
+    background: var(--accent-strong);
+}
+
+.secondaryButton {
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    border: 1px solid var(--border);
+}
+
+.secondaryButton:hover {
+    color: var(--accent-strong);
+    border-color: var(--accent-border);
+}
+
+.heroArt {
+    display: grid;
+    place-items: center;
+}
+
+.heroLogo {
+    width: 168px;
+    height: 168px;
+    border-radius: 34px;
+    background: var(--accent);
+    padding: 18px;
+    box-sizing: border-box;
+}
+
+.row {
+    margin-top: 40px;
+}
+
+.rowHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.rowHead h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+}
+
+.rowIcon {
+    color: var(--accent);
+}
+
+.seeAll {
+    color: var(--accent-strong);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.skeleton {
+    aspect-ratio: 3 / 3.4;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    animation: pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.55;
+    }
+}
+
+.empty {
+    color: var(--text-dim);
+    padding: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
+        padding: 32px;
+    }
+    .heroArt {
+        display: none;
+    }
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .heroText h1 {
+        font-size: 30px;
+    }
+}
+
+.activityList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 680px;
+}
+
+.activityItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-shadow);
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.activityIcon {
+    color: var(--accent-strong);
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.activityText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activityText a:hover {
+    color: var(--accent-strong);
+}
+
+.activityActor {
+    font-weight: 700;
+}
+
+.activityTime {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.newsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
