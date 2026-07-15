@@ -342,7 +342,7 @@ const patchVisibleWorkspaceStacks = ({vm, liveTarget, sourceTarget, blocks, comm
                     ScratchBlocks.Xml.domToWorkspace(dom, workspace);
                 }
             } finally {
-                if (workspace.setToolboxRefreshEnabled) workspace.setToolboxRefreshEnabled(true);
+                workspace.toolboxRefreshEnabled_ = true;
                 if (workspace.setResizesEnabled) workspace.setResizesEnabled(true);
             }
         });
