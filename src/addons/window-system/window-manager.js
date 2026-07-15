@@ -868,8 +868,8 @@ class AddonWindow {
     }
     
     center () {
-        this.x = (window.innerWidth - this.width) / 2;
-        this.y = (window.innerHeight - this.height) / 2;
+        this.x = Math.max(0, (window.innerWidth - this.width) / 2);
+        this.y = Math.max(0, (window.innerHeight - this.height) / 2);
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         return this;

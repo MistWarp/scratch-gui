@@ -1114,6 +1114,8 @@ class Blocks extends React.Component {
         // fresh workspace and we don't want any changes made to another sprites
         // workspace to be 'undone' here.
         this.workspace.clearUndo();
+
+        this.workspace.toolboxRefreshEnabled_ = true;
     }
     handleMonitorsUpdate (monitors) {
         // Update the checkboxes of the relevant monitors.

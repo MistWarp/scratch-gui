@@ -36,6 +36,7 @@ const base = {
         host: '0.0.0.0',
         disableHostCheck: true,
         compress: true,
+        headers: {'Access-Control-Allow-Origin': '*'},
         port: process.env.PORT || 8601,
         // allows ROUTING_STYLE=wildcard to work properly
         historyApiFallback: {

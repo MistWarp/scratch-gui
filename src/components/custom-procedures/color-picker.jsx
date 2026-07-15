@@ -1,11 +1,13 @@
+import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
 import styles from './custom-procedures.css';
 
-const SCRATCH_COLORS = [
-    {name: 'Red', color: '#FF4D4D'},
+const PRESET_COLORS = [
+    {name: 'My Blocks', color: '#FF6680'},
     {name: 'Motion', color: '#4C97FF'},
     {name: 'Looks', color: '#9966FF'},
     {name: 'Sound', color: '#CF63CF'},
@@ -15,60 +17,55 @@ const SCRATCH_COLORS = [
     {name: 'Operators', color: '#59C059'},
     {name: 'Variables', color: '#FF8C1A'},
     {name: 'Lists', color: '#FF661A'},
-    {name: 'My Blocks', color: '#FF6680'},
-    {name: 'Pen', color: '#0fBD8C'}
+    {name: 'Pen', color: '#0FBD8C'},
+    {name: 'Red', color: '#FF4D4D'}
 ];
 
-const ColorPicker = props => {
-    const handlePresetColorClick = presetColor => {
-        const syntheticEvent = {target: {value: presetColor}};
-        props.onColorChange(syntheticEvent);
-    };
-
-    return (
-        <div className={styles.colorPickerRow}>
-            <div className={styles.colorPickerLabel}>
-                <FormattedMessage
-                    defaultMessage="Block color"
-                    description="Label for block color picker in custom procedures"
-                    id="gui.customProcedures.blockColor"
-                />
-            </div>
-            <div className={styles.colorGrid}>
-                {SCRATCH_COLORS.map((colorInfo, index) => (
-                    <div
-                        key={index}
-                        className={`${styles.colorGridItem} ${props.color === colorInfo.color ? styles.colorGridItemSelected : ''}`}
-                        style={{backgroundColor: colorInfo.color}}
-                        onClick={() => handlePresetColorClick(colorInfo.color)}
-                        title={colorInfo.name}
-                        role="button"
-                        tabIndex="0"
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handlePresetColorClick(colorInfo.color);
-                            }
-                        }}
+class ColorPicker extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, ['handleSwatchClick']);
+    }
+    handleSwatchClick (event) {
+        this.props.onColorChange({target: {value: event.currentTarget.dataset.color}});
+    }
+    render () {
+        const selected = this.props.color.toUpperCase();
+        return (
+            <div className={styles.colorRow}>
+                <span className={styles.colorLabel}>
+                    <FormattedMessage
+                        defaultMessage="Block color"
+                        description="Label for block color picker in custom procedures"
+                        id="gui.customProcedures.blockColor"
                     />
-                ))}
+                </span>
+                <div className={styles.colorSwatches}>
+                    {PRESET_COLORS.map(preset => (
+                        <button
+                            key={preset.color}
+                            type="button"
+                            title={preset.name}
+                            className={classNames(styles.colorSwatch, {
+                                [styles.colorSwatchSelected]: selected === preset.color
+                            })}
+                            style={{backgroundColor: preset.color}}
+                            data-color={preset.color}
+                            onClick={this.handleSwatchClick}
+                        />
+                    ))}
+                    <input
+                        className={styles.colorInput}
+                        type="color"
+                        title="Custom color"
+                        value={this.props.color}
+                        onChange={this.props.onColorChange}
+                    />
+                </div>
             </div>
-            <div className={styles.colorPickerContainer}>
-                <input
-                    className={styles.colorPickerInput}
-                    type="color"
-                    value={props.color}
-                    onChange={props.onColorChange}
-                />
-                <div
-                    className={styles.colorPreview}
-                    style={{backgroundColor: props.color}}
-                />
-                <span className={styles.colorValue}>{props.color}</span>
-            </div>
-        </div>
-    );
-};
+        );
+    }
+}
 
 ColorPicker.propTypes = {
     color: PropTypes.string.isRequired,
