@@ -104,7 +104,6 @@ const MyStuff = () => {
             setUploading(true);
             created = await api.createProject({title: file.name.replace(/\.sb3$/i, '') || 'Untitled'});
             await api.uploadProject(created.id, file);
-            await api.publish(created.id);
             setTab('projects');
             load();
         } catch (e) {
