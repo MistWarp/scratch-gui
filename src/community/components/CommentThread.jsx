@@ -4,6 +4,7 @@ import {Trash2, Reply} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
+import RichText from './RichText.jsx';
 import {timeAgo, sameUser} from '../format';
 import styles from './CommentThread.module.css';
 
@@ -44,7 +45,7 @@ const CommentRow = ({comment, onReply, onDelete, onReact, canReply, canDelete, i
                     </button>
                 ) : null}
             </div>
-            <p className={styles.text}>{comment.content}</p>
+            <p className={styles.text}><RichText text={comment.content} /></p>
             <div className={styles.reactions}>
                 <ReactionButtons
                     small

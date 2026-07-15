@@ -200,7 +200,46 @@
 }
 
 @media (max-width: 680px) {
-    .links {
+    .inner {
+        gap: 8px;
+        padding: 0 10px;
+    }
+
+    .linkLabel {
+        display: none;
+    }
+
+    .link {
+        padding: 0 10px;
+    }
+
+    .iconLink {
+        display: none;
+    }
+
+    .search {
+        min-width: 0;
+    }
+
+    .searchInput {
+        height: 36px;
+        padding-left: 34px;
+    }
+
+    .suggestions {
+        position: fixed;
+        top: 54px;
+        left: 10px;
+        right: 10px;
+    }
+
+    .suggestionMeta {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .wordmark {
         display: none;
     }
 }

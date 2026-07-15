@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {Bell, FolderOpen, GitBranch, Info, LogOut, Settings, User} from 'lucide-react';
+import {Bell, FolderOpen, GitBranch, Info, LogOut, Settings, Trophy, User} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -90,6 +90,16 @@ const RoturAccount = props => {
                         id="mw.rotur.accountMenu.notifications"
                     />
                 </MenuItemContainer>
+                {props.showEditorItems ? null : (
+                    <MenuItemContainer href="/leaderboard">
+                        <Trophy />
+                        <FormattedMessage
+                            defaultMessage="Leaderboard"
+                            description="Text to link to the leaderboard, in the Rotur account navigation menu"
+                            id="mw.rotur.accountMenu.leaderboard"
+                        />
+                    </MenuItemContainer>
+                )}
                 <MenuItemContainer href="/settings">
                     <Settings />
                     <FormattedMessage

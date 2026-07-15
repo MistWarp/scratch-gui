@@ -4,27 +4,8 @@ import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import ReactionButtons from './ReactionButtons.jsx';
+import RichText from './RichText.jsx';
 import styles from './NewsItem.module.css';
-
-const linkify = text => String(text)
-    .split(/(https?:\/\/[^\s]+)/g)
-    .map((part, index) => {
-        if (!/^https?:\/\//.test(part)) {
-            return part;
-        }
-        const trailing = part.match(/[.,!?)]+$/);
-        const url = trailing ? part.slice(0, -trailing[0].length) : part;
-        return (
-            <React.Fragment key={index}>
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                >{url.replace(/^https?:\/\//, '')}</a>
-                {trailing ? trailing[0] : ''}
-            </React.Fragment>
-        );
-    });
 
 const NewsItem = ({item, onChanged}) => {
     const {user} = useUser();
@@ -64,7 +45,7 @@ const NewsItem = ({item, onChanged}) => {
                     </button>
                 ) : null}
             </div>
-            <p className={styles.body}>{linkify(item.body)}</p>
+            <p className={styles.body}><RichText text={item.body} /></p>
             <div className={styles.footer}>
                 <ReactionButtons
                     reactions={item.reactions}

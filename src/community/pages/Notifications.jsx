@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, MessageCircle, GitFork, UserPlus} from 'lucide-react';
+import {Heart, MessageCircle, GitFork, UserPlus, AtSign} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -12,7 +12,8 @@ const ICONS = {
     comment: MessageCircle,
     profile_comment: MessageCircle,
     remix: GitFork,
-    follow: UserPlus
+    follow: UserPlus,
+    mention: AtSign
 };
 
 const describe = n => {
@@ -22,6 +23,9 @@ const describe = n => {
     case 'profile_comment': return <span>commented on your profile</span>;
     case 'remix': return <span>remixed <strong>{n.projectTitle}</strong></span>;
     case 'follow': return <span>followed you</span>;
+    case 'mention': return n.projectTitle ?
+        <span>mentioned you on <strong>{n.projectTitle}</strong></span> :
+        <span>mentioned you in a comment</span>;
     default: return <span>did something</span>;
     }
 };
@@ -79,9 +83,9 @@ const Notifications = () => {
                                             to={projectUrl(n.projectId)}
                                             className={styles.body}
                                         >{describe(n)}</Link>
-                                    ) : n.type === 'profile_comment' ? (
+                                    ) : (n.type === 'profile_comment' || n.profile) ? (
                                         <Link
-                                            to={`/users/${user.username}`}
+                                            to={`/users/${n.profile || user.username}`}
                                             className={styles.body}
                                         >{describe(n)}</Link>
                                     ) : (

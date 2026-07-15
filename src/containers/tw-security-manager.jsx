@@ -6,6 +6,7 @@ import log from '../lib/utils/log.js';
 import SecurityManagerModal from '../components/tw-security-manager-modal/security-manager-modal.jsx';
 import SecurityModals from '../lib/constants/security-manager.js';
 import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/persistence/tw-unsandboxed.js';
+import isTrustedExtensionUrl from '../lib/trusted-extension.js';
 import {shouldWarn, isSecurityManagerDisabled} from '../lib/security-warning-settings.js';
 
 /* eslint-disable require-atomic-updates */
@@ -25,9 +26,7 @@ const manuallyTrustExtension = url => {
  * @returns {boolean} True if the extension can is trusted
  */
 const isTrustedExtension = url => (
-    url.startsWith('https://extensions.turbowarp.org/') ||
-    url.startsWith('https://extensions.mistium.com/') ||
-    url.startsWith('http://localhost:8000/') ||
+    isTrustedExtensionUrl(url) ||
     extensionsTrustedByUser.has(url)
 );
 
