@@ -25,12 +25,11 @@ import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
-import CustomThemesPage from './custom-themes-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
 import {Settings, Zap, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Radio,
-    Globe, SunMoon, Wallpaper, Type, SwatchBook, Monitor, Keyboard, ChevronLeft,
+    Globe, SunMoon, Wallpaper, Type, Monitor, Keyboard, ChevronLeft,
     Hourglass} from 'lucide-react';
 import {connect} from 'react-redux';
 
@@ -1706,8 +1705,6 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <FontsPage />;
     case 'loadingScreen':
         return <LoadingScreenPage />;
-    case 'customThemes':
-        return <CustomThemesPage />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -1811,11 +1808,6 @@ class SettingsModalComponent extends React.Component {
                         id: 'theme',
                         label: intl.formatMessage({id: 'tw.menuBar.theme', defaultMessage: 'Theme'}),
                         icon: SunMoon
-                    },
-                    {
-                        id: 'customThemes',
-                        label: intl.formatMessage({id: 'tw.menuBar.customThemes', defaultMessage: 'Custom Themes'}),
-                        icon: SwatchBook
                     },
                     {
                         id: 'wallpaper',

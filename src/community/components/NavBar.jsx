@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, Trophy} from 'lucide-react';
+import {Search, Compass, Plus, FolderOpen, Bell, Trophy, LogIn} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import logo from '../assets/mistwarp-logo.png';
@@ -9,7 +9,7 @@ import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
 import styles from './NavBar.module.css';
 
 const NavBar = () => {
-    const {user, login, logout} = useUser();
+    const {user, loading, login, logout} = useUser();
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -164,11 +164,15 @@ const NavBar = () => {
                                 onLogout={logout}
                             />
                         </>
-                    ) : (
+                    ) : loading ? null : (
                         <button
                             className={styles.signIn}
                             onClick={login}
-                        >Sign in</button>
+                            title="Sign in"
+                            aria-label="Sign in"
+                        >
+                            <LogIn size={19} />
+                        </button>
                     )}
                 </div>
             </div>

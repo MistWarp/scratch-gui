@@ -25,7 +25,6 @@ const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
-const MODAL_WARPTHEME = 'warpthemeModal';
 const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
 const MODAL_PROJECT_METADATA = 'projectMetadataModal';
@@ -55,7 +54,6 @@ const initialState = {
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_ONBOARDING]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
-    [MODAL_WARPTHEME]: false,
     [MODAL_DEBUGGER]: false,
     [MODAL_ROTUR_LOGIN]: false,
     [MODAL_PROJECT_METADATA]: false
@@ -166,9 +164,6 @@ const openShortcutManagerModal = function () {
     setSettingsModalInitialView('shortcuts');
     return openModal(MODAL_SETTINGS);
 };
-const openWarpThemeModal = function () {
-    return openModal(MODAL_WARPTHEME);
-};
 const openDebuggerModal = function () {
     return openModal(MODAL_DEBUGGER);
 };
@@ -262,9 +257,6 @@ const closeOnboardingModal = function () {
 const closeShortcutManagerModal = function () {
     return closeModal(MODAL_SHORTCUT_MANAGER);
 };
-const closeWarpThemeModal = function () {
-    return closeModal(MODAL_WARPTHEME);
-};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -292,7 +284,6 @@ export {
     openPreferencesModal,
     openOnboardingModal,
     openShortcutManagerModal,
-    openWarpThemeModal,
     openDebuggerModal,
     closeDebuggerModal,
     openRoturLoginModal,
@@ -322,6 +313,5 @@ export {
     closeGitModal,
     closePreferencesModal,
     closeOnboardingModal,
-    closeShortcutManagerModal,
-    closeWarpThemeModal
+    closeShortcutManagerModal
 };

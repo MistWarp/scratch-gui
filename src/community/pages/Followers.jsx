@@ -3,11 +3,16 @@ import {useParams, Link} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
 import rotur from '../rotur';
 import Avatar from '../components/Avatar.jsx';
+import setPageMeta from '../page-meta.js';
 import styles from './Followers.module.css';
 
 const Followers = () => {
     const {name} = useParams();
     const [followers, setFollowers] = useState(null);
+
+    useEffect(() => {
+        setPageMeta({title: `${name}'s followers`, image: rotur.avatar(name, 256), card: 'summary'});
+    }, [name]);
 
     useEffect(() => {
         setFollowers(null);

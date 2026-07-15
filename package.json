@@ -223,7 +223,8 @@
       "scratch-paint": "link:../scratch-paint"
     },
     "patchedDependencies": {
-      "scratch-parser": "patches/scratch-parser.patch"
+      "scratch-parser": "patches/scratch-parser.patch",
+      "@turbowarp/scratch-svg-renderer": "patches/@turbowarp__scratch-svg-renderer.patch"
     },
     "allowUnusedPatches": true
   }

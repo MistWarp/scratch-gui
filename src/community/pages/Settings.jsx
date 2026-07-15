@@ -1,7 +1,9 @@
 import React, {useState} from 'react';
-import {Menu, Palette, Radio, User, ShieldAlert} from 'lucide-react';
+import {Menu, Palette, Radio, Store, SwatchBook, User, ShieldAlert} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
+import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
+import WarpThemePanel from '../components/WarpThemePanel.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
     notifyLocalChange,
@@ -43,6 +45,8 @@ const SECURITY_WARNING_LABELS = {
 
 const SECTIONS = [
     {key: 'theme', label: 'Theme', icon: Palette},
+    {key: 'custom-themes', label: 'Custom themes', icon: SwatchBook},
+    {key: 'warptheme', label: 'WarpTheme', icon: Store},
     {key: 'menu-bar', label: 'Menu bar', icon: Menu},
     {key: 'presence', label: 'Presence', icon: Radio},
     {key: 'security', label: 'Security warnings', icon: ShieldAlert},
@@ -132,6 +136,27 @@ const Settings = () => {
                             <ThemeAccentPanel
                                 theme={theme}
                                 onChangeTheme={applyAndPersist}
+                            />
+                        </section>
+                    ) : null}
+
+                    {activeSection === 'custom-themes' ? (
+                        <section className={styles.card}>
+                            <h2>Custom themes</h2>
+                            <CustomThemesPage
+                                theme={theme}
+                                onChangeTheme={applyAndPersist}
+                                onOpenWarpThemeMarketplace={() => setActiveSection('warptheme')}
+                            />
+                        </section>
+                    ) : null}
+
+                    {activeSection === 'warptheme' ? (
+                        <section className={styles.card}>
+                            <h2>WarpTheme marketplace</h2>
+                            <WarpThemePanel
+                                theme={theme}
+                                onThemeChange={applyAndPersist}
                             />
                         </section>
                     ) : null}
