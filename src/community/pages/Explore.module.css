@@ -1,0 +1,107 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.head h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+}
+
+.tab,
+.tabActive {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.tabActive {
+    background: var(--accent);
+    color: #fff;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+}
+
+.status {
+    color: var(--text-dim);
+    padding: 40px 0;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.people {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-shadow);
+    padding: 12px 16px;
+}
+
+.person:hover .personName {
+    color: var(--accent-strong);
+}
+
+.personInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.personName {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.personMeta {
+    font-size: 13px;
+    color: var(--text-dim);
+}

@@ -1,3 +1,4 @@
+import './embed-storage-shim';
 import './import-first';
 
 import React from 'react';
@@ -6,7 +7,7 @@ import AppStateHOC from '../lib/components/app-state-hoc.jsx';
 import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx';
 import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import runAddons from '../addons/entry';
-import {Theme} from '../lib/themes/index.js';
+import {detectTheme} from '../lib/themes/themePersistance';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -55,8 +56,19 @@ render(<WrappedGUI
     onVmInit={onVmInit}
     onProjectLoaded={onProjectLoaded}
     routingStyle="none"
-    theme={Theme.defaults.light}
+    theme={detectTheme()}
 />);
+
+window.addEventListener('message', event => {
+    if (!event.data || event.data.type !== 'mw:capture-stage' || !event.source) return;
+    try {
+        const canvas = document.querySelector('canvas');
+        if (!canvas) throw new Error('no canvas');
+        event.source.postMessage({type: 'mw:stage-capture', dataURL: canvas.toDataURL('image/png')}, '*');
+    } catch (e) {
+        event.source.postMessage({type: 'mw:stage-capture', error: true}, '*');
+    }
+});
 
 if (urlParams.has('addons')) {
     runAddons();

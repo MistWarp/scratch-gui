@@ -1,13 +1,4 @@
-/**
- * Cloud sync for MistWarp themes + settings via Rotur OriginFS.
- * Root: /application data/mistwarp@mistium/
- *
- * localStorage is the offline cache; when signed into Rotur we also
- * read/write cloud copies so data follows the account.
- */
-
-import {getRotur} from './client.js';
-import {OriginFS} from './origin-fs.js';
+import {loadSession, request} from '../community/api.js';
 import {ORDER_KEY as MENU_BAR_ORDER_KEY, HIDDEN_KEY as MENU_BAR_HIDDEN_KEY} from '../mw-menu-bar-layout.js';
 import {
     getAccentMenuBar,
@@ -24,45 +15,36 @@ import {
     subscribeRoturSettings
 } from './settings.js';
 
-const APP_DATA = '/application data/mistwarp@mistium';
-const PATHS = {
-    theme: `${APP_DATA}/theme.json`,
-    customThemes: `${APP_DATA}/custom-themes.json`,
-    settings: `${APP_DATA}/settings.json`
-};
-
-/** @type {OriginFS|null} */
-let fs = null;
 let suppressPush = false;
 let pushTimer = null;
 let pushChain = Promise.resolve();
 
-const isLoggedIn = () => {
-    try {
-        return getRotur().loggedIn;
-    } catch (_) {
-        return false;
-    }
-};
-
-const getFS = () => {
-    if (!isLoggedIn()) {
-        fs = null;
-        return null;
-    }
-    if (!fs) {
-        const rotur = getRotur();
-        if (!rotur || !rotur._http) return null;
-        fs = new OriginFS(rotur._http);
-    }
-    return fs;
-};
-
-const resetFS = () => {
-    fs = null;
-};
-
 const USERNAME_OVERRIDE_KEY = 'tw:username-override';
+const LOCAL_UPDATED_KEY = 'tw:settings-updated';
+
+const stampLocalChange = () => {
+    try {
+        localStorage.setItem(LOCAL_UPDATED_KEY, String(Date.now()));
+    } catch (_) {
+        // ignore
+    }
+};
+
+const readLocalUpdated = () => {
+    try {
+        return Number(localStorage.getItem(LOCAL_UPDATED_KEY)) || 0;
+    } catch (_) {
+        return 0;
+    }
+};
+
+const setLocalUpdated = value => {
+    try {
+        localStorage.setItem(LOCAL_UPDATED_KEY, String(value || 0));
+    } catch (_) {
+        // ignore
+    }
+};
 
 const getUsernameOverride = () => {
     try {
@@ -75,7 +57,7 @@ const getUsernameOverride = () => {
 const readLocalJson = (key, fallback) => {
     try {
         const raw = localStorage.getItem(key);
-        if (raw === null || raw === undefined) return fallback;
+        if (raw === null || typeof raw === 'undefined') return fallback;
         return JSON.parse(raw);
     } catch (_) {
         return fallback;
@@ -93,30 +75,6 @@ const writeLocalJson = (key, value) => {
         // ignore
     }
 };
-
-async function loadJson (path, defaultValue) {
-    const originFS = getFS();
-    if (!originFS) return defaultValue;
-    try {
-        return JSON.parse(await originFS.readFileContent(path));
-    } catch (_) {
-        return defaultValue;
-    }
-}
-
-async function saveJson (path, data) {
-    const originFS = getFS();
-    if (!originFS) return false;
-    try {
-        await originFS.writeFile(path, JSON.stringify(data));
-        await originFS.commit();
-        return true;
-    } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[cloud-sync] Failed to save', path, e);
-        return false;
-    }
-}
 
 const collectLocalSnapshot = () => {
     const username = getUsernameOverride();
@@ -150,6 +108,8 @@ const applySnapshotLocally = snapshot => {
     try {
         if (snapshot.theme && typeof snapshot.theme === 'object') {
             writeLocalJson('tw:theme', snapshot.theme);
+        } else if (snapshot.theme === null) {
+            writeLocalJson('tw:theme', null);
         }
         if (Array.isArray(snapshot.customThemes)) {
             writeLocalJson(
@@ -206,62 +166,61 @@ const applySnapshotLocally = snapshot => {
     }
 };
 
-const pushToCloud = async () => {
-    if (suppressPush || !isLoggedIn()) return false;
-    pushChain = pushChain.catch(() => undefined).then(async () => {
-        if (suppressPush || !isLoggedIn()) return false;
-        const {theme, customThemes, settings} = collectLocalSnapshot();
-        const results = await Promise.all([
-            theme ? saveJson(PATHS.theme, theme) : Promise.resolve(true),
-            saveJson(PATHS.customThemes, customThemes || []),
-            saveJson(PATHS.settings, settings)
-        ]);
-        return results.every(Boolean);
+const pushToCloud = () => {
+    if (suppressPush || !loadSession()) return Promise.resolve(false);
+    pushChain = pushChain.catch(() => null).then(async () => {
+        if (suppressPush || !loadSession()) return false;
+        try {
+            await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
+            return true;
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[cloud-sync] Failed to save settings', e);
+            return false;
+        }
     });
     return pushChain;
 };
 
 const pullFromCloud = async () => {
-    if (!isLoggedIn()) {
-        return {applied: false};
-    }
-    const originFS = getFS();
-    if (!originFS) {
+    if (!loadSession()) {
         return {applied: false};
     }
 
+    let snapshot;
     try {
-        await originFS.loadIndex();
+        const response = await request('/me/settings');
+        snapshot = response.settings;
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.warn('[cloud-sync] Failed to load file index', e);
+        console.warn('[cloud-sync] Failed to load settings', e);
         return {applied: false};
     }
 
-    const [theme, customThemes, settings] = await Promise.all([
-        loadJson(PATHS.theme, null),
-        loadJson(PATHS.customThemes, null),
-        loadJson(PATHS.settings, null)
-    ]);
-
-    const hasCloud =
-        (theme && typeof theme === 'object') ||
-        (Array.isArray(customThemes) && customThemes.length > 0) ||
-        (settings && typeof settings === 'object');
-
-    if (!hasCloud) {
+    if (!snapshot || typeof snapshot !== 'object' || Object.keys(snapshot).length === 0) {
         // First login with empty cloud: seed from local
         await pushToCloud();
         return {applied: false};
     }
 
-    applySnapshotLocally({theme, customThemes, settings});
+    const cloudUpdated = (snapshot.settings && Number(snapshot.settings.updatedAt)) || 0;
+    if (readLocalUpdated() > cloudUpdated) {
+        await pushToCloud();
+        return {applied: false};
+    }
+
+    applySnapshotLocally(snapshot);
+    setLocalUpdated(cloudUpdated);
     return {applied: true};
 };
 
-/** Debounced push after local preference writes. */
+/**
+ * Debounced push after local preference writes.
+ * @param {number} delayMs debounce delay in milliseconds
+ */
 const notifyLocalChange = (delayMs = 800) => {
-    if (suppressPush || !isLoggedIn()) return;
+    if (suppressPush || !loadSession()) return;
+    stampLocalChange();
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {
         pushTimer = null;
@@ -291,13 +250,11 @@ subscribeRoturSettings(() => {
 });
 
 const onRoturLogin = async () => {
-    resetFS();
     const result = await pullFromCloud();
     return {applied: result.applied};
 };
 
 const onRoturLogout = () => {
-    resetFS();
     if (pushTimer) {
         clearTimeout(pushTimer);
         pushTimer = null;

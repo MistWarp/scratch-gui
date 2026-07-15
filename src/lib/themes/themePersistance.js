@@ -72,6 +72,9 @@ const detectTheme = () => {
 
     try {
         const local = localStorage.getItem(STORAGE_KEY);
+        if (local === null) {
+            return addStoredAppearance(systemPreferences);
+        }
 
         // Migrate legacy preferences
         if (local === 'dark') {
@@ -82,7 +85,10 @@ const detectTheme = () => {
         }
 
         const parsed = JSON.parse(local);
-        
+        if (!parsed || typeof parsed !== 'object') {
+            return addStoredAppearance(systemPreferences);
+        }
+
         // Check if this is a custom theme
         if (parsed.isCustom && parsed.customThemeUuid) {
             const customTheme = customThemeManager.getTheme(parsed.customThemeUuid);
@@ -181,25 +187,46 @@ const persistTheme = theme => {
         }
     }
 
-    if (Object.keys(nonDefaultSettings).length === 0) {
-        try {
+    let previous = null;
+    try {
+        previous = localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+        // ignore
+    }
+    const next = Object.keys(nonDefaultSettings).length === 0 ? null : JSON.stringify(nonDefaultSettings);
+    try {
+        if (next === null) {
             localStorage.removeItem(STORAGE_KEY);
-        } catch (e) {
-            // ignore
+        } else {
+            localStorage.setItem(STORAGE_KEY, next);
         }
-    } else {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(nonDefaultSettings));
-        } catch (e) {
-            // ignore
-        }
+    } catch (e) {
+        // ignore
     }
 
-    try {
-        require('../rotur/cloud-sync.js').notifyLocalChange();
-    } catch (_) {
-        // cloud sync optional
+    if (next !== previous) {
+        try {
+            require('../rotur/cloud-sync.js').notifyLocalChange();
+        } catch (_) {
+            // cloud sync optional
+        }
     }
+};
+
+/**
+ * Apply a theme to the GUI pipeline without persisting it.
+ * Use for boot, storage events, and forced themes (embeds); persistence
+ * must only happen on an explicit user change via applyTheme.
+ * @param {Theme} theme the theme
+ */
+const applyThemeVisuals = theme => {
+    try {
+        applyGuiColors(theme);
+    } catch (e) {
+        console.error('Failed to apply GUI colors for theme:', e);
+    }
+
+    applyAppearance(theme.appearance);
 };
 
 /**
@@ -208,20 +235,18 @@ const persistTheme = theme => {
  * @param {Theme} theme the theme
  */
 const applyTheme = theme => {
-    try {
-        applyGuiColors(theme);
-    } catch (e) {
-        // Don't let GUI application failures block persistence
-        console.error('Failed to apply GUI colors for theme:', e);
-    }
-
-    applyAppearance(theme.appearance);
-
+    applyThemeVisuals(theme);
     persistTheme(theme);
 };
 
+if (typeof window !== 'undefined') {
+    window.addEventListener('storage', event => {
+        if (event.key === STORAGE_KEY) applyThemeVisuals(detectTheme());
+    });
+}
+
 try {
-    applyTheme(detectTheme());
+    applyThemeVisuals(detectTheme());
 } catch (e) {
     console.error('Failed to apply theme:', e);
 }
@@ -230,5 +255,6 @@ export {
     onSystemPreferenceChange,
     detectTheme,
     persistTheme,
-    applyTheme
+    applyTheme,
+    applyThemeVisuals
 };

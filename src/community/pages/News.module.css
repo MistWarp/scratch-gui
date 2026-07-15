@@ -1,0 +1,75 @@
+.page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 22px 20px 80px;
+}
+
+.page h1 {
+    font-size: 24px;
+    margin: 0 0 18px;
+}
+
+.status {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 40px 0;
+}
+
+.composer {
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-shadow);
+    padding: 16px;
+    margin-bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.titleInput,
+.bodyInput {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--mw-text);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.titleInput:focus,
+.bodyInput:focus {
+    border-color: var(--accent-border);
+}
+
+.bodyInput {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.submit {
+    align-self: flex-start;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 9px 20px;
+    border-radius: var(--radius-xs);
+}
+
+.submit:disabled {
+    opacity: 0.55;
+}
+
+.error {
+    color: #e0245e;
+    font-size: 13px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}

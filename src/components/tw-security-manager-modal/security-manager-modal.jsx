@@ -14,6 +14,7 @@ import ReadClipboard from './read-clipboard.jsx';
 import Notify from './notify.jsx';
 import Geolocate from './geolocate.jsx';
 import Embed from './embed.jsx';
+import Download from './download.jsx';
 import DelayedMountPropertyHOC from './delayed-mount-property-hoc.jsx';
 import styles from './security-manager-modal.css';
 
@@ -27,6 +28,9 @@ const messages = defineMessages({
 });
 
 const noop = () => {};
+
+const showLoadAll = props => props.type === SecurityModals.LoadExtension &&
+    props.data.showLoadAll;
 
 const SecurityManagerModalComponent = props => (
     <Modal
@@ -56,6 +60,8 @@ const SecurityManagerModalComponent = props => (
                 <Geolocate {...props.data} />
             ) : props.type === SecurityModals.Embed ? (
                 <Embed {...props.data} />
+            ) : props.type === SecurityModals.Download ? (
+                <Download {...props.data} />
             ) : null}
 
             <Box className={styles.buttons}>
@@ -64,22 +70,59 @@ const SecurityManagerModalComponent = props => (
                     onClick={props.onDenied}
                     disabled={!props.enableButtons}
                 >
-                    <FormattedMessage
-                        defaultMessage="Deny"
-                        description="Button in modal asking user for permission to load extension, access file, etc."
-                        id="tw.securityManager.deny"
-                    />
+                    {props.type === SecurityModals.LoadExtension ? (
+                        <FormattedMessage
+                            defaultMessage="Don't run"
+                            description="Button refusing to run potentially dangerous project code"
+                            id="mw.securityManager.dontRun"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Deny"
+                            description="Button denying a project capability"
+                            id="tw.securityManager.deny"
+                        />
+                    )}
                 </button>
+                {showLoadAll(props) ? (
+                    <button
+                        className={styles.loadAllButton}
+                        onClick={props.onLoadAll}
+                        disabled={!props.enableButtons}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Run all without sandbox"
+                            description="Button allowing all of this project's extensions to run unsandboxed"
+                            id="mw.securityManager.loadAllSandboxed"
+                        />
+                    </button>
+                ) : null}
                 <button
                     className={styles.allowButton}
                     onClick={props.onAllowed}
                     disabled={!props.enableButtons}
                 >
-                    <FormattedMessage
-                        defaultMessage="Allow"
-                        description="Button in modal asking user for permission to load extension, access file, etc."
-                        id="tw.securityManager.allow"
-                    />
+                    {props.type === SecurityModals.LoadExtension ? (
+                        props.data.unsandboxed ? (
+                            <FormattedMessage
+                                defaultMessage="Run with full access"
+                                description="Button allowing project code to run outside the sandbox"
+                                id="mw.securityManager.runFullAccess"
+                            />
+                        ) : (
+                            <FormattedMessage
+                                defaultMessage="Run extension"
+                                description="Button allowing project code to run in a sandbox"
+                                id="mw.securityManager.runSandboxed"
+                            />
+                        )
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Allow"
+                            description="Button allowing a project capability"
+                            id="tw.securityManager.allow"
+                        />
+                    )}
                 </button>
             </Box>
         </Box>
@@ -94,7 +137,8 @@ SecurityManagerModalComponent.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
     onAllowed: PropTypes.func.isRequired,
-    onDenied: PropTypes.func.isRequired
+    onDenied: PropTypes.func.isRequired,
+    onLoadAll: PropTypes.func.isRequired
 };
 
 // Prevent accidentally pressing buttons immediately when a prompt appears.

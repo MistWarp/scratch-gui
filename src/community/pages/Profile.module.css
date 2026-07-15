@@ -1,0 +1,307 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 28px 22px 88px;
+}
+
+.profileCard {
+    overflow: hidden;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+}
+
+.banner {
+    height: 220px;
+    background-color: var(--bg-raised);
+    background-size: cover;
+    background-position: center;
+}
+
+.header {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-top: -54px;
+    padding: 0 24px 24px;
+}
+
+.avatar {
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 0 5px var(--bg-card), var(--card-shadow);
+}
+
+.identity {
+    flex: 1;
+    min-width: 0;
+    padding-top: 66px;
+}
+
+.identity h1 {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: clamp(24px, 3vw, 30px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+.pronouns {
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.bio {
+    margin: 10px 0 14px;
+    color: var(--text-dim);
+    max-width: 62ch;
+    line-height: 1.55;
+}
+
+.userStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.onlineDot,
+.offlineDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #45c46b;
+}
+
+.offlineDot {
+    background: var(--text-faint);
+}
+
+.meta {
+    display: flex;
+    gap: 8px 18px;
+    flex-wrap: wrap;
+    color: var(--text-faint);
+    font-size: 13px;
+    align-items: center;
+}
+
+.stat strong {
+    color: var(--text-dim);
+    font-weight: 700;
+}
+
+.metaItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.followButton,
+.followingButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    margin-top: 66px;
+    flex: none;
+}
+
+.followButton {
+    background: var(--accent);
+    color: var(--accent-contrast);
+}
+
+.followingButton {
+    background: var(--bg-raised);
+    color: var(--mw-text);
+}
+
+.notOnMistwarp {
+    margin: 20px 0 0;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.section {
+    margin-top: 28px;
+}
+
+.sectionHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    margin: 0 0 14px;
+}
+
+.sectionEmpty {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0;
+}
+
+.seeAll {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.followersRow {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    padding-top: 8px;
+}
+
+.followerChip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    width: 72px;
+    text-align: center;
+}
+
+.followerChip span {
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.followerChip:hover span {
+    color: var(--accent-strong);
+}
+
+.feed {
+    max-width: 680px;
+}
+
+.commentsToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.commentsToggle:hover {
+    color: var(--mw-text);
+    border-color: var(--accent-border);
+}
+
+.tab,
+.tabActive {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.tabActive {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.status {
+    color: var(--text-dim);
+    padding: 40px 0;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .page {
+        padding: 16px 14px 64px;
+    }
+
+    .banner {
+        height: 150px;
+    }
+
+    .header {
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: -44px;
+        padding: 0 18px 20px;
+    }
+
+    .avatar {
+        width: 92px;
+        height: 92px;
+        flex-basis: 92px;
+        border-radius: 20px;
+    }
+
+    .identity {
+        flex-basis: calc(100% - 106px);
+        padding-top: 52px;
+    }
+
+    .identity h1 {
+        font-size: 24px;
+    }
+
+    .followButton,
+    .followingButton {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0;
+    }
+
+    .tabs {
+        width: 100%;
+    }
+
+    .tab,
+    .tabActive {
+        flex: 1;
+    }
+
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

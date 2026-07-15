@@ -1,0 +1,14 @@
+.file-name {
+    font-family: monospace;
+    user-select: text;
+    overflow-wrap: anywhere;
+}
+
+.file-name::before,
+.file-name::after {
+    content: '"';
+}
+
+.extension {
+    text-decoration: underline;
+}

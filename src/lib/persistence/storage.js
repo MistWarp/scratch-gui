@@ -40,6 +40,27 @@ class Storage extends ScratchStorage {
             this.getAssetCreateConfig.bind(this)
         );
     }
+    addMistWarpAssetStore (assetsBase) {
+        const base = assetsBase.replace(/\/+$/, '');
+        if (this.mistwarpAssetsBase === base) {
+            return;
+        }
+        if (this.mistwarpAssetsBase) {
+            this.mistwarpAssetsBase = base;
+            return;
+        }
+        this.mistwarpAssetsBase = base;
+        this.addWebStore(
+            [
+                this.AssetType.ImageVector,
+                this.AssetType.ImageBitmap,
+                this.AssetType.Sound,
+                this.AssetType.Font,
+                this.AssetType.CustomAsset
+            ],
+            asset => `${this.mistwarpAssetsBase}/${asset.assetId}.${asset.dataFormat}`
+        );
+    }
     setProjectHost (projectHost) {
         this.projectHost = projectHost;
     }
