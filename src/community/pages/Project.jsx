@@ -13,6 +13,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import DiffView from '../components/DiffView.jsx';
 import RichText from '../components/RichText.jsx';
 import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
+import setPageMeta from '../page-meta.js';
 import styles from './Project.module.css';
 
 const formatDate = ms => {
@@ -114,6 +115,15 @@ const Project = () => {
 
     useEffect(() => {
         if (project) setTitle(project.title || '');
+    }, [project]);
+
+    useEffect(() => {
+        if (!project) return;
+        setPageMeta({
+            title: `${project.title} by ${project.owner}`,
+            description: project.instructions || project.description,
+            image: project.thumbUrl
+        });
     }, [project]);
 
     const projectJsonUrl = project && project.projectJsonUrl;
@@ -487,10 +497,12 @@ const Project = () => {
                     </div>
                 </div>
 
-                <InfoPanel
-                    project={project}
-                    onSaved={load}
-                />
+                <div className={styles.sideCol}>
+                    <InfoPanel
+                        project={project}
+                        onSaved={load}
+                    />
+                </div>
             </div>
 
             <div className={styles.bottomGrid}>

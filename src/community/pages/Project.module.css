@@ -327,14 +327,20 @@
     background: var(--bg-raised);
 }
 
+.sideCol {
+    position: relative;
+    min-width: 0;
+}
+
 .sidePanel {
+    position: absolute;
+    inset: 0;
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     overflow: hidden;
     box-shadow: var(--card-shadow);
     display: flex;
     flex-direction: column;
-    align-self: stretch;
     min-height: 0;
 }
 
@@ -490,6 +496,8 @@
 .panelBody {
     padding: 14px 16px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .panelText {
@@ -621,6 +629,11 @@
 @media (max-width: 860px) {
     .stageRow {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sidePanel {
+        position: static;
+        max-height: 50vh;
     }
 
     .bottomGrid {

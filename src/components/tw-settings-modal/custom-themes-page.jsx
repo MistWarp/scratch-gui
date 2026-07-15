@@ -3,14 +3,10 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
-import {connect} from 'react-redux';
 
 import Box from '../box/box.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
-import {setTheme} from '../../reducers/theme.js';
-import {applyTheme} from '../../lib/themes/themePersistance.js';
-import {openWarpThemeModal} from '../../reducers/modals.js';
 import showAlert from '../../addons/window-system/alert';
 import GradientBuilder from './gradient-builder.jsx';
 
@@ -41,7 +37,7 @@ const themePreviewStyle = theme => {
     }
 };
 
-class UnconnectedCustomThemesPage extends React.Component {
+class CustomThemesPage extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
@@ -773,16 +769,7 @@ class UnconnectedCustomThemesPage extends React.Component {
         const {tab, statusMessage} = this.state;
 
         return (
-            <Box className={classNames(styles.body, styles.ctPage)}>
-                <div className={styles.header}>
-                    <FormattedMessage
-                        defaultMessage="Custom Themes"
-                        description="Menu item for custom themes"
-                        id="tw.menuBar.customThemes"
-                    />
-                    <div className={styles.divider} />
-                </div>
-
+            <Box className={styles.ctPage}>
                 {this.renderTabs()}
 
                 {statusMessage && (
@@ -807,23 +794,10 @@ class UnconnectedCustomThemesPage extends React.Component {
     }
 }
 
-UnconnectedCustomThemesPage.propTypes = {
+CustomThemesPage.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func,
     onOpenWarpThemeMarketplace: PropTypes.func
 };
 
-export default connect(
-    state => ({
-        theme: state.scratchGui.theme.theme
-    }),
-    dispatch => ({
-        onChangeTheme: theme => {
-            dispatch(setTheme(theme));
-            applyTheme(theme);
-        },
-        onOpenWarpThemeMarketplace: () => {
-            dispatch(openWarpThemeModal());
-        }
-    })
-)(UnconnectedCustomThemesPage);
+export default CustomThemesPage;

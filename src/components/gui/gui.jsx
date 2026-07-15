@@ -47,7 +47,6 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
-import WarpThemeModal from '../../containers/mw-warptheme-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import {closeRoturLoginModal} from '../../reducers/modals.js';
@@ -730,7 +729,6 @@ const GUIComponent = props => {
             <TWRestorePointManager />
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
-            <WarpThemeModal />
             {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
             {settingsModalVisible && (
                 <TWSettingsModal

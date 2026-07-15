@@ -1,6 +1,7 @@
-import React from 'react';
-import {Routes, Route} from 'react-router-dom';
+import React, {useEffect} from 'react';
+import {Routes, Route, useLocation} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';
+import setPageMeta from './page-meta.js';
 import NavBar from './components/NavBar.jsx';
 import BetaBanner from './components/BetaBanner.jsx';
 import Footer from './components/Footer.jsx';
@@ -15,8 +16,29 @@ import Notifications from './pages/Notifications.jsx';
 import News from './pages/News.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
 
+const ROUTE_TITLES = [
+    ['/explore', 'Explore'],
+    ['/settings', 'Settings'],
+    ['/mystuff', 'My Stuff'],
+    ['/notifications', 'Notifications'],
+    ['/news', 'News'],
+    ['/leaderboard', 'Leaderboard'],
+    ['/users/', 'Profile'],
+    ['/project/', 'Project']
+];
+
+const RouteMeta = () => {
+    const {pathname} = useLocation();
+    useEffect(() => {
+        const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix));
+        setPageMeta({title: match ? match[1] : null});
+    }, [pathname]);
+    return null;
+};
+
 const App = () => (
     <UserProvider>
+        <RouteMeta />
         <NavBar />
         <BetaBanner />
         <div className="mw-app-content">

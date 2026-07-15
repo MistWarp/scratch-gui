@@ -33,16 +33,19 @@ const UserProvider = ({children}) => {
 
     const handleIdentity = useCallback(state => {
         if (state.user) {
-            applyLoggedIn();
+            applyLoggedIn().finally(() => setLoading(false));
         } else {
             setUser(null);
             applyThemeVisuals(detectTheme());
+            if (state.status !== 'restoring') {
+                setLoading(false);
+            }
         }
     }, [applyLoggedIn]);
 
     useEffect(() => {
         const unsubscribe = subscribeIdentity(handleIdentity);
-        identityRestore().finally(() => setLoading(false));
+        identityRestore();
         return unsubscribe;
     }, [handleIdentity]);
 

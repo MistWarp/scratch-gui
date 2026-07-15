@@ -8,6 +8,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
+import setPageMeta from '../page-meta.js';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -48,6 +49,16 @@ const Profile = () => {
         setError(null);
         load();
     }, [name, load]);
+
+    useEffect(() => {
+        if (!profile) return;
+        setPageMeta({
+            title: profile.username || name,
+            description: profile.bio,
+            image: rotur.avatar(name, 256),
+            card: 'summary'
+        });
+    }, [profile, name]);
 
     const toggleFollow = async () => {
         if (!user || !profile) return;
