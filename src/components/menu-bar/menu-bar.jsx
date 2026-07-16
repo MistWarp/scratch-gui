@@ -397,16 +397,16 @@ class MenuBar extends React.Component {
             this.menuResizeObserver.disconnect();
             this.menuResizeObserver = null;
         }
-        
+
         if (this.autosaveCountdownInterval) {
             clearInterval(this.autosaveCountdownInterval);
             this.autosaveCountdownInterval = null;
         }
-        
+
         if (this.props.vm && this.props.vm.runtime && this.workspaceBookmarksProjectListener) {
             this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
-        
+
         if (this.undoRedoChangeListener) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
                 const workspace = ScratchBlocks.getMainWorkspace();
@@ -1859,7 +1859,7 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                                 {this.props.onToggleFractchMode && !this.props.isPlayerOnly && (
                                     <MenuSection>
-                                        <MenuItem
+                                        {false && <MenuItem
                                             onClick={() => {
                                                 this.props.onRequestCloseEdit();
                                                 this.props.onToggleFractchMode();
@@ -1879,7 +1879,7 @@ class MenuBar extends React.Component {
                                                     id="mw.menuBar.switchToFractch"
                                                 />
                                             )}
-                                        </MenuItem>
+                                        </MenuItem>}
                                     </MenuSection>
                                 )}
                                 <MenuSection>

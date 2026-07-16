@@ -11,7 +11,6 @@ overrides:
   scratch-render: link:../scratch-render
   scratch-vm: link:../scratch-vm
   scratch-paint: link:../scratch-paint
-  fractch: link:../../fractch
 
 patchedDependencies:
   '@turbowarp/scratch-svg-renderer':
@@ -95,8 +94,8 @@ importers:
         specifier: ^6.2.5
         version: 6.2.5
       fractch:
-        specifier: link:../../fractch
-        version: link:../../fractch
+        specifier: 0.7.6
+        version: 0.7.6
       get-user-media-promise:
         specifier: 1.1.4
         version: 1.1.4
@@ -3105,6 +3104,11 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  fractch@0.7.6:
+    resolution: {integrity: sha512-NuRCUKHe3JgYtHPAGIIMi+CGQ4CcvnZPY1ydz1vdT1C7ogNcqKv9MQUA7Z084Kq/q6oyrqH4X6p529v2iWZWAw==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   fragment-cache@0.2.1:
     resolution: {integrity: sha512-GMBAbW9antB8iZRHLoGw0b3HANt57diZYFO/HL1JGIC1MjKrdmhxvrJbupnVvpys0zsz7yBApXdQyfepKly2kA==}
@@ -10180,6 +10184,11 @@ snapshots:
       mime-types: 2.1.35
 
   forwarded@0.2.0: {}
+
+  fractch@0.7.6:
+    dependencies:
+      adm-zip: 0.5.18
+      yargs: 17.7.3
 
   fragment-cache@0.2.1:
     dependencies:
