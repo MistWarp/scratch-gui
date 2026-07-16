@@ -16,7 +16,7 @@
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
     "setup": "pnpm install",
     "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm i && pnpm run link",
-    "deploy": "NODE_ENV=production pnpm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
+    "deploy": "NODE_ENV=production pnpm run build && touch build/.nojekyll && cp -r functions build/functions && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
     "prune": "./prune-gh-pages.sh",
     "i18n:push": "tx-push-src scratch-editor interface translations/en.json",
