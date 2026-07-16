@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Menu, Palette, Radio, Store, SwatchBook, User, ShieldAlert} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
@@ -62,6 +62,14 @@ const Settings = () => {
     const [presence, setPresence] = useState(getRoturSettings());
     const [securityWarnings, setSecurityWarnings] = useState(getSecurityWarningSettings());
     const [activeSection, setActiveSection] = useState(SECTIONS[0].key);
+
+    useEffect(() => {
+        setTheme(detectTheme());
+        setUsername(getUsernameOverride() || '');
+        setAccentMenuBarState(getAccentMenuBar());
+        setMenuBarTextState(getMenuBarText());
+        setPresence(getRoturSettings());
+    }, [user]);
     const securityWarningEntries = Object.entries(securityWarnings).filter(([key]) => key !== 'disabled');
     const securitySettingsClass = `${styles.settingRows} ${securityWarnings.disabled ?
         styles.settingsDisabled : ''}`;

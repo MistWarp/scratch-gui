@@ -136,9 +136,20 @@ class UsernameModal extends React.Component {
     }
     handleStageWidthChange (value) {
         this.props.vm.setStageSize(value, this.props.customStageSize.height);
+        this.storeStageSizeInProject();
     }
     handleStageHeightChange (value) {
         this.props.vm.setStageSize(this.props.customStageSize.width, value);
+        this.storeStageSizeInProject();
+    }
+    storeStageSizeInProject () {
+        if (this.storeStageSizeTimeout) {
+            clearTimeout(this.storeStageSizeTimeout);
+        }
+        this.storeStageSizeTimeout = setTimeout(() => {
+            this.storeStageSizeTimeout = null;
+            this.props.vm.storeProjectOptions();
+        }, 500);
     }
     handleStoreProjectOptions () {
         if (!this.state.storeThemeInProject) {

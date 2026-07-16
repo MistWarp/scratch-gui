@@ -165,6 +165,26 @@
     opacity: 1;
 }
 
+.bellLink {
+    position: relative;
+}
+
+.bellBadge {
+    position: absolute;
+    top: 8px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 5px;
+    background: #e25555;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
 .account > div {
     display: flex;
     align-items: center;

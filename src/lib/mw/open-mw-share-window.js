@@ -7,7 +7,7 @@ import WindowManager from '../../addons/window-system/window-manager';
 let shareWindow = null;
 let container = null;
 
-const openMistWarpShareWindow = ({vm, initialTitle, action = 'share', onPublished}) => {
+const openMistWarpShareWindow = ({vm, initialTitle, action = 'save', onPublished}) => {
     if (shareWindow) {
         shareWindow.show().bringToFront();
         return;
@@ -30,7 +30,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, action = 'share', onPublishe
     shareWindow = WindowManager.createWindow({
         id: 'mw-share-window',
         title: action === 'remix' ? 'Remix to MistWarp' :
-            action === 'update' ? 'Update MistWarp project' : 'Share to MistWarp',
+            action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
         width: 460,
         height: 380,
         minWidth: 360,
@@ -54,7 +54,6 @@ const openMistWarpShareWindow = ({vm, initialTitle, action = 'share', onPublishe
             action,
             onClose: cleanup,
             onPublished: result => {
-                cleanup();
                 if (typeof onPublished === 'function') {
                     onPublished(result);
                 }

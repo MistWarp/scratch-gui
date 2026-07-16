@@ -9,6 +9,7 @@ import {
     LoadingStates,
     getIsCreatingNew,
     getIsFetchingWithId,
+    getIsFetchingWithoutId,
     getIsLoading,
     getIsShowingProject,
     onFetchedProjectData,
@@ -129,12 +130,38 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 this.props.onActivateTab(BLOCKS_TAB_INDEX);
             }
         }
+        clearProjectSourceParams () {
+            if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
+            const params = new URLSearchParams(location.search);
+            let changed = false;
+            for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets']) {
+                if (params.has(key)) {
+                    params.delete(key);
+                    changed = true;
+                }
+            }
+            const hasMwHash = /^#mw-/.test(location.hash);
+            if (!changed && !hasMwHash) return;
+            const query = params.toString();
+            const hash = hasMwHash ? '' : location.hash;
+            try {
+                history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${hash}`);
+            } catch (e) {
+                // ignore
+            }
+        }
         fetchProject (projectId, loadingState) {
             // tw: clear and stop the VM before fetching
             // these will also happen later after the project is fetched, but fetching may take a while and
             // the project shouldn't be running while fetching the new project
             this.props.vm.clear();
             this.props.vm.quit();
+
+            const isInitialFetch = !this.hasFetchedProject;
+            this.hasFetchedProject = true;
+            if (!isInitialFetch && getIsFetchingWithoutId(loadingState)) {
+                this.clearProjectSourceParams();
+            }
 
             let assetPromise;
             const searchParams = typeof URLSearchParams === 'undefined' ?

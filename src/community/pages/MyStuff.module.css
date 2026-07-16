@@ -271,3 +271,11 @@
     color: var(--text-dim);
     font-size: 13px;
 }
+
+.quota {
+    margin-left: auto;
+    margin-right: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;
+}

@@ -15,6 +15,7 @@ import MyStuff from './pages/MyStuff.jsx';
 import Notifications from './pages/Notifications.jsx';
 import News from './pages/News.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
+import Admin from './pages/Admin.jsx';
 
 const ROUTE_TITLES = [
     ['/explore', 'Explore'],
@@ -53,6 +54,7 @@ const App = () => (
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/news" element={<News />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/admin" element={<Admin />} />
             </Routes>
         </div>
         <Footer />

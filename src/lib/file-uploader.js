@@ -128,8 +128,9 @@ const costumeUpload = function (fileData, fileType, vm, handleCostume, handleErr
         // Convert .bmp files to .png to compress them. .bmps are completely uncompressed,
         // and would otherwise take up a lot of storage space and take much longer to upload and download.
         bmpConverter(fileData).then(dataUrl => {
-            costumeUpload(dataUrl, 'image/png', vm, handleCostume);
-        });
+            costumeUpload(dataUrl, 'image/png', vm, handleCostume, handleError);
+        })
+            .catch(handleError);
         return; // Return early because we're triggering another proper costumeUpload
     }
     case 'image/png': {
@@ -141,20 +142,25 @@ const costumeUpload = function (fileData, fileType, vm, handleCostume, handleErr
         // Scratch does not natively support webp, so convert to png
         // see image/bmp logic above
         bmpConverter(fileData, 'image/webp').then(dataUrl => {
-            costumeUpload(dataUrl, 'image/png', vm, handleCostume);
-        });
+            costumeUpload(dataUrl, 'image/png', vm, handleCostume, handleError);
+        })
+            .catch(handleError);
         return;
     }
     case 'image/gif': {
         let costumes = [];
-        gifDecoder(fileData, (frameNumber, dataUrl, numFrames) => {
-            costumeUpload(dataUrl, 'image/png', vm, costumes_ => {
-                costumes = costumes.concat(costumes_);
-                if (frameNumber === numFrames - 1) {
-                    handleCostume(costumes);
-                }
-            }, handleError);
-        });
+        try {
+            gifDecoder(fileData, (frameNumber, dataUrl, numFrames) => {
+                costumeUpload(dataUrl, 'image/png', vm, costumes_ => {
+                    costumes = costumes.concat(costumes_);
+                    if (frameNumber === numFrames - 1) {
+                        handleCostume(costumes);
+                    }
+                }, handleError);
+            });
+        } catch (e) {
+            handleError(e);
+        }
         return; // Abandon this load, do not try to load gif itself
     }
     default:

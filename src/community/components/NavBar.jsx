@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, Trophy, LogIn} from 'lucide-react';
+import {Search, Compass, Plus, FolderOpen, Bell, Trophy, LogIn, ShieldCheck} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import logo from '../assets/mistwarp-logo.png';
@@ -14,8 +14,33 @@ const NavBar = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
+    const [unread, setUnread] = useState(0);
     const navigate = useNavigate();
     const searchRef = useRef(null);
+
+    useEffect(() => {
+        if (!user) {
+            setUnread(0);
+            return;
+        }
+        let stale = false;
+        const refresh = () => {
+            api.notifications()
+                .then(data => {
+                    if (!stale) setUnread((data.notifications || []).filter(n => !n.read).length);
+                })
+                .catch(() => {});
+        };
+        refresh();
+        const timer = setInterval(refresh, 60000);
+        const onRead = () => setUnread(0);
+        window.addEventListener('mw:notifications-read', onRead);
+        return () => {
+            stale = true;
+            clearInterval(timer);
+            window.removeEventListener('mw:notifications-read', onRead);
+        };
+    }, [user]);
 
     useEffect(() => {
         const q = query.trim();
@@ -23,12 +48,20 @@ const NavBar = () => {
             setSuggestions([]);
             return;
         }
+        let stale = false;
         const timer = setTimeout(() => {
             api.searchUsers(q)
-                .then(data => setSuggestions(data.users || []))
-                .catch(() => setSuggestions([]));
+                .then(data => {
+                    if (!stale) setSuggestions(data.users || []);
+                })
+                .catch(() => {
+                    if (!stale) setSuggestions([]);
+                });
         }, 200);
-        return () => clearTimeout(timer);
+        return () => {
+            stale = true;
+            clearTimeout(timer);
+        };
     }, [query]);
 
     useEffect(() => {
@@ -138,6 +171,16 @@ const NavBar = () => {
                     </Link>
                     {user ? (
                         <>
+                            {user.isAdmin ? (
+                                <Link
+                                    to="/admin"
+                                    className={styles.iconLink}
+                                    title="Admin"
+                                    aria-label="Admin"
+                                >
+                                    <ShieldCheck size={19} />
+                                </Link>
+                            ) : null}
                             <Link
                                 to="/mystuff"
                                 className={styles.iconLink}
@@ -148,11 +191,14 @@ const NavBar = () => {
                             </Link>
                             <Link
                                 to="/notifications"
-                                className={styles.iconLink}
+                                className={`${styles.iconLink} ${styles.bellLink}`}
                                 title="Notifications"
-                                aria-label="Notifications"
+                                aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
                             >
                                 <Bell size={19} />
+                                {unread > 0 ? (
+                                    <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
+                                ) : null}
                             </Link>
                             <RoturAccount
                                 username={user.username}

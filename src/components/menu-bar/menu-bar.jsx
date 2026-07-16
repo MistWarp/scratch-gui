@@ -570,8 +570,8 @@ class MenuBar extends React.Component {
             initialTitle: this.props.projectTitle,
             action: getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged),
             onPublished: result => {
-                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: true}});
-                window.open(result.url, '_blank', 'noopener');
+                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared}});
+                this.props.onProjectUnchanged();
             }
         });
     }
@@ -1590,8 +1590,8 @@ class MenuBar extends React.Component {
                                                         />
                                                     ) : (
                                                         <FormattedMessage
-                                                            defaultMessage="Share to MistWarp"
-                                                            description="File menu item to share on MistWarp"
+                                                            defaultMessage="Save to MistWarp"
+                                                            description="File menu item to save the project to MistWarp"
                                                             id="mw.menuBar.share"
                                                         />
                                                     )}

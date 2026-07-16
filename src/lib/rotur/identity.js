@@ -84,14 +84,17 @@ const invalidateFailedValidator = error => {
     return true;
 };
 
-const restore = async () => {
+let restoreInFlight = null;
+
+const doRestore = async () => {
     setState({status: 'restoring'});
     adoptUrlToken();
     let user = null;
     try {
         user = await roturRestore();
     } catch (_) {
-        user = null;
+        setState({status: 'idle', user: null});
+        return null;
     }
     if (!user) {
         storeSession(null);
@@ -107,9 +110,18 @@ const restore = async () => {
     return user;
 };
 
+const restore = () => {
+    if (!restoreInFlight) {
+        restoreInFlight = doRestore().finally(() => {
+            restoreInFlight = null;
+        });
+    }
+    return restoreInFlight;
+};
+
 const login = async () => {
     const previousUser = state.user;
-    setState({status: 'logging-in', user: null});
+    setState({status: 'logging-in'});
     let user;
     try {
         user = await roturLogin();

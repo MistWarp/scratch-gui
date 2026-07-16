@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect, useState, useCallback} from 'react';
 import api from './api';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
+import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
 import {
     subscribe as subscribeIdentity,
@@ -22,13 +23,22 @@ const UserProvider = ({children}) => {
         } catch (e) {
             me = null;
         }
-        setUser(me);
+        let applied = false;
         try {
-            await onRoturLogin();
+            applied = (await onRoturLogin()).applied;
         } catch (e) {
-            // ignore
+            applied = false;
+        }
+        if (applied) {
+            try {
+                customThemeManager.themes.clear();
+                customThemeManager.loadCustomThemes();
+            } catch (e) {
+                // ignore
+            }
         }
         applyThemeVisuals(detectTheme());
+        setUser(me);
     }, []);
 
     const handleIdentity = useCallback(state => {

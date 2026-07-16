@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {publishToMistWarp, captureThumbnailDataUri} from '../../lib/community/publish.js';
+import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
 import styles from './share-window.css';
 
 class ShareWindow extends React.Component {
@@ -15,10 +15,14 @@ class ShareWindow extends React.Component {
             title: props.initialTitle || 'Untitled',
             thumbnail: null,
             status: null,
-            error: null
+            error: null,
+            done: null
         };
     }
     componentDidMount () {
+        if (this.props.action === 'update') {
+            return;
+        }
         captureThumbnailDataUri(this.props.vm).then(thumbnail => {
             if (thumbnail && !this.state.thumbnail) {
                 this.setState({thumbnail});
@@ -49,11 +53,12 @@ class ShareWindow extends React.Component {
         if (this.state.status) {
             return;
         }
-        this.setState({status: 'Publishing…', error: null});
+        const isUpdate = this.props.action === 'update';
+        this.setState({status: 'Saving…', error: null});
         let thumbnailBlob = null;
-        if (this.state.thumbnail) {
+        if (!isUpdate && this.state.thumbnail) {
             try {
-                thumbnailBlob = await (await fetch(this.state.thumbnail)).blob();
+                thumbnailBlob = await prepareThumbnailBlob(this.state.thumbnail);
             } catch (e) {
                 thumbnailBlob = null;
             }
@@ -61,18 +66,75 @@ class ShareWindow extends React.Component {
         try {
             const result = await publishToMistWarp({
                 vm: this.props.vm,
-                title: this.state.title,
+                title: isUpdate ? null : this.state.title,
                 thumbnailBlob,
+                updateOnly: isUpdate,
                 onProgress: ({message}) => this.setState({status: message})
             });
+            this.setState({status: null, done: result});
             this.props.onPublished(result);
         } catch (e) {
-            this.setState({status: null, error: e.message || 'Could not publish'});
+            this.setState({status: null, error: e.message || 'Could not save'});
         }
     }
     render () {
         const actionLabel = this.props.action === 'remix' ? 'Remix' :
-            this.props.action === 'update' ? 'Update' : 'Publish';
+            this.props.action === 'update' ? 'Update' : 'Save';
+        if (this.state.done) {
+            return (
+                <div className={styles.root}>
+                    <div className={styles.body}>
+                        <p className={styles.doneMessage}>
+                            {this.state.done.shared ?
+                                'Your project is saved and shared.' :
+                                'Your project is saved to MistWarp. ' +
+                                'It stays private until you share it from its project page.'}
+                        </p>
+                    </div>
+                    <div className={styles.footer}>
+                        <button
+                            className={styles.secondary}
+                            onClick={this.props.onClose}
+                        >Close</button>
+                        <button
+                            className={styles.primary}
+                            onClick={() => {
+                                window.open(this.state.done.url, '_blank', 'noopener');
+                                this.props.onClose();
+                            }}
+                        >Open project page</button>
+                    </div>
+                </div>
+            );
+        }
+        const isUpdate = this.props.action === 'update';
+        if (isUpdate) {
+            return (
+                <div className={styles.root}>
+                    <div className={styles.body}>
+                        <p className={styles.doneMessage}>
+                            {'Upload the current version of this project to MistWarp. ' +
+                            'The title and thumbnail stay as they are; edit those on the project page.'}
+                        </p>
+                        {this.state.error ? (
+                            <div className={styles.error}>{this.state.error}</div>
+                        ) : null}
+                    </div>
+                    <div className={styles.footer}>
+                        <button
+                            className={styles.secondary}
+                            onClick={this.props.onClose}
+                            disabled={!!this.state.status}
+                        >Cancel</button>
+                        <button
+                            className={styles.primary}
+                            onClick={this.handlePublish}
+                            disabled={!!this.state.status}
+                        >{this.state.status || actionLabel}</button>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className={styles.root}>
                 <div className={styles.body}>
@@ -144,13 +206,13 @@ ShareWindow.propTypes = {
         renderer: PropTypes.object
     }).isRequired,
     initialTitle: PropTypes.string,
-    action: PropTypes.oneOf(['share', 'remix', 'update']),
+    action: PropTypes.oneOf(['save', 'remix', 'update']),
     onClose: PropTypes.func.isRequired,
     onPublished: PropTypes.func.isRequired
 };
 
 ShareWindow.defaultProps = {
-    action: 'share'
+    action: 'save'
 };
 
 export default ShareWindow;

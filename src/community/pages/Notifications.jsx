@@ -40,8 +40,10 @@ const Notifications = () => {
         }
         api.notifications()
             .then(data => setItems(data.notifications || []))
-            .catch(() => setItems([]));
-        api.readNotifications().catch(() => {});
+            .catch(() => setItems([]))
+            .finally(() => api.readNotifications()
+                .then(() => window.dispatchEvent(new Event('mw:notifications-read')))
+                .catch(() => {}));
     }, [user]);
 
     if (loading) {
