@@ -62,7 +62,7 @@
     "css-loader": "^1.0.0",
     "dapjs": "2.3.0",
     "fake-indexeddb": "^6.2.5",
-    "fractch": "0.7.6",
+    "fractch": "0.7.8",
     "get-user-media-promise": "1.1.4",
     "immutable": "3.8.2",
     "intl-messageformat": "^2.2.0",
