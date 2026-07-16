@@ -4,22 +4,25 @@ import {ArrowLeft} from 'lucide-react';
 import rotur from '../rotur';
 import Avatar from '../components/Avatar.jsx';
 import setPageMeta from '../page-meta.js';
+import useLatest from '../use-latest.js';
 import styles from './Followers.module.css';
 
 const Followers = () => {
     const {name} = useParams();
     const [followers, setFollowers] = useState(null);
+    const beginLoad = useLatest();
 
     useEffect(() => {
         setPageMeta({title: `${name}'s followers`, image: rotur.avatar(name, 256), card: 'summary'});
     }, [name]);
 
     useEffect(() => {
+        const fresh = beginLoad();
         setFollowers(null);
         rotur.followers(name)
-            .then(data => setFollowers(data.followers || []))
-            .catch(() => setFollowers([]));
-    }, [name]);
+            .then(fresh(data => setFollowers(data.followers || [])))
+            .catch(fresh(() => setFollowers([])));
+    }, [name, beginLoad]);
 
     return (
         <main className={styles.page}>

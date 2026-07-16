@@ -2,7 +2,7 @@ import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
     Heart, HeartCrack, ArrowLeft, Play, GitFork, ExternalLink, Pencil, Plus, X, Check,
-    Globe, EyeOff, MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks,
+    Globe, EyeOff, MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl} from '../api';
@@ -14,6 +14,7 @@ import DiffView from '../components/DiffView.jsx';
 import RichText from '../components/RichText.jsx';
 import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
 import setPageMeta from '../page-meta.js';
+import useLatest from '../use-latest.js';
 import styles from './Project.module.css';
 
 const formatDate = ms => {
@@ -94,20 +95,32 @@ const Project = () => {
     const [savingTitle, setSavingTitle] = useState(false);
     const [thumbnailMenu, setThumbnailMenu] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
+    const [reportSent, setReportSent] = useState(false);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const [blockStats, setBlockStats] = useState(null);
     const [customExtensions, setCustomExtensions] = useState([]);
     const [unsandboxed, setUnsandboxed] = useState(false);
 
-    const load = useCallback(() => api.getProject(id)
-        .then(data => setProject(data.project))
-        .catch(() => setError('Project not found.')), [id]);
+    const beginLoad = useLatest();
+
+    const load = useCallback(() => {
+        const fresh = beginLoad();
+        return api.getProject(id)
+            .then(fresh(data => {
+                setProject(data.project);
+                setError(null);
+            }))
+            .catch(fresh(e => setError(
+                e && e.status === 404 ? 'Project not found.' : 'Could not load this project.'
+            )));
+    }, [id, beginLoad]);
 
     useEffect(() => {
         setProject(null);
         setError(null);
         setActionError(null);
+        setReportSent(false);
         setTab('Comments');
         load();
         api.view(id).catch(() => {});
@@ -214,6 +227,18 @@ const Project = () => {
         }
     };
 
+    const reportProject = async () => {
+        const reason = window.prompt('Why are you reporting this project?');
+        if (!reason || !reason.trim()) return;
+        try {
+            await api.report('project', id, reason.trim());
+            setActionError(null);
+            setReportSent(true);
+        } catch (e) {
+            setActionError(e.message || 'Could not send the report.');
+        }
+    };
+
     const toggleShared = async () => {
         try {
             await (project.shared ? api.unpublish(id) : api.publish(id));
@@ -305,7 +330,7 @@ const Project = () => {
         react: (commentId, type) => api.reactComment(id, commentId, type)
     }), [id]);
 
-    if (error) {
+    if (error && !project) {
         return <main className={styles.page}><p className={styles.status}>{error}</p></main>;
     }
     if (!project) {
@@ -341,12 +366,6 @@ const Project = () => {
                                     onKeyDown={handleTitleKeyDown}
                                 />
                             ) : <h1>{project.title}</h1>}
-                            {project.shared ? null : (
-                                <span className={styles.draftBadge}>
-                                    <EyeOff size={12} />
-                                    Unshared
-                                </span>
-                            )}
                         </div>
                         <Link
                             to={`/users/${project.owner}`}
@@ -379,10 +398,25 @@ const Project = () => {
                         <ExternalLink size={16} />
                         See inside
                     </a>
+                    {user && !project.isOwner ? (
+                        <button
+                            className={styles.remixButton}
+                            title="Report this project"
+                            onClick={reportProject}
+                        >
+                            <Flag size={16} />
+                            Report
+                        </button>
+                    ) : null}
                 </div>
             </div>
 
             {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
+            {reportSent ? (
+                <div className={styles.actionSuccess}>
+                    {'Thanks, your report was sent to the moderators.'}
+                </div>
+            ) : null}
             {thumbnailStatus !== 'idle' ? (
                 <div className={styles.actionSuccess}>
                     {thumbnailStatus === 'saving' ? 'Saving thumbnail…' : 'Thumbnail updated.'}

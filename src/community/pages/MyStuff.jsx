@@ -1,7 +1,10 @@
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Plus, Trash2, Heart, HeartCrack, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink} from 'lucide-react';
+import {
+    Plus, Trash2, Heart, HeartCrack, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive
+} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
+import {formatBytes} from '../format';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import styles from './MyStuff.module.css';
@@ -19,7 +22,24 @@ const MyStuff = () => {
     const [uploading, setUploading] = useState(false);
     const [actionError, setActionError] = useState('');
     const [openMenu, setOpenMenu] = useState('');
+    const [quota, setQuota] = useState(null);
     const uploadInput = useRef(null);
+
+    useEffect(() => {
+        if (!user) {
+            setQuota(null);
+            return;
+        }
+        let stale = false;
+        api.quota()
+            .then(data => {
+                if (!stale) setQuota(data);
+            })
+            .catch(() => {});
+        return () => {
+            stale = true;
+        };
+    }, [user, projects]);
 
     useEffect(() => {
         setFeaturedProject(user ? user.featuredProject : '');
@@ -42,12 +62,20 @@ const MyStuff = () => {
         load();
     }, [load]);
 
+    const clearFeaturedIf = async id => {
+        if (featuredProject !== id) return;
+        setFeaturedProject('');
+        try {
+            await api.updateProfile({featuredProject: ''});
+        } catch (e) {
+            // ignore
+        }
+    };
+
     const unpublish = async id => {
         try {
             await api.unpublish(id);
-            if (featuredProject === id) {
-                setFeaturedProject('');
-            }
+            await clearFeaturedIf(id);
             load();
         } catch (e) {
             setActionError(e.message);
@@ -72,6 +100,7 @@ const MyStuff = () => {
         try {
             setActionError('');
             await api.deleteProject(id);
+            await clearFeaturedIf(id);
             load();
         } catch (e) {
             setActionError(e.message);
@@ -127,6 +156,14 @@ const MyStuff = () => {
         <main className={styles.page}>
             <div className={styles.head}>
                 <h1>My stuff</h1>
+                {quota ? (
+                    <span
+                        className={styles.quota}
+                        title="Uploads from the last 7 days count toward this limit"
+                    >
+                        {`${formatBytes(quota.used)} of ${formatBytes(quota.limit)} uploaded this week`}
+                    </span>
+                ) : null}
                 <div className={styles.headActions}>
                     <input
                         ref={uploadInput}
@@ -219,6 +256,12 @@ const MyStuff = () => {
                                         <Play size={13} />
                                         {project.views || 0}
                                     </span>
+                                    {project.sizeBytes ? (
+                                        <span className={styles.rowStat}>
+                                            <HardDrive size={13} />
+                                            {formatBytes(project.sizeBytes)}
+                                        </span>
+                                    ) : null}
                                 </span>
                             </div>
                             <div className={styles.rowActions}>

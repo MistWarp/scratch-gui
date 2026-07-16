@@ -6,6 +6,7 @@ import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
 import RichText from './RichText.jsx';
 import {timeAgo, sameUser} from '../format';
+import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
 const CommentRow = ({comment, onReply, onDelete, onReact, canReply, canDelete, isReply}) => (
@@ -97,14 +98,25 @@ const CommentThread = ({source, canModerate, disabled}) => {
     const [replyText, setReplyText] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
+    const [loadFailed, setLoadFailed] = useState(false);
+
+    const beginLoad = useLatest();
 
     const load = useCallback(() => {
+        const fresh = beginLoad();
         source.list()
-            .then(d => setComments((d.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0))))
-            .catch(() => setComments([]));
-    }, [source]);
+            .then(fresh(d => {
+                setComments((d.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0)));
+                setLoadFailed(false);
+            }))
+            .catch(fresh(() => setLoadFailed(true)));
+    }, [source, beginLoad]);
 
-    useEffect(load, [load]);
+    useEffect(() => {
+        setComments([]);
+        setLoadFailed(false);
+        load();
+    }, [load]);
 
     const submit = async (text, parent) => {
         if (!text.trim() || busy) return;
@@ -214,7 +226,11 @@ const CommentThread = ({source, canModerate, disabled}) => {
                         ) : null}
                     </div>
                 </div>
-            )) : <p className={styles.empty}>No comments yet.</p>}
+            )) : (
+                <p className={styles.empty}>
+                    {loadFailed ? 'Comments could not be loaded right now.' : 'No comments yet.'}
+                </p>
+            )}
         </div>
     );
 };

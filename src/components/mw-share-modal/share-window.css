@@ -118,3 +118,10 @@
     font-size: 13px;
     margin-top: 4px;
 }
+
+.done-message {
+    color: var(--text-primary, #eee);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 8px 0;
+}

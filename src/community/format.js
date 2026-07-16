@@ -11,4 +11,11 @@ const timeAgo = ms => {
 
 const sameUser = (a, b) => Boolean(a && b) && a.toLowerCase() === b.toLowerCase();
 
-export {timeAgo, sameUser};
+const formatBytes = bytes => {
+    const value = Number(bytes) || 0;
+    if (value >= 1048576) return `${(value / 1048576).toFixed(1)} MB`;
+    if (value >= 1024) return `${Math.round(value / 1024)} KB`;
+    return `${value} B`;
+};
+
+export {timeAgo, sameUser, formatBytes};

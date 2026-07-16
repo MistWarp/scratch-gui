@@ -220,7 +220,8 @@
       "scratch-blocks": "link:../scratch-blocks",
       "scratch-render": "link:../scratch-render",
       "scratch-vm": "link:../scratch-vm",
-      "scratch-paint": "link:../scratch-paint"
+      "scratch-paint": "link:../scratch-paint",
+      "fractch": "link:../../fractch"
     },
     "patchedDependencies": {
       "scratch-parser": "patches/scratch-parser.patch",

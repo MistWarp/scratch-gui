@@ -547,8 +547,11 @@ class CustomTheme extends Theme {
             return this.originalAccent;
         }
 
-        const menuBarImage = document.documentElement.style
-            .getPropertyValue('--menu-bar-background-image');
+        // Only ever derive the gradient from this theme's own stored colors.
+        // Reading the live DOM here would export whatever theme is currently
+        // applied and silently overwrite every other theme with it.
+        const menuBarImage = (this.customAccent && this.customAccent.guiColors &&
+            this.customAccent.guiColors['menu-bar-background-image']) || '';
 
         if (!menuBarImage) return null;
 
@@ -704,6 +707,12 @@ class CustomTheme extends Theme {
         }
         if (data.createdAt) {
             Object.defineProperty(theme, 'createdAt', {value: data.createdAt, writable: false});
+        }
+
+        // Keep the stored gradient data as the export source of truth so the
+        // theme round-trips losslessly through import/export cycles.
+        if (data.accent && typeof data.accent === 'object' && Array.isArray(data.accent.colors)) {
+            theme.originalAccent = data.accent;
         }
 
         return theme;

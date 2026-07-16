@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams, Link} from 'react-router-dom';
 import api from '../api';
+import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import styles from './Explore.module.css';
@@ -19,20 +20,23 @@ const Explore = () => {
     const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const beginLoad = useLatest();
+
     useEffect(() => {
+        const fresh = beginLoad();
         setLoading(true);
         api.explore({sort, q, limit: 48})
-            .then(data => setProjects(data.projects || []))
-            .catch(() => setProjects([]))
-            .finally(() => setLoading(false));
+            .then(fresh(data => setProjects(data.projects || [])))
+            .catch(fresh(() => setProjects([])))
+            .finally(fresh(() => setLoading(false)));
         if (q.trim()) {
             api.searchUsers(q.trim())
-                .then(data => setPeople(data.users || []))
-                .catch(() => setPeople([]));
+                .then(fresh(data => setPeople(data.users || [])))
+                .catch(fresh(() => setPeople([])));
         } else {
             setPeople([]);
         }
-    }, [sort, q]);
+    }, [sort, q, beginLoad]);
 
     const setSort = key => {
         const next = new URLSearchParams(params);

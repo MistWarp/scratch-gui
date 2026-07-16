@@ -11,8 +11,12 @@ overrides:
   scratch-render: link:../scratch-render
   scratch-vm: link:../scratch-vm
   scratch-paint: link:../scratch-paint
+  fractch: link:../../fractch
 
 patchedDependencies:
+  '@turbowarp/scratch-svg-renderer':
+    hash: 81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9
+    path: patches/@turbowarp__scratch-svg-renderer.patch
   scratch-parser:
     hash: 7f03af2d2e61fc6d5af5eecddef071142f83bbae93a9e0733cf5b9a8e8b6a3eb
     path: patches/scratch-parser.patch
@@ -44,7 +48,7 @@ importers:
         version: 0.0.202403251715(webpack@4.47.0)
       '@turbowarp/scratch-svg-renderer':
         specifier: ^1.0.0-202312242305-12c360b
-        version: 1.1.0
+        version: 1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)
       '@turbowarp/startaudiocontext':
         specifier: ^1.0.0
         version: 1.0.0
@@ -91,8 +95,8 @@ importers:
         specifier: ^6.2.5
         version: 6.2.5
       fractch:
-        specifier: ^0.7.5
-        version: 0.7.5
+        specifier: link:../../fractch
+        version: link:../../fractch
       get-user-media-promise:
         specifier: 1.1.4
         version: 1.1.4
@@ -3101,11 +3105,6 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
-
-  fractch@0.7.5:
-    resolution: {integrity: sha512-PU7ph1wBlAi4E5Zap59wTyxtcgjWP4G9gMChwIR0VCk0BZdpInKc/M4OVp9SPcnLttaNAtJjXHI+rSKyHCRGFw==}
-    engines: {node: '>=18'}
-    hasBin: true
 
   fragment-cache@0.2.1:
     resolution: {integrity: sha512-GMBAbW9antB8iZRHLoGw0b3HANt57diZYFO/HL1JGIC1MjKrdmhxvrJbupnVvpys0zsz7yBApXdQyfepKly2kA==}
@@ -7759,7 +7758,7 @@ snapshots:
       - encoding
       - webpack
 
-  '@turbowarp/scratch-svg-renderer@1.1.0':
+  '@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)':
     dependencies:
       '@turbowarp/nanolog': 0.2.0
       base64-js: 1.2.1
@@ -10181,11 +10180,6 @@ snapshots:
       mime-types: 2.1.35
 
   forwarded@0.2.0: {}
-
-  fractch@0.7.5:
-    dependencies:
-      adm-zip: 0.5.18
-      yargs: 17.7.3
 
   fragment-cache@0.2.1:
     dependencies:

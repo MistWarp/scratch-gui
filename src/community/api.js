@@ -36,8 +36,14 @@ const embedUrl = (project, {unsandboxed = false} = {}) => {
     if (theme) {
         params.set('theme', theme);
         if (theme.includes('custom')) {
-            const customThemes = readStored('tw:custom-themes');
-            if (customThemes) params.set('theme_custom', customThemes);
+            try {
+                const uuid = JSON.parse(theme).customThemeUuid;
+                const library = JSON.parse(readStored('tw:custom-themes') || '[]');
+                const active = Array.isArray(library) ? library.filter(entry => entry.uuid === uuid) : [];
+                if (active.length) params.set('theme_custom', JSON.stringify(active));
+            } catch (e) {
+                // leave theme_custom out rather than shipping the whole library
+            }
         }
     }
     if (unsandboxed) params.set('allow_all', '1');
@@ -51,6 +57,7 @@ const api = {
     storeSession,
     logout,
     me: () => request('/me'),
+    quota: () => request('/me/quota'),
     settings: {
         get: () => request('/me/settings'),
         put: settings => request('/me/settings', {method: 'PUT', body: settings})
@@ -89,6 +96,17 @@ const api = {
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${name}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    report: (type, target, reason) => request('/reports', {method: 'POST', body: {type, target, reason}}),
+    admin: {
+        reports: () => request('/admin/reports'),
+        reportAction: (id, action) => request('/admin/reports/action', {method: 'POST', body: {id, action}}),
+        admins: () => request('/admin/admins'),
+        addAdmin: username => request('/admin/admins', {method: 'POST', body: {username}}),
+        removeAdmin: username => request('/admin/admins/remove', {method: 'POST', body: {username}}),
+        bans: () => request('/admin/bans'),
+        ban: (username, reason) => request('/admin/ban', {method: 'POST', body: {username, reason}}),
+        unban: username => request('/admin/unban', {method: 'POST', body: {username}})
+    },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),
     deleteNews: id => request(`/news/${id}`, {method: 'DELETE'}),

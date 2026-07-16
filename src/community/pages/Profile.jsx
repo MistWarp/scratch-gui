@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {useParams, Link} from 'react-router-dom';
-import {UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil} from 'lucide-react';
+import {UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag} from 'lucide-react';
 import api from '../api';
 import rotur from '../rotur';
 import {useUser} from '../UserContext.jsx';
@@ -8,6 +8,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
+import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';
 import styles from './Profile.module.css';
 
@@ -29,24 +30,29 @@ const Profile = () => {
     const [mwUser, setMwUser] = useState(null);
     const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
+    const [reportSent, setReportSent] = useState(false);
+
+    const beginLoad = useLatest();
 
     const load = useCallback(() => {
+        const fresh = beginLoad();
         rotur.profile(name, {includePosts: false})
-            .then(setProfile)
-            .catch(() => setError('This user does not exist on Rotur.'));
+            .then(fresh(setProfile))
+            .catch(fresh(() => setError('This user does not exist on Rotur.')));
         api.getUser(name)
-            .then(setMwUser)
-            .catch(() => setMwUser(null));
+            .then(fresh(setMwUser))
+            .catch(fresh(() => setMwUser(null)));
         rotur.followers(name)
-            .then(data => setFollowers(data.followers || []))
-            .catch(() => setFollowers([]));
-    }, [name]);
+            .then(fresh(data => setFollowers(data.followers || [])))
+            .catch(fresh(() => setFollowers([])));
+    }, [name, beginLoad]);
 
     useEffect(() => {
         setProfile(null);
         setMwUser(null);
         setFollowers([]);
         setError(null);
+        setReportSent(false);
         load();
     }, [name, load]);
 
@@ -59,6 +65,18 @@ const Profile = () => {
             card: 'summary'
         });
     }, [profile, name]);
+
+    const reportUser = async () => {
+        if (reportSent) return;
+        const reason = window.prompt(`Why are you reporting ${name}?`);
+        if (!reason || !reason.trim()) return;
+        try {
+            await api.report('user', name, reason.trim());
+            setReportSent(true);
+        } catch (e) {
+            return;
+        }
+    };
 
     const toggleFollow = async () => {
         if (!user || !profile) return;
@@ -156,6 +174,16 @@ const Profile = () => {
                         >
                             {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
                             {profile.followed ? 'Following' : 'Follow'}
+                        </button>
+                    ) : null}
+                    {user && !isSelf ? (
+                        <button
+                            className={styles.followingButton}
+                            title="Report this user"
+                            onClick={reportUser}
+                        >
+                            <Flag size={15} />
+                            {reportSent ? 'Reported' : 'Report'}
                         </button>
                     ) : null}
                     {isSelf ? (

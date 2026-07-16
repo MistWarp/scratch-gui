@@ -1,0 +1,105 @@
+.page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 22px 88px;
+}
+
+.page h1 {
+    margin: 0 0 20px;
+    font-size: 26px;
+}
+
+.page h2 {
+    margin: 28px 0 12px;
+    font-size: 18px;
+}
+
+.status {
+    color: var(--text-dim);
+}
+
+.error {
+    color: #e25555;
+    margin: 8px 0;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+}
+
+.row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.row-title {
+    font-weight: 600;
+}
+
+.row-meta {
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.reason {
+    font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.secondary {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.danger {
+    background: #e25555;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.add-admin {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.input {
+    background: var(--bg-card);
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 14px;
+}

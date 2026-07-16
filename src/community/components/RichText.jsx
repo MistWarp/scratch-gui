@@ -2,7 +2,26 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api, {projectUrl} from '../api';
 
-const TOKEN = /(https?:\/\/[^\s]+|(?<![A-Za-z0-9_])@[A-Za-z0-9_]+)/g;
+const TOKEN = /https?:\/\/[^\s]+|@[A-Za-z0-9_]+/g;
+
+const splitParts = text => {
+    const parts = [];
+    let last = 0;
+    let match;
+    TOKEN.lastIndex = 0;
+    while ((match = TOKEN.exec(text)) !== null) {
+        const start = match.index;
+        const value = match[0];
+        if (value.startsWith('@') && start > 0 && /[A-Za-z0-9_]/.test(text[start - 1])) {
+            continue;
+        }
+        parts.push(text.slice(last, start));
+        parts.push(value);
+        last = start + value.length;
+    }
+    parts.push(text.slice(last));
+    return parts;
+};
 
 const titleCache = new Map();
 
@@ -40,8 +59,7 @@ const projectIdFrom = url => {
     }
 };
 
-const RichText = ({text}) => String(text || '')
-    .split(TOKEN)
+const RichText = ({text}) => splitParts(String(text || ''))
     .map((part, index) => {
         if (/^@[A-Za-z0-9_]+$/.test(part)) {
             return (

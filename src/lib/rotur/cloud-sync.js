@@ -171,7 +171,10 @@ const pushToCloud = () => {
     pushChain = pushChain.catch(() => null).then(async () => {
         if (suppressPush || !loadSession()) return false;
         try {
-            await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
+            const response = await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
+            if (response && Number(response.updatedAt)) {
+                setLocalUpdated(Number(response.updatedAt));
+            }
             return true;
         } catch (e) {
             // eslint-disable-next-line no-console
@@ -219,8 +222,9 @@ const pullFromCloud = async () => {
  * @param {number} delayMs debounce delay in milliseconds
  */
 const notifyLocalChange = (delayMs = 800) => {
-    if (suppressPush || !loadSession()) return;
+    if (suppressPush) return;
     stampLocalChange();
+    if (!loadSession()) return;
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {
         pushTimer = null;

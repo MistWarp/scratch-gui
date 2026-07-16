@@ -71,19 +71,26 @@ const fetchCurrentUser = async () => {
     if (!rotur.loggedIn) {
         return null;
     }
+    let sawNetworkError = false;
     try {
         const user = normalizeUser(await rotur.me.get());
         if (user) return user;
     } catch (_) {
-        // fall through
+        sawNetworkError = true;
     }
     try {
         const auth = await rotur.me.checkAuth();
         if (auth && auth.username) {
             return normalizeUser({username: auth.username});
         }
+        return null;
     } catch (_) {
-        // fall through
+        sawNetworkError = true;
+    }
+    if (sawNetworkError) {
+        const error = new Error('Could not reach Rotur');
+        error.transient = true;
+        throw error;
     }
     return null;
 };

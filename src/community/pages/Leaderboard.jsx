@@ -53,7 +53,7 @@ const Leaderboard = () => {
                                 </span>
                                 <span className={styles.followers}>
                                     <Users size={16} />
-                                    {person.follower_count.toLocaleString()} followers
+                                    {(person.follower_count || 0).toLocaleString()} followers
                                 </span>
                             </Link>
                         </li>
