@@ -259,11 +259,15 @@ class TWSecurityManagerComponent extends React.Component {
         }
         if (this.loadAllUnsandboxed) return true;
         const {showModal} = await this.acquireModalLock();
+        let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {
             url,
             showLoadAll: true,
-            unsandboxed: getPersistedUnsandboxed(),
-            onChangeUnsandboxed: this.handleChangeUnsandboxed.bind(this)
+            unsandboxed,
+            onChangeUnsandboxed: e => {
+                unsandboxed = e.target.checked;
+                this.handleChangeUnsandboxed(e);
+            }
         });
         if (!allowed) return false;
 
@@ -272,7 +276,6 @@ class TWSecurityManagerComponent extends React.Component {
             return true;
         }
 
-        const unsandboxed = this.state.data.unsandboxed;
         setPersistedUnsandboxed(unsandboxed);
         if (unsandboxed) {
             manuallyTrustExtension(url);

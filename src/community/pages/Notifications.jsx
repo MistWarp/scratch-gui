@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, MessageCircle, GitFork, UserPlus, AtSign, ShieldAlert, Megaphone} from 'lucide-react';
+import {Heart, MessageCircle, GitFork, UserPlus, AtSign, ShieldAlert, Megaphone, Flag} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -16,10 +16,18 @@ const ICONS = {
     mention: AtSign,
     standing: ShieldAlert,
     moderation: ShieldAlert,
-    news: Megaphone
+    news: Megaphone,
+    report_update: Flag
 };
 
-const SYSTEM_TYPES = ['standing', 'moderation', 'news'];
+const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
+
+const REPORT_OUTCOMES = {
+    dismiss: 'reviewed; no action was taken',
+    warn_user: 'actioned with a warning',
+    ban_user: 'actioned with a ban',
+    unshare_project: 'actioned; the project was unshared'
+};
 
 const describe = n => {
     switch (n.type) {
@@ -36,6 +44,7 @@ const describe = n => {
         <span>Your account standing is now <strong>{n.level}</strong>.</span>;
     case 'moderation': return <span>{n.message || 'A moderator sent you a message.'}</span>;
     case 'news': return <span>New announcement: <strong>{n.title}</strong></span>;
+    case 'report_update': return <span>Your report was {REPORT_OUTCOMES[n.action] || 'reviewed'}.</span>;
     default: return <span>did something</span>;
     }
 };

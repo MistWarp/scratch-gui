@@ -45,7 +45,11 @@ export default async function ({ addon, console }) {
   document.head.appendChild(textShadowCss);
 
   const updateBlockly = () => {
-    blocklyInstance.Field.cacheWidths_ = {}; // Clear text width cache
+    if (typeof blocklyInstance.Field.clearFontCache === "function") {
+      blocklyInstance.Field.clearFontCache();
+    } else {
+      blocklyInstance.Field.cacheWidths_ = {};
+    }
     // If font size has changed, middle click popup needs to clear it's cache too
     clearTextWidthCache();
 

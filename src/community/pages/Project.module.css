@@ -327,6 +327,49 @@
     background: var(--bg-raised);
 }
 
+.menuWrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.actionMenu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 7px);
+    z-index: 5;
+    width: 210px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.actionMenu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--mw-text);
+    padding: 8px 10px;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.actionMenu button:hover {
+    background: var(--bg-raised);
+}
+
+.actionMenu .menuDanger {
+    color: #e25555;
+}
+
 .sideCol {
     position: relative;
     min-width: 0;
@@ -530,6 +573,25 @@
     color: var(--accent-strong);
     font-size: 13px;
     font-weight: 600;
+}
+
+.tagRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    padding: 4px 9px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tag:hover {
+    background: var(--accent-softer);
 }
 
 .bottomGrid {

@@ -113,7 +113,9 @@ const api = {
         messageUser: (username, message) =>
             request('/admin/user/message', {method: 'POST', body: {username, message}}),
         updateUserProfile: (username, patch) =>
-            request('/admin/user/profile', {method: 'POST', body: {username, ...patch}})
+            request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
+        searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
+        stats: () => request('/admin/stats')
     },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),
