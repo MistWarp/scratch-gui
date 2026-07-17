@@ -245,10 +245,14 @@ class TWSecurityManagerComponent extends React.Component {
             return true;
         }
         if (!isPlatformProjectLoad()) {
-            log.info(`Loading extension ${url} automatically; project is not from the MistWarp platform`);
+            log.info(`Loading extension ${url} unsandboxed; project is not from the MistWarp platform`);
+            manuallyTrustExtension(url);
             return true;
         }
-        if (!shouldWarn('loadExtension')) return true;
+        if (!shouldWarn('loadExtension')) {
+            manuallyTrustExtension(url);
+            return true;
+        }
         if (url === 'builtin:patching') {
             const {showModal} = await this.acquireModalLock();
             return showModal(SecurityModals.LoadExtension, {
