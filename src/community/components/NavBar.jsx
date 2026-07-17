@@ -3,6 +3,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {Search, Compass, Plus, FolderOpen, Bell, Trophy, LogIn, ShieldCheck} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
+import rotur from '../rotur';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
@@ -12,15 +13,18 @@ const NavBar = () => {
     const {user, loading, login, logout} = useUser();
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
+    const [projectSuggestions, setProjectSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
     const [unread, setUnread] = useState(0);
+    const [openReports, setOpenReports] = useState(0);
     const navigate = useNavigate();
     const searchRef = useRef(null);
 
     useEffect(() => {
         if (!user) {
             setUnread(0);
+            setOpenReports(0);
             return;
         }
         let stale = false;
@@ -30,15 +34,24 @@ const NavBar = () => {
                     if (!stale) setUnread((data.notifications || []).filter(n => !n.read).length);
                 })
                 .catch(() => {});
+            if (user.isAdmin) {
+                api.admin.reports()
+                    .then(data => {
+                        if (!stale) setOpenReports((data.reports || []).filter(r => !r.resolved).length);
+                    })
+                    .catch(() => {});
+            }
         };
         refresh();
         const timer = setInterval(refresh, 60000);
         const onRead = () => setUnread(0);
         window.addEventListener('mw:notifications-read', onRead);
+        window.addEventListener('mw:reports-updated', refresh);
         return () => {
             stale = true;
             clearInterval(timer);
             window.removeEventListener('mw:notifications-read', onRead);
+            window.removeEventListener('mw:reports-updated', refresh);
         };
     }, [user]);
 
@@ -46,17 +59,25 @@ const NavBar = () => {
         const q = query.trim();
         if (q.length < 2) {
             setSuggestions([]);
+            setProjectSuggestions([]);
             return;
         }
         let stale = false;
         const timer = setTimeout(() => {
-            api.searchUsers(q)
-                .then(data => {
-                    if (!stale) setSuggestions(data.users || []);
-                })
-                .catch(() => {
-                    if (!stale) setSuggestions([]);
+            Promise.all([
+                api.searchUsers(q).catch(() => ({users: []})),
+                api.explore({q, limit: 5}).catch(() => ({projects: []}))
+            ]).then(([u, p]) => {
+                if (stale) return;
+                const users = u.users || [];
+                setSuggestions(users);
+                setProjectSuggestions(p.projects || []);
+                Promise.all(users.map(person =>
+                    rotur.followerCount(person.username).then(followers => ({...person, followers}))
+                )).then(enriched => {
+                    if (!stale) setSuggestions(enriched);
                 });
+            });
         }, 200);
         return () => {
             stale = true;
@@ -84,6 +105,12 @@ const NavBar = () => {
         setSuggestionsOpen(false);
         setQuery('');
         navigate(`/users/${name}`);
+    };
+
+    const goToProject = id => {
+        setSuggestionsOpen(false);
+        setQuery('');
+        navigate(`/project/${id}`);
     };
 
     return (
@@ -137,8 +164,24 @@ const NavBar = () => {
                         }}
                         onFocus={() => setSuggestionsOpen(true)}
                     />
-                    {suggestionsOpen && suggestions.length ? (
+                    {suggestionsOpen && (suggestions.length || projectSuggestions.length) ? (
                         <div className={styles.suggestions}>
+                            {projectSuggestions.map(project => (
+                                <button
+                                    key={project.id}
+                                    type="button"
+                                    className={styles.suggestion}
+                                    onClick={() => goToProject(project.id)}
+                                >
+                                    <img
+                                        className={styles.suggestionThumb}
+                                        src={project.thumbUrl}
+                                        alt=""
+                                    />
+                                    <span>{project.title}</span>
+                                    <span className={styles.suggestionMeta}>by {project.owner}</span>
+                                </button>
+                            ))}
                             {suggestions.map(person => (
                                 <button
                                     key={person.username}
@@ -174,11 +217,14 @@ const NavBar = () => {
                             {user.isAdmin ? (
                                 <Link
                                     to="/admin"
-                                    className={styles.iconLink}
+                                    className={`${styles.iconLink} ${styles.bellLink}`}
                                     title="Admin"
-                                    aria-label="Admin"
+                                    aria-label={openReports > 0 ? `Admin (${openReports} open reports)` : 'Admin'}
                                 >
                                     <ShieldCheck size={19} />
+                                    {openReports > 0 ? (
+                                        <span className={styles.bellBadge}>{openReports > 9 ? '9+' : openReports}</span>
+                                    ) : null}
                                 </Link>
                             ) : null}
                             <Link

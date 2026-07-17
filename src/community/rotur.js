@@ -38,12 +38,33 @@ const avatar = (username, size = 128, radius = 0) => {
 
 const banner = username => `${AVATARS}/.banners/${encodeURIComponent((username || '').toLowerCase())}`;
 
+const getStatus = username => get('/status/get', {name: username});
+
+const followerCountCache = new Map();
+const followerCount = async username => {
+    const key = (username || '').toLowerCase();
+    if (followerCountCache.has(key)) {
+        return followerCountCache.get(key);
+    }
+    try {
+        const profile = await get(`/profile/${encodeURIComponent(username)}`, {include_posts: '0'});
+        const count = typeof profile.followers === 'number' ? profile.followers : 0;
+        followerCountCache.set(key, count);
+        return count;
+    } catch (e) {
+        return 0;
+    }
+};
+
 const followerLeaderboard = async (max = 15) => {
     const users = await get('/stats/followers', {max});
     return Promise.all(users.map(async user => {
         try {
-            const profile = await get(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'});
-            return {...user, index: profile.index, status: profile.status};
+            const [profile, status] = await Promise.all([
+                get(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'}),
+                getStatus(user.username).catch(() => null)
+            ]);
+            return {...user, index: profile.index, status};
         } catch (e) {
             return user;
         }
@@ -59,6 +80,8 @@ const rotur = {
     unfollow: username => get('/unfollow', {username}),
     followers: username => get('/followers', {name: username}),
     following: username => get('/following', {name: username}),
+    status: getStatus,
+    followerCount,
     followerLeaderboard
 };
 

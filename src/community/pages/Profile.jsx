@@ -32,6 +32,8 @@ const Profile = () => {
     const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
     const [reporting, setReporting] = useState(false);
+    const [adminProjects, setAdminProjects] = useState([]);
+    const [presence, setPresence] = useState(null);
 
     const beginLoad = useLatest();
 
@@ -56,6 +58,31 @@ const Profile = () => {
         setReporting(false);
         load();
     }, [name, load]);
+
+    useEffect(() => {
+        setPresence(null);
+        let active = true;
+        rotur.status(name)
+            .then(data => active && setPresence(data))
+            .catch(() => active && setPresence(null));
+        return () => {
+            active = false;
+        };
+    }, [name]);
+
+    useEffect(() => {
+        if (!user || !user.isAdmin) {
+            setAdminProjects([]);
+            return () => {};
+        }
+        let active = true;
+        api.myProjects(name)
+            .then(data => active && setAdminProjects(data.projects || []))
+            .catch(() => active && setAdminProjects([]));
+        return () => {
+            active = false;
+        };
+    }, [name, user]);
 
     useEffect(() => {
         if (!profile) return;
@@ -110,10 +137,12 @@ const Profile = () => {
     const projects = (mwUser && mwUser.projects) || [];
     const featuredProject = mwUser ? projects.find(project => project.id === mwUser.featuredProject) : null;
     const otherProjects = featuredProject ? projects.filter(project => project.id !== featuredProject.id) : projects;
+    const unsharedProjects = adminProjects.filter(project => !project.shared);
     const onMistWarp = !mwUser || mwUser.exists !== false;
     const year = joinYear(profile.created);
-    const statusDotClass = profile.status && profile.status.presence === 'online' ?
-        styles.onlineDot : styles.offlineDot;
+    const isOnline = Boolean(presence && presence.presence && presence.presence !== 'offline');
+    const statusDotClass = isOnline ? styles.onlineDot : styles.offlineDot;
+    const statusText = presence ? (presence.status || presence.presence) : '';
 
     return (
         <main className={styles.page}>
@@ -139,10 +168,10 @@ const Profile = () => {
                         <h1>{profile.username || name}</h1>
                         {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
                         <p className={styles.bio}>{profile.bio ? <RichText text={profile.bio} /> : 'No bio yet.'}</p>
-                        {profile.status ? (
+                        {presence ? (
                             <span className={styles.userStatus}>
                                 <span className={statusDotClass} />
-                                <RichText text={profile.status.status || profile.status.presence} />
+                                <RichText text={statusText || (isOnline ? 'Online' : 'Offline')} />
                             </span>
                         ) : null}
                         <div className={styles.meta}>
@@ -216,6 +245,20 @@ const Profile = () => {
                     <h2 className={styles.sectionTitle}>Projects</h2>
                     <div className={styles.grid}>
                         {otherProjects.map(project => (
+                            <ProjectCard
+                                key={project.id}
+                                project={project}
+                            />
+                        ))}
+                    </div>
+                </section>
+            ) : null}
+
+            {user && user.isAdmin && unsharedProjects.length ? (
+                <section className={styles.section}>
+                    <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
+                    <div className={styles.grid}>
+                        {unsharedProjects.map(project => (
                             <ProjectCard
                                 key={project.id}
                                 project={project}

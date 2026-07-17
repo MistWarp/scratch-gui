@@ -1,14 +1,14 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
-import {useParams, Link} from 'react-router-dom';
+import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
     Heart, HeartCrack, ArrowLeft, Play, GitFork, ExternalLink, Pencil, Plus, X, Check,
     Globe, EyeOff, MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
-    ShieldCheck, ShieldAlert
+    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
-import {timeAgo} from '../format';
+import {timeAgo, sameUser} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
@@ -88,6 +88,7 @@ const analyzeBlocks = data => {
 const Project = () => {
     const {id} = useParams();
     const {user} = useUser();
+    const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [error, setError] = useState(null);
     const [actionError, setActionError] = useState(null);
@@ -97,6 +98,9 @@ const Project = () => {
     const [thumbnailMenu, setThumbnailMenu] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
     const [reporting, setReporting] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const [blockStats, setBlockStats] = useState(null);
@@ -248,6 +252,51 @@ const Project = () => {
         }
     };
 
+    const removeProject = async () => {
+        setMenuOpen(false);
+        if (!window.confirm('Delete this project? This cannot be undone.')) return;
+        try {
+            await api.deleteProject(id);
+            navigate(`/users/${project.owner}`);
+        } catch (e) {
+            setActionError(e.message || 'Could not delete this project.');
+        }
+    };
+
+    const copyLink = () => {
+        setMenuOpen(false);
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                setActionError(null);
+                setThumbnailStatus('idle');
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2000);
+            })
+            .catch(() => setActionError('Could not copy the link.'));
+    };
+    const menuShare = () => {
+        setMenuOpen(false);
+        toggleShared();
+    };
+    const menuComments = () => {
+        setMenuOpen(false);
+        toggleComments();
+    };
+    const menuReport = () => {
+        setMenuOpen(false);
+        setReporting(true);
+    };
+
+    useEffect(() => {
+        const onDown = event => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setMenuOpen(false);
+            }
+        };
+        window.addEventListener('mousedown', onDown);
+        return () => window.removeEventListener('mousedown', onDown);
+    }, []);
+
     const pickThumbnail = event => {
         const file = event.target.files && event.target.files[0];
         event.target.value = '';
@@ -363,15 +412,6 @@ const Project = () => {
                     </div>
                 </div>
                 <div className={styles.topActions}>
-                    {project.isOwner ? (
-                        <button
-                            className={styles.remixButton}
-                            onClick={toggleShared}
-                        >
-                            {project.shared ? <EyeOff size={16} /> : <Globe size={16} />}
-                            {project.shared ? 'Unshare' : 'Share'}
-                        </button>
-                    ) : null}
                     <button
                         className={styles.remixButton}
                         onClick={remix}
@@ -387,16 +427,56 @@ const Project = () => {
                         <ExternalLink size={16} />
                         See inside
                     </a>
-                    {user && !project.isOwner ? (
+                    <div
+                        className={styles.menuWrap}
+                        ref={menuRef}
+                    >
                         <button
                             className={styles.remixButton}
-                            title="Report this project"
-                            onClick={() => setReporting(true)}
+                            title="More actions"
+                            aria-label="More actions"
+                            onClick={() => setMenuOpen(open => !open)}
                         >
-                            <Flag size={16} />
-                            Report
+                            <MoreHorizontal size={18} />
                         </button>
-                    ) : null}
+                        {menuOpen ? (
+                            <div className={styles.actionMenu}>
+                                <button onClick={copyLink}>
+                                    <Link2 size={15} />
+                                    Copy link
+                                </button>
+                                {project.isOwner ? (
+                                    <button onClick={menuShare}>
+                                        {project.shared ? <EyeOff size={15} /> : <Globe size={15} />}
+                                        {project.shared ? 'Unshare' : 'Share'}
+                                    </button>
+                                ) : null}
+                                {project.isOwner ? (
+                                    <button onClick={menuComments}>
+                                        {project.commentsOff ?
+                                            <MessageSquare size={15} /> :
+                                            <MessageSquareOff size={15} />}
+                                        {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                                    </button>
+                                ) : null}
+                                {user && !sameUser(project.owner, user.username) ? (
+                                    <button onClick={menuReport}>
+                                        <Flag size={15} />
+                                        Report
+                                    </button>
+                                ) : null}
+                                {project.isOwner ? (
+                                    <button
+                                        className={styles.menuDanger}
+                                        onClick={removeProject}
+                                    >
+                                        <Trash2 size={15} />
+                                        Delete project
+                                    </button>
+                                ) : null}
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
             </div>
 
@@ -408,6 +488,7 @@ const Project = () => {
                 />
             ) : null}
             {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
+            {copied ? <div className={styles.actionSuccess}>Link copied to clipboard.</div> : null}
             {thumbnailStatus !== 'idle' ? (
                 <div className={styles.actionSuccess}>
                     {thumbnailStatus === 'saving' ? 'Saving thumbnail…' : 'Thumbnail updated.'}
@@ -546,16 +627,6 @@ const Project = () => {
                         ) : (
                             <h2 className={styles.colTitle}>Comments</h2>
                         )}
-                        {project.isOwner && tab === 'Comments' ? (
-                            <button
-                                className={styles.commentsToggle}
-                                title={project.commentsOff ? 'Turn comments on' : 'Turn comments off'}
-                                onClick={toggleComments}
-                            >
-                                {project.commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
-                                {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
-                            </button>
-                        ) : null}
                     </div>
                     {tab === 'Comments' && (
                         <CommentThread
@@ -585,7 +656,18 @@ const Project = () => {
     );
 };
 
-const INFO_TABS = ['Instructions', 'Notes', 'Credits'];
+const INFO_TABS = ['Instructions', 'Notes', 'Credits', 'Tags'];
+
+const parseTags = text => {
+    const seen = [];
+    text.split(/[\s,]+/).forEach(raw => {
+        const tag = raw.replace(/^#+/, '').trim().toLowerCase();
+        if (tag && !seen.includes(tag) && seen.length < 10) {
+            seen.push(tag);
+        }
+    });
+    return seen;
+};
 
 const InfoPanel = ({project, onSaved}) => {
     const [tab, setTab] = useState('Instructions');
@@ -594,11 +676,13 @@ const InfoPanel = ({project, onSaved}) => {
     const [instructions, setInstructions] = useState(project.instructions || '');
     const [notes, setNotes] = useState(project.notes || '');
     const [credits, setCredits] = useState(project.credits || []);
+    const [tagsText, setTagsText] = useState((project.tags || []).join(' '));
 
     const startEdit = () => {
         setInstructions(project.instructions || '');
         setNotes(project.notes || '');
         setCredits(project.credits || []);
+        setTagsText((project.tags || []).join(' '));
         setEditing(true);
     };
 
@@ -608,7 +692,8 @@ const InfoPanel = ({project, onSaved}) => {
             await api.updateProject(project.id, {
                 instructions,
                 notes,
-                credits: credits.filter(c => c.who && c.who.trim())
+                credits: credits.filter(c => c.who && c.who.trim()),
+                tags: parseTags(tagsText)
             });
             setEditing(false);
             onSaved();
@@ -741,6 +826,30 @@ const InfoPanel = ({project, onSaved}) => {
                             ))}
                         </ul>
                     ) : <p className={styles.panelEmpty}>No credits listed.</p>
+                )}
+
+                {tab === 'Tags' && (
+                    editing ? (
+                        <div>
+                            <input
+                                className={styles.panelInput}
+                                value={tagsText}
+                                placeholder="platformer game pixel-art"
+                                onChange={e => setTagsText(e.target.value)}
+                            />
+                            <p className={styles.panelEmpty}>Separate tags with spaces. Up to 10.</p>
+                        </div>
+                    ) : (project.tags && project.tags.length) ? (
+                        <div className={styles.tagRow}>
+                            {project.tags.map(tag => (
+                                <Link
+                                    key={tag}
+                                    to={`/explore?q=${encodeURIComponent(`#${tag}`)}`}
+                                    className={styles.tag}
+                                >{`#${tag}`}</Link>
+                            ))}
+                        </div>
+                    ) : <p className={styles.panelEmpty}>No tags yet.</p>
                 )}
 
                 {!editing && project.remixParent ? (

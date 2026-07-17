@@ -144,6 +144,15 @@
     white-space: nowrap;
 }
 
+.suggestionThumb {
+    width: 40px;
+    height: 30px;
+    border-radius: var(--radius-xs);
+    object-fit: cover;
+    background: var(--bg-raised);
+    flex-shrink: 0;
+}
+
 .account {
     display: flex;
     align-items: stretch;

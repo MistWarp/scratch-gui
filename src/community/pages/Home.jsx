@@ -54,11 +54,17 @@ const Row = ({title, icon, action, projects, loading}) => {
     );
 };
 
-const ActivitySection = ({user}) => {
+const ActivitySection = ({user, login}) => {
     const [items, setItems] = useState([]);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
+        if (!user) {
+            setItems([]);
+            setLoaded(true);
+            return;
+        }
+        setLoaded(false);
         rotur.following(user.username)
             .then(data => {
                 const following = data.following || [];
@@ -70,23 +76,25 @@ const ActivitySection = ({user}) => {
             .then(data => setItems(data.activity || []))
             .catch(() => setItems([]))
             .finally(() => setLoaded(true));
-    }, [user.username]);
+    }, [user]);
 
-    if (!loaded || !items.length) {
-        return null;
-    }
-
-    return (
-        <section className={styles.feedBox}>
-            <div className={styles.rowHead}>
-                <h2>
-                    <Users
-                        size={19}
-                        className={styles.rowIcon}
-                    />
-                    From people you follow
-                </h2>
+    let body;
+    if (!user) {
+        body = (
+            <div className={styles.feedMessage}>
+                <span>Log in to see your friends&apos; activity.</span>
+                <button
+                    className={styles.feedSignIn}
+                    onClick={login}
+                >Sign in with Rotur</button>
             </div>
+        );
+    } else if (!loaded) {
+        body = <div className={styles.feedMessage}>Loading…</div>;
+    } else if (!items.length) {
+        body = <div className={styles.feedMessage}>No recent activity from people you follow yet.</div>;
+    } else {
+        body = (
             <div className={`${styles.activityList} ${styles.feedScroll}`}>
                 {items.map((item, index) => {
                     const Icon = ACTIVITY_ICONS[item.type] || Heart;
@@ -117,6 +125,21 @@ const ActivitySection = ({user}) => {
                     );
                 })}
             </div>
+        );
+    }
+
+    return (
+        <section className={styles.feedBox}>
+            <div className={styles.rowHead}>
+                <h2>
+                    <Users
+                        size={19}
+                        className={styles.rowIcon}
+                    />
+                    From people you follow
+                </h2>
+            </div>
+            {body}
         </section>
     );
 };
@@ -228,7 +251,10 @@ const Home = () => {
 
             <div className={styles.homeFeeds}>
                 <NewsSection />
-                {user ? <ActivitySection user={user} /> : null}
+                <ActivitySection
+                    user={user}
+                    login={login}
+                />
             </div>
 
             <Row
