@@ -7,6 +7,194 @@ import {timeAgo} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './Admin.module.css';
 
+const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
+
+const UserManager = () => {
+    const [query, setQuery] = useState('');
+    const [data, setData] = useState(null);
+    const [error, setError] = useState('');
+    const [note, setNote] = useState('');
+    const [level, setLevel] = useState('good');
+    const [reason, setReason] = useState('');
+    const [message, setMessage] = useState('');
+    const [bio, setBio] = useState('');
+
+    const loadUser = useCallback(async name => {
+        const target = (name || '').trim();
+        if (!target) return;
+        setError('');
+        setNote('');
+        try {
+            const result = await api.admin.getUser(target);
+            setData(result);
+            setLevel((result.standing && result.standing.level) || 'good');
+            setReason('');
+            setMessage('');
+            setBio(result.bio || '');
+        } catch (e) {
+            setData(null);
+            setError(e.message || 'Could not load that user.');
+        }
+    }, []);
+
+    const run = async (fn, ok) => {
+        setError('');
+        setNote('');
+        try {
+            await fn();
+            if (ok) setNote(ok);
+            await loadUser(data.username);
+        } catch (e) {
+            setError(e.message || 'Action failed.');
+        }
+    };
+
+    const applyStanding = () =>
+        run(() => api.admin.setStanding(data.username, level, reason.trim()), 'Standing updated.');
+    const sendMessage = () =>
+        run(() => api.admin.messageUser(data.username, message.trim()), 'Message sent.');
+    const saveBio = () =>
+        run(() => api.admin.updateUserProfile(data.username, {bio}), 'Bio saved.');
+    const toggleComments = () =>
+        run(() => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
+    const unshareProject = pid => run(() => api.unpublish(pid), 'Project unshared.');
+    const deleteProject = pid => run(() => api.deleteProject(pid), 'Project deleted.');
+
+    return (
+        <div>
+            <h2>Users</h2>
+            <div className={styles.addAdmin}>
+                <input
+                    className={styles.input}
+                    placeholder="username"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter') loadUser(query);
+                    }}
+                />
+                <button
+                    className={styles.secondary}
+                    onClick={() => loadUser(query)}
+                >Look up</button>
+            </div>
+            {error ? <p className={styles.error}>{error}</p> : null}
+            {note ? <p className={styles.status}>{note}</p> : null}
+            {data ? (
+                <div className={styles.userCard}>
+                    <div className={styles.userHead}>
+                        <Avatar
+                            username={data.username}
+                            size={44}
+                        />
+                        <div className={styles.rowInfo}>
+                            <span className={styles.rowTitle}>
+                                <Link to={`/users/${data.username}`}>{`@${data.username}`}</Link>
+                                {data.admin ? <span className={styles.badge}>admin</span> : null}
+                                <span className={styles.badge}>{(data.standing && data.standing.level) || 'good'}</span>
+                            </span>
+                            <span className={styles.rowMeta}>
+                                {`${data.followerCount || 0} followers · ${data.followingCount || 0} following`}
+                            </span>
+                        </div>
+                    </div>
+
+                    <label className={styles.fieldLabel}>Account standing</label>
+                    <div className={styles.field}>
+                        <select
+                            className={styles.select}
+                            value={level}
+                            onChange={e => setLevel(e.target.value)}
+                        >
+                            {STANDING_LEVELS.map(l => (
+                                <option
+                                    key={l}
+                                    value={l}
+                                >{l}</option>
+                            ))}
+                        </select>
+                        <input
+                            className={styles.input}
+                            placeholder="Reason (shown to the user)"
+                            value={reason}
+                            onChange={e => setReason(e.target.value)}
+                        />
+                        <button
+                            className={styles.secondary}
+                            onClick={applyStanding}
+                        >Apply</button>
+                    </div>
+
+                    <label className={styles.fieldLabel}>Send a message to their notifications</label>
+                    <div className={styles.field}>
+                        <input
+                            className={styles.input}
+                            placeholder="Message"
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                        />
+                        <button
+                            className={styles.secondary}
+                            disabled={!message.trim()}
+                            onClick={sendMessage}
+                        >Send</button>
+                    </div>
+
+                    <label className={styles.fieldLabel}>Profile bio</label>
+                    <div className={styles.field}>
+                        <textarea
+                            className={styles.textarea}
+                            value={bio}
+                            maxLength={300}
+                            onChange={e => setBio(e.target.value)}
+                        />
+                        <button
+                            className={styles.secondary}
+                            onClick={saveBio}
+                        >Save bio</button>
+                    </div>
+                    <button
+                        className={styles.secondary}
+                        onClick={toggleComments}
+                    >{data.commentsOff ? 'Enable profile comments' : 'Disable profile comments'}</button>
+
+                    {(data.projects || []).length ? (
+                        <div className={styles.list}>
+                            {data.projects.map(project => (
+                                <div
+                                    key={project.id}
+                                    className={styles.row}
+                                >
+                                    <div className={styles.rowInfo}>
+                                        <span className={styles.rowTitle}>
+                                            <Link to={projectUrl(project.id)}>{project.title || project.id}</Link>
+                                        </span>
+                                        <span className={styles.rowMeta}>
+                                            {project.shared ? 'Shared' : 'Not shared'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.rowActions}>
+                                        {project.shared ? (
+                                            <button
+                                                className={styles.secondary}
+                                                onClick={() => unshareProject(project.id)}
+                                            >Unshare</button>
+                                        ) : null}
+                                        <button
+                                            className={styles.danger}
+                                            onClick={() => deleteProject(project.id)}
+                                        >Delete</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
 const Admin = () => {
     const {user, loading} = useUser();
     const [reports, setReports] = useState(null);
@@ -123,6 +311,7 @@ const Admin = () => {
                                 </span>
                                 <span className={styles.rowMeta}>
                                     {`Reported by @${report.reporter} · ${timeAgo(report.created)} ago`}
+                                    {report.context ? ` · in ${report.context}` : ''}
                                 </span>
                                 <span className={styles.reason}>{report.reason}</span>
                             </div>
@@ -133,6 +322,10 @@ const Admin = () => {
                                         onClick={() => act(report.id, 'unshare_project')}
                                     >Unshare</button>
                                 ) : null}
+                                <button
+                                    className={styles.secondary}
+                                    onClick={() => act(report.id, 'warn_user')}
+                                >{report.type === 'project' ? 'Warn owner' : 'Warn user'}</button>
                                 <button
                                     className={styles.danger}
                                     onClick={() => act(report.id, 'ban_user')}
@@ -148,6 +341,8 @@ const Admin = () => {
             ) : (
                 <p className={styles.status}>No open reports.</p>
             )}
+
+            <UserManager />
 
             <h2>Bans</h2>
             <button

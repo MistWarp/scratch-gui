@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, MessageCircle, GitFork, UserPlus, AtSign} from 'lucide-react';
+import {Heart, MessageCircle, GitFork, UserPlus, AtSign, ShieldAlert, Megaphone} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -13,8 +13,13 @@ const ICONS = {
     profile_comment: MessageCircle,
     remix: GitFork,
     follow: UserPlus,
-    mention: AtSign
+    mention: AtSign,
+    standing: ShieldAlert,
+    moderation: ShieldAlert,
+    news: Megaphone
 };
+
+const SYSTEM_TYPES = ['standing', 'moderation', 'news'];
 
 const describe = n => {
     switch (n.type) {
@@ -26,6 +31,11 @@ const describe = n => {
     case 'mention': return n.projectTitle ?
         <span>mentioned you on <strong>{n.projectTitle}</strong></span> :
         <span>mentioned you in a comment</span>;
+    case 'standing': return n.reason ?
+        <span>Your account standing is now <strong>{n.level}</strong>: {n.reason}</span> :
+        <span>Your account standing is now <strong>{n.level}</strong>.</span>;
+    case 'moderation': return <span>{n.message || 'A moderator sent you a message.'}</span>;
+    case 'news': return <span>New announcement: <strong>{n.title}</strong></span>;
     default: return <span>did something</span>;
     }
 };
@@ -62,6 +72,27 @@ const Notifications = () => {
                 <div className={styles.list}>
                     {items.map(n => {
                         const Icon = ICONS[n.type] || Heart;
+                        const system = SYSTEM_TYPES.includes(n.type);
+                        if (system) {
+                            const body = <span className={styles.body}>{describe(n)}</span>;
+                            return (
+                                <div
+                                    key={n.id}
+                                    className={n.read ? styles.item : styles.itemUnread}
+                                >
+                                    <span className={styles.sysAvatar}><Icon size={20} /></span>
+                                    <div className={styles.text}>
+                                        {n.type === 'news' && n.newsId ? (
+                                            <Link
+                                                to="/news"
+                                                className={styles.body}
+                                            >{describe(n)}</Link>
+                                        ) : body}
+                                    </div>
+                                    <span className={styles.time}>{timeAgo(n.created)}</span>
+                                </div>
+                            );
+                        }
                         return (
                             <div
                                 key={n.id}

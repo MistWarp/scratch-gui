@@ -1,15 +1,16 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
-import {Trash2, Reply} from 'lucide-react';
+import {Trash2, Reply, Flag} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
+import ReportModal from './ReportModal.jsx';
 import RichText from './RichText.jsx';
 import {timeAgo, sameUser} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
-const CommentRow = ({comment, onReply, onDelete, onReact, canReply, canDelete, isReply}) => (
+const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, canDelete, canReport, isReply}) => (
     <div className={isReply ? styles.replyRow : styles.row}>
         <Link to={`/users/${comment.author}`}>
             <Avatar
@@ -34,6 +35,15 @@ const CommentRow = ({comment, onReply, onDelete, onReact, canReply, canDelete, i
                         onClick={onReply}
                     >
                         <Reply size={14} />
+                    </button>
+                ) : null}
+                {canReport ? (
+                    <button
+                        className={styles.iconAction}
+                        title="Report comment"
+                        onClick={onReport}
+                    >
+                        <Flag size={13} />
                     </button>
                 ) : null}
                 {canDelete ? (
@@ -90,7 +100,7 @@ const InlineComposer = ({user, value, onChange, onSubmit, onCancel, placeholder,
     </div>
 );
 
-const CommentThread = ({source, canModerate, disabled}) => {
+const CommentThread = ({source, canModerate, disabled, reportContext}) => {
     const {user} = useUser();
     const [comments, setComments] = useState([]);
     const [content, setContent] = useState('');
@@ -99,6 +109,7 @@ const CommentThread = ({source, canModerate, disabled}) => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [loadFailed, setLoadFailed] = useState(false);
+    const [reportId, setReportId] = useState(null);
 
     const beginLoad = useLatest();
 
@@ -162,6 +173,7 @@ const CommentThread = ({source, canModerate, disabled}) => {
     };
 
     const canDelete = comment => Boolean(user) && (canModerate || sameUser(comment.author, user.username));
+    const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
     const canReply = Boolean(user) && !disabled;
 
     const roots = comments.filter(c => !c.parent);
@@ -195,8 +207,10 @@ const CommentThread = ({source, canModerate, disabled}) => {
                         onReply={() => openReply(comment.id)}
                         onDelete={() => remove(comment.id)}
                         onReact={type => react(comment.id, type)}
+                        onReport={() => setReportId(comment.id)}
                         canReply={canReply}
                         canDelete={canDelete(comment)}
+                        canReport={canReport(comment)}
                     />
                     <div className={styles.replies}>
                         {repliesOf(comment.id).map(reply => (
@@ -206,9 +220,11 @@ const CommentThread = ({source, canModerate, disabled}) => {
                                 isReply
                                 canReply={canReply}
                                 canDelete={canDelete(reply)}
+                                canReport={canReport(reply)}
                                 onReply={() => openReply(comment.id, `@${reply.author} `)}
                                 onDelete={() => remove(reply.id)}
                                 onReact={type => react(reply.id, type)}
+                                onReport={() => setReportId(reply.id)}
                             />
                         ))}
                         {replyTo === comment.id && user ? (
@@ -231,6 +247,14 @@ const CommentThread = ({source, canModerate, disabled}) => {
                     {loadFailed ? 'Comments could not be loaded right now.' : 'No comments yet.'}
                 </p>
             )}
+            {reportId ? (
+                <ReportModal
+                    type="comment"
+                    target={reportId}
+                    context={reportContext}
+                    onClose={() => setReportId(null)}
+                />
+            ) : null}
         </div>
     );
 };

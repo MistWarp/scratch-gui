@@ -1,0 +1,24 @@
+.banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: color-mix(in srgb, #e2a355 22%, var(--bg-card));
+    color: var(--mw-text);
+    font-size: 13px;
+    padding: 7px 14px;
+}
+
+.icon {
+    color: #d98324;
+    flex-shrink: 0;
+}
+
+.link {
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.link:hover {
+    text-decoration: underline;
+}

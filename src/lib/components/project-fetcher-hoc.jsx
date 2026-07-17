@@ -40,6 +40,43 @@ const cloneProjectFromRepo = async url => {
 
 const isHttpUrl = url => /^https?:\/\//.test(url);
 
+let fetchInitiatedLoad = false;
+
+const clearProjectSourceFromUrl = () => {
+    if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
+    const params = new URLSearchParams(location.search);
+    let changed = false;
+    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets']) {
+        if (params.has(key)) {
+            params.delete(key);
+            changed = true;
+        }
+    }
+    const hasMwHash = /^#mw-/.test(location.hash);
+    if (!changed && !hasMwHash) return;
+    const query = params.toString();
+    const hash = hasMwHash ? '' : location.hash;
+    try {
+        history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${hash}`);
+    } catch (e) {
+        // ignore
+    }
+};
+
+const clearProjectSourceOnForeignLoads = vm => {
+    if (!vm || vm._mwClearsProjectSourceUrl) return;
+    vm._mwClearsProjectSourceUrl = true;
+    const originalLoadProject = vm.loadProject.bind(vm);
+    vm.loadProject = (...args) => {
+        if (fetchInitiatedLoad) {
+            fetchInitiatedLoad = false;
+        } else {
+            clearProjectSourceFromUrl();
+        }
+        return originalLoadProject(...args);
+    };
+};
+
 const loadPlatformProject = async id => {
     const {project} = await getMistWarpProject(id);
     if (project.assetsBase && isHttpUrl(project.assetsBase)) {
@@ -93,6 +130,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             storage.setProjectToken(props.projectToken);
             storage.setAssetHost(props.assetHost);
             storage.setTranslatorFunction(props.intl.formatMessage);
+            clearProjectSourceOnForeignLoads(props.vm);
             if (typeof location !== 'undefined' && typeof URLSearchParams !== 'undefined') {
                 const initialPlatformId = new URLSearchParams(location.search).get('platform_project') ||
                     (location.hash.match(/^#mw-([\w-]+)/) || [])[1];
@@ -130,26 +168,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 this.props.onActivateTab(BLOCKS_TAB_INDEX);
             }
         }
-        clearProjectSourceParams () {
-            if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
-            const params = new URLSearchParams(location.search);
-            let changed = false;
-            for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets']) {
-                if (params.has(key)) {
-                    params.delete(key);
-                    changed = true;
-                }
-            }
-            const hasMwHash = /^#mw-/.test(location.hash);
-            if (!changed && !hasMwHash) return;
-            const query = params.toString();
-            const hash = hasMwHash ? '' : location.hash;
-            try {
-                history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${hash}`);
-            } catch (e) {
-                // ignore
-            }
-        }
         fetchProject (projectId, loadingState) {
             // tw: clear and stop the VM before fetching
             // these will also happen later after the project is fetched, but fetching may take a while and
@@ -160,7 +178,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             const isInitialFetch = !this.hasFetchedProject;
             this.hasFetchedProject = true;
             if (!isInitialFetch && getIsFetchingWithoutId(loadingState)) {
-                this.clearProjectSourceParams();
+                clearProjectSourceFromUrl();
             }
 
             let assetPromise;
@@ -211,6 +229,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             return assetPromise
                 .then(projectAsset => {
                     if (projectAsset) {
+                        fetchInitiatedLoad = true;
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
                     } else {
                         // Treat failure to load as an error

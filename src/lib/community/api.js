@@ -131,7 +131,6 @@ const createProject = payload => request('/projects', {method: 'POST', body: pay
 const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_BASE}${path}`);
-    xhr.withCredentials = true;
     const session = loadSession();
     if (session) {
         xhr.setRequestHeader('Authorization', `Bearer ${session}`);
