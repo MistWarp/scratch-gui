@@ -60,7 +60,7 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     }
     const authResponse = await fetch(
         `${API_BASE}/auth?v=${encodeURIComponent(validator)}`,
-        {method: 'POST', credentials: 'include'}
+        {method: 'POST'}
     );
     const authData = await parseResponse(authResponse);
     storeSession(authData.token);
@@ -83,7 +83,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false} =
         if (session) {
             finalHeaders.Authorization = `Bearer ${session}`;
         }
-        const options = {method, headers: finalHeaders, credentials: 'include'};
+        const options = {method, headers: finalHeaders};
         if (body instanceof FormData) {
             options.body = body;
         } else if (typeof body !== 'undefined') {
