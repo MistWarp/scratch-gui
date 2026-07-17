@@ -30,6 +30,15 @@ const isTrustedExtension = url => (
     extensionsTrustedByUser.has(url)
 );
 
+const isPlatformProjectLoad = () => {
+    try {
+        const params = new URLSearchParams(location.search);
+        return params.has('mw_assets') || params.has('platform_project') || /^#mw-/.test(location.hash);
+    } catch (e) {
+        return false;
+    }
+};
+
 const fetchHostsTrustedByUser = new Set();
 const embedHostsTrustedByUser = new Set();
 
@@ -233,6 +242,10 @@ class TWSecurityManagerComponent extends React.Component {
     async canLoadExtensionFromProject (url) {
         if (isTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
+            return true;
+        }
+        if (!isPlatformProjectLoad()) {
+            log.info(`Loading extension ${url} automatically; project is not from the MistWarp platform`);
             return true;
         }
         if (!shouldWarn('loadExtension')) return true;

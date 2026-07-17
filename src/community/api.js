@@ -96,7 +96,8 @@ const api = {
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${name}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
-    report: (type, target, reason) => request('/reports', {method: 'POST', body: {type, target, reason}}),
+    report: (type, target, reason, context) =>
+        request('/reports', {method: 'POST', body: {type, target, reason, context}}),
     admin: {
         reports: () => request('/admin/reports'),
         reportAction: (id, action) => request('/admin/reports/action', {method: 'POST', body: {id, action}}),
@@ -105,7 +106,14 @@ const api = {
         removeAdmin: username => request('/admin/admins/remove', {method: 'POST', body: {username}}),
         bans: () => request('/admin/bans'),
         ban: (username, reason) => request('/admin/ban', {method: 'POST', body: {username, reason}}),
-        unban: username => request('/admin/unban', {method: 'POST', body: {username}})
+        unban: username => request('/admin/unban', {method: 'POST', body: {username}}),
+        getUser: username => request(`/admin/user?username=${encodeURIComponent(username)}`),
+        setStanding: (username, level, reason) =>
+            request('/admin/standing', {method: 'POST', body: {username, level, reason}}),
+        messageUser: (username, message) =>
+            request('/admin/user/message', {method: 'POST', body: {username, message}}),
+        updateUserProfile: (username, patch) =>
+            request('/admin/user/profile', {method: 'POST', body: {username, ...patch}})
     },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),

@@ -6,6 +6,7 @@ import rotur from '../rotur';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
+import ReportModal from '../components/ReportModal.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
 import useLatest from '../use-latest.js';
@@ -30,7 +31,7 @@ const Profile = () => {
     const [mwUser, setMwUser] = useState(null);
     const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
-    const [reportSent, setReportSent] = useState(false);
+    const [reporting, setReporting] = useState(false);
 
     const beginLoad = useLatest();
 
@@ -52,7 +53,7 @@ const Profile = () => {
         setMwUser(null);
         setFollowers([]);
         setError(null);
-        setReportSent(false);
+        setReporting(false);
         load();
     }, [name, load]);
 
@@ -65,18 +66,6 @@ const Profile = () => {
             card: 'summary'
         });
     }, [profile, name]);
-
-    const reportUser = async () => {
-        if (reportSent) return;
-        const reason = window.prompt(`Why are you reporting ${name}?`);
-        if (!reason || !reason.trim()) return;
-        try {
-            await api.report('user', name, reason.trim());
-            setReportSent(true);
-        } catch (e) {
-            return;
-        }
-    };
 
     const toggleFollow = async () => {
         if (!user || !profile) return;
@@ -128,6 +117,13 @@ const Profile = () => {
 
     return (
         <main className={styles.page}>
+            {reporting ? (
+                <ReportModal
+                    type="user"
+                    target={name}
+                    onClose={() => setReporting(false)}
+                />
+            ) : null}
             <section className={styles.profileCard}>
                 <div
                     className={styles.banner}
@@ -180,10 +176,10 @@ const Profile = () => {
                         <button
                             className={styles.followingButton}
                             title="Report this user"
-                            onClick={reportUser}
+                            onClick={() => setReporting(true)}
                         >
                             <Flag size={15} />
-                            {reportSent ? 'Reported' : 'Report'}
+                            Report
                         </button>
                     ) : null}
                     {isSelf ? (
@@ -284,6 +280,7 @@ const Profile = () => {
                             source={commentSource}
                             canModerate={isSelf}
                             disabled={commentsOff}
+                            reportContext={`profile ${name}`}
                         />
                     </div>
                 </section>

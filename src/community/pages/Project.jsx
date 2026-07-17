@@ -10,6 +10,7 @@ import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
+import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
 import RichText from '../components/RichText.jsx';
 import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
@@ -95,7 +96,7 @@ const Project = () => {
     const [savingTitle, setSavingTitle] = useState(false);
     const [thumbnailMenu, setThumbnailMenu] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
-    const [reportSent, setReportSent] = useState(false);
+    const [reporting, setReporting] = useState(false);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const [blockStats, setBlockStats] = useState(null);
@@ -120,7 +121,7 @@ const Project = () => {
         setProject(null);
         setError(null);
         setActionError(null);
-        setReportSent(false);
+        setReporting(false);
         setTab('Comments');
         load();
         api.view(id).catch(() => {});
@@ -224,18 +225,6 @@ const Project = () => {
             window.location.href = editorUrl({platformProject: result.id});
         } catch (e) {
             setActionError('Could not remix this project.');
-        }
-    };
-
-    const reportProject = async () => {
-        const reason = window.prompt('Why are you reporting this project?');
-        if (!reason || !reason.trim()) return;
-        try {
-            await api.report('project', id, reason.trim());
-            setActionError(null);
-            setReportSent(true);
-        } catch (e) {
-            setActionError(e.message || 'Could not send the report.');
         }
     };
 
@@ -402,7 +391,7 @@ const Project = () => {
                         <button
                             className={styles.remixButton}
                             title="Report this project"
-                            onClick={reportProject}
+                            onClick={() => setReporting(true)}
                         >
                             <Flag size={16} />
                             Report
@@ -411,12 +400,14 @@ const Project = () => {
                 </div>
             </div>
 
-            {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
-            {reportSent ? (
-                <div className={styles.actionSuccess}>
-                    {'Thanks, your report was sent to the moderators.'}
-                </div>
+            {reporting ? (
+                <ReportModal
+                    type="project"
+                    target={id}
+                    onClose={() => setReporting(false)}
+                />
             ) : null}
+            {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
             {thumbnailStatus !== 'idle' ? (
                 <div className={styles.actionSuccess}>
                     {thumbnailStatus === 'saving' ? 'Saving thumbnail…' : 'Thumbnail updated.'}
@@ -571,6 +562,7 @@ const Project = () => {
                             source={commentSource}
                             canModerate={project.isOwner}
                             disabled={Boolean(project.commentsOff)}
+                            reportContext={`project ${id}`}
                         />
                     )}
                     {tab === 'History' && <HistoryList id={id} />}

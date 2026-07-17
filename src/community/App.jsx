@@ -4,6 +4,7 @@ import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
 import NavBar from './components/NavBar.jsx';
 import BetaBanner from './components/BetaBanner.jsx';
+import StandingBanner from './components/StandingBanner.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import Explore from './pages/Explore.jsx';
@@ -42,6 +43,7 @@ const App = () => (
         <RouteMeta />
         <NavBar />
         <BetaBanner />
+        <StandingBanner />
         <div className="mw-app-content">
             <Routes>
                 <Route path="/" element={<Home />} />

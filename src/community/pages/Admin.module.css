@@ -103,3 +103,73 @@
     padding: 7px 10px;
     font-size: 14px;
 }
+
+.user-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+}
+
+.user-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-top: 6px;
+}
+
+.field {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.field .input {
+    flex: 1;
+    min-width: 140px;
+}
+
+.select {
+    background: var(--bg-card);
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 14px;
+}
+
+.textarea {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg-card);
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    min-height: 64px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    text-transform: capitalize;
+}
