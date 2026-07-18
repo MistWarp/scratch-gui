@@ -14,6 +14,7 @@ import ChevronDown from './ChevronDown.jsx';
 import menuBarStyles from './menu-bar.css';
 import accountNavStyles from './account-nav.css';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
+import {buildAuthUrl} from '../../lib/rotur/client.js';
 import {
     openAccountMenu,
     closeAccountMenu,
@@ -108,9 +109,10 @@ const RoturAccount = props => {
                 <MenuSection>
                     <MenuItemContainer
                         onClick={() => {
+                            const authUrl = buildAuthUrl();
                             props.onCloseMenu();
                             doLogout();
-                            window.location.href = 'https://rotur.dev/auth';
+                            window.location.href = authUrl;
                         }}
                     >
                         <Users />

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
@@ -59,7 +60,7 @@ const describe = n => {
     }
 };
 
-const Notifications = () => {
+const Notifications = ({hideHeading}) => {
     const {user, loading} = useUser();
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
@@ -88,7 +89,7 @@ const Notifications = () => {
 
     return (
         <main className={styles.page}>
-            <h1>Notifications</h1>
+            {hideHeading ? null : <h1>Notifications</h1>}
             {failed ? (
                 <p className={styles.status}>Couldn&apos;t load. Try again.</p>
             ) : items === null ? (
@@ -160,6 +161,10 @@ const Notifications = () => {
             )}
         </main>
     );
+};
+
+Notifications.propTypes = {
+    hideHeading: PropTypes.bool
 };
 
 export default Notifications;
