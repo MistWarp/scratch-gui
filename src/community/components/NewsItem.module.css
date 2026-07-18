@@ -64,3 +64,9 @@
     color: var(--text-faint);
     font-size: 12px;
 }
+
+.error {
+    color: #e0245e;
+    font-size: 13px;
+    margin: 8px 0 0;
+}

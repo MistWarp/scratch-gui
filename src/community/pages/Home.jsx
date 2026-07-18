@@ -57,6 +57,7 @@ const Row = ({title, icon, action, projects, loading}) => {
 const ActivitySection = ({user, login}) => {
     const [items, setItems] = useState([]);
     const [loaded, setLoaded] = useState(false);
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -65,6 +66,7 @@ const ActivitySection = ({user, login}) => {
             return;
         }
         setLoaded(false);
+        setFailed(false);
         rotur.following(user.username)
             .then(data => {
                 const following = data.following || [];
@@ -74,7 +76,7 @@ const ActivitySection = ({user, login}) => {
                 return api.activity(following);
             })
             .then(data => setItems(data.activity || []))
-            .catch(() => setItems([]))
+            .catch(() => setFailed(true))
             .finally(() => setLoaded(true));
     }, [user]);
 
@@ -91,6 +93,8 @@ const ActivitySection = ({user, login}) => {
         );
     } else if (!loaded) {
         body = <div className={styles.feedMessage}>Loading…</div>;
+    } else if (failed) {
+        body = <div className={styles.feedMessage}>Couldn&apos;t load. Try again.</div>;
     } else if (!items.length) {
         body = <div className={styles.feedMessage}>No recent activity from people you follow yet.</div>;
     } else {
@@ -146,15 +150,33 @@ const ActivitySection = ({user, login}) => {
 
 const NewsSection = () => {
     const [items, setItems] = useState(null);
+    const [failed, setFailed] = useState(false);
 
     const load = () => {
+        setFailed(false);
         api.news()
             .then(data => setItems(data.news || []))
-            .catch(() => setItems([]));
+            .catch(() => setFailed(true));
     };
 
     useEffect(load, []);
 
+    if (failed) {
+        return (
+            <section className={styles.feedBox}>
+                <div className={styles.rowHead}>
+                    <h2>
+                        <Megaphone
+                            size={19}
+                            className={styles.rowIcon}
+                        />
+                        News
+                    </h2>
+                </div>
+                <div className={styles.feedMessage}>Couldn&apos;t load news.</div>
+            </section>
+        );
+    }
     if (!items || !items.length) {
         return null;
     }

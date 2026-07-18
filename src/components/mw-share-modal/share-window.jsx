@@ -16,6 +16,7 @@ class ShareWindow extends React.Component {
             thumbnail: null,
             status: null,
             error: null,
+            notice: null,
             done: null
         };
     }
@@ -54,13 +55,14 @@ class ShareWindow extends React.Component {
             return;
         }
         const isUpdate = this.props.action === 'update';
-        this.setState({status: 'Saving…', error: null});
+        this.setState({status: 'Saving…', error: null, notice: null});
         let thumbnailBlob = null;
         if (!isUpdate && this.state.thumbnail) {
             try {
                 thumbnailBlob = await prepareThumbnailBlob(this.state.thumbnail);
             } catch (e) {
                 thumbnailBlob = null;
+                this.setState({notice: 'Couldn\'t attach thumbnail; publishing without it.'});
             }
         }
         try {
@@ -179,6 +181,9 @@ class ShareWindow extends React.Component {
                         </div>
                     </div>
 
+                    {this.state.notice ? (
+                        <div className={styles.notice}>{this.state.notice}</div>
+                    ) : null}
                     {this.state.error ? (
                         <div className={styles.error}>{this.state.error}</div>
                     ) : null}

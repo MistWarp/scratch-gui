@@ -381,7 +381,9 @@ class WindowedModal extends React.Component {
     
     handlePopState () {
         // Whenever someone navigates, we want to be closed
-        this.props.onRequestClose();
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
+        }
     }
     
     get id () {

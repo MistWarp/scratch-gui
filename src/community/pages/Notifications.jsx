@@ -52,17 +52,21 @@ const describe = n => {
 const Notifications = () => {
     const {user, loading} = useUser();
     const [items, setItems] = useState(null);
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
         if (!user) {
             return;
         }
+        setFailed(false);
         api.notifications()
-            .then(data => setItems(data.notifications || []))
-            .catch(() => setItems([]))
-            .finally(() => api.readNotifications()
-                .then(() => window.dispatchEvent(new Event('mw:notifications-read')))
-                .catch(() => {}));
+            .then(data => {
+                setItems(data.notifications || []);
+                api.readNotifications()
+                    .then(() => window.dispatchEvent(new Event('mw:notifications-read')))
+                    .catch(() => {});
+            })
+            .catch(() => setFailed(true));
     }, [user]);
 
     if (loading) {
@@ -75,7 +79,9 @@ const Notifications = () => {
     return (
         <main className={styles.page}>
             <h1>Notifications</h1>
-            {items === null ? (
+            {failed ? (
+                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
+            ) : items === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : items.length ? (
                 <div className={styles.list}>

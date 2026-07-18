@@ -11,11 +11,13 @@ const News = () => {
     const [body, setBody] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
+    const [loadFailed, setLoadFailed] = useState(false);
 
     const load = useCallback(() => {
+        setLoadFailed(false);
         api.news()
             .then(data => setItems(data.news || []))
-            .catch(() => setItems([]));
+            .catch(() => setLoadFailed(true));
     }, []);
 
     useEffect(load, [load]);
@@ -69,7 +71,9 @@ const News = () => {
                 </form>
             ) : null}
 
-            {items === null ? (
+            {loadFailed ? (
+                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
+            ) : items === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : items.length ? (
                 <div className={styles.list}>

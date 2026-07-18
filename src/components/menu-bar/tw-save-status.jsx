@@ -23,12 +23,6 @@ const TWSaveStatus = ({
     onProjectUnchanged,
     vm
 }) => {
-    if (filterInlineAlerts(alertsList).length > 0) {
-        return <InlineMessages />;
-    }
-    if (!projectChanged) {
-        return null;
-    }
     const mistwarpAction = roturReady ?
         getMistWarpAction(getRememberedPlatformProjectState(), projectChanged) :
         null;
@@ -38,6 +32,12 @@ const TWSaveStatus = ({
         action: mistwarpAction,
         onPublished: onProjectUnchanged
     }), [vm, projectTitle, mistwarpAction, onProjectUnchanged]);
+    if (filterInlineAlerts(alertsList).length > 0) {
+        return <InlineMessages />;
+    }
+    if (!projectChanged) {
+        return null;
+    }
     const saveToComputer = (
         <SB3Downloader
             showSaveFilePicker={showSaveFilePicker}

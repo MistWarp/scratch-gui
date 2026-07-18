@@ -20,15 +20,17 @@ const Explore = () => {
     const [projects, setProjects] = useState([]);
     const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState(false);
 
     const beginLoad = useLatest();
 
     useEffect(() => {
         const fresh = beginLoad();
         setLoading(true);
+        setFailed(false);
         api.explore({sort, q, limit: 48})
             .then(fresh(data => setProjects(data.projects || [])))
-            .catch(fresh(() => setProjects([])))
+            .catch(fresh(() => setFailed(true)))
             .finally(fresh(() => setLoading(false)));
         if (q.trim()) {
             api.searchUsers(q.trim())
@@ -80,7 +82,7 @@ const Explore = () => {
                             <div className={styles.personInfo}>
                                 <span className={styles.personName}>{person.username}</span>
                                 <span className={styles.personMeta}>
-                                    {person.followers} {person.followers === 1 ? 'follower' : 'followers'}
+                                    {person.followers ?? 0} {person.followers === 1 ? 'follower' : 'followers'}
                                     {' · '}
                                     {person.projects} {person.projects === 1 ? 'project' : 'projects'}
                                 </span>
@@ -91,6 +93,8 @@ const Explore = () => {
             ) : null}
             {loading ? (
                 <p className={styles.status}>Loading…</p>
+            ) : failed ? (
+                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
             ) : projects.length ? (
                 <div className={styles.grid}>
                     {projects.map(project => (

@@ -46,6 +46,11 @@ const RoturAccount = props => {
         );
     }
 
+    const go = path => () => {
+        props.onCloseMenu();
+        window.location.href = path;
+    };
+
     return (
         <MenuLabel
             open={props.menuOpen}
@@ -66,7 +71,7 @@ const RoturAccount = props => {
                 open={props.menuOpen}
                 place={props.isRtl ? 'right' : 'left'}
             >
-                <MenuItemContainer href={`/users/${encodeURIComponent(props.username)}`}>
+                <MenuItemContainer onClick={go(`/users/${encodeURIComponent(props.username)}`)}>
                     <User />
                     <FormattedMessage
                         defaultMessage="Profile"
@@ -74,7 +79,7 @@ const RoturAccount = props => {
                         id="gui.accountMenu.profile"
                     />
                 </MenuItemContainer>
-                <MenuItemContainer href="/mystuff">
+                <MenuItemContainer onClick={go('/mystuff')}>
                     <FolderOpen />
                     <FormattedMessage
                         defaultMessage="My stuff"
@@ -82,7 +87,7 @@ const RoturAccount = props => {
                         id="mw.rotur.accountMenu.myStuff"
                     />
                 </MenuItemContainer>
-                <MenuItemContainer href="/notifications">
+                <MenuItemContainer onClick={go('/notifications')}>
                     <Bell />
                     <FormattedMessage
                         defaultMessage="Notifications"
@@ -91,7 +96,7 @@ const RoturAccount = props => {
                     />
                 </MenuItemContainer>
                 {props.showEditorItems ? null : (
-                    <MenuItemContainer href="/leaderboard">
+                    <MenuItemContainer onClick={go('/leaderboard')}>
                         <Trophy />
                         <FormattedMessage
                             defaultMessage="Leaderboard"
@@ -100,7 +105,7 @@ const RoturAccount = props => {
                         />
                     </MenuItemContainer>
                 )}
-                <MenuItemContainer href="/settings">
+                <MenuItemContainer onClick={go('/settings')}>
                     <Settings />
                     <FormattedMessage
                         defaultMessage="Settings"
