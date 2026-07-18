@@ -1,13 +1,19 @@
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive
+    Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
+    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
+import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
+import StatChart, {historyRows} from '../components/StatChart.jsx';
 import styles from './MyStuff.module.css';
+
+const fmt = value => (Number(value) || 0).toLocaleString();
+const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const TABS = [
     {key: 'projects', label: 'Projects'},
@@ -24,6 +30,8 @@ const MyStuff = () => {
     const [failed, setFailed] = useState(false);
     const [openMenu, setOpenMenu] = useState('');
     const [quota, setQuota] = useState(null);
+    const [stats, setStats] = useState(null);
+    const [account, setAccount] = useState(null);
     const uploadInput = useRef(null);
     const menuRef = useRef(null);
 
@@ -46,6 +54,24 @@ const MyStuff = () => {
     useEffect(() => {
         setFeaturedProject(user ? user.featuredProject : '');
     }, [user]);
+
+    useEffect(() => {
+        if (!user) {
+            setStats(null);
+            setAccount(null);
+            return () => {};
+        }
+        let stale = false;
+        api.stats()
+            .then(data => !stale && setStats(data.stats || null))
+            .catch(() => {});
+        getAccountSummary()
+            .then(data => !stale && setAccount(data))
+            .catch(() => {});
+        return () => {
+            stale = true;
+        };
+    }, [user, projects]);
 
     const load = useCallback(() => {
         if (!user) {
@@ -167,6 +193,13 @@ const MyStuff = () => {
         return <main className={styles.page}><p className={styles.status}>Sign in to see your projects.</p></main>;
     }
 
+    const totalEarnings = tab === 'projects' && projects ?
+        Math.round(projects.reduce((sum, p) => sum + (p.revenue || 0), 0) * 100) / 100 :
+        0;
+    const weekViews = stats ?
+        historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0) :
+        0;
+
     return (
         <main className={styles.page}>
             <div className={styles.head}>
@@ -177,6 +210,15 @@ const MyStuff = () => {
                         title="Uploads from the last 7 days count toward this limit"
                     >
                         {`${formatBytes(quota.used)} of ${formatBytes(quota.limit)} uploaded this week`}
+                    </span>
+                ) : null}
+                {totalEarnings > 0 ? (
+                    <span
+                        className={styles.earnings}
+                        title="Total credits earned from paywalled projects"
+                    >
+                        <Coins size={14} />
+                        {`${totalEarnings.toLocaleString()} credits earned`}
                     </span>
                 ) : null}
                 <div className={styles.headActions}>
@@ -206,6 +248,55 @@ const MyStuff = () => {
             </div>
 
             {actionError ? <p className={styles.error}>{actionError}</p> : null}
+
+            {stats && stats.projectCount > 0 ? (
+                <section className={styles.dashboard}>
+                    <div className={styles.dashGrid}>
+                        <div className={`${styles.dashTile} ${styles.tileMonth}`}>
+                            <span className={styles.dashIcon}><TrendingUp size={18} /></span>
+                            <span className={styles.dashNumber}>{fmt(weekViews)}</span>
+                            <span className={styles.dashLabel}>Views this week</span>
+                        </div>
+                        <div className={`${styles.dashTile} ${styles.tileViews}`}>
+                            <span className={styles.dashIcon}><Eye size={18} /></span>
+                            <span className={styles.dashNumber}>{fmt(stats.totalViews)}</span>
+                            <span className={styles.dashLabel}>Total views</span>
+                        </div>
+                        <div className={`${styles.dashTile} ${styles.tileHearts}`}>
+                            <span className={styles.dashIcon}><Heart size={18} /></span>
+                            <span className={styles.dashNumber}>{fmt(stats.totalHearts)}</span>
+                            <span className={styles.dashLabel}>Hearts</span>
+                        </div>
+                        {stats.totalRevenue > 0 ? (
+                            <div className={`${styles.dashTile} ${styles.tileEarned}`}>
+                                <span className={styles.dashIcon}><Coins size={18} /></span>
+                                <span className={styles.dashNumber}>{fmtCredits(stats.totalRevenue)}</span>
+                                <span className={styles.dashLabel}>Credits earned</span>
+                            </div>
+                        ) : null}
+                        {account && account.balance !== null ? (
+                            <div className={`${styles.dashTile} ${styles.tileBalance}`}>
+                                <span className={styles.dashIcon}><Wallet size={18} /></span>
+                                <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
+                                <span className={styles.dashLabel}>Balance</span>
+                            </div>
+                        ) : null}
+                        {account && account.donationsReceived > 0 ? (
+                            <div className={`${styles.dashTile} ${styles.tileDonations}`}>
+                                <span className={styles.dashIcon}><HeartHandshake size={18} /></span>
+                                <span className={styles.dashNumber}>{fmtCredits(account.donationsReceived)}</span>
+                                <span className={styles.dashLabel}>Donations received</span>
+                            </div>
+                        ) : null}
+                    </div>
+                    <StatChart
+                        title="Views over the last 2 weeks"
+                        rows={historyRows(stats.viewHistory, 14)}
+                        accent="#4C97FF"
+                        emptyText="No views yet. Share a project to get started."
+                    />
+                </section>
+            ) : null}
 
             <div className={styles.tabs}>
                 {TABS.map(option => (
@@ -264,7 +355,9 @@ const MyStuff = () => {
                                     className={styles.title}
                                 >{project.title}</Link>
                                 <span className={project.shared ? styles.shared : styles.draft}>
-                                    {project.shared ? 'Shared' : 'Draft'}
+                                    {(project.visibility || (project.shared ? 'public' : 'private')) === 'public' ?
+                                        'Shared' :
+                                        (project.visibility === 'unlisted' ? 'Unlisted' : 'Draft')}
                                 </span>
                                 <span className={styles.rowStats}>
                                     <span className={styles.rowStat}>
@@ -279,6 +372,17 @@ const MyStuff = () => {
                                         <Play size={13} />
                                         {project.views || 0}
                                     </span>
+                                    {project.price ? (
+                                        <span className={styles.rowStat}>
+                                            <Coins size={13} />
+                                            {project.price}
+                                        </span>
+                                    ) : null}
+                                    {project.revenue ? (
+                                        <span className={styles.rowStat}>
+                                            {`${Math.round(project.revenue * 100) / 100} earned`}
+                                        </span>
+                                    ) : null}
                                     {project.sizeBytes ? (
                                         <span className={styles.rowStat}>
                                             <HardDrive size={13} />
@@ -315,8 +419,12 @@ const MyStuff = () => {
                                         <div className={styles.actionMenu}>
                                             <a href={editorUrl({platformProject: project.id})}>
                                                 <Pencil size={14} />
-                                                Edit
+                                                Open in editor
                                             </a>
+                                            <Link to={`/mystuff/project/${project.id}`}>
+                                                <SlidersHorizontal size={14} />
+                                                Manage &amp; analytics
+                                            </Link>
                                             <Link to={projectUrl(project.id)}>
                                                 <ExternalLink size={14} />
                                                 Project page

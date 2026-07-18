@@ -119,12 +119,16 @@ const login = async () => {
     await rotur.login({
         system: 'rotur',
         timeout: 120000,
-        requires: resolvePermissions([
-            'me.checkAuth',
-            'following.follow',
-            'following.unfollow',
-            'validators.generate'
-        ])
+        requires: [
+            ...resolvePermissions([
+                'me.checkAuth',
+                'following.follow',
+                'following.unfollow',
+                'validators.generate',
+                'me.transfer'
+            ]),
+            'credits:view'
+        ]
     });
     storeToken(rotur.token);
     const user = await fetchCurrentUser();
@@ -247,6 +251,84 @@ const clearActivity = () => {
 const isLoggedIn = () => getClient().loggedIn;
 const getRotur = () => getClient();
 
+const isPaymentPermissionError = error => {
+    const message = String((error && error.message) || error || '').toLowerCase();
+    return message.includes('permission') ||
+        message.includes('scope') ||
+        message.includes('not allowed') ||
+        message.includes('unauthorized') ||
+        message.includes('token');
+};
+
+// Read the current Rotur credit balance, or null if the token can't see it.
+const getBalance = async () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return null;
+    }
+    try {
+        const me = await rotur.me.get();
+        return me && typeof me.currency === 'number' ? me.currency : null;
+    } catch (_) {
+        return null;
+    }
+};
+
+// Read balance plus donation totals from the account's transaction history.
+// Returns null if the token can't see credits. Fields default to 0/null.
+const getAccountSummary = async () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return null;
+    }
+    try {
+        const me = await rotur.me.get();
+        if (!me || me.error) {
+            return null;
+        }
+        const balance = typeof me.currency === 'number' ? me.currency : null;
+        const txns = me['sys.transactions'] || me.transactions || [];
+        let donationsReceived = 0;
+        let donationsGiven = 0;
+        if (Array.isArray(txns)) {
+            for (const t of txns) {
+                if (!String(t.note || '').toLowerCase().includes('donation')) continue;
+                if (t.type === 'in') donationsReceived += Number(t.amount) || 0;
+                else if (t.type === 'out') donationsGiven += Number(t.amount) || 0;
+            }
+        }
+        const round = value => Math.round(value * 100) / 100;
+        return {
+            balance,
+            donationsReceived: round(donationsReceived),
+            donationsGiven: round(donationsGiven),
+            hasTransactions: Array.isArray(txns)
+        };
+    } catch (_) {
+        return null;
+    }
+};
+
+// Transfer credits to another Rotur user. Throws an Error; if the failure is a
+// missing-permission on the current (sub-)token, the error carries needsReauth.
+const payUser = async (to, amount, note) => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        const error = new Error('Log in to send credits');
+        error.needsReauth = true;
+        throw error;
+    }
+    const result = await rotur.me.transfer(to, amount, note);
+    if (result && result.error) {
+        const error = new Error(result.error);
+        if (isPaymentPermissionError(result.error)) {
+            error.needsReauth = true;
+        }
+        throw error;
+    }
+    return result;
+};
+
 export {
     ACTIVITY_ID,
     APP_URL,
@@ -259,5 +341,8 @@ export {
     clearActivity,
     isLoggedIn,
     getRotur,
-    fetchCurrentUser
+    fetchCurrentUser,
+    getBalance,
+    getAccountSummary,
+    payUser
 };

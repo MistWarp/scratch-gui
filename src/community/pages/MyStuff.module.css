@@ -279,3 +279,88 @@
     font-size: 13px;
     white-space: nowrap;
 }
+
+.earnings {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 12px;
+    color: var(--accent-strong);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.dashGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.dashTile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.dashIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.dashNumber {
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--mw-text);
+}
+
+.dashLabel {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.tileMonth .dashIcon {
+    background: color-mix(in srgb, #59C059 18%, transparent);
+    color: #59C059;
+}
+
+.tileViews .dashIcon {
+    background: color-mix(in srgb, #4C97FF 18%, transparent);
+    color: #4C97FF;
+}
+
+.tileHearts .dashIcon {
+    background: color-mix(in srgb, #E0245E 18%, transparent);
+    color: #E0245E;
+}
+
+.tileEarned .dashIcon {
+    background: color-mix(in srgb, #FF8C1A 18%, transparent);
+    color: #FF8C1A;
+}
+
+.tileBalance .dashIcon {
+    background: color-mix(in srgb, #9966FF 18%, transparent);
+    color: #9966FF;
+}
+
+.tileDonations .dashIcon {
+    background: color-mix(in srgb, #0FBD8C 18%, transparent);
+    color: #0FBD8C;
+}

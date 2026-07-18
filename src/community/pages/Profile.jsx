@@ -1,8 +1,11 @@
 import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {useParams, Link} from 'react-router-dom';
-import {UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag} from 'lucide-react';
+import {
+    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, X
+} from 'lucide-react';
 import api from '../api';
 import rotur from '../rotur';
+import {payUser} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -36,6 +39,7 @@ const Profile = () => {
     const [reporting, setReporting] = useState(false);
     const [adminProjects, setAdminProjects] = useState([]);
     const [presence, setPresence] = useState(null);
+    const [donating, setDonating] = useState(false);
 
     const beginLoad = useLatest();
 
@@ -160,6 +164,12 @@ const Profile = () => {
                     onClose={() => setReporting(false)}
                 />
             ) : null}
+            {donating ? (
+                <DonateModal
+                    recipient={profile.username || name}
+                    onClose={() => setDonating(false)}
+                />
+            ) : null}
             <section className={styles.profileCard}>
                 <div
                     className={styles.banner}
@@ -207,6 +217,16 @@ const Profile = () => {
                         >
                             {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
                             {profile.followed ? 'Following' : 'Follow'}
+                        </button>
+                    ) : null}
+                    {user && !isSelf ? (
+                        <button
+                            className={styles.followButton}
+                            title={`Send credits to ${profile.username || name}`}
+                            onClick={() => setDonating(true)}
+                        >
+                            <Coins size={15} />
+                            Donate
                         </button>
                     ) : null}
                     {user && !isSelf ? (
@@ -339,6 +359,95 @@ const Profile = () => {
                 </section>
             ) : null}
         </main>
+    );
+};
+
+const DonateModal = ({recipient, onClose}) => {
+    const [amount, setAmount] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [status, setStatus] = useState(null);
+    const [sent, setSent] = useState(0);
+
+    const send = async () => {
+        const value = Math.round((Number(amount) || 0) * 100) / 100;
+        if (!value || value <= 0) {
+            setStatus('Enter an amount greater than 0.');
+            return;
+        }
+        setBusy(true);
+        setStatus(null);
+        try {
+            await payUser(recipient, value, `MistWarp donation to ${recipient}`);
+            setSent(value);
+        } catch (e) {
+            setStatus(e.needsReauth ?
+                'Your current login cannot send credits. Log out and back in, then try again.' :
+                (e.message || 'Could not send credits.'));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div
+            className={styles.donateOverlay}
+            onClick={onClose}
+        >
+            <div
+                className={styles.donateModal}
+                onClick={event => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+            >
+                <div className={styles.donateHead}>
+                    <span className={styles.donateHeadTitle}>
+                        <Coins size={17} />
+                        {`Donate to ${recipient}`}
+                    </span>
+                    <button
+                        className={styles.donateClose}
+                        onClick={onClose}
+                        aria-label="Close"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+                {sent ? (
+                    <div className={styles.donateDone}>
+                        <span className={styles.donateDoneIcon}><Coins size={28} /></span>
+                        <p>{`Sent ${sent} credits to ${recipient}.`}</p>
+                        <button
+                            className={styles.donateSend}
+                            onClick={onClose}
+                        >Done</button>
+                    </div>
+                ) : (
+                    <div className={styles.donateBody}>
+                        <p className={styles.donateText}>
+                            {`Send Rotur credits straight to ${recipient}. This transfers directly from your account.`}
+                        </p>
+                        <input
+                            className={styles.donateInput}
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="Amount in credits"
+                            value={amount}
+                            onChange={event => setAmount(event.target.value)}
+                        />
+                        {status ? <p className={styles.donateStatus}>{status}</p> : null}
+                        <button
+                            className={styles.donateSend}
+                            onClick={send}
+                            disabled={busy}
+                        >
+                            <Coins size={16} />
+                            {busy ? 'Sending…' : 'Send credits'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

@@ -1,15 +1,17 @@
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
 import PropTypes from 'prop-types';
-import React, {useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
-import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
+import {
+    getMistWarpAction, getRememberedPlatformProjectState, publishToMistWarp
+} from '../../lib/community/publish.js';
 
-import {Save, CloudUpload} from 'lucide-react';
+import {Save, CloudUpload, Loader} from 'lucide-react';
 
 import styles from './save-status.css';
 
@@ -23,15 +25,35 @@ const TWSaveStatus = ({
     onProjectUnchanged,
     vm
 }) => {
+    const [uploading, setUploading] = useState(false);
+    const platformState = roturReady ? getRememberedPlatformProjectState() : null;
     const mistwarpAction = roturReady ?
-        getMistWarpAction(getRememberedPlatformProjectState(), projectChanged) :
+        getMistWarpAction(platformState, projectChanged) :
         null;
+    // An already-shared project the user owns updates in place: skip the share
+    // window and upload the sb3 straight away when they hit save.
+    const sharedUpdate = mistwarpAction === 'update' && platformState && platformState.shared;
     const openSaveWindow = useCallback(() => openMistWarpShareWindow({
         vm,
         initialTitle: projectTitle,
         action: mistwarpAction,
         onPublished: onProjectUnchanged
     }), [vm, projectTitle, mistwarpAction, onProjectUnchanged]);
+    const directUpload = useCallback(async () => {
+        if (uploading) return;
+        setUploading(true);
+        try {
+            await publishToMistWarp({vm, title: projectTitle, updateOnly: true});
+            onProjectUnchanged();
+        } catch (e) {
+            // Something went wrong (needs sign-in, network, etc.): fall back to
+            // the full save window so the user can see the error and retry.
+            openSaveWindow();
+        } finally {
+            setUploading(false);
+        }
+    }, [uploading, vm, projectTitle, onProjectUnchanged, openSaveWindow]);
+    const onSaveClick = sharedUpdate ? directUpload : openSaveWindow;
     if (filterInlineAlerts(alertsList).length > 0) {
         return <InlineMessages />;
     }
@@ -85,14 +107,27 @@ const TWSaveStatus = ({
         <React.Fragment>
             <div
                 className={styles.saveNow}
-                onClick={openSaveWindow}
+                onClick={onSaveClick}
             >
-                <CloudUpload
-                    className={styles.saveIconAlways}
-                    size={18}
-                />
+                {uploading ? (
+                    <Loader
+                        className={styles.saveIconAlways}
+                        size={18}
+                    />
+                ) : (
+                    <CloudUpload
+                        className={styles.saveIconAlways}
+                        size={18}
+                    />
+                )}
                 <span className={styles.saveLabel}>
-                    {mistwarpAction === 'remix' ? (
+                    {uploading ? (
+                        <FormattedMessage
+                            defaultMessage="Saving to MistWarp…"
+                            description="Menu bar item while uploading the project to MistWarp"
+                            id="mw.saveStatus.saving"
+                        />
+                    ) : mistwarpAction === 'remix' ? (
                         <FormattedMessage
                             defaultMessage="Remix to MistWarp"
                             description="Menu bar item to remix the project to MistWarp"

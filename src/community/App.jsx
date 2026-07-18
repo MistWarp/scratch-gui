@@ -13,6 +13,7 @@ import Profile from './pages/Profile.jsx';
 import Followers from './pages/Followers.jsx';
 import Settings from './pages/Settings.jsx';
 import MyStuff from './pages/MyStuff.jsx';
+import ManageProject from './pages/ManageProject.jsx';
 import Notifications from './pages/Notifications.jsx';
 import News from './pages/News.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
@@ -21,6 +22,7 @@ import Admin from './pages/Admin.jsx';
 const ROUTE_TITLES = [
     ['/explore', 'Explore'],
     ['/settings', 'Settings'],
+    ['/mystuff/project/', 'Manage project'],
     ['/mystuff', 'My Stuff'],
     ['/notifications', 'Notifications'],
     ['/news', 'News'],
@@ -54,6 +56,7 @@ const App = () => (
                 <Route path="/users/:name/followers" element={<Followers />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/mystuff" element={<MyStuff />} />
+                <Route path="/mystuff/project/:id" element={<ManageProject />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/news" element={<News />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />

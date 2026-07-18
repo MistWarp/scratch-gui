@@ -58,6 +58,7 @@ const api = {
     logout,
     me: () => request('/me'),
     quota: () => request('/me/quota'),
+    stats: () => request('/me/stats'),
     settings: {
         get: () => request('/me/settings'),
         put: settings => request('/me/settings', {method: 'PUT', body: settings})
@@ -80,6 +81,9 @@ const api = {
     deleteProject: id => request(`/projects/${id}`, {method: 'DELETE'}),
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
+    setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
+    purchaseIntent: id => request(`/projects/${id}/purchase/intent`, {method: 'POST'}),
+    purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
     getUser: name => request(`/users/${name}`),
     searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),
     userLoves: name => request(`/users/${name}/loves`),

@@ -1,0 +1,221 @@
+.sidePanel {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sidePanelEmbedded {
+    position: static;
+    inset: auto;
+    border: 1px solid var(--border);
+}
+
+.panelTabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.panelTab,
+.panelTabActive {
+    border: none;
+    background: none;
+    color: var(--mw-text);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 7px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.panelTabActive {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+}
+
+.panelEdit {
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-dim);
+    cursor: pointer;
+}
+
+.panelEdit:hover {
+    background: var(--bg-raised);
+    color: var(--mw-text);
+}
+
+.panelBody {
+    padding: 14px 16px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.panelInput {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+}
+
+.panelInput:focus {
+    border-color: var(--accent);
+}
+
+.panelText {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.panelEmpty {
+    margin: 0;
+    color: var(--text-faint);
+    font-size: 14px;
+}
+
+.creditEditor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.creditEditRow {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.creditWho,
+.creditRole {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 9px;
+    outline: none;
+    min-width: 0;
+}
+
+.creditWho {
+    flex: 0 0 38%;
+}
+
+.creditRole {
+    flex: 1;
+}
+
+.creditWho:focus,
+.creditRole:focus {
+    border-color: var(--accent);
+}
+
+.creditRemove {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-faint);
+    cursor: pointer;
+}
+
+.creditRemove:hover {
+    color: #f0a3a3;
+}
+
+.creditAdd {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    border: none;
+    background: none;
+    color: var(--accent-strong);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+.creditList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.creditList li {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.creditName {
+    font-weight: 700;
+    color: var(--accent-strong);
+}
+
+.creditRoleText {
+    color: var(--text-dim);
+}
+
+.tagRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    padding: 4px 9px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tag:hover {
+    background: var(--accent-softer);
+}
+
+.remixOf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 600;
+}

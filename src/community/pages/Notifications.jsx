@@ -1,6 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, MessageCircle, GitFork, UserPlus, AtSign, ShieldAlert, Megaphone, Flag} from 'lucide-react';
+import {
+    Heart, MessageCircle, GitFork, UserPlus, AtSign, ShieldAlert, Megaphone, Flag, Reply, Coins
+} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -11,9 +13,12 @@ const ICONS = {
     love: Heart,
     comment: MessageCircle,
     profile_comment: MessageCircle,
+    reply: Reply,
     remix: GitFork,
     follow: UserPlus,
     mention: AtSign,
+    purchase: Coins,
+    donation: Coins,
     standing: ShieldAlert,
     moderation: ShieldAlert,
     news: Megaphone,
@@ -34,6 +39,11 @@ const describe = n => {
     case 'love': return <span>loved <strong>{n.projectTitle}</strong></span>;
     case 'comment': return <span>commented on <strong>{n.projectTitle}</strong></span>;
     case 'profile_comment': return <span>commented on your profile</span>;
+    case 'reply': return n.projectTitle ?
+        <span>replied to your comment on <strong>{n.projectTitle}</strong></span> :
+        <span>replied to your comment</span>;
+    case 'purchase': return <span>bought <strong>{n.projectTitle}</strong> for {n.amount} credits</span>;
+    case 'donation': return <span>donated {n.amount} credits to you</span>;
     case 'remix': return <span>remixed <strong>{n.projectTitle}</strong></span>;
     case 'follow': return <span>followed you</span>;
     case 'mention': return n.projectTitle ?

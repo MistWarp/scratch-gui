@@ -1,0 +1,429 @@
+.page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 22px 88px;
+}
+
+.statusMsg {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 60px 0;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.back,
+.viewLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.back:hover,
+.viewLink:hover {
+    color: var(--accent-strong);
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.heroThumb,
+.heroThumbFallback {
+    width: 108px;
+    height: 81px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background: var(--bg-raised);
+}
+
+.heroThumbFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent-strong);
+    text-transform: uppercase;
+}
+
+.heroText {
+    min-width: 0;
+}
+
+.title {
+    margin: 0;
+    font-size: 25px;
+    letter-spacing: -0.01em;
+}
+
+.heroSub {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.sidebar {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    position: sticky;
+    top: 20px;
+}
+
+.sidebarItem,
+.sidebarActive {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebarActive {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.sidebarItem:hover {
+    background: var(--bg-raised);
+    color: var(--mw-text);
+}
+
+.sidebarCount {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--accent-strong);
+}
+
+.content {
+    min-width: 0;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.statGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.statIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.statNumber {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--mw-text);
+}
+
+.statLabel {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.statViews .statIcon {
+    background: color-mix(in srgb, #4C97FF 18%, transparent);
+    color: #4C97FF;
+}
+
+.statRevenue .statIcon {
+    background: color-mix(in srgb, #FF8C1A 18%, transparent);
+    color: #FF8C1A;
+}
+
+.statBuyers .statIcon {
+    background: color-mix(in srgb, #9966FF 18%, transparent);
+    color: #9966FF;
+}
+
+.statHearts .statIcon {
+    background: color-mix(in srgb, #E0245E 18%, transparent);
+    color: #E0245E;
+}
+
+.chartCard,
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.chartTitle,
+.cardTitle {
+    margin: 0 0 16px;
+    font-size: 16px;
+}
+
+.empty {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0;
+}
+
+.chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 150px;
+}
+
+.chartCol {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    height: 100%;
+}
+
+.chartTrack {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.chartBar {
+    width: 66%;
+    min-height: 2px;
+    border-radius: 5px 5px 0 0;
+    transition: height 0.2s ease;
+}
+
+.chartLabel {
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.buyers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.buyerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+}
+
+.buyerRow:hover {
+    background: var(--bg-raised);
+}
+
+.buyer {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--mw-text);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.buyer:hover {
+    color: var(--accent-strong);
+}
+
+.buyerMeta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.buyerAmount {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #FF8C1A;
+}
+
+.buyerDate {
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.fieldRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+.priceField {
+    width: 200px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field > span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.field input,
+.field select,
+.field textarea {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+}
+
+.field textarea {
+    min-height: 84px;
+    resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.checkboxField {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--mw-text);
+}
+
+.formActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 2px;
+}
+
+.formStatus {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    cursor: pointer;
+}
+
+.save:hover {
+    background: var(--accent-strong);
+}
+
+.save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: static;
+        grid-auto-flow: column;
+        overflow-x: auto;
+    }
+
+    .fieldRow {
+        grid-template-columns: 1fr;
+    }
+}
