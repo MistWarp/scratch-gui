@@ -56,13 +56,11 @@ export default class FindBarController {
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
         this._cachedScratchSounds = null;
-        this._lastWorkspaceVersion = null;
         this._debounceTimer = null;
-        this._workspaceChangeListener = null;
-    }
 
-    get workspace () {
-        return this.ScratchBlocks.getMainWorkspace();
+        this._invalidateOnVmChange = () => this._invalidateCache();
+        this.vm.on('PROJECT_CHANGED', this._invalidateOnVmChange);
+        this.vm.on('workspaceUpdate', this._invalidateOnVmChange);
     }
 
     _debounce (func, delay) {
@@ -76,35 +74,6 @@ export default class FindBarController {
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
         this._cachedScratchSounds = null;
-        this._lastWorkspaceVersion = null;
-    }
-
-    _getWorkspaceVersion () {
-        const workspace = this.workspace;
-        if (!workspace) return null;
-        return workspace.id || (workspace.getAllBlocks && workspace.getAllBlocks().length);
-    }
-
-    _setupWorkspaceListener () {
-        if (this._workspaceChangeListener) return;
-
-        this._workspaceChangeListener = () => {
-            this._invalidateCache();
-            this.dropdown.empty();
-        };
-
-        const workspace = this.workspace;
-        if (workspace && workspace.addChangeListener) {
-            workspace.addChangeListener(this._workspaceChangeListener);
-        }
-    }
-
-    _removeWorkspaceListener () {
-        const workspace = this.workspace;
-        if (workspace && workspace.removeChangeListener && this._workspaceChangeListener) {
-            workspace.removeChangeListener(this._workspaceChangeListener);
-        }
-        this._workspaceChangeListener = null;
     }
 
     createDom (root) {
@@ -185,7 +154,6 @@ export default class FindBarController {
         this.searchStats.className = 'sa-find-stats';
 
         this.bindEvents();
-        this._setupWorkspaceListener();
         this.tabChanged();
 
         setFindBarApi({
@@ -198,7 +166,8 @@ export default class FindBarController {
         setFindBarApi(null);
         document.removeEventListener('keydown', this._onDocumentKeyDown, true);
         document.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
-        this._removeWorkspaceListener();
+        this.vm.removeListener('PROJECT_CHANGED', this._invalidateOnVmChange);
+        this.vm.removeListener('workspaceUpdate', this._invalidateOnVmChange);
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
@@ -635,16 +604,14 @@ export default class FindBarController {
 
         let scratchBlocks;
         const tabIndex = this.activeTabIndexRef.current;
-        const workspaceVersion = this._getWorkspaceVersion();
 
         switch (tabIndex) {
         case 0:
-            if (this._cachedScratchBlocks && this._lastWorkspaceVersion === workspaceVersion) {
+            if (this._cachedScratchBlocks) {
                 scratchBlocks = this._cachedScratchBlocks;
             } else {
                 scratchBlocks = this.getScratchBlocks();
                 this._cachedScratchBlocks = scratchBlocks;
-                this._lastWorkspaceVersion = workspaceVersion;
             }
             break;
         case 1:
@@ -698,232 +665,22 @@ export default class FindBarController {
         const myBlocks = [];
         const myBlocksByProcCode = {};
 
-        const currentTarget = this.utils.getEditingTarget();
-        const targets = [currentTarget];
+        const target = this.utils.getEditingTarget();
+        const vmBlocks = target && target.blocks && target.blocks._blocks;
+        if (!vmBlocks) return myBlocks;
 
-        for (const target of targets) {
-            const workspace = target === currentTarget ? this.workspace : target.blocks;
-            const spriteName = target.sprite ? target.sprite.name : null;
-            const isCurrentSprite = target === currentTarget;
-
-            if (!isCurrentSprite && workspace && workspace._blocks) {
-                this.addBlocksFromTarget(target, myBlocks, myBlocksByProcCode, spriteName);
-            } else if (isCurrentSprite) {
-                this.addBlocksFromWorkspace(this.workspace, myBlocks, myBlocksByProcCode, spriteName, isCurrentSprite);
-            }
-        }
-
-        const clsOrder = {flag: 0, receive: 1, event: 2, define: 3, var: 4, VAR: 5, list: 6, LIST: 7};
-
-        myBlocks.sort((a, b) => {
-            const t = clsOrder[a.cls] - clsOrder[b.cls];
-            if (t !== 0) return t;
-            if (a.lower < b.lower) return -1;
-            if (a.lower > b.lower) return 1;
-            return (a.y || 0) - (b.y || 0);
-        });
-
-        return myBlocks;
-    }
-
-    addBlocksFromWorkspace (workspace, myBlocks, myBlocksByProcCode, spriteName, isCurrentSprite) {
-        const topBlocks = workspace.getTopBlocks();
-
-        const addBlock = (cls, txt, root, opcode = null) => {
-            const id = root.id ? root.id : root.getId ? root.getId() : null;
-            const displayText = isCurrentSprite || !spriteName ? txt : `[${spriteName}] ${txt}`;
-
-            const clone = myBlocksByProcCode[displayText];
+        const addBlock = (cls, txt, id, opcode = null, y = null) => {
+            const clone = myBlocksByProcCode[txt];
             if (clone) {
                 if (!clone.clones) clone.clones = [];
                 clone.clones.push(id);
                 return clone;
             }
-
-            const items = new BlockItem(cls, displayText, id, 0, opcode);
-            items.y = root.getRelativeToSurfaceXY ? root.getRelativeToSurfaceXY().y : null;
-            items.spriteName = spriteName;
-            items.isCurrentSprite = isCurrentSprite;
-            myBlocks.push(items);
-            myBlocksByProcCode[displayText] = items;
-            return items;
+            const item = new BlockItem(cls, txt, id, y, opcode);
+            myBlocks.push(item);
+            myBlocksByProcCode[txt] = item;
+            return item;
         };
-
-        const getDescFromField = root => {
-            const fields = root.inputList[0];
-            let desc = '';
-            for (const fieldRow of fields.fieldRow) {
-                desc = desc ? `${desc} ` : '';
-                if (
-                    fieldRow instanceof this.ScratchBlocks.FieldImage &&
-                    fieldRow.src_.endsWith('green-flag.svg')
-                ) {
-                    desc += this.msgAny('/_general/blocks/green-flag');
-                } else {
-                    desc += fieldRow.getText();
-                }
-            }
-            return desc;
-        };
-
-        for (const root of topBlocks) {
-            if (root.type === 'procedures_definition') {
-                const label = root.getChildren()[0];
-                const procCode = label.getProcCode();
-                if (!procCode) continue;
-                const indexOfLabel = root.inputList.findIndex(i => i.fieldRow.length > 0);
-                if (indexOfLabel === -1) continue;
-                const translatedDefine = root.inputList[indexOfLabel].fieldRow[0].getText();
-                const message = indexOfLabel === 0 ?
-                    `${translatedDefine} ${procCode}` :
-                    `${procCode} ${translatedDefine}`;
-                addBlock('define', message, root);
-                continue;
-            }
-
-            if (root.type === 'event_whenflagclicked') {
-                addBlock('flag', getDescFromField(root), root, root.type);
-                continue;
-            }
-
-            if (root.type === 'event_whenbroadcastreceived') {
-                const fieldRow = root.inputList[0].fieldRow;
-                const eventName = fieldRow.find(input => input.name === 'BROADCAST_OPTION').getText();
-                addBlock('receive', this.msg('event', {name: eventName}), root, root.type).eventName = eventName;
-                continue;
-            }
-
-            if (root.type.substr(0, 10) === 'event_when') {
-                addBlock('event', getDescFromField(root), root, root.type);
-                continue;
-            }
-
-            if (root.type === 'control_start_as_clone') {
-                addBlock('event', getDescFromField(root), root, root.type);
-                continue;
-            }
-        }
-
-        const allBlocks = this.workspace.getAllBlocks();
-        const nonShadowBlocks = new Set();
-        const textInputsByBlockId = new Map();
-
-        const isTextInputField = field => {
-            if (!field || typeof field.getText !== 'function') return false;
-            if (this.ScratchBlocks.FieldTextInput && field instanceof this.ScratchBlocks.FieldTextInput) return true;
-            if (this.ScratchBlocks.FieldNumber && field instanceof this.ScratchBlocks.FieldNumber) return true;
-            const ctorName = field.constructor && field.constructor.name;
-            return ctorName === 'FieldTextInput' || ctorName === 'FieldNumber' || ctorName === 'FieldAngle';
-        };
-
-        const collectTextInputsFromBlock = block => {
-            const inputList = block.inputList;
-            if (!inputList) return [];
-
-            const values = [];
-            for (const input of inputList) {
-                const fieldRow = input.fieldRow;
-                if (!fieldRow) continue;
-                for (const field of fieldRow) {
-                    if (!isTextInputField(field)) continue;
-                    const text = String(field.getText()).trim();
-                    if (text) values.push(text);
-                }
-            }
-            return values;
-        };
-
-        for (const block of allBlocks) {
-            if (!block) continue;
-            if (!block.isShadow_) {
-                nonShadowBlocks.add(block);
-            }
-
-            if (block.id) {
-                const values = collectTextInputsFromBlock(block);
-                if (values.length > 0) {
-                    let entry = textInputsByBlockId.get(block.id);
-                    if (!entry) {
-                        entry = {block, values: new Set()};
-                        textInputsByBlockId.set(block.id, entry);
-                    }
-                    for (const value of values) entry.values.add(value);
-                }
-            }
-        }
-
-        for (const block of nonShadowBlocks) {
-            const blockType = block.type;
-            if (
-                !blockType.startsWith('data_') &&
-                !blockType.startsWith('event_') &&
-                !blockType.startsWith('procedures_') &&
-                blockType !== 'control_start_as_clone' &&
-                blockType !== 'event_broadcast' &&
-                blockType !== 'event_broadcastandwait'
-            ) {
-                addBlock(blockType, blockType, block, blockType);
-            }
-        }
-
-        const map = this.workspace.getVariableMap();
-
-        const vars = map.getVariablesOfType('');
-        for (const row of vars) {
-            addBlock(
-                row.isLocal ? 'var' : 'VAR',
-                row.isLocal ? this.msg('var-local', {name: row.name}) : this.msg('var-global', {name: row.name}),
-                row
-            );
-        }
-
-        const lists = map.getVariablesOfType('list');
-        for (const row of lists) {
-            addBlock(
-                row.isLocal ? 'list' : 'LIST',
-                row.isLocal ? this.msg('list-local', {name: row.name}) : this.msg('list-global', {name: row.name}),
-                row
-            );
-        }
-
-        const events = this.getCallsToEvents();
-        for (const event of events) {
-            addBlock('receive', this.msg('event', {name: event.eventName}), event.block).eventName = event.eventName;
-        }
-
-        for (const {block, values} of textInputsByBlockId.values()) {
-            const inputsText = Array.from(values).join(', ');
-            if (!inputsText) continue;
-
-            const displayText = `${block.type}: ${inputsText}`;
-            const item = addBlock(block.type, displayText, block, block.type);
-            item.isTextInputEntry = true;
-        }
-
-        // The workspace only renders the scripts you are near, but searching has
-        // to cover the whole sprite, so pick up whatever is not rendered from the
-        // VM, which holds all of it either way.
-        this.addUnrenderedBlocks(workspace, addBlock);
-
-        return myBlocks;
-    }
-
-    /**
-     * Index the blocks the workspace has not rendered, straight from the VM.
-     * @param {object} workspace The Blockly workspace.
-     * @param {Function} addBlock Adds an entry, as used by addBlocksFromWorkspace.
-     */
-    addUnrenderedBlocks (workspace, addBlock) {
-        const target = this.utils.getEditingTarget();
-        const vmBlocks = target && target.blocks && target.blocks._blocks;
-        if (!vmBlocks) return;
-
-        const scriptY = new Map();
-        if (typeof workspace.getDeferredScripts === 'function') {
-            for (const script of workspace.getDeferredScripts()) {
-                scriptY.set(script.id, script.y);
-            }
-        }
 
         const textOf = value => (
             value === null || typeof value === 'undefined' ? '' : String(value).trim()
@@ -934,7 +691,6 @@ export default class FindBarController {
                 const text = textOf(block.fields[name].value);
                 if (text) values.push(text);
             }
-            // A block's numbers and strings live in the shadow blocks in its inputs.
             for (const name of Object.keys(block.inputs || {})) {
                 const shadow = vmBlocks[block.inputs[name].shadow];
                 if (!shadow || !shadow.fields) continue;
@@ -945,15 +701,24 @@ export default class FindBarController {
             }
             return values;
         };
+        const hatLabel = block => {
+            const template = this.ScratchBlocks.Msg[block.opcode.toUpperCase()];
+            if (typeof template === 'string') {
+                const values = fieldValuesOf(block);
+                let i = 0;
+                return template.replace(/%\d+/g, () => {
+                    const value = values[i++];
+                    return typeof value === 'undefined' ? '()' : value;
+                }).trim();
+            }
+            return block.opcode.replace('event_when', 'when ').replace(/_/g, ' ');
+        };
 
         for (const blockId of Object.keys(vmBlocks)) {
-            // Anything rendered was already indexed above, with better labels.
-            if (workspace.getBlockById(blockId)) continue;
             const block = vmBlocks[blockId];
             if (!block || block.shadow || !block.opcode) continue;
             const opcode = block.opcode;
-            const stub = {id: blockId};
-            let item = null;
+            const y = block.topLevel && typeof block.y === 'number' ? block.y : null;
 
             if (block.topLevel) {
                 if (opcode === 'procedures_definition') {
@@ -962,21 +727,17 @@ export default class FindBarController {
                     const proto = protoId && vmBlocks[protoId];
                     const procCode = (proto && proto.mutation && proto.mutation.proccode) ||
                         'custom block';
-                    item = addBlock('define', `define ${procCode}`, stub, opcode);
+                    addBlock('define', `define ${procCode}`, blockId, opcode, y);
                 } else if (opcode === 'event_whenflagclicked') {
                     const flag = this.msgAny('/_general/blocks/green-flag');
-                    item = addBlock('flag', `when ${flag} clicked`, stub, opcode);
+                    addBlock('flag', `when ${flag} clicked`, blockId, opcode, y);
                 } else if (opcode === 'event_whenbroadcastreceived') {
                     const eventName = (block.fields && block.fields.BROADCAST_OPTION &&
                         block.fields.BROADCAST_OPTION.value) || 'message';
-                    item = addBlock('receive', this.msg('event', {name: eventName}), stub, opcode);
-                    item.eventName = eventName;
+                    addBlock('receive', this.msg('event', {name: eventName}), blockId, opcode, y)
+                        .eventName = eventName;
                 } else if (opcode.startsWith('event_when') || opcode === 'control_start_as_clone') {
-                    const label = opcode.replace('event_when', 'when ').replace(/_/g, ' ');
-                    item = addBlock('event', label, stub, opcode);
-                }
-                if (item && (item.y === null || typeof item.y === 'undefined')) {
-                    item.y = scriptY.has(blockId) ? scriptY.get(blockId) : block.y;
+                    addBlock('event', hatLabel(block), blockId, opcode, y);
                 }
             }
 
@@ -984,15 +745,11 @@ export default class FindBarController {
                 !opcode.startsWith('data_') &&
                 !opcode.startsWith('event_') &&
                 !opcode.startsWith('procedures_') &&
-                opcode !== 'control_start_as_clone' &&
-                opcode !== 'event_broadcast' &&
-                opcode !== 'event_broadcastandwait'
+                opcode !== 'control_start_as_clone'
             ) {
-                addBlock(opcode, opcode, stub, opcode);
+                addBlock(opcode, opcode, blockId, opcode);
             }
 
-            // getCallsToEvents only sees rendered blocks, so pick up the
-            // broadcasts sent from scripts that are not.
             if (opcode === 'event_broadcast' || opcode === 'event_broadcastandwait') {
                 const menuId = block.inputs && block.inputs.BROADCAST_INPUT &&
                     (block.inputs.BROADCAST_INPUT.block || block.inputs.BROADCAST_INPUT.shadow);
@@ -1000,65 +757,56 @@ export default class FindBarController {
                 const eventName = menu && menu.fields && menu.fields.BROADCAST_OPTION ?
                     menu.fields.BROADCAST_OPTION.value :
                     this.msg('complex-broadcast');
-                const sender = addBlock('receive', this.msg('event', {name: eventName}), stub, opcode);
-                sender.eventName = eventName;
+                addBlock('receive', this.msg('event', {name: eventName}), blockId, opcode)
+                    .eventName = eventName;
             }
 
             const values = fieldValuesOf(block);
             if (values.length) {
-                const entry = addBlock(opcode, `${opcode}: ${values.join(', ')}`, stub, opcode);
-                entry.isTextInputEntry = true;
-            }
-        }
-    }
-
-    addBlocksFromTarget (target, myBlocks, myBlocksByProcCode, spriteName) {
-        const blocks = target.blocks;
-        if (!blocks._blocks) return;
-
-        const addBlock = (cls, txt, blockId, opcode = null) => {
-            const displayText = `[${spriteName}] ${txt}`;
-            const clone = myBlocksByProcCode[displayText];
-            if (clone) {
-                if (!clone.clones) clone.clones = [];
-                clone.clones.push(blockId);
-                return clone;
-            }
-            const items = new BlockItem(cls, displayText, blockId, 0, opcode);
-            items.spriteName = spriteName;
-            items.isCurrentSprite = false;
-            items.targetId = target.id;
-            myBlocks.push(items);
-            myBlocksByProcCode[displayText] = items;
-            return items;
-        };
-
-        for (const blockId of Object.keys(blocks._blocks)) {
-            const block = blocks._blocks[blockId];
-
-            if (block.topLevel) {
-                if (block.opcode === 'procedures_definition') {
-                    const procCode = block.mutation?.proccode || 'custom block';
-                    addBlock('define', `define ${procCode}`, blockId, block.opcode);
-                } else if (block.opcode === 'event_whenflagclicked') {
-                    addBlock('flag', 'when flag clicked', blockId, block.opcode);
-                } else if (block.opcode.startsWith('event_when')) {
-                    addBlock('event', block.opcode.replace('event_when', 'when '), blockId, block.opcode);
-                }
+                addBlock(opcode, `${opcode}: ${values.join(', ')}`, blockId, opcode)
+                    .isTextInputEntry = true;
             }
         }
 
-        const variables = target.variables;
-        if (variables) {
+        const addVars = (variables, isLocal) => {
+            if (!variables) return;
             for (const varId of Object.keys(variables)) {
                 const variable = variables[varId];
                 if (variable.type === '') {
-                    addBlock('var', `var ${variable.name}`, varId);
+                    addBlock(
+                        isLocal ? 'var' : 'VAR',
+                        isLocal ?
+                            this.msg('var-local', {name: variable.name}) :
+                            this.msg('var-global', {name: variable.name}),
+                        varId
+                    );
                 } else if (variable.type === 'list') {
-                    addBlock('list', `list ${variable.name}`, varId);
+                    addBlock(
+                        isLocal ? 'list' : 'LIST',
+                        isLocal ?
+                            this.msg('list-local', {name: variable.name}) :
+                            this.msg('list-global', {name: variable.name}),
+                        varId
+                    );
                 }
             }
-        }
+        };
+        const stage = this.vm.runtime.getTargetForStage();
+        if (stage) addVars(stage.variables, false);
+        if (target !== stage) addVars(target.variables, true);
+
+        const clsOrder = {flag: 0, receive: 1, event: 2, define: 3, var: 4, VAR: 5, list: 6, LIST: 7};
+        const rank = cls => (cls in clsOrder ? clsOrder[cls] : 8);
+
+        myBlocks.sort((a, b) => {
+            const t = rank(a.cls) - rank(b.cls);
+            if (t !== 0) return t;
+            if (a.lower < b.lower) return -1;
+            if (a.lower > b.lower) return 1;
+            return (a.y || 0) - (b.y || 0);
+        });
+
+        return myBlocks;
     }
 
     getScratchCostumes () {
@@ -1081,33 +829,5 @@ export default class FindBarController {
             i++;
         }
         return items;
-    }
-
-    getCallsToEvents () {
-        const uses = [];
-        const alreadyFound = new Set();
-
-        for (const block of this.workspace.getAllBlocks()) {
-            if (block.type !== 'event_broadcast' && block.type !== 'event_broadcastandwait') {
-                continue;
-            }
-
-            const broadcastInput = block.getChildren()[0];
-            if (!broadcastInput) continue;
-
-            let eventName = '';
-            if (broadcastInput.type === 'event_broadcast_menu') {
-                eventName = broadcastInput.inputList[0].fieldRow[0].getText();
-            } else {
-                eventName = this.msg('complex-broadcast');
-            }
-
-            if (!alreadyFound.has(eventName)) {
-                alreadyFound.add(eventName);
-                uses.push({eventName, block});
-            }
-        }
-
-        return uses;
     }
 }

@@ -66,6 +66,7 @@ const api = {
     readNotifications: () => request('/notifications/read', {method: 'POST'}),
     explore: ({sort = 'recent', q = '', offset = 0, limit = 24} = {}) =>
         request(`/explore?sort=${sort}&q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}`),
+    leaderboard: by => request(`/leaderboard?by=${by}`),
     getProject: id => request(`/projects/${id}`),
     createProject,
     uploadProject,

@@ -20,36 +20,6 @@ export default class Dropdown {
         this._cachedVariableUses = new Map();
         this._cachedProcedureCalls = new Map();
         this._cachedEventCalls = new Map();
-        this._cacheWorkspaceVersion = null;
-    }
-
-    get workspace () {
-        return this.ScratchBlocks.getMainWorkspace();
-    }
-
-    _getWorkspaceVersion () {
-        const workspace = this.workspace;
-        if (!workspace) return null;
-        return workspace.id || (workspace.getAllBlocks && JSON.stringify(workspace.getAllBlocks().map(b => b.id)));
-    }
-
-    _shouldInvalidateCache () {
-        const currentVersion = this._getWorkspaceVersion();
-        if (currentVersion !== this._cacheWorkspaceVersion) {
-            this._cacheWorkspaceVersion = currentVersion;
-            this._cachedVariableUses.clear();
-            this._cachedProcedureCalls.clear();
-            this._cachedEventCalls.clear();
-            return true;
-        }
-        return false;
-    }
-
-    _invalidateCache () {
-        this._cachedVariableUses.clear();
-        this._cachedProcedureCalls.clear();
-        this._cachedEventCalls.clear();
-        this._cacheWorkspaceVersion = null;
     }
 
     createDom () {
@@ -176,17 +146,6 @@ export default class Dropdown {
             this.selected = item;
         }
 
-        if (item.data.targetId && item.data.targetId !== this.utils.getEditingTarget().id) {
-            const target = this.vm.runtime.getTargetById(item.data.targetId);
-            if (target) {
-                this.vm.setEditingTarget(target.id);
-                setTimeout(() => {
-                    this.navigateToBlock(item, instanceBlock);
-                }, 100);
-                return;
-            }
-        }
-
         this.navigateToBlock(item, instanceBlock);
     }
 
@@ -241,10 +200,7 @@ export default class Dropdown {
         }
 
         if (item.data.clones) {
-            const blocks = [this.workspace.getBlockById(item.data.labelID)];
-            for (const cloneID of item.data.clones) {
-                blocks.push(this.workspace.getBlockById(cloneID));
-            }
+            const blocks = [item.data.labelID, ...item.data.clones].map(id => ({id}));
             this.carousel.build(item, blocks, instanceBlock);
             return;
         }
@@ -254,23 +210,22 @@ export default class Dropdown {
     }
 
     getVariableUsesById (id) {
-        this._shouldInvalidateCache();
-
         if (this._cachedVariableUses.has(id)) {
             return this._cachedVariableUses.get(id);
         }
 
         const uses = [];
-        const topBlocks = this.workspace.getTopBlocks();
-        for (const topBlock of topBlocks) {
-            const kids = topBlock.getDescendants();
-            for (const block of kids) {
-                const blockVariables = block.getVarModels && block.getVarModels();
-                if (blockVariables) {
-                    for (const blockVar of blockVariables) {
-                        if (blockVar.getId() === id) {
-                            uses.push(block);
-                        }
+        const target = this.utils.getEditingTarget();
+        const blocks = target && target.blocks && target.blocks._blocks;
+        if (blocks) {
+            for (const blockId of Object.keys(blocks)) {
+                const block = blocks[blockId];
+                const fields = block.fields;
+                if (!fields) continue;
+                for (const name of Object.keys(fields)) {
+                    if (fields[name].id === id) {
+                        uses.push(new BlockInstance(target, block));
+                        break;
                     }
                 }
             }
@@ -281,24 +236,27 @@ export default class Dropdown {
     }
 
     getCallsToProcedureById (id) {
-        this._shouldInvalidateCache();
-
         if (this._cachedProcedureCalls.has(id)) {
             return this._cachedProcedureCalls.get(id);
         }
 
-        const procBlock = this.workspace.getBlockById(id);
-        const label = procBlock.getChildren()[0];
-        const procCode = label.getProcCode();
-
-        const uses = [procBlock];
-        const topBlocks = this.workspace.getTopBlocks();
-        for (const topBlock of topBlocks) {
-            const kids = topBlock.getDescendants();
-            for (const block of kids) {
-                if (block.type === 'procedures_call') {
-                    if (block.getProcCode() === procCode) {
-                        uses.push(block);
+        const uses = [];
+        const target = this.utils.getEditingTarget();
+        const blocks = target && target.blocks && target.blocks._blocks;
+        const def = blocks && blocks[id];
+        if (def) {
+            uses.push(new BlockInstance(target, def));
+            const protoId = def.inputs && def.inputs.custom_block && def.inputs.custom_block.block;
+            const proto = protoId && blocks[protoId];
+            const procCode = proto && proto.mutation && proto.mutation.proccode;
+            if (procCode) {
+                for (const blockId of Object.keys(blocks)) {
+                    const block = blocks[blockId];
+                    if (
+                        block.opcode === 'procedures_call' &&
+                        block.mutation && block.mutation.proccode === procCode
+                    ) {
+                        uses.push(new BlockInstance(target, block));
                     }
                 }
             }
@@ -309,8 +267,6 @@ export default class Dropdown {
     }
 
     getCallsToEventsByName (name) {
-        this._shouldInvalidateCache();
-
         if (this._cachedEventCalls.has(name)) {
             return this._cachedEventCalls.get(name);
         }
@@ -360,6 +316,5 @@ export default class Dropdown {
         this._cachedVariableUses.clear();
         this._cachedProcedureCalls.clear();
         this._cachedEventCalls.clear();
-        this._cacheWorkspaceVersion = null;
     }
 }

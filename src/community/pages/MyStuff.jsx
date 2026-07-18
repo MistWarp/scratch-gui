@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    Plus, Trash2, Heart, HeartCrack, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive
+    Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
@@ -249,7 +249,7 @@ const MyStuff = () => {
                                         {project.loveCount || 0}
                                     </span>
                                     <span className={styles.rowStat}>
-                                        <HeartCrack size={13} />
+                                        <ThumbsDown size={13} />
                                         {project.brokenHeartCount || 0}
                                     </span>
                                     <span className={styles.rowStat}>
