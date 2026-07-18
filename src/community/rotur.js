@@ -76,8 +76,16 @@ const rotur = {
     banner,
     profile: (username, {includePosts = false} = {}) =>
         get(`/profile/${encodeURIComponent(username)}`, {include_posts: includePosts ? '1' : '0'}),
-    follow: username => get('/follow', {username}),
-    unfollow: username => get('/unfollow', {username}),
+    follow: async username => {
+        const result = await get('/follow', {username});
+        followerCountCache.delete((username || '').toLowerCase());
+        return result;
+    },
+    unfollow: async username => {
+        const result = await get('/unfollow', {username});
+        followerCountCache.delete((username || '').toLowerCase());
+        return result;
+    },
     followers: username => get('/followers', {name: username}),
     following: username => get('/following', {name: username}),
     status: getStatus,

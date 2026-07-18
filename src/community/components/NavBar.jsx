@@ -195,7 +195,7 @@ const NavBar = () => {
                                     />
                                     <span>{person.username}</span>
                                     <span className={styles.suggestionMeta}>
-                                        {person.followers} followers · {person.projects} projects
+                                        {person.followers ?? 0} followers · {person.projects} projects
                                     </span>
                                 </button>
                             ))}

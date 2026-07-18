@@ -34,6 +34,7 @@ const RouteMeta = () => {
     useEffect(() => {
         const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix));
         setPageMeta({title: match ? match[1] : null});
+        window.scrollTo(0, 0);
     }, [pathname]);
     return null;
 };

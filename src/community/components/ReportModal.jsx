@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {Flag, X} from 'lucide-react';
 import api from '../api';
 import styles from './ReportModal.module.css';
@@ -25,6 +25,16 @@ const ReportModal = ({type, target, context, onClose}) => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
+    const firstRef = useRef(null);
+
+    useEffect(() => {
+        if (firstRef.current) firstRef.current.focus();
+        const onKey = event => {
+            if (event.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [onClose]);
 
     const submit = async () => {
         if (busy) return;
@@ -79,6 +89,7 @@ const ReportModal = ({type, target, context, onClose}) => {
                     <div className={styles.body}>
                         <label className={styles.label}>What is wrong?</label>
                         <select
+                            ref={firstRef}
                             className={styles.select}
                             value={category}
                             onChange={e => setCategory(e.target.value)}

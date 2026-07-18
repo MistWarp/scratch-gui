@@ -219,9 +219,10 @@ class CollaborationModal extends Component {
         } catch (error) {
             this.setState({
                 error: error.message || 'Failed to create room',
-                isConnecting: false,
                 connectionStep: 'join'
             });
+        } finally {
+            this.setState({isConnecting: false});
         }
     }
 

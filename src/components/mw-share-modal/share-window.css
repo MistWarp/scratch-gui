@@ -119,6 +119,13 @@
     margin-top: 4px;
 }
 
+.notice {
+    color: var(--text-primary, #ccc);
+    font-size: 13px;
+    margin-top: 4px;
+    opacity: 0.8;
+}
+
 .done-message {
     color: var(--text-primary, #eee);
     font-size: 14px;

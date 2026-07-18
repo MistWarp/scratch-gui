@@ -101,6 +101,7 @@ const Project = () => {
     const [copied, setCopied] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
+    const thumbMenuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const [blockStats, setBlockStats] = useState(null);
@@ -291,6 +292,9 @@ const Project = () => {
         const onDown = event => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
                 setMenuOpen(false);
+            }
+            if (thumbMenuRef.current && !thumbMenuRef.current.contains(event.target)) {
+                setThumbnailMenu(false);
             }
         };
         window.addEventListener('mousedown', onDown);
@@ -568,7 +572,10 @@ const Project = () => {
                         ) : null}
                         <span className={styles.statSpacer} />
                         {project.isOwner ? (
-                            <div className={styles.thumbnailPicker}>
+                            <div
+                                className={styles.thumbnailPicker}
+                                ref={thumbMenuRef}
+                            >
                                 <button
                                     className={styles.statButton}
                                     title="Set the project thumbnail"
@@ -985,7 +992,7 @@ const HistoryList = ({id}) => {
 const PullList = ({id, canMerge, onChange}) => {
     const [pulls, setPulls] = useState(null);
     const [openPull, setOpenPull] = useState(null);
-    const [diff, setDiff] = useState('');
+    const [diff, setDiff] = useState(null);
 
     const reload = useCallback(() => {
         api.pulls(id).then(d => setPulls(d.pulls || [])).catch(() => setPulls([]));
@@ -995,7 +1002,7 @@ const PullList = ({id, canMerge, onChange}) => {
 
     const view = async pull => {
         setOpenPull(pull);
-        setDiff('');
+        setDiff(null);
         try {
             setDiff(await api.pullDiff(id, pull.index));
         } catch (e) {

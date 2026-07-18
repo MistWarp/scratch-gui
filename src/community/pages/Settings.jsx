@@ -6,7 +6,6 @@ import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-p
 import WarpThemePanel from '../components/WarpThemePanel.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
-    notifyLocalChange,
     getUsernameOverride,
     setUsernameOverride
 } from '../../lib/rotur/cloud-sync.js';
@@ -87,13 +86,11 @@ const Settings = () => {
         setAccentMenuBar(enabled);
         setAccentMenuBarState(enabled);
         applyTheme(detectTheme());
-        notifyLocalChange();
     };
     const changeMenuBarText = value => {
         setMenuBarText(value);
         setMenuBarTextState(value);
         applyTheme(detectTheme());
-        notifyLocalChange();
     };
     const changePresence = (key, enabled) => {
         updateRoturSettings({[key]: enabled});

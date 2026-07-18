@@ -20,29 +20,25 @@ let pushTimer = null;
 let pushChain = Promise.resolve();
 
 const USERNAME_OVERRIDE_KEY = 'tw:username-override';
-const LOCAL_UPDATED_KEY = 'tw:settings-updated';
+const DIRTY_KEY = 'tw:settings-dirty';
 
-const stampLocalChange = () => {
+const markDirty = dirty => {
     try {
-        localStorage.setItem(LOCAL_UPDATED_KEY, String(Date.now()));
+        if (dirty) {
+            localStorage.setItem(DIRTY_KEY, '1');
+        } else {
+            localStorage.removeItem(DIRTY_KEY);
+        }
     } catch (_) {
         // ignore
     }
 };
 
-const readLocalUpdated = () => {
+const isDirty = () => {
     try {
-        return Number(localStorage.getItem(LOCAL_UPDATED_KEY)) || 0;
+        return localStorage.getItem(DIRTY_KEY) === '1';
     } catch (_) {
-        return 0;
-    }
-};
-
-const setLocalUpdated = value => {
-    try {
-        localStorage.setItem(LOCAL_UPDATED_KEY, String(value || 0));
-    } catch (_) {
-        // ignore
+        return false;
     }
 };
 
@@ -171,10 +167,8 @@ const pushToCloud = () => {
     pushChain = pushChain.catch(() => null).then(async () => {
         if (suppressPush || !loadSession()) return false;
         try {
-            const response = await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
-            if (response && Number(response.updatedAt)) {
-                setLocalUpdated(Number(response.updatedAt));
-            }
+            await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
+            markDirty(false);
             return true;
         } catch (e) {
             // eslint-disable-next-line no-console
@@ -206,14 +200,12 @@ const pullFromCloud = async () => {
         return {applied: false};
     }
 
-    const cloudUpdated = (snapshot.settings && Number(snapshot.settings.updatedAt)) || 0;
-    if (readLocalUpdated() > cloudUpdated) {
+    if (isDirty()) {
         await pushToCloud();
         return {applied: false};
     }
 
     applySnapshotLocally(snapshot);
-    setLocalUpdated(cloudUpdated);
     return {applied: true};
 };
 
@@ -223,7 +215,7 @@ const pullFromCloud = async () => {
  */
 const notifyLocalChange = (delayMs = 800) => {
     if (suppressPush) return;
-    stampLocalChange();
+    markDirty(true);
     if (!loadSession()) return;
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {

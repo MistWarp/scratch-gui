@@ -31,6 +31,8 @@ const Profile = () => {
     const [mwUser, setMwUser] = useState(null);
     const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
+    const [actionError, setActionError] = useState(null);
+    const [followBusy, setFollowBusy] = useState(false);
     const [reporting, setReporting] = useState(false);
     const [adminProjects, setAdminProjects] = useState([]);
     const [presence, setPresence] = useState(null);
@@ -95,7 +97,9 @@ const Profile = () => {
     }, [profile, name]);
 
     const toggleFollow = async () => {
-        if (!user || !profile) return;
+        if (!user || !profile || followBusy) return;
+        setFollowBusy(true);
+        setActionError(null);
         try {
             if (profile.followed) {
                 await rotur.unfollow(name);
@@ -104,7 +108,9 @@ const Profile = () => {
             }
             load();
         } catch (e) {
-            return;
+            setActionError(e.message || 'Could not update follow.');
+        } finally {
+            setFollowBusy(false);
         }
     };
 
@@ -112,11 +118,12 @@ const Profile = () => {
     const commentsOff = Boolean(mwUser && mwUser.commentsOff);
 
     const toggleComments = async () => {
+        setActionError(null);
         try {
             await api.updateProfile({commentsOff: !commentsOff});
             load();
         } catch (e) {
-            return;
+            setActionError(e.message || 'Could not update comments.');
         }
     };
 
@@ -195,6 +202,7 @@ const Profile = () => {
                     {user && !isSelf ? (
                         <button
                             className={profile.followed ? styles.followingButton : styles.followButton}
+                            disabled={followBusy}
                             onClick={toggleFollow}
                         >
                             {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
@@ -224,6 +232,8 @@ const Profile = () => {
                     ) : null}
                 </header>
             </section>
+
+            {actionError ? <p className={styles.status}>{actionError}</p> : null}
 
             {!onMistWarp ? (
                 <div className={styles.notOnMistwarp}>

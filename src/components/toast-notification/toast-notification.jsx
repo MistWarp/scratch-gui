@@ -8,14 +8,15 @@ const ToastNotificationComponent = props => {
     const {message, type = 'info', visible, onClose} = props;
     const intl = props.intl;
 
-    if (!visible || !message) return null;
-
     React.useEffect(() => {
+        if (!visible || !message) return () => {};
         const timeout = setTimeout(() => {
             onClose();
         }, 3000);
         return () => clearTimeout(timeout);
-    }, [onClose]);
+    }, [visible, message, type, onClose]);
+
+    if (!visible || !message) return null;
 
     return (
         <div
@@ -24,7 +25,7 @@ const ToastNotificationComponent = props => {
             aria-live="polite"
         >
             <span className={styles.message}>
-                {typeof message === 'string' ? message : message}
+                {message}
             </span>
             <button
                 className={styles.closeButton}

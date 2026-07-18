@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Trash2} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -10,23 +10,26 @@ import styles from './NewsItem.module.css';
 const NewsItem = ({item, onChanged}) => {
     const {user} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
+    const [error, setError] = useState('');
 
     const react = async type => {
+        setError('');
         try {
             await api.reactNews(item.id, type);
             onChanged();
         } catch (e) {
-            return;
+            setError(e.message || 'Could not react.');
         }
     };
 
     const remove = async () => {
         if (!window.confirm('Delete this update?')) return;
+        setError('');
         try {
             await api.deleteNews(item.id);
             onChanged();
         } catch (e) {
-            return;
+            setError(e.message || 'Could not delete update.');
         }
     };
 
@@ -53,6 +56,7 @@ const NewsItem = ({item, onChanged}) => {
                 />
                 {item.author ? <span className={styles.author}>posted by {item.author}</span> : null}
             </div>
+            {error ? <p className={styles.error}>{error}</p> : null}
         </article>
     );
 };

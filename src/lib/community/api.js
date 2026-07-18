@@ -35,7 +35,7 @@ const storeSession = token => {
 
 const parseResponse = async response => {
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) {
+    if (!response.ok || data.ok === false || data.error) {
         const error = new Error(data.error || `Request failed (${response.status})`);
         error.status = response.status;
         error.code = data.code;
@@ -53,7 +53,7 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     const validator = validatorData.validator;
     if (!validator) {
         const error = new Error(validatorData.error || 'Could not validate Rotur login');
-        if (validatorResponse.status === 403) {
+        if (validatorData.error || validatorResponse.status === 403) {
             error.code = 'VALIDATOR_GENERATION_FAILED';
         }
         throw error;
@@ -67,11 +67,23 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     return authData;
 };
 
+let authInvalidHandler = null;
+const onAuthInvalid = handler => {
+    authInvalidHandler = handler;
+};
+
 const runExchange = token => {
     if (!exchangeInFlight) {
-        exchangeInFlight = exchangeValidator(token).finally(() => {
-            exchangeInFlight = null;
-        });
+        exchangeInFlight = exchangeValidator(token)
+            .catch(error => {
+                if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
+                    authInvalidHandler();
+                }
+                throw error;
+            })
+            .finally(() => {
+                exchangeInFlight = null;
+            });
     }
     return exchangeInFlight;
 };
@@ -148,7 +160,7 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
         } catch (e) {
             data = {};
         }
-        if (xhr.status >= 200 && xhr.status < 300 && data.ok !== false) {
+        if (xhr.status >= 200 && xhr.status < 300 && data.ok !== false && !data.error) {
             resolve(data);
             return;
         }
@@ -194,6 +206,8 @@ export {
     loadSession,
     storeSession,
     exchangeValidator,
+    runExchange,
+    onAuthInvalid,
     logout,
     createProject,
     uploadProject,

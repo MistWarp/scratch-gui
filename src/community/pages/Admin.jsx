@@ -19,17 +19,16 @@ const SECTIONS = [
     {key: 'admins', label: 'Admins', icon: ShieldCheck}
 ];
 
-const dayLabel = offset => {
-    const d = new Date(Date.now() - (offset * 86400000));
-    return `${d.getMonth() + 1}/${d.getDate()}`;
+const dayLabel = dayNumber => {
+    const d = new Date(dayNumber * 86400000);
+    return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 };
 
 const buildSeries = (byDay, days) => {
     const today = Math.floor(Date.now() / 86400000);
     return Array.from({length: days}, (unused, idx) => {
-        const offset = days - 1 - idx;
-        const key = String(today - offset);
-        return {label: dayLabel(offset), value: (byDay && byDay[key]) || 0};
+        const dayNumber = today - (days - 1 - idx);
+        return {label: dayLabel(dayNumber), value: (byDay && byDay[String(dayNumber)]) || 0};
     });
 };
 

@@ -21,9 +21,11 @@ const MyStuff = () => {
     const [featuredProject, setFeaturedProject] = useState(user ? user.featuredProject : '');
     const [uploading, setUploading] = useState(false);
     const [actionError, setActionError] = useState('');
+    const [failed, setFailed] = useState(false);
     const [openMenu, setOpenMenu] = useState('');
     const [quota, setQuota] = useState(null);
     const uploadInput = useRef(null);
+    const menuRef = useRef(null);
 
     useEffect(() => {
         if (!user) {
@@ -50,17 +52,29 @@ const MyStuff = () => {
             return;
         }
         setProjects(null);
+        setFailed(false);
         const fetchTab = tab === 'loves' ?
             api.userLoves(user.username) :
             api.myProjects(user.username);
         fetchTab
             .then(data => setProjects(data.projects || []))
-            .catch(() => setProjects([]));
+            .catch(() => setFailed(true));
     }, [user, tab]);
 
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (!openMenu) return () => {};
+        const onDown = event => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setOpenMenu('');
+            }
+        };
+        window.addEventListener('mousedown', onDown);
+        return () => window.removeEventListener('mousedown', onDown);
+    }, [openMenu]);
 
     const clearFeaturedIf = async id => {
         if (featuredProject !== id) return;
@@ -74,6 +88,7 @@ const MyStuff = () => {
 
     const unpublish = async id => {
         try {
+            setActionError('');
             await api.unpublish(id);
             await clearFeaturedIf(id);
             load();
@@ -202,7 +217,15 @@ const MyStuff = () => {
                 ))}
             </div>
 
-            {projects === null ? (
+            {failed ? (
+                <p className={styles.status}>
+                    Couldn&apos;t load.{' '}
+                    <button
+                        className={styles.secondary}
+                        onClick={load}
+                    >Try again</button>
+                </p>
+            ) : projects === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : tab !== 'projects' ? (
                 projects.length ? (
@@ -276,7 +299,10 @@ const MyStuff = () => {
                                         onClick={() => publish(project.id)}
                                     >Share</button>
                                 )}
-                                <div className={styles.actionMenuWrap}>
+                                <div
+                                    className={styles.actionMenuWrap}
+                                    ref={openMenu === project.id ? menuRef : null}
+                                >
                                     <button
                                         className={styles.moreButton}
                                         aria-label={`Actions for ${project.title}`}

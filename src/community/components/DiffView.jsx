@@ -11,8 +11,11 @@ const lineClass = line => {
 };
 
 const DiffView = ({diff}) => {
-    if (!diff) {
+    if (diff === null || typeof diff === 'undefined') {
         return <p className={styles.empty}>Loading diff…</p>;
+    }
+    if (!diff) {
+        return <p className={styles.empty}>No changes.</p>;
     }
     const lines = diff.split('\n');
     return (
