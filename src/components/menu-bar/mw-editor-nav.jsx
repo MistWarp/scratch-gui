@@ -2,21 +2,18 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {Bell, FolderOpen} from 'lucide-react';
+import {FolderOpen} from 'lucide-react';
 
 import menuBarStyles from './menu-bar.css';
-import openMistWarpPageWindow from '../../lib/mw/open-mw-page-window.js';
+import MwNotifications from './mw-notifications.jsx';
+import MyStuffPage from '../../community/pages/MyStuff.jsx';
+import openMistWarpCommunityWindow from '../../lib/mw/open-mw-community-window.jsx';
 
-const openMyStuff = () => openMistWarpPageWindow({
+const openMyStuff = () => openMistWarpCommunityWindow({
     id: 'mw-mystuff-window',
     title: 'My Stuff',
-    path: '/mystuff'
-});
-
-const openNotifications = () => openMistWarpPageWindow({
-    id: 'mw-notifications-window',
-    title: 'Notifications',
-    path: '/notifications'
+    initialPath: '/mystuff',
+    element: <MyStuffPage />
 });
 
 const NavItem = ({title, icon: Icon, onClick}) => {
@@ -58,11 +55,7 @@ const MwEditorNav = ({username}) => {
                 icon={FolderOpen}
                 onClick={openMyStuff}
             />
-            <NavItem
-                title="Notifications"
-                icon={Bell}
-                onClick={openNotifications}
-            />
+            <MwNotifications />
         </React.Fragment>
     );
 };
