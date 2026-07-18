@@ -11,7 +11,7 @@ import {
     getMistWarpAction, getRememberedPlatformProjectState, publishToMistWarp
 } from '../../lib/community/publish.js';
 
-import {Save, CloudUpload, Loader} from 'lucide-react';
+import {Save, Loader} from 'lucide-react';
 
 import styles from './save-status.css';
 
@@ -30,9 +30,6 @@ const TWSaveStatus = ({
     const mistwarpAction = roturReady ?
         getMistWarpAction(platformState, projectChanged) :
         null;
-    // An already-shared project the user owns updates in place: skip the share
-    // window and upload the sb3 straight away when they hit save.
-    const sharedUpdate = mistwarpAction === 'update' && platformState && platformState.shared;
     const openSaveWindow = useCallback(() => openMistWarpShareWindow({
         vm,
         initialTitle: projectTitle,
@@ -53,7 +50,7 @@ const TWSaveStatus = ({
             setUploading(false);
         }
     }, [uploading, vm, projectTitle, onProjectUnchanged, openSaveWindow]);
-    const onSaveClick = sharedUpdate ? directUpload : openSaveWindow;
+    const onSaveClick = mistwarpAction === 'update' ? directUpload : openSaveWindow;
     if (filterInlineAlerts(alertsList).length > 0) {
         return <InlineMessages />;
     }
@@ -104,46 +101,49 @@ const TWSaveStatus = ({
         return saveToComputer;
     }
     return (
-        <React.Fragment>
-            <div
-                className={styles.saveNow}
-                onClick={onSaveClick}
-            >
+        <div
+            className={styles.saveNow}
+            onClick={onSaveClick}
+        >
+            {uploading ? (
+                <Loader
+                    className={styles.saveIconAlways}
+                    size={18}
+                />
+            ) : (
+                <Save
+                    className={styles.saveIconAlways}
+                    size={18}
+                />
+            )}
+            <span className={styles.saveLabel}>
                 {uploading ? (
-                    <Loader
-                        className={styles.saveIconAlways}
-                        size={18}
+                    <FormattedMessage
+                        defaultMessage="Saving to MistWarp…"
+                        description="Menu bar item while uploading the project to MistWarp"
+                        id="mw.saveStatus.saving"
+                    />
+                ) : mistwarpAction === 'remix' ? (
+                    <FormattedMessage
+                        defaultMessage="Remix to MistWarp"
+                        description="Menu bar item to remix the project to MistWarp"
+                        id="mw.saveStatus.remix"
+                    />
+                ) : mistwarpAction === 'update' ? (
+                    <FormattedMessage
+                        defaultMessage="Update MistWarp project"
+                        description="Menu bar item to update the project on MistWarp"
+                        id="mw.saveStatus.update"
                     />
                 ) : (
-                    <CloudUpload
-                        className={styles.saveIconAlways}
-                        size={18}
+                    <FormattedMessage
+                        defaultMessage="Save to MistWarp"
+                        description="Menu bar item to save the project to MistWarp"
+                        id="mw.saveStatus.save"
                     />
                 )}
-                <span className={styles.saveLabel}>
-                    {uploading ? (
-                        <FormattedMessage
-                            defaultMessage="Saving to MistWarp…"
-                            description="Menu bar item while uploading the project to MistWarp"
-                            id="mw.saveStatus.saving"
-                        />
-                    ) : mistwarpAction === 'remix' ? (
-                        <FormattedMessage
-                            defaultMessage="Remix to MistWarp"
-                            description="Menu bar item to remix the project to MistWarp"
-                            id="mw.saveStatus.remix"
-                        />
-                    ) : (
-                        <FormattedMessage
-                            defaultMessage="Save to MistWarp"
-                            description="Menu bar item to save the project to MistWarp"
-                            id="mw.saveStatus.save"
-                        />
-                    )}
-                </span>
-            </div>
-            {saveToComputer}
-        </React.Fragment>
+            </span>
+        </div>
     );
 };
 

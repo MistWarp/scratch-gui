@@ -303,6 +303,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 shouldUpdateTargets,
                 shouldUpdateProjectChanged,
                 onOpenProjectThemePrompt,
+                onSetTheme,
                 onBlockDragUpdate,
                 onGreenFlag,
                 onKeyDown,

@@ -267,6 +267,14 @@ const publishToMistWarp = async ({
     }
     rememberPlatformProject({...platformProject, id: platformId, isOwner: true, shared});
 
+    try {
+        const withHash = new URL(window.location.href);
+        withHash.hash = `mw-${platformId}`;
+        window.history.replaceState(null, '', withHash);
+    } catch (e) {
+        // ignore
+    }
+
     return {id: platformId, url: `/project/${platformId}`, shared};
 };
 
