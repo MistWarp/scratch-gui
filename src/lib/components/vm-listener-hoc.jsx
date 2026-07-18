@@ -25,8 +25,30 @@ import {
 import {openProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {setCustomStageSize} from '../../reducers/custom-stage-size';
 import {openUnknownPlatformModal} from '../../reducers/modals';
+import {setTheme} from '../../reducers/theme';
+import {Theme} from '../themes';
+import {CustomTheme} from '../themes/custom-themes.js';
 import implementGuiAPI from '../api/extension-gui';
 import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
+
+const projectThemeSuppressed = () => {
+    try {
+        return new URLSearchParams(window.location.search).get('apply_project_theme') === '0';
+    } catch (e) {
+        return false;
+    }
+};
+
+const buildProjectTheme = payload => {
+    if (payload && payload.kind === 'custom' && payload.data) {
+        return CustomTheme.import(payload.data);
+    }
+    if (payload && payload.kind === 'standard' && payload.data) {
+        const d = payload.data;
+        return new Theme(d.accent, d.gui, d.blocks, d.menuBarAlign, d.wallpaper, d.fonts, null, d.appearance || {});
+    }
+    return null;
+};
 
 let compileErrorCounter = 0;
 
@@ -168,6 +190,29 @@ const vmListenerHOC = function (WrappedComponent) {
 
             const stored = runtime.getStoredProjectOptions();
             if (!stored || !stored.mistwarpTheme) return;
+
+            // On the community project page the project runs embedded, so the
+            // theme just applies (no prompt) unless the page suppressed it.
+            if (this.props.isEmbedded) {
+                if (projectThemeSuppressed()) return;
+                try {
+                    const theme = buildProjectTheme(stored.mistwarpTheme);
+                    if (theme) {
+                        this.props.onSetTheme(theme);
+                        try {
+                            window.parent.postMessage(
+                                {type: 'mw:project-theme-applied', theme: stored.mistwarpTheme},
+                                '*'
+                            );
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
+                } catch (e) {
+                    // ignore: bad theme payloads just don't apply
+                }
+                return;
+            }
 
             const promptKey = computePromptKey(stored.mistwarpTheme);
             if (!promptKey) return;
@@ -318,6 +363,8 @@ const vmListenerHOC = function (WrappedComponent) {
         onPlatformMismatch: PropTypes.func.isRequired,
         onRuntimeOptionsChanged: PropTypes.func.isRequired,
         onOpenProjectThemePrompt: PropTypes.func,
+        onSetTheme: PropTypes.func,
+        isEmbedded: PropTypes.bool,
         onStageSizeChanged: PropTypes.func,
         onCompileError: PropTypes.func,
         onClearCompileErrors: PropTypes.func,
@@ -343,6 +390,7 @@ const vmListenerHOC = function (WrappedComponent) {
             state.scratchGui.editorTab.activeTabIndex === BLOCKS_TAB_INDEX
         ),
         projectChanged: state.scratchGui.projectChanged,
+        isEmbedded: state.scratchGui.mode.isEmbedded,
         // Do not emit target or project updates in fullscreen or player only mode
         // or when recording sounds (it leads to garbled recordings on low-power machines)
         shouldUpdateTargets: !state.scratchGui.mode.isFullScreen && !state.scratchGui.mode.isPlayerOnly &&
@@ -394,6 +442,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onOpenProjectThemePrompt: (mistwarpTheme, promptKey) => dispatch(
             openProjectThemePrompt(mistwarpTheme, promptKey)
         ),
+        onSetTheme: theme => dispatch(setTheme(theme)),
         onShowExtensionAlert: data => {
             dispatch(showExtensionAlert(data));
         },

@@ -28,10 +28,13 @@ const readStored = key => {
     }
 };
 
-const embedUrl = (project, {unsandboxed = false} = {}) => {
+const embedUrl = (project, {unsandboxed = false, applyProjectTheme = true} = {}) => {
     const params = new URLSearchParams();
     params.set('project_url', project.projectJsonUrl);
     params.set('mw_assets', project.assetsBase);
+    if (!applyProjectTheme) {
+        params.set('apply_project_theme', '0');
+    }
     const theme = readStored('tw:theme');
     if (theme) {
         params.set('theme', theme);
@@ -78,6 +81,10 @@ const api = {
         return request(`/projects/${id}/thumbnail`, {method: 'POST', body: form});
     },
     myProjects: name => request(`/users/${name}/projects?all=1`),
+    library: () => request('/me/library'),
+    purchases: () => request('/me/purchases'),
+    saveProject: id => request(`/projects/${id}/save`, {method: 'POST'}),
+    unsaveProject: id => request(`/projects/${id}/save`, {method: 'DELETE'}),
     deleteProject: id => request(`/projects/${id}`, {method: 'DELETE'}),
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
@@ -106,6 +113,7 @@ const api = {
     admin: {
         reports: () => request('/admin/reports'),
         reportAction: (id, action) => request('/admin/reports/action', {method: 'POST', body: {id, action}}),
+        reportEvidence: id => request(`/admin/reports/evidence/${id}`),
         admins: () => request('/admin/admins'),
         addAdmin: username => request('/admin/admins', {method: 'POST', body: {username}}),
         removeAdmin: username => request('/admin/admins/remove', {method: 'POST', body: {username}}),

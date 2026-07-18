@@ -3,10 +3,18 @@ import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
     Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
-    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal
+    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
+    Palette, Bookmark, BookmarkCheck
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl} from '../api';
 import {buyProject} from '../purchase';
+import {isInsufficientFunds} from '../credits';
+import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
+import {getBalance} from '../../lib/rotur/client.js';
+import rotur from '../rotur';
+import {Theme} from '../../lib/themes';
+import {CustomTheme} from '../../lib/themes/custom-themes.js';
+import {applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance';
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
@@ -61,6 +69,38 @@ const CATEGORY_COLORS = {
 const catLabel = prefix => CATEGORY_NAMES[prefix] || (prefix.charAt(0).toUpperCase() + prefix.slice(1));
 const catColor = prefix => CATEGORY_COLORS[prefix] || 'var(--accent-strong)';
 
+const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
+const getProjectThemeMode = () => {
+    try {
+        return localStorage.getItem(PROJECT_THEME_MODE_KEY) || 'all';
+    } catch (e) {
+        return 'all';
+    }
+};
+
+const buildProjectTheme = payload => {
+    try {
+        if (payload && payload.kind === 'custom' && payload.data) {
+            return CustomTheme.import(payload.data);
+        }
+        if (payload && payload.kind === 'standard' && payload.data) {
+            const d = payload.data;
+            return new Theme(d.accent, d.gui, d.blocks, d.menuBarAlign, d.wallpaper, d.fonts, null, d.appearance || {});
+        }
+    } catch (e) {
+        // ignore malformed payloads
+    }
+    return null;
+};
+
+const restoreUserTheme = () => {
+    try {
+        applyThemeVisuals(detectTheme());
+    } catch (e) {
+        // ignore
+    }
+};
+
 const topFive = counts => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
 const getCustomExtensions = data => {
@@ -110,6 +150,15 @@ const Project = () => {
     const [customExtensions, setCustomExtensions] = useState([]);
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
+    const [showBuyCredits, setShowBuyCredits] = useState(false);
+    const [creditBalance, setCreditBalance] = useState(null);
+    const [confirmBuy, setConfirmBuy] = useState(false);
+    const [confirmBalance, setConfirmBalance] = useState(null);
+    const [savingLibrary, setSavingLibrary] = useState(false);
+    const [projectThemeApplied, setProjectThemeApplied] = useState(false);
+    const [revertTheme, setRevertTheme] = useState(false);
+    const [followsOwner, setFollowsOwner] = useState(false);
+    const themeMode = getProjectThemeMode();
 
     const beginLoad = useLatest();
 
@@ -131,9 +180,50 @@ const Project = () => {
         setActionError(null);
         setReporting(false);
         setTab('Comments');
+        setProjectThemeApplied(false);
+        setRevertTheme(false);
+        setFollowsOwner(false);
+        restoreUserTheme();
         load();
         api.view(id).catch(() => {});
     }, [id, load]);
+
+    useEffect(() => {
+        const onMessage = event => {
+            if (event.data && event.data.type === 'mw:project-theme-applied') {
+                setProjectThemeApplied(true);
+                const theme = buildProjectTheme(event.data.theme);
+                if (theme) {
+                    try {
+                        applyThemeVisuals(theme);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, []);
+
+    // Always hand the viewer's own theme back when leaving the project.
+    useEffect(() => () => restoreUserTheme(), []);
+
+    const owner = project && project.owner;
+    useEffect(() => {
+        if (themeMode !== 'followed' || !user || !owner) return;
+        let active = true;
+        rotur.following(user.username)
+            .then(data => {
+                if (!active) return;
+                const list = (data.following || []).map(name => String(name).toLowerCase());
+                setFollowsOwner(list.includes(String(owner).toLowerCase()));
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [themeMode, user, owner]);
 
     useEffect(() => {
         if (project) setTitle(project.title || '');
@@ -210,6 +300,20 @@ const Project = () => {
         }
     };
 
+    const sendThemeToStage = useCallback(() => {
+        try {
+            const frame = stageFrame.current;
+            if (!frame || !frame.contentWindow) return;
+            frame.contentWindow.postMessage({
+                type: 'mw:apply-theme',
+                theme: localStorage.getItem('tw:theme'),
+                customThemes: localStorage.getItem('tw:custom-themes')
+            }, '*');
+        } catch (e) {
+            // ignore
+        }
+    }, []);
+
     const handleTitleKeyDown = event => {
         if (event.key === 'Enter') {
             event.currentTarget.blur();
@@ -246,15 +350,30 @@ const Project = () => {
         }
     };
 
-    const buy = async () => {
+    const openBuyConfirm = async () => {
+        setActionError(null);
+        setConfirmBalance(null);
+        setConfirmBuy(true);
+        try {
+            setConfirmBalance(await getBalance());
+        } catch (e) {
+            // balance stays null; the purchase still guards on the server
+        }
+    };
+
+    const doBuy = async () => {
         if (buying) return;
         setBuying(true);
         setActionError(null);
         try {
             const fresh = await buyProject(id);
             setProject(fresh);
+            setConfirmBuy(false);
         } catch (e) {
-            if (e.needsReauth) {
+            setConfirmBuy(false);
+            if (isInsufficientFunds(e)) {
+                setShowBuyCredits(true);
+            } else if (e.needsReauth) {
                 setActionError('Your current login cannot send credits. Log out and back in, then try again.');
             } else {
                 setActionError(e.message || 'Could not complete the purchase.');
@@ -282,6 +401,25 @@ const Project = () => {
             navigate(`/users/${project.owner}`);
         } catch (e) {
             setActionError(e.message || 'Could not delete this project.');
+        }
+    };
+
+    const toggleLibrary = async () => {
+        setMenuOpen(false);
+        if (savingLibrary) return;
+        setSavingLibrary(true);
+        try {
+            if (project.saved) {
+                await api.unsaveProject(id);
+            } else {
+                await api.saveProject(id);
+            }
+            setProject(current => ({...current, saved: !current.saved}));
+            setActionError(null);
+        } catch (e) {
+            setActionError(e.message || 'Could not update your library.');
+        } finally {
+            setSavingLibrary(false);
         }
     };
 
@@ -407,6 +545,12 @@ const Project = () => {
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
     const locked = Boolean(project.locked);
+    const hasContent = project.hasContent !== false;
+    const themeAllowed = !revertTheme && (
+        themeMode === 'all' ||
+        (themeMode === 'hearted' && project.myReaction === 'heart') ||
+        (themeMode === 'followed' && followsOwner)
+    );
 
     return (
         <main className={styles.page}>
@@ -455,13 +599,15 @@ const Project = () => {
                             Remix
                         </button>
                     ) : null}
-                    <a
-                        className={styles.primary}
-                        href={seeInsideHref}
-                    >
-                        <ExternalLink size={16} />
-                        See inside
-                    </a>
+                    {locked ? null : (
+                        <a
+                            className={styles.primary}
+                            href={seeInsideHref}
+                        >
+                            <ExternalLink size={16} />
+                            See inside
+                        </a>
+                    )}
                     <div
                         className={styles.menuWrap}
                         ref={menuRef}
@@ -480,6 +626,15 @@ const Project = () => {
                                     <Link2 size={15} />
                                     Copy link
                                 </button>
+                                {user ? (
+                                    <button
+                                        onClick={toggleLibrary}
+                                        disabled={savingLibrary}
+                                    >
+                                        {project.saved ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
+                                        {project.saved ? 'Remove from library' : 'Save to library'}
+                                    </button>
+                                ) : null}
                                 {project.isOwner ? (
                                     <Link
                                         to={`/mystuff/project/${project.id}`}
@@ -534,6 +689,62 @@ const Project = () => {
                     onClose={() => setReporting(false)}
                 />
             ) : null}
+            {showBuyCredits ? (
+                <BuyCreditsModal
+                    needed={price}
+                    balance={creditBalance}
+                    onClose={() => setShowBuyCredits(false)}
+                />
+            ) : null}
+            {confirmBuy ? (
+                <div
+                    className={styles.confirmOverlay}
+                    onClick={() => setConfirmBuy(false)}
+                >
+                    <div
+                        className={styles.confirmModal}
+                        onClick={event => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <h3 className={styles.confirmTitle}>Confirm purchase</h3>
+                        <p className={styles.confirmText}>
+                            {`Buy ${project.title} for ${price} credits?`}
+                        </p>
+                        {confirmBalance !== null ? (
+                            <p className={styles.confirmBalance}>{`Your balance: ${confirmBalance} credits`}</p>
+                        ) : null}
+                        <div className={styles.confirmActions}>
+                            <button
+                                className={styles.confirmCancel}
+                                onClick={() => setConfirmBuy(false)}
+                            >Cancel</button>
+                            {confirmBalance !== null && confirmBalance < price ? (
+                                <button
+                                    className={styles.confirmButton}
+                                    onClick={() => {
+                                        setConfirmBuy(false);
+                                        setCreditBalance(confirmBalance);
+                                        setShowBuyCredits(true);
+                                    }}
+                                >
+                                    <Coins size={15} />
+                                    Buy credits
+                                </button>
+                            ) : (
+                                <button
+                                    className={styles.confirmButton}
+                                    onClick={doBuy}
+                                    disabled={buying}
+                                >
+                                    <Coins size={15} />
+                                    {buying ? 'Processing…' : `Pay ${price} credits`}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
             {copied ? <div className={styles.actionSuccess}>Link copied to clipboard.</div> : null}
             {thumbnailStatus !== 'idle' ? (
@@ -566,12 +777,48 @@ const Project = () => {
                     </span>
                 </div>
             ) : null}
+            {projectThemeApplied && !revertTheme ? (
+                <div className={styles.themeNotice}>
+                    <Palette size={16} />
+                    <span className={styles.themeNoticeText}>This project applied its own theme.</span>
+                    <button
+                        className={styles.themeNoticeButton}
+                        onClick={() => {
+                            setRevertTheme(true);
+                            restoreUserTheme();
+                        }}
+                    >Use my theme</button>
+                    <Link
+                        to="/settings"
+                        className={styles.themeNoticeButton}
+                    >Preferences</Link>
+                </div>
+            ) : null}
 
             <div className={styles.stageRow}>
                 <div className={styles.stageCol}>
                     <div className={styles.stageWrap}>
                         <div className={styles.stageSizer}>
-                            {locked ? (
+                            {!locked && !hasContent ? (
+                                <div className={styles.paywall}>
+                                    <Upload size={32} />
+                                    <h2 className={styles.paywallTitle}>Nothing here yet</h2>
+                                    <p className={styles.paywallText}>
+                                        {project.isOwner ?
+                                            'No content yet. Open it in the editor and save to upload.' :
+                                            'This project has not been uploaded yet.'}
+                                    </p>
+                                    {project.isOwner ? (
+                                        <a
+                                            className={styles.paywallButton}
+                                            href={editorUrl({platformProject: project.id})}
+                                        >
+                                            <ExternalLink size={16} />
+                                            Open in editor
+                                        </a>
+                                    ) : null}
+                                </div>
+                            ) : locked ? (
                                 <div className={styles.paywall}>
                                     <Lock size={32} />
                                     <h2 className={styles.paywallTitle}>{price} credits to play</h2>
@@ -580,11 +827,11 @@ const Project = () => {
                                     </p>
                                     <button
                                         className={styles.paywallButton}
-                                        onClick={buy}
+                                        onClick={openBuyConfirm}
                                         disabled={!user || buying}
                                     >
                                         <Coins size={16} />
-                                        {buying ? 'Processing…' : `Buy for ${price} credits`}
+                                        {`Buy for ${price} credits`}
                                     </button>
                                     {!user ? (
                                         <p className={styles.paywallHint}>Log in to buy this project.</p>
@@ -592,11 +839,12 @@ const Project = () => {
                                 </div>
                             ) : (
                                 <iframe
-                                    key={unsandboxed ? 'unsandboxed' : 'sandboxed'}
+                                    key={`${unsandboxed ? 'u' : 's'}-${themeAllowed ? 't' : 'n'}`}
                                     ref={stageFrame}
                                     className={styles.stage}
-                                    src={embedUrl(project, {unsandboxed})}
+                                    src={embedUrl(project, {unsandboxed, applyProjectTheme: themeAllowed})}
                                     title={project.title}
+                                    onLoad={sendThemeToStage}
                                     allow="autoplay; fullscreen"
                                     sandbox={unsandboxed ?
                                         null :

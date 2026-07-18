@@ -1,9 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {Menu, Palette, Radio, Store, SwatchBook, User, ShieldAlert} from 'lucide-react';
+import {Menu, Palette, Radio, Store, SwatchBook, User, ShieldAlert, Brush} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import WarpThemePanel from '../components/WarpThemePanel.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
     getUsernameOverride,
@@ -42,8 +43,24 @@ const SECURITY_WARNING_LABELS = {
     download: 'Project downloads'
 };
 
+const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
+const PROJECT_THEME_MODES = [
+    {value: 'all', label: 'All projects'},
+    {value: 'followed', label: 'Only creators I follow'},
+    {value: 'hearted', label: 'Only projects I have hearted'},
+    {value: 'none', label: 'Never'}
+];
+const getProjectThemeMode = () => {
+    try {
+        return localStorage.getItem(PROJECT_THEME_MODE_KEY) || 'all';
+    } catch (e) {
+        return 'all';
+    }
+};
+
 const SECTIONS = [
     {key: 'theme', label: 'Theme', icon: Palette},
+    {key: 'project-themes', label: 'Project themes', icon: Brush},
     {key: 'custom-themes', label: 'Custom themes', icon: SwatchBook},
     {key: 'warptheme', label: 'WarpTheme', icon: Store},
     {key: 'menu-bar', label: 'Menu bar', icon: Menu},
@@ -60,7 +77,17 @@ const Settings = () => {
     const [menuBarText, setMenuBarTextState] = useState(getMenuBarText());
     const [presence, setPresence] = useState(getRoturSettings());
     const [securityWarnings, setSecurityWarnings] = useState(getSecurityWarningSettings());
+    const [projectThemeMode, setProjectThemeMode] = useState(getProjectThemeMode());
     const [activeSection, setActiveSection] = useState(SECTIONS[0].key);
+
+    const changeProjectThemeMode = value => {
+        setProjectThemeMode(value);
+        try {
+            localStorage.setItem(PROJECT_THEME_MODE_KEY, value);
+        } catch (e) {
+            // ignore
+        }
+    };
 
     useEffect(() => {
         setTheme(detectTheme());
@@ -114,26 +141,12 @@ const Settings = () => {
             </p>
 
             <div className={styles.layout}>
-                <nav
-                    className={styles.sidebar}
-                    aria-label="Settings sections"
-                >
-                    {SECTIONS.map(section => {
-                        const Icon = section.icon;
-                        return (
-                            <button
-                                key={section.key}
-                                type="button"
-                                className={activeSection === section.key ? styles.sidebarActive : styles.sidebarItem}
-                                onClick={() => setActiveSection(section.key)}
-                                aria-current={activeSection === section.key ? 'page' : null}
-                            >
-                                <Icon size={18} />
-                                <span>{section.label}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
+                <Sidebar
+                    sections={SECTIONS}
+                    active={activeSection}
+                    onChange={setActiveSection}
+                    ariaLabel="Settings sections"
+                />
 
                 <div className={styles.content}>
                     {activeSection === 'theme' ? (
@@ -219,6 +232,31 @@ const Settings = () => {
                                     </label>
                                 ))}
                             </div>
+                        </section>
+                    ) : null}
+
+                    {activeSection === 'project-themes' ? (
+                        <section className={styles.card}>
+                            <h2>Project themes</h2>
+                            <p className={styles.lead}>
+                                Some projects come with their own MistWarp theme. Choose when the player should
+                                switch to a project&apos;s theme automatically.
+                            </p>
+                            <label className={styles.field}>
+                                <span>Apply project themes for</span>
+                                <select
+                                    className={styles.input}
+                                    value={projectThemeMode}
+                                    onChange={event => changeProjectThemeMode(event.target.value)}
+                                >
+                                    {PROJECT_THEME_MODES.map(mode => (
+                                        <option
+                                            key={mode.value}
+                                            value={mode.value}
+                                        >{mode.label}</option>
+                                    ))}
+                                </select>
+                            </label>
                         </section>
                     ) : null}
 

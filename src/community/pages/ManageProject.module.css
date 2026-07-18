@@ -87,51 +87,6 @@
     align-items: start;
 }
 
-.sidebar {
-    display: grid;
-    gap: 6px;
-    padding: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-    position: sticky;
-    top: 20px;
-}
-
-.sidebarItem,
-.sidebarActive {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-dim);
-    font: inherit;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-}
-
-.sidebarActive {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
-.sidebarItem:hover {
-    background: var(--bg-raised);
-    color: var(--mw-text);
-}
-
-.sidebarCount {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--accent-strong);
-}
-
 .content {
     min-width: 0;
 }
@@ -417,13 +372,12 @@
         grid-template-columns: 1fr;
     }
 
-    .sidebar {
-        position: static;
-        grid-auto-flow: column;
-        overflow-x: auto;
-    }
-
     .fieldRow {
         grid-template-columns: 1fr;
     }
+}
+
+.statSaves .statIcon {
+    background: color-mix(in srgb, #0FBD8C 18%, transparent);
+    color: #0FBD8C;
 }

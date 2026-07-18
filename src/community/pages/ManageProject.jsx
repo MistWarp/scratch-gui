@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
-    ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal
+    ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 import styles from './ManageProject.module.css';
 
 const roundCredits = value => Math.round((Number(value) || 0) * 100) / 100;
@@ -125,28 +126,15 @@ const ManageProject = () => {
             </div>
 
             <div className={styles.layout}>
-                <nav
-                    className={styles.sidebar}
-                    aria-label="Project sections"
-                >
-                    {sections.map(item => {
-                        const Icon = item.icon;
-                        return (
-                            <button
-                                key={item.key}
-                                type="button"
-                                className={activeSection === item.key ? styles.sidebarActive : styles.sidebarItem}
-                                onClick={() => setSection(item.key)}
-                            >
-                                <Icon size={18} />
-                                <span>{item.label}</span>
-                                {item.key === 'buyers' && buyers.length ? (
-                                    <span className={styles.sidebarCount}>{buyers.length}</span>
-                                ) : null}
-                            </button>
-                        );
-                    })}
-                </nav>
+                <Sidebar
+                    sections={sections.map(item => ({
+                        ...item,
+                        badge: item.key === 'buyers' && buyers.length ? buyers.length : null
+                    }))}
+                    active={activeSection}
+                    onChange={setSection}
+                    ariaLabel="Project sections"
+                />
 
                 <div className={styles.content}>
                     {activeSection === 'overview' ? (
@@ -176,6 +164,11 @@ const ManageProject = () => {
                                     <span className={styles.statIcon}><Heart size={20} /></span>
                                     <span className={styles.statNumber}>{hearts}</span>
                                     <span className={styles.statLabel}>Hearts</span>
+                                </div>
+                                <div className={`${styles.stat} ${styles.statSaves}`}>
+                                    <span className={styles.statIcon}><Bookmark size={20} /></span>
+                                    <span className={styles.statNumber}>{(analytics.saves || 0).toLocaleString()}</span>
+                                    <span className={styles.statLabel}>Library saves</span>
                                 </div>
                                 {paywalled ? (
                                     <div className={`${styles.stat} ${styles.statRevenue}`}>

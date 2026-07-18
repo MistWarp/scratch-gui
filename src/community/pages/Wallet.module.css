@@ -1,0 +1,252 @@
+.page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 22px 88px;
+}
+
+.heading {
+    margin: 0 0 20px;
+    font-size: 26px;
+}
+
+.status {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 40px 0;
+}
+
+.balanceCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+}
+
+.balanceIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: color-mix(in srgb, #FF8C1A 18%, transparent);
+    color: #FF8C1A;
+    flex-shrink: 0;
+}
+
+.balanceLabel {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.balanceValue {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--mw-text);
+}
+
+.balanceUnit {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.balanceUnknown {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.claimMsg {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.claimBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: none;
+    background: #FF8C1A;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.claimBtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.claimBtn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.donationRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.donationCard {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    font-size: 14px;
+    color: var(--mw-text);
+}
+
+.section {
+    margin-bottom: 28px;
+}
+
+.sectionTitle {
+    margin: 0 0 6px;
+    font-size: 17px;
+}
+
+.sectionLead {
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+.tiers {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.tier {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    text-decoration: none;
+    text-align: center;
+}
+
+.tier:hover {
+    border-color: var(--accent-border);
+}
+
+.tierCredits {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--mw-text);
+}
+
+.tierCredits span {
+    display: block;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.tierPrice {
+    font-weight: 700;
+    font-size: 16px;
+    color: #FF8C1A;
+}
+
+.purchases {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.purchaseRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.purchaseTitle {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--mw-text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.purchaseTitle:hover {
+    color: var(--accent-strong);
+}
+
+.purchaseMeta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.purchaseAmount {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #FF8C1A;
+}
+
+.purchaseDate {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.empty {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0;
+}
+
+.exploreLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
+@media (max-width: 520px) {
+    .tiers {
+        grid-template-columns: 1fr;
+    }
+}

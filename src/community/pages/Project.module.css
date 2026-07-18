@@ -104,8 +104,9 @@
 }
 
 .titleInput {
+    width: 100%;
     min-width: 120px;
-    max-width: min(420px, 45vw);
+    box-sizing: border-box;
     border: 1px solid transparent;
     border-radius: 7px;
     background: transparent;
@@ -963,4 +964,119 @@
     margin: 0;
     font-size: 13px;
     color: var(--text-dim);
+}
+
+.themeNotice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-xs);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 13px;
+}
+
+.themeNoticeText {
+    flex: 1;
+    min-width: 0;
+}
+
+.themeNoticeButton {
+    flex-shrink: 0;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--mw-text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 5px 11px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.themeNoticeButton:hover {
+    color: var(--accent-strong);
+}
+
+.confirmOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: color-mix(in srgb, #000 55%, transparent);
+}
+
+.confirmModal {
+    width: 100%;
+    max-width: 380px;
+    padding: 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+}
+
+.confirmTitle {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.confirmText {
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: var(--mw-text);
+}
+
+.confirmBalance {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.confirmActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.confirmCancel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 9px 16px;
+    cursor: pointer;
+}
+
+.confirmButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 9px 16px;
+    cursor: pointer;
+}
+
+.confirmButton:hover {
+    background: var(--accent-strong);
+}
+
+.confirmButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

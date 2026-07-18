@@ -2,7 +2,7 @@ import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake
+    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, Bookmark, LayoutDashboard
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
@@ -10,19 +10,86 @@ import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
+import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 import styles from './MyStuff.module.css';
 
 const fmt = value => (Number(value) || 0).toLocaleString();
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
-const TABS = [
-    {key: 'projects', label: 'Projects'},
-    {key: 'loves', label: 'Hearted'}
+const visibilityLabel = project => {
+    const v = project.visibility || (project.shared ? 'public' : 'private');
+    if (v === 'public') return 'Shared';
+    if (v === 'unlisted') return 'Unlisted';
+    return 'Draft';
+};
+
+const Overview = ({stats, account, onBuyCredits}) => {
+    const weekViews = historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0);
+    return (
+        <section className={styles.dashboard}>
+            <div className={styles.dashGrid}>
+                <div className={`${styles.dashTile} ${styles.tileMonth}`}>
+                    <span className={styles.dashIcon}><TrendingUp size={18} /></span>
+                    <span className={styles.dashNumber}>{fmt(weekViews)}</span>
+                    <span className={styles.dashLabel}>Views this week</span>
+                </div>
+                <div className={`${styles.dashTile} ${styles.tileViews}`}>
+                    <span className={styles.dashIcon}><Eye size={18} /></span>
+                    <span className={styles.dashNumber}>{fmt(stats.totalViews)}</span>
+                    <span className={styles.dashLabel}>Total views</span>
+                </div>
+                <div className={`${styles.dashTile} ${styles.tileHearts}`}>
+                    <span className={styles.dashIcon}><Heart size={18} /></span>
+                    <span className={styles.dashNumber}>{fmt(stats.totalHearts)}</span>
+                    <span className={styles.dashLabel}>Hearts</span>
+                </div>
+                {stats.totalRevenue > 0 ? (
+                    <div className={`${styles.dashTile} ${styles.tileEarned}`}>
+                        <span className={styles.dashIcon}><Coins size={18} /></span>
+                        <span className={styles.dashNumber}>{fmtCredits(stats.totalRevenue)}</span>
+                        <span className={styles.dashLabel}>Credits earned</span>
+                    </div>
+                ) : null}
+                {account && account.balance !== null ? (
+                    <div className={`${styles.dashTile} ${styles.tileBalance}`}>
+                        <span className={styles.dashIcon}><Wallet size={18} /></span>
+                        <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
+                        <span className={styles.dashLabel}>Balance</span>
+                        <button
+                            className={styles.dashBuy}
+                            onClick={onBuyCredits}
+                        >Buy credits</button>
+                    </div>
+                ) : null}
+                {account && account.donationsReceived > 0 ? (
+                    <div className={`${styles.dashTile} ${styles.tileDonations}`}>
+                        <span className={styles.dashIcon}><HeartHandshake size={18} /></span>
+                        <span className={styles.dashNumber}>{fmtCredits(account.donationsReceived)}</span>
+                        <span className={styles.dashLabel}>Donations received</span>
+                    </div>
+                ) : null}
+            </div>
+            <StatChart
+                title="Views over the last 2 weeks"
+                rows={historyRows(stats.viewHistory, 14)}
+                accent="#4C97FF"
+                emptyText="No views yet. Share a project to get started."
+            />
+        </section>
+    );
+};
+
+const SECTIONS = [
+    {key: 'overview', label: 'Overview', icon: LayoutDashboard},
+    {key: 'projects', label: 'My Projects', icon: FolderOpen},
+    {key: 'library', label: 'My Library', icon: Bookmark},
+    {key: 'loves', label: 'My Loved', icon: Heart}
 ];
 
 const MyStuff = () => {
     const {user, loading} = useUser();
-    const [tab, setTab] = useState('projects');
+    const [tab, setTab] = useState('overview');
     const [projects, setProjects] = useState(null);
     const [featuredProject, setFeaturedProject] = useState(user ? user.featuredProject : '');
     const [uploading, setUploading] = useState(false);
@@ -32,6 +99,7 @@ const MyStuff = () => {
     const [quota, setQuota] = useState(null);
     const [stats, setStats] = useState(null);
     const [account, setAccount] = useState(null);
+    const [showBuyCredits, setShowBuyCredits] = useState(false);
     const uploadInput = useRef(null);
     const menuRef = useRef(null);
 
@@ -74,14 +142,16 @@ const MyStuff = () => {
     }, [user, projects]);
 
     const load = useCallback(() => {
-        if (!user) {
+        if (!user || tab === 'overview') {
             return;
         }
         setProjects(null);
         setFailed(false);
         const fetchTab = tab === 'loves' ?
             api.userLoves(user.username) :
-            api.myProjects(user.username);
+            tab === 'library' ?
+                api.library() :
+                api.myProjects(user.username);
         fetchTab
             .then(data => setProjects(data.projects || []))
             .catch(() => setFailed(true));
@@ -193,13 +263,6 @@ const MyStuff = () => {
         return <main className={styles.page}><p className={styles.status}>Sign in to see your projects.</p></main>;
     }
 
-    const totalEarnings = tab === 'projects' && projects ?
-        Math.round(projects.reduce((sum, p) => sum + (p.revenue || 0), 0) * 100) / 100 :
-        0;
-    const weekViews = stats ?
-        historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0) :
-        0;
-
     return (
         <main className={styles.page}>
             <div className={styles.head}>
@@ -210,15 +273,6 @@ const MyStuff = () => {
                         title="Uploads from the last 7 days count toward this limit"
                     >
                         {`${formatBytes(quota.used)} of ${formatBytes(quota.limit)} uploaded this week`}
-                    </span>
-                ) : null}
-                {totalEarnings > 0 ? (
-                    <span
-                        className={styles.earnings}
-                        title="Total credits earned from paywalled projects"
-                    >
-                        <Coins size={14} />
-                        {`${totalEarnings.toLocaleString()} credits earned`}
                     </span>
                 ) : null}
                 <div className={styles.headActions}>
@@ -249,214 +303,188 @@ const MyStuff = () => {
 
             {actionError ? <p className={styles.error}>{actionError}</p> : null}
 
-            {stats && stats.projectCount > 0 ? (
-                <section className={styles.dashboard}>
-                    <div className={styles.dashGrid}>
-                        <div className={`${styles.dashTile} ${styles.tileMonth}`}>
-                            <span className={styles.dashIcon}><TrendingUp size={18} /></span>
-                            <span className={styles.dashNumber}>{fmt(weekViews)}</span>
-                            <span className={styles.dashLabel}>Views this week</span>
-                        </div>
-                        <div className={`${styles.dashTile} ${styles.tileViews}`}>
-                            <span className={styles.dashIcon}><Eye size={18} /></span>
-                            <span className={styles.dashNumber}>{fmt(stats.totalViews)}</span>
-                            <span className={styles.dashLabel}>Total views</span>
-                        </div>
-                        <div className={`${styles.dashTile} ${styles.tileHearts}`}>
-                            <span className={styles.dashIcon}><Heart size={18} /></span>
-                            <span className={styles.dashNumber}>{fmt(stats.totalHearts)}</span>
-                            <span className={styles.dashLabel}>Hearts</span>
-                        </div>
-                        {stats.totalRevenue > 0 ? (
-                            <div className={`${styles.dashTile} ${styles.tileEarned}`}>
-                                <span className={styles.dashIcon}><Coins size={18} /></span>
-                                <span className={styles.dashNumber}>{fmtCredits(stats.totalRevenue)}</span>
-                                <span className={styles.dashLabel}>Credits earned</span>
-                            </div>
-                        ) : null}
-                        {account && account.balance !== null ? (
-                            <div className={`${styles.dashTile} ${styles.tileBalance}`}>
-                                <span className={styles.dashIcon}><Wallet size={18} /></span>
-                                <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
-                                <span className={styles.dashLabel}>Balance</span>
-                            </div>
-                        ) : null}
-                        {account && account.donationsReceived > 0 ? (
-                            <div className={`${styles.dashTile} ${styles.tileDonations}`}>
-                                <span className={styles.dashIcon}><HeartHandshake size={18} /></span>
-                                <span className={styles.dashNumber}>{fmtCredits(account.donationsReceived)}</span>
-                                <span className={styles.dashLabel}>Donations received</span>
-                            </div>
-                        ) : null}
-                    </div>
-                    <StatChart
-                        title="Views over the last 2 weeks"
-                        rows={historyRows(stats.viewHistory, 14)}
-                        accent="#4C97FF"
-                        emptyText="No views yet. Share a project to get started."
-                    />
-                </section>
+            {showBuyCredits ? (
+                <BuyCreditsModal
+                    balance={account && account.balance}
+                    onClose={() => setShowBuyCredits(false)}
+                />
             ) : null}
 
-            <div className={styles.tabs}>
-                {TABS.map(option => (
-                    <button
-                        key={option.key}
-                        className={option.key === tab ? styles.tabActive : styles.tab}
-                        onClick={() => setTab(option.key)}
-                    >{option.label}</button>
-                ))}
-            </div>
-
-            {failed ? (
-                <p className={styles.status}>
-                    Couldn&apos;t load.{' '}
-                    <button
-                        className={styles.secondary}
-                        onClick={load}
-                    >Try again</button>
-                </p>
-            ) : projects === null ? (
-                <p className={styles.status}>Loading…</p>
-            ) : tab !== 'projects' ? (
-                projects.length ? (
-                    <div className={styles.grid}>
-                        {projects.map(project => (
-                            <ProjectCard
-                                key={project.id}
-                                project={project}
+            <div className={styles.layout}>
+                <Sidebar
+                    sections={SECTIONS}
+                    active={tab}
+                    onChange={setTab}
+                    ariaLabel="My stuff sections"
+                />
+                <div className={styles.content}>
+                    {tab === 'overview' ? (
+                        stats ? (
+                            <Overview
+                                stats={stats}
+                                account={account}
+                                onBuyCredits={() => setShowBuyCredits(true)}
                             />
-                        ))}
-                    </div>
-                ) : (
-                    <p className={styles.status}>Projects you heart show up here.</p>
-                )
-            ) : projects.length ? (
-                <div className={styles.list}>
-                    {projects.map(project => (
-                        <div
-                            key={project.id}
-                            className={styles.row}
-                        >
-                            <Link
-                                to={projectUrl(project.id)}
-                                className={styles.thumb}
-                            >
-                                {project.thumbUrl ? (
-                                    <img
-                                        src={project.thumbUrl}
-                                        alt=""
+                        ) : (
+                            <p className={styles.status}>Loading…</p>
+                        )
+                    ) : failed ? (
+                        <p className={styles.status}>
+                            Couldn&apos;t load.{' '}
+                            <button
+                                className={styles.secondary}
+                                onClick={load}
+                            >Try again</button>
+                        </p>
+                    ) : projects === null ? (
+                        <p className={styles.status}>Loading…</p>
+                    ) : tab !== 'projects' ? (
+                        projects.length ? (
+                            <div className={styles.grid}>
+                                {projects.map(project => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
                                     />
-                                ) : <span>{(project.title || '?')[0]}</span>}
-                            </Link>
-                            <div className={styles.info}>
-                                <Link
-                                    to={projectUrl(project.id)}
-                                    className={styles.title}
-                                >{project.title}</Link>
-                                <span className={project.shared ? styles.shared : styles.draft}>
-                                    {(project.visibility || (project.shared ? 'public' : 'private')) === 'public' ?
-                                        'Shared' :
-                                        (project.visibility === 'unlisted' ? 'Unlisted' : 'Draft')}
-                                </span>
-                                <span className={styles.rowStats}>
-                                    <span className={styles.rowStat}>
-                                        <Heart size={13} />
-                                        {project.loveCount || 0}
-                                    </span>
-                                    <span className={styles.rowStat}>
-                                        <ThumbsDown size={13} />
-                                        {project.brokenHeartCount || 0}
-                                    </span>
-                                    <span className={styles.rowStat}>
-                                        <Play size={13} />
-                                        {project.views || 0}
-                                    </span>
-                                    {project.price ? (
-                                        <span className={styles.rowStat}>
-                                            <Coins size={13} />
-                                            {project.price}
-                                        </span>
-                                    ) : null}
-                                    {project.revenue ? (
-                                        <span className={styles.rowStat}>
-                                            {`${Math.round(project.revenue * 100) / 100} earned`}
-                                        </span>
-                                    ) : null}
-                                    {project.sizeBytes ? (
-                                        <span className={styles.rowStat}>
-                                            <HardDrive size={13} />
-                                            {formatBytes(project.sizeBytes)}
-                                        </span>
-                                    ) : null}
-                                </span>
+                                ))}
                             </div>
-                            <div className={styles.rowActions}>
-                                {project.shared ? (
-                                    <button
-                                        className={styles.secondary}
-                                        onClick={() => unpublish(project.id)}
-                                    >Unshare</button>
-                                ) : (
-                                    <button
-                                        className={styles.secondary}
-                                        onClick={() => publish(project.id)}
-                                    >Share</button>
-                                )}
-                                <div
-                                    className={styles.actionMenuWrap}
-                                    ref={openMenu === project.id ? menuRef : null}
-                                >
-                                    <button
-                                        className={styles.moreButton}
-                                        aria-label={`Actions for ${project.title}`}
-                                        aria-expanded={openMenu === project.id}
-                                        onClick={() => setOpenMenu(openMenu === project.id ? '' : project.id)}
+                        ) : (
+                            <p className={styles.status}>
+                                {tab === 'library' ?
+                                    'Projects you buy or save to your library show up here.' :
+                                    'Projects you heart show up here.'}
+                            </p>
+                        )
+                    ) : projects.length ? (
+                        <div className={styles.list}>
+                            {projects.map(project => {
+                                const featured = featuredProject === project.id;
+                                const isMenuOpen = openMenu === project.id;
+                                return (
+                                    <div
+                                        key={project.id}
+                                        className={styles.row}
                                     >
-                                        <MoreHorizontal size={18} />
-                                    </button>
-                                    {openMenu === project.id ? (
-                                        <div className={styles.actionMenu}>
-                                            <a href={editorUrl({platformProject: project.id})}>
-                                                <Pencil size={14} />
-                                                Open in editor
-                                            </a>
-                                            <Link to={`/mystuff/project/${project.id}`}>
-                                                <SlidersHorizontal size={14} />
-                                                Manage &amp; analytics
-                                            </Link>
-                                            <Link to={projectUrl(project.id)}>
-                                                <ExternalLink size={14} />
-                                                Project page
-                                            </Link>
+                                        <Link
+                                            to={projectUrl(project.id)}
+                                            className={styles.thumb}
+                                        >
+                                            {project.thumbUrl ? (
+                                                <img
+                                                    src={project.thumbUrl}
+                                                    alt=""
+                                                />
+                                            ) : <span>{(project.title || '?')[0]}</span>}
+                                        </Link>
+                                        <div className={styles.info}>
+                                            <Link
+                                                to={projectUrl(project.id)}
+                                                className={styles.title}
+                                            >{project.title}</Link>
+                                            <span className={project.shared ? styles.shared : styles.draft}>
+                                                {visibilityLabel(project)}
+                                            </span>
+                                            <span className={styles.rowStats}>
+                                                <span className={styles.rowStat}>
+                                                    <Heart size={13} />
+                                                    {project.loveCount || 0}
+                                                </span>
+                                                <span className={styles.rowStat}>
+                                                    <ThumbsDown size={13} />
+                                                    {project.brokenHeartCount || 0}
+                                                </span>
+                                                <span className={styles.rowStat}>
+                                                    <Play size={13} />
+                                                    {project.views || 0}
+                                                </span>
+                                                {project.price ? (
+                                                    <span className={styles.rowStat}>
+                                                        <Coins size={13} />
+                                                        {project.price}
+                                                    </span>
+                                                ) : null}
+                                                {project.revenue ? (
+                                                    <span className={styles.rowStat}>
+                                                        {`${Math.round(project.revenue * 100) / 100} earned`}
+                                                    </span>
+                                                ) : null}
+                                                {project.sizeBytes ? (
+                                                    <span className={styles.rowStat}>
+                                                        <HardDrive size={13} />
+                                                        {formatBytes(project.sizeBytes)}
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                        </div>
+                                        <div className={styles.rowActions}>
                                             {project.shared ? (
-                                                <button onClick={() => toggleFeatured(project.id)}>
-                                                    <Star
-                                                        size={14}
-                                                        fill={featuredProject === project.id ? 'currentColor' : 'none'}
-                                                    />
-                                                    {featuredProject === project.id ?
-                                                        'Remove profile feature' : 'Feature on profile'}
-                                                </button>
+                                                <button
+                                                    className={styles.secondary}
+                                                    onClick={() => unpublish(project.id)}
+                                                >Unshare</button>
                                             ) : (
                                                 <button
-                                                    className={styles.danger}
-                                                    onClick={() => deleteProject(project.id)}
-                                                >
-                                                    <Trash2 size={14} />
-                                                    Delete
-                                                </button>
+                                                    className={styles.secondary}
+                                                    onClick={() => publish(project.id)}
+                                                >Share</button>
                                             )}
+                                            <div
+                                                className={styles.actionMenuWrap}
+                                                ref={isMenuOpen ? menuRef : null}
+                                            >
+                                                <button
+                                                    className={styles.moreButton}
+                                                    aria-label={`Actions for ${project.title}`}
+                                                    aria-expanded={isMenuOpen}
+                                                    onClick={() => setOpenMenu(isMenuOpen ? '' : project.id)}
+                                                >
+                                                    <MoreHorizontal size={18} />
+                                                </button>
+                                                {isMenuOpen ? (
+                                                    <div className={styles.actionMenu}>
+                                                        <a href={editorUrl({platformProject: project.id})}>
+                                                            <Pencil size={14} />
+                                                            Open in editor
+                                                        </a>
+                                                        <Link to={`/mystuff/project/${project.id}`}>
+                                                            <SlidersHorizontal size={14} />
+                                                            Manage &amp; analytics
+                                                        </Link>
+                                                        <Link to={projectUrl(project.id)}>
+                                                            <ExternalLink size={14} />
+                                                            Project page
+                                                        </Link>
+                                                        {project.shared ? (
+                                                            <button onClick={() => toggleFeatured(project.id)}>
+                                                                <Star
+                                                                    size={14}
+                                                                    fill={featured ? 'currentColor' : 'none'}
+                                                                />
+                                                                {featured ?
+                                                                    'Remove profile feature' : 'Feature on profile'}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                className={styles.danger}
+                                                                onClick={() => deleteProject(project.id)}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                                Delete
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
                                         </div>
-                                    ) : null}
-                                </div>
-                            </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    ))}
+                    ) : (
+                        <p className={styles.status}>You have not created any projects yet.</p>
+                    )}
                 </div>
-            ) : (
-                <p className={styles.status}>You have not created any projects yet.</p>
-            )}
+            </div>
         </main>
     );
 };
