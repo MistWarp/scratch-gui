@@ -23,6 +23,32 @@
     text-align: center;
 }
 
+.tabs {
+    display: inline-flex;
+    gap: 6px;
+    margin: 0 0 20px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.tab,
+.tabActive {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.tabActive {
+    background: var(--accent);
+    color: #fff;
+}
+
 .list {
     display: grid;
     gap: 8px;
@@ -85,7 +111,7 @@
     font-size: 12px;
 }
 
-.followers {
+.stat {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -104,7 +130,7 @@
         padding: 10px;
     }
 
-    .followers {
+    .stat {
         font-size: 12px;
     }
 }

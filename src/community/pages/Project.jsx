@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
-    Heart, HeartCrack, ArrowLeft, Play, GitFork, ExternalLink, Pencil, Plus, X, Check,
+    Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, Pencil, Plus, X, Check,
     Globe, EyeOff, MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2
 } from 'lucide-react';
@@ -550,7 +550,7 @@ const Project = () => {
                             onClick={() => react('brokenheart')}
                             disabled={!user}
                         >
-                            <HeartCrack
+                            <ThumbsDown
                                 size={16}
                                 fill={project.myReaction === 'brokenheart' ? 'currentColor' : 'none'}
                             />

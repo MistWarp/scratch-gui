@@ -1,12 +1,12 @@
 import React from 'react';
-import {Heart, HeartCrack} from 'lucide-react';
+import {Heart, ThumbsDown} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import {sameUser} from '../format';
 import styles from './ReactionButtons.module.css';
 
 const TYPES = [
     {key: 'heart', Icon: Heart},
-    {key: 'brokenheart', Icon: HeartCrack}
+    {key: 'brokenheart', Icon: ThumbsDown}
 ];
 
 const ReactionButtons = ({reactions, onReact, small}) => {
