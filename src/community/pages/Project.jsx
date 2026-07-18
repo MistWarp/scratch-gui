@@ -1,18 +1,20 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
-    Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, Pencil, Plus, X, Check,
-    Globe, EyeOff, MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
-    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2
+    Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
+    MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
+    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl} from '../api';
+import {buyProject} from '../purchase';
 import Avatar from '../components/Avatar.jsx';
+import VisibilityMenu from '../components/VisibilityMenu.jsx';
+import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo, sameUser} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
-import RichText from '../components/RichText.jsx';
 import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -107,6 +109,7 @@ const Project = () => {
     const [blockStats, setBlockStats] = useState(null);
     const [customExtensions, setCustomExtensions] = useState([]);
     const [unsandboxed, setUnsandboxed] = useState(false);
+    const [buying, setBuying] = useState(false);
 
     const beginLoad = useLatest();
 
@@ -233,13 +236,31 @@ const Project = () => {
         }
     };
 
-    const toggleShared = async () => {
+    const changeVisibility = async value => {
         try {
-            await (project.shared ? api.unpublish(id) : api.publish(id));
+            await api.setVisibility(id, value);
             setActionError(null);
             load();
         } catch (e) {
-            setActionError(e.message || 'Could not update sharing.');
+            setActionError(e.message || 'Could not update visibility.');
+        }
+    };
+
+    const buy = async () => {
+        if (buying) return;
+        setBuying(true);
+        setActionError(null);
+        try {
+            const fresh = await buyProject(id);
+            setProject(fresh);
+        } catch (e) {
+            if (e.needsReauth) {
+                setActionError('Your current login cannot send credits. Log out and back in, then try again.');
+            } else {
+                setActionError(e.message || 'Could not complete the purchase.');
+            }
+        } finally {
+            setBuying(false);
         }
     };
 
@@ -275,9 +296,9 @@ const Project = () => {
             })
             .catch(() => setActionError('Could not copy the link.'));
     };
-    const menuShare = () => {
+    const menuRemix = () => {
         setMenuOpen(false);
-        toggleShared();
+        remix();
     };
     const menuComments = () => {
         setMenuOpen(false);
@@ -383,6 +404,9 @@ const Project = () => {
 
     const commentTabs = project.repo ? ['Comments', 'History', 'Pull requests'] : ['Comments'];
     const sharedDate = formatDate(project.sharedAt || project.created);
+    const visibility = project.visibility || (project.shared ? 'public' : 'private');
+    const price = project.price || 0;
+    const locked = Boolean(project.locked);
 
     return (
         <main className={styles.page}>
@@ -416,14 +440,21 @@ const Project = () => {
                     </div>
                 </div>
                 <div className={styles.topActions}>
-                    <button
-                        className={styles.remixButton}
-                        onClick={remix}
-                        disabled={!user}
-                    >
-                        <GitFork size={16} />
-                        Remix
-                    </button>
+                    {project.isOwner ? (
+                        <VisibilityMenu
+                            value={visibility}
+                            onChange={changeVisibility}
+                        />
+                    ) : project.canRemix ? (
+                        <button
+                            className={styles.remixButton}
+                            onClick={remix}
+                            disabled={!user}
+                        >
+                            <GitFork size={16} />
+                            Remix
+                        </button>
+                    ) : null}
                     <a
                         className={styles.primary}
                         href={seeInsideHref}
@@ -450,9 +481,21 @@ const Project = () => {
                                     Copy link
                                 </button>
                                 {project.isOwner ? (
-                                    <button onClick={menuShare}>
-                                        {project.shared ? <EyeOff size={15} /> : <Globe size={15} />}
-                                        {project.shared ? 'Unshare' : 'Share'}
+                                    <Link
+                                        to={`/mystuff/project/${project.id}`}
+                                        onClick={() => setMenuOpen(false)}
+                                    >
+                                        <SlidersHorizontal size={15} />
+                                        Manage &amp; analytics
+                                    </Link>
+                                ) : null}
+                                {project.isOwner ? (
+                                    <button
+                                        onClick={menuRemix}
+                                        disabled={!user}
+                                    >
+                                        <GitFork size={15} />
+                                        Remix
                                     </button>
                                 ) : null}
                                 {project.isOwner ? (
@@ -499,21 +542,67 @@ const Project = () => {
                 </div>
             ) : null}
 
+            {visibility === 'unlisted' ? (
+                <div className={styles.visibilityNotice}>
+                    <LinkIcon size={16} />
+                    <span>Unlisted. Hidden from search and profiles, but anyone with the link can open it.</span>
+                </div>
+            ) : null}
+            {visibility === 'private' ? (
+                <div className={styles.visibilityNotice}>
+                    <EyeOff size={16} />
+                    <span>Unshared. Only you can see this project.</span>
+                </div>
+            ) : null}
+            {price > 0 ? (
+                <div className={styles.visibilityNotice}>
+                    <Coins size={16} />
+                    <span>
+                        {project.isOwner ?
+                            `Paywalled at ${price} credits.` :
+                            project.bought ?
+                                'You own this project.' :
+                                `${price} credits to play this project.`}
+                    </span>
+                </div>
+            ) : null}
+
             <div className={styles.stageRow}>
                 <div className={styles.stageCol}>
                     <div className={styles.stageWrap}>
                         <div className={styles.stageSizer}>
-                            <iframe
-                                key={unsandboxed ? 'unsandboxed' : 'sandboxed'}
-                                ref={stageFrame}
-                                className={styles.stage}
-                                src={embedUrl(project, {unsandboxed})}
-                                title={project.title}
-                                allow="autoplay; fullscreen"
-                                sandbox={unsandboxed ?
-                                    null :
-                                    'allow-scripts allow-forms allow-pointer-lock allow-downloads'}
-                            />
+                            {locked ? (
+                                <div className={styles.paywall}>
+                                    <Lock size={32} />
+                                    <h2 className={styles.paywallTitle}>{price} credits to play</h2>
+                                    <p className={styles.paywallText}>
+                                        Buy once to play {project.title} whenever you like.
+                                    </p>
+                                    <button
+                                        className={styles.paywallButton}
+                                        onClick={buy}
+                                        disabled={!user || buying}
+                                    >
+                                        <Coins size={16} />
+                                        {buying ? 'Processing…' : `Buy for ${price} credits`}
+                                    </button>
+                                    {!user ? (
+                                        <p className={styles.paywallHint}>Log in to buy this project.</p>
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <iframe
+                                    key={unsandboxed ? 'unsandboxed' : 'sandboxed'}
+                                    ref={stageFrame}
+                                    className={styles.stage}
+                                    src={embedUrl(project, {unsandboxed})}
+                                    title={project.title}
+                                    allow="autoplay; fullscreen"
+                                    sandbox={unsandboxed ?
+                                        null :
+                                        'allow-scripts allow-forms allow-pointer-lock allow-downloads'}
+                                />
+                            )}
                         </div>
                     </div>
                     {customExtensions.length ? (
@@ -541,7 +630,8 @@ const Project = () => {
                         <button
                             className={project.myReaction === 'heart' ? styles.statOn : styles.statButton}
                             onClick={() => react('heart')}
-                            disabled={!user}
+                            disabled={!user || locked}
+                            title={locked ? 'Buy this project to react' : null}
                         >
                             <Heart
                                 size={16}
@@ -552,7 +642,8 @@ const Project = () => {
                         <button
                             className={project.myReaction === 'brokenheart' ? styles.statOn : styles.statButton}
                             onClick={() => react('brokenheart')}
-                            disabled={!user}
+                            disabled={!user || locked}
+                            title={locked ? 'Buy this project to react' : null}
                         >
                             <ThumbsDown
                                 size={16}
@@ -611,7 +702,7 @@ const Project = () => {
                 </div>
 
                 <div className={styles.sideCol}>
-                    <InfoPanel
+                    <ProjectInfoPanel
                         project={project}
                         onSaved={load}
                     />
@@ -639,7 +730,7 @@ const Project = () => {
                         <CommentThread
                             source={commentSource}
                             canModerate={project.isOwner}
-                            disabled={Boolean(project.commentsOff)}
+                            disabled={Boolean(project.commentsOff) || locked}
                             reportContext={`project ${id}`}
                         />
                     )}
@@ -660,216 +751,6 @@ const Project = () => {
                 </aside>
             </div>
         </main>
-    );
-};
-
-const INFO_TABS = ['Instructions', 'Notes', 'Credits', 'Tags'];
-
-const parseTags = text => {
-    const seen = [];
-    text.split(/[\s,]+/).forEach(raw => {
-        const tag = raw.replace(/^#+/, '').trim().toLowerCase();
-        if (tag && !seen.includes(tag) && seen.length < 10) {
-            seen.push(tag);
-        }
-    });
-    return seen;
-};
-
-const InfoPanel = ({project, onSaved}) => {
-    const [tab, setTab] = useState('Instructions');
-    const [editing, setEditing] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [instructions, setInstructions] = useState(project.instructions || '');
-    const [notes, setNotes] = useState(project.notes || '');
-    const [credits, setCredits] = useState(project.credits || []);
-    const [tagsText, setTagsText] = useState((project.tags || []).join(' '));
-
-    const startEdit = () => {
-        setInstructions(project.instructions || '');
-        setNotes(project.notes || '');
-        setCredits(project.credits || []);
-        setTagsText((project.tags || []).join(' '));
-        setEditing(true);
-    };
-
-    const save = async () => {
-        setSaving(true);
-        try {
-            await api.updateProject(project.id, {
-                instructions,
-                notes,
-                credits: credits.filter(c => c.who && c.who.trim()),
-                tags: parseTags(tagsText)
-            });
-            setEditing(false);
-            onSaved();
-        } catch (e) {
-            // eslint-disable-next-line no-alert
-            alert('Could not save.');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const updateCredit = (i, field, value) => {
-        setCredits(list => list.map((c, idx) => (idx === i ? {...c, [field]: value} : c)));
-    };
-    const addCredit = () => setCredits(list => [...list, {who: '', role: ''}]);
-    const removeCredit = i => setCredits(list => list.filter((c, idx) => idx !== i));
-
-    return (
-        <aside className={styles.sidePanel}>
-            <div className={styles.panelTabs}>
-                {INFO_TABS.map(name => (
-                    <button
-                        key={name}
-                        className={name === tab ? styles.panelTabActive : styles.panelTab}
-                        onClick={() => setTab(name)}
-                    >{name}</button>
-                ))}
-                {project.isOwner ? (
-                    editing ? (
-                        <button
-                            className={styles.panelEdit}
-                            onClick={save}
-                            disabled={saving}
-                            title="Save"
-                        >
-                            <Check size={15} />
-                        </button>
-                    ) : (
-                        <button
-                            className={styles.panelEdit}
-                            onClick={startEdit}
-                            title="Edit"
-                        >
-                            <Pencil size={14} />
-                        </button>
-                    )
-                ) : null}
-            </div>
-            <div className={styles.panelBody}>
-                {tab === 'Instructions' && (
-                    editing ? (
-                        <textarea
-                            className={styles.panelInput}
-                            value={instructions}
-                            maxLength={5000}
-                            placeholder="How do you play or use this project?"
-                            onChange={e => setInstructions(e.target.value)}
-                        />
-                    ) : project.instructions ? (
-                        <p className={styles.panelText}><RichText text={project.instructions} /></p>
-                    ) : <p className={styles.panelEmpty}>No instructions provided.</p>
-                )}
-
-                {tab === 'Notes' && (
-                    editing ? (
-                        <textarea
-                            className={styles.panelInput}
-                            value={notes}
-                            maxLength={5000}
-                            placeholder="Anything else you want to share"
-                            onChange={e => setNotes(e.target.value)}
-                        />
-                    ) : project.notes ? (
-                        <p className={styles.panelText}><RichText text={project.notes} /></p>
-                    ) : <p className={styles.panelEmpty}>No notes yet.</p>
-                )}
-
-                {tab === 'Credits' && (
-                    editing ? (
-                        <div className={styles.creditEditor}>
-                            {credits.map((c, i) => (
-                                <div
-                                    key={i}
-                                    className={styles.creditEditRow}
-                                >
-                                    <input
-                                        className={styles.creditWho}
-                                        value={c.who}
-                                        placeholder="username"
-                                        onChange={e => updateCredit(i, 'who', e.target.value)}
-                                    />
-                                    <input
-                                        className={styles.creditRole}
-                                        value={c.role}
-                                        placeholder="what they did"
-                                        onChange={e => updateCredit(i, 'role', e.target.value)}
-                                    />
-                                    <button
-                                        className={styles.creditRemove}
-                                        onClick={() => removeCredit(i)}
-                                        title="Remove"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                className={styles.creditAdd}
-                                onClick={addCredit}
-                            >
-                                <Plus size={14} />
-                                Add credit
-                            </button>
-                        </div>
-                    ) : (project.credits && project.credits.length) ? (
-                        <ul className={styles.creditList}>
-                            {project.credits.map((c, i) => (
-                                <li key={i}>
-                                    <Link
-                                        to={`/users/${c.who}`}
-                                        className={styles.creditName}
-                                    >{c.who}</Link>
-                                    {c.role ? (
-                                        <span className={styles.creditRoleText}>
-                                            {' '}
-                                            <RichText text={c.role} />
-                                        </span>
-                                    ) : null}
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className={styles.panelEmpty}>No credits listed.</p>
-                )}
-
-                {tab === 'Tags' && (
-                    editing ? (
-                        <div>
-                            <input
-                                className={styles.panelInput}
-                                value={tagsText}
-                                placeholder="platformer game pixel-art"
-                                onChange={e => setTagsText(e.target.value)}
-                            />
-                            <p className={styles.panelEmpty}>Separate tags with spaces. Up to 10.</p>
-                        </div>
-                    ) : (project.tags && project.tags.length) ? (
-                        <div className={styles.tagRow}>
-                            {project.tags.map(tag => (
-                                <Link
-                                    key={tag}
-                                    to={`/explore?q=${encodeURIComponent(`#${tag}`)}`}
-                                    className={styles.tag}
-                                >{`#${tag}`}</Link>
-                            ))}
-                        </div>
-                    ) : <p className={styles.panelEmpty}>No tags yet.</p>
-                )}
-
-                {!editing && project.remixParent ? (
-                    <Link
-                        to={projectUrl(project.remixParent)}
-                        className={styles.remixOf}
-                    >
-                        <GitFork size={13} />
-                        Based on another project
-                    </Link>
-                ) : null}
-            </div>
-        </aside>
     );
 };
 
