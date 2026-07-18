@@ -1,0 +1,123 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: color-mix(in srgb, #000 55%, transparent);
+}
+
+.modal {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    background: color-mix(in srgb, #FF8C1A 12%, transparent);
+}
+
+.headTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #FF8C1A;
+}
+
+.close {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 2px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: var(--mw-text);
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 16px;
+}
+
+.lead {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--mw-text);
+}
+
+.tiers {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.tier {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    text-decoration: none;
+    text-align: center;
+}
+
+.tier:hover {
+    border-color: var(--accent-border);
+}
+
+.tierCredits {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--mw-text);
+}
+
+.tierCredits span {
+    display: block;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.tierPrice {
+    font-weight: 700;
+    font-size: 15px;
+    color: #FF8C1A;
+}
+
+.note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+@media (max-width: 460px) {
+    .tiers {
+        grid-template-columns: 1fr;
+    }
+}

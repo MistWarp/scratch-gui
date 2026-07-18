@@ -248,14 +248,8 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 18px;
-}
-
-@media (max-width: 900px) {
-    .grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 
 .rowStats {
@@ -363,4 +357,39 @@
 .tileDonations .dashIcon {
     background: color-mix(in srgb, #0FBD8C 18%, transparent);
     color: #0FBD8C;
+}
+
+.dashBuy {
+    margin-top: 6px;
+    align-self: flex-start;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--accent-strong);
+    font: inherit;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+.dashBuy:hover {
+    background: var(--accent-soft);
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.content {
+    min-width: 0;
+}
+
+@media (max-width: 720px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
 }

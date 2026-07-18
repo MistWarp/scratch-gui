@@ -202,6 +202,8 @@ const getProject = id => request(`/projects/${id}`);
 
 const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
 
+const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
+
 export {
     loadSession,
     storeSession,
@@ -216,5 +218,6 @@ export {
     checkProjectAssets,
     getProject,
     remixProject,
+    deleteProject,
     request
 };

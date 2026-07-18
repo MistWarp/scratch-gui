@@ -22,48 +22,6 @@
     align-items: start;
 }
 
-.sidebar {
-    display: grid;
-    gap: 6px;
-    padding: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-}
-
-.sidebarItem,
-.sidebarActive {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-dim);
-    font: inherit;
-    font-weight: 600;
-    text-align: left;
-}
-
-.sidebarActive {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
-.sidebarItem:hover {
-    background: var(--bg-raised);
-    color: var(--mw-text);
-}
-
-.sidebarItem:focus-visible,
-.sidebarActive:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
 .content {
     min-width: 0;
 }

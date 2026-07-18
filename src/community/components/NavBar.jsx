@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, Trophy, LogIn, ShieldCheck} from 'lucide-react';
+import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import rotur from '../rotur';
@@ -204,14 +204,6 @@ const NavBar = () => {
                 </form>
 
                 <div className={styles.account}>
-                    <Link
-                        to="/leaderboard"
-                        className={styles.iconLink}
-                        title="Leaderboard"
-                        aria-label="Leaderboard"
-                    >
-                        <Trophy size={19} />
-                    </Link>
                     {user ? (
                         <>
                             {user.isAdmin ? (
@@ -234,6 +226,14 @@ const NavBar = () => {
                                 aria-label="My stuff"
                             >
                                 <FolderOpen size={19} />
+                            </Link>
+                            <Link
+                                to="/wallet"
+                                className={styles.iconLink}
+                                title="Wallet"
+                                aria-label="Wallet"
+                            >
+                                <Wallet size={19} />
                             </Link>
                             <Link
                                 to="/notifications"

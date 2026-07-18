@@ -6,6 +6,8 @@ import {
 import api from '../api';
 import rotur from '../rotur';
 import {payUser} from '../../lib/rotur/client.js';
+import {isInsufficientFunds} from '../credits';
+import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -367,6 +369,7 @@ const DonateModal = ({recipient, onClose}) => {
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState(null);
     const [sent, setSent] = useState(0);
+    const [needCredits, setNeedCredits] = useState(0);
 
     const send = async () => {
         const value = Math.round((Number(amount) || 0) * 100) / 100;
@@ -380,13 +383,26 @@ const DonateModal = ({recipient, onClose}) => {
             await payUser(recipient, value, `MistWarp donation to ${recipient}`);
             setSent(value);
         } catch (e) {
-            setStatus(e.needsReauth ?
-                'Your current login cannot send credits. Log out and back in, then try again.' :
-                (e.message || 'Could not send credits.'));
+            if (isInsufficientFunds(e)) {
+                setNeedCredits(value);
+            } else {
+                setStatus(e.needsReauth ?
+                    'Your current login cannot send credits. Log out and back in, then try again.' :
+                    (e.message || 'Could not send credits.'));
+            }
         } finally {
             setBusy(false);
         }
     };
+
+    if (needCredits) {
+        return (
+            <BuyCreditsModal
+                needed={needCredits}
+                onClose={onClose}
+            />
+        );
+    }
 
     return (
         <div

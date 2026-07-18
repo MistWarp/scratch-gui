@@ -6,6 +6,16 @@ import {
 } from './settings.js';
 
 const TOKEN_KEY = 'mw:rotur-token';
+const REQUIRED_PERMISSIONS = [
+    ...resolvePermissions([
+        'me.checkAuth',
+        'following.follow',
+        'following.unfollow',
+        'validators.generate',
+        'me.transfer'
+    ]),
+    'credits:view'
+];
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://warp.mistium.com';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -95,6 +105,28 @@ const fetchCurrentUser = async () => {
     return null;
 };
 
+const tokenHasRequiredPermissions = async () => {
+    const rotur = getClient();
+    try {
+        const abilities = await rotur.me.abilities();
+        if (!abilities || abilities.error || abilities.token_type === 'main') {
+            return true;
+        }
+        const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
+        if (granted.includes('full')) {
+            return true;
+        }
+        for (const permission of REQUIRED_PERMISSIONS) {
+            if (!granted.includes(permission)) {
+                return false;
+            }
+        }
+        return true;
+    } catch (_) {
+        return true;
+    }
+};
+
 /** Restore a previous session from localStorage. */
 const restoreSession = async () => {
     const token = loadStoredToken();
@@ -109,6 +141,11 @@ const restoreSession = async () => {
         storeToken(null);
         return null;
     }
+    if (!(await tokenHasRequiredPermissions())) {
+        rotur.logout();
+        storeToken(null);
+        return null;
+    }
     storeToken(rotur.token);
     return user;
 };
@@ -119,16 +156,7 @@ const login = async () => {
     await rotur.login({
         system: 'rotur',
         timeout: 120000,
-        requires: [
-            ...resolvePermissions([
-                'me.checkAuth',
-                'following.follow',
-                'following.unfollow',
-                'validators.generate',
-                'me.transfer'
-            ]),
-            'credits:view'
-        ]
+        requires: REQUIRED_PERMISSIONS
     });
     storeToken(rotur.token);
     const user = await fetchCurrentUser();
@@ -268,7 +296,7 @@ const getBalance = async () => {
     }
     try {
         const me = await rotur.me.get();
-        return me && typeof me.currency === 'number' ? me.currency : null;
+        return me && typeof me['sys.currency'] === 'number' ? me['sys.currency'] : null;
     } catch (_) {
         return null;
     }
@@ -286,13 +314,14 @@ const getAccountSummary = async () => {
         if (!me || me.error) {
             return null;
         }
-        const balance = typeof me.currency === 'number' ? me.currency : null;
+        const balance = typeof me['sys.currency'] === 'number' ? me['sys.currency'] : null;
         const txns = me['sys.transactions'] || me.transactions || [];
         let donationsReceived = 0;
         let donationsGiven = 0;
         if (Array.isArray(txns)) {
             for (const t of txns) {
-                if (!String(t.note || '').toLowerCase().includes('donation')) continue;
+                const note = String(t.note || '').toLowerCase();
+                if (!note.includes('donation')) continue;
                 if (t.type === 'in') donationsReceived += Number(t.amount) || 0;
                 else if (t.type === 'out') donationsGiven += Number(t.amount) || 0;
             }
@@ -329,6 +358,30 @@ const payUser = async (to, amount, note) => {
     return result;
 };
 
+// Claim the account's daily credits. Throws on failure; the error carries
+// needsReauth when the token lacks the credits:daily permission, and waitHours
+// when the daily claim is not yet available.
+const claimDaily = async () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        const error = new Error('Log in to claim daily credits');
+        error.needsReauth = true;
+        throw error;
+    }
+    const result = await rotur.me.claimDaily();
+    if (result && result.error) {
+        const error = new Error(result.error);
+        if (isPaymentPermissionError(result.error)) {
+            error.needsReauth = true;
+        }
+        if (result.wait_hours) {
+            error.waitHours = result.wait_hours;
+        }
+        throw error;
+    }
+    return result;
+};
+
 export {
     ACTIVITY_ID,
     APP_URL,
@@ -344,5 +397,6 @@ export {
     fetchCurrentUser,
     getBalance,
     getAccountSummary,
-    payUser
+    payUser,
+    claimDaily
 };

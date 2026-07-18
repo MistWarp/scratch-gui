@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {
-    createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, remixProject
+    createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, remixProject,
+    deleteProject
 } from './api';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
@@ -219,29 +220,43 @@ const publishToMistWarp = async ({
         await updateProject(platformId, {title: projectTitle});
     }
 
-    onProgress({phase: 'package', message: 'Packaging project'});
-    let sb3Blob;
+    // Create + upload must be atomic: if the upload fails on a project we just
+    // created, delete it so we never leave a data-less project behind.
     try {
-        sb3Blob = await buildSparseSb3(vm, platformId);
-    } catch (e) {
-        sb3Blob = await vm.saveProjectSb3();
-    }
-    const thumbnail = updateOnly ? null : (thumbnailBlob || await captureThumbnail(vm));
-    onProgress({phase: 'upload', message: 'Uploading project'});
-    try {
-        await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
-            const percent = Math.min(100, Math.round((loaded / total) * 100));
-            onProgress({
-                phase: 'upload',
-                message: percent >= 100 ? 'Processing on server' : `Uploading ${percent}%`,
-                loaded,
-                total
-            });
-        });
-    } catch (e) {
-        if (e.code !== 'debounced') {
-            throw e;
+        onProgress({phase: 'package', message: 'Packaging project'});
+        let sb3Blob;
+        try {
+            sb3Blob = await buildSparseSb3(vm, platformId);
+        } catch (e) {
+            sb3Blob = await vm.saveProjectSb3();
         }
+        const thumbnail = updateOnly ? null : (thumbnailBlob || await captureThumbnail(vm));
+        onProgress({phase: 'upload', message: 'Uploading project'});
+        try {
+            await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
+                const percent = Math.min(100, Math.round((loaded / total) * 100));
+                onProgress({
+                    phase: 'upload',
+                    message: percent >= 100 ? 'Processing on server' : `Uploading ${percent}%`,
+                    loaded,
+                    total
+                });
+            });
+        } catch (e) {
+            if (e.code !== 'debounced') {
+                throw e;
+            }
+        }
+    } catch (e) {
+        if (createdNow) {
+            try {
+                await deleteProject(platformId);
+            } catch (_) {
+                // best-effort cleanup
+            }
+            rememberPlatformProject(null);
+        }
+        throw e;
     }
 
     let shared = Boolean(platformProject && platformProject.shared);

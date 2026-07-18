@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
 import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3} from 'lucide-react';
-import api, {projectUrl} from '../api';
+import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import {timeAgo, formatBytes} from '../format';
@@ -431,6 +431,68 @@ const UserManager = () => {
     );
 };
 
+const EvidenceDetails = ({data}) => {
+    const config = data.config || {};
+    const buyers = config.buyers || [];
+    const visibility = config.visibility || (config.shared ? 'public' : 'private');
+    return (
+        <div className={styles.evidenceBody}>
+            <ul className={styles.evidenceMeta}>
+                <li><strong>Title:</strong> {` ${config.title || ''}`}</li>
+                <li><strong>Owner:</strong> {` @${config.owner || ''}`}</li>
+                <li><strong>Price:</strong> {` ${config.price || 0} credits`}</li>
+                <li><strong>Visibility:</strong> {` ${visibility}`}</li>
+                {config.revenue ? <li><strong>Revenue:</strong> {` ${config.revenue} credits`}</li> : null}
+                {buyers.length ? <li><strong>Buyers:</strong> {` ${buyers.length}`}</li> : null}
+                {config.snapshotAt ? (
+                    <li><strong>Captured:</strong> {` ${new Date(config.snapshotAt).toLocaleString()}`}</li>
+                ) : null}
+            </ul>
+            {config.description ? <p className={styles.evidenceText}>{config.description}</p> : null}
+            {config.instructions ? <p className={styles.evidenceText}>{config.instructions}</p> : null}
+            <iframe
+                className={styles.evidenceStage}
+                src={embedUrl({projectJsonUrl: data.projectJsonUrl, assetsBase: data.assetsBase})}
+                title="Reported project copy"
+                sandbox="allow-scripts allow-pointer-lock"
+            />
+        </div>
+    );
+};
+
+const EvidencePanel = ({target}) => {
+    const [open, setOpen] = useState(false);
+    const [state, setState] = useState({status: 'idle', data: null});
+    const toggle = async () => {
+        setOpen(value => !value);
+        if (state.status !== 'idle') return;
+        setState({status: 'loading', data: null});
+        try {
+            const result = await api.admin.reportEvidence(target);
+            setState(result.exists ? {status: 'ready', data: result} : {status: 'none', data: null});
+        } catch (e) {
+            setState({status: 'none', data: null});
+        }
+    };
+    return (
+        <div className={styles.evidence}>
+            <button
+                className={styles.secondary}
+                onClick={toggle}
+            >{open ? 'Hide reported copy' : 'View reported copy'}</button>
+            {open && state.status === 'loading' ? (
+                <p className={styles.status}>Loading…</p>
+            ) : null}
+            {open && state.status === 'none' ? (
+                <p className={styles.status}>No preserved copy for this report.</p>
+            ) : null}
+            {open && state.status === 'ready' ? (
+                <EvidenceDetails data={state.data} />
+            ) : null}
+        </div>
+    );
+};
+
 const Admin = () => {
     const {user, loading} = useUser();
     const [reports, setReports] = useState(null);
@@ -592,6 +654,9 @@ const Admin = () => {
                                                     {report.context ? ` · in ${report.context}` : ''}
                                                 </span>
                                                 <span className={styles.reason}>{report.reason}</span>
+                                                {report.type === 'project' ? (
+                                                    <EvidencePanel target={report.target} />
+                                                ) : null}
                                             </div>
                                             <div className={styles.rowActions}>
                                                 {report.type === 'project' ? (
