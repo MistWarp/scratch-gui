@@ -43,18 +43,12 @@ const RouteMeta = () => {
     return null;
 };
 
-const CHROMELESS = typeof window !== 'undefined' && window.self !== window.top;
-
 const App = () => (
     <UserProvider>
         <RouteMeta />
-        {CHROMELESS ? null : (
-            <React.Fragment>
-                <NavBar />
-                <BetaBanner />
-                <StandingBanner />
-            </React.Fragment>
-        )}
+        <NavBar />
+        <BetaBanner />
+        <StandingBanner />
         <div className="mw-app-content">
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -72,7 +66,7 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
             </Routes>
         </div>
-        {CHROMELESS ? null : <Footer />}
+        <Footer />
     </UserProvider>
 );
 

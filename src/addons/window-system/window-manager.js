@@ -1225,4 +1225,8 @@ const WindowManager = {
     }
 };
 
+if (typeof window !== 'undefined') {
+    window.wm = WindowManager;
+}
+
 export default WindowManager;
