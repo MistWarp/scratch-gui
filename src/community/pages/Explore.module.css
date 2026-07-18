@@ -69,16 +69,17 @@
 
 .people {
     display: flex;
-    flex-direction: column;
     gap: 10px;
     margin-bottom: 18px;
+    overflow-x: auto;
+    scrollbar-width: thin;
 }
 
 .person {
     display: flex;
     align-items: center;
     gap: 14px;
-    width: 100%;
+    flex: 0 0 220px;
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     box-shadow: var(--card-shadow);

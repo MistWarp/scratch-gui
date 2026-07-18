@@ -35,7 +35,7 @@ const Explore = () => {
         if (q.trim()) {
             api.searchUsers(q.trim())
                 .then(fresh(data => {
-                    const users = data.users || [];
+                    const users = (data.users || []).slice(0, 5);
                     setPeople(users);
                     Promise.all(users.map(person =>
                         rotur.followerCount(person.username).then(followers => ({...person, followers}))
@@ -83,7 +83,7 @@ const Explore = () => {
                                 <span className={styles.personName}>{person.username}</span>
                                 <span className={styles.personMeta}>
                                     {person.followers ?? 0} {person.followers === 1 ? 'follower' : 'followers'}
-                                    {' · '}
+                                    <br />
                                     {person.projects} {person.projects === 1 ? 'project' : 'projects'}
                                 </span>
                             </div>
