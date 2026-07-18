@@ -57,6 +57,7 @@ import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
+import MwEditorNav from './mw-editor-nav.jsx';
 import CollabPresence from './mw-collab-presence.jsx';
 
 import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
@@ -2338,6 +2339,12 @@ class MenuBar extends React.Component {
                         className={styles.menuBarLayoutItem}
                     >
                         <CollabPresence />
+                    </div>
+                    <div
+                        data-mw-item="mw-editor-nav"
+                        className={styles.menuBarLayoutItem}
+                    >
+                        <MwEditorNav />
                     </div>
                     <div
                         data-mw-item="rotur-account"

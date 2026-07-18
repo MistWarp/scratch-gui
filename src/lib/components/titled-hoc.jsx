@@ -24,6 +24,11 @@ const messages = defineMessages({
 const TitledHOC = function (WrappedComponent) {
     class TitledComponent extends React.Component {
         componentDidMount () {
+            const hasExplicitTitle = this.props.projectTitle !== null &&
+                typeof this.props.projectTitle !== 'undefined';
+            if (!hasExplicitTitle && this.props.reduxProjectTitle) {
+                return;
+            }
             this.handleReceivedProjectTitle(this.props.projectTitle);
         }
         componentDidUpdate (prevProps) {

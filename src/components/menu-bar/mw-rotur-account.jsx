@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {Bell, FolderOpen, GitBranch, Info, LogOut, Settings, Trophy, User} from 'lucide-react';
+import {LogOut, Settings, Trophy, User, Users} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -19,8 +19,7 @@ import {
     closeAccountMenu,
     accountMenuOpen
 } from '../../reducers/menus.js';
-import {openRoturLoginModal, openGitModal} from '../../reducers/modals.js';
-import {setGitModalInitialView} from '../../lib/git/modal-view.js';
+import {openRoturLoginModal} from '../../reducers/modals.js';
 
 const RoturAccount = props => {
     if (!props.username) {
@@ -51,6 +50,15 @@ const RoturAccount = props => {
         window.location.href = path;
     };
 
+    const doLogout = () => {
+        if (props.onLogout) {
+            props.onLogout();
+            return;
+        }
+        const api = getRoturSessionApi();
+        if (api && api.logout) api.logout();
+    };
+
     return (
         <MenuLabel
             open={props.menuOpen}
@@ -79,22 +87,6 @@ const RoturAccount = props => {
                         id="gui.accountMenu.profile"
                     />
                 </MenuItemContainer>
-                <MenuItemContainer onClick={go('/mystuff')}>
-                    <FolderOpen />
-                    <FormattedMessage
-                        defaultMessage="My stuff"
-                        description="Text to link to my projects, in the Rotur account navigation menu"
-                        id="mw.rotur.accountMenu.myStuff"
-                    />
-                </MenuItemContainer>
-                <MenuItemContainer onClick={go('/notifications')}>
-                    <Bell />
-                    <FormattedMessage
-                        defaultMessage="Notifications"
-                        description="Text to link to notifications, in the Rotur account navigation menu"
-                        id="mw.rotur.accountMenu.notifications"
-                    />
-                </MenuItemContainer>
                 {props.showEditorItems ? null : (
                     <MenuItemContainer onClick={go('/leaderboard')}>
                         <Trophy />
@@ -113,46 +105,25 @@ const RoturAccount = props => {
                         id="mw.rotur.accountMenu.settings"
                     />
                 </MenuItemContainer>
-                {props.showEditorItems ? (
-                    <MenuItemContainer
-                        onClick={() => {
-                            props.onCloseMenu();
-                            props.onOpenRoturRepos();
-                        }}
-                    >
-                        <GitBranch />
-                        <FormattedMessage
-                            defaultMessage="Your repos"
-                            description="Account menu item opening the Rotur Git repo manager"
-                            id="mw.rotur.accountMenu.repos"
-                        />
-                    </MenuItemContainer>
-                ) : null}
-                {props.showEditorItems ? (
-                    <MenuItemContainer
-                        onClick={() => {
-                            props.onCloseMenu();
-                            props.onOpenRoturInfo();
-                        }}
-                    >
-                        <Info />
-                        <FormattedMessage
-                            defaultMessage="What Rotur unlocks"
-                            description="Account menu item opening the Rotur features window"
-                            id="mw.rotur.accountMenu.info"
-                        />
-                    </MenuItemContainer>
-                ) : null}
                 <MenuSection>
                     <MenuItemContainer
                         onClick={() => {
                             props.onCloseMenu();
-                            if (props.onLogout) {
-                                props.onLogout();
-                                return;
-                            }
-                            const api = getRoturSessionApi();
-                            if (api && api.logout) api.logout();
+                            doLogout();
+                            window.location.href = 'https://rotur.dev/auth';
+                        }}
+                    >
+                        <Users />
+                        <FormattedMessage
+                            defaultMessage="Switch account"
+                            description="Account menu item that signs out and opens the Rotur auth page"
+                            id="mw.rotur.accountMenu.switchAccount"
+                        />
+                    </MenuItemContainer>
+                    <MenuItemContainer
+                        onClick={() => {
+                            props.onCloseMenu();
+                            doLogout();
                         }}
                     >
                         <LogOut />
@@ -175,8 +146,6 @@ RoturAccount.propTypes = {
     onLogout: PropTypes.func,
     onOpenLogin: PropTypes.func.isRequired,
     onOpenMenu: PropTypes.func.isRequired,
-    onOpenRoturRepos: PropTypes.func,
-    onOpenRoturInfo: PropTypes.func,
     showEditorItems: PropTypes.bool,
     username: PropTypes.string
 };
@@ -194,12 +163,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onOpenLogin: () => dispatch(openRoturLoginModal()),
     onOpenMenu: () => dispatch(openAccountMenu()),
-    onCloseMenu: () => dispatch(closeAccountMenu()),
-    onOpenRoturRepos: () => {
-        setGitModalInitialView('rotur');
-        dispatch(openGitModal());
-    },
-    onOpenRoturInfo: () => dispatch(openRoturLoginModal())
+    onCloseMenu: () => dispatch(closeAccountMenu())
 });
 
 export {RoturAccount};
