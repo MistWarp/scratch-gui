@@ -483,7 +483,7 @@ class CustomTheme extends Theme {
             name: this.name,
             description: this.description,
             author: this.author,
-            accent: accentExport || null,
+            accent: accentExport || (typeof this.originalAccent === 'string' ? this.originalAccent : null),
             menuBarForeground: menuBarForeground || null,
             gui: this.gui,
             blocks: this.blocks,
