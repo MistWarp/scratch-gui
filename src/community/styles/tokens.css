@@ -1,7 +1,7 @@
 :root {
-    --accent: var(--motion-primary, hsl(260, 60%, 60%));
+    --accent: var(--looks-secondary, hsl(260, 60%, 60%));
     --accent-strong: var(--looks-secondary, var(--accent));
-    --accent-dim: var(--motion-tertiary, var(--accent));
+    --accent-dim: var(--looks-secondary-dark, var(--accent));
     --accent-soft: var(--looks-light-transparent, rgba(133, 92, 214, 0.15));
     --accent-softer: var(--looks-light-transparent, rgba(133, 92, 214, 0.08));
     --accent-border: var(--looks-transparent, rgba(133, 92, 214, 0.35));
