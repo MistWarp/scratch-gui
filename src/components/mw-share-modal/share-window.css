@@ -132,3 +132,29 @@
     line-height: 1.5;
     margin: 8px 0;
 }
+
+.agree-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: var(--text-primary, #eee);
+}
+
+.agree-body {
+    background: var(--input-background, #111);
+    border: 1px solid var(--ui-black-transparent, #2c2c33);
+    border-radius: 9px;
+    padding: 14px;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+.agree-text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary, #ccc);
+}

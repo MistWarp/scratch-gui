@@ -108,13 +108,15 @@ const api = {
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${name}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    agreement: () => request('/agreement'),
+    acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
     quotaReset: () => request('/me/quota/reset', {method: 'POST'}),
     quotaResetConfirm: key => request('/me/quota/reset/confirm', {method: 'POST', body: {key}}),
     report: (type, target, reason, context) =>
         request('/reports', {method: 'POST', body: {type, target, reason, context}}),
     admin: {
         reports: () => request('/admin/reports'),
-        reportAction: (id, action) => request('/admin/reports/action', {method: 'POST', body: {id, action}}),
+        reportAction: (id, action, reason) => request('/admin/reports/action', {method: 'POST', body: {id, action, reason}}),
         reportEvidence: id => request(`/admin/reports/evidence/${id}`),
         admins: () => request('/admin/admins'),
         addAdmin: username => request('/admin/admins', {method: 'POST', body: {username}}),

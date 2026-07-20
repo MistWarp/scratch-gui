@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
     SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, Bookmark, LayoutDashboard,
-    RefreshCw, AlertTriangle
+    RefreshCw, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
@@ -65,7 +65,7 @@ const Overview = ({stats, account, quota, onBuyCredits}) => {
                             />
                         </div>
                         <span className={pct >= 80 ? styles.quotaWarn : styles.quotaPct}>
-                            {pct >= 80 ? '⚠ ' : ''}{Math.round(pct)}% full
+                            {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}% full
                         </span>
                     </div>
                 ) : null}
@@ -109,16 +109,7 @@ const UploadUsage = ({quota, onRefresh}) => {
 
     const pct = quota ? (quota.used / quota.limit) * 100 : 0;
 
-    const dailyRows = (quota && quota.daily) ? [...quota.daily].reverse() : [];
-    const maxBytes = dailyRows.reduce((m, d) => Math.max(m, d.bytes), 0);
-
-    const dayLabel = dayIndex => {
-        try {
-            return new Date(Number(dayIndex) * 86400000).toLocaleDateString([], {month: 'short', day: 'numeric'});
-        } catch (e) {
-            return '';
-        }
-    };
+    const dailyMap = Object.fromEntries((quota?.daily || []).map(d => [d.day, d.bytes]));
 
     // shared boilerplate for both reset actions
     const runReset = useCallback(async (fn, errorPrefix) => {
@@ -187,7 +178,7 @@ const UploadUsage = ({quota, onRefresh}) => {
             <div className={styles.uploadBarSection}>
                 <div className={styles.uploadBarLabel}>
                     {Math.round(pct)}% full
-                    {pct >= 80 ? <span className={styles.uploadWarn}> ⚠ Nearly full</span> : null}
+                    {pct >= 80 ? <span className={styles.uploadWarn}> <AlertTriangle size={14} /> Nearly full</span> : null}
                 </div>
                 <div className={styles.uploadBarBg}>
                     <div
@@ -197,33 +188,13 @@ const UploadUsage = ({quota, onRefresh}) => {
                 </div>
             </div>
 
-            <div className={styles.uploadChart}>
-                <h3 className={styles.uploadChartTitle}>Daily upload volume</h3>
-                {dailyRows.length > 0 ? (
-                    <div className={styles.uploadChartGrid}>
-                        {dailyRows.map(d => {
-                            const h = maxBytes
-                                ? Math.max((d.bytes / maxBytes) * 100, d.bytes ? 4 : 0)
-                                : 0;
-                            const label = dayLabel(d.day);
-                            return (
-                                <div key={d.day} className={styles.uploadChartCol}>
-                                    <div className={styles.uploadChartTrack}>
-                                        <div
-                                            className={styles.uploadChartBar}
-                                            style={{height: `${h}%`}}
-                                            title={`${formatBytes(d.bytes)} on ${label}`}
-                                        />
-                                    </div>
-                                    <span className={styles.uploadChartLabel}>{label}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <p className={styles.status}>No uploads in the current window.</p>
-                )}
-            </div>
+            <StatChart
+                title="Daily upload volume"
+                rows={historyRows(dailyMap, 14)}
+                format={formatBytes}
+                accent="#4C97FF"
+                emptyText="No uploads in the current window."
+            />
 
             <div className={styles.uploadReset}>
                 <h3 className={styles.uploadChartTitle}>Reset upload quota</h3>
@@ -234,7 +205,7 @@ const UploadUsage = ({quota, onRefresh}) => {
 
                 {resetDone ? (
                     <div className={styles.uploadResetDone}>
-                        <p>✅ Quota reset successfully! Your upload usage is now 0.</p>
+                        <p><CheckCircle size={16} /> Quota reset successfully! Your upload usage is now 0.</p>
                     </div>
                 ) : resetError ? (
                     <div className={styles.uploadResetError}>
@@ -291,10 +262,87 @@ const UploadUsage = ({quota, onRefresh}) => {
     );
 };
 
+const AgreementTab = () => {
+    const [agreement, setAgreement] = useState(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let stale = false;
+        api.agreement()
+            .then(data => {
+                if (!stale) setAgreement(data.agreement);
+            })
+            .catch(() => {});
+        return () => { stale = true; };
+    }, []);
+
+    const handleAccept = async () => {
+        setBusy(true);
+        setError('');
+        try {
+            const data = await api.acceptAgreement();
+            setAgreement(prev => ({...prev, accepted: true}));
+            if (data.already) {
+                // already accepted, just update the local state
+            }
+        } catch (e) {
+            setError(e.message || 'Could not accept agreement.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    if (!agreement) {
+        return <p className={styles.status}>Loading agreement…</p>;
+    }
+
+    if (!agreement.text && agreement.version === 0) {
+        return (
+            <section>
+                <p className={styles.status}>No agreement has been set yet.</p>
+            </section>
+        );
+    }
+
+    const alreadyAccepted = agreement.accepted === true;
+
+    return (
+        <section className={styles.agreementSection}>
+            <div className={styles.agreementContent}>
+                <pre className={styles.agreementText}>{agreement.text}</pre>
+            </div>
+            <div className={styles.agreementFooter}>
+                {alreadyAccepted ? (
+                    <p className={styles.agreementAccepted}>
+                        <CheckCircle size={16} /> You have accepted version {agreement.version} (updated{' '}
+                        {new Date(agreement.updatedAt).toLocaleDateString()}).
+                    </p>
+                ) : (
+                    <>
+                        <p className={styles.agreementPrompt}>
+                            To continue using the platform, please accept this agreement.
+                        </p>
+                        {error ? <p className={styles.error}>{error}</p> : null}
+                        <button
+                            className={styles.agreementAcceptBtn}
+                            onClick={handleAccept}
+                            disabled={busy}
+                        >
+                            {busy ? 'Accepting…' : `Accept v${agreement.version}`}
+                        </button>
+                    </>
+                )}
+            </div>
+        </section>
+    );
+};
+
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
     {key: 'projects', label: 'My Projects', icon: FolderOpen},
     {key: 'uploads', label: 'Uploads', icon: HardDrive},
+    {key: 'agreement', label: 'Agreement', icon: HeartHandshake},
     {key: 'library', label: 'My Library', icon: Bookmark},
     {key: 'loves', label: 'My Loved', icon: Heart}
 ];
@@ -312,6 +360,11 @@ const MyStuff = () => {
     const [stats, setStats] = useState(null);
     const [account, setAccount] = useState(null);
     const [showBuyCredits, setShowBuyCredits] = useState(false);
+    const [pendingUploadFile, setPendingUploadFile] = useState(null);
+    const [showAgreeModal, setShowAgreeModal] = useState(false);
+    const [agreeData, setAgreeData] = useState(null);
+    const [agreeBusy, setAgreeBusy] = useState(false);
+    const [agreeError, setAgreeError] = useState('');
     const uploadInput = useRef(null);
     const menuRef = useRef(null);
 
@@ -450,6 +503,22 @@ const MyStuff = () => {
             setActionError('Choose a Scratch .sb3 project file.');
             return;
         }
+
+        // Check agreement acceptance before allowing upload — show modal if needed
+        try {
+            const agreementData = await api.agreement();
+            const ag = agreementData.agreement;
+            if (ag.version > 0 && !ag.accepted) {
+                setAgreeData(ag);
+                setPendingUploadFile(file);
+                setShowAgreeModal(true);
+                return;
+            }
+        } catch (e) {
+            // If the agreement endpoint fails, we let the upload proceed
+            // rather than blocking on a network error.
+        }
+
         let created;
         try {
             setActionError('');
@@ -467,6 +536,40 @@ const MyStuff = () => {
             setUploading(false);
         }
     };
+
+    const confirmAgreeAndUpload = useCallback(async () => {
+        setAgreeBusy(true);
+        setAgreeError('');
+        try {
+            await api.acceptAgreement();
+            // Now proceed with the stored upload
+            const file = pendingUploadFile;
+            setPendingUploadFile(null);
+            setShowAgreeModal(false);
+            setAgreeData(null);
+            // Run the upload
+            setActionError('');
+            setUploading(true);
+            const created = await api.createProject({
+                title: file.name.replace(/\.sb3$/i, '') || 'Untitled'
+            });
+            await api.uploadProject(created.id, file);
+            setTab('projects');
+            load();
+        } catch (e) {
+            setAgreeError(e.message || 'Could not accept agreement.');
+        } finally {
+            setAgreeBusy(false);
+            setUploading(false);
+        }
+    }, [pendingUploadFile, load]);
+
+    const cancelAgreeModal = useCallback(() => {
+        setPendingUploadFile(null);
+        setShowAgreeModal(false);
+        setAgreeData(null);
+        setAgreeError('');
+    }, []);
 
     const refreshQuota = useCallback(() => {
         if (!user) return;
@@ -514,7 +617,7 @@ const MyStuff = () => {
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
-                    ⚠ You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    <AlertTriangle size={14} /> You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
                     ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
                     {quota.used >= quota.limit
                         ? 'You cannot upload new projects until usage drops.'
@@ -527,6 +630,44 @@ const MyStuff = () => {
                     balance={account && account.balance}
                     onClose={() => setShowBuyCredits(false)}
                 />
+            ) : null}
+
+            {showAgreeModal && agreeData ? (
+                <div className={styles.confirmOverlay} onClick={cancelAgreeModal}>
+                    <div
+                        className={styles.agreeModal}
+                        onClick={e => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <h2 className={styles.confirmTitle}>
+                            Upload agreement v{agreeData.version}
+                        </h2>
+                        <div className={styles.agreeModalBody}>
+                            <pre className={styles.agreementText}>{agreeData.text}</pre>
+                        </div>
+                        {agreeError ? (
+                            <p className={styles.error}>{agreeError}</p>
+                        ) : null}
+                        <p className={styles.agreementPrompt}>
+                            You must accept this agreement before you can upload projects.
+                        </p>
+                        <div className={styles.confirmActions}>
+                            <button
+                                className={styles.agreementAcceptBtn}
+                                onClick={confirmAgreeAndUpload}
+                                disabled={agreeBusy}
+                            >
+                                {agreeBusy ? 'Accepting…' : `Accept v${agreeData.version} & upload`}
+                            </button>
+                            <button
+                                className={styles.secondary}
+                                onClick={cancelAgreeModal}
+                                disabled={agreeBusy}
+                            >Cancel</button>
+                        </div>
+                    </div>
+                </div>
             ) : null}
 
             <div className={styles.layout}>
@@ -553,6 +694,8 @@ const MyStuff = () => {
                             quota={quota}
                             onRefresh={refreshQuota}
                         />
+                    ) : tab === 'agreement' ? (
+                        <AgreementTab />
                     ) : failed ? (
                         <p className={styles.status}>
                             Couldn&apos;t load.{' '}

@@ -209,6 +209,24 @@ const Project = () => {
     // Always hand the viewer's own theme back when leaving the project.
     useEffect(() => () => restoreUserTheme(), []);
 
+    // Scroll to a comment anchor after the comments section renders
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (!hash) return;
+        const id = hash.replace('#', '');
+        const tryScroll = (attempts = 0) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({behavior: 'smooth', block: 'center'});
+                return;
+            }
+            if (attempts < 20) {
+                setTimeout(() => tryScroll(attempts + 1), 300);
+            }
+        };
+        tryScroll();
+    }, [project]); // re-run when project data loads (which triggers comment rendering)
+
     const owner = project && project.owner;
     useEffect(() => {
         if (themeMode !== 'followed' || !user || !owner) return;

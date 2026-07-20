@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
+import {request} from '../../lib/community/api.js';
 import styles from './share-window.css';
 
 class ShareWindow extends React.Component {
@@ -10,6 +11,7 @@ class ShareWindow extends React.Component {
         this.handleRetake = this.handleRetake.bind(this);
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
+        this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.fileInput = React.createRef();
         this.state = {
             title: props.initialTitle || 'Untitled',
@@ -17,7 +19,10 @@ class ShareWindow extends React.Component {
             status: null,
             error: null,
             notice: null,
-            done: null
+            done: null,
+            agreement: null,
+            agreeBusy: false,
+            agreeError: ''
         };
     }
     componentDidMount () {
@@ -51,11 +56,24 @@ class ShareWindow extends React.Component {
         reader.readAsDataURL(file);
     }
     async handlePublish () {
-        if (this.state.status) {
+        if (this.state.status || this.state.agreeBusy) {
             return;
         }
         const isUpdate = this.props.action === 'update';
-        this.setState({status: 'Saving…', error: null, notice: null});
+
+        // Check agreement acceptance before uploading
+        try {
+            const agreementData = await request('/agreement');
+            const ag = agreementData.agreement;
+            if (ag.version > 0 && !ag.accepted) {
+                this.setState({agreement: ag, agreeError: ''});
+                return;
+            }
+        } catch (e) {
+            // proceed with upload if agreement check fails
+        }
+
+        this.setState({status: 'Saving…', error: null, notice: null, agreement: null});
         let thumbnailBlob = null;
         if (!isUpdate && this.state.thumbnail) {
             try {
@@ -79,9 +97,54 @@ class ShareWindow extends React.Component {
             this.setState({status: null, error: e.message || 'Could not save'});
         }
     }
+
+    async handleAcceptAgreement () {
+        this.setState({agreeBusy: true, agreeError: ''});
+        try {
+            await request('/agreement/accept', {method: 'POST'});
+            this.setState({agreeBusy: false, agreement: null});
+            // proceed with the save now that agreement is accepted
+            this.handlePublish();
+        } catch (e) {
+            this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
+        }
+    }
     render () {
         const actionLabel = this.props.action === 'remix' ? 'Remix' :
             this.props.action === 'update' ? 'Update' : 'Save';
+
+        if (this.state.agreement) {
+            return (
+                <div className={styles.root}>
+                    <div className={styles.body}>
+                        <h3 className={styles.agreeTitle}>
+                            Upload agreement v{this.state.agreement.version}
+                        </h3>
+                        <div className={styles.agreeBody}>
+                            <pre className={styles.agreeText}>{this.state.agreement.text}</pre>
+                        </div>
+                        {this.state.agreeError ? (
+                            <div className={styles.error}>{this.state.agreeError}</div>
+                        ) : null}
+                    </div>
+                    <div className={styles.footer}>
+                        <button
+                            className={styles.secondary}
+                            onClick={() => this.setState({agreement: null, agreeError: ''})}
+                            disabled={this.state.agreeBusy}
+                        >Cancel</button>
+                        <button
+                            className={styles.primary}
+                            onClick={this.handleAcceptAgreement}
+                            disabled={this.state.agreeBusy}
+                        >
+                            {this.state.agreeBusy ? 'Accepting…' : `Accept v${this.state.agreement.version} & ${actionLabel.toLowerCase()}`}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
         if (this.state.done) {
             return (
                 <div className={styles.root}>

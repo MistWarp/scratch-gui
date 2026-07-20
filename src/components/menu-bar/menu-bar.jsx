@@ -166,7 +166,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Send,
     Download, AppWindow, Computer, Shield, Code, Code2, MessageCircle, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Check
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1583,12 +1583,6 @@ class MenuBar extends React.Component {
                                                             description="File menu item to remix a MistWarp project"
                                                             id="mw.menuBar.remix"
                                                         />
-                                                    ) : mistwarpAction === 'update' ? (
-                                                        <FormattedMessage
-                                                            defaultMessage="Update MistWarp project"
-                                                            description="File menu item to update a MistWarp project"
-                                                            id="mw.menuBar.update"
-                                                        />
                                                     ) : (
                                                         <FormattedMessage
                                                             defaultMessage="Save to MistWarp"
@@ -1761,7 +1755,7 @@ class MenuBar extends React.Component {
                                                         [styles.inactive]: this.state.autosavePaused
                                                     })}
                                                 >
-                                                    {this.state.autosavePaused ? '⏸' : '✓'}
+                                                    {this.state.autosavePaused ? <Pause /> : <Check />}
                                                 </span>
                                                 {' '}
                                                 {this.state.autosavePaused ? (
@@ -1788,7 +1782,7 @@ class MenuBar extends React.Component {
                                                         {'('}
                                                         {this.formatTimeRemaining(this.getAutosaveTimeRemaining())}
                                                         {')'}
-                                                        {this.state.autosavePaused && ' ⏸'}
+                                                        {' '}{this.state.autosavePaused && <Pause />}
                                                     </span>
                                                 )}
                                             </MenuItem>

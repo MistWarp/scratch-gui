@@ -60,24 +60,35 @@ const ActivitySection = ({user, login}) => {
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {
+        let cancelled = false;
         if (!user) {
             setItems([]);
             setLoaded(true);
-            return;
+            return () => {};
         }
         setLoaded(false);
         setFailed(false);
         rotur.following(user.username)
             .then(data => {
+                if (cancelled) return;
                 const following = data.following || [];
                 if (!following.length) {
                     return {activity: []};
                 }
                 return api.activity(following);
             })
-            .then(data => setItems(data.activity || []))
-            .catch(() => setFailed(true))
-            .finally(() => setLoaded(true));
+            .then(data => {
+                if (cancelled) return;
+                setItems(data.activity || []);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setFailed(true);
+            })
+            .finally(() => {
+                if (!cancelled) setLoaded(true);
+            });
+        return () => { cancelled = true; };
     }, [user]);
 
     let body;
@@ -159,7 +170,18 @@ const NewsSection = () => {
             .catch(() => setFailed(true));
     };
 
-    useEffect(load, []);
+    useEffect(() => {
+        let cancelled = false;
+        setFailed(false);
+        api.news()
+            .then(data => {
+                if (!cancelled) setItems(data.news || []);
+            })
+            .catch(() => {
+                if (!cancelled) setFailed(true);
+            });
+        return () => { cancelled = true; };
+    }, []);
 
     if (failed) {
         return (
@@ -216,14 +238,17 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let cancelled = false;
         Promise.all([
             api.explore({sort: 'trending', limit: 8}).catch(() => ({projects: []})),
             api.explore({sort: 'recent', limit: 8}).catch(() => ({projects: []}))
         ]).then(([t, r]) => {
+            if (cancelled) return;
             setTrending(t.projects || []);
             setRecent(r.projects || []);
             setLoading(false);
         });
+        return () => { cancelled = true; };
     }, []);
 
     return (
