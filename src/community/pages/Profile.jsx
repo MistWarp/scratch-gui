@@ -102,6 +102,24 @@ const Profile = () => {
         });
     }, [profile, name]);
 
+    // Scroll to a comment anchor after the comments section renders
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (!hash) return;
+        const id = hash.replace('#', '');
+        const tryScroll = (attempts = 0) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({behavior: 'smooth', block: 'center'});
+                return;
+            }
+            if (attempts < 20) {
+                setTimeout(() => tryScroll(attempts + 1), 300);
+            }
+        };
+        tryScroll();
+    }, [profile, mwUser]);
+
     const toggleFollow = async () => {
         if (!user || !profile || followBusy) return;
         setFollowBusy(true);

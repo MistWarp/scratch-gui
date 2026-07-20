@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
-import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3} from 'lucide-react';
+import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3, AlertTriangle} from 'lucide-react';
 import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -76,7 +76,7 @@ const QuotaTile = ({quota}) => {
                 />
             </div>
             <span className={pct >= 80 ? styles.quotaWarnText : styles.quotaPctText}>
-                {pct >= 80 ? '⚠ ' : ''}{Math.round(pct)}% full
+                {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}% full
             </span>
         </div>
     );
@@ -108,7 +108,7 @@ const StatsOverview = () => {
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
-                    ⚠ You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    <AlertTriangle size={14} /> You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
                     ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
                     {quota.used >= quota.limit
                         ? 'You cannot upload new projects until usage drops.'
@@ -655,15 +655,21 @@ const Admin = () => {
         if (user && user.isAdmin) load();
     }, [user, load]);
 
-    const act = async (id, action) => {
+    const act = async (id, action, reason) => {
         try {
             setError('');
-            await api.admin.reportAction(id, action);
+            await api.admin.reportAction(id, action, reason);
             window.dispatchEvent(new Event('mw:reports-updated'));
             load();
         } catch (e) {
             setError(e.message || 'Action failed.');
         }
+    };
+
+    const warnFromReport = (report) => {
+        const reason = window.prompt('Reason for the warning (shown to the user):');
+        if (reason === null) return; // cancelled
+        act(report.id, 'warn_user', reason.trim());
     };
 
     const banByName = async () => {
@@ -780,6 +786,20 @@ const Admin = () => {
                                                         <Link
                                                             to={`/users/${report.target}`}
                                                         >{`@${report.target}`}</Link>
+                                                    ) : report.type === 'comment' && report.context ? (
+                                                        (() => {
+                                                            const ctx = report.context;
+                                                            const target = report.target;
+                                                            if (ctx.startsWith('project ')) {
+                                                                const pid = ctx.slice(8);
+                                                                return <Link to={`${projectUrl(pid)}#comment-id-${target}`}>{`Comment ${target}`}</Link>;
+                                                            }
+                                                            if (ctx.startsWith('profile ')) {
+                                                                const uname = ctx.slice(8);
+                                                                return <Link to={`/users/${uname}#comment-id-${target}`}>{`Comment ${target}`}</Link>;
+                                                            }
+                                                            return `Comment ${target}`;
+                                                        })()
                                                     ) : (
                                                         `Comment ${report.target}`
                                                     )}
@@ -802,7 +822,7 @@ const Admin = () => {
                                                 ) : null}
                                                 <button
                                                     className={styles.secondary}
-                                                    onClick={() => act(report.id, 'warn_user')}
+                                                    onClick={() => warnFromReport(report)}
                                                 >{report.type === 'project' ? 'Warn owner' : 'Warn user'}</button>
                                                 <button
                                                     className={styles.danger}

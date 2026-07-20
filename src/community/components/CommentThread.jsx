@@ -10,8 +10,8 @@ import {timeAgo, sameUser} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
-const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, canDelete, canReport, isReply}) => (
-    <div className={isReply ? styles.replyRow : styles.row}>
+const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, canDelete, canReport, isReply, id}) => (
+    <div id={id} className={isReply ? styles.replyRow : styles.row}>
         <Link to={`/users/${comment.author}`}>
             <Avatar
                 username={comment.author}
@@ -221,11 +221,12 @@ const CommentThread = ({source, canModerate, disabled, reportContext}) => {
             {roots.length ? roots.map(comment => (
                 <div
                     key={comment.id}
+                    id={`comment-group-${comment.id}`}
                     className={styles.commentGroup}
                 >
                     <CommentRow
                         comment={comment}
-                        onReply={() => openReply(comment.id)}
+                        id={`comment-id-${comment.id}`}
                         onDelete={() => remove(comment.id)}
                         onReact={type => react(comment.id, type)}
                         onReport={() => setReportId(comment.id)}
@@ -245,6 +246,7 @@ const CommentThread = ({source, canModerate, disabled, reportContext}) => {
                                         <CommentRow
                                             key={reply.id}
                                             comment={reply}
+                                            id={`comment-id-${reply.id}`}
                                             isReply
                                             canReply={canReply}
                                             canDelete={canDelete(reply)}

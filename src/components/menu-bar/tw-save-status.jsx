@@ -1,17 +1,14 @@
 import {connect} from 'react-redux';
-import {FormattedMessage} from 'react-intl';
 import PropTypes from 'prop-types';
-import React, {useCallback, useState} from 'react';
+import React, {useCallback} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
-import {
-    getMistWarpAction, getRememberedPlatformProjectState, publishToMistWarp
-} from '../../lib/community/publish.js';
+import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
 
-import {Save, Loader} from 'lucide-react';
+import {Save} from 'lucide-react';
 
 import styles from './save-status.css';
 
@@ -25,7 +22,6 @@ const TWSaveStatus = ({
     onProjectUnchanged,
     vm
 }) => {
-    const [uploading, setUploading] = useState(false);
     const platformState = roturReady ? getRememberedPlatformProjectState() : null;
     const mistwarpAction = roturReady ?
         getMistWarpAction(platformState, projectChanged) :
@@ -36,21 +32,7 @@ const TWSaveStatus = ({
         action: mistwarpAction,
         onPublished: onProjectUnchanged
     }), [vm, projectTitle, mistwarpAction, onProjectUnchanged]);
-    const directUpload = useCallback(async () => {
-        if (uploading) return;
-        setUploading(true);
-        try {
-            await publishToMistWarp({vm, title: projectTitle, updateOnly: true});
-            onProjectUnchanged();
-        } catch (e) {
-            // Something went wrong (needs sign-in, network, etc.): fall back to
-            // the full save window so the user can see the error and retry.
-            openSaveWindow();
-        } finally {
-            setUploading(false);
-        }
-    }, [uploading, vm, projectTitle, onProjectUnchanged, openSaveWindow]);
-    const onSaveClick = mistwarpAction === 'update' ? directUpload : openSaveWindow;
+    const onSaveClick = openSaveWindow;
     if (filterInlineAlerts(alertsList).length > 0) {
         return <InlineMessages />;
     }
@@ -70,29 +52,9 @@ const TWSaveStatus = ({
                         'Save to your computer'}
                 >
                     <Save
-                        className={mistwarpAction ? styles.saveIconAlways : styles.saveIcon}
+                        className={styles.saveIconAlways}
                         size={18}
                     />
-                    {mistwarpAction ? null : (
-                        <span className={styles.saveLabel}>
-                            {fileHandle ? (
-                                <FormattedMessage
-                                    defaultMessage="Save as {file}"
-                                    description="Menu bar item to save to an existing file on the user's computer"
-                                    id="tw.menuBar.saveAs"
-                                    values={{
-                                        file: fileHandle.name
-                                    }}
-                                />
-                            ) : (
-                                <FormattedMessage
-                                    defaultMessage="Save to your computer"
-                                    description="Menu bar item for downloading a project to your computer"
-                                    id="gui.menuBar.downloadToComputer"
-                                />
-                            )}
-                        </span>
-                    )}
                 </div>
             )}
         </SB3Downloader>
@@ -100,49 +62,17 @@ const TWSaveStatus = ({
     if (!mistwarpAction) {
         return saveToComputer;
     }
+    const mistwarpLabel = mistwarpAction === 'remix' ? 'Remix to MistWarp' : 'Save to MistWarp';
     return (
         <div
             className={styles.saveNow}
             onClick={onSaveClick}
+            title={mistwarpLabel}
         >
-            {uploading ? (
-                <Loader
-                    className={styles.saveIconAlways}
-                    size={18}
-                />
-            ) : (
-                <Save
-                    className={styles.saveIconAlways}
-                    size={18}
-                />
-            )}
-            <span className={styles.saveLabel}>
-                {uploading ? (
-                    <FormattedMessage
-                        defaultMessage="Saving to MistWarp…"
-                        description="Menu bar item while uploading the project to MistWarp"
-                        id="mw.saveStatus.saving"
-                    />
-                ) : mistwarpAction === 'remix' ? (
-                    <FormattedMessage
-                        defaultMessage="Remix to MistWarp"
-                        description="Menu bar item to remix the project to MistWarp"
-                        id="mw.saveStatus.remix"
-                    />
-                ) : mistwarpAction === 'update' ? (
-                    <FormattedMessage
-                        defaultMessage="Update MistWarp project"
-                        description="Menu bar item to update the project on MistWarp"
-                        id="mw.saveStatus.update"
-                    />
-                ) : (
-                    <FormattedMessage
-                        defaultMessage="Save to MistWarp"
-                        description="Menu bar item to save the project to MistWarp"
-                        id="mw.saveStatus.save"
-                    />
-                )}
-            </span>
+            <Save
+                className={styles.saveIconAlways}
+                size={18}
+            />
         </div>
     );
 };

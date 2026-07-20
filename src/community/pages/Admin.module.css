@@ -325,7 +325,7 @@
 .quotaBarFill {
     height: 100%;
     border-radius: 4px;
-    background: linear-gradient(90deg, #0FBD8C, #4C97FF);
+    background: #4C97FF;
     transition: width 0.3s;
 }
 
@@ -333,6 +333,9 @@
     font-size: 12px;
     color: var(--text-dim);
     margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .quotaWarnText {
@@ -340,6 +343,9 @@
     color: #f0a3a3;
     font-weight: 600;
     margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .quotaWarning {
@@ -351,6 +357,9 @@
     color: #f0a3a3;
     font-size: 14px;
     line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .charts {
