@@ -63,14 +63,37 @@ const MiniChart = ({title, series}) => {
     );
 };
 
+const QuotaTile = ({quota}) => {
+    const pct = (quota.used / quota.limit) * 100;
+    return (
+        <div className={styles.statTile}>
+            <span className={styles.statValue}>{formatBytes(quota.used)}</span>
+            <span className={styles.statLabel}>of {formatBytes(quota.limit)} used</span>
+            <div className={styles.quotaBarBg}>
+                <div
+                    className={styles.quotaBarFill}
+                    style={{width: `${Math.min(100, pct)}%`}}
+                />
+            </div>
+            <span className={pct >= 80 ? styles.quotaWarnText : styles.quotaPctText}>
+                {pct >= 80 ? '⚠ ' : ''}{Math.round(pct)}% full
+            </span>
+        </div>
+    );
+};
+
 const StatsOverview = () => {
     const [stats, setStats] = useState(null);
+    const [quota, setQuota] = useState(null);
     const [error, setError] = useState('');
 
     useEffect(() => {
         api.admin.stats()
             .then(setStats)
             .catch(e => setError(e.message || 'Could not load stats.'));
+        api.quota()
+            .then(setQuota)
+            .catch(() => {});
     }, []);
 
     if (error) {
@@ -82,6 +105,17 @@ const StatsOverview = () => {
     return (
         <div>
             <h2>Overview</h2>
+
+            {quota && (quota.used / quota.limit) * 100 >= 80 ? (
+                <p className={styles.quotaWarning}>
+                    ⚠ You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
+                    {quota.used >= quota.limit
+                        ? 'You cannot upload new projects until usage drops.'
+                        : 'Consider managing your projects to free up space.'}
+                </p>
+            ) : null}
+
             <div className={styles.statGrid}>
                 <StatTile
                     label="Projects"
@@ -127,6 +161,7 @@ const StatsOverview = () => {
                     label="News posts"
                     value={stats.newsPosts.toLocaleString()}
                 />
+                {quota ? <QuotaTile quota={quota} /> : null}
             </div>
             <div className={styles.charts}>
                 <MiniChart
@@ -253,7 +288,6 @@ const UserManager = () => {
     const [level, setLevel] = useState('good');
     const [reason, setReason] = useState('');
     const [message, setMessage] = useState('');
-    const [bio, setBio] = useState('');
 
     const loadUser = useCallback(async name => {
         const target = (name || '').trim();
@@ -266,7 +300,6 @@ const UserManager = () => {
             setLevel((result.standing && result.standing.level) || 'good');
             setReason('');
             setMessage('');
-            setBio(result.bio || '');
         } catch (e) {
             setData(null);
             setError(e.message || 'Could not load that user.');
@@ -289,8 +322,6 @@ const UserManager = () => {
         run(() => api.admin.setStanding(data.username, level, reason.trim()), 'Standing updated.');
     const sendMessage = () =>
         run(() => api.admin.messageUser(data.username, message.trim()), 'Message sent.');
-    const saveBio = () =>
-        run(() => api.admin.updateUserProfile(data.username, {bio}), 'Bio saved.');
     const toggleComments = () =>
         run(() => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
     const unshareProject = pid => run(() => api.unpublish(pid), 'Project unshared.');
@@ -376,23 +407,27 @@ const UserManager = () => {
                         >Send</button>
                     </div>
 
-                    <label className={styles.fieldLabel}>Profile bio</label>
-                    <div className={styles.field}>
-                        <textarea
-                            className={styles.textarea}
-                            value={bio}
-                            maxLength={300}
-                            onChange={e => setBio(e.target.value)}
-                        />
-                        <button
-                            className={styles.secondary}
-                            onClick={saveBio}
-                        >Save bio</button>
-                    </div>
                     <button
                         className={styles.secondary}
                         onClick={toggleComments}
                     >{data.commentsOff ? 'Enable profile comments' : 'Disable profile comments'}</button>
+
+                    {data.quota ? (
+                        <div className={styles.quota}>
+                            <span className={styles.fieldLabel}>Upload quota</span>
+                            <span className={styles.quotaBar}>
+                                <span className={styles.quotaFillBg}>
+                                    <span
+                                        className={styles.quotaFill}
+                                        style={{width: `${Math.min(100, (data.quota.used / data.quota.limit) * 100)}%`}}
+                                    />
+                                </span>
+                                <span className={styles.quotaText}>
+                                    {`${formatBytes(data.quota.used)} of ${formatBytes(data.quota.limit)}`}
+                                </span>
+                            </span>
+                        </div>
+                    ) : null}
 
                     {(data.projects || []).length ? (
                         <div className={styles.list}>
