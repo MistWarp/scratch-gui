@@ -139,6 +139,15 @@
     flex-shrink: 0;
 }
 
+.resetInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
 .secondary {
     background: transparent;
     color: inherit;

@@ -108,6 +108,8 @@ const api = {
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${name}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    quotaReset: () => request('/me/quota/reset', {method: 'POST'}),
+    quotaResetConfirm: key => request('/me/quota/reset/confirm', {method: 'POST', body: {key}}),
     report: (type, target, reason, context) =>
         request('/reports', {method: 'POST', body: {type, target, reason, context}}),
     admin: {
@@ -128,7 +130,8 @@ const api = {
         updateUserProfile: (username, patch) =>
             request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
         searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
-        stats: () => request('/admin/stats')
+        stats: () => request('/admin/stats'),
+        users: () => request('/admin/users')
     },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),
