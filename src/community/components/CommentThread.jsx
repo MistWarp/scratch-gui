@@ -110,8 +110,27 @@ const CommentThread = ({source, canModerate, disabled, reportContext}) => {
     const [error, setError] = useState(null);
     const [loadFailed, setLoadFailed] = useState(false);
     const [reportId, setReportId] = useState(null);
+    const [replyLimits, setReplyLimits] = useState({});
 
     const beginLoad = useLatest();
+
+    const INITIAL_LIMIT = 3;
+    const REPLY_PAGE = 5;
+
+    const showMoreReplies = useCallback(id => {
+        setReplyLimits(prev => ({
+            ...prev,
+            [id]: (prev[id] ?? INITIAL_LIMIT) + REPLY_PAGE
+        }));
+    }, []);
+
+    const hideReplies = useCallback(id => {
+        setReplyLimits(prev => {
+            const next = {...prev};
+            delete next[id];
+            return next;
+        });
+    }, []);
 
     const load = useCallback(() => {
         const fresh = beginLoad();
@@ -177,7 +196,9 @@ const CommentThread = ({source, canModerate, disabled, reportContext}) => {
     const canReply = Boolean(user) && !disabled;
 
     const roots = comments.filter(c => !c.parent);
-    const repliesOf = parentId => comments.filter(c => c.parent === parentId);
+    const repliesOf = parentId => comments
+        .filter(c => c.parent === parentId)
+        .sort((a, b) => (a.created || 0) - (b.created || 0));
 
     return (
         <div className={styles.thread}>
@@ -213,20 +234,45 @@ const CommentThread = ({source, canModerate, disabled, reportContext}) => {
                         canReport={canReport(comment)}
                     />
                     <div className={styles.replies}>
-                        {repliesOf(comment.id).map(reply => (
-                            <CommentRow
-                                key={reply.id}
-                                comment={reply}
-                                isReply
-                                canReply={canReply}
-                                canDelete={canDelete(reply)}
-                                canReport={canReport(reply)}
-                                onReply={() => openReply(comment.id, `@${reply.author} `)}
-                                onDelete={() => remove(reply.id)}
-                                onReact={type => react(reply.id, type)}
-                                onReport={() => setReportId(reply.id)}
-                            />
-                        ))}
+                        {(() => {
+                            const all = repliesOf(comment.id);
+                            const limit = replyLimits[comment.id] ?? INITIAL_LIMIT;
+                            const visible = all.slice(0, limit);
+                            const hidden = all.length - visible.length;
+                            return (
+                                <>
+                                    {visible.map(reply => (
+                                        <CommentRow
+                                            key={reply.id}
+                                            comment={reply}
+                                            isReply
+                                            canReply={canReply}
+                                            canDelete={canDelete(reply)}
+                                            canReport={canReport(reply)}
+                                            onReply={() => openReply(comment.id, `@${reply.author} `)}
+                                            onDelete={() => remove(reply.id)}
+                                            onReact={type => react(reply.id, type)}
+                                            onReport={() => setReportId(reply.id)}
+                                        />
+                                    ))}
+                                    {hidden > 0 ? (
+                                        <button
+                                            className={styles.showMore}
+                                            onClick={() => showMoreReplies(comment.id)}
+                                        >
+                                            Show {hidden} more {hidden === 1 ? 'reply' : 'replies'}
+                                        </button>
+                                    ) : all.length > INITIAL_LIMIT ? (
+                                        <button
+                                            className={styles.showMore}
+                                            onClick={() => hideReplies(comment.id)}
+                                        >
+                                            Hide replies
+                                        </button>
+                                    ) : null}
+                                </>
+                            );
+                        })()}
                         {replyTo === comment.id && user ? (
                             <InlineComposer
                                 small

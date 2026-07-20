@@ -24,8 +24,9 @@ const visibilityLabel = project => {
     return 'Draft';
 };
 
-const Overview = ({stats, account, onBuyCredits}) => {
+const Overview = ({stats, account, quota, onBuyCredits}) => {
     const weekViews = historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0);
+    const pct = quota ? (quota.used / quota.limit) * 100 : 0;
     return (
         <section className={styles.dashboard}>
             <div className={styles.dashGrid}>
@@ -49,6 +50,22 @@ const Overview = ({stats, account, onBuyCredits}) => {
                         <span className={styles.dashIcon}><Coins size={18} /></span>
                         <span className={styles.dashNumber}>{fmtCredits(stats.totalRevenue)}</span>
                         <span className={styles.dashLabel}>Credits earned</span>
+                    </div>
+                ) : null}
+                {quota ? (
+                    <div className={`${styles.dashTile} ${styles.tileQuota}`}>
+                        <span className={styles.dashIcon}><HardDrive size={18} /></span>
+                        <span className={styles.dashNumber}>{formatBytes(quota.used)}</span>
+                        <span className={styles.dashLabel}>of {formatBytes(quota.limit)} used</span>
+                        <div className={styles.quotaBarBg}>
+                            <div
+                                className={styles.quotaBarFill}
+                                style={{width: `${Math.min(100, pct)}%`}}
+                            />
+                        </div>
+                        <span className={pct >= 80 ? styles.quotaWarn : styles.quotaPct}>
+                            {pct >= 80 ? '⚠ ' : ''}{Math.round(pct)}% full
+                        </span>
                     </div>
                 ) : null}
                 {account && account.balance !== null ? (
@@ -267,14 +284,6 @@ const MyStuff = () => {
         <main className={styles.page}>
             <div className={styles.head}>
                 <h1>My stuff</h1>
-                {quota ? (
-                    <span
-                        className={styles.quota}
-                        title="Uploads from the last 7 days count toward this limit"
-                    >
-                        {`${formatBytes(quota.used)} of ${formatBytes(quota.limit)} uploaded this week`}
-                    </span>
-                ) : null}
                 <div className={styles.headActions}>
                     <input
                         ref={uploadInput}
@@ -303,6 +312,16 @@ const MyStuff = () => {
 
             {actionError ? <p className={styles.error}>{actionError}</p> : null}
 
+            {quota && (quota.used / quota.limit) * 100 >= 80 ? (
+                <p className={styles.quotaWarning}>
+                    ⚠ You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
+                    {quota.used >= quota.limit
+                        ? 'You cannot upload new projects until usage drops.'
+                        : 'Consider managing your projects to free up space.'}
+                </p>
+            ) : null}
+
             {showBuyCredits ? (
                 <BuyCreditsModal
                     balance={account && account.balance}
@@ -323,6 +342,7 @@ const MyStuff = () => {
                             <Overview
                                 stats={stats}
                                 account={account}
+                                quota={quota}
                                 onBuyCredits={() => setShowBuyCredits(true)}
                             />
                         ) : (
