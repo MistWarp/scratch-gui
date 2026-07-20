@@ -58,12 +58,21 @@ const applyThemeFonts = async fonts => {
     
     const fontFamily = fontStack.join(', ');
     
+    // Elements excluded from the theme font (stage contents and renderer HTML overlays keep their own fonts)
+    const fontExclusions = [
+        '[class^="paint-editor_text-area_"]',
+        '[class*="stage_"]',
+        '[class*="stage_"] *',
+        '.scratch-render-overlays',
+        '.scratch-render-overlays *'
+    ].map(selector => `:not(${selector})`).join('');
+
     // Create style element
     const newFontStyleElement = document.createElement('style');
     newFontStyleElement.id = 'theme-fonts';
     newFontStyleElement.textContent = `
         /* Theme Fonts - High Priority Overrides */
-        *:not([class^="paint-editor_text-area_"]) {
+        *${fontExclusions} {
             font-family: var(--theme-font, ${fontFamily}) !important;
         }
 
