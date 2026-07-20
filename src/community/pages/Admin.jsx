@@ -280,52 +280,226 @@ const ProjectManager = () => {
     );
 };
 
-const UserManager = () => {
-    const [query, setQuery] = useState('');
+const UserDetailCard = ({username, onBack}) => {
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [note, setNote] = useState('');
     const [level, setLevel] = useState('good');
-    const [reason, setReason] = useState('');
+    const [reasonText, setReasonText] = useState('');
     const [message, setMessage] = useState('');
 
-    const loadUser = useCallback(async name => {
-        const target = (name || '').trim();
-        if (!target) return;
+    useEffect(() => {
+        if (!username) return;
         setError('');
         setNote('');
-        try {
-            const result = await api.admin.getUser(target);
-            setData(result);
-            setLevel((result.standing && result.standing.level) || 'good');
-            setReason('');
-            setMessage('');
-        } catch (e) {
-            setData(null);
-            setError(e.message || 'Could not load that user.');
-        }
-    }, []);
+        api.admin.getUser(username)
+            .then(result => {
+                setData(result);
+                setLevel((result.standing && result.standing.level) || 'good');
+                setReasonText('');
+                setMessage('');
+            })
+            .catch(e => {
+                setData(null);
+                setError(e.message || 'Could not load that user.');
+            });
+    }, [username]);
 
-    const run = async (fn, ok) => {
+    const refresh = () => {
+        if (!data) return;
+        api.admin.getUser(data.username).then(setData).catch(() => {});
+    };
+
+    const applyStanding = async () => {
+        if (!data) return;
         setError('');
         setNote('');
         try {
-            await fn();
-            if (ok) setNote(ok);
-            await loadUser(data.username);
+            await api.admin.setStanding(data.username, level, reasonText.trim());
+            setNote('Standing updated.');
+            refresh();
         } catch (e) {
             setError(e.message || 'Action failed.');
         }
     };
 
-    const applyStanding = () =>
-        run(() => api.admin.setStanding(data.username, level, reason.trim()), 'Standing updated.');
-    const sendMessage = () =>
-        run(() => api.admin.messageUser(data.username, message.trim()), 'Message sent.');
-    const toggleComments = () =>
-        run(() => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
-    const unshareProject = pid => run(() => api.unpublish(pid), 'Project unshared.');
-    const deleteProject = pid => run(() => api.deleteProject(pid), 'Project deleted.');
+    const sendMessage = async () => {
+        if (!data || !message.trim()) return;
+        setError('');
+        setNote('');
+        try {
+            await api.admin.messageUser(data.username, message.trim());
+            setNote('Message sent.');
+            setMessage('');
+        } catch (e) {
+            setError(e.message || 'Action failed.');
+        }
+    };
+
+    const toggleComments = async () => {
+        if (!data) return;
+        setError('');
+        setNote('');
+        try {
+            await api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff});
+            refresh();
+        } catch (e) {
+            setError(e.message || 'Action failed.');
+        }
+    };
+
+    const unshareProject = async pid => {
+        try {
+            await api.unpublish(pid);
+            setNote('Project unshared.');
+            refresh();
+        } catch (e) {
+            setError(e.message || 'Could not unshare.');
+        }
+    };
+
+    const deleteProject = async pid => {
+        if (!window.confirm('Delete this project? This cannot be undone.')) return;
+        try {
+            await api.deleteProject(pid);
+            setNote('Project deleted.');
+            refresh();
+        } catch (e) {
+            setError(e.message || 'Could not delete.');
+        }
+    };
+
+    if (error) return <div><p className={styles.error}>{error}</p><button className={styles.secondary} onClick={onBack}>Back to list</button></div>;
+    if (!data) return <p className={styles.status}>Loading user details…</p>;
+
+    return (
+        <div>
+            <button className={styles.secondary} onClick={onBack} style={{marginBottom: 10}}>← Back to list</button>
+            <div className={styles.userCard}>
+                <div className={styles.userHead}>
+                    <Avatar username={data.username} size={44} />
+                    <div className={styles.rowInfo}>
+                        <span className={styles.rowTitle}>
+                            <Link to={`/users/${data.username}`}>{`@${data.username}`}</Link>
+                            {data.admin ? <span className={styles.badge}>admin</span> : null}
+                            <span className={styles.badge}>{(data.standing && data.standing.level) || 'good'}</span>
+                        </span>
+                        <span className={styles.rowMeta}>
+                            {`${data.followerCount || 0} followers · ${data.followingCount || 0} following`}
+                        </span>
+                    </div>
+                </div>
+
+                <label className={styles.fieldLabel}>Account standing</label>
+                <div className={styles.field}>
+                    <select className={styles.select} value={level} onChange={e => setLevel(e.target.value)}>
+                        {STANDING_LEVELS.map(l => (
+                            <option key={l} value={l}>{l}</option>
+                        ))}
+                    </select>
+                    <input
+                        className={styles.input}
+                        placeholder="Reason (shown to the user)"
+                        value={reasonText}
+                        onChange={e => setReasonText(e.target.value)}
+                    />
+                    <button className={styles.secondary} onClick={applyStanding}>Apply</button>
+                </div>
+
+                <label className={styles.fieldLabel}>Send a message to their notifications</label>
+                <div className={styles.field}>
+                    <input
+                        className={styles.input}
+                        placeholder="Message"
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                    />
+                    <button className={styles.secondary} disabled={!message.trim()} onClick={sendMessage}>Send</button>
+                </div>
+
+                <button className={styles.secondary} onClick={toggleComments}>
+                    {data.commentsOff ? 'Enable profile comments' : 'Disable profile comments'}
+                </button>
+
+                {data.quota ? (
+                    <div className={styles.quota}>
+                        <span className={styles.fieldLabel}>Upload quota</span>
+                        <span className={styles.quotaBar}>
+                            <span className={styles.quotaFillBg}>
+                                <span
+                                    className={styles.quotaFill}
+                                    style={{width: `${Math.min(100, (data.quota.used / data.quota.limit) * 100)}%`}}
+                                />
+                            </span>
+                            <span className={styles.quotaText}>
+                                {`${formatBytes(data.quota.used)} of ${formatBytes(data.quota.limit)}`}
+                            </span>
+                        </span>
+                    </div>
+                ) : null}
+
+                {(data.projects || []).length ? (
+                    <div className={styles.list}>
+                        {data.projects.map(project => (
+                            <div key={project.id} className={styles.row}>
+                                <div className={styles.rowInfo}>
+                                    <span className={styles.rowTitle}>
+                                        <Link to={projectUrl(project.id)}>{project.title || project.id}</Link>
+                                    </span>
+                                    <span className={styles.rowMeta}>
+                                        {project.shared ? 'Shared' : 'Not shared'}
+                                    </span>
+                                </div>
+                                <div className={styles.rowActions}>
+                                    {project.shared ? (
+                                        <button className={styles.secondary} onClick={() => unshareProject(project.id)}>Unshare</button>
+                                    ) : null}
+                                    <button className={styles.danger} onClick={() => deleteProject(project.id)}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+
+                {note ? <p className={styles.status} style={{marginTop: 8}}>{note}</p> : null}
+            </div>
+        </div>
+    );
+};
+
+const UserManager = () => {
+    const [query, setQuery] = useState('');
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [selected, setSelected] = useState(null);
+
+    useEffect(() => {
+        setLoading(true);
+        setError('');
+        api.admin.users()
+            .then(data => {
+                setUsers(data.users || []);
+                setLoading(false);
+            })
+            .catch(e => {
+                setError(e.message || 'Could not load users.');
+                setLoading(false);
+            });
+    }, []);
+
+    const filtered = query.trim()
+        ? users.filter(u => u.username.toLowerCase().includes(query.toLowerCase()))
+        : users;
+
+    if (selected) {
+        return (
+            <div>
+                <h2>Users</h2>
+                <UserDetailCard username={selected} onBack={() => setSelected(null)} />
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -333,135 +507,61 @@ const UserManager = () => {
             <div className={styles.addAdmin}>
                 <input
                     className={styles.input}
-                    placeholder="username"
+                    placeholder="Filter by username…"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter') loadUser(query);
-                    }}
                 />
-                <button
-                    className={styles.secondary}
-                    onClick={() => loadUser(query)}
-                >Look up</button>
+                <span className={styles.status} style={{fontSize: 13, alignSelf: 'center'}}>
+                    {users.length} total
+                </span>
             </div>
             {error ? <p className={styles.error}>{error}</p> : null}
-            {note ? <p className={styles.status}>{note}</p> : null}
-            {data ? (
-                <div className={styles.userCard}>
-                    <div className={styles.userHead}>
-                        <Avatar
-                            username={data.username}
-                            size={44}
-                        />
-                        <div className={styles.rowInfo}>
-                            <span className={styles.rowTitle}>
-                                <Link to={`/users/${data.username}`}>{`@${data.username}`}</Link>
-                                {data.admin ? <span className={styles.badge}>admin</span> : null}
-                                <span className={styles.badge}>{(data.standing && data.standing.level) || 'good'}</span>
-                            </span>
-                            <span className={styles.rowMeta}>
-                                {`${data.followerCount || 0} followers · ${data.followingCount || 0} following`}
-                            </span>
-                        </div>
-                    </div>
-
-                    <label className={styles.fieldLabel}>Account standing</label>
-                    <div className={styles.field}>
-                        <select
-                            className={styles.select}
-                            value={level}
-                            onChange={e => setLevel(e.target.value)}
-                        >
-                            {STANDING_LEVELS.map(l => (
-                                <option
-                                    key={l}
-                                    value={l}
-                                >{l}</option>
-                            ))}
-                        </select>
-                        <input
-                            className={styles.input}
-                            placeholder="Reason (shown to the user)"
-                            value={reason}
-                            onChange={e => setReason(e.target.value)}
-                        />
-                        <button
-                            className={styles.secondary}
-                            onClick={applyStanding}
-                        >Apply</button>
-                    </div>
-
-                    <label className={styles.fieldLabel}>Send a message to their notifications</label>
-                    <div className={styles.field}>
-                        <input
-                            className={styles.input}
-                            placeholder="Message"
-                            value={message}
-                            onChange={e => setMessage(e.target.value)}
-                        />
-                        <button
-                            className={styles.secondary}
-                            disabled={!message.trim()}
-                            onClick={sendMessage}
-                        >Send</button>
-                    </div>
-
-                    <button
-                        className={styles.secondary}
-                        onClick={toggleComments}
-                    >{data.commentsOff ? 'Enable profile comments' : 'Disable profile comments'}</button>
-
-                    {data.quota ? (
-                        <div className={styles.quota}>
-                            <span className={styles.fieldLabel}>Upload quota</span>
-                            <span className={styles.quotaBar}>
-                                <span className={styles.quotaFillBg}>
-                                    <span
-                                        className={styles.quotaFill}
-                                        style={{width: `${Math.min(100, (data.quota.used / data.quota.limit) * 100)}%`}}
-                                    />
-                                </span>
-                                <span className={styles.quotaText}>
-                                    {`${formatBytes(data.quota.used)} of ${formatBytes(data.quota.limit)}`}
-                                </span>
-                            </span>
-                        </div>
-                    ) : null}
-
-                    {(data.projects || []).length ? (
-                        <div className={styles.list}>
-                            {data.projects.map(project => (
-                                <div
-                                    key={project.id}
-                                    className={styles.row}
-                                >
-                                    <div className={styles.rowInfo}>
-                                        <span className={styles.rowTitle}>
-                                            <Link to={projectUrl(project.id)}>{project.title || project.id}</Link>
+            {loading ? (
+                <p className={styles.status}>Loading users…</p>
+            ) : filtered.length ? (
+                <div className={styles.list}>
+                    {filtered.map(user => {
+                        const pct = user.quotaLimit > 0 ? (user.quotaUsed / user.quotaLimit) * 100 : 0;
+                        return (
+                            <div
+                                key={user.username}
+                                className={styles.row}
+                                style={{cursor: 'pointer'}}
+                                onClick={() => setSelected(user.username)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={e => { if (e.key === 'Enter') setSelected(user.username); }}
+                            >
+                                <Avatar username={user.username} size={32} />
+                                <div className={styles.rowInfo}>
+                                    <span className={styles.rowTitle}>
+                                        {`@${user.username}`}
+                                        {user.banned ? <span className={styles.badge} style={{borderColor: '#e25555', color: '#e25555'}}>banned</span> : null}
+                                    </span>
+                                    <span className={styles.rowMeta}>
+                                        {`${user.followerCount} followers · ${user.projectCount} projects`}
+                                    </span>
+                                </div>
+                                <div className={styles.resetInfo}>
+                                    <div className={styles.quotaBar}>
+                                        <span className={styles.quotaFillBg} style={{width: 100}}>
+                                            <span
+                                                className={styles.quotaFill}
+                                                style={{width: `${Math.min(100, pct)}%`}}
+                                            />
                                         </span>
-                                        <span className={styles.rowMeta}>
-                                            {project.shared ? 'Shared' : 'Not shared'}
+                                        <span className={styles.quotaText}>
+                                            {formatBytes(user.quotaUsed)}
                                         </span>
-                                    </div>
-                                    <div className={styles.rowActions}>
-                                        {project.shared ? (
-                                            <button
-                                                className={styles.secondary}
-                                                onClick={() => unshareProject(project.id)}
-                                            >Unshare</button>
-                                        ) : null}
-                                        <button
-                                            className={styles.danger}
-                                            onClick={() => deleteProject(project.id)}
-                                        >Delete</button>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : null}
+                            </div>
+                        );
+                    })}
                 </div>
-            ) : null}
+            ) : (
+                <p className={styles.status}>No users match that filter.</p>
+            )}
         </div>
     );
 };

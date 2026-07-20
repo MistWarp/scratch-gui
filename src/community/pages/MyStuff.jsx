@@ -2,7 +2,8 @@ import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, Bookmark, LayoutDashboard
+    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, Bookmark, LayoutDashboard,
+    RefreshCw, AlertTriangle
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
@@ -97,9 +98,203 @@ const Overview = ({stats, account, quota, onBuyCredits}) => {
     );
 };
 
+const UploadUsage = ({quota, onRefresh}) => {
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [amount, setAmount] = useState(20);
+    const [resetting, setResetting] = useState(false);
+    const [resetKey, setResetKey] = useState('');
+    const [payTo, setPayTo] = useState('');
+    const [resetError, setResetError] = useState('');
+    const [resetDone, setResetDone] = useState(false);
+
+    const pct = quota ? (quota.used / quota.limit) * 100 : 0;
+
+    const dailyRows = (quota && quota.daily) ? [...quota.daily].reverse() : [];
+    const maxBytes = dailyRows.reduce((m, d) => Math.max(m, d.bytes), 0);
+
+    const dayLabel = dayIndex => {
+        try {
+            return new Date(Number(dayIndex) * 86400000).toLocaleDateString([], {month: 'short', day: 'numeric'});
+        } catch (e) {
+            return '';
+        }
+    };
+
+    // shared boilerplate for both reset actions
+    const runReset = useCallback(async (fn, errorPrefix) => {
+        setResetting(true);
+        setResetError('');
+        try {
+            await fn();
+        } catch (e) {
+            setResetError(e.message || errorPrefix);
+        } finally {
+            setResetting(false);
+        }
+    }, []);
+
+    const handleReset = useCallback(() => {
+        runReset(async () => {
+            const data = await api.quotaReset();
+            setResetKey(data.key);
+            setPayTo(data.payTo);
+            setAmount(data.amount);
+            setShowConfirm(true);
+        }, 'Could not start reset');
+    }, [runReset]);
+
+    const confirmReset = useCallback(() => {
+        runReset(async () => {
+            await api.quotaResetConfirm(resetKey);
+            setShowConfirm(false);
+            setResetDone(true);
+            onRefresh();
+        }, 'Reset failed');
+    }, [runReset, resetKey, onRefresh]);
+
+    const dismiss = useCallback(() => {
+        setShowConfirm(false);
+        setResetKey('');
+        setResetError('');
+    }, []);
+
+    const oldestDate = quota && quota.oldestEventMs
+        ? new Date(quota.oldestEventMs).toLocaleDateString()
+        : null;
+
+    if (!quota) {
+        return <p className={styles.status}>Loading upload info…</p>;
+    }
+
+    const summaryStats = [
+        {value: formatBytes(quota.used), label: 'Used'},
+        {value: formatBytes(quota.limit), label: 'Limit'},
+        ...(oldestDate ? [{value: oldestDate, label: 'Oldest upload'}] : []),
+        {value: quota.eventCount || 0, label: 'Uploads this week'}
+    ];
+
+    return (
+        <section className={styles.uploads}>
+            <div className={styles.uploadSummary}>
+                {summaryStats.map(s => (
+                    <div key={s.label} className={styles.uploadStat}>
+                        <span className={styles.uploadStatNum}>{s.value}</span>
+                        <span className={styles.uploadStatLabel}>{s.label}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className={styles.uploadBarSection}>
+                <div className={styles.uploadBarLabel}>
+                    {Math.round(pct)}% full
+                    {pct >= 80 ? <span className={styles.uploadWarn}> ⚠ Nearly full</span> : null}
+                </div>
+                <div className={styles.uploadBarBg}>
+                    <div
+                        className={styles.uploadBarFill}
+                        style={{width: `${Math.min(100, pct)}%`}}
+                    />
+                </div>
+            </div>
+
+            <div className={styles.uploadChart}>
+                <h3 className={styles.uploadChartTitle}>Daily upload volume</h3>
+                {dailyRows.length > 0 ? (
+                    <div className={styles.uploadChartGrid}>
+                        {dailyRows.map(d => {
+                            const h = maxBytes
+                                ? Math.max((d.bytes / maxBytes) * 100, d.bytes ? 4 : 0)
+                                : 0;
+                            const label = dayLabel(d.day);
+                            return (
+                                <div key={d.day} className={styles.uploadChartCol}>
+                                    <div className={styles.uploadChartTrack}>
+                                        <div
+                                            className={styles.uploadChartBar}
+                                            style={{height: `${h}%`}}
+                                            title={`${formatBytes(d.bytes)} on ${label}`}
+                                        />
+                                    </div>
+                                    <span className={styles.uploadChartLabel}>{label}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <p className={styles.status}>No uploads in the current window.</p>
+                )}
+            </div>
+
+            <div className={styles.uploadReset}>
+                <h3 className={styles.uploadChartTitle}>Reset upload quota</h3>
+                <p className={styles.uploadResetDesc}>
+                    Reset your weekly upload usage back to zero. This costs{' '}
+                    <strong>{amount || 20} credits</strong>.
+                </p>
+
+                {resetDone ? (
+                    <div className={styles.uploadResetDone}>
+                        <p>✅ Quota reset successfully! Your upload usage is now 0.</p>
+                    </div>
+                ) : resetError ? (
+                    <div className={styles.uploadResetError}>
+                        <p><AlertTriangle size={14} /> {resetError}</p>
+                        <button
+                            className={styles.secondary}
+                            onClick={() => setResetError('')}
+                        >Dismiss</button>
+                    </div>
+                ) : (
+                    <button
+                        className={styles.uploadResetBtn}
+                        onClick={handleReset}
+                        disabled={resetting}
+                    >
+                        <RefreshCw size={16} />
+                        {resetting ? 'Starting…' : 'Reset quota'}
+                    </button>
+                )}
+            </div>
+
+            {showConfirm ? (
+                <div className={styles.confirmOverlay} onClick={dismiss}>
+                    <div
+                        className={styles.confirmModal}
+                        onClick={e => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <h3 className={styles.confirmTitle}>Reset upload quota?</h3>
+                        <p className={styles.confirmText}>
+                            This will cost <strong>{amount} credits</strong>
+                            {payTo ? <> sent to <code>{payTo}</code></> : ''}.
+                            Your upload usage will be reset to zero. Continue?
+                        </p>
+                        <div className={styles.confirmActions}>
+                            <button
+                                className={styles.uploadResetBtn}
+                                onClick={confirmReset}
+                                disabled={resetting}
+                            >
+                                {resetting ? 'Resetting…' : `Spend ${amount} credits`}
+                            </button>
+                            <button
+                                className={styles.secondary}
+                                onClick={dismiss}
+                                disabled={resetting}
+                            >Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+        </section>
+    );
+};
+
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
     {key: 'projects', label: 'My Projects', icon: FolderOpen},
+    {key: 'uploads', label: 'Uploads', icon: HardDrive},
     {key: 'library', label: 'My Library', icon: Bookmark},
     {key: 'loves', label: 'My Loved', icon: Heart}
 ];
@@ -159,7 +354,7 @@ const MyStuff = () => {
     }, [user, projects]);
 
     const load = useCallback(() => {
-        if (!user || tab === 'overview') {
+        if (!user || tab === 'overview' || tab === 'uploads') {
             return;
         }
         setProjects(null);
@@ -273,6 +468,11 @@ const MyStuff = () => {
         }
     };
 
+    const refreshQuota = useCallback(() => {
+        if (!user) return;
+        api.quota().then(data => setQuota(data)).catch(() => {});
+    }, [user]);
+
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
     }
@@ -348,6 +548,11 @@ const MyStuff = () => {
                         ) : (
                             <p className={styles.status}>Loading…</p>
                         )
+                    ) : tab === 'uploads' ? (
+                        <UploadUsage
+                            quota={quota}
+                            onRefresh={refreshQuota}
+                        />
                     ) : failed ? (
                         <p className={styles.status}>
                             Couldn&apos;t load.{' '}

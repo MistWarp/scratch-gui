@@ -476,3 +476,287 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ---- Upload usage ---- */
+
+.uploads {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.uploadSummary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+}
+
+.uploadStat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+}
+
+.uploadStatNum {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--mw-text);
+    line-height: 1.2;
+}
+
+.uploadStatLabel {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.uploadBarSection {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.uploadBarLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.uploadWarn {
+    color: #f0a3a3;
+    font-weight: 600;
+}
+
+.uploadBarBg {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--bg-raised);
+    overflow: hidden;
+}
+
+.uploadBarFill {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #0FBD8C, #4C97FF);
+    transition: width 0.3s;
+}
+
+.uploadChart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.uploadChartTitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.uploadChartGrid {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding: 8px 0;
+    overflow-x: auto;
+}
+
+.uploadChartCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 36px;
+}
+
+.uploadChartTrack {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.uploadChartBar {
+    width: 70%;
+    min-height: 4px;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, #4C97FF, #0FBD8C);
+    transition: height 0.3s;
+}
+
+.uploadChartLabel {
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.uploadReset {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+}
+
+.uploadResetDesc {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.uploadResetBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    align-self: flex-start;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.uploadResetBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.uploadResetBtn:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.uploadResetConfirm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.uploadResetBox {
+    padding: 16px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+}
+
+.uploadResetPay {
+    margin: 0 0 14px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.uploadResetCode {
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+}
+
+.uploadResetActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.uploadResetDone {
+    padding: 16px;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, #0FBD8C 14%, transparent);
+    border: 1px solid color-mix(in srgb, #0FBD8C 30%, transparent);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.uploadResetError {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, #f0a3a3 12%, transparent);
+    border: 1px solid color-mix(in srgb, #f0a3a3 30%, transparent);
+    color: #f0a3a3;
+    font-size: 14px;
+}
+
+.uploadResetError p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.uploadResetError .secondary {
+    margin-left: auto;
+}
+
+/* ---- Confirm reset modal ---- */
+
+.confirmOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: color-mix(in srgb, #000 55%, transparent);
+}
+
+.confirmModal {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+}
+
+.confirmTitle {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.confirmText {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-dim);
+}
+
+.confirmText code {
+    background: var(--bg-raised);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.confirmActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}

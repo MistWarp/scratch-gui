@@ -8,7 +8,7 @@ const round = value => Math.round((Number(value) || 0) * 100) / 100;
 // Shown anywhere a MistWarp action needs more credits than the viewer has.
 // `needed` (optional) is the total the action costs; `balance` (optional) the
 // viewer's current balance, used to show how many more are required.
-const BuyCreditsModal = ({needed = 0, balance = null, onClose}) => {
+const BuyCreditsModal = ({needed = 0, balance = null, onClose, children}) => {
     const short = needed && balance !== null ? Math.max(0, round(needed - balance)) : 0;
     return (
         <div
@@ -62,6 +62,7 @@ const BuyCreditsModal = ({needed = 0, balance = null, onClose}) => {
                         <ExternalLink size={13} />
                         Credits are added to your Rotur account after checkout on Ko-fi.
                     </p>
+                    {children}
                 </div>
             </div>
         </div>
