@@ -233,6 +233,33 @@
     opacity: 1;
 }
 
+.signIn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.loginError {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #fff;
+    background: #e0245e;
+}
+
+.loginErrorClose {
+    margin-left: auto;
+    border: none;
+    background: none;
+    color: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
 @media (max-width: 680px) {
     .inner {
         gap: 8px;

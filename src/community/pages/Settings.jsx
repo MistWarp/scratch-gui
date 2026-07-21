@@ -18,6 +18,7 @@ import {
     MENU_BAR_TEXT_OPTIONS
 } from '../../lib/themes/menu-bar-accent.js';
 import {getRoturSettings, updateRoturSettings} from '../../lib/rotur/settings.js';
+import {presenceSupported} from '../../lib/rotur/client.js';
 import {
     getSecurityWarningSettings,
     setSecurityWarningSetting
@@ -70,7 +71,7 @@ const SECTIONS = [
 ];
 
 const Settings = () => {
-    const {user} = useUser();
+    const {user, login, logout} = useUser();
     const [theme, setTheme] = useState(detectTheme());
     const [username, setUsername] = useState(getUsernameOverride() || '');
     const [accentMenuBar, setAccentMenuBarState] = useState(getAccentMenuBar());
@@ -79,6 +80,30 @@ const Settings = () => {
     const [securityWarnings, setSecurityWarnings] = useState(getSecurityWarningSettings());
     const [projectThemeMode, setProjectThemeMode] = useState(getProjectThemeMode());
     const [activeSection, setActiveSection] = useState(SECTIONS[0].key);
+    const [presenceOk, setPresenceOk] = useState(true);
+
+    useEffect(() => {
+        if (!user) {
+            setPresenceOk(true);
+            return;
+        }
+        let cancelled = false;
+        presenceSupported().then(supported => {
+            if (!cancelled) setPresenceOk(supported);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
+
+    const reloginForPresence = async () => {
+        try {
+            await logout();
+            await login();
+        } catch (e) {
+            // ignore
+        }
+    };
 
     const changeProjectThemeMode = value => {
         setProjectThemeMode(value);
@@ -216,6 +241,23 @@ const Settings = () => {
                     {activeSection === 'presence' ? (
                         <section className={styles.card}>
                             <h2>Presence</h2>
+                            {user && !presenceOk ? (
+                                <div className={styles.risk}>
+                                    {'Your current Rotur login is missing the '}
+                                    <strong>{'account:profile'}</strong>
+                                    {' permission, so your editor activity cannot be shared. '}
+                                    {'Log in again to grant it.'}
+                                    <div>
+                                        <button
+                                            className={styles.riskAction}
+                                            type="button"
+                                            onClick={reloginForPresence}
+                                        >
+                                            {'Log in again'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
                             <div className={styles.settingRows}>
                                 {Object.entries(presence).map(([key, enabled]) => (
                                     <label

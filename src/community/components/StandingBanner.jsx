@@ -10,7 +10,23 @@ const MESSAGES = {
 };
 
 const StandingBanner = () => {
-    const {user} = useUser();
+    const {user, banMessage, dismissBan} = useUser();
+    if (banMessage) {
+        return (
+            <div className={styles.banner}>
+                <ShieldAlert
+                    className={styles.icon}
+                    size={16}
+                />
+                <span className={styles.text}>{banMessage}</span>
+                <button
+                    type="button"
+                    className={styles.link}
+                    onClick={dismissBan}
+                >Dismiss</button>
+            </div>
+        );
+    }
     if (!user || !user.standing || user.standing === 'good') {
         return null;
     }

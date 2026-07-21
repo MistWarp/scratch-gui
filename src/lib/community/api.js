@@ -72,12 +72,20 @@ const onAuthInvalid = handler => {
     authInvalidHandler = handler;
 };
 
+let bannedHandler = null;
+const onBanned = handler => {
+    bannedHandler = handler;
+};
+
 const runExchange = token => {
     if (!exchangeInFlight) {
         exchangeInFlight = exchangeValidator(token)
             .catch(error => {
                 if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
                     authInvalidHandler();
+                }
+                if (error.code === 'banned' && bannedHandler) {
+                    bannedHandler(error.message);
                 }
                 throw error;
             })
@@ -204,12 +212,40 @@ const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
+const HANDOFF_KEY = 'mw:project-handoff';
+const HANDOFF_MAX_AGE = 5 * 60 * 1000;
+
+const stashProjectHandoff = project => {
+    try {
+        sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({project, at: Date.now()}));
+    } catch (e) {
+        // ignore
+    }
+};
+
+const takeProjectHandoff = id => {
+    try {
+        const raw = sessionStorage.getItem(HANDOFF_KEY);
+        if (!raw) return null;
+        sessionStorage.removeItem(HANDOFF_KEY);
+        const {project, at} = JSON.parse(raw);
+        if (!project || String(project.id) !== String(id)) return null;
+        if (!at || Date.now() - at > HANDOFF_MAX_AGE) return null;
+        return project;
+    } catch (e) {
+        return null;
+    }
+};
+
 export {
     loadSession,
+    stashProjectHandoff,
+    takeProjectHandoff,
     storeSession,
     exchangeValidator,
     runExchange,
     onAuthInvalid,
+    onBanned,
     logout,
     createProject,
     uploadProject,

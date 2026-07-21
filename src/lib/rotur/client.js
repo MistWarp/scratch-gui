@@ -12,10 +12,13 @@ const REQUIRED_PERMISSIONS = [
         'following.follow',
         'following.unfollow',
         'validators.generate',
-        'me.transfer'
+        'me.transfer',
+        'me.claimDaily'
     ]),
     'credits:view'
 ];
+const PRESENCE_PERMISSION = 'account:profile';
+const LOGIN_PERMISSIONS = [...REQUIRED_PERMISSIONS, PRESENCE_PERMISSION];
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://warp.mistium.com';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -127,6 +130,24 @@ const tokenHasRequiredPermissions = async () => {
     }
 };
 
+/** Whether the current token may publish status/activity over the status socket. */
+const presenceSupported = async () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return false;
+    }
+    try {
+        const abilities = await rotur.me.abilities();
+        if (!abilities || abilities.error || abilities.token_type === 'main') {
+            return true;
+        }
+        const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
+        return granted.includes('full') || granted.includes(PRESENCE_PERMISSION);
+    } catch (_) {
+        return true;
+    }
+};
+
 /** Restore a previous session from localStorage. */
 const restoreSession = async () => {
     const token = loadStoredToken();
@@ -154,7 +175,7 @@ const buildAuthUrl = (returnTo = (typeof window === 'undefined' ? '' : window.lo
     const params = new URLSearchParams({
         system: 'rotur',
         return_to: returnTo,
-        requires: REQUIRED_PERMISSIONS.join(',')
+        requires: LOGIN_PERMISSIONS.join(',')
     });
     return `https://rotur.dev/auth?${params.toString()}`;
 };
@@ -165,7 +186,7 @@ const login = async () => {
     await rotur.login({
         system: 'rotur',
         timeout: 120000,
-        requires: REQUIRED_PERMISSIONS
+        requires: LOGIN_PERMISSIONS
     });
     storeToken(rotur.token);
     const user = await fetchCurrentUser();
@@ -403,6 +424,7 @@ export {
     syncActivity,
     clearActivity,
     isLoggedIn,
+    presenceSupported,
     getRotur,
     fetchCurrentUser,
     getBalance,

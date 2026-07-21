@@ -22,6 +22,7 @@ const ReactionButtons = ({reactions, onReact, small}) => {
                         key={key}
                         className={mine ? styles.buttonOn : styles.button}
                         disabled={!user}
+                        title={!user ? 'Sign in to react' : null}
                         onClick={() => onReact(key)}
                     >
                         <Icon

@@ -22,6 +22,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     const [tab, setTab] = useState('Instructions');
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
     const [instructions, setInstructions] = useState(project.instructions || '');
     const [notes, setNotes] = useState(project.notes || '');
     const [credits, setCredits] = useState(project.credits || []);
@@ -32,11 +33,18 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
         setNotes(project.notes || '');
         setCredits(project.credits || []);
         setTagsText((project.tags || []).join(' '));
+        setSaveError('');
         setEditing(true);
+    };
+
+    const cancelEdit = () => {
+        setSaveError('');
+        setEditing(false);
     };
 
     const save = async () => {
         setSaving(true);
+        setSaveError('');
         try {
             await api.updateProject(project.id, {
                 instructions,
@@ -47,8 +55,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
             setEditing(false);
             onSaved();
         } catch (e) {
-            // eslint-disable-next-line no-alert
-            alert('Could not save.');
+            setSaveError(e.message || 'Could not save your changes.');
         } finally {
             setSaving(false);
         }
@@ -72,14 +79,24 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 ))}
                 {project.isOwner ? (
                     editing ? (
-                        <button
-                            className={styles.panelEdit}
-                            onClick={save}
-                            disabled={saving}
-                            title="Save"
-                        >
-                            <Check size={15} />
-                        </button>
+                        <>
+                            <button
+                                className={styles.panelEdit}
+                                onClick={save}
+                                disabled={saving}
+                                title="Save"
+                            >
+                                <Check size={15} />
+                            </button>
+                            <button
+                                className={styles.panelEdit}
+                                onClick={cancelEdit}
+                                disabled={saving}
+                                title="Cancel"
+                            >
+                                <X size={14} />
+                            </button>
+                        </>
                     ) : (
                         <button
                             className={styles.panelEdit}
@@ -92,6 +109,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 ) : null}
             </div>
             <div className={styles.panelBody}>
+                {saveError ? <p className={styles.panelError}>{saveError}</p> : null}
                 {tab === 'Instructions' && (
                     editing ? (
                         <textarea

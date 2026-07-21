@@ -15,8 +15,9 @@ const UserContext = createContext({user: null, login: () => {}, logout: () => {}
 const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [banMessage, setBanMessage] = useState(null);
 
-    const applyLoggedIn = useCallback(async () => {
+    const applyLoggedIn = useCallback(async identityUser => {
         let me = null;
         try {
             me = await api.me();
@@ -38,12 +39,15 @@ const UserProvider = ({children}) => {
             }
         }
         applyThemeVisuals(detectTheme());
-        setUser(me);
+        // A transient /me failure while Rotur is logged in should not flip the
+        // UI to signed-out; fall back to a minimal user so it stays logged in.
+        setUser(me || (identityUser ? {username: identityUser.username} : null));
     }, []);
 
     const handleIdentity = useCallback(state => {
+        setBanMessage(state.banMessage || null);
         if (state.user) {
-            applyLoggedIn().finally(() => setLoading(false));
+            applyLoggedIn(state.user).finally(() => setLoading(false));
         } else {
             setUser(null);
             applyThemeVisuals(detectTheme());
@@ -68,7 +72,7 @@ const UserProvider = ({children}) => {
     }, []);
 
     return (
-        <UserContext.Provider value={{user, loading, login, logout}}>
+        <UserContext.Provider value={{user, loading, login, logout, banMessage, dismissBan: () => setBanMessage(null)}}>
             {children}
         </UserContext.Provider>
     );

@@ -5,7 +5,8 @@ import {
     exchangeValidator,
     logout,
     createProject,
-    uploadProject
+    uploadProject,
+    stashProjectHandoff
 } from '../lib/community/api.js';
 
 const editorUrl = ({clone, platformProject, projectJson, assets} = {}) => {
@@ -32,6 +33,7 @@ const embedUrl = (project, {unsandboxed = false, applyProjectTheme = true} = {})
     const params = new URLSearchParams();
     params.set('project_url', project.projectJsonUrl);
     params.set('mw_assets', project.assetsBase);
+    params.set('mw_bridge', '1');
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
     }
@@ -133,7 +135,9 @@ const api = {
             request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
         searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
         stats: () => request('/admin/stats'),
-        users: () => request('/admin/users')
+        users: () => request('/admin/users'),
+        payouts: () => request('/admin/payouts'),
+        retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'})
     },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),
@@ -158,4 +162,4 @@ const api = {
 };
 
 export default api;
-export {editorUrl, embedUrl, projectUrl, loadSession, storeSession, exchangeValidator, request};
+export {editorUrl, embedUrl, projectUrl, loadSession, storeSession, exchangeValidator, request, stashProjectHandoff};

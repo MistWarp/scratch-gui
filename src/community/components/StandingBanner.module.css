@@ -17,6 +17,12 @@
 .link {
     color: var(--accent-strong);
     font-weight: 700;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    font-family: inherit;
+    cursor: pointer;
 }
 
 .link:hover {

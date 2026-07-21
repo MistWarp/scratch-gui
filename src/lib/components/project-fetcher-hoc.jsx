@@ -30,7 +30,8 @@ import {cloneRepo} from '../git/browser-git.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
-import {getProject as getMistWarpProject} from '../community/api.js';
+import {getProject as getMistWarpProject, takeProjectHandoff} from '../community/api.js';
+import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 
 const cloneProjectFromRepo = async url => {
     const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
@@ -77,17 +78,23 @@ const clearProjectSourceOnForeignLoads = vm => {
     };
 };
 
+const fetchArrayBuffer = url => fetch(url).then(r => {
+    if (!r.ok) {
+        throw new Error(`Request returned status ${r.status}`);
+    }
+    return r.arrayBuffer();
+});
+
 const loadPlatformProject = async id => {
-    const {project} = await getMistWarpProject(id);
+    let project = takeProjectHandoff(id);
+    if (!project) {
+        ({project} = await getMistWarpProject(id));
+    }
     if (project.assetsBase && isHttpUrl(project.assetsBase)) {
         storage.addMistWarpAssetStore(project.assetsBase);
     }
     rememberPlatformProject(project);
-    const response = await fetch(project.projectJsonUrl);
-    if (!response.ok) {
-        throw new Error(`Request returned status ${response.status}`);
-    }
-    return {data: await response.arrayBuffer()};
+    return {data: await fetchArrayBuffer(project.projectJsonUrl)};
 };
 
 // TW: Temporary hack for project tokens
@@ -209,14 +216,11 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 ) {
                     projectUrl = `https://${projectUrl}`;
                 }
-                assetPromise = fetch(projectUrl)
-                    .then(r => {
-                        if (!r.ok) {
-                            throw new Error(`Request returned status ${r.status}`);
-                        }
-                        return r.arrayBuffer();
-                    })
-                    .then(buffer => ({data: buffer}));
+                const jsonUrl = projectUrl;
+                assetPromise = (hasBridge() ?
+                    bridgeFetch(jsonUrl).catch(() => fetchArrayBuffer(jsonUrl)) :
+                    fetchArrayBuffer(jsonUrl)
+                ).then(buffer => ({data: buffer}));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)
