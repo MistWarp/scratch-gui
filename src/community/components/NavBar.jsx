@@ -11,6 +11,8 @@ import styles from './NavBar.module.css';
 
 const NavBar = () => {
     const {user, loading, login, logout} = useUser();
+    const [loginError, setLoginError] = useState('');
+    const [signingIn, setSigningIn] = useState(false);
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [projectSuggestions, setProjectSuggestions] = useState([]);
@@ -99,6 +101,27 @@ const NavBar = () => {
         event.preventDefault();
         setSuggestionsOpen(false);
         navigate(`/explore?q=${encodeURIComponent(query)}`);
+    };
+
+    const doLogin = async () => {
+        if (signingIn) return;
+        setLoginError('');
+        setSigningIn(true);
+        try {
+            await login();
+        } catch (e) {
+            if (e && e.code === 'banned') {
+                // handled by the global ban banner
+            } else {
+                setLoginError(
+                    e && /popup|blocked|window/i.test(String(e.message || '')) ?
+                        'Sign-in window was blocked. Allow popups for this site and try again.' :
+                        (e && e.message) || 'Sign-in did not complete. Please try again.'
+                );
+            }
+        } finally {
+            setSigningIn(false);
+        }
     };
 
     const goToProfile = name => {
@@ -252,14 +275,15 @@ const NavBar = () => {
                                 showEditorItems={false}
                                 onOpenMenu={() => setAccountOpen(true)}
                                 onCloseMenu={() => setAccountOpen(false)}
-                                onOpenLogin={login}
+                                onOpenLogin={doLogin}
                                 onLogout={logout}
                             />
                         </>
                     ) : loading ? null : (
                         <button
                             className={styles.signIn}
-                            onClick={login}
+                            onClick={doLogin}
+                            disabled={signingIn}
                             title="Sign in"
                             aria-label="Sign in"
                         >
@@ -268,6 +292,19 @@ const NavBar = () => {
                     )}
                 </div>
             </div>
+            {loginError ? (
+                <div
+                    className={styles.loginError}
+                    role="alert"
+                >
+                    <span>{loginError}</span>
+                    <button
+                        className={styles.loginErrorClose}
+                        onClick={() => setLoginError('')}
+                        aria-label="Dismiss"
+                    >×</button>
+                </div>
+            ) : null}
         </header>
     );
 };

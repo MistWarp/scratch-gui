@@ -6,7 +6,7 @@ import {
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
     Palette, Bookmark, BookmarkCheck
 } from 'lucide-react';
-import api, {projectUrl, editorUrl, embedUrl} from '../api';
+import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
 import {buyProject} from '../purchase';
 import {isInsufficientFunds} from '../credits';
 import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
@@ -318,6 +318,35 @@ const Project = () => {
         }
     };
 
+    useEffect(() => {
+        if (!project || !project.projectJsonUrl) return;
+        const assetsBase = project.assetsBase ? `${project.assetsBase.replace(/\/+$/, '')}/` : null;
+        const allowed = url => typeof url === 'string' &&
+            (url === project.projectJsonUrl || (assetsBase && url.startsWith(assetsBase)));
+        const onMessage = event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            const data = event.data;
+            if (!data || data.type !== 'mw:fetch' || !allowed(data.url)) return;
+            const reply = (message, transfer) => {
+                try {
+                    event.source.postMessage(message, '*', transfer);
+                } catch (e) {
+                    // ignore
+                }
+            };
+            fetch(data.url)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Request returned status ${response.status}`);
+                    return response.arrayBuffer();
+                })
+                .then(buffer => reply({type: 'mw:fetch-result', id: data.id, buffer}, [buffer]))
+                .catch(() => reply({type: 'mw:fetch-result', id: data.id}));
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, [project]);
+
     const sendThemeToStage = useCallback(() => {
         try {
             const frame = stageFrame.current;
@@ -612,6 +641,7 @@ const Project = () => {
                             className={styles.remixButton}
                             onClick={remix}
                             disabled={!user}
+                            title={!user ? 'Sign in to remix' : null}
                         >
                             <GitFork size={16} />
                             Remix
@@ -621,6 +651,7 @@ const Project = () => {
                         <a
                             className={styles.primary}
                             href={seeInsideHref}
+                            onClick={() => stashProjectHandoff(project)}
                         >
                             <ExternalLink size={16} />
                             See inside
@@ -830,6 +861,7 @@ const Project = () => {
                                         <a
                                             className={styles.paywallButton}
                                             href={editorUrl({platformProject: project.id})}
+                                            onClick={() => stashProjectHandoff(project)}
                                         >
                                             <ExternalLink size={16} />
                                             Open in editor
@@ -897,7 +929,7 @@ const Project = () => {
                             className={project.myReaction === 'heart' ? styles.statOn : styles.statButton}
                             onClick={() => react('heart')}
                             disabled={!user || locked}
-                            title={locked ? 'Buy this project to react' : null}
+                            title={locked ? 'Buy this project to react' : (!user ? 'Sign in to react' : null)}
                         >
                             <Heart
                                 size={16}
@@ -909,7 +941,7 @@ const Project = () => {
                             className={project.myReaction === 'brokenheart' ? styles.statOn : styles.statButton}
                             onClick={() => react('brokenheart')}
                             disabled={!user || locked}
-                            title={locked ? 'Buy this project to react' : null}
+                            title={locked ? 'Buy this project to react' : (!user ? 'Sign in to react' : null)}
                         >
                             <ThumbsDown
                                 size={16}
@@ -997,6 +1029,8 @@ const Project = () => {
                             source={commentSource}
                             canModerate={project.isOwner}
                             disabled={Boolean(project.commentsOff) || locked}
+                            disabledReason={locked && !project.commentsOff ?
+                                'Buy this project to comment.' : 'Comments are turned off.'}
                             reportContext={`project ${id}`}
                         />
                     )}

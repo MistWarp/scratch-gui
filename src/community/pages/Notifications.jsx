@@ -28,6 +28,8 @@ const ICONS = {
 
 const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
 
+const commentAnchor = n => (n.commentId ? `#comment-id-${n.commentId}` : '');
+
 const REPORT_OUTCOMES = {
     dismiss: 'reviewed; no action was taken',
     warn_user: 'actioned with a warning',
@@ -139,12 +141,12 @@ const Notifications = ({hideHeading}) => {
                                     {' '}
                                     {n.projectId ? (
                                         <Link
-                                            to={projectUrl(n.projectId)}
+                                            to={`${projectUrl(n.projectId)}${commentAnchor(n)}`}
                                             className={styles.body}
                                         >{describe(n)}</Link>
                                     ) : (n.type === 'profile_comment' || n.profile) ? (
                                         <Link
-                                            to={`/users/${n.profile || user.username}`}
+                                            to={`/users/${n.profile || user.username}${commentAnchor(n)}`}
                                             className={styles.body}
                                         >{describe(n)}</Link>
                                     ) : (

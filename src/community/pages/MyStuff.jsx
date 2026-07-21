@@ -503,6 +503,10 @@ const MyStuff = () => {
             setActionError('Choose a Scratch .sb3 project file.');
             return;
         }
+        if (quota && quota.used >= quota.limit) {
+            setActionError('Your weekly upload quota is full. Free up space or reset it before uploading.');
+            return;
+        }
 
         // Check agreement acceptance before allowing upload — show modal if needed
         try {
@@ -831,15 +835,14 @@ const MyStuff = () => {
                                                                 {featured ?
                                                                     'Remove profile feature' : 'Feature on profile'}
                                                             </button>
-                                                        ) : (
-                                                            <button
-                                                                className={styles.danger}
-                                                                onClick={() => deleteProject(project.id)}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                                Delete
-                                                            </button>
-                                                        )}
+                                                        ) : null}
+                                                        <button
+                                                            className={styles.danger}
+                                                            onClick={() => deleteProject(project.id)}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                            Delete
+                                                        </button>
                                                     </div>
                                                 ) : null}
                                             </div>

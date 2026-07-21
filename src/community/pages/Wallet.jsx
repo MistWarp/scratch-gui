@@ -70,9 +70,13 @@ const Wallet = () => {
                 setAccountLoaded(true);
             }
         } catch (e) {
-            setClaimMsg(e.waitHours ?
-                `Already claimed. Come back in ${e.waitHours}h.` :
-                (e.message || 'Could not claim daily credits.'));
+            if (e.waitHours) {
+                setClaimMsg(`Already claimed. Come back in ${e.waitHours}h.`);
+            } else if (e.needsReauth) {
+                setClaimMsg('Your current login cannot claim daily credits. Log out and back in, then try again.');
+            } else {
+                setClaimMsg(e.message || 'Could not claim daily credits.');
+            }
         } finally {
             setClaiming(false);
         }
@@ -94,7 +98,7 @@ const Wallet = () => {
                             </>
                         ) : (
                             <span className={styles.balanceUnknown}>
-                                {accountLoaded ? 'Log out and back in to see your balance' : '…'}
+                                {accountLoaded ? 'Could not load your balance right now' : '…'}
                             </span>
                         )}
                     </div>

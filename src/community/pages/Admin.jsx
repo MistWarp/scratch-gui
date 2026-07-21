@@ -86,6 +86,8 @@ const StatsOverview = () => {
     const [stats, setStats] = useState(null);
     const [quota, setQuota] = useState(null);
     const [error, setError] = useState('');
+    const [payoutBusy, setPayoutBusy] = useState(false);
+    const [payoutNote, setPayoutNote] = useState('');
 
     useEffect(() => {
         api.admin.stats()
@@ -96,6 +98,22 @@ const StatsOverview = () => {
             .catch(() => {});
     }, []);
 
+    const retryPayouts = async () => {
+        if (payoutBusy) return;
+        setPayoutBusy(true);
+        setPayoutNote('');
+        try {
+            const result = await api.admin.retryPayouts();
+            setPayoutNote(`Paid ${result.paid}, ${result.remaining} still pending.`);
+            const fresh = await api.admin.stats();
+            setStats(fresh);
+        } catch (e) {
+            setPayoutNote(e.message || 'Could not retry payouts.');
+        } finally {
+            setPayoutBusy(false);
+        }
+    };
+
     if (error) {
         return <div><h2>Overview</h2><p className={styles.error}>{error}</p></div>;
     }
@@ -105,6 +123,21 @@ const StatsOverview = () => {
     return (
         <div>
             <h2>Overview</h2>
+
+            {stats.pendingPayouts > 0 ? (
+                <div className={styles.quotaWarning}>
+                    <AlertTriangle size={14} /> {stats.pendingPayouts} creator payout
+                    {stats.pendingPayouts === 1 ? '' : 's'} failed and{' '}
+                    {stats.pendingPayouts === 1 ? 'is' : 'are'} owed
+                    ({Math.round((stats.pendingPayoutAmount || 0) * 100) / 100} credits total).{' '}
+                    <button
+                        className={styles.secondary}
+                        onClick={retryPayouts}
+                        disabled={payoutBusy}
+                    >{payoutBusy ? 'Retrying…' : 'Retry now'}</button>
+                    {payoutNote ? <span>{` ${payoutNote}`}</span> : null}
+                </div>
+            ) : null}
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
@@ -672,6 +705,12 @@ const Admin = () => {
         act(report.id, 'warn_user', reason.trim());
     };
 
+    const banFromReport = report => {
+        const who = report.type === 'project' ? 'the owner of this project' : `@${report.target}`;
+        if (!window.confirm(`Ban ${who}? They will be locked out of MistWarp until unbanned.`)) return;
+        act(report.id, 'ban_user');
+    };
+
     const banByName = async () => {
         const username = window.prompt('Ban which user?');
         if (!username) return;
@@ -826,7 +865,7 @@ const Admin = () => {
                                                 >{report.type === 'project' ? 'Warn owner' : 'Warn user'}</button>
                                                 <button
                                                     className={styles.danger}
-                                                    onClick={() => act(report.id, 'ban_user')}
+                                                    onClick={() => banFromReport(report)}
                                                 >{report.type === 'project' ? 'Ban owner' : 'Ban user'}</button>
                                                 <button
                                                     className={styles.secondary}

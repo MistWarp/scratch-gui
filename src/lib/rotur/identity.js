@@ -6,12 +6,19 @@ import {
 } from './client.js';
 import {onRoturLogout} from './cloud-sync.js';
 import {clearGitAuth} from './git-api.js';
-import {runExchange, onAuthInvalid, loadSession, storeSession, logout as mistLogout} from '../community/api.js';
+import {
+    runExchange,
+    onAuthInvalid,
+    onBanned,
+    loadSession,
+    storeSession,
+    logout as mistLogout
+} from '../community/api.js';
 
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
 
-let state = {status: 'idle', user: null};
+let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
 
 const getState = () => state;
@@ -106,8 +113,9 @@ const doRestore = async () => {
         await ensureMistSession();
     } catch (error) {
         if (invalidateFailedValidator(error)) return null;
+        if (error && error.code === 'banned') return null;
     }
-    setState({status: 'ready', user});
+    setState({status: 'ready', user, banMessage: null});
     return user;
 };
 
@@ -135,8 +143,9 @@ const login = async () => {
         await ensureMistSession();
     } catch (error) {
         if (invalidateFailedValidator(error)) throw error;
+        if (error && error.code === 'banned') throw error;
     }
-    setState({status: 'ready', user});
+    setState({status: 'ready', user, banMessage: null});
     return user;
 };
 
@@ -154,13 +163,28 @@ const logout = () => {
     }
     roturLogout();
     storeSession(null);
-    setState({status: 'idle', user: null});
+    setState({status: 'idle', user: null, banMessage: null});
 };
 
 const getMistSession = () => loadSession();
 const getRoturToken = () => getRotur().token || readRoturToken();
 
 onAuthInvalid(() => invalidateFailedValidator({code: 'VALIDATOR_GENERATION_FAILED'}));
+onBanned(message => {
+    roturLogout();
+    storeSession(null);
+    try {
+        clearGitAuth();
+    } catch (_) {
+        // ignore
+    }
+    try {
+        onRoturLogout();
+    } catch (_) {
+        // ignore
+    }
+    setState({status: 'idle', user: null, banMessage: message || 'This account is banned from MistWarp.'});
+});
 
 if (typeof window !== 'undefined') {
     window.addEventListener('storage', event => {

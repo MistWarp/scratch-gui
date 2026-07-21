@@ -50,6 +50,17 @@
     padding: 10px 12px;
 }
 
+.riskAction {
+    margin-top: 8px;
+    border: 1px solid color-mix(in srgb, var(--mw-text) 25%, transparent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mw-text);
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
 .note {
     color: var(--text-dim);
     font-size: 14px;

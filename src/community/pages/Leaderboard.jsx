@@ -96,6 +96,8 @@ const Leaderboard = () => {
                 <p className={styles.status}>Loading…</p>
             ) : error ? (
                 <p className={styles.status}>{error}</p>
+            ) : !users.length ? (
+                <p className={styles.status}>No one on this leaderboard yet.</p>
             ) : (
                 <ol className={styles.list}>
                     {users.map((person, position) => (
