@@ -1,10 +1,6 @@
 {
   "name": "scratch-gui",
   "version": "3.2.37",
-  "dependencies": {
-    "scratch-paint": "workspace:*",
-},
-{
   "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
   "author": "Massachusetts Institute of Technology",
   "license": "GPL-3.0",
@@ -12,10 +8,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/LLK/scratch-gui.git"
-},
-{
+  },
   "main": "./dist/scratch-gui.js",
   "packageManager": "pnpm@10.28.2",
+  "dependencies": {
+    "scratch-paint": "workspace:*"
+  },
   "scripts": {
     "build": "pnpm run clean && webpack --colors --bail",
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
@@ -37,7 +35,8 @@
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
     "link": "pnpm link ../scratch-vm ../scratch-blocks ../scratch-render ../scratch-paint"
-  },
+  }
+},
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
