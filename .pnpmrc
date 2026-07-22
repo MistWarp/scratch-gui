@@ -1,0 +1,3 @@
+public-hoist-pattern[]=*scratch-paint*
+shamefully-hoist=true
+node-linker=hoisted
