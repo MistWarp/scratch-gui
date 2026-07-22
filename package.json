@@ -3,7 +3,7 @@
   "version": "3.2.37",
   "dependencies": {
     "scratch-paint": "workspace:*",
-  },
+},
   "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
   "author": "Massachusetts Institute of Technology",
   "license": "GPL-3.0",
