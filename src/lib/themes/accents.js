@@ -4,6 +4,7 @@ import * as accentRed from './accent/red';
 import * as accentOrange from './accent/orange';
 import * as accentYellow from './accent/yellow';
 import * as accentGreen from './accent/green';
+import * as accentEggplant from './accent/eggplant';
 import * as accentRainbow from './accent/rainbow';
 import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
@@ -66,6 +67,12 @@ const ACCENTS = [
         accent: accentBlue,
         description: 'Blue accent color',
         id: 'tw.accent.blue'
+    },
+    {
+        name: 'Eggplant',
+        accent: accentEggplantPurple,
+        description: 'Eggplant accent color',
+        id: 'tw.accent.eggplant-purple'
     },
     {
         name: 'Rainbow',
