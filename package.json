@@ -36,7 +36,6 @@
     "watch": "webpack --colors --watch",
     "link": "pnpm link ../scratch-vm ../scratch-blocks ../scratch-render ../scratch-paint"
   }
-},
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
