@@ -30,6 +30,8 @@ const isTrustedExtension = url => (
     extensionsTrustedByUser.has(url)
 );
 
+const jsExecutionExtension = url => (/\/EvalPlus\.js$/i.test(url) ? 'EvalPlus' : null);
+
 const isPlatformProjectLoad = () => {
     try {
         const params = new URLSearchParams(location.search);
@@ -240,7 +242,8 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} Whether the extension can be loaded
      */
     async canLoadExtensionFromProject (url) {
-        if (isTrustedExtension(url)) {
+        const dangerousJs = jsExecutionExtension(url);
+        if (!dangerousJs && isTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
             return true;
         }
@@ -253,11 +256,12 @@ class TWSecurityManagerComponent extends React.Component {
             manuallyTrustExtension(url);
             return true;
         }
-        if (url === 'builtin:patching') {
+        if (url === 'builtin:patching' || dangerousJs) {
             const {showModal} = await this.acquireModalLock();
             return showModal(SecurityModals.LoadExtension, {
                 url,
-                dangerousBuiltin: true,
+                dangerousBuiltin: !dangerousJs,
+                dangerousJs,
                 unsandboxed: true
             });
         }
