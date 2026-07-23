@@ -343,9 +343,16 @@ class CustomTheme extends Theme {
         /** @readonly */
         this.uuid = this.generateUUID();
 
-        // Check if it's a full accent object (with guiColors)
-        const isFullAccent = typeof accent === 'object' && accent.guiColors;
-        this.customAccent = isFullAccent ? accent : null;
+        // Raw gradient data ({colors, direction}) becomes a full accent, same as import()
+        const isGradientData = accent && typeof accent === 'object' && Array.isArray(accent.colors);
+        const resolved = isGradientData ?
+            GradientUtils.createGradientAccent(
+                accent.colors,
+                accent.colors[0] ? accent.colors[0].color : '#ff6b6b',
+                {direction: accent.direction || '90'}
+            ) :
+            accent;
+        this.customAccent = resolved && typeof resolved === 'object' && resolved.guiColors ? resolved : null;
 
         // Store the original accent data (either gradient format or full accent object)
         this.originalAccent = accent;
@@ -402,7 +409,7 @@ class CustomTheme extends Theme {
     }
 
     _create (options) {
-        return new CustomTheme(
+        const theme = new CustomTheme(
             options.name,
             this.description,
             options.accent,
@@ -414,6 +421,9 @@ class CustomTheme extends Theme {
             this.author,
             options.appearance
         );
+        theme.uuid = this.uuid;
+        theme.createdAt = this.createdAt;
+        return theme;
     }
 
     /**

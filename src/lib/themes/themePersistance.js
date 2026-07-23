@@ -148,10 +148,13 @@ const persistTheme = theme => {
 
     // Handle custom themes differently
     if (theme instanceof CustomTheme) {
-        const isSavedCustomTheme = !!customThemeManager.getTheme(theme.uuid);
-        if (isSavedCustomTheme) {
+        const savedCustomTheme = customThemeManager.getTheme(theme.uuid);
+        if (savedCustomTheme) {
             nonDefaultSettings.customThemeUuid = theme.uuid;
             nonDefaultSettings.isCustom = true;
+            if (JSON.stringify(savedCustomTheme.appearance) !== JSON.stringify(theme.appearance)) {
+                customThemeManager.updateTheme(theme.uuid, {appearance: theme.appearance});
+            }
         } else {
             // Modified/unselected custom theme: persist inline so it can be restored.
             nonDefaultSettings.inlineCustomTheme = theme.export();

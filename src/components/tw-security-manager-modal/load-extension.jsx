@@ -25,6 +25,23 @@ const LoadExtensionModal = props => (
                     />
                 </div>
             </React.Fragment>
+        ) : props.dangerousJs ? (
+            <React.Fragment>
+                <FormattedMessage
+                    defaultMessage="This project runs JavaScript with the {name} extension."
+                    description="Warning title before a project loads an extension that runs JavaScript"
+                    id="mw.loadExtension.jsExecution"
+                    values={{name: props.dangerousJs}}
+                />
+                <div className={styles.unsandboxedWarning}>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="It runs with full access to MistWarp. It could steal your login session, take over your account, read or change projects and settings, or run other malicious code. Only continue if you trust this project's author."
+                        description="Warning before a project loads an extension that runs JavaScript"
+                        id="mw.loadExtension.jsExecutionWarning"
+                    />
+                </div>
+            </React.Fragment>
         ) : props.url.startsWith('data:') ? (
             <React.Fragment>
                 <FormattedMessage
@@ -71,7 +88,7 @@ const LoadExtensionModal = props => (
                 ) : null}
             </React.Fragment>
         ) : null}
-        {props.unsandboxed || props.dangerousBuiltin || (
+        {props.unsandboxed || props.dangerousBuiltin || props.dangerousJs || (
             <div className={styles.sandboxed}>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
@@ -86,6 +103,7 @@ const LoadExtensionModal = props => (
 
 LoadExtensionModal.propTypes = {
     dangerousBuiltin: PropTypes.bool,
+    dangerousJs: PropTypes.string,
     url: PropTypes.string.isRequired,
     unsandboxed: PropTypes.bool.isRequired,
     onChangeUnsandboxed: PropTypes.func
