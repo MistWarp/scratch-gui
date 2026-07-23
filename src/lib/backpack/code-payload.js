@@ -21,37 +21,56 @@ const codePayload = ({blockObjects, topBlockId}) => {
         });
 };
 
-const findTopBlock = payload => {
-    const blocks = payload.extensionURLs ? payload.blocks : payload;
-    return blocks.find(i => i.topLevel);
-};
+const getBlocks = payload => (Array.isArray(payload) ? payload : payload.blocks);
 
-const placeInViewport = (payload, workspaceMetrics, isRtl) => {
-    const topBlock = findTopBlock(payload);
-    if (topBlock) {
-        const {scrollX, scrollY, scale} = workspaceMetrics || {
-            scrollX: 0,
-            scrollY: 0,
-            scale: BLOCKS_DEFAULT_SCALE
-        };
+const getFrames = payload => (Array.isArray(payload) ? [] : payload.frames || []);
 
-        const posY = -scrollY + 30;
-        let posX;
-        if (isRtl) {
-            posX = scrollX + 30;
-        } else {
-            posX = -scrollX + 30;
+/**
+ * Move a payload so that its anchor sits at the given workspace position, taking
+ * everything else along. A frame is the anchor when there is one, so that the
+ * scripts stay inside it.
+ * @param {object} payload The blocks, and frames, being placed.
+ * @param {number} x The x position for the anchor, in workspace units.
+ * @param {number} y The y position for the anchor, in workspace units.
+ * @return {object} The same payload, moved.
+ */
+const offsetToPosition = (payload, x, y) => {
+    const blocks = getBlocks(payload);
+    const frames = getFrames(payload);
+    const anchor = frames[0] || blocks.find(i => i.topLevel);
+    if (!anchor) return payload;
+
+    const dx = x - (anchor.x || 0);
+    const dy = y - (anchor.y || 0);
+    for (const block of blocks) {
+        if (block.topLevel) {
+            block.x = (block.x || 0) + dx;
+            block.y = (block.y || 0) + dy;
         }
-
-        topBlock.x = posX / scale;
-        topBlock.y = posY / scale;
+    }
+    for (const frame of frames) {
+        frame.x = (frame.x || 0) + dx;
+        frame.y = (frame.y || 0) + dy;
     }
 
     return payload;
 };
 
+const placeInViewport = (payload, workspaceMetrics, isRtl) => {
+    const {scrollX, scrollY, scale} = workspaceMetrics || {
+        scrollX: 0,
+        scrollY: 0,
+        scale: BLOCKS_DEFAULT_SCALE
+    };
+
+    const posY = -scrollY + 30;
+    const posX = isRtl ? scrollX + 30 : -scrollX + 30;
+
+    return offsetToPosition(payload, posX / scale, posY / scale);
+};
+
 export {
     codePayload as default,
-    findTopBlock,
+    offsetToPosition,
     placeInViewport
 };

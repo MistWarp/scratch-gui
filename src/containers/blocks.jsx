@@ -47,7 +47,7 @@ import {
 } from '../reducers/editor-tab';
 import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
-import {findTopBlock} from '../lib/backpack/code-payload.js';
+import {offsetToPosition} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
 
@@ -1273,18 +1273,17 @@ class Blocks extends React.Component {
             .then(response => response.json())
             .then(payload => {
                 // based on https://github.com/ScratchAddons/ScratchAddons/pull/7028
-                const topBlock = findTopBlock(payload);
-                if (topBlock) {
-                    const metrics = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
-                    if (metrics) {
-                        const {x, y} = dragInfo.currentOffset;
-                        const {left, right} = this.workspace.scrollbar.hScroll.outerSvg_.getBoundingClientRect();
-                        const {top} = this.workspace.scrollbar.vScroll.outerSvg_.getBoundingClientRect();
-                        topBlock.x = (
-                            this.props.isRtl ? metrics.scrollX - x + right : -metrics.scrollX + x - left
-                        ) / metrics.scale;
-                        topBlock.y = (-metrics.scrollY - top + y) / metrics.scale;
-                    }
+                const metrics = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
+                if (metrics) {
+                    const {x, y} = dragInfo.currentOffset;
+                    const {left, right} = this.workspace.scrollbar.hScroll.outerSvg_.getBoundingClientRect();
+                    const {top} = this.workspace.scrollbar.vScroll.outerSvg_.getBoundingClientRect();
+                    offsetToPosition(
+                        payload,
+                        (this.props.isRtl ? metrics.scrollX - x + right : -metrics.scrollX + x - left) /
+                            metrics.scale,
+                        (-metrics.scrollY - top + y) / metrics.scale
+                    );
                 }
                 return this.props.vm.shareBlocksToTarget(payload, this.props.vm.editingTarget.id);
             })
