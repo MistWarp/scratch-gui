@@ -383,7 +383,7 @@ const MyStuff = () => {
         return () => {
             stale = true;
         };
-    }, [user, projects]);
+    }, [user]);
 
     useEffect(() => {
         setFeaturedProject(user ? user.featuredProject : '');
@@ -402,7 +402,7 @@ const MyStuff = () => {
         return () => {
             stale = true;
         };
-    }, [user, projects]);
+    }, [user]);
 
     useEffect(() => {
         if (!user) return;
@@ -446,6 +446,12 @@ const MyStuff = () => {
         return () => window.removeEventListener('mousedown', onDown);
     }, [openMenu]);
 
+    const refreshUsage = useCallback(() => {
+        if (!user) return;
+        api.quota().then(data => setQuota(data)).catch(() => {});
+        api.stats().then(data => setStats(data.stats || null)).catch(() => {});
+    }, [user]);
+
     const clearFeaturedIf = async id => {
         if (featuredProject !== id) return;
         setFeaturedProject('');
@@ -462,6 +468,7 @@ const MyStuff = () => {
             await api.unpublish(id);
             await clearFeaturedIf(id);
             load();
+            refreshUsage();
         } catch (e) {
             setActionError(e.message);
         }
@@ -472,6 +479,7 @@ const MyStuff = () => {
             setActionError('');
             await api.publish(id);
             load();
+            refreshUsage();
         } catch (e) {
             setActionError(e.message);
         }
@@ -487,6 +495,7 @@ const MyStuff = () => {
             await api.deleteProject(id);
             await clearFeaturedIf(id);
             load();
+            refreshUsage();
         } catch (e) {
             setActionError(e.message);
         }
@@ -583,11 +592,6 @@ const MyStuff = () => {
         setAgreeData(null);
         setAgreeError('');
     }, []);
-
-    const refreshQuota = useCallback(() => {
-        if (!user) return;
-        api.quota().then(data => setQuota(data)).catch(() => {});
-    }, [user]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -705,7 +709,7 @@ const MyStuff = () => {
                     ) : tab === 'uploads' ? (
                         <UploadUsage
                             quota={quota}
-                            onRefresh={refreshQuota}
+                            onRefresh={refreshUsage}
                         />
                     ) : tab === 'agreement' ? (
                         <AgreementTab />

@@ -200,7 +200,11 @@ class TWRestorePointManager extends React.Component {
         this.props.onCloseModal();
         this.props.onStartLoadingRestorePoint(this.props.loadingState);
 
-        RestorePointAPI.loadRestorePoint(this.props.vm, id)
+        const backup = this.props.projectChanged ?
+            RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle) :
+            Promise.resolve();
+        backup
+            .then(() => RestorePointAPI.loadRestorePoint(this.props.vm, id))
             .then(() => {
                 this.props.onFinishLoadingRestorePoint(true, this.props.loadingState);
                 setTimeout(() => {

@@ -9,6 +9,7 @@ import {closeGitModal} from '../reducers/modals.js';
 
 import downloadBlob from '../lib/utils/download-blob.js';
 import {openFractchMode} from '../lib/git/fractch-mode.js';
+import RestorePointAPI from '../lib/api/restore-points.js';
 
 import {
     getDefaultAuthor,
@@ -445,6 +446,7 @@ class TWGitModal extends React.Component {
         const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
         const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 
+        await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
         this.props.vm.quit();
         await this.props.vm.loadProject(buffer, {skipGitImport: true});
         this.props.vm.renderer.draw();
@@ -1268,12 +1270,14 @@ TWGitModal.propTypes = {
     onClose: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
     projectChanged: PropTypes.bool,
+    projectTitle: PropTypes.string,
     roturUsername: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     vm: state.scratchGui.vm,
     projectChanged: state.scratchGui.projectChanged,
+    projectTitle: state.scratchGui.projectTitle,
     roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
 });
 

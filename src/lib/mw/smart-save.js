@@ -1,7 +1,9 @@
 import openMistWarpShareWindow from './open-mw-share-window.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
 import {request} from '../community/api.js';
+import communityEnabled from '../community/enabled.js';
 import downloadBlob from '../utils/download-blob';
+import {embedRepoIntoSb3Blob} from '../git/browser-git.js';
 
 const agreementAccepted = async () => {
     try {
@@ -17,10 +19,10 @@ const agreementAccepted = async () => {
 // Not on MistWarp yet -> download an sb3. The window only reappears for an
 // update when a new upload agreement needs accepting, or the silent upload fails.
 const smartSave = async ({vm, title, onSaved = () => {}}) => {
-    const platform = getRememberedPlatformProjectState();
+    const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
     if (!platform) {
-        const blob = await vm.saveProjectSb3();
+        const blob = await embedRepoIntoSb3Blob(await vm.saveProjectSb3());
         downloadBlob(`${title || 'project'}.sb3`, blob);
         return;
     }

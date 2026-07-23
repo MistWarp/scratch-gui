@@ -51,6 +51,7 @@ class AssetChannel extends Emitter {
         this.storeAsset = storeAsset;
         this._incoming = new Map(); // `${peerId}:${md5ext}` -> receive state
         this._requestedFromHost = new Set();
+        this._pendingServes = new Map(); // md5ext -> Set of peerIds waiting for it
         this._destroyed = false;
 
         if (isHost) {
@@ -66,6 +67,7 @@ class AssetChannel extends Emitter {
         this.session.off('asset-message', this._onAssetMessage);
         this._incoming.clear();
         this._requestedFromHost.clear();
+        this._pendingServes.clear();
         this.removeAllListeners();
     }
 
@@ -147,7 +149,13 @@ class AssetChannel extends Emitter {
             if (!this.isHost) return;
             const {md5exts} = envelope.payload;
             md5exts.filter(md5ext => !this.getAsset(md5ext))
-                .forEach(md5ext => this.emit('asset-unavailable', {peerId, md5ext}));
+                .forEach(md5ext => {
+                    if (!this._pendingServes.has(md5ext)) {
+                        this._pendingServes.set(md5ext, new Set());
+                    }
+                    this._pendingServes.get(md5ext).add(peerId);
+                    this.emit('asset-unavailable', {peerId, md5ext});
+                });
             this.sendAssets(peerId, md5exts.filter(md5ext => this.getAsset(md5ext)));
             break;
         }
@@ -200,6 +208,12 @@ class AssetChannel extends Emitter {
         }
         this._requestedFromHost.delete(incoming.md5ext);
         this.emit('asset-received', incoming.md5ext);
+
+        const waiting = this._pendingServes.get(incoming.md5ext);
+        if (waiting) {
+            this._pendingServes.delete(incoming.md5ext);
+            waiting.forEach(peerId => this.sendAsset(peerId, incoming.md5ext));
+        }
     }
 }
 

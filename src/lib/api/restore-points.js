@@ -327,6 +327,7 @@ const createRestorePoint = (
             const thumbnailStore = transaction.objectStore(THUMBNAIL_STORE);
             const request = thumbnailStore.add(thumbnailData, generatedId);
             request.onsuccess = () => {
+                vm.emit('RESTORE_POINT_END');
                 resolveTransaction();
             };
         };
@@ -395,6 +396,14 @@ const createRestorePoint = (
         writeMetadata();
     });
 }));
+
+const createSafetyRestorePoint = (vm, title) => Promise.resolve()
+    .then(() => createRestorePoint(vm, title || '?', TYPE_AUTOMATIC))
+    .then(() => removeExtraneousRestorePoints())
+    .catch(error => {
+        // eslint-disable-next-line no-console
+        console.warn('Could not create safety restore point', error);
+    });
 
 /**
  * @param {number} id the restore point's ID
@@ -739,6 +748,7 @@ export default {
     TYPE_MANUAL,
     getAllRestorePoints,
     createRestorePoint,
+    createSafetyRestorePoint,
     removeExtraneousRestorePoints,
     deleteRestorePoint,
     deleteAllRestorePoints,
