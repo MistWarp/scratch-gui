@@ -40,17 +40,19 @@ const offsetToPosition = (payload, x, y) => {
     const anchor = frames[0] || blocks.find(i => i.topLevel);
     if (!anchor) return payload;
 
-    const dx = x - (anchor.x || 0);
-    const dy = y - (anchor.y || 0);
+    // Positions parsed out of the workspace xml arrive as strings.
+    const at = (item, axis) => Number(item[axis]) || 0;
+    const dx = x - at(anchor, 'x');
+    const dy = y - at(anchor, 'y');
     for (const block of blocks) {
         if (block.topLevel) {
-            block.x = (block.x || 0) + dx;
-            block.y = (block.y || 0) + dy;
+            block.x = at(block, 'x') + dx;
+            block.y = at(block, 'y') + dy;
         }
     }
     for (const frame of frames) {
-        frame.x = (frame.x || 0) + dx;
-        frame.y = (frame.y || 0) + dy;
+        frame.x = at(frame, 'x') + dx;
+        frame.y = at(frame, 'y') + dy;
     }
 
     return payload;
