@@ -8,6 +8,7 @@ import {
     writeProjectToFractchTree,
     buildSb3FromFractchTree
 } from './fractch-tree.js';
+import RestorePointAPI from '../api/restore-points.js';
 
 const FS_NAME = 'mistwarp-git';
 const REPO_DIR = '/repo';
@@ -17,12 +18,10 @@ const SNAPSHOT_FILE = 'project.sb3';
 const GIT_EMBED_DIR = '.mistwarp-git';
 
 let fsSingleton = null;
-let shouldWipeOnStart = true;
 
 const getFs = () => {
     if (!fsSingleton) {
-        fsSingleton = new LightningFS(FS_NAME, {wipe: shouldWipeOnStart});
-        shouldWipeOnStart = false;
+        fsSingleton = new LightningFS(FS_NAME);
     }
     return fsSingleton;
 };
@@ -369,6 +368,7 @@ const restoreProjectFromCurrentRef = async vm => {
             throw new Error('VM does not support loadProject method');
         }
 
+        await RestorePointAPI.createSafetyRestorePoint(vm, 'Before git restore');
         vm.quit();
         await vm.loadProject(snapshot, {skipGitImport: true});
     } catch (e) {
@@ -1335,6 +1335,7 @@ const applyFractchWorkspace = async vm => {
     if (!vm) throw new Error('VM not provided');
     const bytes = await buildSb3FromFractchTree({fs: getFs().promises, dir: REPO_DIR});
     const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    await RestorePointAPI.createSafetyRestorePoint(vm, 'Before git restore');
     vm.quit();
     await vm.loadProject(buffer, {skipGitImport: true});
     if (vm.renderer) vm.renderer.draw();

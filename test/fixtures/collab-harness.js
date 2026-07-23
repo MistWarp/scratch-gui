@@ -130,6 +130,10 @@ class FakeCollabTransport extends Emitter {
         return this._id;
     }
 
+    bufferedAmount () {
+        return 0;
+    }
+
     host (roomId) {
         this.isHost = true;
         this.roomId = roomId;

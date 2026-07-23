@@ -3,6 +3,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import log from '../utils/log';
 import {getIsShowingProject} from '../../reducers/project-state';
+import RestorePointAPI from '../api/restore-points';
 
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
@@ -181,8 +182,11 @@ const SB3PostMessageHOC = function (WrappedComponent) {
             }
 
             // Stop current project and load new one
-            this.props.vm.quit();
-            this.props.vm.loadProject(arrayBuffer)
+            RestorePointAPI.createSafetyRestorePoint(this.props.vm, 'Before external load')
+                .then(() => {
+                    this.props.vm.quit();
+                    return this.props.vm.loadProject(arrayBuffer);
+                })
                 .then(() => {
                     log.info('SB3 project loaded successfully via postMessage');
                     

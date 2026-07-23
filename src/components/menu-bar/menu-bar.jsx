@@ -22,6 +22,7 @@ import {
     rememberPlatformProject
 } from '../../lib/community/publish.js';
 import {getProject as getMistWarpProject} from '../../lib/community/api.js';
+import communityEnabled from '../../lib/community/enabled.js';
 import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import Divider from '../divider/divider.jsx';
 // import SaveStatus from './save-status.jsx';
@@ -54,6 +55,7 @@ import {
     getFs as getGitFs
 } from '../../lib/git/browser-git';
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
+import RestorePointAPI from '../../lib/api/restore-points';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
@@ -543,7 +545,7 @@ class MenuBar extends React.Component {
         this.props.onClickCollaboration();
     }
     refreshMistWarpShared () {
-        const remembered = getRememberedPlatformProjectState();
+        const remembered = communityEnabled ? getRememberedPlatformProjectState() : null;
         if (!remembered) {
             this.setState({mistwarpProject: null});
             return;
@@ -641,8 +643,20 @@ class MenuBar extends React.Component {
 
     async handleClickGitPull (remote) {
         this.props.onRequestCloseFile();
+        if (this.props.projectChanged) {
+            // eslint-disable-next-line no-alert
+            const ok = window.confirm(this.props.intl.formatMessage({
+                defaultMessage: 'Pulling will replace your project with the repository version. Continue?',
+                description: 'Confirmation before git pull replaces the open project',
+                id: 'mw.menuBar.gitPull.confirmReplace'
+            }));
+            if (!ok) {
+                return;
+            }
+        }
         this.props.onShowGitStatus('gitPulling');
         try {
+            await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
             await gitPull({
                 vm: this.props.vm,
                 remote,
@@ -687,8 +701,6 @@ class MenuBar extends React.Component {
                     message: message.trim(),
                     author: getDefaultAuthor()
                 });
-                // Mark unchanged so the Commit item hides until the next edit.
-                this.props.onProjectUnchanged();
                 this.props.onGitStatusDone('gitCommitSuccess');
             } catch (e) {
                 console.error(e);
@@ -1365,7 +1377,9 @@ class MenuBar extends React.Component {
         };
     }
     render () {
-        const mistwarpAction = getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged);
+        const mistwarpAction = communityEnabled ?
+            getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged) :
+            null;
         const saveNowMessage = (
             <FormattedMessage
                 defaultMessage="Save now"

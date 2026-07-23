@@ -12,6 +12,7 @@ import PresenceChannel from './presence.js';
 import CursorOverlay from './cursor-overlay.js';
 import {getAssetData, storeAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
 import {avatarForCollabUser} from './avatar.js';
+import RestorePointAPI from '../api/restore-points.js';
 
 /**
  * The collaboration engine facade — the only module the React layer talks
@@ -341,6 +342,10 @@ class CollabService extends Emitter {
     }
 
     async _loadProjectSuppressed (buffer) {
+        if (!this._backedUpBeforeSync) {
+            this._backedUpBeforeSync = true;
+            await RestorePointAPI.createSafetyRestorePoint(this.vm, 'Before joining collaboration');
+        }
         this.emit('project-sync-apply-start');
         this._adapter.setSuppressed(true);
         try {
@@ -368,6 +373,7 @@ class CollabService extends Emitter {
     _teardown () {
         this.isConnected = false;
         this._approved = false;
+        this._backedUpBeforeSync = false;
         if (this._adapter) {
             this._adapter.destroy();
             this._adapter = null;

@@ -187,13 +187,8 @@ const restoreSession = async () => {
     if (cached) {
         return cached;
     }
-    const user = await fetchCurrentUser();
-    if (!user) {
-        rotur.logout();
-        storeToken(null);
-        return null;
-    }
-    if (!(await tokenHasRequiredPermissions())) {
+    const [user, hasPermissions] = await Promise.all([fetchCurrentUser(), tokenHasRequiredPermissions()]);
+    if (!user || !hasPermissions) {
         rotur.logout();
         storeToken(null);
         return null;

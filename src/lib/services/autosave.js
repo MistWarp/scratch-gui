@@ -3,6 +3,7 @@
  */
 
 import SettingsStore from '../../addons/settings-store-singleton.js';
+import {embedRepoIntoSb3Blob} from '../git/browser-git.js';
 
 class AutosaveService {
     constructor () {
@@ -274,7 +275,7 @@ class AutosaveService {
             }
 
             // Get project data as blob
-            const projectBlob = await this.vm.saveProjectSb3();
+            const projectBlob = await embedRepoIntoSb3Blob(await this.vm.saveProjectSb3());
             const filename = this.generateAutosaveFilename();
             
             // Create download link and trigger download

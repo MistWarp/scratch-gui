@@ -727,7 +727,7 @@ const GUIComponent = props => {
     const alwaysEnabledModals = useMemo(() => (
         <React.Fragment>
             <RoturSession />
-            <RoturExtensionHost />
+            {!isEmbedded && <RoturExtensionHost />}
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
             <TWRestorePointManager />
@@ -768,7 +768,8 @@ const GUIComponent = props => {
         gitModalVisible,
         onboardingVisible,
         roturLoginModalVisible,
-        onRequestCloseRoturLogin
+        onRequestCloseRoturLogin,
+        isEmbedded
     ]);
 
     const minDimensions = useMemo(() => {

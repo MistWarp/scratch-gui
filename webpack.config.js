@@ -1,6 +1,21 @@
 const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
+const fs = require('fs');
 const webpack = require('webpack');
+
+try {
+    const envFile = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
+    for (const line of envFile.split('\n')) {
+        const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+        if (match && !(match[1] in process.env)) {
+            process.env[match[1]] = match[2];
+        }
+    }
+} catch (e) {
+    // .env is optional
+}
+
+const ENABLE_COMMUNITY = process.env.MW_COMMUNITY === 'true';
 
 // Plugins
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -174,7 +189,7 @@ module.exports = [
     // to run editor examples
     defaultsDeep({}, base, {
         entry: {
-            'community': './src/playground/community.jsx',
+            ...(ENABLE_COMMUNITY ? {'community': './src/playground/community.jsx'} : {}),
             'editor': './src/playground/editor.jsx',
             'player': './src/playground/player.jsx',
             'fullscreen': './src/playground/fullscreen.jsx',
@@ -212,7 +227,8 @@ module.exports = [
                 'process.env.DEBUG': Boolean(process.env.DEBUG),
                 'process.env.ENABLE_SERVICE_WORKER': JSON.stringify(process.env.ENABLE_SERVICE_WORKER || ''),
                 'process.env.ROOT': JSON.stringify(root),
-                'process.env.ROUTING_STYLE': JSON.stringify(process.env.ROUTING_STYLE || 'wildcard')
+                'process.env.ROUTING_STYLE': JSON.stringify(process.env.ROUTING_STYLE || 'wildcard'),
+                'process.env.MW_COMMUNITY': JSON.stringify(ENABLE_COMMUNITY ? 'true' : '')
             }),
             new HtmlWebpackPlugin({
                 chunks: ['editor'],
@@ -222,11 +238,18 @@ module.exports = [
                 isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
-            new HtmlWebpackPlugin({
+            new HtmlWebpackPlugin(ENABLE_COMMUNITY ? {
                 chunks: ['community'],
                 template: 'src/playground/simple.ejs',
                 filename: 'index.html',
                 title: APP_NAME,
+                ...htmlWebpackPluginCommon
+            } : {
+                chunks: ['editor'],
+                template: 'src/playground/index.ejs',
+                filename: 'index.html',
+                title: `${APP_NAME} - Enhance Your Scratch Experience`,
+                isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({

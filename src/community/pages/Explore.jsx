@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams, Link} from 'react-router-dom';
 import api from '../api';
-import rotur from '../rotur';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -34,13 +33,7 @@ const Explore = () => {
             .finally(fresh(() => setLoading(false)));
         if (q.trim()) {
             api.searchUsers(q.trim())
-                .then(fresh(data => {
-                    const users = (data.users || []).slice(0, 5);
-                    setPeople(users);
-                    Promise.all(users.map(person =>
-                        rotur.followerCount(person.username).then(followers => ({...person, followers}))
-                    )).then(fresh(enriched => setPeople(enriched)));
-                }))
+                .then(fresh(data => setPeople((data.users || []).slice(0, 5))))
                 .catch(fresh(() => setPeople([])));
         } else {
             setPeople([]);

@@ -7,6 +7,7 @@ import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import smartSave from '../../lib/mw/smart-save.js';
 import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
+import communityEnabled from '../../lib/community/enabled.js';
 
 import {Save} from 'lucide-react';
 
@@ -22,8 +23,8 @@ const TWSaveStatus = ({
     onProjectUnchanged,
     vm
 }) => {
-    const platformState = roturReady ? getRememberedPlatformProjectState() : null;
-    const mistwarpAction = roturReady ?
+    const platformState = communityEnabled && roturReady ? getRememberedPlatformProjectState() : null;
+    const mistwarpAction = communityEnabled && roturReady ?
         getMistWarpAction(platformState, projectChanged) :
         null;
     const onSaveClick = useCallback(() => smartSave({

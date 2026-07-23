@@ -3,7 +3,6 @@ import {Link, useNavigate} from 'react-router-dom';
 import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
-import rotur from '../rotur';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
@@ -46,7 +45,7 @@ const NavBar = () => {
             }
         };
         refresh();
-        const timer = setInterval(refresh, 60000);
+        const timer = setInterval(refresh, 300000);
         const onRead = () => setUnread(0);
         window.addEventListener('mw:notifications-read', onRead);
         window.addEventListener('mw:reports-updated', refresh);
@@ -74,14 +73,8 @@ const NavBar = () => {
                 api.explore({q, limit: 5}).catch(() => ({projects: []}))
             ]).then(([u, p]) => {
                 if (stale) return;
-                const users = u.users || [];
-                setSuggestions(users);
+                setSuggestions(u.users || []);
                 setProjectSuggestions(p.projects || []);
-                Promise.all(users.map(person =>
-                    rotur.followerCount(person.username).then(followers => ({...person, followers}))
-                )).then(enriched => {
-                    if (!stale) setSuggestions(enriched);
-                });
             });
         }, 200);
         return () => {
