@@ -288,7 +288,8 @@ const TWStateManager = function (WrappedComponent) {
                 'onSetProjectId',
                 'onSetIsPlayerOnly',
                 'onSetIsFullScreen',
-                'handleRoomCode'
+                'handleRoomCode',
+                'handleParentIdentity'
             ]);
         }
         componentDidMount () {
@@ -409,6 +410,9 @@ const TWStateManager = function (WrappedComponent) {
             this.router.onhashchange();
             window.addEventListener('hashchange', this.handleHashChange);
             window.addEventListener('popstate', this.handlePopState);
+            if (this.props.isEmbedded) {
+                window.addEventListener('message', this.handleParentIdentity);
+            }
         }
         componentDidUpdate (prevProps) {
             if (this.props.username !== prevProps.username && this.props.username !== this.doNotPersistUsername) {
@@ -548,6 +552,17 @@ const TWStateManager = function (WrappedComponent) {
         componentWillUnmount () {
             window.removeEventListener('hashchange', this.handleHashChange);
             window.removeEventListener('popstate', this.handlePopState);
+            window.removeEventListener('message', this.handleParentIdentity);
+        }
+        handleParentIdentity (event) {
+            const data = event.data;
+            if (!data || data.type !== 'mw:rotur-user' || event.source !== window.parent) return;
+            const name = data.user && data.user.loggedIn ?
+                (data.displayName || `@${data.user.username}`) :
+                null;
+            if (!name || name === this.props.username) return;
+            this.doNotPersistUsername = name;
+            this.props.onSetUsername(name);
         }
         handleHashChange () {
             this.router.onhashchange();

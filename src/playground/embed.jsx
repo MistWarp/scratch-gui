@@ -30,8 +30,8 @@ const getProjectId = () => {
     return '0';
 };
 
-const projectId = getProjectId();
 const urlParams = new URLSearchParams(location.search);
+const projectId = urlParams.get('platform_project') || getProjectId();
 
 let vm;
 

@@ -289,6 +289,7 @@ const executeVMAction = shortcut => {
         case 'deleteSprite':
             if (vm.deleteSprite && vm.editingTarget) {
                 const spriteId = vm.editingTarget.id;
+                // eslint-disable-next-line no-alert
                 if (window.confirm('Are you sure you want to delete this sprite?')) {
                     vm.deleteSprite(spriteId);
                 }
@@ -410,13 +411,12 @@ const updateShortcuts = customShortcuts => {
 
 const getShortcuts = () => shortcuts;
 
-const getCallbacks = () => callbacks;
-
 const updateCallbacks = newCallbacks => {
     // Only update callbacks if they don't already exist
     const updatedCallbacks = {...callbacks};
     for (const key of Object.keys(newCallbacks)) {
-        if (!(key in updatedCallbacks) || updatedCallbacks[key] === undefined || updatedCallbacks[key] === null) {
+        const existing = updatedCallbacks[key];
+        if (!(key in updatedCallbacks) || existing === null || typeof existing === 'undefined') {
             updatedCallbacks[key] = newCallbacks[key];
         }
     }

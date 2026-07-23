@@ -5,6 +5,8 @@ import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
+import setFaviconBadge from '../faviconBadge';
+import ProjectThumbnail from './ProjectThumbnail.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
 import styles from './NavBar.module.css';
 
@@ -58,6 +60,10 @@ const NavBar = () => {
             document.removeEventListener('visibilitychange', refresh);
         };
     }, [user]);
+
+    useEffect(() => {
+        setFaviconBadge(unread > 0);
+    }, [unread]);
 
     useEffect(() => {
         const q = query.trim();
@@ -192,10 +198,10 @@ const NavBar = () => {
                                     className={styles.suggestion}
                                     onClick={() => goToProject(project.id)}
                                 >
-                                    <img
+                                    <ProjectThumbnail
+                                        project={project}
                                         className={styles.suggestionThumb}
-                                        src={project.thumbUrl}
-                                        alt=""
+                                        fallbackClassName={styles.suggestionThumbFallback}
                                     />
                                     <span>{project.title}</span>
                                     <span className={styles.suggestionMeta}>by {project.owner}</span>

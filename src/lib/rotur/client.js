@@ -53,14 +53,19 @@ const storeToken = token => {
     }
 };
 
-/** Stable avatar URL derived only from username. */
+/**
+ * Stable avatar URL derived only from username.
+ * @param {string} username - Account username
+ * @returns {string} Avatar URL
+ */
 const getAvatarUrl = username => (
     `https://avatars.rotur.dev/${encodeURIComponent(String(username).toLowerCase())}`
 );
 
 /**
  * Normalize me.get() / profile payloads into a stable shape.
- * @returns {{username: string, id: string|null, avatarUrl: string, bio: string|null}|null}
+ * @param {object} data - Raw profile payload
+ * @returns {object|null} Normalized user or null
  */
 const normalizeUser = data => {
     if (!data || typeof data !== 'object' || data.error) {
@@ -224,6 +229,22 @@ const login = async () => {
     return user;
 };
 
+const clearActivity = () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn || !rotur.socket) {
+        return;
+    }
+    try {
+        if (typeof rotur.socket.removeActivity === 'function') {
+            rotur.socket.removeActivity(ACTIVITY_ID);
+        } else if (typeof rotur.socket.clearActivity === 'function') {
+            rotur.socket.clearActivity(ACTIVITY_ID);
+        }
+    } catch (_) {
+        // ignore
+    }
+};
+
 const logout = () => {
     clearActivity();
     const rotur = getClient();
@@ -253,7 +274,8 @@ const ensureSocket = async () => {
 /**
  * Publish MistWarp editing presence.
  * Title/status are fixed strings; edit duration uses start_time only.
- * @param {{projectTitle?: string, editingSince?: number}|string} projectTitleOrCtx
+ * @param {object|string} projectTitleOrCtx - Project title or activity context.
+ * @param {object} [extra] - Extra activity fields.
  */
 const syncActivity = async (projectTitleOrCtx, extra = {}) => {
     const rotur = getClient();
@@ -316,22 +338,6 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
     } catch (error) {
         // eslint-disable-next-line no-console
         console.warn('[Rotur] Failed to sync activity', error);
-    }
-};
-
-const clearActivity = () => {
-    const rotur = getClient();
-    if (!rotur.loggedIn || !rotur.socket) {
-        return;
-    }
-    try {
-        if (typeof rotur.socket.removeActivity === 'function') {
-            rotur.socket.removeActivity(ACTIVITY_ID);
-        } else if (typeof rotur.socket.clearActivity === 'function') {
-            rotur.socket.clearActivity(ACTIVITY_ID);
-        }
-    } catch (_) {
-        // ignore
     }
 };
 

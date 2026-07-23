@@ -1,4 +1,4 @@
-import {normalizeKey, findShortcutByKey} from './registry.js';
+import {normalizeKey} from './registry.js';
 
 const detectConflicts = (shortcuts, shortcutId, newKey) => {
     const conflicts = [];

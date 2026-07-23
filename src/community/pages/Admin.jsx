@@ -143,11 +143,12 @@ const StatsOverview = () => {
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
-                    <AlertTriangle size={14} /> You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    <AlertTriangle size={14} /> You&apos;ve used {formatBytes(quota.used)} of
+                    your {formatBytes(quota.limit)} upload quota
                     ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
-                    {quota.used >= quota.limit
-                        ? 'You cannot upload new projects until usage drops.'
-                        : 'Consider managing your projects to free up space.'}
+                    {quota.used >= quota.limit ?
+                        'You cannot upload new projects until usage drops.' :
+                        'Consider managing your projects to free up space.'}
                 </p>
             ) : null}
 
@@ -404,7 +405,14 @@ const UserDetailCard = ({username, onBack}) => {
         }
     };
 
-    if (error) return <div><p className={styles.error}>{error}</p><button className={styles.secondary} onClick={onBack}>Back to list</button></div>;
+    if (error) {
+        return (
+            <div>
+                <p className={styles.error}>{error}</p>
+                <button className={styles.secondary} onClick={onBack}>Back to list</button>
+            </div>
+        );
+    }
     if (!data) return <p className={styles.status}>Loading user details…</p>;
 
     return (
@@ -487,9 +495,15 @@ const UserDetailCard = ({username, onBack}) => {
                                 </div>
                                 <div className={styles.rowActions}>
                                     {project.shared ? (
-                                        <button className={styles.secondary} onClick={() => unshareProject(project.id)}>Unshare</button>
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => unshareProject(project.id)}
+                                        >Unshare</button>
                                     ) : null}
-                                    <button className={styles.danger} onClick={() => deleteProject(project.id)}>Delete</button>
+                                    <button
+                                        className={styles.danger}
+                                        onClick={() => deleteProject(project.id)}
+                                    >Delete</button>
                                 </div>
                             </div>
                         ))}
@@ -523,9 +537,9 @@ const UserManager = () => {
             });
     }, []);
 
-    const filtered = query.trim()
-        ? users.filter(u => u.username.toLowerCase().includes(query.toLowerCase()))
-        : users;
+    const filtered = query.trim() ?
+        users.filter(u => u.username.toLowerCase().includes(query.toLowerCase())) :
+        users;
 
     if (selected) {
         return (
@@ -565,13 +579,20 @@ const UserManager = () => {
                                 onClick={() => setSelected(user.username)}
                                 role="button"
                                 tabIndex={0}
-                                onKeyDown={e => { if (e.key === 'Enter') setSelected(user.username); }}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') setSelected(user.username);
+                                }}
                             >
                                 <Avatar username={user.username} size={32} />
                                 <div className={styles.rowInfo}>
                                     <span className={styles.rowTitle}>
                                         {`@${user.username}`}
-                                        {user.banned ? <span className={styles.badge} style={{borderColor: '#e25555', color: '#e25555'}}>banned</span> : null}
+                                        {user.banned ? (
+                                            <span
+                                                className={styles.badge}
+                                                style={{borderColor: '#e25555', color: '#e25555'}}
+                                            >banned</span>
+                                        ) : null}
                                     </span>
                                     <span className={styles.rowMeta}>
                                         {`${user.followerCount} followers · ${user.projectCount} projects`}
@@ -701,7 +722,7 @@ const Admin = () => {
         }
     };
 
-    const warnFromReport = (report) => {
+    const warnFromReport = report => {
         const reason = window.prompt('Reason for the warning (shown to the user):');
         if (reason === null) return; // cancelled
         act(report.id, 'warn_user', reason.trim());
@@ -833,11 +854,19 @@ const Admin = () => {
                                                             const target = report.target;
                                                             if (ctx.startsWith('project ')) {
                                                                 const pid = ctx.slice(8);
-                                                                return <Link to={`${projectUrl(pid)}#comment-id-${target}`}>{`Comment ${target}`}</Link>;
+                                                                return (
+                                                                    <Link
+                                                                        to={`${projectUrl(pid)}#comment-id-${target}`}
+                                                                    >{`Comment ${target}`}</Link>
+                                                                );
                                                             }
                                                             if (ctx.startsWith('profile ')) {
                                                                 const uname = ctx.slice(8);
-                                                                return <Link to={`/users/${uname}#comment-id-${target}`}>{`Comment ${target}`}</Link>;
+                                                                return (
+                                                                    <Link
+                                                                        to={`/users/${uname}#comment-id-${target}`}
+                                                                    >{`Comment ${target}`}</Link>
+                                                                );
                                                             }
                                                             return `Comment ${target}`;
                                                         })()

@@ -1,6 +1,6 @@
+import React from 'react';
 import {FilePen} from 'lucide-react';
 
-// Usage
-const File = () => <FilePen />;
+const File = () => React.createElement(FilePen);
 
 export default File;

@@ -215,8 +215,8 @@ const pullFromCloud = async () => {
  */
 const notifyLocalChange = (delayMs = 800) => {
     if (suppressPush) return;
-    markDirty(true);
     if (!loadSession()) return;
+    markDirty(true);
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {
         pushTimer = null;
@@ -255,6 +255,7 @@ const onRoturLogout = () => {
         clearTimeout(pushTimer);
         pushTimer = null;
     }
+    markDirty(false);
     try {
         localStorage.removeItem(USERNAME_OVERRIDE_KEY);
     } catch (_) {

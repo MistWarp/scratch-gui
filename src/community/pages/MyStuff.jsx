@@ -14,6 +14,7 @@ import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+import useEscape from '../use-escape.js';
 import styles from './MyStuff.module.css';
 
 const fmt = value => (Number(value) || 0).toLocaleString();
@@ -149,10 +150,11 @@ const UploadUsage = ({quota, onRefresh}) => {
         setResetKey('');
         setResetError('');
     }, []);
+    useEscape(showConfirm ? dismiss : null);
 
-    const oldestDate = quota && quota.oldestEventMs
-        ? new Date(quota.oldestEventMs).toLocaleDateString()
-        : null;
+    const oldestDate = quota && quota.oldestEventMs ?
+        new Date(quota.oldestEventMs).toLocaleDateString() :
+        null;
 
     if (!quota) {
         return <p className={styles.status}>Loading upload info…</p>;
@@ -179,7 +181,9 @@ const UploadUsage = ({quota, onRefresh}) => {
             <div className={styles.uploadBarSection}>
                 <div className={styles.uploadBarLabel}>
                     {Math.round(pct)}% full
-                    {pct >= 80 ? <span className={styles.uploadWarn}> <AlertTriangle size={14} /> Nearly full</span> : null}
+                    {pct >= 80 ? (
+                        <span className={styles.uploadWarn}> <AlertTriangle size={14} /> Nearly full</span>
+                    ) : null}
                 </div>
                 <div className={styles.uploadBarBg}>
                     <div
@@ -275,7 +279,9 @@ const AgreementTab = () => {
                 if (!stale) setAgreement(data.agreement);
             })
             .catch(() => {});
-        return () => { stale = true; };
+        return () => {
+            stale = true;
+        };
     }, []);
 
     const handleAccept = async () => {
@@ -592,6 +598,7 @@ const MyStuff = () => {
         setAgreeData(null);
         setAgreeError('');
     }, []);
+    useEscape(showAgreeModal ? cancelAgreeModal : null);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -634,11 +641,12 @@ const MyStuff = () => {
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
-                    <AlertTriangle size={14} /> You've used {formatBytes(quota.used)} of your {formatBytes(quota.limit)} upload quota
+                    <AlertTriangle size={14} /> You&apos;ve used {formatBytes(quota.used)} of
+                    your {formatBytes(quota.limit)} upload quota
                     ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
-                    {quota.used >= quota.limit
-                        ? 'You cannot upload new projects until usage drops.'
-                        : 'Consider managing your projects to free up space.'}
+                    {quota.used >= quota.limit ?
+                        'You cannot upload new projects until usage drops.' :
+                        'Consider managing your projects to free up space.'}
                 </p>
             ) : null}
 
@@ -754,7 +762,10 @@ const MyStuff = () => {
                                             to={projectUrl(project.id)}
                                             className={styles.thumb}
                                         >
-                                            <ProjectThumbnail project={project} />
+                                            <ProjectThumbnail
+                                                project={project}
+                                                lazy
+                                            />
                                         </Link>
                                         <div className={styles.info}>
                                             <Link

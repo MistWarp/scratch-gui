@@ -189,7 +189,7 @@ module.exports = [
     // to run editor examples
     defaultsDeep({}, base, {
         entry: {
-            ...(ENABLE_COMMUNITY ? {'community': './src/playground/community.jsx'} : {}),
+            ...(ENABLE_COMMUNITY ? {community: './src/playground/community.jsx'} : {}),
             'editor': './src/playground/editor.jsx',
             'player': './src/playground/player.jsx',
             'fullscreen': './src/playground/fullscreen.jsx',

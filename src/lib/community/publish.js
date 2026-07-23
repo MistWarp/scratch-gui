@@ -243,7 +243,7 @@ const publishToMistWarp = async ({
                 });
             });
         } catch (e) {
-            if (e.code !== 'debounced') {
+            if (e.code !== 'debounced' || createdNow) {
                 throw e;
             }
         }

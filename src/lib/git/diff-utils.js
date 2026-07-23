@@ -32,8 +32,8 @@ const MyersDiff = {
 
     /**
      * Split text into lines, preserving line endings
-     * @param {string} text
-     * @returns {string[]}
+     * @param {string} text - Text to split
+     * @returns {string[]} Array of lines
      */
     _splitLines (text) {
         if (!text) return [];
@@ -46,17 +46,16 @@ const MyersDiff = {
 
     /**
      * Core Myers O(ND) algorithm
-     * @param {string[]} linesA
-     * @param {string[]} linesB
-     * @returns {Array<{type: 'same'|'add'|'remove', lineA: number, lineB: number}>}
+     * @param {string[]} linesA - Original lines
+     * @param {string[]} linesB - Modified lines
+     * @returns {Array} Edit script entries
      */
     _myersDiffAlgorithm (linesA, linesB) {
         const N = linesA.length;
         const M = linesB.length;
         const MAX = N + M;
 
-        const V = new Int32Array(2 * MAX + 1);
-        const vs = [V];
+        const V = new Int32Array((2 * MAX) + 1);
         V[MAX] = 0;
 
         const trace = [];
@@ -92,6 +91,12 @@ const MyersDiff = {
 
     /**
      * Backtrace to find edit script
+     * @param {Array} trace - Recorded V snapshots
+     * @param {number} x - End x coordinate
+     * @param {number} y - End y coordinate
+     * @param {string[]} linesA - Original lines
+     * @param {string[]} linesB - Modified lines
+     * @returns {Array} Edit script entries
      */
     _backtrace (trace, x, y, linesA, linesB) {
         const result = [];
@@ -159,6 +164,10 @@ const MyersDiff = {
 
     /**
      * Convert edit script to diff hunks
+     * @param {string[]} linesA - Original lines
+     * @param {string[]} linesB - Modified lines
+     * @param {Array} editScript - Edit script entries
+     * @returns {object} Diff result
      */
     _convertToDiffHunks (linesA, linesB, editScript) {
         const hunks = [];
@@ -217,6 +226,7 @@ const MyersDiff = {
 
     /**
      * Create empty result
+     * @returns {object} Empty diff result
      */
     _createEmptyResult () {
         return {
@@ -230,6 +240,8 @@ const MyersDiff = {
 
     /**
      * Create result with all additions
+     * @param {string[]} linesB - Modified lines
+     * @returns {object} Diff result
      */
     _createAddAllResult (linesB) {
         const changes = linesB.map((line, i) => ({
@@ -256,6 +268,8 @@ const MyersDiff = {
 
     /**
      * Create result with all deletions
+     * @param {string[]} linesA - Original lines
+     * @returns {object} Diff result
      */
     _createRemoveAllResult (linesA) {
         const changes = linesA.map((line, i) => ({
@@ -282,8 +296,8 @@ const MyersDiff = {
 
     /**
      * Compute hash of text for quick comparison
-     * @param {string} text
-     * @returns {string}
+     * @param {string} text - Text to hash
+     * @returns {string} Hash string
      */
     computeHash (text) {
         let hash = 0;
@@ -300,9 +314,9 @@ const MyersDiff = {
 
     /**
      * Compare two texts for equality
-     * @param {string} textA
-     * @param {string} textB
-     * @returns {boolean}
+     * @param {string} textA - First text
+     * @param {string} textB - Second text
+     * @returns {boolean} True if equal
      */
     areEqual (textA, textB) {
         return textA === textB;

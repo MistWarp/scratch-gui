@@ -200,6 +200,8 @@ if (typeof window !== 'undefined') {
             }
         } else if (!state.user) {
             restore();
+        } else if (event.key === ROTUR_TOKEN_KEY && event.newValue !== event.oldValue) {
+            restore();
         }
     });
 }

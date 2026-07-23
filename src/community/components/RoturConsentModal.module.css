@@ -1,45 +1,3 @@
-.overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: color-mix(in srgb, #000 55%, transparent);
-}
-
-.modal {
-    width: 100%;
-    max-width: 440px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-}
-
-.head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border-soft);
-    background: color-mix(in srgb, #FF8C1A 12%, transparent);
-    font-weight: 700;
-    font-size: 15px;
-    color: #FF8C1A;
-}
-
-.body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 18px 16px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
 .lead {
     margin: 0;
     font-size: 14px;
@@ -69,40 +27,4 @@
     gap: 2px;
     font-size: 14px;
     color: var(--mw-text);
-}
-
-.buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.allow,
-.deny {
-    padding: 8px 16px;
-    border-radius: var(--radius);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    border: 1px solid var(--border);
-}
-
-.deny {
-    background: transparent;
-    color: var(--mw-text);
-}
-
-.deny:hover {
-    background: var(--border-soft);
-}
-
-.allow {
-    background: #FF8C1A;
-    border-color: #FF8C1A;
-    color: #fff;
-}
-
-.allow:hover {
-    background: color-mix(in srgb, #FF8C1A 88%, #000);
 }

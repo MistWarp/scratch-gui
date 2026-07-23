@@ -2,6 +2,7 @@ import React, {useEffect, useState, useCallback} from 'react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import NewsItem from '../components/NewsItem.jsx';
+import Button from '../components/ui/Button.jsx';
 import styles from './News.module.css';
 
 const News = () => {
@@ -72,7 +73,10 @@ const News = () => {
             ) : null}
 
             {loadFailed ? (
-                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
+                <p className={styles.status}>
+                    Couldn&apos;t load.{' '}
+                    <Button onClick={load}>Try again</Button>
+                </p>
             ) : items === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : items.length ? (
