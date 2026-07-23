@@ -1,1 +1,0 @@
-(window.webpackJsonpGUI=window.webpackJsonpGUI||[]).push([[68],{2138:function(s,n,c){"use strict";c.r(n),c.d(n,"resources",function(){return e});var o=c(1001),w=c.n(o),r=c(1002),a=c.n(r);const e={"macos.css":w.a,"windows10.css":a.a}}}]);
