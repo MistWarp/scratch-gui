@@ -48,7 +48,8 @@ class OriginFS {
 
     formatPath (dir) {
         const basePath = `origin/(c) users/${this.username}/`;
-        const formatted = String(dir).replace(/^\//, '').replace(/\/$/, '');
+        const formatted = String(dir).replace(/^\//, '')
+            .replace(/\/$/, '');
         return (basePath + formatted).replace(/\/$/, '');
     }
 
@@ -70,7 +71,8 @@ class OriginFS {
             return crypto.randomUUID().replace(/-/g, '');
         }
         const data =
-            Math.random().toString(36).slice(2) +
+            Math.random().toString(36)
+                .slice(2) +
             (this._uuidCounter++).toString(36) +
             Date.now().toString() +
             this.username;
@@ -86,9 +88,11 @@ class OriginFS {
             hash = ((hash << 5) - hash) + data.charCodeAt(i);
             hash |= 0;
         }
-        return Math.abs(hash).toString(16).padStart(32, '0');
+        return Math.abs(hash).toString(16)
+            .padStart(32, '0');
     }
 
+    // eslint-disable-next-line require-await
     async request (method, path, body = null) {
         if (method === 'GET') {
             return this.http.get(path, {}, true);

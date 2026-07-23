@@ -15,6 +15,7 @@ import ReportModal from '../components/ReportModal.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
 import useLatest from '../use-latest.js';
+import useEscape from '../use-escape.js';
 import setPageMeta from '../page-meta.js';
 import styles from './Profile.module.css';
 
@@ -38,6 +39,7 @@ const Profile = () => {
     const [error, setError] = useState(null);
     const [actionError, setActionError] = useState(null);
     const [followBusy, setFollowBusy] = useState(false);
+    const [commentsBusy, setCommentsBusy] = useState(false);
     const [reporting, setReporting] = useState(false);
     const [adminProjects, setAdminProjects] = useState([]);
     const [presence, setPresence] = useState(null);
@@ -146,12 +148,16 @@ const Profile = () => {
     const commentsOff = Boolean(mwUser && mwUser.commentsOff);
 
     const toggleComments = async () => {
+        if (commentsBusy) return;
+        setCommentsBusy(true);
         setActionError(null);
         try {
             await api.updateProfile({commentsOff: !commentsOff});
             load();
         } catch (e) {
             setActionError(e.message || 'Could not update comments.');
+        } finally {
+            setCommentsBusy(false);
         }
     };
 
@@ -366,6 +372,7 @@ const Profile = () => {
                             <button
                                 className={styles.commentsToggle}
                                 onClick={toggleComments}
+                                disabled={commentsBusy}
                             >
                                 {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
                                 {commentsOff ? 'Turn on comments' : 'Turn off comments'}
@@ -392,6 +399,7 @@ const DonateModal = ({recipient, onClose}) => {
     const [status, setStatus] = useState(null);
     const [sent, setSent] = useState(0);
     const [needCredits, setNeedCredits] = useState(0);
+    useEscape(onClose);
 
     const send = async () => {
         const value = Math.round((Number(amount) || 0) * 100) / 100;

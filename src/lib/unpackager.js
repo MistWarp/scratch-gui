@@ -39,7 +39,7 @@ const identifyProjectJSONType = data => {
     throw new Error('Can not determine project.json type');
 };
 
-const decodeBase85WithLengthHeader = str => {
+const decodeBase85WithLengthHeader = payload => {
     const decode1 = str => {
         const getValue = code => {
             if (code === 0x7e) {
@@ -51,9 +51,9 @@ const decodeBase85WithLengthHeader = str => {
             if (n % 4 === 0) {
                 return n;
             }
-            return n + (4 - n % 4);
+            return n + (4 - (n % 4));
         };
-        const stringToBytes = str => new TextEncoder().encode(str);
+        const stringToBytes = bytes => new TextEncoder().encode(bytes);
         const lengthEndsAt = str.indexOf(',');
         const byteLength = +str.substring(0, lengthEndsAt);
         const resultBuffer = new ArrayBuffer(toMultipleOfFour(byteLength));
@@ -81,9 +81,9 @@ const decodeBase85WithLengthHeader = str => {
             if (n % 4 === 0) {
                 return n;
             }
-            return n + (4 - n % 4);
+            return n + (4 - (n % 4));
         };
-        const stringToBytes = str => new TextEncoder().encode(str);
+        const stringToBytes = bytes => new TextEncoder().encode(bytes);
         const lengthEndsAt = str.indexOf(',');
         const byteLength = +str.substring(0, lengthEndsAt);
         const resultBuffer = new ArrayBuffer(toMultipleOfFour(byteLength));
@@ -111,7 +111,7 @@ const decodeBase85WithLengthHeader = str => {
             if (n % 4 === 0) {
                 return n;
             }
-            return n + (4 - n % 4);
+            return n + (4 - (n % 4));
         };
         const lengthEndsAt = str.indexOf(',');
         const byteLength = +str
@@ -133,14 +133,14 @@ const decodeBase85WithLengthHeader = str => {
         return new Uint8Array(resultBuffer, 0, byteLength);
     };
 
-    const header = str.substring(0, str.indexOf(','));
+    const header = payload.substring(0, payload.indexOf(','));
     if (/^\d+$/.test(header)) {
-        if (str.includes('\\')) {
-            return decode2(str);
+        if (payload.includes('\\')) {
+            return decode2(payload);
         }
-        return decode1(str);
+        return decode1(payload);
     }
-    return decode3(str);
+    return decode3(payload);
 };
 
 const decodeBase85WithoutLengthHeader = (str, length) => {

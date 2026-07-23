@@ -14,7 +14,7 @@ export {MyersDiff};
  * @param {string} dir - Repository directory
  * @param {string} oid - Commit or tree OID
  * @param {string} filepath - Path to file (relative to repo root)
- * @returns {Promise<{text: string|null, oid: string|null}>}
+ * @returns {Promise<object>} File text and oid
  */
 export const getFileContentAtCommit = async ({fs, dir, oid, filepath}) => {
     if (!fs || !dir || !oid || !filepath) {
@@ -52,7 +52,7 @@ export const getFileContentAtCommit = async ({fs, dir, oid, filepath}) => {
  * @param {object} fs - Filesystem object
  * @param {string} dir - Repository directory
  * @param {string} commitOid - Commit OID
- * @returns {Promise<{oid: string, tree: object}>}
+ * @returns {Promise<{oid: string, tree: object}>} Tree oid and tree
  */
 export const getTreeAtCommit = async ({fs, dir, commitOid}) => {
     if (!fs || !dir || !commitOid) {
@@ -71,7 +71,7 @@ export const getTreeAtCommit = async ({fs, dir, commitOid}) => {
  * @param {object} fs - Filesystem object
  * @param {string} dir - Repository directory
  * @param {string} treeOid - Tree OID
- * @returns {Promise<Array<{path: string, mode: number, oid: string}>>}
+ * @returns {Promise<Array<{path: string, mode: number, oid: string}>>} Files in tree
  */
 export const listFilesInTree = async ({fs, dir, treeOid, basePath = ''}) => {
     const files = [];
@@ -102,7 +102,7 @@ export const listFilesInTree = async ({fs, dir, treeOid, basePath = ''}) => {
  * @param {string} dir - Repository directory
  * @param {string} oidA - First commit OID
  * @param {string} oidB - Second commit OID
- * @returns {Promise<Array<{path: string, type: 'added'|'removed'|'modified', oidA: string|null, oidB: string|null}>>}
+ * @returns {Promise<Array>} Changed file entries
  */
 export const getChangedFilesBetweenCommits = async ({fs, dir, oidA, oidB}) => {
     if (!fs || !dir || !oidA || !oidB) {
@@ -167,13 +167,24 @@ export const getCommitParents = async ({fs, dir, oid}) => {
 };
 
 /**
+ * Normalize whitespace by removing leading/trailing and collapsing runs of spaces
+ * @param {string} text - Text to normalize
+ * @returns {string} Normalized text
+ */
+const normalizeWhitespace = text => text
+    .split('\n')
+    .map(line => line.trim().replace(/\s+/g, ' '))
+    .join('\n');
+
+/**
  * Compute line diff between two texts
  * @param {string} contentA - Original content
  * @param {string} contentB - Modified content
  * @param {object} options - Options for diff computation
  * @param {boolean} options.ignoreWhitespace - Ignore whitespace changes
- * @returns {Promise<DiffResult>}
+ * @returns {Promise<DiffResult>} Diff result
  */
+// eslint-disable-next-line require-await
 export const computeLineDiff = async (contentA, contentB, options = {}) => {
     const {ignoreWhitespace = false} = options;
 
@@ -189,22 +200,10 @@ export const computeLineDiff = async (contentA, contentB, options = {}) => {
 };
 
 /**
- * Normalize whitespace by removing leading/trailing and collapsing runs of spaces
- * @param {string} text
- * @returns {string}
- */
-function normalizeWhitespace (text) {
-    return text
-        .split('\n')
-        .map(line => line.trim().replace(/\s+/g, ' '))
-        .join('\n');
-}
-
-/**
  * Get simplified change type comparison
- * @param {string} typeA
- * @param {string} typeB
- * @returns {string}
+ * @param {string} typeA - First type
+ * @param {string} typeB - Second type
+ * @returns {string} Change type
  */
 export const getChangeType = (typeA, typeB) => {
     if (!typeA) return 'add';

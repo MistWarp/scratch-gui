@@ -138,7 +138,9 @@ class ShareWindow extends React.Component {
                             onClick={this.handleAcceptAgreement}
                             disabled={this.state.agreeBusy}
                         >
-                            {this.state.agreeBusy ? 'Accepting…' : `Accept v${this.state.agreement.version} & ${actionLabel.toLowerCase()}`}
+                            {this.state.agreeBusy ?
+                                'Accepting…' :
+                                `Accept v${this.state.agreement.version} & ${actionLabel.toLowerCase()}`}
                         </button>
                     </div>
                 </div>

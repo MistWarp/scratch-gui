@@ -54,6 +54,7 @@ const embedUrl = (project, {unsandboxed = false, applyProjectTheme = true} = {})
     params.set('project_url', project.projectJsonUrl);
     params.set('mw_assets', project.assetsBase);
     params.set('mw_bridge', '1');
+    if (project.id) params.set('platform_project', project.id);
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
     }
@@ -132,7 +133,8 @@ const api = {
         request('/reports', {method: 'POST', body: {type, target, reason, context}}),
     admin: {
         reports: () => request('/admin/reports'),
-        reportAction: (id, action, reason) => request('/admin/reports/action', {method: 'POST', body: {id, action, reason}}),
+        reportAction: (id, action, reason) =>
+            request('/admin/reports/action', {method: 'POST', body: {id, action, reason}}),
         reportEvidence: id => request(`/admin/reports/evidence/${id}`),
         admins: () => request('/admin/admins'),
         addAdmin: username => request('/admin/admins', {method: 'POST', body: {username}}),

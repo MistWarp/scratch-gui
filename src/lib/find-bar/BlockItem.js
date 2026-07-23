@@ -17,8 +17,8 @@ export default class BlockItem {
 
     /**
      * True if the blockID matches a block represented by this BlockItem
-     * @param {string} id
-     * @returns {boolean}
+     * @param {string} id - Block id to match
+     * @returns {boolean} True if the id matches
      */
     matchesID (id) {
         if (this.labelID === id) {

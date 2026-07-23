@@ -26,7 +26,10 @@ const ProjectCard = ({project}) => {
                 />
             </div>
             <div className={styles.body}>
-                <div className={styles.title}>{project.title}</div>
+                <div
+                    className={styles.title}
+                    title={project.title}
+                >{project.title}</div>
                 <div className={styles.owner}>by {project.owner}</div>
                 {project.description ? (
                     <p className={styles.desc}>{project.description}</p>

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
+import Button from '../components/ui/Button.jsx';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import styles from './Notifications.module.css';
@@ -66,6 +67,7 @@ const Notifications = ({hideHeading}) => {
     const {user, loading} = useUser();
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -80,7 +82,7 @@ const Notifications = ({hideHeading}) => {
                     .catch(() => {});
             })
             .catch(() => setFailed(true));
-    }, [user]);
+    }, [user, attempt]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -93,7 +95,10 @@ const Notifications = ({hideHeading}) => {
         <main className={styles.page}>
             {hideHeading ? null : <h1>Notifications</h1>}
             {failed ? (
-                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
+                <p className={styles.status}>
+                    Couldn&apos;t load.{' '}
+                    <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
+                </p>
             ) : items === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : items.length ? (

@@ -71,8 +71,8 @@ const updateRoturSettings = patch => {
 };
 
 /**
- * @param {{collaborating?: boolean}|string|null|undefined} [ctx] Activity context.
- * @returns {string}
+ * @param {object|string} [ctx] - Activity context.
+ * @returns {string} Activity title
  */
 const formatActivityTitle = ctx =>
     ((ctx && typeof ctx === 'object' && ctx.collaborating) ?
@@ -80,8 +80,8 @@ const formatActivityTitle = ctx =>
         `Editing In ${APP_NAME}`);
 
 /**
- * @param {string|{projectTitle?: string, doing?: string}|null|undefined} projectTitleOrCtx
- * @returns {string}
+ * @param {string|object} projectTitleOrCtx - Project title or activity context.
+ * @returns {string} Activity status
  */
 const formatActivityStatus = projectTitleOrCtx => {
     const ctx = typeof projectTitleOrCtx === 'object' && projectTitleOrCtx !== null ?
@@ -93,8 +93,8 @@ const formatActivityStatus = projectTitleOrCtx => {
 };
 
 /**
- * @param {(settings: typeof DEFAULTS) => void} handler
- * @returns {() => void}
+ * @param {Function} handler - Settings change handler
+ * @returns {Function} Unsubscribe function
  */
 const subscribeRoturSettings = handler => {
     listeners.add(handler);

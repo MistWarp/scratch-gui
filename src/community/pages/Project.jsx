@@ -18,6 +18,8 @@ import {
     activityAllowed, rememberActivityDecision, isActivityMethod
 } from '../../lib/rotur/extension-bridge.js';
 import {getRoturSettings, setRoturSetting} from '../../lib/rotur/settings.js';
+import {getUsernameOverride} from '../../lib/rotur/cloud-sync.js';
+import useEscape from '../use-escape.js';
 import rotur from '../rotur';
 import {Theme} from '../../lib/themes';
 import {CustomTheme} from '../../lib/themes/custom-themes.js';
@@ -136,7 +138,7 @@ const analyzeBlocks = data => {
 
 const Project = () => {
     const {id} = useParams();
-    const {user} = useUser();
+    const {user, loading: userLoading} = useUser();
     const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [error, setError] = useState(null);
@@ -167,6 +169,7 @@ const Project = () => {
     const [followsOwner, setFollowsOwner] = useState(false);
     const [roturModal, setRoturModal] = useState(null);
     const themeMode = getProjectThemeMode();
+    useEscape(confirmBuy ? () => setConfirmBuy(false) : null);
 
     const beginLoad = useLatest();
 
@@ -221,9 +224,9 @@ const Project = () => {
     useEffect(() => {
         const hash = window.location.hash;
         if (!hash) return;
-        const id = hash.replace('#', '');
+        const anchorId = hash.replace('#', '');
         const tryScroll = (attempts = 0) => {
-            const el = document.getElementById(id);
+            const el = document.getElementById(anchorId);
             if (el) {
                 el.scrollIntoView({behavior: 'smooth', block: 'center'});
                 return;
@@ -350,23 +353,25 @@ const Project = () => {
         return () => window.removeEventListener('message', onMessage);
     }, [project]);
 
+    const userMessage = useMemo(() => ({
+        type: 'mw:rotur-user',
+        user: {
+            loggedIn: Boolean(user && user.username),
+            username: (user && user.username) || '',
+            id: (user && user.id) || ''
+        },
+        displayName: user && user.username ? getUsernameOverride() || `@${user.username}` : '',
+        projectId: (project && project.id) || id || '',
+        projectName: (project && (project.title || project.name)) || '',
+        projectImage: (project && project.thumbUrl) || ''
+    }), [user, project, id]);
+
     // Rotur bridge for the embedded player. The project iframe cannot hold the
     // token or render trusted UI, so its Rotur blocks post requests up here; this
     // page holds the token (via lib/rotur/client) and renders consent/confirm UI
     // that the sandboxed project cannot read or approve on its own.
     useEffect(() => {
-        const identity = {
-            loggedIn: Boolean(user && user.username),
-            username: (user && user.username) || '',
-            id: (user && user.id) || ''
-        };
-        const userMessage = {
-            type: 'mw:rotur-user',
-            user: identity,
-            projectId: (project && project.id) || id || '',
-            projectName: (project && (project.title || project.name)) || '',
-            projectImage: (project && project.thumbUrl) || ''
-        };
+        const identity = userMessage.user;
         const onMessage = event => {
             const frame = stageFrame.current;
             if (!frame || event.source !== frame.contentWindow) return;
@@ -382,6 +387,10 @@ const Project = () => {
             };
 
             if (data.kind === 'hello') {
+                // While identity is still restoring, stay silent: answering now
+                // would settle the embed's cache as logged-out. The proactive
+                // push below runs once loading finishes and answers instead.
+                if (userLoading) return;
                 try {
                     source.postMessage(userMessage, '*');
                 } catch (e) {
@@ -487,14 +496,14 @@ const Project = () => {
         // fires once.
         try {
             const frame = stageFrame.current;
-            if (frame && frame.contentWindow) {
+            if (!userLoading && frame && frame.contentWindow) {
                 frame.contentWindow.postMessage(userMessage, '*');
             }
         } catch (e) {
             // ignore
         }
         return () => window.removeEventListener('message', onMessage);
-    }, [user, project, id]);
+    }, [user, userLoading, project, id, userMessage]);
 
     const sendThemeToStage = useCallback(() => {
         try {
@@ -505,10 +514,13 @@ const Project = () => {
                 theme: localStorage.getItem('tw:theme'),
                 customThemes: localStorage.getItem('tw:custom-themes')
             }, '*');
+            if (!userLoading) {
+                frame.contentWindow.postMessage(userMessage, '*');
+            }
         } catch (e) {
             // ignore
         }
-    }, []);
+    }, [userLoading, userMessage]);
 
     const handleTitleKeyDown = event => {
         if (event.key === 'Enter') {
@@ -1291,12 +1303,21 @@ const RemixTree = ({id}) => {
         setTree(null);
         api.remixTree(id).then(setTree).catch(() => setTree({nodes: []}));
     }, [id]);
+    const childMap = useMemo(() => {
+        const map = new Map();
+        for (const node of (tree && tree.nodes) || []) {
+            if (!map.has(node.remixParent)) map.set(node.remixParent, []);
+            map.get(node.remixParent).push(node);
+        }
+        for (const list of map.values()) {
+            list.sort((a, b) => (a.sharedAt || a.created || 0) - (b.sharedAt || b.created || 0));
+        }
+        return map;
+    }, [tree]);
     if (!tree) return <p className={styles.status}>Loading…</p>;
     const nodes = tree.nodes || [];
     if (nodes.length < 2) return <p className={styles.sideEmpty}>No remixes yet.</p>;
-    const childrenOf = parentId => nodes
-        .filter(node => node.remixParent === parentId)
-        .sort((a, b) => (a.sharedAt || a.created || 0) - (b.sharedAt || b.created || 0));
+    const childrenOf = parentId => childMap.get(parentId) || [];
     const root = nodes.find(node => node.id === tree.root);
     if (!root) return <p className={styles.sideEmpty}>No remixes yet.</p>;
     return (
@@ -1334,6 +1355,8 @@ const PullList = ({id, canMerge, onChange}) => {
     const [pulls, setPulls] = useState(null);
     const [openPull, setOpenPull] = useState(null);
     const [diff, setDiff] = useState(null);
+    const [merging, setMerging] = useState(false);
+    const [mergeError, setMergeError] = useState(null);
 
     const reload = useCallback(() => {
         api.pulls(id).then(d => setPulls(d.pulls || [])).catch(() => setPulls([]));
@@ -1344,6 +1367,7 @@ const PullList = ({id, canMerge, onChange}) => {
     const view = async pull => {
         setOpenPull(pull);
         setDiff(null);
+        setMergeError(null);
         try {
             setDiff(await api.pullDiff(id, pull.index));
         } catch (e) {
@@ -1352,16 +1376,20 @@ const PullList = ({id, canMerge, onChange}) => {
     };
 
     const merge = async pull => {
+        if (merging) return;
+        setMerging(true);
+        setMergeError(null);
         try {
             await api.mergePull(id, pull.index);
             setOpenPull(null);
             reload();
             onChange();
         } catch (e) {
-            // eslint-disable-next-line no-alert
-            alert(e.code === 'conflict' ?
+            setMergeError(e.code === 'conflict' ?
                 'This pull request has conflicts. Open it in the editor and pull to resolve.' :
                 'Merge failed.');
+        } finally {
+            setMerging(false);
         }
     };
 
@@ -1380,11 +1408,13 @@ const PullList = ({id, canMerge, onChange}) => {
                 <p className={styles.muted}>
                     #{openPull.index} by {openPull.user} into {openPull.baseBranch}
                 </p>
+                {mergeError ? <div className={styles.actionError}>{mergeError}</div> : null}
                 {canMerge && openPull.state === 'open' ? (
                     <button
                         className={styles.primary}
                         onClick={() => merge(openPull)}
-                    >Merge</button>
+                        disabled={merging}
+                    >{merging ? 'Merging…' : 'Merge'}</button>
                 ) : null}
                 <DiffView diff={diff} />
             </div>

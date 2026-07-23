@@ -32,6 +32,10 @@ class NotificationManager {
 
         if (this.notifications.length > this.maxNotifications) {
             const oldest = this.notifications.shift();
+            if (this.dismissTimeouts.has(oldest.id)) {
+                clearTimeout(this.dismissTimeouts.get(oldest.id));
+                this.dismissTimeouts.delete(oldest.id);
+            }
         }
 
         this.notifyListeners();

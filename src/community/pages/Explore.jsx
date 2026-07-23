@@ -4,6 +4,7 @@ import api from '../api';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Avatar from '../components/Avatar.jsx';
+import Button from '../components/ui/Button.jsx';
 import styles from './Explore.module.css';
 
 const SORTS = [
@@ -20,6 +21,7 @@ const Explore = () => {
     const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
 
     const beginLoad = useLatest();
 
@@ -38,7 +40,7 @@ const Explore = () => {
         } else {
             setPeople([]);
         }
-    }, [sort, q, beginLoad]);
+    }, [sort, q, beginLoad, attempt]);
 
     const setSort = key => {
         const next = new URLSearchParams(params);
@@ -87,7 +89,10 @@ const Explore = () => {
             {loading ? (
                 <p className={styles.status}>Loading…</p>
             ) : failed ? (
-                <p className={styles.status}>Couldn&apos;t load. Try again.</p>
+                <p className={styles.status}>
+                    Couldn&apos;t load.{' '}
+                    <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
+                </p>
             ) : projects.length ? (
                 <div className={styles.grid}>
                     {projects.map(project => (

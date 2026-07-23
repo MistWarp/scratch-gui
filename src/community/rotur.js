@@ -30,6 +30,27 @@ const get = async (path, params = {}) => {
     return data;
 };
 
+const CACHE_TTL = 30000;
+const cache = new Map();
+
+const cachedGet = (path, params = {}) => {
+    const key = `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
+    const hit = cache.get(key);
+    if (hit) {
+        if (hit.promise) return hit.promise;
+        if (Date.now() - hit.time < CACHE_TTL) return Promise.resolve(hit.data);
+    }
+    const promise = get(path, params).then(data => {
+        cache.set(key, {time: Date.now(), data});
+        return data;
+    }, err => {
+        cache.delete(key);
+        throw err;
+    });
+    cache.set(key, {promise});
+    return promise;
+};
+
 const avatar = (username, size = 128, radius = 0) => {
     const params = new URLSearchParams({s: String(size)});
     if (radius) params.set('radius', String(radius));
@@ -38,14 +59,14 @@ const avatar = (username, size = 128, radius = 0) => {
 
 const banner = username => `${AVATARS}/.banners/${encodeURIComponent((username || '').toLowerCase())}`;
 
-const getStatus = username => get('/status/get', {name: username});
+const getStatus = username => cachedGet('/status/get', {name: username});
 
 const followerLeaderboard = async (max = 15) => {
-    const users = await get('/stats/followers', {max});
+    const users = await cachedGet('/stats/followers', {max});
     return Promise.all(users.map(async user => {
         try {
             const [profile, status] = await Promise.all([
-                get(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'}),
+                cachedGet(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'}),
                 getStatus(user.username).catch(() => null)
             ]);
             return {...user, index: profile.index, status};
@@ -59,11 +80,17 @@ const rotur = {
     avatar,
     banner,
     profile: (username, {includePosts = false} = {}) =>
-        get(`/profile/${encodeURIComponent(username)}`, {include_posts: includePosts ? '1' : '0'}),
-    follow: username => get('/follow', {username}),
-    unfollow: username => get('/unfollow', {username}),
-    followers: username => get('/followers', {name: username}),
-    following: username => get('/following', {name: username}),
+        cachedGet(`/profile/${encodeURIComponent(username)}`, {include_posts: includePosts ? '1' : '0'}),
+    follow: username => get('/follow', {username}).then(data => {
+        cache.clear();
+        return data;
+    }),
+    unfollow: username => get('/unfollow', {username}).then(data => {
+        cache.clear();
+        return data;
+    }),
+    followers: username => cachedGet('/followers', {name: username}),
+    following: username => cachedGet('/following', {name: username}),
     status: getStatus,
     followerLeaderboard
 };

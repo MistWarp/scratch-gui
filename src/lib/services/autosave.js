@@ -17,6 +17,7 @@ class AutosaveService {
         this.lastSaveTime = 0;
         this.initialized = false;
         this.addonSettingsListener = null;
+        this.unsubscribeStore = null;
     }
 
     /**
@@ -41,10 +42,15 @@ class AutosaveService {
         this.loadSettings();
         
         // Listen for Redux settings changes
-        store.subscribe(() => {
+        this.unsubscribeStore = store.subscribe(() => {
             const state = store.getState();
             const autosaveState = state.scratchGui.autosave;
-            
+
+            const changed = autosaveState.enabled !== this.enabled ||
+                autosaveState.interval !== this.interval ||
+                autosaveState.showNotifications !== this.showNotifications;
+            if (!changed) return;
+
             // Only apply Redux settings if autosave addon is not enabled
             if (!SettingsStore.getAddonEnabled('autosave')) {
                 if (autosaveState.enabled !== this.enabled) {
@@ -111,11 +117,15 @@ class AutosaveService {
      * @param {boolean} enabled - Whether autosave should be enabled
      */
     setEnabled (enabled) {
+        const wasEnabled = this.enabled;
         this.enabled = enabled;
         this.saveSettings();
-        
+
         if (enabled) {
             this.start();
+            if (!wasEnabled && this.showNotifications) {
+                this.showNotification(`Autosave enabled - saving every ${this.interval} minutes`);
+            }
         } else {
             this.stop();
         }
@@ -140,18 +150,21 @@ class AutosaveService {
     updateFromAddonSettings () {
         if (SettingsStore.getAddonEnabled('autosave')) {
             const wasEnabled = this.enabled;
+            const previousInterval = this.interval;
             this.enabled = SettingsStore.getAddonSetting('autosave', 'autosaveEnabled');
             this.interval = SettingsStore.getAddonSetting('autosave', 'interval');
             this.showNotifications = SettingsStore.getAddonSetting('autosave', 'showNotifications');
             this.onlyWhenChanged = SettingsStore.getAddonSetting('autosave', 'saveOnlyWhenChanged');
-            
+
             // Start/stop autosave based on enabled state
             if (this.enabled && !wasEnabled) {
                 this.start();
+                if (this.showNotifications) {
+                    this.showNotification(`Autosave enabled - saving every ${this.interval} minutes`);
+                }
             } else if (!this.enabled && wasEnabled) {
                 this.stop();
-            } else if (this.enabled) {
-                // Restart with new interval if needed
+            } else if (this.enabled && this.interval !== previousInterval) {
                 this.start();
             }
         }
@@ -165,6 +178,10 @@ class AutosaveService {
         if (this.addonSettingsListener) {
             SettingsStore.removeEventListener('setting-changed', this.addonSettingsListener);
             this.addonSettingsListener = null;
+        }
+        if (this.unsubscribeStore) {
+            this.unsubscribeStore();
+            this.unsubscribeStore = null;
         }
         this.initialized = false;
     }
@@ -185,10 +202,6 @@ class AutosaveService {
         }, intervalMs);
         
         console.log(`Autosave started with ${this.interval} minute interval`);
-        
-        if (this.showNotifications) {
-            this.showNotification(`Autosave enabled - saving every ${this.interval} minutes`);
-        }
     }
 
     /**

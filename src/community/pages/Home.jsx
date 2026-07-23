@@ -6,6 +6,7 @@ import rotur from '../rotur';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import Avatar from '../components/Avatar.jsx';
+import Button from '../components/ui/Button.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import NewsItem from '../components/NewsItem.jsx';
 import logo from '../assets/mistwarp-logo.png';
@@ -28,9 +29,39 @@ const describeActivity = item => {
     }
 };
 
-const Row = ({title, icon, action, projects, loading}) => {
+const Row = ({title, icon, action, projects, loading, failed, onRetry}) => {
+    let body;
     if (loading) {
-        return null;
+        body = (
+            <div className={styles.grid}>
+                {[0, 1, 2, 3].map(i => (
+                    <div
+                        key={i}
+                        className={styles.skeleton}
+                    />
+                ))}
+            </div>
+        );
+    } else if (failed) {
+        body = (
+            <div className={styles.empty}>
+                Couldn&apos;t load projects.{' '}
+                <Button onClick={onRetry}>Try again</Button>
+            </div>
+        );
+    } else if (projects.length) {
+        body = (
+            <div className={styles.grid}>
+                {projects.map(project => (
+                    <ProjectCard
+                        key={project.id}
+                        project={project}
+                    />
+                ))}
+            </div>
+        );
+    } else {
+        body = <div className={styles.empty}>Nothing here yet. Be the first to share a project.</div>;
     }
     return (
         <section className={styles.row}>
@@ -38,18 +69,7 @@ const Row = ({title, icon, action, projects, loading}) => {
                 <h2>{icon}{title}</h2>
                 {action}
             </div>
-            {projects.length ? (
-                <div className={styles.grid}>
-                    {projects.map(project => (
-                        <ProjectCard
-                            key={project.id}
-                            project={project}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className={styles.empty}>Nothing here yet. Be the first to share a project.</div>
-            )}
+            {body}
         </section>
     );
 };
@@ -58,6 +78,7 @@ const ActivitySection = ({user, login}) => {
     const [items, setItems] = useState([]);
     const [loaded, setLoaded] = useState(false);
     const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -88,8 +109,10 @@ const ActivitySection = ({user, login}) => {
             .finally(() => {
                 if (!cancelled) setLoaded(true);
             });
-        return () => { cancelled = true; };
-    }, [user]);
+        return () => {
+            cancelled = true;
+        };
+    }, [user, attempt]);
 
     let body;
     if (!user) {
@@ -105,7 +128,12 @@ const ActivitySection = ({user, login}) => {
     } else if (!loaded) {
         body = <div className={styles.feedMessage}>Loading…</div>;
     } else if (failed) {
-        body = <div className={styles.feedMessage}>Couldn&apos;t load. Try again.</div>;
+        body = (
+            <div className={styles.feedMessage}>
+                Couldn&apos;t load.{' '}
+                <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
+            </div>
+        );
     } else if (!items.length) {
         body = <div className={styles.feedMessage}>No recent activity from people you follow yet.</div>;
     } else {
@@ -180,7 +208,9 @@ const NewsSection = () => {
             .catch(() => {
                 if (!cancelled) setFailed(true);
             });
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     if (failed) {
@@ -199,7 +229,23 @@ const NewsSection = () => {
             </section>
         );
     }
-    if (!items || !items.length) {
+    if (!items) {
+        return (
+            <section className={styles.feedBox}>
+                <div className={styles.rowHead}>
+                    <h2>
+                        <Megaphone
+                            size={19}
+                            className={styles.rowIcon}
+                        />
+                        News
+                    </h2>
+                </div>
+                <div className={styles.feedMessage}>Loading…</div>
+            </section>
+        );
+    }
+    if (!items.length) {
         return null;
     }
 
@@ -236,20 +282,29 @@ const Home = () => {
     const [recent, setRecent] = useState([]);
     const [trending, setTrending] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState({trending: false, recent: false});
+    const [attempt, setAttempt] = useState(0);
+    const retry = () => setAttempt(a => a + 1);
 
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
+        setFailed({trending: false, recent: false});
         Promise.all([
-            api.explore({sort: 'trending', limit: 8}).catch(() => ({projects: []})),
-            api.explore({sort: 'recent', limit: 8}).catch(() => ({projects: []}))
+            api.explore({sort: 'trending', limit: 8}).catch(() => null),
+            api.explore({sort: 'recent', limit: 8}).catch(() => null)
         ]).then(([t, r]) => {
             if (cancelled) return;
-            setTrending(t.projects || []);
-            setRecent(r.projects || []);
-            setLoading(false);
+            if (t) setTrending(t.projects || []);
+            if (r) setRecent(r.projects || []);
+            setFailed({trending: !t, recent: !r});
+        }).finally(() => {
+            if (!cancelled) setLoading(false);
         });
-        return () => { cancelled = true; };
-    }, []);
+        return () => {
+            cancelled = true;
+        };
+    }, [attempt]);
 
     return (
         <main className={styles.page}>
@@ -312,6 +367,8 @@ const Home = () => {
                 />}
                 projects={trending}
                 loading={loading}
+                failed={failed.trending}
+                onRetry={retry}
                 action={<Link
                     to="/explore?sort=trending"
                     className={styles.seeAll}
@@ -325,6 +382,8 @@ const Home = () => {
                 />}
                 projects={recent}
                 loading={loading}
+                failed={failed.recent}
+                onRetry={retry}
                 action={<Link
                     to="/explore?sort=recent"
                     className={styles.seeAll}
