@@ -47,6 +47,7 @@ import {
     formatActivityTitle,
     formatActivityStatus
 } from '../../lib/rotur/settings.js';
+import {readActivityGrants, writeActivityGrants} from '../../lib/rotur/extension-bridge.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -119,6 +120,18 @@ const messages = defineMessages({
     headerRotur: {
         defaultMessage: 'Rotur',
         id: 'mw.settings.roturHeader'
+    },
+    activitySharingAsk: {
+        defaultMessage: 'Ask each project',
+        id: 'mw.settings.rotur.activitySharing.ask'
+    },
+    activitySharingAll: {
+        defaultMessage: 'Always allow',
+        id: 'mw.settings.rotur.activitySharing.all'
+    },
+    activitySharingOff: {
+        defaultMessage: 'Never',
+        id: 'mw.settings.rotur.activitySharing.off'
     }
 });
 
@@ -1346,9 +1359,11 @@ class UnwrappedRoturPage extends React.Component {
         super(props);
         bindAll(this, [
             'handlePresenceChange',
-            'handleIncludeDurationChange'
+            'handleIncludeDurationChange',
+            'handleActivitySharingChange',
+            'handleResetActivityGrants'
         ]);
-        this.state = getRoturSettings();
+        this.state = {...getRoturSettings(), activityGrantCount: Object.keys(readActivityGrants()).length};
     }
     setSetting (key, value) {
         setRoturSetting(key, value);
@@ -1360,9 +1375,16 @@ class UnwrappedRoturPage extends React.Component {
     handleIncludeDurationChange (e) {
         this.setSetting('includeEditDuration', e.target.checked);
     }
+    handleActivitySharingChange (e) {
+        this.setSetting('activitySharing', e.target.value);
+    }
+    handleResetActivityGrants () {
+        writeActivityGrants({});
+        this.setState({activityGrantCount: 0});
+    }
     render () {
         const {intl, loggedIn, username, projectTitle} = this.props;
-        const {presenceEnabled, includeEditDuration} = this.state;
+        const {presenceEnabled, includeEditDuration, activitySharing, activityGrantCount} = this.state;
 
         return (
             <Box className={styles.body}>
@@ -1406,6 +1428,42 @@ class UnwrappedRoturPage extends React.Component {
                         id="mw.settings.rotur.includeEditDurationHelp"
                     />}
                 />
+
+                <div className={styles.setting}>
+                    <div className={styles.textSettingLabel}>
+                        <FormattedMessage
+                            defaultMessage="Let projects show activity on your profile"
+                            id="mw.settings.rotur.activitySharing"
+                        />
+                    </div>
+                    <select
+                        value={activitySharing}
+                        onChange={this.handleActivitySharingChange}
+                    >
+                        <option value="ask">{intl.formatMessage(messages.activitySharingAsk)}</option>
+                        <option value="all">{intl.formatMessage(messages.activitySharingAll)}</option>
+                        <option value="off">{intl.formatMessage(messages.activitySharingOff)}</option>
+                    </select>
+                    <p className={styles.detail}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Projects can show what you're playing on your profile. Be asked per project, always allow, or never."
+                            id="mw.settings.rotur.activitySharingHelp"
+                        />
+                    </p>
+                    {activityGrantCount > 0 ? (
+                        <button
+                            className={styles.button}
+                            onClick={this.handleResetActivityGrants}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Reset per-project choices ({count})"
+                                id="mw.settings.rotur.resetActivityGrants"
+                                values={{count: activityGrantCount}}
+                            />
+                        </button>
+                    ) : null}
+                </div>
 
                 <p className={styles.detail}>
                     <FormattedMessage

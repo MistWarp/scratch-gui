@@ -37,9 +37,17 @@ const TitledHOC = function (WrappedComponent) {
             }
             // if project is a new default project, and has loaded,
             if (this.props.isShowingWithoutId && prevProps.isAnyCreatingNewState) {
-                // reset title to default
-                const defaultProjectTitle = this.handleReceivedProjectTitle();
-                this.props.onUpdateProjectTitle(defaultProjectTitle, true);
+                const defaultProjectTitle = this.props.intl.formatMessage(messages.defaultProjectTitle);
+                // #mw- platform loads still go through the default-project id path
+                // (hash parser only understands numeric scratch ids), but the fetcher
+                // already set the real title from the API. Don't clobber that.
+                if (this.props.reduxProjectTitle &&
+                    this.props.reduxProjectTitle !== defaultProjectTitle) {
+                    this.props.onUpdateProjectTitle(this.props.reduxProjectTitle, false);
+                } else {
+                    const title = this.handleReceivedProjectTitle();
+                    this.props.onUpdateProjectTitle(title, true);
+                }
             }
             // if the projectTitle hasn't changed, but the reduxProjectTitle
             // HAS changed, we need to report that change to the projectTitle's owner

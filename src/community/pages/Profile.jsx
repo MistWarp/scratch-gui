@@ -125,12 +125,16 @@ const Profile = () => {
         setFollowBusy(true);
         setActionError(null);
         try {
+            const me = user.username;
             if (profile.followed) {
                 await rotur.unfollow(name);
+                setProfile(p => ({...p, followed: false, followers: Math.max(0, (p.followers || 1) - 1)}));
+                setFollowers(fs => fs.filter(f => f.toLowerCase() !== me.toLowerCase()));
             } else {
                 await rotur.follow(name);
+                setProfile(p => ({...p, followed: true, followers: (p.followers || 0) + 1}));
+                setFollowers(fs => [me, ...fs.filter(f => f.toLowerCase() !== me.toLowerCase())]);
             }
-            load();
         } catch (e) {
             setActionError(e.message || 'Could not update follow.');
         } finally {

@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {Trash2, Reply, Flag} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
@@ -182,17 +182,29 @@ const CommentThread = ({source, canModerate, disabled, disabledReason, reportCon
         if (!window.confirm('Delete this comment?')) return;
         try {
             await source.remove(commentId);
-            load();
+            setComments(cs => cs.filter(c => c.id !== commentId && c.parent !== commentId));
         } catch (e) {
             setError(e.message || 'Could not delete comment.');
         }
     };
 
+    const toggleReaction = (reactions, type, username) => {
+        const had = (reactions[type] || []).some(name => sameUser(name, username));
+        const next = {};
+        for (const key of Object.keys(reactions)) {
+            next[key] = (reactions[key] || []).filter(name => !sameUser(name, username));
+        }
+        if (!had) next[type] = [...(next[type] || []), username];
+        return next;
+    };
+
     const react = async (commentId, type) => {
-        if (!source.react) return;
+        if (!source.react || !user) return;
         try {
             await source.react(commentId, type);
-            load();
+            setComments(cs => cs.map(c => (c.id === commentId ?
+                {...c, reactions: toggleReaction(c.reactions || {}, type, user.username)} :
+                c)));
         } catch (e) {
             setError(e.message || 'Could not react.');
         }
@@ -209,10 +221,19 @@ const CommentThread = ({source, canModerate, disabled, disabledReason, reportCon
     const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
     const canReply = Boolean(user) && !disabled;
 
-    const roots = comments.filter(c => !c.parent);
-    const repliesOf = parentId => comments
-        .filter(c => c.parent === parentId)
-        .sort((a, b) => (a.created || 0) - (b.created || 0));
+    const {roots, replyMap} = useMemo(() => {
+        const map = new Map();
+        for (const c of comments) {
+            if (!c.parent) continue;
+            if (!map.has(c.parent)) map.set(c.parent, []);
+            map.get(c.parent).push(c);
+        }
+        for (const list of map.values()) {
+            list.sort((a, b) => (a.created || 0) - (b.created || 0));
+        }
+        return {roots: comments.filter(c => !c.parent), replyMap: map};
+    }, [comments]);
+    const repliesOf = parentId => replyMap.get(parentId) || [];
 
     return (
         <div className={styles.thread}>

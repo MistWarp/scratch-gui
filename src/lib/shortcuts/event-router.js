@@ -320,6 +320,11 @@ const executeCallbackAction = shortcut => {
 
     try {
         switch (shortcut.action) {
+        case 'saveSmart':
+            if (callbacks.saveSmart) {
+                callbacks.saveSmart();
+            }
+            break;
         case 'loadFromComputer':
             if (callbacks.loadFromComputer) {
                 callbacks.loadFromComputer();

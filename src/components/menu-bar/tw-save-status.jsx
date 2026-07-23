@@ -5,7 +5,7 @@ import InlineMessages from '../../containers/inline-messages.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
-import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import smartSave from '../../lib/mw/smart-save.js';
 import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
 
 import {Save} from 'lucide-react';
@@ -26,13 +26,11 @@ const TWSaveStatus = ({
     const mistwarpAction = roturReady ?
         getMistWarpAction(platformState, projectChanged) :
         null;
-    const openSaveWindow = useCallback(() => openMistWarpShareWindow({
+    const onSaveClick = useCallback(() => smartSave({
         vm,
-        initialTitle: projectTitle,
-        action: mistwarpAction,
-        onPublished: onProjectUnchanged
-    }), [vm, projectTitle, mistwarpAction, onProjectUnchanged]);
-    const onSaveClick = openSaveWindow;
+        title: projectTitle,
+        onSaved: onProjectUnchanged
+    }), [vm, projectTitle, onProjectUnchanged]);
     if (filterInlineAlerts(alertsList).length > 0) {
         return <InlineMessages />;
     }
@@ -43,9 +41,9 @@ const TWSaveStatus = ({
         <SB3Downloader
             showSaveFilePicker={showSaveFilePicker}
         >
-            {(_className, _downloadProjectCallback, {smartSave}) => (
+            {(_className, _downloadProjectCallback, {smartSave: saveToDisk}) => (
                 <div
-                    onClick={smartSave}
+                    onClick={saveToDisk}
                     className={styles.saveNow}
                     title={fileHandle ?
                         `Save as ${fileHandle.name}` :

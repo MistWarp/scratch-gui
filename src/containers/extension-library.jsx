@@ -13,7 +13,7 @@ import extensionLibraryContent, {
 import extensionTags from '../lib/libraries/tw-extension-tags';
 import {getVanillaPalette} from '../lib/mw-vanilla-palette';
 
-import LibraryComponent from '../components/library/library.jsx';
+import LibraryComponent from '../components/tw-extension-library/extension-library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
 
 const messages = defineMessages({

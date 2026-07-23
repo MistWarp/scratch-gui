@@ -8,6 +8,7 @@ import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
+import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import styles from './ManageProject.module.css';
@@ -140,15 +141,11 @@ const ManageProject = () => {
                     {activeSection === 'overview' ? (
                         <div className={styles.stack}>
                             <div className={styles.hero}>
-                                {project.thumbUrl ? (
-                                    <img
-                                        className={styles.heroThumb}
-                                        src={project.thumbUrl}
-                                        alt=""
-                                    />
-                                ) : (
-                                    <span className={styles.heroThumbFallback}>{(project.title || '?')[0]}</span>
-                                )}
+                                <ProjectThumbnail
+                                    project={project}
+                                    className={styles.heroThumb}
+                                    fallbackClassName={styles.heroThumbFallback}
+                                />
                                 <div className={styles.heroText}>
                                     <h1 className={styles.title}>{project.title}</h1>
                                     <p className={styles.heroSub}>See how your project is doing.</p>

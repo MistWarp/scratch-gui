@@ -11,6 +11,7 @@ overrides:
   scratch-render: link:../scratch-render
   scratch-vm: link:../scratch-vm
   scratch-paint: link:../scratch-paint
+  rotur-sdk: link:../../rotur-sdk
 
 patchedDependencies:
   '@turbowarp/scratch-svg-renderer':
@@ -214,8 +215,8 @@ importers:
         specifier: 0.1.1
         version: 0.1.1
       rotur-sdk:
-        specifier: ^1.3.4
-        version: 1.3.4
+        specifier: link:../../rotur-sdk
+        version: link:../../rotur-sdk
       scratch-audio:
         specifier: github:TurboWarp/scratch-audio#develop
         version: https://codeload.github.com/TurboWarp/scratch-audio/tar.gz/aba00cd02e36d95407effafa03f3678e4c669b30
@@ -5481,14 +5482,6 @@ packages:
   ripemd160@2.0.3:
     resolution: {integrity: sha512-5Di9UC0+8h1L6ZD2d7awM7E/T4uA1fJRlx6zk/NvdCCVEoAnFqvHmCuNeIKoCeIixBX/q8uM+6ycDvF8woqosA==}
     engines: {node: '>= 0.8'}
-
-  rotur-sdk@1.3.4:
-    resolution: {integrity: sha512-UFy5NJ1jVJY6Z3r2uXYQ7UKBHmhCJUUIBNSyFK6Alu9c/MoETVFhgR0yU50EvFj2IsERpy2cNqNjN3FYhInNzQ==}
-    peerDependencies:
-      ts-morph: ^28.0.0
-    peerDependenciesMeta:
-      ts-morph:
-        optional: true
 
   rst-selector-parser@2.2.3:
     resolution: {integrity: sha512-nDG1rZeP6oFTLN6yNDV/uiAvs1+FS/KlrEwh7+y7dpuApDBy6bI2HTBcc0/V8lv9OTqfyD34eF7au2pm8aBbhA==}
@@ -12966,8 +12959,6 @@ snapshots:
     dependencies:
       hash-base: 3.1.2
       inherits: 2.0.4
-
-  rotur-sdk@1.3.4: {}
 
   rst-selector-parser@2.2.3:
     dependencies:

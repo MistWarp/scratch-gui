@@ -2,7 +2,6 @@
 import _cat_blocks from "../addons/cat-blocks/_manifest_entry.js";
 import _dev_inspector from "../addons/dev-inspector/_manifest_entry.js";
 import _editor_devtools from "../addons/editor-devtools/_manifest_entry.js";
-import _middle_click_popup from "../addons/middle-click-popup/_manifest_entry.js";
 import _jump_to_def from "../addons/jump-to-def/_manifest_entry.js";
 import _reorder_custom_inputs from "../addons/reorder-custom-inputs/_manifest_entry.js";
 import _editor_searchable_dropdowns from "../addons/editor-searchable-dropdowns/_manifest_entry.js";
@@ -86,7 +85,6 @@ export default {
   "cat-blocks": _cat_blocks,
   "dev-inspector": _dev_inspector,
   "editor-devtools": _editor_devtools,
-  "middle-click-popup": _middle_click_popup,
   "jump-to-def": _jump_to_def,
   "reorder-custom-inputs": _reorder_custom_inputs,
   "editor-searchable-dropdowns": _editor_searchable_dropdowns,

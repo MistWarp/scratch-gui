@@ -82,6 +82,8 @@ const QuotaTile = ({quota}) => {
     );
 };
 
+const num = v => Number(v || 0).toLocaleString();
+
 const StatsOverview = () => {
     const [stats, setStats] = useState(null);
     const [quota, setQuota] = useState(null);
@@ -152,19 +154,19 @@ const StatsOverview = () => {
             <div className={styles.statGrid}>
                 <StatTile
                     label="Projects"
-                    value={stats.totalProjects.toLocaleString()}
+                    value={num(stats.totalProjects)}
                 />
                 <StatTile
                     label="Shared"
-                    value={stats.sharedProjects.toLocaleString()}
+                    value={num(stats.sharedProjects)}
                 />
                 <StatTile
                     label="Unshared"
-                    value={stats.unsharedProjects.toLocaleString()}
+                    value={num(stats.unsharedProjects)}
                 />
                 <StatTile
                     label="Users"
-                    value={stats.totalUsers.toLocaleString()}
+                    value={num(stats.totalUsers)}
                 />
                 <StatTile
                     label="Storage used"
@@ -172,27 +174,27 @@ const StatsOverview = () => {
                 />
                 <StatTile
                     label="Total views"
-                    value={stats.totalViews.toLocaleString()}
+                    value={num(stats.totalViews)}
                 />
                 <StatTile
                     label="Total loves"
-                    value={stats.totalLoves.toLocaleString()}
+                    value={num(stats.totalLoves)}
                 />
                 <StatTile
                     label="Active sessions"
-                    value={stats.activeSessions.toLocaleString()}
+                    value={num(stats.activeSessions)}
                 />
                 <StatTile
                     label="Open reports"
-                    value={stats.openReports.toLocaleString()}
+                    value={num(stats.openReports)}
                 />
                 <StatTile
                     label="Banned users"
-                    value={stats.bannedUsers.toLocaleString()}
+                    value={num(stats.bannedUsers)}
                 />
                 <StatTile
                     label="News posts"
-                    value={stats.newsPosts.toLocaleString()}
+                    value={num(stats.newsPosts)}
                 />
                 {quota ? <QuotaTile quota={quota} /> : null}
             </div>

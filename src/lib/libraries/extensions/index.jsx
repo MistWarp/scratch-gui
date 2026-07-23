@@ -50,6 +50,14 @@ import gdxforConnectionIconURL from './gdxfor/gdxfor-illustration.svg';
 import gdxforConnectionSmallIconURL from './gdxfor/gdxfor-small.svg';
 
 import twIcon from './tw/tw.svg';
+import roturAccountIcon from './rotur/account.png';
+import roturEconomyIcon from './rotur/economy.png';
+import roturKeysIcon from './rotur/keys.png';
+import roturStatusIcon from './rotur/status.png';
+import roturSocialIcon from './rotur/social.png';
+import roturShopIcon from './rotur/shop.png';
+import roturGroupsIcon from './rotur/groups.png';
+import roturFilesIcon from './rotur/files.png';
 import customExtensionIcon from './custom/custom.svg';
 import galleryIcon from './gallery/gallery.svg';
 import {APP_NAME} from '../../constants/brand';
@@ -86,6 +94,78 @@ export default [
         description: 'Inject JavaScript into compiled projects.',
         incompatibleWithScratch: true,
         tags: ['tw'],
+        featured: true
+    },
+    {
+        name: 'Rotur Account',
+        extensionId: 'rotur',
+        iconURL: roturAccountIcon,
+        description: 'Log in with Rotur and read who the player is.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Economy',
+        extensionId: 'roturEconomy',
+        iconURL: roturEconomyIcon,
+        description: 'Credits, transfers, and daily rewards.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Keys',
+        extensionId: 'roturKeys',
+        iconURL: roturKeysIcon,
+        description: 'Buy, sell, and check Rotur keys.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Status',
+        extensionId: 'roturStatus',
+        iconURL: roturStatusIcon,
+        description: 'Read and set Rotur status and presence.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Social',
+        extensionId: 'roturSocial',
+        iconURL: roturSocialIcon,
+        description: 'Posts, follows, and friends on Rotur.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Shop',
+        extensionId: 'roturShop',
+        iconURL: roturShopIcon,
+        description: 'Items and cosmetics marketplace.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Groups',
+        extensionId: 'roturGroups',
+        iconURL: roturGroupsIcon,
+        description: 'Communities, roles, and group economy.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
+        featured: true
+    },
+    {
+        name: 'Rotur Files',
+        extensionId: 'roturFiles',
+        iconURL: roturFilesIcon,
+        description: 'Read and manage your Rotur file storage.',
+        incompatibleWithScratch: true,
+        tags: ['rotur', 'mistium'],
         featured: true
     },
     {

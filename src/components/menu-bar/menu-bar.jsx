@@ -69,6 +69,7 @@ import {
     openProjectMetadataModal,
     openGitModal,
     openExtensionManagerModal,
+    openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
 import {showOnboarding} from '../../reducers/onboarding';
@@ -166,7 +167,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Send,
     Download, AppWindow, Computer, Shield, Code, Code2, MessageCircle, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Check
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Check, HelpCircle
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1950,6 +1951,19 @@ class MenuBar extends React.Component {
                                             id="tw.menuBar.showTutorial"
                                         />
                                     </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickHelp();
+                                            this.props.onRequestCloseEdit();
+                                        }}
+                                    >
+                                        <HelpCircle />
+                                        <FormattedMessage
+                                            defaultMessage="Help"
+                                            description="Menu bar item that opens the help window"
+                                            id="mw.menuBar.help"
+                                        />
+                                    </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItemLink href="https://originchats.mistium.com?server=chats.mistium.com">
@@ -2449,6 +2463,7 @@ MenuBar.propTypes = {
     onClickPreferencesModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
+    onClickHelp: PropTypes.func,
 
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
@@ -2584,6 +2599,7 @@ const mapDispatchToProps = dispatch => ({
         localStorage.removeItem('mw:has-seen-onboarding');
         dispatch(showOnboarding());
     },
+    onClickHelp: () => dispatch(openHelp()),
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onClickNew: needSave => {
         dispatch(setPlayer(false));

@@ -1,3 +1,5 @@
+import {clearContentCache} from './cached-fetch.js';
+
 const API_BASE = 'https://mwapi.mistium.com/api';
 
 const SESSION_KEY = 'mw:mistwarp-session';
@@ -30,6 +32,47 @@ const storeSession = token => {
         }
     } catch (e) {
         // ignore
+    }
+};
+
+const GET_CACHE_PREFIX = 'mw:api-cache:';
+const GET_CACHE_TTL = 60 * 1000;
+
+const getCacheKey = path => {
+    const session = loadSession();
+    return `${GET_CACHE_PREFIX}${session ? session.slice(-8) : 'anon'}:${path}`;
+};
+
+const clearApiCache = () => {
+    try {
+        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+            const key = sessionStorage.key(i);
+            if (key && key.startsWith(GET_CACHE_PREFIX)) {
+                sessionStorage.removeItem(key);
+            }
+        }
+    } catch (e) {
+        // ignore
+    }
+};
+
+const readApiCache = path => {
+    try {
+        const raw = sessionStorage.getItem(getCacheKey(path));
+        if (!raw) return null;
+        const {data, at} = JSON.parse(raw);
+        if (!at || Date.now() - at > GET_CACHE_TTL) return null;
+        return data;
+    } catch (e) {
+        return null;
+    }
+};
+
+const writeApiCache = (path, data) => {
+    try {
+        sessionStorage.setItem(getCacheKey(path), JSON.stringify({data, at: Date.now()}));
+    } catch (e) {
+        clearApiCache();
     }
 };
 
@@ -97,6 +140,13 @@ const runExchange = token => {
 };
 
 const request = async (path, {method = 'GET', body, headers = {}, raw = false} = {}) => {
+    const cacheable = method === 'GET' && !raw;
+    if (cacheable) {
+        const hit = readApiCache(path);
+        if (hit) return hit;
+    } else if (method !== 'GET' && !path.endsWith('/view')) {
+        clearApiCache();
+    }
     const doFetch = () => {
         const session = loadSession();
         const finalHeaders = {...headers};
@@ -135,7 +185,11 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false} =
     if (raw) {
         return response;
     }
-    return parseResponse(response);
+    const data = await parseResponse(response);
+    if (cacheable) {
+        writeApiCache(path, data);
+    }
+    return data;
 };
 
 const logout = async () => {
@@ -197,6 +251,9 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress) => {
         if (!roturToken) throw e;
         await runExchange(roturToken);
         return uploadXhr(path, form, onUploadProgress);
+    } finally {
+        clearApiCache();
+        clearContentCache();
     }
 };
 

@@ -275,6 +275,15 @@ module.exports = [
             new CopyWebpackPlugin({
                 patterns: [
                     {
+                        from: path.resolve(__dirname, '../docs/build'),
+                        to: 'docs',
+                        noErrorOnMissing: true
+                    }
+                ]
+            }),
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
                         from: 'extensions/**',
                         to: 'static',
                         context: 'src/examples'
