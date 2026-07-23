@@ -35,12 +35,19 @@ class BalancedText extends React.Component {
 
     componentWillUnmount () {
         self.removeEventListener('resize', this.handleResize);
+        if (this.resizeFrame) {
+            cancelAnimationFrame(this.resizeFrame);
+        }
     }
 
     handleResize () {
-        if (this.props.resize) {
-            this.balanceText();
+        if (!this.props.resize || this.resizeFrame) {
+            return;
         }
+        this.resizeFrame = requestAnimationFrame(() => {
+            this.resizeFrame = null;
+            this.balanceText();
+        });
     }
 
     balanceText () {

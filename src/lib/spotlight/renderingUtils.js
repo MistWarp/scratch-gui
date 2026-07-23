@@ -6,7 +6,8 @@ import {
     createCostumePreviewItem,
     createSectionHeader,
     createSoundPreviewItem,
-    createCustomBlockPreviewItem
+    createCustomBlockPreviewItem,
+    createActionPreviewItem
 } from './uiComponents.js';
 
 /**
@@ -34,7 +35,7 @@ const renderMenuItem = (result, svgBlock, previewWidth, previewScale, Blockly, v
         svgBlock.appendChild(foreignObject);
         
         renderedBlock = {width: previewWidth / previewScale, height: height};
-    } else if (result.isSprite || result.isCostume || result.isSound || result.isCustomBlock) {
+    } else if (result.isSprite || result.isCostume || result.isSound || result.isCustomBlock || result.isAction) {
         height = 60;
         const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         foreignObject.setAttribute('width', `${previewWidth / previewScale}`);
@@ -49,6 +50,8 @@ const renderMenuItem = (result, svgBlock, previewWidth, previewScale, Blockly, v
             item = createSoundPreviewItem(result.soundData);
         } else if (result.isCustomBlock) {
             item = createCustomBlockPreviewItem(result.customBlockData);
+        } else if (result.isAction) {
+            item = createActionPreviewItem(result.actionData);
         }
 
         if (item) {

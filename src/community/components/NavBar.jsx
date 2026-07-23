@@ -31,6 +31,7 @@ const NavBar = () => {
         }
         let stale = false;
         const refresh = () => {
+            if (document.hidden) return;
             api.notifications()
                 .then(data => {
                     if (!stale) setUnread((data.notifications || []).filter(n => !n.read).length);
@@ -49,11 +50,13 @@ const NavBar = () => {
         const onRead = () => setUnread(0);
         window.addEventListener('mw:notifications-read', onRead);
         window.addEventListener('mw:reports-updated', refresh);
+        document.addEventListener('visibilitychange', refresh);
         return () => {
             stale = true;
             clearInterval(timer);
             window.removeEventListener('mw:notifications-read', onRead);
             window.removeEventListener('mw:reports-updated', refresh);
+            document.removeEventListener('visibilitychange', refresh);
         };
     }, [user]);
 

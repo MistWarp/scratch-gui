@@ -148,6 +148,33 @@ const presenceSupported = async () => {
     }
 };
 
+const RESTORE_CACHE_KEY = 'mw:rotur-restore';
+const RESTORE_CACHE_TTL = 5 * 60 * 1000;
+
+const readRestoreCache = token => {
+    try {
+        const raw = sessionStorage.getItem(RESTORE_CACHE_KEY);
+        if (!raw) return null;
+        const {user, at, token: cachedToken} = JSON.parse(raw);
+        if (cachedToken !== token || !at || Date.now() - at > RESTORE_CACHE_TTL) return null;
+        return user || null;
+    } catch (_) {
+        return null;
+    }
+};
+
+const writeRestoreCache = (token, user) => {
+    try {
+        if (user) {
+            sessionStorage.setItem(RESTORE_CACHE_KEY, JSON.stringify({user, token, at: Date.now()}));
+        } else {
+            sessionStorage.removeItem(RESTORE_CACHE_KEY);
+        }
+    } catch (_) {
+        // ignore
+    }
+};
+
 /** Restore a previous session from localStorage. */
 const restoreSession = async () => {
     const token = loadStoredToken();
@@ -156,6 +183,10 @@ const restoreSession = async () => {
     }
     const rotur = getClient();
     rotur.setToken(token);
+    const cached = readRestoreCache(token);
+    if (cached) {
+        return cached;
+    }
     const user = await fetchCurrentUser();
     if (!user) {
         rotur.logout();
@@ -168,6 +199,7 @@ const restoreSession = async () => {
         return null;
     }
     storeToken(rotur.token);
+    writeRestoreCache(rotur.token, user);
     return user;
 };
 
@@ -193,6 +225,7 @@ const login = async () => {
     if (!user) {
         throw new Error('Logged in but could not load Rotur profile');
     }
+    writeRestoreCache(rotur.token, user);
     return user;
 };
 
@@ -201,6 +234,7 @@ const logout = () => {
     const rotur = getClient();
     rotur.logout();
     storeToken(null);
+    writeRestoreCache(null, null);
 };
 
 const ensureSocket = async () => {
@@ -308,6 +342,46 @@ const clearActivity = () => {
 
 const isLoggedIn = () => getClient().loggedIn;
 const getRotur = () => getClient();
+
+// Ensure the current session token can exercise every scope in `scopes`. If the
+// token is already sufficient (or is a full-access main token) this is a no-op;
+// otherwise it re-runs the Rotur login popup requesting the union of the existing
+// login scopes plus the requested ones, broadening the same session in place. No
+// separate per-project sub-token is minted.
+const ensureScopes = async scopes => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return false;
+    }
+    const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
+    if (!wanted.length) {
+        return true;
+    }
+    let granted = null;
+    try {
+        const abilities = await rotur.me.abilities();
+        if (!abilities || abilities.error || abilities.token_type === 'main') {
+            return true;
+        }
+        granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
+    } catch (_) {
+        return true;
+    }
+    if (granted.includes('full')) {
+        return true;
+    }
+    const missing = wanted.filter(scope => !granted.includes(scope));
+    if (!missing.length) {
+        return true;
+    }
+    await rotur.login({
+        system: 'rotur',
+        timeout: 120000,
+        requires: [...new Set([...LOGIN_PERMISSIONS, ...wanted])]
+    });
+    storeToken(rotur.token);
+    return true;
+};
 
 const isPaymentPermissionError = error => {
     const message = String((error && error.message) || error || '').toLowerCase();
@@ -430,5 +504,6 @@ export {
     getBalance,
     getAccountSummary,
     payUser,
-    claimDaily
+    claimDaily,
+    ensureScopes
 };

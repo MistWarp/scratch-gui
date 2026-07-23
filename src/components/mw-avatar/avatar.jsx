@@ -4,13 +4,19 @@ import styles from './avatar.css';
 
 const AVATARS = 'https://avatars.rotur.dev';
 
+const overlayStatus = new Map();
+
 const Avatar = ({username, size = 40, className}) => {
-    const [overlayFailed, setOverlayFailed] = useState(false);
-    useEffect(() => {
-        setOverlayFailed(false);
-    }, [username]);
-    const handleOverlayError = useCallback(() => setOverlayFailed(true), []);
     const name = encodeURIComponent((username || '').toLowerCase());
+    const [overlayFailed, setOverlayFailed] = useState(() => overlayStatus.get(name) === false);
+    useEffect(() => {
+        setOverlayFailed(overlayStatus.get(name) === false);
+    }, [name]);
+    const handleOverlayError = useCallback(() => {
+        overlayStatus.set(name, false);
+        setOverlayFailed(true);
+    }, [name]);
+    const handleOverlayLoad = useCallback(() => overlayStatus.set(name, true), [name]);
     const imageSize = Math.max(64, size * 2);
     const imageRadius = Math.max(32, size);
     return (
@@ -31,6 +37,7 @@ const Avatar = ({username, size = 40, className}) => {
                     alt=""
                     loading="lazy"
                     onError={handleOverlayError}
+                    onLoad={handleOverlayLoad}
                 />
             )}
         </span>

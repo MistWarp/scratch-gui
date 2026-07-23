@@ -10,6 +10,7 @@ import {formatBytes} from '../format';
 import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
+import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
 import Sidebar from '../components/Sidebar.jsx';
@@ -398,13 +399,21 @@ const MyStuff = () => {
         api.stats()
             .then(data => !stale && setStats(data.stats || null))
             .catch(() => {});
+        return () => {
+            stale = true;
+        };
+    }, [user, projects]);
+
+    useEffect(() => {
+        if (!user) return;
+        let stale = false;
         getAccountSummary()
             .then(data => !stale && setAccount(data))
             .catch(() => {});
         return () => {
             stale = true;
         };
-    }, [user, projects]);
+    }, [user]);
 
     const load = useCallback(() => {
         if (!user || tab === 'overview' || tab === 'uploads') {
@@ -741,12 +750,7 @@ const MyStuff = () => {
                                             to={projectUrl(project.id)}
                                             className={styles.thumb}
                                         >
-                                            {project.thumbUrl ? (
-                                                <img
-                                                    src={project.thumbUrl}
-                                                    alt=""
-                                                />
-                                            ) : <span>{(project.title || '?')[0]}</span>}
+                                            <ProjectThumbnail project={project} />
                                         </Link>
                                         <div className={styles.info}>
                                             <Link

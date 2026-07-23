@@ -50,6 +50,12 @@ const createCostumePreviewItem = costumeData => createPreviewItem(
 
 const createSoundPreviewItem = soundData => createPreviewItem(soundData.name, 'Sound');
 
+const createActionPreviewItem = actionData => createPreviewItem(
+    actionData.label,
+    actionData.type || 'Action',
+    actionData.hint || null
+);
+
 const createCustomBlockPreviewItem = customBlockData => createPreviewItem(
     customBlockData.displayName,
     'Custom block',
@@ -68,5 +74,6 @@ export {
     createCostumePreviewItem,
     createSectionHeader,
     createCustomBlockPreviewItem,
-    createSoundPreviewItem
+    createSoundPreviewItem,
+    createActionPreviewItem
 };

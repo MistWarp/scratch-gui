@@ -1,4 +1,4 @@
-import EventTarget from '../../event-target.js'; /* inserted by pull.js */
+import EventTarget from '../../addons/event-target.js';
 
 const textWidthCache = new Map();
 const textWidthCacheSize = 1000;
@@ -39,8 +39,16 @@ const onClearTextWidthCache = func => {
     eventTarget.addEventListener(eventClearTextCache, func);
 };
 
+/**
+ * @param {function(): void} func The function to stop calling when the cache is cleared
+ */
+const offClearTextWidthCache = func => {
+    eventTarget.removeEventListener(eventClearTextCache, func);
+};
+
 export {
     getTextWidth,
     clearTextWidthCache,
-    onClearTextWidthCache
+    onClearTextWidthCache,
+    offClearTextWidthCache
 };

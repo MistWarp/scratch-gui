@@ -1,11 +1,11 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import {Heart, Play, Coins} from 'lucide-react';
 import {projectUrl} from '../api';
+import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './ProjectCard.module.css';
 
 const ProjectCard = ({project}) => {
-    const [broken, setBroken] = useState(false);
     const price = project.price || 0;
     return (
         <Link
@@ -19,16 +19,11 @@ const ProjectCard = ({project}) => {
                         {project.bought ? 'Owned' : price}
                     </span>
                 ) : null}
-                {project.thumbUrl && !broken ? (
-                    <img
-                        src={project.thumbUrl}
-                        alt=""
-                        loading="lazy"
-                        onError={() => setBroken(true)}
-                    />
-                ) : (
-                    <div className={styles.placeholder}>{(project.title || '?')[0]}</div>
-                )}
+                <ProjectThumbnail
+                    project={project}
+                    fallbackClassName={styles.placeholder}
+                    lazy
+                />
             </div>
             <div className={styles.body}>
                 <div className={styles.title}>{project.title}</div>

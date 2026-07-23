@@ -22,6 +22,7 @@ import {
 } from '../reducers/editor-tab';
 import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
+import {setProjectUnchanged} from '../reducers/project-changed';
 import {setFullScreen} from '../reducers/mode';
 
 import {
@@ -60,6 +61,7 @@ import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
 import {initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
 import startFractchLiveReload from '../lib/fractch-live';
+import smartSave from '../lib/mw/smart-save.js';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -96,6 +98,11 @@ class GUI extends React.Component {
             },
             this.props.vm,
             {
+                saveSmart: () => smartSave({
+                    vm: this.props.vm,
+                    title: this.props.projectTitle,
+                    onSaved: this.props.onProjectUnchanged
+                }),
                 loadFromComputer: this.props.onStartSelectingFileUpload,
                 openPackager: this.props.onClickPackager,
                 toggleStageSize: () => {
@@ -172,8 +179,10 @@ class GUI extends React.Component {
             openSpriteLibrary,
             projectHost,
             projectId,
+            projectTitle,
             requestNewProject,
             saveProjectAsCopy,
+            onProjectUnchanged,
             /* eslint-enable no-unused-vars */
             children,
             fetchingProject,
@@ -214,6 +223,8 @@ GUI.propTypes = {
     onVmInit: PropTypes.func,
     projectHost: PropTypes.string,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    projectTitle: PropTypes.string,
+    onProjectUnchanged: PropTypes.func,
     telemetryModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
     activeTabIndex: PropTypes.number
@@ -249,6 +260,7 @@ const mapStateToProps = state => {
         isShowingProject: getIsShowingProject(loadingState),
         loadingStateVisible: state.scratchGui.modals.loadingProject,
         projectId: state.scratchGui.projectState.projectId,
+        projectTitle: state.scratchGui.projectTitle,
         soundLibraryVisible: state.scratchGui.modals.soundLibrary,
         soundsTabVisible: state.scratchGui.editorTab.activeTabIndex === SOUNDS_TAB_INDEX,
         targetIsStage: (
@@ -289,6 +301,7 @@ const mapDispatchToProps = dispatch => ({
     requestNewProject: needSave => dispatch(requestNewProject(needSave)),
     manualUpdateProject: () => dispatch(manualUpdateProject()),
     saveProjectAsCopy: () => dispatch(saveProjectAsCopy()),
+    onProjectUnchanged: () => dispatch(setProjectUnchanged()),
     openSpriteLibrary: () => dispatch(openSpriteLibrary()),
     openCostumeLibrary: () => dispatch(openCostumeLibrary()),
     openSoundLibrary: () => dispatch(openSoundLibrary()),

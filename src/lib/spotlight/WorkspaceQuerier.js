@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * @file Contains all the logic for the parsing of queries by the {@link WorkspaceQuerier}.
  * I'm really sorry if somebody other than me ever has to debug this.

@@ -29,8 +29,8 @@ export const getDefaultShortcuts = () => [
         key: 'Ctrl+S',
         defaultKey: 'Ctrl+S',
         category: SHORTCUT_CATEGORIES.FILE,
-        actionType: 'redux',
-        action: 'manualUpdateProject',
+        actionType: 'callback',
+        action: 'saveSmart',
         params: [],
         label: 'Save'
     },

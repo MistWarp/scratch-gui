@@ -9,8 +9,13 @@ const APP_NAME = 'MistWarp';
 
 const DEFAULTS = {
     presenceEnabled: true,
-    includeEditDuration: true
+    includeEditDuration: true,
+    // How project extensions may show activity on your Rotur profile:
+    // 'ask' (prompt per project), 'all' (always allow), 'off' (never).
+    activitySharing: 'ask'
 };
+
+const SHARING_MODES = ['ask', 'all', 'off'];
 
 /** @type {Set<(settings: typeof DEFAULTS) => void>} */
 const listeners = new Set();
@@ -22,7 +27,9 @@ const readAll = () => {
         const parsed = JSON.parse(raw);
         return {
             presenceEnabled: parsed.presenceEnabled !== false,
-            includeEditDuration: parsed.includeEditDuration !== false
+            includeEditDuration: parsed.includeEditDuration !== false,
+            activitySharing: SHARING_MODES.includes(parsed.activitySharing) ?
+                parsed.activitySharing : 'ask'
         };
     } catch (_) {
         return {...DEFAULTS};

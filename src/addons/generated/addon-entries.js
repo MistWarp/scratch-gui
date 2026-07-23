@@ -3,7 +3,6 @@ export default {
   "cat-blocks": () => import(/* webpackChunkName: "addon-entry-cat-blocks" */ "../addons/cat-blocks/_runtime_entry.js"),
   "dev-inspector": () => import(/* webpackChunkName: "addon-entry-dev-inspector" */ "../addons/dev-inspector/_runtime_entry.js"),
   "editor-devtools": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/editor-devtools/_runtime_entry.js"),
-  "middle-click-popup": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/middle-click-popup/_runtime_entry.js"),
   "jump-to-def": () => require("../addons/jump-to-def/_runtime_entry.js"),
   "reorder-custom-inputs": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/reorder-custom-inputs/_runtime_entry.js"),
   "editor-searchable-dropdowns": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/editor-searchable-dropdowns/_runtime_entry.js"),

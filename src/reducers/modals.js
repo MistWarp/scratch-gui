@@ -28,6 +28,7 @@ const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
 const MODAL_PROJECT_METADATA = 'projectMetadataModal';
+const MODAL_HELP = 'helpModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -56,7 +57,9 @@ const initialState = {
     [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_DEBUGGER]: false,
     [MODAL_ROTUR_LOGIN]: false,
-    [MODAL_PROJECT_METADATA]: false
+    [MODAL_PROJECT_METADATA]: false,
+    [MODAL_HELP]: false,
+    helpEntry: null
 };
 
 const reducer = function (state, action) {
@@ -69,12 +72,18 @@ const reducer = function (state, action) {
     case CLOSE_MODAL:
         return Object.assign({}, state, {
             [action.modal]: false,
-            simpleDialogConfig: null
+            simpleDialogConfig: null,
+            helpEntry: action.modal === MODAL_HELP ? null : state.helpEntry
         });
     case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
         return Object.assign({}, state, {
             [MODAL_SIMPLE_DIALOG]: true,
             simpleDialogConfig: action.dialogConfig
+        });
+    case 'scratch-gui/modals/SET_HELP_MODAL':
+        return Object.assign({}, state, {
+            [MODAL_HELP]: true,
+            helpEntry: action.entryId || null
         });
     default:
         return state;
@@ -181,6 +190,15 @@ const openProjectMetadataModal = function () {
 };
 const closeProjectMetadataModal = function () {
     return closeModal(MODAL_PROJECT_METADATA);
+};
+const openHelp = function (entryId) {
+    return {
+        type: 'scratch-gui/modals/SET_HELP_MODAL',
+        entryId: entryId || null
+    };
+};
+const closeHelpModal = function () {
+    return closeModal(MODAL_HELP);
 };
 const openSimpleDialog = function (dialogConfig) {
     return {
@@ -290,6 +308,8 @@ export {
     closeRoturLoginModal,
     openProjectMetadataModal,
     closeProjectMetadataModal,
+    openHelp,
+    closeHelpModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,

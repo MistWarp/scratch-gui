@@ -7,10 +7,17 @@ import {
     Palette, Bookmark, BookmarkCheck
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
+import {cachedFetchBuffer, cachedFetchJson} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
 import {isInsufficientFunds} from '../credits';
 import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
+import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import {getBalance} from '../../lib/rotur/client.js';
+import {
+    hasFullGrant, commitGrant, callRotur,
+    activityAllowed, rememberActivityDecision, isActivityMethod
+} from '../../lib/rotur/extension-bridge.js';
+import {getRoturSettings, setRoturSetting} from '../../lib/rotur/settings.js';
 import rotur from '../rotur';
 import {Theme} from '../../lib/themes';
 import {CustomTheme} from '../../lib/themes/custom-themes.js';
@@ -158,6 +165,7 @@ const Project = () => {
     const [projectThemeApplied, setProjectThemeApplied] = useState(false);
     const [revertTheme, setRevertTheme] = useState(false);
     const [followsOwner, setFollowsOwner] = useState(false);
+    const [roturModal, setRoturModal] = useState(null);
     const themeMode = getProjectThemeMode();
 
     const beginLoad = useLatest();
@@ -263,8 +271,7 @@ const Project = () => {
         setUnsandboxed(false);
         let cancelled = false;
         if (projectJsonUrl) {
-            fetch(projectJsonUrl)
-                .then(response => response.json())
+            cachedFetchJson(projectJsonUrl)
                 .then(data => {
                     if (cancelled) return;
                     setBlockStats(analyzeBlocks(data));
@@ -335,17 +342,159 @@ const Project = () => {
                     // ignore
                 }
             };
-            fetch(data.url)
-                .then(response => {
-                    if (!response.ok) throw new Error(`Request returned status ${response.status}`);
-                    return response.arrayBuffer();
-                })
+            cachedFetchBuffer(data.url)
                 .then(buffer => reply({type: 'mw:fetch-result', id: data.id, buffer}, [buffer]))
                 .catch(() => reply({type: 'mw:fetch-result', id: data.id}));
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
     }, [project]);
+
+    // Rotur bridge for the embedded player. The project iframe cannot hold the
+    // token or render trusted UI, so its Rotur blocks post requests up here; this
+    // page holds the token (via lib/rotur/client) and renders consent/confirm UI
+    // that the sandboxed project cannot read or approve on its own.
+    useEffect(() => {
+        const identity = {
+            loggedIn: Boolean(user && user.username),
+            username: (user && user.username) || '',
+            id: (user && user.id) || ''
+        };
+        const userMessage = {
+            type: 'mw:rotur-user',
+            user: identity,
+            projectId: (project && project.id) || id || '',
+            projectName: (project && (project.title || project.name)) || '',
+            projectImage: (project && project.thumbUrl) || ''
+        };
+        const onMessage = event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            const data = event.data;
+            if (!data || data.type !== 'mw:rotur') return;
+            const source = event.source;
+            const reply = payload => {
+                try {
+                    source.postMessage({type: 'mw:rotur-result', ...payload}, '*');
+                } catch (e) {
+                    // ignore
+                }
+            };
+
+            if (data.kind === 'hello') {
+                try {
+                    source.postMessage(userMessage, '*');
+                } catch (e) {
+                    // ignore
+                }
+                return;
+            }
+
+            if (data.kind === 'consent') {
+                const scopes = data.scopes || [];
+                const meta = data.meta || {};
+                if (!identity.loggedIn) {
+                    reply({id: data.id, ok: true, result: false});
+                    return;
+                }
+                if (hasFullGrant(meta, scopes)) {
+                    reply({id: data.id, ok: true, result: true});
+                    return;
+                }
+                setRoturModal({
+                    type: 'consent',
+                    data: {scopes, username: identity.username, name: meta.name},
+                    onAllow: async () => {
+                        setRoturModal(null);
+                        try {
+                            await commitGrant(meta, scopes);
+                            reply({id: data.id, ok: true, result: true});
+                        } catch (e) {
+                            reply({id: data.id, ok: false, error: String((e && e.message) || e)});
+                        }
+                    },
+                    onDeny: () => {
+                        setRoturModal(null);
+                        reply({id: data.id, ok: true, result: false});
+                    }
+                });
+                return;
+            }
+
+            if (data.kind === 'call') {
+                const {method, args, opts} = data;
+                const perform = async () => {
+                    try {
+                        const result = await callRotur(method, args);
+                        reply({id: data.id, ok: true, result});
+                    } catch (e) {
+                        reply({id: data.id, ok: false, error: String((e && e.message) || e)});
+                    }
+                };
+                if (isActivityMethod(method)) {
+                    const key = (project && project.id) || id || `name:${(project && project.title) || ''}`;
+                    const decision = activityAllowed(getRoturSettings().activitySharing, key);
+                    if (decision === true) {
+                        perform();
+                        return;
+                    }
+                    if (decision === false) {
+                        reply({id: data.id, ok: true, result: ''});
+                        return;
+                    }
+                    setRoturModal({
+                        type: 'share',
+                        data: {username: identity.username, name: (project && project.title) || ''},
+                        onShareThis: () => {
+                            setRoturModal(null);
+                            rememberActivityDecision(key, true);
+                            perform();
+                        },
+                        onShareAll: () => {
+                            setRoturModal(null);
+                            setRoturSetting('activitySharing', 'all');
+                            perform();
+                        },
+                        onShareNo: () => {
+                            setRoturModal(null);
+                            rememberActivityDecision(key, false);
+                            reply({id: data.id, ok: true, result: ''});
+                        }
+                    });
+                    return;
+                }
+                if (opts && opts.sensitive) {
+                    setRoturModal({
+                        type: 'confirm',
+                        data: {label: (opts && opts.label) || method, username: identity.username},
+                        onAllow: () => {
+                            setRoturModal(null);
+                            perform();
+                        },
+                        onDeny: () => {
+                            setRoturModal(null);
+                            reply({id: data.id, ok: false, error: 'You cancelled this Rotur action'});
+                        }
+                    });
+                } else {
+                    perform();
+                }
+            }
+        };
+        window.addEventListener('message', onMessage);
+        // Push identity proactively so a login (or logout) after the embed has
+        // loaded refreshes its cache, instead of waiting for a hello that only
+        // fires once.
+        try {
+            const frame = stageFrame.current;
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage(userMessage, '*');
+            }
+        } catch (e) {
+            // ignore
+        }
+        return () => window.removeEventListener('message', onMessage);
+    }, [user, project, id]);
 
     const sendThemeToStage = useCallback(() => {
         try {
@@ -743,6 +892,17 @@ const Project = () => {
                     needed={price}
                     balance={creditBalance}
                     onClose={() => setShowBuyCredits(false)}
+                />
+            ) : null}
+            {roturModal ? (
+                <RoturConsentModal
+                    type={roturModal.type}
+                    data={roturModal.data}
+                    onAllow={() => roturModal.onAllow && roturModal.onAllow()}
+                    onDeny={() => roturModal.onDeny && roturModal.onDeny()}
+                    onShareThis={() => roturModal.onShareThis && roturModal.onShareThis()}
+                    onShareAll={() => roturModal.onShareAll && roturModal.onShareAll()}
+                    onShareNo={() => roturModal.onShareNo && roturModal.onShareNo()}
                 />
             ) : null}
             {confirmBuy ? (

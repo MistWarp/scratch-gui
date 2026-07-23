@@ -5,6 +5,7 @@ import bindAll from 'lodash.bindall';
 import {connect} from 'react-redux';
 
 import {setProjectUnchanged} from '../../reducers/project-changed.js';
+import {setProjectTitle} from '../../reducers/project-title.js';
 import {
     LoadingStates,
     getIsCreatingNew,
@@ -32,6 +33,7 @@ import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
 import {getProject as getMistWarpProject, takeProjectHandoff} from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
+import {cachedFetchBuffer} from '../community/cached-fetch.js';
 
 const cloneProjectFromRepo = async url => {
     const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
@@ -78,12 +80,7 @@ const clearProjectSourceOnForeignLoads = vm => {
     };
 };
 
-const fetchArrayBuffer = url => fetch(url).then(r => {
-    if (!r.ok) {
-        throw new Error(`Request returned status ${r.status}`);
-    }
-    return r.arrayBuffer();
-});
+const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async id => {
     let project = takeProjectHandoff(id);
@@ -94,7 +91,7 @@ const loadPlatformProject = async id => {
         storage.addMistWarpAssetStore(project.assetsBase);
     }
     rememberPlatformProject(project);
-    return {data: await fetchArrayBuffer(project.projectJsonUrl)};
+    return {data: await fetchArrayBuffer(project.projectJsonUrl), title: project.title};
 };
 
 // TW: Temporary hack for project tokens
@@ -234,6 +231,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 .then(projectAsset => {
                     if (projectAsset) {
                         fetchInitiatedLoad = true;
+                        if (projectAsset.title) {
+                            this.props.onSetProjectTitle(projectAsset.title);
+                        }
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
                     } else {
                         // Treat failure to load as an error
@@ -286,6 +286,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         onError: PropTypes.func,
         onFetchedProjectData: PropTypes.func,
         onProjectUnchanged: PropTypes.func,
+        onSetProjectTitle: PropTypes.func,
         projectHost: PropTypes.string,
         projectToken: PropTypes.string,
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -313,7 +314,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         onFetchedProjectData: (projectData, loadingState) =>
             dispatch(onFetchedProjectData(projectData, loadingState)),
         setProjectId: projectId => dispatch(setProjectId(projectId)),
-        onProjectUnchanged: () => dispatch(setProjectUnchanged())
+        onProjectUnchanged: () => dispatch(setProjectUnchanged()),
+        onSetProjectTitle: title => dispatch(setProjectTitle(title))
     });
     // Allow incoming props to override redux-provided props. Used to mock in tests.
     const mergeProps = (stateProps, dispatchProps, ownProps) => Object.assign(

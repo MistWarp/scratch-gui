@@ -3,7 +3,6 @@
 const addons = [
     'cat-blocks',
     'editor-devtools',
-    'middle-click-popup',
     'jump-to-def',
     'tab-styles',
     'reorder-custom-inputs',

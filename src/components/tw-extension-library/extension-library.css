@@ -1,0 +1,133 @@
+@import "../../css/colors.css";
+@import "../../css/default-colors.css";
+
+.modal-content {
+    width: 1040px;
+    max-width: 94vw;
+    height: 82vh;
+    max-height: 860px;
+}
+
+.layout {
+    height: 100%;
+}
+
+.content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.search-row {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px;
+    padding: 10px 14px;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 10px;
+}
+
+.search-icon {
+    flex-shrink: 0;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+}
+
+.search {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    /* keep scrolling inside the panel; do not chain to the page/iframe host */
+    overscroll-behavior: contain;
+    padding: 0 16px 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    align-content: start;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    color: $text-primary;
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.card:hover {
+    border-color: $looks-secondary;
+    box-shadow: 0 4px 12px color-mix(in srgb, $ui-black-transparent 60%, transparent);
+    transform: translateY(-2px);
+}
+
+.card:focus-visible {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+    outline: none;
+}
+
+.card-disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.card-disabled:hover {
+    border-color: $ui-black-transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.card-icon {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    height: auto;
+    object-fit: cover;
+    object-position: center;
+    background: color-mix(in srgb, $text-primary 6%, $ui-primary);
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.card-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px 16px;
+}
+
+.card-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: $text-primary;
+}
+
+.card-description {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    line-height: 1.35;
+}

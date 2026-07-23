@@ -46,13 +46,16 @@ import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.j
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
+import MWHelpModal from '../../containers/mw-help-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
+import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import {closeRoturLoginModal} from '../../reducers/modals.js';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
+import NativeSpotlight from '../../containers/spotlight.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
@@ -724,10 +727,12 @@ const GUIComponent = props => {
     const alwaysEnabledModals = useMemo(() => (
         <React.Fragment>
             <RoturSession />
+            <RoturExtensionHost />
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
             <TWRestorePointManager />
             <MWExtensionManagerModal />
+            <MWHelpModal />
             <MWProjectThemeModal />
             {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
             {settingsModalVisible && (
@@ -955,6 +960,12 @@ const GUIComponent = props => {
                             ref={editorWrapperRef}
                         >
                             <NativeFindBar
+                                activeTabIndex={activeTabIndex}
+                                isPlayerOnly={isPlayerOnly}
+                                locale={locale}
+                                vm={vm}
+                            />
+                            <NativeSpotlight
                                 activeTabIndex={activeTabIndex}
                                 isPlayerOnly={isPlayerOnly}
                                 locale={locale}
