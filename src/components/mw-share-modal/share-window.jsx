@@ -17,7 +17,8 @@ class ShareWindow extends React.Component {
             title: props.initialTitle || 'Untitled',
             thumbnail: null,
             status: null,
-            error: null,
+            error: props.initialError ? props.initialError.message : null,
+            errorCode: props.initialError ? props.initialError.code : null,
             notice: null,
             done: null,
             agreement: null,
@@ -73,7 +74,7 @@ class ShareWindow extends React.Component {
             // proceed with upload if agreement check fails
         }
 
-        this.setState({status: 'Saving…', error: null, notice: null, agreement: null});
+        this.setState({status: 'Saving…', error: null, errorCode: null, notice: null, agreement: null});
         let thumbnailBlob = null;
         if (!isUpdate && this.state.thumbnail) {
             try {
@@ -94,7 +95,7 @@ class ShareWindow extends React.Component {
             this.setState({status: null, done: result});
             this.props.onPublished(result);
         } catch (e) {
-            this.setState({status: null, error: e.message || 'Could not save'});
+            this.setState({status: null, error: e.message || 'Could not save', errorCode: e.code || null});
         }
     }
 
@@ -108,6 +109,22 @@ class ShareWindow extends React.Component {
         } catch (e) {
             this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
         }
+    }
+    renderError () {
+        if (!this.state.error) return null;
+        return (
+            <div className={styles.errorPanel}>
+                <div className={styles.error}>{this.state.error}</div>
+                {this.state.errorCode === 'project_too_large' && (
+                    <button
+                        className={styles.reviewStorage}
+                        onClick={this.props.onReviewStorage}
+                    >
+                        {'Check project storage'}
+                    </button>
+                )}
+            </div>
+        );
     }
     render () {
         const actionLabel = this.props.action === 'remix' ? 'Remix' :
@@ -183,9 +200,7 @@ class ShareWindow extends React.Component {
                             {'Upload the current version of this project to MistWarp. ' +
                             'The title and thumbnail stay as they are; edit those on the project page.'}
                         </p>
-                        {this.state.error ? (
-                            <div className={styles.error}>{this.state.error}</div>
-                        ) : null}
+                        {this.renderError()}
                     </div>
                     <div className={styles.footer}>
                         <button
@@ -249,9 +264,7 @@ class ShareWindow extends React.Component {
                     {this.state.notice ? (
                         <div className={styles.notice}>{this.state.notice}</div>
                     ) : null}
-                    {this.state.error ? (
-                        <div className={styles.error}>{this.state.error}</div>
-                    ) : null}
+                    {this.renderError()}
                 </div>
                 <div className={styles.footer}>
                     <button
@@ -275,9 +288,14 @@ ShareWindow.propTypes = {
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object
     }).isRequired,
+    initialError: PropTypes.shape({
+        code: PropTypes.string,
+        message: PropTypes.string
+    }),
     initialTitle: PropTypes.string,
     action: PropTypes.oneOf(['save', 'remix', 'update']),
     onClose: PropTypes.func.isRequired,
+    onReviewStorage: PropTypes.func.isRequired,
     onPublished: PropTypes.func.isRequired
 };
 

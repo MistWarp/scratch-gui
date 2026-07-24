@@ -59,6 +59,7 @@ const initialState = {
     [MODAL_ROTUR_LOGIN]: false,
     [MODAL_PROJECT_METADATA]: false,
     [MODAL_HELP]: false,
+    projectMetadataView: 'project',
     helpEntry: null
 };
 
@@ -67,7 +68,10 @@ const reducer = function (state, action) {
     switch (action.type) {
     case OPEN_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: true
+            [action.modal]: true,
+            projectMetadataView: action.modal === MODAL_PROJECT_METADATA ?
+                (action.view || 'project') :
+                state.projectMetadataView
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
@@ -185,8 +189,8 @@ const openRoturLoginModal = function () {
 const closeRoturLoginModal = function () {
     return closeModal(MODAL_ROTUR_LOGIN);
 };
-const openProjectMetadataModal = function () {
-    return openModal(MODAL_PROJECT_METADATA);
+const openProjectMetadataModal = function (view) {
+    return Object.assign(openModal(MODAL_PROJECT_METADATA), {view});
 };
 const closeProjectMetadataModal = function () {
     return closeModal(MODAL_PROJECT_METADATA);

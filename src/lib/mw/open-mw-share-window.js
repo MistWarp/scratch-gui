@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom';
 
 import ShareWindow from '../../components/mw-share-modal/share-window.jsx';
 import WindowManager from '../../addons/window-system/window-manager';
+import {openProjectMetadataModal} from '../../reducers/modals';
 
 let shareWindow = null;
 let container = null;
 
-const openMistWarpShareWindow = ({vm, initialTitle, action = 'save', onPublished}) => {
+const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save', onPublished}) => {
     if (shareWindow) {
         shareWindow.show().bringToFront();
         return;
@@ -51,8 +52,15 @@ const openMistWarpShareWindow = ({vm, initialTitle, action = 'save', onPublished
         React.createElement(ShareWindow, {
             vm,
             initialTitle,
+            initialError,
             action,
             onClose: cleanup,
+            onReviewStorage: () => {
+                cleanup();
+                if (window.ReduxStore) {
+                    window.ReduxStore.dispatch(openProjectMetadataModal('optimiser'));
+                }
+            },
             onPublished: result => {
                 if (typeof onPublished === 'function') {
                     onPublished(result);
