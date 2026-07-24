@@ -521,7 +521,7 @@ class MenuBar extends React.Component {
     }
     handleClickProjectMetadata () {
         this.props.onClickProjectMetadata();
-        this.props.onRequestCloseFile();
+        this.props.onRequestCloseTools();
     }
     handleClickAddRestorePoint = () => {
         if (this.props.vm) {
@@ -1752,15 +1752,6 @@ class MenuBar extends React.Component {
                                                 id="tw.menuBar.createRestorePoint"
                                             />
                                         </MenuItem>
-                                        <MenuItem onClick={this.handleClickProjectMetadata}>
-                                            <Info />
-                                            <FormattedMessage
-                                                defaultMessage="Project metadata"
-                                                // eslint-disable-next-line max-len
-                                                description="Menu bar item to view the open project's metadata (author, dates, contents)"
-                                                id="mw.menuBar.projectMetadata"
-                                            />
-                                        </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
                                         <MenuSection>
@@ -2093,6 +2084,15 @@ class MenuBar extends React.Component {
                                             defaultMessage="Live Collaboration"
                                             description="Menu bar item for live collaboration"
                                             id="tw.menuBar.collaboration"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleClickProjectMetadata}>
+                                        <Info />
+                                        <FormattedMessage
+                                            defaultMessage="Project metadata"
+                                            // eslint-disable-next-line max-len
+                                            description="Menu bar item to view the open project's metadata (author, dates, contents)"
+                                            id="mw.menuBar.projectMetadata"
                                         />
                                     </MenuItem>
                                 </MenuSection>

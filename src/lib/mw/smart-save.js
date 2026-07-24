@@ -40,7 +40,13 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     try {
         onSaved(await publishToMistWarp({vm, title: null, updateOnly: true}));
     } catch (e) {
-        openMistWarpShareWindow({vm, initialTitle: title, action: 'update', onPublished: onSaved});
+        openMistWarpShareWindow({
+            vm,
+            initialTitle: title,
+            initialError: e,
+            action: 'update',
+            onPublished: onSaved
+        });
     }
 };
 

@@ -5,8 +5,6 @@
 }
 
 .page-content {
-    display: flex;
-    flex-direction: column;
     flex: 1;
     padding: 1.5rem 2rem;
     overflow-y: auto;
@@ -16,10 +14,8 @@
 
 .header {
     display: flex;
-    flex-direction: row;
     align-items: center;
     margin: 0.5rem 0 0.75rem;
-    font-weight: bold;
 }
 
 .header h2 {
@@ -28,9 +24,41 @@
 }
 
 .divider {
-    flex-grow: 1;
+    flex: 1;
     margin-left: 1rem;
     border-top: 1px dashed $ui-tertiary;
+}
+
+.page-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.page-title p {
+    margin: -0.35rem 0 0.75rem;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.8125rem;
+}
+
+.refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    color: $text-primary;
+    background: $ui-primary;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.refresh:hover {
+    background: $ui-tertiary;
 }
 
 .row {
@@ -48,7 +76,7 @@
 }
 
 .label {
-    width: 8rem;
+    width: 9rem;
     flex-shrink: 0;
     font-weight: 600;
 }
@@ -66,8 +94,167 @@
 }
 
 .detail {
-    margin: 0.75rem 1rem 0;
+    margin: 0.5rem 1rem 1rem;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
     font-size: 0.8125rem;
     line-height: 1.4;
+}
+
+.status-good,
+.status-bad {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0.25rem 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: $badge-background;
+}
+
+.status-bad {
+    color: $error-primary;
+    background: $error-transparent;
+}
+
+.status-good span,
+.status-bad span {
     color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.summary > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: $badge-background;
+}
+
+.summary span {
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.75rem;
+}
+
+.summary strong {
+    font-size: 1.1rem;
+}
+
+.meter {
+    margin: 0.75rem 1rem 1rem;
+}
+
+.meter-label {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.8125rem;
+}
+
+.meter-label > span:first-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.meter-label small {
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+}
+
+.meter-label > span:last-child {
+    flex-shrink: 0;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-variant-numeric: tabular-nums;
+}
+
+.meter-label .over {
+    color: $error-primary;
+    font-weight: 700;
+}
+
+.meter-track,
+.bar {
+    height: 0.45rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: $ui-tertiary;
+}
+
+.meter-fill,
+.meter-fill-over,
+.bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: $motion-primary;
+}
+
+.meter-fill-over {
+    background: $error-primary;
+}
+
+.breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1rem;
+}
+
+.breakdown-label,
+.largest-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.breakdown-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.8125rem;
+}
+
+.largest {
+    display: flex;
+    flex-direction: column;
+}
+
+.largest-row {
+    align-items: center;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid $ui-tertiary;
+}
+
+.largest-row > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+    overflow-wrap: anywhere;
+}
+
+.largest-row small {
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+}
+
+.largest-row > strong {
+    flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+    .page-content {
+        padding: 1.25rem;
+    }
+
+    .summary {
+        grid-template-columns: 1fr;
+    }
 }
