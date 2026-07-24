@@ -12,7 +12,7 @@ import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
-import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
+import {KO_FI_SHOP_URL} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
 import useEscape from '../use-escape.js';
 import styles from './MyStuff.module.css';
@@ -27,7 +27,7 @@ const visibilityLabel = project => {
     return 'Draft';
 };
 
-const Overview = ({stats, account, quota, onBuyCredits}) => {
+const Overview = ({stats, account, quota}) => {
     const weekViews = historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0);
     const pct = quota ? (quota.used / quota.limit) * 100 : 0;
     return (
@@ -76,10 +76,10 @@ const Overview = ({stats, account, quota, onBuyCredits}) => {
                         <span className={styles.dashIcon}><Wallet size={18} /></span>
                         <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
                         <span className={styles.dashLabel}>Balance</span>
-                        <button
+                        <a
                             className={styles.dashBuy}
-                            onClick={onBuyCredits}
-                        >Buy credits</button>
+                            href={KO_FI_SHOP_URL}
+                        >Buy credits</a>
                     </div>
                 ) : null}
                 {account && account.donationsReceived > 0 ? (
@@ -366,7 +366,6 @@ const MyStuff = () => {
     const [quota, setQuota] = useState(null);
     const [stats, setStats] = useState(null);
     const [account, setAccount] = useState(null);
-    const [showBuyCredits, setShowBuyCredits] = useState(false);
     const [pendingUploadFile, setPendingUploadFile] = useState(null);
     const [showAgreeModal, setShowAgreeModal] = useState(false);
     const [agreeData, setAgreeData] = useState(null);
@@ -650,13 +649,6 @@ const MyStuff = () => {
                 </p>
             ) : null}
 
-            {showBuyCredits ? (
-                <BuyCreditsModal
-                    balance={account && account.balance}
-                    onClose={() => setShowBuyCredits(false)}
-                />
-            ) : null}
-
             {showAgreeModal && agreeData ? (
                 <div className={styles.confirmOverlay} onClick={cancelAgreeModal}>
                     <div
@@ -709,7 +701,6 @@ const MyStuff = () => {
                                 stats={stats}
                                 account={account}
                                 quota={quota}
-                                onBuyCredits={() => setShowBuyCredits(true)}
                             />
                         ) : (
                             <p className={styles.status}>Loading…</p>

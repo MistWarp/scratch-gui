@@ -82,16 +82,16 @@ const clearProjectSourceOnForeignLoads = vm => {
 
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
-const loadPlatformProject = async id => {
-    let project = takeProjectHandoff(id);
-    if (!project) {
-        ({project} = await getMistWarpProject(id));
-    }
+const loadPlatformProject = async (id, source) => {
+    const project = source || takeProjectHandoff(id) || (await getMistWarpProject(id)).project;
     if (project.assetsBase && isHttpUrl(project.assetsBase)) {
         storage.addMistWarpAssetStore(project.assetsBase);
     }
     rememberPlatformProject(project);
-    return {data: await fetchArrayBuffer(project.projectJsonUrl), title: project.title};
+    const data = hasBridge() ?
+        await bridgeFetch(project.projectJsonUrl).catch(() => fetchArrayBuffer(project.projectJsonUrl)) :
+        await fetchArrayBuffer(project.projectJsonUrl);
+    return {data, title: project.title};
 };
 
 // TW: Temporary hack for project tokens
@@ -201,8 +201,14 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
             let projectUrl = searchParams && searchParams.get('project_url');
-            if (hashProjectId) {
-                assetPromise = loadPlatformProject(hashProjectId);
+            if (hashProjectId || platformProject) {
+                const id = hashProjectId || platformProject;
+                const source = platformProject && !hashProjectId && projectUrl ? {
+                    id,
+                    projectJsonUrl: projectUrl,
+                    assetsBase: mistwarpAssets
+                } : null;
+                assetPromise = loadPlatformProject(id, source);
             } else if (cloneUrl) {
                 assetPromise = cloneProjectFromRepo(cloneUrl);
             } else if (projectUrl) {

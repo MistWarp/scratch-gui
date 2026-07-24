@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {Search} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
@@ -57,7 +57,7 @@ TagItem.propTypes = {
 const ExtensionCard = ({item, onSelect}) => {
     const handleClick = React.useCallback(() => onSelect(item), [onSelect, item]);
     const icon = item.iconURL || item.rawURL;
-    const body = (
+    const content = (
         <React.Fragment>
             {icon ? (
                 <img
@@ -67,6 +67,14 @@ const ExtensionCard = ({item, onSelect}) => {
                     draggable={false}
                 />
             ) : <div className={styles.cardIcon} />}
+            {item.insetIconURL ? (
+                <img
+                    className={styles.cardInsetIcon}
+                    src={item.insetIconURL}
+                    alt=""
+                    draggable={false}
+                />
+            ) : null}
             <div className={styles.cardText}>
                 <div className={styles.cardName}>{item.name}</div>
                 {item.description ? (
@@ -75,27 +83,93 @@ const ExtensionCard = ({item, onSelect}) => {
             </div>
         </React.Fragment>
     );
-    if (item.href) {
-        return (
-            <a
-                className={styles.card}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                {body}
-            </a>
-        );
-    }
+    const info = item.docsURI || item.samples || item.credits || item.bluetoothRequired ||
+        item.internetConnectionRequired || item.collaborator ? (
+            <div className={styles.cardInfo}>
+                {item.docsURI ? (
+                    <a
+                        href={item.docsURI}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <FormattedMessage
+                            defaultMessage="Documentation"
+                            id="tw.documentation"
+                        />
+                    </a>
+                ) : null}
+                {item.samples && item.samples[0] ? (
+                    <a
+                        href={item.samples[0].href}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <FormattedMessage
+                            defaultMessage="Sample project"
+                            id="tw.sample"
+                        />
+                    </a>
+                ) : null}
+                {item.credits && item.credits.length ? (
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Created by:"
+                            id="tw.createdBy"
+                        />
+                        {' '}
+                        {item.credits.map((credit, index) => (
+                            <React.Fragment key={index}>
+                                {credit}{index < item.credits.length - 1 ? ', ' : null}
+                            </React.Fragment>
+                        ))}
+                    </span>
+                ) : null}
+                {item.bluetoothRequired || item.internetConnectionRequired ? (
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Requires"
+                            id="gui.extensionLibrary.requires"
+                        />
+                        {': '}
+                        {[item.bluetoothRequired && 'Bluetooth', item.internetConnectionRequired && 'Internet']
+                            .filter(Boolean).join(', ')}
+                    </span>
+                ) : null}
+                {item.collaborator ? (
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Collaboration with"
+                            id="gui.extensionLibrary.collaboration"
+                        />
+                        {': '}
+                        {item.collaborator}
+                    </span>
+                ) : null}
+            </div>
+        ) : null;
     return (
-        <button
-            className={classNames(styles.card, {[styles.cardDisabled]: item.disabled})}
-            onClick={handleClick}
-            disabled={item.disabled}
-            type="button"
-        >
-            {body}
-        </button>
+        <div className={classNames(styles.card, {[styles.cardDisabled]: item.disabled})}>
+            {item.href ? (
+                <a
+                    className={styles.cardSelect}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {content}
+                </a>
+            ) : (
+                <button
+                    className={styles.cardSelect}
+                    onClick={handleClick}
+                    disabled={item.disabled}
+                    type="button"
+                >
+                    {content}
+                </button>
+            )}
+            {info}
+        </div>
     );
 };
 
