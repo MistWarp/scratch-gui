@@ -57,7 +57,7 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
     align-content: start;
 }
@@ -66,7 +66,6 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0;
     text-align: left;
     background: $ui-primary;
     border: 1px solid $ui-black-transparent;
@@ -76,6 +75,22 @@
     color: $text-primary;
     text-decoration: none;
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.card-select {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.card-select:disabled {
+    cursor: default;
 }
 
 .card:hover {
@@ -104,12 +119,23 @@
 .card-icon {
     display: block;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 2 / 1;
     height: auto;
     object-fit: cover;
     object-position: center;
     background: color-mix(in srgb, $text-primary 6%, $ui-primary);
     border-bottom: 1px solid $ui-black-transparent;
+}
+
+.card-inset-icon {
+    width: 40px;
+    height: 40px;
+    margin: -20px 14px 0;
+    padding: 6px;
+    border: 3px solid $ui-primary;
+    border-radius: 8px;
+    background: $pen-primary;
+    box-sizing: border-box;
 }
 
 .card-text {
@@ -130,4 +156,19 @@
     font-size: 0.8125rem;
     color: color-mix(in srgb, $text-primary 65%, transparent);
     line-height: 1.35;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 14px 14px;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+.card-info a {
+    color: inherit;
+    text-decoration: underline;
 }

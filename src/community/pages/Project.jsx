@@ -9,8 +9,7 @@ import {
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
 import {cachedFetchBuffer, cachedFetchJson} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
-import {isInsufficientFunds} from '../credits';
-import BuyCreditsModal from '../components/BuyCreditsModal.jsx';
+import {isInsufficientFunds, KO_FI_SHOP_URL} from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import {getBalance} from '../../lib/rotur/client.js';
 import {
@@ -132,7 +131,7 @@ const analyzeBlocks = data => {
         }
     }
     const topCategories = topFive(categories)
-        .map(([prefix, count]) => ({label: catLabel(prefix), count, color: catColor(prefix)}));
+        .map(([prefix, count]) => ({id: prefix, label: catLabel(prefix), count, color: catColor(prefix)}));
     return {total, topCategories};
 };
 
@@ -159,8 +158,6 @@ const Project = () => {
     const [customExtensions, setCustomExtensions] = useState([]);
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
-    const [showBuyCredits, setShowBuyCredits] = useState(false);
-    const [creditBalance, setCreditBalance] = useState(null);
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [confirmBalance, setConfirmBalance] = useState(null);
     const [savingLibrary, setSavingLibrary] = useState(false);
@@ -268,12 +265,13 @@ const Project = () => {
     }, [project]);
 
     const projectJsonUrl = project && project.projectJsonUrl;
+    const projectJsonBytes = project && project.jsonBytes;
     useEffect(() => {
         setBlockStats(null);
         setCustomExtensions([]);
         setUnsandboxed(false);
         let cancelled = false;
-        if (projectJsonUrl) {
+        if (projectJsonUrl && !(projectJsonBytes > 5 * 1024 * 1024)) {
             cachedFetchJson(projectJsonUrl)
                 .then(data => {
                     if (cancelled) return;
@@ -285,7 +283,7 @@ const Project = () => {
         return () => {
             cancelled = true;
         };
-    }, [projectJsonUrl]);
+    }, [projectJsonUrl, projectJsonBytes]);
 
     const runUnsandboxed = () => {
         // eslint-disable-next-line no-alert
@@ -580,7 +578,7 @@ const Project = () => {
         } catch (e) {
             setConfirmBuy(false);
             if (isInsufficientFunds(e)) {
-                setShowBuyCredits(true);
+                window.location.assign(KO_FI_SHOP_URL);
             } else if (e.needsReauth) {
                 setActionError('Your current login cannot send credits. Log out and back in, then try again.');
             } else {
@@ -899,13 +897,6 @@ const Project = () => {
                     onClose={() => setReporting(false)}
                 />
             ) : null}
-            {showBuyCredits ? (
-                <BuyCreditsModal
-                    needed={price}
-                    balance={creditBalance}
-                    onClose={() => setShowBuyCredits(false)}
-                />
-            ) : null}
             {roturModal ? (
                 <RoturConsentModal
                     type={roturModal.type}
@@ -941,17 +932,13 @@ const Project = () => {
                                 onClick={() => setConfirmBuy(false)}
                             >Cancel</button>
                             {confirmBalance !== null && confirmBalance < price ? (
-                                <button
+                                <a
                                     className={styles.confirmButton}
-                                    onClick={() => {
-                                        setConfirmBuy(false);
-                                        setCreditBalance(confirmBalance);
-                                        setShowBuyCredits(true);
-                                    }}
+                                    href={KO_FI_SHOP_URL}
                                 >
                                     <Coins size={15} />
                                     Buy credits
-                                </button>
+                                </a>
                             ) : (
                                 <button
                                     className={styles.confirmButton}
@@ -1234,7 +1221,7 @@ const BarChart = ({title, rows}) => {
             <ul className={styles.chartRows}>
                 {rows.map(row => (
                     <li
-                        key={row.label}
+                        key={row.id}
                         className={styles.chartRow}
                     >
                         <span

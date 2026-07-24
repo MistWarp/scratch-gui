@@ -217,6 +217,21 @@
     overflow: hidden;
 }
 
+.bar-inner.indeterminate {
+    width: 30% !important;
+    animation: bar-indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes bar-indeterminate {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(333%);
+    }
+}
+
 /* A light sweeping across the bar, so it still looks alive during a stage that
    cannot report progress. */
 .bar-inner::after {
