@@ -58,6 +58,7 @@ import roturSocialIcon from './rotur/social.png';
 import roturShopIcon from './rotur/shop.png';
 import roturGroupsIcon from './rotur/groups.png';
 import roturFilesIcon from './rotur/files.png';
+import patchingIcon from './patching/patching.png';
 import customExtensionIcon from './custom/custom.svg';
 import galleryIcon from './gallery/gallery.svg';
 import {APP_NAME} from '../../constants/brand';
@@ -90,10 +91,10 @@ export default [
     {
         name: 'Patching',
         extensionId: 'patching',
-        iconURL: twIcon,
+        iconURL: patchingIcon,
         description: 'Inject JavaScript into compiled projects.',
         incompatibleWithScratch: true,
-        tags: ['tw'],
+        tags: ['mistium'],
         featured: true
     },
     {
@@ -102,7 +103,7 @@ export default [
         iconURL: roturAccountIcon,
         description: 'Log in with Rotur and read who the player is.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -111,7 +112,7 @@ export default [
         iconURL: roturEconomyIcon,
         description: 'Credits, transfers, and daily rewards.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -120,7 +121,7 @@ export default [
         iconURL: roturKeysIcon,
         description: 'Buy, sell, and check Rotur keys.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -129,7 +130,7 @@ export default [
         iconURL: roturStatusIcon,
         description: 'Read and set Rotur status and presence.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -138,7 +139,7 @@ export default [
         iconURL: roturSocialIcon,
         description: 'Posts, follows, and friends on Rotur.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -147,7 +148,7 @@ export default [
         iconURL: roturShopIcon,
         description: 'Items and cosmetics marketplace.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -156,7 +157,7 @@ export default [
         iconURL: roturGroupsIcon,
         description: 'Communities, roles, and group economy.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
@@ -165,7 +166,7 @@ export default [
         iconURL: roturFilesIcon,
         description: 'Read and manage your Rotur file storage.',
         incompatibleWithScratch: true,
-        tags: ['rotur', 'mistium'],
+        tags: ['rotur'],
         featured: true
     },
     {
