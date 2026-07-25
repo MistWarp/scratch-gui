@@ -38,7 +38,9 @@ const rememberPlatformProject = project => {
             sessionStorage.setItem(PLATFORM_ID_KEY, JSON.stringify({
                 id: String(value.id),
                 isOwner: value.isOwner,
-                shared: !!value.shared
+                shared: !!value.shared,
+                projectJsonUrl: value.projectJsonUrl,
+                trustedExtensions: value.trustedExtensions || []
             }));
         } else {
             sessionStorage.removeItem(PLATFORM_ID_KEY);

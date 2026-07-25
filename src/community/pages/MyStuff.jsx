@@ -518,6 +518,20 @@ const MyStuff = () => {
         }
     };
 
+    const createFromSb3 = useCallback(async file => {
+        let created;
+        try {
+            created = await api.createProject({title: file.name.replace(/\.sb3$/i, '') || 'Untitled'});
+            await api.uploadProject(created.id, file);
+            return created;
+        } catch (e) {
+            if (created) {
+                await api.deleteProject(created.id).catch(() => {});
+            }
+            throw e;
+        }
+    }, []);
+
     const uploadSb3 = async event => {
         const file = event.target.files[0];
         event.target.value = '';
@@ -531,7 +545,7 @@ const MyStuff = () => {
             return;
         }
 
-        // Check agreement acceptance before allowing upload — show modal if needed
+        // Check agreement acceptance before allowing upload, show modal if needed
         try {
             const agreementData = await api.agreement();
             const ag = agreementData.agreement;
@@ -546,18 +560,13 @@ const MyStuff = () => {
             // rather than blocking on a network error.
         }
 
-        let created;
         try {
             setActionError('');
             setUploading(true);
-            created = await api.createProject({title: file.name.replace(/\.sb3$/i, '') || 'Untitled'});
-            await api.uploadProject(created.id, file);
+            await createFromSb3(file);
             setTab('projects');
             load();
         } catch (e) {
-            if (created) {
-                api.deleteProject(created.id).catch(() => {});
-            }
             setActionError(e.message || 'Could not upload that project.');
         } finally {
             setUploading(false);
@@ -577,10 +586,7 @@ const MyStuff = () => {
             // Run the upload
             setActionError('');
             setUploading(true);
-            const created = await api.createProject({
-                title: file.name.replace(/\.sb3$/i, '') || 'Untitled'
-            });
-            await api.uploadProject(created.id, file);
+            await createFromSb3(file);
             setTab('projects');
             load();
         } catch (e) {
@@ -589,7 +595,7 @@ const MyStuff = () => {
             setAgreeBusy(false);
             setUploading(false);
         }
-    }, [pendingUploadFile, load]);
+    }, [pendingUploadFile, load, createFromSb3]);
 
     const cancelAgreeModal = useCallback(() => {
         setPendingUploadFile(null);

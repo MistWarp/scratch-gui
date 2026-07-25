@@ -448,3 +448,77 @@
     border-radius: var(--radius-sm);
     background: #000;
 }
+
+.extension-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.extension-search {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.extension-tab,
+.extension-tab-active {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-transform: capitalize;
+}
+
+.extension-tab-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.extension-row {
+    min-width: 0;
+}
+
+.extension-hash {
+    overflow-wrap: anywhere;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.extension-url {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.link-button {
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #e25555;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.extension-source {
+    max-height: 420px;
+    margin: 8px 0 0;
+    padding: 12px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--mw-text);
+    font-size: 12px;
+    white-space: pre;
+}

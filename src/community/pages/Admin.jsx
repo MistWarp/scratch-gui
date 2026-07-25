@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
-import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3, AlertTriangle} from 'lucide-react';
+import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3, AlertTriangle, Puzzle} from 'lucide-react';
 import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -15,6 +15,7 @@ const SECTIONS = [
     {key: 'reports', label: 'Reports', icon: Flag},
     {key: 'users', label: 'Users', icon: User},
     {key: 'projects', label: 'Projects', icon: FolderOpen},
+    {key: 'extensions', label: 'Extensions', icon: Puzzle},
     {key: 'bans', label: 'Bans', icon: Ban},
     {key: 'admins', label: 'Admins', icon: ShieldCheck}
 ];
@@ -684,6 +685,266 @@ const EvidencePanel = ({target}) => {
     );
 };
 
+const removeDeletedExtensionProjects = (extensions, deletedProjects) => {
+    const deleted = new Set((deletedProjects || []).map(String));
+    if (!deleted.size) return extensions;
+    return extensions.map(extension => {
+        const projects = (extension.projects || []).filter(id => !deleted.has(String(id)));
+        if (projects.length === (extension.projects || []).length) return extension;
+        return {...extension, projects, projectCount: projects.length};
+    });
+};
+
+const ExtensionManager = () => {
+    const [data, setData] = useState(null);
+    const [tab, setTab] = useState('untrusted');
+    const [error, setError] = useState('');
+    const [note, setNote] = useState('');
+    const [source, setSource] = useState(null);
+    const [blockedUrl, setBlockedUrl] = useState('');
+    const [query, setQuery] = useState('');
+
+    const load = useCallback(() => {
+        setError('');
+        return api.admin.extensions()
+            .then(setData)
+            .catch(e => setError(e.message || 'Could not load extensions.'));
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [load]);
+
+    const setPolicy = async (hash, status) => {
+        if (status === 'blocked' && !window.confirm('Block this extension and delete every project using it?')) {
+            return;
+        }
+        try {
+            const result = await api.admin.setExtensionPolicy(hash, status);
+            setNote(result.deleted ? `Deleted ${result.deleted} projects.` : 'Extension policy updated.');
+            setSource(null);
+            setData(current => ({
+                ...current,
+                extensions: removeDeletedExtensionProjects(current.extensions || [], result.deletedProjects)
+                    .map(extension => {
+                        if (extension.hash === hash) return {...extension, status};
+                        return extension;
+                    })
+            }));
+        } catch (e) {
+            setError(e.message || 'Could not update extension policy.');
+        }
+    };
+
+    const setUrlPolicy = async (url, blocked) => {
+        if (blocked && !window.confirm('Block this URL and delete every project using it?')) return;
+        try {
+            const result = await api.admin.setExtensionUrlPolicy(url, blocked);
+            setNote(result.deleted ? `Deleted ${result.deleted} projects.` : 'URL policy updated.');
+            setBlockedUrl('');
+            setData(current => ({
+                ...current,
+                extensions: removeDeletedExtensionProjects(current.extensions || [], result.deletedProjects),
+                blockedUrls: blocked ?
+                    [...new Set([...(current.blockedUrls || []), url])] :
+                    (current.blockedUrls || []).filter(blockedEntry => blockedEntry !== url)
+            }));
+        } catch (e) {
+            setError(e.message || 'Could not update URL policy.');
+        }
+    };
+
+    const viewSource = async hash => {
+        try {
+            setError('');
+            setSource({hash, text: 'Loading…'});
+            setSource({hash, text: await api.admin.extensionSource(hash)});
+        } catch (e) {
+            setSource(null);
+            setError(e.message || 'Could not load extension source.');
+        }
+    };
+
+    if (!data) {
+        return (
+            <div>
+                <h2>Extensions</h2>
+                <p className={error ? styles.error : styles.status}>{error || 'Loading…'}</p>
+            </div>
+        );
+    }
+
+    const allExtensions = data.extensions || [];
+    const search = query.trim().toLowerCase();
+    const extensions = allExtensions.filter(extension => {
+        if (extension.status !== tab) return false;
+        if (!search) return true;
+        const metadata = extension.metadata || {};
+        return [
+            extension.hash,
+            ...(extension.urls || []),
+            metadata.name,
+            metadata.id,
+            metadata.description,
+            metadata.author,
+            metadata.license
+        ].some(value => typeof value === 'string' && value.toLowerCase().includes(search));
+    });
+    const tabs = [
+        {status: 'untrusted', label: 'To be verified'},
+        {status: 'trusted', label: 'Trusted'},
+        {status: 'blocked', label: 'Blocked'}
+    ];
+
+    return (
+        <div>
+            <h2>Extensions</h2>
+            <input
+                type="search"
+                className={`${styles.input} ${styles.extensionSearch}`}
+                placeholder="Search extensions"
+                aria-label="Search extensions"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+            />
+            <div className={styles.extensionTabs}>
+                {tabs.map(item => (
+                    <button
+                        key={item.status}
+                        className={tab === item.status ? styles.extensionTabActive : styles.extensionTab}
+                        onClick={() => setTab(item.status)}
+                    >
+                        {`${item.label} (${
+                            allExtensions.filter(extension => extension.status === item.status).length
+                        })`}
+                    </button>
+                ))}
+            </div>
+            <div className={styles.addAdmin}>
+                <input
+                    className={styles.input}
+                    placeholder="Block an extension URL"
+                    value={blockedUrl}
+                    onChange={e => setBlockedUrl(e.target.value)}
+                />
+                <button
+                    className={styles.danger}
+                    onClick={() => blockedUrl.trim() && setUrlPolicy(blockedUrl.trim(), true)}
+                >Block URL</button>
+            </div>
+            {error ? <p className={styles.error}>{error}</p> : null}
+            {note ? <p className={styles.status}>{note}</p> : null}
+            {extensions.length ? (
+                <div className={styles.list}>
+                    {extensions.map(extension => (
+                        <div
+                            key={extension.hash}
+                            className={styles.extensionRow}
+                        >
+                            <div className={styles.row}>
+                                <div className={styles.rowInfo}>
+                                    {extension.metadata && extension.metadata.name ? (
+                                        <span className={styles.rowTitle}>{extension.metadata.name}</span>
+                                    ) : null}
+                                    {extension.metadata && extension.metadata.id ? (
+                                        <span className={styles.rowMeta}>{`ID: ${extension.metadata.id}`}</span>
+                                    ) : null}
+                                    {extension.metadata && extension.metadata.description ? (
+                                        <span className={styles.rowMeta}>{extension.metadata.description}</span>
+                                    ) : null}
+                                    {extension.metadata && extension.metadata.author ? (
+                                        <span className={styles.rowMeta}>{`By: ${extension.metadata.author}`}</span>
+                                    ) : null}
+                                    {extension.metadata && extension.metadata.license ? (
+                                        <span className={styles.rowMeta}>
+                                            {`License: ${extension.metadata.license}`}
+                                        </span>
+                                    ) : null}
+                                    <span className={styles.extensionHash}>{extension.hash}</span>
+                                    <span className={styles.rowMeta}>
+                                        {`Used in ${extension.projectCount} ${
+                                            extension.projectCount === 1 ? 'project' : 'projects'
+                                        }`}
+                                    </span>
+                                    {extension.urls.map(url => (
+                                        <span
+                                            key={url}
+                                            className={styles.extensionUrl}
+                                        >
+                                            {url}
+                                            {!extension.gallery && /^https?:\/\//.test(url) ? (
+                                                <button
+                                                    className={styles.linkButton}
+                                                    onClick={() => setUrlPolicy(url, true)}
+                                                >Block URL</button>
+                                            ) : null}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className={styles.rowActions}>
+                                    {extension.sourceAvailable ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => viewSource(extension.hash)}
+                                        >View source</button>
+                                    ) : null}
+                                    {!extension.gallery && tab !== 'trusted' ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setPolicy(extension.hash, 'trusted')}
+                                        >Trust</button>
+                                    ) : !extension.gallery ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
+                                        >Untrust</button>
+                                    ) : null}
+                                    {!extension.gallery && tab !== 'blocked' ? (
+                                        <button
+                                            className={styles.danger}
+                                            onClick={() => setPolicy(extension.hash, 'blocked')}
+                                        >Block hash</button>
+                                    ) : !extension.gallery ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
+                                        >Unblock</button>
+                                    ) : null}
+                                </div>
+                            </div>
+                            {source && source.hash === extension.hash ? (
+                                <pre className={styles.extensionSource}>{source.text}</pre>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className={styles.status}>
+                    {search ?
+                        'No matching extensions.' :
+                        (tab === 'untrusted' ? 'No extensions to verify.' : `No ${tab} extension hashes.`)}
+                </p>
+            )}
+            {tab === 'blocked' && data.blockedUrls && data.blockedUrls.length ? (
+                <div className={styles.list}>
+                    {data.blockedUrls.map(url => (
+                        <div
+                            key={url}
+                            className={styles.row}
+                        >
+                            <span className={styles.extensionUrl}>{url}</span>
+                            <button
+                                className={styles.secondary}
+                                onClick={() => setUrlPolicy(url, false)}
+                            >Unblock URL</button>
+                        </div>
+                    ))}
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
 const Admin = () => {
     const {user, loading} = useUser();
     const [reports, setReports] = useState(null);
@@ -921,6 +1182,12 @@ const Admin = () => {
                     {active === 'projects' ? (
                         <section className={styles.card}>
                             <ProjectManager />
+                        </section>
+                    ) : null}
+
+                    {active === 'extensions' ? (
+                        <section className={styles.card}>
+                            <ExtensionManager />
                         </section>
                     ) : null}
 

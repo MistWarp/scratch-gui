@@ -6,8 +6,9 @@ import log from '../lib/utils/log.js';
 import SecurityManagerModal from '../components/tw-security-manager-modal/security-manager-modal.jsx';
 import SecurityModals from '../lib/constants/security-manager.js';
 import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/persistence/tw-unsandboxed.js';
-import isTrustedExtensionUrl from '../lib/trusted-extension.js';
+import isTrustedExtensionUrl, {isGalleryExtensionUrl} from '../lib/trusted-extension.js';
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
+import {extensionSourceUrl, hashExtensionUrl} from '../lib/community/api.js';
 
 /* eslint-disable require-atomic-updates */
 
@@ -20,18 +21,6 @@ const manuallyTrustExtension = url => {
     extensionsTrustedByUser.add(url);
 };
 
-/**
- * Trusted extensions are loaded automatically and without a sandbox.
- * @param {string} url URL as a string.
- * @returns {boolean} True if the extension can is trusted
- */
-const isTrustedExtension = url => (
-    isTrustedExtensionUrl(url) ||
-    extensionsTrustedByUser.has(url)
-);
-
-const jsExecutionExtension = url => (/\/EvalPlus\.js$/i.test(url) ? 'EvalPlus' : null);
-
 const isPlatformProjectLoad = () => {
     try {
         const params = new URLSearchParams(location.search);
@@ -40,6 +29,28 @@ const isPlatformProjectLoad = () => {
         return false;
     }
 };
+
+const isPlatformTrustedExtension = async url => {
+    if (!isPlatformProjectLoad()) return false;
+    const project = getRememberedPlatformProjectState();
+    if (!project || !Array.isArray(project.trustedExtensions)) return false;
+    return project.trustedExtensions.includes(await hashExtensionUrl(url));
+};
+
+/**
+ * Trusted extensions are loaded automatically and without a sandbox.
+ * @param {string} url URL as a string.
+ * @returns {boolean} True if the extension can is trusted
+ */
+const isTrustedExtension = url => {
+    const platformProject = isPlatformProjectLoad() && getRememberedPlatformProjectState();
+    if (platformProject && Array.isArray(platformProject.trustedExtensions)) {
+        return isGalleryExtensionUrl(url) || extensionsTrustedByUser.has(url);
+    }
+    return isTrustedExtensionUrl(url) || extensionsTrustedByUser.has(url);
+};
+
+const jsExecutionExtension = url => (/\/EvalPlus\.js$/i.test(url) ? 'EvalPlus' : null);
 
 const isOwnedPlatformProject = () => {
     const project = getRememberedPlatformProjectState();
@@ -97,6 +108,7 @@ let allowedGeolocation = false;
 const SECURITY_MANAGER_METHODS = [
     'getSandboxMode',
     'canLoadExtensionFromProject',
+    'rewriteExtensionURL',
     'canFetch',
     'canOpenWindow',
     'canRedirect',
@@ -109,11 +121,10 @@ const SECURITY_MANAGER_METHODS = [
     'canDownload'
 ];
 
-const withSecurityBypass = (method, implementation, allowAll) => (...args) => (
-    allowAll() ?
-        (method === 'getSandboxMode' ? 'unsandboxed' : true) :
-        implementation(...args)
-);
+const withSecurityBypass = (method, implementation, allowAll) => (...args) => {
+    if (method === 'rewriteExtensionURL') return implementation(...args);
+    return allowAll() ? (method === 'getSandboxMode' ? 'unsandboxed' : true) : implementation(...args);
+};
 
 class TWSecurityManagerComponent extends React.Component {
     constructor (props) {
@@ -235,12 +246,21 @@ class TWSecurityManagerComponent extends React.Component {
      * @param {string} url The extension's URL
      * @returns {string} The VM worker mode to use
      */
-    getSandboxMode (url) {
-        if (isTrustedExtension(url)) {
+    async getSandboxMode (url) {
+        if (await isPlatformTrustedExtension(url) || isTrustedExtension(url)) {
             log.info(`Loading extension ${url} unsandboxed`);
             return 'unsandboxed';
         }
         return 'iframe';
+    }
+
+    async rewriteExtensionURL (url) {
+        const project = isPlatformProjectLoad() && getRememberedPlatformProjectState();
+        if (project && project.id && project.projectJsonUrl && !isGalleryExtensionUrl(url)) {
+            const rewritten = await extensionSourceUrl(project, url);
+            return rewritten;
+        }
+        return url;
     }
 
     handleChangeUnsandboxed (e) {
@@ -259,6 +279,10 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canLoadExtensionFromProject (url) {
         const dangerousJs = jsExecutionExtension(url);
+        if (await isPlatformTrustedExtension(url)) {
+            log.info(`Loading extension ${url} automatically`);
+            return true;
+        }
         if (!dangerousJs && isTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
             return true;
@@ -476,5 +500,6 @@ export {
     ConnectedSecurityManagerComponent as default,
     manuallyTrustExtension,
     isTrustedExtension,
+    isPlatformTrustedExtension,
     isOwnedPlatformProject
 };

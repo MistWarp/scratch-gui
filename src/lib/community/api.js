@@ -1,4 +1,6 @@
+import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
+import {isGalleryExtensionUrl} from '../trusted-extension.js';
 
 const API_BASE = 'https://mwapi.mistium.com/api';
 
@@ -139,8 +141,8 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
-const request = async (path, {method = 'GET', body, headers = {}, raw = false} = {}) => {
-    const cacheable = method === 'GET' && !raw;
+const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true} = {}) => {
+    const cacheable = method === 'GET' && !raw && cache;
     if (cacheable) {
         const hit = readApiCache(path);
         if (hit) return hit;
@@ -235,9 +237,51 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
     xhr.send(form);
 });
 
+const getCustomExtensionUrls = project => {
+    const urls = {...(project.extensionURLs || {})};
+    for (const target of project.targets || []) {
+        Object.assign(urls, (target && target.extensionURLs) || {});
+    }
+    return [...new Set(Object.values(urls).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url)))];
+};
+
+const hashExtensionUrl = async url => {
+    const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url)));
+    return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const extensionSourceUrl = async (project, url) => {
+    const params = new URLSearchParams();
+    try {
+        const key = new URL(project.projectJsonUrl).searchParams.get('k');
+        if (key) params.set('k', key);
+    } catch (e) {
+        params.delete('k');
+    }
+    const query = params.toString();
+    const hash = await hashExtensionUrl(url);
+    const sourceUrl = `${API_BASE}/projects/${encodeURIComponent(project.id)}/extensions/${hash}/source`;
+    return `${sourceUrl}${query ? `?${query}` : ''}`;
+};
+
+const collectExtensionSources = async sb3Blob => {
+    const zip = await JSZip.loadAsync(sb3Blob);
+    const projectFile = zip.file('project.json');
+    if (!projectFile) throw new Error('Project has no project.json');
+    const urls = getCustomExtensionUrls(JSON.parse(await projectFile.async('text')));
+    const sources = {};
+    await Promise.all(urls.map(async url => {
+        const response = await fetch(url, {credentials: 'omit'});
+        if (!response.ok) throw new Error(`Could not read custom extension source (${response.status}): ${url}`);
+        sources[url] = await response.text();
+    }));
+    return sources;
+};
+
 const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress) => {
     const form = new FormData();
     form.append('project', sb3Blob, 'project.sb3');
+    form.append('extensions', JSON.stringify(await collectExtensionSources(sb3Blob)));
     if (thumbnailBlob) {
         form.append('thumbnail', thumbnailBlob, 'thumb.png');
     }
@@ -312,5 +356,8 @@ export {
     getProject,
     remixProject,
     deleteProject,
-    request
+    request,
+    getCustomExtensionUrls,
+    hashExtensionUrl,
+    extensionSourceUrl
 };

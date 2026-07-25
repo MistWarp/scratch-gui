@@ -60,10 +60,10 @@ const projectData = translateFunction => {
                 currentCostume: 0,
                 costumes: [
                     {
-                        assetId: '927d672925e7b99f7813735c484c6922',
+                        assetId: '9d439ffa19a721c736dc91790d0eb350',
                         name: translator(messages.costume, {index: 1}),
                         bitmapResolution: 1,
-                        md5ext: '927d672925e7b99f7813735c484c6922.svg',
+                        md5ext: '9d439ffa19a721c736dc91790d0eb350.svg',
                         dataFormat: 'svg',
                         rotationCenterX: 100,
                         rotationCenterY: 100
