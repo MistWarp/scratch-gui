@@ -2,7 +2,6 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import React, {useCallback} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
-import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import smartSave from '../../lib/mw/smart-save.js';
@@ -15,11 +14,9 @@ import styles from './save-status.css';
 
 const TWSaveStatus = ({
     alertsList,
-    fileHandle,
     projectChanged,
     projectTitle,
     roturReady,
-    showSaveFilePicker,
     onProjectUnchanged,
     vm
 }) => {
@@ -38,29 +35,7 @@ const TWSaveStatus = ({
     if (!projectChanged) {
         return null;
     }
-    const saveToComputer = (
-        <SB3Downloader
-            showSaveFilePicker={showSaveFilePicker}
-        >
-            {(_className, _downloadProjectCallback, {smartSave: saveToDisk}) => (
-                <div
-                    onClick={saveToDisk}
-                    className={styles.saveNow}
-                    title={fileHandle ?
-                        `Save as ${fileHandle.name}` :
-                        'Save to your computer'}
-                >
-                    <Save
-                        className={styles.saveIconAlways}
-                        size={18}
-                    />
-                </div>
-            )}
-        </SB3Downloader>
-    );
-    if (!mistwarpAction) {
-        return saveToComputer;
-    }
+    if (!platformState || !mistwarpAction) return null;
     const mistwarpLabel = mistwarpAction === 'remix' ? 'Remix to MistWarp' : 'Save to MistWarp';
     return (
         <div
@@ -78,13 +53,9 @@ const TWSaveStatus = ({
 
 TWSaveStatus.propTypes = {
     alertsList: PropTypes.arrayOf(PropTypes.object),
-    fileHandle: PropTypes.shape({
-        name: PropTypes.string
-    }),
     projectChanged: PropTypes.bool,
     projectTitle: PropTypes.string,
     roturReady: PropTypes.bool,
-    showSaveFilePicker: PropTypes.func,
     onProjectUnchanged: PropTypes.func,
     vm: PropTypes.shape({
         saveProjectSb3: PropTypes.func,

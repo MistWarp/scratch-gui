@@ -7,6 +7,8 @@ import {Search} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import {
     ModalSidebar,
+    ModalSidebarGroup,
+    ModalSidebarGroupHeader,
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
@@ -26,6 +28,13 @@ const messages = defineMessages({
 });
 
 const ALL = 'all';
+const topExtensionIds = new Set(['tw', 'custom_extension', 'gallery']);
+const sources = [
+    ['scratch', 'Scratch'],
+    ['tw', 'TurboWarp'],
+    ['mistium', 'Mistium'],
+    ['rotur', 'Rotur']
+];
 
 const labelOf = (tag, intl) => (
     typeof tag.intlLabel === 'string' ? tag.intlLabel : intl.formatMessage(tag.intlLabel)
@@ -34,12 +43,11 @@ const labelOf = (tag, intl) => (
 // A real, loadable extension (not a divider or gallery-status card).
 const isExtension = item => item && typeof item === 'object' && (item.extensionId || item.href);
 
-const TagItem = ({tag, label, count, selected, onSelect}) => {
+const TagItem = ({tag, label, selected, onSelect}) => {
     const handleClick = React.useCallback(() => onSelect(tag), [onSelect, tag]);
     return (
         <ModalSidebarItem
             label={label}
-            count={count}
             selected={selected}
             onClick={handleClick}
         />
@@ -49,9 +57,20 @@ const TagItem = ({tag, label, count, selected, onSelect}) => {
 TagItem.propTypes = {
     tag: PropTypes.string.isRequired,
     label: PropTypes.node.isRequired,
-    count: PropTypes.number,
     selected: PropTypes.bool,
     onSelect: PropTypes.func.isRequired
+};
+
+const ExtensionSection = ({children, title}) => (
+    <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+        <div className={styles.grid}>{children}</div>
+    </section>
+);
+
+ExtensionSection.propTypes = {
+    children: PropTypes.node.isRequired,
+    title: PropTypes.node.isRequired
 };
 
 const ExtensionCard = ({item, onSelect}) => {
@@ -216,8 +235,25 @@ class TWExtensionLibrary extends React.Component {
 
     render () {
         const {intl, tags, title, onRequestClose, onItemSelected} = this.props;
-        const items = (this.props.data || []).filter(isExtension);
-        const visible = items.filter(item => this.matchesTag(item) && this.matchesQuery(item));
+        const data = this.props.data || [];
+        const divider = data.indexOf('---');
+        const builtIn = data.slice(0, divider === -1 ? data.length : divider).filter(isExtension);
+        const gallery = divider === -1 ? [] : data.slice(divider + 1).filter(isExtension);
+        const matches = item => this.matchesTag(item) && this.matchesQuery(item);
+        const items = builtIn.concat(gallery);
+        const visible = items.filter(matches);
+        const top = visible.filter(item => topExtensionIds.has(item.extensionId));
+        const sourceOf = item => item.source ||
+            (item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
+                item.tags.includes('tw') ? 'tw' : 'scratch');
+        const sections = sources.map(([source, sourceTitle]) => ({
+            title: sourceTitle,
+            items: visible.filter(item =>
+                !topExtensionIds.has(item.extensionId) && sourceOf(item) === source
+            )
+        })).filter(section => section.items.length);
+        const showSections = this.state.selectedTag === ALL && !this.state.query.trim() &&
+            (top.length || sections.length > 1);
 
         const sidebarTags = [{tag: ALL, intlLabel: intl.formatMessage(messages.all)}, ...tags];
 
@@ -235,21 +271,20 @@ class TWExtensionLibrary extends React.Component {
                 <ModalSidebarLayout className={styles.layout}>
                     <ModalSidebar
                         ariaLabel={title}
-                        width="narrow"
+                        width="wide"
                     >
-                        {sidebarTags.map(tag => (
-                            <TagItem
-                                key={tag.tag}
-                                tag={tag.tag}
-                                label={labelOf(tag, intl)}
-                                count={tag.tag === ALL ?
-                                    items.length :
-                                    items.filter(item => Array.isArray(item.tags) &&
-                                        item.tags.includes(tag.tag)).length}
-                                selected={this.state.selectedTag === tag.tag}
-                                onSelect={this.handleSelectTag}
-                            />
-                        ))}
+                        <ModalSidebarGroup>
+                            <ModalSidebarGroupHeader label="Extensions" />
+                            {sidebarTags.map(tag => (
+                                <TagItem
+                                    key={tag.tag}
+                                    tag={tag.tag}
+                                    label={labelOf(tag, intl)}
+                                    selected={this.state.selectedTag === tag.tag}
+                                    onSelect={this.handleSelectTag}
+                                />
+                            ))}
+                        </ModalSidebarGroup>
                     </ModalSidebar>
 
                     <div className={styles.content}>
@@ -267,15 +302,45 @@ class TWExtensionLibrary extends React.Component {
                             />
                         </div>
                         <div className={styles.scroll}>
-                            <div className={styles.grid}>
-                                {visible.map((item, index) => (
-                                    <ExtensionCard
-                                        key={`${item.extensionId || 'link'}-${index}`}
-                                        item={item}
-                                        onSelect={onItemSelected}
-                                    />
-                                ))}
-                            </div>
+                            {showSections ? (
+                                <React.Fragment>
+                                    {top.length ? (
+                                        <div className={styles.grid}>
+                                            {top.map((item, index) => (
+                                                <ExtensionCard
+                                                    key={`${item.extensionId || 'link'}-${index}`}
+                                                    item={item}
+                                                    onSelect={onItemSelected}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                    {sections.map(section => (
+                                        <ExtensionSection
+                                            key={section.title}
+                                            title={section.title}
+                                        >
+                                            {section.items.map((item, index) => (
+                                                <ExtensionCard
+                                                    key={`${item.extensionId || 'link'}-${index}`}
+                                                    item={item}
+                                                    onSelect={onItemSelected}
+                                                />
+                                            ))}
+                                        </ExtensionSection>
+                                    ))}
+                                </React.Fragment>
+                            ) : (
+                                <div className={styles.grid}>
+                                    {visible.map((item, index) => (
+                                        <ExtensionCard
+                                            key={`${item.extensionId || 'link'}-${index}`}
+                                            item={item}
+                                            onSelect={onItemSelected}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </ModalSidebarLayout>

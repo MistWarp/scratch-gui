@@ -61,6 +61,7 @@ const fetchLibrary = async () => {
         extensionId: extension.id,
         extensionURL: `https://extensions.turbowarp.org/${extension.slug}.js`,
         iconURL: `https://extensions.turbowarp.org/${extension.image || 'images/unknown.svg'}`,
+        source: 'tw',
         tags: ['tw'],
         credits: [
             ...(extension.by || []),
@@ -100,6 +101,7 @@ const fetchLibrary = async () => {
             extensionId: extension.id,
             extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
             iconURL: `https://extensions.mistium.com/${extension.image || 'images/unknown.svg'}`,
+            source: 'mistium',
             tags: ['mistium', 'tw'],
             credits: [
                 ...(extension.by || []),

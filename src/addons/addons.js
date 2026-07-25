@@ -79,7 +79,8 @@ const addons = [
     'autosave',
     'no-category-text',
     'green-flag-order',
-    'remove-extension-button'
+    'remove-extension-button',
+    'merge-operators'
 ];
 
 const newAddons = [
@@ -87,7 +88,8 @@ const newAddons = [
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',
-    'tab-styles'
+    'tab-styles',
+    'merge-operators'
 ];
 
 // eslint-disable-next-line import/no-commonjs
