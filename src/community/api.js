@@ -55,6 +55,9 @@ const embedUrl = (project, {unsandboxed = false, applyProjectTheme = true} = {})
     params.set('mw_assets', project.assetsBase);
     params.set('mw_bridge', '1');
     if (project.id) params.set('platform_project', project.id);
+    if (project.trustedExtensions && project.trustedExtensions.length) {
+        params.set('mw_te', JSON.stringify(project.trustedExtensions));
+    }
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
     }
@@ -153,7 +156,19 @@ const api = {
         stats: () => request('/admin/stats'),
         users: () => request('/admin/users'),
         payouts: () => request('/admin/payouts'),
-        retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'})
+        retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'}),
+        extensions: () => request('/admin/extensions', {cache: false}),
+        setExtensionPolicy: (hash, status) =>
+            request('/admin/extensions/policy', {method: 'POST', body: {hash, status}}),
+        setExtensionUrlPolicy: (url, blocked) =>
+            request('/admin/extensions/url-policy', {method: 'POST', body: {url, blocked}}),
+        extensionSource: hash =>
+            request(`/admin/extensions/${hash}/source`, {raw: true}).then(response => {
+                if (!response.ok) throw new Error(`Could not load source (${response.status})`);
+                return response.text();
+            }),
+        indexProjectExtensions: (id, sources) =>
+            request(`/admin/projects/${id}/extensions/index`, {method: 'POST', body: {sources}})
     },
     news: () => request('/news'),
     postNews: (title, body) => request('/news', {method: 'POST', body: {title, body}}),

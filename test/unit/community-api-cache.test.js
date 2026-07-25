@@ -46,6 +46,12 @@ describe('community api GET cache', () => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
+    test('cache can be disabled for fresh GETs', async () => {
+        await request('/admin/extensions', {cache: false});
+        await request('/admin/extensions', {cache: false});
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
     test('expired entries refetch', async () => {
         const now = Date.now();
         const spy = jest.spyOn(Date, 'now');

@@ -31,9 +31,10 @@ import {timeAgo, sameUser} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
-import isTrustedExtensionUrl from '../../lib/trusted-extension.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
+import {hashExtensionUrl} from '../../lib/community/api.js';
+import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
 const formatDate = ms => {
@@ -111,12 +112,15 @@ const restoreUserTheme = () => {
 
 const topFive = counts => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-const getCustomExtensions = data => {
+const getCustomExtensions = async (data, trustedExtensions) => {
     const urls = {...(data.extensionURLs || {})};
     for (const target of data.targets || []) {
-        Object.assign(urls, target.extensionURLs || {});
+        Object.assign(urls, (target && target.extensionURLs) || {});
     }
-    return Object.values(urls).filter(url => typeof url === 'string' && !isTrustedExtensionUrl(url));
+    const custom = Object.values(urls).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url));
+    const trusted = new Set(trustedExtensions || []);
+    const hashes = await Promise.all(custom.map(hashExtensionUrl));
+    return custom.filter((url, index) => !trusted.has(hashes[index]));
 };
 
 const analyzeBlocks = data => {
@@ -273,17 +277,20 @@ const Project = () => {
         let cancelled = false;
         if (projectJsonUrl && !(projectJsonBytes > 5 * 1024 * 1024)) {
             cachedFetchJson(projectJsonUrl)
-                .then(data => {
+                .then(async data => {
                     if (cancelled) return;
                     setBlockStats(analyzeBlocks(data));
-                    setCustomExtensions(getCustomExtensions(data));
+                    setCustomExtensions(await getCustomExtensions(
+                        data,
+                        project.trustedExtensions || []
+                    ));
                 })
                 .catch(() => !cancelled && setBlockStats(null));
         }
         return () => {
             cancelled = true;
         };
-    }, [projectJsonUrl, projectJsonBytes]);
+    }, [projectJsonUrl, projectJsonBytes, project && project.trustedExtensions]);
 
     const runUnsandboxed = () => {
         // eslint-disable-next-line no-alert

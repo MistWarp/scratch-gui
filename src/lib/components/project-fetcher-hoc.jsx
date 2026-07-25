@@ -49,7 +49,7 @@ const clearProjectSourceFromUrl = () => {
     if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
     const params = new URLSearchParams(location.search);
     let changed = false;
-    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets']) {
+    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te']) {
         if (params.has(key)) {
             params.delete(key);
             changed = true;
@@ -197,6 +197,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             const hashProjectId = hashMatch && hashMatch[1];
             rememberPlatformProject(platformProject ? {id: platformProject} : null);
             const mistwarpAssets = searchParams && searchParams.get('mw_assets');
+            let mistwarpTrustedExtensions = [];
+            try {
+                mistwarpTrustedExtensions = JSON.parse((searchParams && searchParams.get('mw_te')) || '[]');
+            } catch (e) {
+                mistwarpTrustedExtensions = [];
+            }
             if (mistwarpAssets && isHttpUrl(mistwarpAssets)) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
@@ -206,7 +212,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 const source = platformProject && !hashProjectId && projectUrl ? {
                     id,
                     projectJsonUrl: projectUrl,
-                    assetsBase: mistwarpAssets
+                    assetsBase: mistwarpAssets,
+                    trustedExtensions: mistwarpTrustedExtensions
                 } : null;
                 assetPromise = loadPlatformProject(id, source);
             } else if (cloneUrl) {
