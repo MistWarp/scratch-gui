@@ -1,18 +1,40 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {FormattedMessage, FormattedDate, FormattedTime, FormattedRelative} from 'react-intl';
+import {
+    defineMessages,
+    FormattedMessage,
+    FormattedDate,
+    FormattedTime,
+    FormattedRelative,
+    injectIntl,
+    intlShape
+} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import styles from './restore-point-modal.css';
 import {formatBytes} from '../../lib/utils/bytes';
 import RestorePointAPI from '../../lib/api/restore-points';
 import log from '../../lib/utils/log';
 
-import {Download, Trash} from 'lucide-react';
+import {Download, ImageOff, LoaderCircle, RotateCcw, Trash2} from 'lucide-react';
 
-// Browser support is not perfect yet
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
 
-class RestorePoint extends React.Component {
+const messages = defineMessages({
+    restore: {
+        defaultMessage: 'Restore',
+        id: 'tw.restorePoints.restore'
+    },
+    export: {
+        defaultMessage: 'Export',
+        id: 'tw.restorePoints.export'
+    },
+    delete: {
+        defaultMessage: 'Delete',
+        id: 'tw.restorePoints.delete'
+    }
+});
+
+export class RestorePoint extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -26,7 +48,6 @@ class RestorePoint extends React.Component {
         };
         this.unmounted = false;
 
-        // should never change for the same restore point
         this.totalSize = this.getTotalSize();
     }
 
@@ -66,13 +87,11 @@ class RestorePoint extends React.Component {
         return size;
     }
 
-    handleClickDelete (e) {
-        e.stopPropagation();
+    handleClickDelete () {
         this.props.onClickDelete(this.props.id);
     }
 
-    handleClickExport (e) {
-        e.stopPropagation();
+    handleClickExport () {
         this.props.onClickExport(this.props.id);
     }
 
@@ -82,78 +101,109 @@ class RestorePoint extends React.Component {
 
     render () {
         const createdDate = new Date(this.props.created * 1000);
+        const restoreLabel = this.props.intl.formatMessage(messages.restore);
+        const exportLabel = this.props.intl.formatMessage(messages.export);
+        const deleteLabel = this.props.intl.formatMessage(messages.delete);
         return (
-            <div
-                tabIndex={0}
-                role="button"
-                className={styles.restorePoint}
-                onClick={this.handleClickLoad}
-            >
-                <div className={styles.thumbnailContainer}>
-                    {this.state.error ? (
-                        <span className={styles.thumbnailPlaceholder}>
-                            {'?'}
-                        </span>
-                    ) : this.state.thumbnail ? (
-                        <img
-                            className={styles.thumbnailImage}
-                            src={this.state.thumbnail}
-                            draggable={false}
-                        />
-                    ) : null}
-                </div>
-
-                <div>
+            <article className={styles.restorePoint}>
+                <div className={styles.projectCell}>
+                    <div className={styles.thumbnailContainer}>
+                        {this.state.error ? (
+                            <span className={styles.thumbnailPlaceholder}>
+                                <ImageOff />
+                            </span>
+                        ) : this.state.thumbnail ? (
+                            <img
+                                alt=""
+                                className={styles.thumbnailImage}
+                                src={this.state.thumbnail}
+                                draggable={false}
+                            />
+                        ) : (
+                            <span className={styles.thumbnailPlaceholder}>
+                                <LoaderCircle className={styles.spinner} />
+                            </span>
+                        )}
+                    </div>
                     <div className={styles.restorePointTitle}>
                         {this.props.title}
                     </div>
+                </div>
 
-                    <div>
-                        {relativeTimeSupported() && (
-                            <span>
-                                <FormattedRelative value={createdDate} />
-                                {' ('}
-                            </span>
-                        )}
+                <div className={styles.tableCell}>
+                    {this.props.type === RestorePointAPI.TYPE_MANUAL ? (
+                        <FormattedMessage
+                            defaultMessage="Manual"
+                            id="tw.restorePoints.manual"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Automatic"
+                            id="tw.restorePoints.automatic"
+                        />
+                    )}
+                </div>
+
+                <div className={styles.tableCell}>
+                    {relativeTimeSupported() ? (
+                        <FormattedRelative value={createdDate} />
+                    ) : (
                         <FormattedDate value={createdDate} />
+                    )}
+                    <span>
+                        <FormattedDate
+                            day="numeric"
+                            month="short"
+                            value={createdDate}
+                        />
                         {', '}
                         <FormattedTime value={createdDate} />
-                        {relativeTimeSupported() && ')'}
-                    </div>
+                    </span>
+                </div>
 
-                    <div>
-                        {formatBytes(this.totalSize)}
-                        {', '}
+                <div className={styles.tableCell}>
+                    {formatBytes(this.totalSize)}
+                    <span>
                         <FormattedMessage
                             defaultMessage="{n} assets"
-                            // eslint-disable-next-line max-len
-                            description="Describes how many assets (costumes and images) are in a restore point. {n} is replaced with a number like 406"
                             id="tw.restorePoints.assets"
                             values={{
                                 n: Object.keys(this.props.assets).length
                             }}
                         />
-                    </div>
+                    </span>
                 </div>
 
                 <div className={styles.restorePointButtons}>
                     <button
-                        className={styles.restorePointButton}
-                        onClick={this.handleClickExport}
+                        aria-label={restoreLabel}
+                        className={styles.actionButton}
+                        onClick={this.handleClickLoad}
+                        title={restoreLabel}
+                    >
+                        <RotateCcw />
+                    </button>
+                    <button
+                        aria-label={exportLabel}
+                        className={styles.actionButton}
                         disabled={this.props.isExporting}
+                        onClick={this.handleClickExport}
+                        title={exportLabel}
                     >
                         <Download />
                     </button>
 
                     <button
-                        className={styles.restorePointButton}
-                        onClick={this.handleClickDelete}
+                        aria-label={deleteLabel}
+                        className={`${styles.actionButton} ${styles.deleteButton}`}
                         disabled={this.props.isExporting}
+                        onClick={this.handleClickDelete}
+                        title={deleteLabel}
                     >
-                        <Trash />
+                        <Trash2 />
                     </button>
                 </div>
-            </div>
+            </article>
         );
     }
 }
@@ -164,11 +214,13 @@ RestorePoint.propTypes = {
     created: PropTypes.number.isRequired,
     projectSize: PropTypes.number.isRequired,
     thumbnailSize: PropTypes.number.isRequired,
-    assets: PropTypes.shape({}).isRequired, // Record<string, number>
+    type: PropTypes.number.isRequired,
+    assets: PropTypes.shape({}).isRequired,
+    intl: intlShape,
     isExporting: PropTypes.bool.isRequired,
     onClickDelete: PropTypes.func.isRequired,
     onClickExport: PropTypes.func.isRequired,
     onClickLoad: PropTypes.func.isRequired
 };
 
-export default RestorePoint;
+export default injectIntl(RestorePoint);

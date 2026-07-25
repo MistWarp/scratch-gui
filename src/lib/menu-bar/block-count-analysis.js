@@ -1,5 +1,5 @@
-import WindowManager from '../../window-system/window-manager.js';
-import Utils from '../../../lib/find-bar/Utils.js';
+import WindowManager from '../../addons/window-system/window-manager.js';
+import Utils from '../find-bar/Utils.js';
 
 const CONDITIONALS = new Set([
     'control_if',
@@ -200,14 +200,13 @@ export const analyzeProject = runtime => {
 };
 
 /**
- * Add the live project count and complexity window.
- * @param {object} api Addon userscript API.
+ * @param {object} options Native menu bar integration.
+ * @returns {object} Controller.
  */
-export default async function ({addon, msg}) {
-    const vm = addon.tab.traps.vm;
+export default function (options) {
+    const {vm, display, getSetting, getBlockly, msg} = options;
     let analysisWindow = null;
     let analysisRoot = null;
-    let display = null;
     let navigation = null;
     let refreshTimer = null;
 
@@ -247,7 +246,7 @@ export default async function ({addon, msg}) {
     };
 
     const showScript = async script => {
-        const Blockly = await addon.tab.traps.getBlockly();
+        const Blockly = await getBlockly();
         if (!navigation) navigation = new Utils(vm, Blockly);
         if (!vm.editingTarget || vm.editingTarget.id !== script.targetId) vm.setEditingTarget(script.targetId);
         if (analysisWindow) analysisWindow.hide();
@@ -422,10 +421,10 @@ export default async function ({addon, msg}) {
         const metrics = analyzeProject(vm.runtime);
         if (display) {
             const parts = [];
-            if (!addon.settings.get('hide_block_count')) parts.push(msg('blocks', {num: metrics.blockCount}));
-            if (addon.settings.get('show_costume_count')) parts.push(msg('costumes', {num: metrics.costumeCount}));
-            if (addon.settings.get('show_sound_count')) parts.push(msg('sounds', {num: metrics.soundCount}));
-            if (addon.settings.get('show_complexity_score')) {
+            if (getSetting('show_block_count')) parts.push(msg('blocks', {num: metrics.blockCount}));
+            if (getSetting('show_costume_count')) parts.push(msg('costumes', {num: metrics.costumeCount}));
+            if (getSetting('show_sound_count')) parts.push(msg('sounds', {num: metrics.soundCount}));
+            if (getSetting('show_complexity_score')) {
                 parts.push(msg('complexity-menu', {score: metrics.complexityScore}));
             }
             display.textContent = parts.length ? parts.join(' · ') : msg('analysis-short');
@@ -440,28 +439,19 @@ export default async function ({addon, msg}) {
 
     vm.on('PROJECT_CHANGED', scheduleUpdate);
     vm.runtime.on('PROJECT_LOADED', updateDisplay);
-    addon.settings.addEventListener('change', updateDisplay);
-    addon.self.addEventListener('disabled', () => {
-        clearTimeout(refreshTimer);
-        if (analysisWindow) analysisWindow.close();
-    });
+    display.type = 'button';
+    display.title = msg('open-analysis');
+    display.addEventListener('click', showAnalysis);
+    updateDisplay();
 
-    for (;;) {
-        const topBar = await addon.tab.waitForElement("[class^='menu-bar_file-group']", {
-            markAsSeen: true,
-            reduxEvents: [
-                'scratch-gui/mode/SET_PLAYER',
-                'fontsLoaded/SET_FONTS_LOADED',
-                'scratch-gui/locales/SELECT_LOCALE'
-            ],
-            reduxCondition: state => !state.scratchGui.mode.isPlayerOnly
-        });
-        display = (topBar.parentElement || topBar).appendChild(element('button', 'sa-block-count-display'));
-        display.type = 'button';
-        display.dataset.mwItem = 'block-count';
-        display.title = msg('open-analysis');
-        display.addEventListener('click', showAnalysis);
-        addon.tab.displayNoneWhileDisabled(display);
-        updateDisplay();
-    }
+    return {
+        update: updateDisplay,
+        destroy: () => {
+            vm.off('PROJECT_CHANGED', scheduleUpdate);
+            vm.runtime.off('PROJECT_LOADED', updateDisplay);
+            display.removeEventListener('click', showAnalysis);
+            clearTimeout(refreshTimer);
+            if (analysisWindow) analysisWindow.close();
+        }
+    };
 }

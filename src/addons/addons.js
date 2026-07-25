@@ -10,7 +10,6 @@ const addons = [
     'data-category-tweaks-v2',
     'block-palette-icons',
     'hide-flyout',
-    'mediarecorder',
     'drag-drop',
     'debugger',
     'canvas-screenshot',
@@ -20,7 +19,6 @@ const addons = [
     'mouse-pos',
     'color-picker',
     'remove-sprite-confirm',
-    'block-count',
     'onion-skinning',
     'paint-snap',
     'default-costume-editor-color',
@@ -32,7 +30,6 @@ const addons = [
     'custom-block-shape',
     'editor-square-inputs',
     'zebra-striping',
-    'custom-menu-bar',
     'editor-theme3',
     'custom-block-text',
     'editor-colored-context-menus',
@@ -74,9 +71,7 @@ const addons = [
     'fullscreen',
     'tw-straighten-comments',
     'tw-remove-backpack',
-    'tw-remove-feedback',
     'tw-disable-cloud-variables',
-    'autosave',
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',
@@ -84,7 +79,6 @@ const addons = [
 ];
 
 const newAddons = [
-    'autosave',
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',

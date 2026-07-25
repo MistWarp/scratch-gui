@@ -22,6 +22,7 @@ import {
 import {Theme} from '../../lib/themes/index.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
+import {onSettingsChanged} from '../../lib/menu-bar/settings.js';
 
 const LABELS = {
     'file': 'File',
@@ -31,6 +32,7 @@ const LABELS = {
     'tools': 'Tools',
     'mode': 'Mode',
     'block-count': 'Block Count',
+    'media-recorder': 'Video Recorder',
     'save-status': 'Save Status',
     'about': 'About',
     'project-title': 'Project Title',
@@ -93,6 +95,21 @@ class MenuBarLayoutSetting extends React.Component {
             dragId: null,
             dragZone: null
         };
+    }
+    componentDidMount () {
+        this.disposeSettingsListener = onSettingsChanged(() => {
+            requestAnimationFrame(() => {
+                const present = getPresentOrderedIds();
+                this.setState({
+                    present,
+                    orders: this.readOrders(present),
+                    hidden: getHidden()
+                });
+            });
+        });
+    }
+    componentWillUnmount () {
+        if (this.disposeSettingsListener) this.disposeSettingsListener();
     }
     readOrders (present) {
         const orders = {};
@@ -194,7 +211,7 @@ class MenuBarLayoutSetting extends React.Component {
     render () {
         const currentAlign = (this.props.theme && this.props.theme.menuBarAlign) || 'center';
         return (
-            <div className={styles.setting}>
+            <div className={styles.menuBarLayout}>
                 <div className={styles.menuBarZoneLabel}>
                     <FormattedMessage
                         defaultMessage="Alignment"

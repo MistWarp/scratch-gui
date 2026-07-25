@@ -1,4 +1,4 @@
-import {analyzeProject} from '../../../src/addons/addons/block-count/blockcount';
+import {analyzeProject} from '../../../src/lib/menu-bar/block-count-analysis';
 
 const block = (id, opcode, extra = {}) => ({
     id,

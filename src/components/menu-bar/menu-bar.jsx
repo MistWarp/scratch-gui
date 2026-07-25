@@ -126,19 +126,21 @@ import {
 import {setFileHandle} from '../../reducers/tw.js';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import {showStandardAlert, showAlertWithTimeout, closeAlertWithId} from '../../reducers/alerts';
-import {
-    setAutosaveEnabled,
-    setAutosaveInterval,
-    setAutosaveNotifications
-} from '../../reducers/autosave.js';
-
 import collectMetadata from '../../lib/collect-metadata';
 import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
-import SettingsStore from '../../addons/settings-store-singleton.js';
+import {mediaRecorderSupported} from '../../addons/environment.js';
+import addonEnglish from '../../addons/addons-l10n/en.json';
+import initBlockCount from '../../lib/menu-bar/block-count-analysis.js';
+import {
+    getSetting as getMenuBarSetting,
+    getSettings as getMenuBarSettings,
+    onSettingsChanged
+} from '../../lib/menu-bar/settings.js';
 
 import openFractchTerminalWindow from '../../lib/mw/open-fractch-terminal-window.js';
 
 import WorkspaceBookmarksMenu from './workspace-bookmarks-menu.jsx';
+import MediaRecorderButton from './media-recorder.jsx';
 
 import {
     createWorkspaceBookmarksExportData,
@@ -150,6 +152,7 @@ import {
 } from '../../lib/mw/workspace-bookmarks.js';
 
 import styles from './menu-bar.css';
+import '!!style-loader!css-loader!./block-count.css';
 
 // import helpIcon from '../../lib/assets/icon--tutorials.svg';
 // import mystuffIcon from './icon--mystuff.png';
@@ -169,7 +172,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Send,
     Download, AppWindow, Computer, Shield, Code, Code2, MessageCircle, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Check, HelpCircle
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -290,6 +293,10 @@ const formatShortcutDisplay = keyCombo => {
 };
 
 const COLLAPSE_MENU_WIDTH = 900;
+const addonMessage = (intl, addonId) => (id, values) => intl.formatMessage({
+    id: `${addonId}/${id}`,
+    defaultMessage: addonEnglish[`${addonId}/${id}`] || id
+}, values);
 
 class MenuBar extends React.Component {
     constructor (props) {
@@ -306,9 +313,13 @@ class MenuBar extends React.Component {
             gitRemotes: [],
             menuCollapsed: false,
             moreMenuOpen: false,
+            menuBarSettings: getMenuBarSettings(),
             mistwarpProject: getRememberedPlatformProjectState()
         };
         this.menuBarRef = React.createRef();
+        this.blockCountRef = React.createRef();
+        this.blockCountController = null;
+        this.disposeMenuBarSettings = null;
         this.menuResizeObserver = null;
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
@@ -370,6 +381,26 @@ class MenuBar extends React.Component {
         this.observeMenuBarWidth();
         this.startAutosaveCountdown();
         this.refreshMistWarpShared();
+        if (this.blockCountRef.current) {
+            this.blockCountController = initBlockCount({
+                vm: this.props.vm,
+                display: this.blockCountRef.current,
+                getSetting: getMenuBarSetting,
+                getBlockly: this.ensureScratchBlocks,
+                msg: addonMessage(this.props.intl, 'block-count')
+            });
+        }
+        this.disposeMenuBarSettings = onSettingsChanged(() => {
+            const previousSettings = this.state.menuBarSettings;
+            const menuBarSettings = getMenuBarSettings();
+            this.setState({menuBarSettings}, () => {
+                if (this.blockCountController) this.blockCountController.update();
+                if (menuBarSettings.autosave_enabled !== previousSettings.autosave_enabled ||
+                    menuBarSettings.autosave_interval !== previousSettings.autosave_interval) {
+                    this.startAutosaveCountdown();
+                }
+            });
+        });
 
         // Prevent the legacy addon from also injecting a bookmarks menu.
         window.__mistwarpNativeWorkspaceBookmarks = true;
@@ -397,6 +428,8 @@ class MenuBar extends React.Component {
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
         document.removeEventListener('mousedown', this.handleDocumentMouseDown);
+        if (this.blockCountController) this.blockCountController.destroy();
+        if (this.disposeMenuBarSettings) this.disposeMenuBarSettings();
         if (this.menuResizeObserver) {
             this.menuResizeObserver.disconnect();
             this.menuResizeObserver = null;
@@ -1153,18 +1186,10 @@ class MenuBar extends React.Component {
         };
     }
     handleToggleAutosave () {
-        // Instead of enabling/disabling, just pause/resume the timer
         this.setState(prevState => ({autosavePaused: !prevState.autosavePaused}));
-        this.props.onRequestCloseFile();
     }
     getAutosaveEnabled () {
-        // Check if autosave addon is enabled and use its settings
-        const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
-
-        if (isAutosaveAddonEnabled) {
-            return SettingsStore.getAddonSetting('autosave', 'autosaveEnabled');
-        }
-        return this.props.autosaveEnabled;
+        return this.state.menuBarSettings.autosave_enabled;
     }
     getAutosaveTimeRemaining () {
         return this.state.autosaveTimeRemaining;
@@ -1181,15 +1206,7 @@ class MenuBar extends React.Component {
             return;
         }
 
-        // Get interval from addon settings or Redux state
-        const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
-        let intervalMinutes;
-
-        if (isAutosaveAddonEnabled) {
-            intervalMinutes = SettingsStore.getAddonSetting('autosave', 'interval') || 5;
-        } else {
-            intervalMinutes = this.props.autosaveInterval || 5;
-        }
+        const intervalMinutes = this.state.menuBarSettings.autosave_interval;
 
         // Set initial time
         const totalSeconds = intervalMinutes * 60;
@@ -1215,19 +1232,12 @@ class MenuBar extends React.Component {
         }, 1000);
     }
     performAutosave () {
+        if (this.state.menuBarSettings.autosave_only_when_changed && !this.props.projectChanged) return;
         // Save to the current file using the same method as manual save
         if (this.props.handleSaveProject) {
             this.props.handleSaveProject();
 
-            // Show notification if enabled
-            const isAutosaveAddonEnabled = SettingsStore.getAddonEnabled('autosave');
-            let showNotifications = true;
-
-            if (isAutosaveAddonEnabled) {
-                showNotifications = SettingsStore.getAddonSetting('autosave', 'showNotifications');
-            }
-
-            if (showNotifications) {
+            if (this.state.menuBarSettings.autosave_notifications) {
                 this.showAutosaveNotification('Project autosaved successfully!', 'success');
             }
         }
@@ -1427,7 +1437,11 @@ class MenuBar extends React.Component {
             <Box
                 className={classNames(
                     this.props.className,
-                    styles.menuBar
+                    styles.menuBar,
+                    {
+                        [styles.iconsOnly]: this.state.menuBarSettings.menu_labels === 'icons',
+                        [styles.labelsOnly]: this.state.menuBarSettings.menu_labels === 'labels'
+                    }
                 )}
                 ref={this.menuBarRef}
             >
@@ -1756,14 +1770,7 @@ class MenuBar extends React.Component {
                                     {this.getAutosaveEnabled() && (
                                         <MenuSection>
                                             <MenuItem onClick={this.handleToggleAutosave}>
-                                                <span
-                                                    className={classNames({
-                                                        [styles.inactive]: this.state.autosavePaused
-                                                    })}
-                                                >
-                                                    {this.state.autosavePaused ? <Pause /> : <Check />}
-                                                </span>
-                                                {' '}
+                                                {this.state.autosavePaused ? <Play /> : <Pause />}
                                                 {this.state.autosavePaused ? (
                                                     <FormattedMessage
                                                         defaultMessage="Resume autosave"
@@ -1788,7 +1795,6 @@ class MenuBar extends React.Component {
                                                         {'('}
                                                         {this.formatTimeRemaining(this.getAutosaveTimeRemaining())}
                                                         {')'}
-                                                        {' '}{this.state.autosavePaused && <Pause />}
                                                     </span>
                                                 )}
                                             </MenuItem>
@@ -2205,6 +2211,23 @@ class MenuBar extends React.Component {
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
                     </div>
 
+                    {!this.props.isPlayerOnly && mediaRecorderSupported &&
+                        this.state.menuBarSettings.show_media_recorder && (
+                        <MediaRecorderButton
+                            className={classNames(styles.menuBarItem, styles.hoverable)}
+                            labelClassName={styles.collapsibleLabel}
+                            projectTitle={this.props.projectTitle}
+                            vm={this.props.vm}
+                        />
+                    )}
+                    {!this.props.isPlayerOnly && (
+                        <button
+                            className="sa-block-count-display"
+                            data-mw-item="block-count"
+                            ref={this.blockCountRef}
+                        />
+                    )}
+
                     <div
                         data-mw-item="__divider"
                         className={styles.menuBarLayoutItem}
@@ -2396,8 +2419,6 @@ MenuBar.propTypes = {
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     autoUpdateProject: PropTypes.func,
-    autosaveEnabled: PropTypes.bool,
-    autosaveInterval: PropTypes.number,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     canCreateCopy: PropTypes.bool,
@@ -2498,9 +2519,6 @@ MenuBar.propTypes = {
     onRequestCloseTools: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
-    onSetAutosaveEnabled: PropTypes.func,
-    onSetAutosaveInterval: PropTypes.func,
-    onSetAutosaveNotifications: PropTypes.func,
     onSetTimeTravelMode: PropTypes.func,
     onShare: PropTypes.func,
     onStartSelectingFileUpload: PropTypes.func,
@@ -2542,8 +2560,6 @@ const mapStateToProps = (state, ownProps) => {
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
-        autosaveEnabled: state.scratchGui.autosave.enabled,
-        autosaveInterval: state.scratchGui.autosave.interval,
         currentLocale: state.locales.locale,
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
@@ -2624,9 +2640,6 @@ const mapDispatchToProps = dispatch => ({
     onClickSave: () => dispatch(manualUpdateProject()),
     onClickSaveAsCopy: () => dispatch(saveProjectAsCopy()),
     onSeeCommunity: () => dispatch(setPlayer(true)),
-    onSetAutosaveEnabled: enabled => dispatch(setAutosaveEnabled(enabled)),
-    onSetAutosaveInterval: interval => dispatch(setAutosaveInterval(interval)),
-    onSetAutosaveNotifications: showNotifications => dispatch(setAutosaveNotifications(showNotifications)),
     onSetTimeTravelMode: mode => dispatch(setTimeTravel(mode))
 });
 

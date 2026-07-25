@@ -1,0 +1,331 @@
+@import "../../css/colors.css";
+
+.menu-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    gap: 0.4rem;
+    height: 100%;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+
+.menu-button:focus-visible {
+    outline: none;
+}
+
+.menu-button-active {
+    background: color-mix(in srgb, $error-primary 20%, transparent);
+}
+
+.window {
+    color: $text-primary;
+}
+
+.page {
+    box-sizing: border-box;
+    min-height: 100%;
+    padding: 1.25rem;
+    background: $ui-modal-background;
+    color: $text-primary;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.intro {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+    padding: 0.9rem;
+    margin-bottom: 1rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.65rem;
+    background: $ui-primary;
+}
+
+.intro > svg {
+    flex: 0 0 auto;
+    color: $looks-secondary;
+}
+
+.intro div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.intro span {
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.section {
+    padding: 0.9rem;
+    margin-bottom: 0.8rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.65rem;
+    background: $ui-primary;
+}
+
+.section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+}
+
+.section h3 svg {
+    color: $looks-secondary;
+}
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.field-grid > label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.input-with-unit {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-modal-background;
+}
+
+.input-with-unit:focus-within {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.input-with-unit input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.input-with-unit span {
+    padding-right: 0.65rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.72rem;
+    font-weight: 400;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2rem;
+    color: $text-primary;
+    cursor: pointer;
+    font-size: 0.82rem;
+}
+
+.toggle-row + .toggle-row {
+    border-top: 1px solid $ui-black-transparent;
+}
+
+.toggle-row svg {
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+}
+
+.toggle-row span {
+    flex: 1;
+}
+
+.toggle-row input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: $looks-secondary;
+}
+
+.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    margin: 0.75rem 0;
+    border-radius: 0.55rem;
+    background: color-mix(in srgb, $error-primary 12%, transparent);
+    color: $text-primary;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.notice svg {
+    flex: 0 0 auto;
+    color: $error-primary;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.4rem;
+}
+
+.actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0 0.9rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.secondary-button {
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+}
+
+.secondary-button:hover {
+    background: $ui-secondary;
+}
+
+.primary-button {
+    border: 1px solid transparent;
+    background: $looks-secondary;
+    color: white;
+}
+
+.primary-button:hover {
+    background: color-mix(in srgb, $looks-secondary 88%, black);
+}
+
+.status-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 25rem;
+    padding: 1.5rem 0.5rem 0.5rem;
+    text-align: center;
+}
+
+.status-page h2 {
+    margin: 0.8rem 0 0.3rem;
+    font-size: 1.1rem;
+}
+
+.status-page > p {
+    max-width: 22rem;
+    margin: 0 0 1.5rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.status-icon {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: $looks-light-transparent;
+    color: $looks-secondary;
+}
+
+.status-icon.recording {
+    background: color-mix(in srgb, $error-primary 14%, transparent);
+    color: $error-primary;
+}
+
+.progress {
+    width: 100%;
+    height: 0.45rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: $ui-secondary;
+}
+
+.progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: $looks-secondary;
+    transition: width 0.1s linear;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    width: 100%;
+    margin: 0.8rem 0 1.5rem;
+}
+
+.stats div {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem 0.45rem;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.6rem;
+    background: $ui-primary;
+    text-align: left;
+}
+
+.stats svg {
+    grid-row: span 2;
+    color: $looks-secondary;
+}
+
+.stats span {
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+    font-size: 0.7rem;
+}
+
+.stats strong {
+    font-size: 0.82rem;
+}
+
+.status-page .actions {
+    width: 100%;
+    margin-top: auto;
+}
+
+@media (max-width: 440px) {
+    .field-grid,
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .actions {
+        flex-direction: column-reverse;
+    }
+
+    .actions button {
+        width: 100%;
+    }
+}

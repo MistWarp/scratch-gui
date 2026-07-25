@@ -1,11 +1,10 @@
 import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {AlertTriangle, Plus, RefreshCw, Trash2} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import RestorePoint from './restore-point.jsx';
 import styles from './restore-point-modal.css';
-import classNames from 'classnames';
-import {APP_NAME} from '../../lib/constants/brand';
 import {formatBytes} from '../../lib/utils/bytes';
 
 const messages = defineMessages({
@@ -15,35 +14,36 @@ const messages = defineMessages({
         id: 'tw.restorePoints.title'
     },
     never: {
-        defaultMessage: 'never',
-        id: 'tw.restorePoints.never',
-        description: 'Part of restore point modal. Appears as dropdown in context "Restore points are created [never]"'
+        defaultMessage: 'Never',
+        id: 'tw.restorePoints.never'
     },
     oneMinute: {
-        defaultMessage: 'every minute',
-        id: 'tw.restorePoints.1minute',
-        // eslint-disable-next-line max-len
-        description: 'Part of restore point modal. Appears as dropdown in context "Restore points are created [every minute]"'
+        defaultMessage: 'Every minute',
+        id: 'tw.restorePoints.1minute'
     },
     minutes: {
-        defaultMessage: 'every {n} minutes',
-        id: 'tw.restorePoints.minutes',
-        // eslint-disable-next-line max-len
-        description: 'Part of restore point modal. Appears as dropdown in context "Restore points are created [every 5 minutes]". {n} will be replaced with a number greater than 1.'
+        defaultMessage: 'Every {n} minutes',
+        id: 'tw.restorePoints.minutes'
+    },
+    refresh: {
+        defaultMessage: 'Refresh',
+        id: 'tw.restorePoints.refresh'
     }
 });
 
 const MINUTE = 1000 * 60;
 const INTERVAL_OPTIONS = [
-    MINUTE * 1,
+    MINUTE,
     MINUTE * 5,
     MINUTE * 10,
     MINUTE * 15,
     MINUTE * 30,
     -1
 ];
+
 const IntervalSelector = props => (
     <select
+        className={styles.intervalSelector}
         value={props.value}
         onChange={props.onChange}
     >
@@ -64,14 +64,13 @@ const IntervalSelector = props => (
             </option>
         ))}
         {!INTERVAL_OPTIONS.includes(props.value) && (
-            // This should never happen unless someone manually edits their storage, so we
-            // don't need to worry about making this work good.
             <option value={props.value}>
-                {`every ${props.value}ms`}
+                {`Every ${props.value}ms`}
             </option>
         )}
     </select>
 );
+
 IntervalSelector.propTypes = {
     intl: intlShape,
     value: PropTypes.number.isRequired,
@@ -80,136 +79,200 @@ IntervalSelector.propTypes = {
 
 const RestorePointModal = props => (
     <Modal
+        centered
         className={styles.modalContent}
-        onRequestClose={props.onClose}
         contentLabel={props.intl.formatMessage(messages.title)}
+        height={560}
         id="restorePointModal"
+        minHeight={420}
+        minWidth={500}
+        onRequestClose={props.onClose}
+        width={680}
     >
         <div className={styles.body}>
-            <p>
-                <FormattedMessage
-                    // eslint-disable-next-line max-len
-                    defaultMessage="{APP_NAME} periodically saves restore points on your computer to help recover your project if you forget to save. This is intended as a last resort for recovery. Your computer may silently delete these restore points at any time. DO NOT rely on this feature."
-                    id="tw.restorePoints.description"
-                    values={{
-                        APP_NAME: APP_NAME
-                    }}
+            <div className={styles.automaticRow}>
+                <div>
+                    <strong>
+                        <FormattedMessage
+                            defaultMessage="Automatic restore points"
+                            id="tw.restorePoints.automaticHeading"
+                        />
+                    </strong>
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Local recovery snapshots. Keep separate backups too."
+                            id="tw.restorePoints.automaticDescription"
+                        />
+                    </span>
+                </div>
+                <IntervalSelector
+                    intl={props.intl}
+                    value={props.interval}
+                    onChange={props.onChangeInterval}
                 />
-            </p>
-
-            <p>
-                <FormattedMessage
-                    defaultMessage="Restore points are created {time}."
-                    id="tw.restorePoints.intervalOption"
-                    // eslint-disable-next-line max-len
-                    description="{time} will be replaced with a dropdown with values such as [every 5 minutes] and [never]"
-                    values={{
-                        time: (
-                            <IntervalSelector
-                                intl={props.intl}
-                                value={props.interval}
-                                onChange={props.onChangeInterval}
-                            />
-                        )
-                    }}
-                />
-            </p>
-
+            </div>
             {props.interval < 0 && (
-                <p className={styles.disabled}>
+                <div className={styles.warning}>
+                    <AlertTriangle />
                     <FormattedMessage
-                        defaultMessage="Disabling restore points is dangerous."
-                        // eslint-disable-next-line max-len
-                        description="Warning that appears in restore point modal when the user has disabled restore points."
+                        defaultMessage="Automatic restore points are off. Manual restore points are still available."
                         id="tw.restorePoints.off"
                     />
-                </p>
+                </div>
             )}
 
-            {props.error ? (
-                <div className={styles.error}>
-                    <p>
+            <div className={styles.listToolbar}>
+                <div>
+                    <strong>
                         <FormattedMessage
-                            defaultMessage="Restore points are not available due to an error:"
-                            // eslint-disable-next-line max-len
-                            description="Error message in restore point manager when the list of restore points cannot be loaded. Followed by an error message."
-                            id="tw.restorePoints.error"
-                            values={{
-                                error: props.error
-                            }}
+                            defaultMessage="Saved versions"
+                            id="tw.restorePoints.savedHeading"
                         />
-                    </p>
-                    <p className={styles.errorMessage}>
-                        {props.error}
-                    </p>
+                    </strong>
+                    {!props.isLoading && !props.error && (
+                        <span className={styles.summary}>
+                            <FormattedMessage
+                                defaultMessage="{count} restore points · {size}"
+                                id="tw.restorePoints.summary"
+                                values={{
+                                    count: props.restorePoints.length,
+                                    size: formatBytes(props.totalSize)
+                                }}
+                            />
+                        </span>
+                    )}
+                </div>
+                <div className={styles.headerActions}>
+                    <button
+                        aria-label={props.intl.formatMessage(messages.refresh)}
+                        className={styles.iconButton}
+                        disabled={props.isLoading}
+                        onClick={props.onClickRefresh}
+                        title={props.intl.formatMessage(messages.refresh)}
+                    >
+                        <RefreshCw />
+                    </button>
+                    <button
+                        className={styles.primaryButton}
+                        disabled={props.isLoading}
+                        onClick={props.onClickCreate}
+                    >
+                        <Plus />
+                        <FormattedMessage
+                            defaultMessage="Create"
+                            id="tw.restorePoints.create"
+                        />
+                    </button>
+                </div>
+            </div>
+
+            {props.error ? (
+                <div className={styles.state}>
+                    <AlertTriangle />
+                    <strong>
+                        <FormattedMessage
+                            defaultMessage="Restore points could not be loaded"
+                            id="tw.restorePoints.error"
+                        />
+                    </strong>
+                    <span className={styles.errorMessage}>{props.error}</span>
+                    <button
+                        className={styles.secondaryButton}
+                        onClick={props.onClickRefresh}
+                    >
+                        <RefreshCw />
+                        <FormattedMessage
+                            defaultMessage="Try again"
+                            id="tw.restorePoints.retry"
+                        />
+                    </button>
                 </div>
             ) : props.isLoading ? (
-                <div className={styles.loading}>
+                <div className={styles.state}>
+                    <RefreshCw className={styles.spinner} />
                     <FormattedMessage
-                        defaultMessage="Loading..."
-                        description="Loading message in restore point manager"
+                        defaultMessage="Loading restore points…"
                         id="tw.restorePoints.loading"
                     />
                 </div>
             ) : props.restorePoints.length === 0 ? (
-                <div className={styles.empty}>
-                    <FormattedMessage
-                        defaultMessage="No restore points found."
-                        description="Message that appears when no restore points exist yet"
-                        id="tw.restorePoints.empty"
-                    />
+                <div className={styles.state}>
+                    <strong>
+                        <FormattedMessage
+                            defaultMessage="No restore points yet"
+                            id="tw.restorePoints.empty"
+                        />
+                    </strong>
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Create one now or keep working until the next automatic snapshot."
+                            id="tw.restorePoints.emptyDescription"
+                        />
+                    </span>
                 </div>
             ) : (
-                <React.Fragment>
+                <div className={styles.table}>
+                    <div className={styles.tableHeader}>
+                        <span>
+                            <FormattedMessage
+                                defaultMessage="Project"
+                                id="tw.restorePoints.projectColumn"
+                            />
+                        </span>
+                        <span>
+                            <FormattedMessage
+                                defaultMessage="Type"
+                                id="tw.restorePoints.typeColumn"
+                            />
+                        </span>
+                        <span>
+                            <FormattedMessage
+                                defaultMessage="Created"
+                                id="tw.restorePoints.createdColumn"
+                            />
+                        </span>
+                        <span>
+                            <FormattedMessage
+                                defaultMessage="Size"
+                                id="tw.restorePoints.sizeColumn"
+                            />
+                        </span>
+                        <span />
+                    </div>
                     <div className={styles.restorePointContainer}>
                         {props.restorePoints.map(restorePoint => (
                             <RestorePoint
                                 key={restorePoint.id}
+                                isExporting={props.isExporting(restorePoint.id)}
                                 onClickDelete={props.onClickDelete}
                                 onClickExport={props.onClickExport}
                                 onClickLoad={props.onClickLoad}
-                                isExporting={props.isExporting(restorePoint.id)}
                                 {...restorePoint}
                             />
                         ))}
                     </div>
+                </div>
+            )}
 
-                    <div className={styles.extraContainer}>
-                        <div className={styles.totalSize}>
-                            <div>
-                                <FormattedMessage
-                                    defaultMessage="Estimated storage used: {size}"
-                                    description="Part of restore point modal describing amount of disk space used"
-                                    id="tw.restorePoints.size"
-                                    values={{
-                                        size: formatBytes(props.totalSize)
-                                    }}
-                                />
-                            </div>
-                            <div className={styles.totalSizeDescription}>
-                                <FormattedMessage
-                                    // eslint-disable-next-line max-len
-                                    defaultMessage="Costumes or sounds used by multiple restore points are only stored once."
-                                    // eslint-disable-next-line max-len
-                                    description="Part of the restore point modal that explains why the total storage used is less than may be expected."
-                                    id="tw.restorePoints.size2"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={props.onClickDeleteAll}
-                            className={classNames(styles.button, styles.deleteAllButton)}
-                            disabled={props.isLoading}
-                        >
-                            <FormattedMessage
-                                defaultMessage="Delete All"
-                                description="Button to delete all restore points"
-                                id="tw.restorePoints.deleteAll"
-                            />
-                        </button>
-                    </div>
-                </React.Fragment>
+            {!props.isLoading && !props.error && props.restorePoints.length > 0 && (
+                <div className={styles.footer}>
+                    <span>
+                        <FormattedMessage
+                            defaultMessage="Shared assets are counted once."
+                            id="tw.restorePoints.size2"
+                        />
+                    </span>
+                    <button
+                        className={styles.deleteAllButton}
+                        onClick={props.onClickDeleteAll}
+                    >
+                        <Trash2 />
+                        <FormattedMessage
+                            defaultMessage="Delete all"
+                            id="tw.restorePoints.deleteAll"
+                        />
+                    </button>
+                </div>
             )}
         </div>
     </Modal>
@@ -225,6 +288,7 @@ RestorePointModal.propTypes = {
     onClickDeleteAll: PropTypes.func.isRequired,
     onClickExport: PropTypes.func.isRequired,
     onClickLoad: PropTypes.func.isRequired,
+    onClickRefresh: PropTypes.func.isRequired,
     isExporting: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,
     totalSize: PropTypes.number.isRequired,
