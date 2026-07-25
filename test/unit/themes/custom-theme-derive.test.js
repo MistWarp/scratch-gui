@@ -5,7 +5,7 @@ const gradient = {
     colors: [{color: '#123456', position: 0}, {color: '#abcdef', position: 100}]
 };
 
-test('deriving a saved gradient theme keeps its identity and colors', () => {
+test('deriving a saved gradient theme deselects it without losing its colors', () => {
     const imported = CustomTheme.import({
         uuid: 'custom-theme-test',
         name: 'Test',
@@ -17,7 +17,7 @@ test('deriving a saved gradient theme keeps its identity and colors', () => {
 
     const derived = imported.setAppearance({menuBarLayout: {orders: {}, hidden: ['file']}});
 
-    expect(derived.uuid).toBe(imported.uuid);
-    expect(customThemeManager.getTheme(derived.uuid)).toBeTruthy();
+    expect(derived.uuid).not.toBe(imported.uuid);
+    expect(customThemeManager.getTheme(derived.uuid)).toBeNull();
     expect(derived.getGuiColors()).toEqual(imported.getGuiColors());
 });
