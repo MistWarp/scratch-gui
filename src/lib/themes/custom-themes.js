@@ -421,7 +421,6 @@ class CustomTheme extends Theme {
             this.author,
             options.appearance
         );
-        theme.uuid = this.uuid;
         theme.createdAt = this.createdAt;
         return theme;
     }
