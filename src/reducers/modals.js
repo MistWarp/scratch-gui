@@ -23,7 +23,6 @@ const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
 const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
-const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
@@ -53,7 +52,6 @@ const initialState = {
     [MODAL_GIT]: false,
     [MODAL_PREFERENCES]: false,
     [MODAL_SIMPLE_DIALOG]: false,
-    [MODAL_ONBOARDING]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_DEBUGGER]: false,
     [MODAL_ROTUR_LOGIN]: false,
@@ -168,9 +166,6 @@ const openGitModal = function () {
 const openPreferencesModal = function () {
     return openModal(MODAL_PREFERENCES);
 };
-const openOnboardingModal = function () {
-    return openModal(MODAL_ONBOARDING);
-};
 const openShortcutManagerModal = function () {
     // eslint-disable-next-line global-require
     const {setSettingsModalInitialView} = require('../lib/settings/modal-view.js');
@@ -273,9 +268,6 @@ const closeGitModal = function () {
 const closePreferencesModal = function () {
     return closeModal(MODAL_PREFERENCES);
 };
-const closeOnboardingModal = function () {
-    return closeModal(MODAL_ONBOARDING);
-};
 const closeShortcutManagerModal = function () {
     return closeModal(MODAL_SHORTCUT_MANAGER);
 };
@@ -304,7 +296,6 @@ export {
     openExtensionManagerModal,
     openGitModal,
     openPreferencesModal,
-    openOnboardingModal,
     openShortcutManagerModal,
     openDebuggerModal,
     closeDebuggerModal,
@@ -336,6 +327,5 @@ export {
     closeExtensionManagerModal,
     closeGitModal,
     closePreferencesModal,
-    closeOnboardingModal,
     closeShortcutManagerModal
 };
