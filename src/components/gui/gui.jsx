@@ -56,7 +56,6 @@ import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
-import Onboarding from '../../containers/onboarding.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -67,7 +66,6 @@ import {Theme} from '../../lib/themes';
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
 import {setStageSize} from '../../reducers/stage-size';
-import {showOnboarding} from '../../reducers/onboarding';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -674,8 +672,6 @@ const GUIComponent = props => {
         telemetryModalVisible,
         theme,
         tipsLibraryVisible,
-        onOpenOnboarding,
-        onboardingVisible,
         usernameModalVisible,
         settingsModalVisible,
         customExtensionModalVisible,
@@ -752,7 +748,6 @@ const GUIComponent = props => {
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
             )}
             <SimpleDialog />
-            {onboardingVisible && <Onboarding />}
         </React.Fragment>
     ), [
         securityManager,
@@ -766,7 +761,6 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
-        onboardingVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
         isEmbedded
@@ -1251,8 +1245,6 @@ GUIComponent.propTypes = {
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.instanceOf(Theme),
     tipsLibraryVisible: PropTypes.bool,
-    onOpenOnboarding: PropTypes.func,
-    onboardingVisible: PropTypes.bool,
     usernameModalVisible: PropTypes.bool,
     roturLoginModalVisible: PropTypes.bool,
     onRequestCloseRoturLogin: PropTypes.func,
@@ -1298,13 +1290,11 @@ const mapStateToProps = state => ({
     stageSizeRequestId: state.scratchGui.stageSize.requestId,
     theme: state.scratchGui.theme.theme,
     locale: state.locales.locale,
-    onboardingVisible: state.scratchGui.onboarding.visible,
     roturLoginModalVisible: state.scratchGui.modals.roturLoginModal
 });
 
 const mapDispatchToProps = dispatch => ({
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
-    onOpenOnboarding: () => dispatch(showOnboarding()),
     onRequestCloseRoturLogin: () => dispatch(closeRoturLoginModal())
 });
 

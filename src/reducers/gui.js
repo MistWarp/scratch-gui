@@ -32,7 +32,6 @@ import vmReducer, {vmInitialState} from './vm';
 import vmStatusReducer, {vmStatusInitialState} from './vm-status';
 import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace-metrics';
 import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-theme';
-import onboardingReducer, {onboardingInitialState} from './onboarding';
 import toastReducer, {toastInitialState} from './toast';
 import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
 import roturReducer, {roturInitialState} from './rotur';
@@ -78,7 +77,6 @@ const guiInitialState = {
     vmStatus: vmStatusInitialState,
     workspaceMetrics: workspaceMetricsInitialState,
     rotur: roturInitialState,
-    onboarding: onboardingInitialState,
     shortcuts: shortcutsInitialState
 };
 
@@ -154,19 +152,6 @@ const initTelemetryModal = function (currentState) {
     );
 };
 
-const initOnboarding = function (currentState) {
-    return Object.assign(
-        {},
-        currentState,
-        {
-            onboarding: {
-                visible: true,
-                step: 0
-            }
-        }
-    );
-};
-
 const guiReducer = combineReducers({
     alerts: alertsReducer,
     assetDrag: assetDragReducer,
@@ -202,7 +187,6 @@ const guiReducer = combineReducers({
     vm: vmReducer,
     vmStatus: vmStatusReducer,
     workspaceMetrics: workspaceMetricsReducer,
-    onboarding: onboardingReducer,
     shortcuts: shortcutsReducer,
     rotur: roturReducer
 });
@@ -215,6 +199,5 @@ export {
     initFullScreen,
     initPlayer,
     initTelemetryModal,
-    initTutorialCard,
-    initOnboarding
+    initTutorialCard
 };
