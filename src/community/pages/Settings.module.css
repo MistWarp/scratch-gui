@@ -101,19 +101,6 @@
     gap: 0;
 }
 
-.masterSecurityToggle {
-    margin-bottom: 12px;
-    padding: 0 10px;
-    border: 1px solid color-mix(in srgb, #e0245e 45%, transparent) !important;
-    border-radius: 9px;
-    color: var(--mw-text);
-    font-weight: 700;
-}
-
-.settingsDisabled {
-    opacity: 0.4;
-}
-
 .settingRow {
     min-height: 44px;
     display: flex;

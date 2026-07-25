@@ -64,6 +64,29 @@
     background: $badge-border;
 }
 
+.menu-bar-layout {
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+}
+
+.menu-bar-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.menu-bar-setting-row:last-child {
+    border-bottom: 0;
+}
+
+.menu-bar-setting-row > span {
+    flex: 1;
+    min-width: 0;
+}
+
 .label {
     height: 32px;
     display: flex;

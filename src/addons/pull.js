@@ -235,10 +235,6 @@ const generateManifestEntry = (id, manifest) => {
         result += 'import {clipboardSupported} from "../../environment";\n';
         result += 'if (!clipboardSupported) manifest.unsupported = true;\n';
     }
-    if (id === 'mediarecorder') {
-        result += 'import {mediaRecorderSupported} from "../../environment";\n';
-        result += 'if (!mediaRecorderSupported) manifest.unsupported = true;\n';
-    }
     if (id === 'tw-disable-cloud-variables') {
         result += 'import {isScratchDesktop} from "../../../lib/utils/isScratchDesktop";\n';
         result += 'if (isScratchDesktop()) manifest.unsupported = true;\n';

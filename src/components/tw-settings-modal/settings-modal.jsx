@@ -23,6 +23,7 @@ import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
+import MenuBarFeatureSettings from './menu-bar-settings.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
@@ -104,6 +105,18 @@ const messages = defineMessages({
     headerMenuBar: {
         defaultMessage: 'Menu Bar',
         id: 'mw.settings.menuBarHeader'
+    },
+    headerMenuBarLayout: {
+        defaultMessage: 'Layout',
+        id: 'mw.settings.menuBarLayoutHeader'
+    },
+    headerMenuBarItems: {
+        defaultMessage: 'Menu Items',
+        id: 'mw.settings.menuBarItemsHeader'
+    },
+    headerAutosave: {
+        defaultMessage: 'Autosave',
+        id: 'mw.settings.autosaveHeader'
     },
     headerDebugger: {
         defaultMessage: 'Debugger',
@@ -1015,11 +1028,45 @@ const pageConfigurations = {
     menuBar: {
         sections: [
             {
-                headerMessage: 'headerMenuBar',
+                headerMessage: 'headerMenuBarLayout',
                 settings: [
                     {
                         component: MenuBarLayoutSetting,
                         props: () => ({})
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerMenuBarItems',
+                settings: [
+                    {
+                        component: MenuBarFeatureSettings,
+                        props: () => ({
+                            ids: [
+                                'menu_labels',
+                                'show_block_count',
+                                'show_costume_count',
+                                'show_sound_count',
+                                'show_complexity_score',
+                                'show_media_recorder'
+                            ]
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerAutosave',
+                settings: [
+                    {
+                        component: MenuBarFeatureSettings,
+                        props: () => ({
+                            ids: [
+                                'autosave_enabled',
+                                'autosave_interval',
+                                'autosave_notifications',
+                                'autosave_only_when_changed'
+                            ]
+                        })
                     }
                 ]
             }

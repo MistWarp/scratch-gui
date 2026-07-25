@@ -44,24 +44,12 @@ const migrateSettings = settings => {
     }
 
     // Migrate 1 -> 2
-    // tw-project-info is now block-count
-    // tw-interface-customization split into tw-remove-backpack and tw-remove-feedback
+    // tw-interface-customization split into native menu settings and tw-remove-backpack
     if (oldVersion < 2) {
-        const projectInfo = settings['tw-project-info'];
-        if (projectInfo && typeof projectInfo.enabled === 'boolean') {
-            settings['block-count'] = {
-                enabled: projectInfo.enabled
-            };
-        }
         const interfaceCustomization = settings['tw-interface-customization'];
         if (interfaceCustomization && interfaceCustomization.enabled) {
             if (interfaceCustomization.removeBackpack) {
                 settings['tw-remove-backpack'] = {
-                    enabled: true
-                };
-            }
-            if (interfaceCustomization.removeFeedback) {
-                settings['tw-remove-feedback'] = {
                     enabled: true
                 };
             }

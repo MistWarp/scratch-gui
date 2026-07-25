@@ -1,9 +1,9 @@
-import {isTrustedExtension, manuallyTrustExtension} from '../../src/containers/tw-security-manager.jsx';
 import {
-    setSecurityWarningSetting,
-    shouldWarn,
-    isSecurityManagerDisabled
-} from '../../src/lib/security-warning-settings.js';
+    isOwnedPlatformProject,
+    isTrustedExtension,
+    manuallyTrustExtension
+} from '../../src/containers/tw-security-manager.jsx';
+import {rememberPlatformProject} from '../../src/lib/community/publish.js';
 
 test('only official or explicitly trusted extensions run unsandboxed', () => {
     const custom = 'https://example.com/extension.js';
@@ -16,13 +16,12 @@ test('only official or explicitly trusted extensions run unsandboxed', () => {
     expect(isTrustedExtension(custom)).toBe(true);
 });
 
-test('security warning categories can be disabled independently', () => {
-    localStorage.removeItem('mw:security-warnings');
-    expect(shouldWarn('download')).toBe(true);
-    setSecurityWarningSetting('download', false);
-    expect(shouldWarn('download')).toBe(false);
-    expect(shouldWarn('fetch')).toBe(true);
-    expect(isSecurityManagerDisabled()).toBe(false);
-    setSecurityWarningSetting('disabled', true);
-    expect(isSecurityManagerDisabled()).toBe(true);
+test('only the verified owner gets the bypass option', () => {
+    window.history.replaceState(null, '', '/editor#mw-project-1');
+    rememberPlatformProject({id: 'project-1', isOwner: false});
+    expect(isOwnedPlatformProject()).toBe(false);
+    rememberPlatformProject({id: 'project-1', isOwner: true});
+    expect(isOwnedPlatformProject()).toBe(true);
+    window.history.replaceState(null, '', '/editor');
+    expect(isOwnedPlatformProject()).toBe(false);
 });

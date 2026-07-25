@@ -1,6 +1,12 @@
 import {loadSession, request} from '../community/api.js';
 import {ORDER_KEY as MENU_BAR_ORDER_KEY, HIDDEN_KEY as MENU_BAR_HIDDEN_KEY} from '../mw-menu-bar-layout.js';
 import {
+    CHANGE_EVENT as MENU_BAR_SETTINGS_CHANGE_EVENT,
+    DEFINITIONS as MENU_BAR_SETTINGS,
+    STORAGE_PREFIX as MENU_BAR_SETTINGS_PREFIX,
+    getSettings as getMenuBarSettings
+} from '../menu-bar/settings.js';
+import {
     getAccentMenuBar,
     getMenuBarText,
     getCompactSave,
@@ -88,7 +94,8 @@ const collectLocalSnapshot = () => {
                     hidden: readLocalJson(MENU_BAR_HIDDEN_KEY, []),
                     accent: getAccentMenuBar(),
                     text: getMenuBarText(),
-                    compactSave: getCompactSave()
+                    compactSave: getCompactSave(),
+                    features: getMenuBarSettings()
                 },
                 version: 1,
                 updatedAt: Date.now()
@@ -152,6 +159,22 @@ const applySnapshotLocally = snapshot => {
                     } catch (_) {
                         // ignore
                     }
+                }
+                if (snapshot.settings.menuBar.features) {
+                    for (const {id} of MENU_BAR_SETTINGS) {
+                        if (typeof snapshot.settings.menuBar.features[id] === 'undefined') continue;
+                        try {
+                            localStorage.setItem(
+                                `${MENU_BAR_SETTINGS_PREFIX}${id}`,
+                                String(snapshot.settings.menuBar.features[id])
+                            );
+                        } catch (_) {
+                            // ignore
+                        }
+                    }
+                    window.dispatchEvent(new CustomEvent(MENU_BAR_SETTINGS_CHANGE_EVENT, {
+                        detail: {id: 'cloud-sync'}
+                    }));
                 }
             }
         }

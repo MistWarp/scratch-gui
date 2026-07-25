@@ -12,6 +12,8 @@ import {
 
 const UserContext = createContext({user: null, login: () => {}, logout: () => {}});
 
+const normalizeUser = user => user && {...user, isAdmin: user.isAdmin === true};
+
 const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const UserProvider = ({children}) => {
         applyThemeVisuals(detectTheme());
         // A transient /me failure while Rotur is logged in should not flip the
         // UI to signed-out; fall back to a minimal user so it stays logged in.
-        setUser(me || (identityUser ? {username: identityUser.username} : null));
+        setUser(normalizeUser(me || (identityUser ? {username: identityUser.username} : null)));
     }, []);
 
     const handleIdentity = useCallback(state => {
@@ -80,4 +82,4 @@ const UserProvider = ({children}) => {
 
 const useUser = () => useContext(UserContext);
 
-export {UserProvider, useUser};
+export {UserProvider, useUser, normalizeUser};

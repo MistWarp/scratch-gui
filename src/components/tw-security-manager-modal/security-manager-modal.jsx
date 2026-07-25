@@ -29,9 +29,6 @@ const messages = defineMessages({
 
 const noop = () => {};
 
-const showLoadAll = props => props.type === SecurityModals.LoadExtension &&
-    props.data.showLoadAll;
-
 const SecurityManagerModalComponent = props => (
     <Modal
         className={styles.modalContent}
@@ -40,6 +37,16 @@ const SecurityManagerModalComponent = props => (
         id="securitymanagermodal"
     >
         <Box className={styles.body}>
+            {props.showLoadAll ? (
+                <p>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Looks like you made this. Bypass every permission popup and give it full access? If not, do not load it."
+                        description="Warning before bypassing security prompts for an owned project"
+                        id="mw.securityManager.ownerBypassWarning"
+                    />
+                </p>
+            ) : null}
             {props.type === SecurityModals.LoadExtension ? (
                 <LoadExtensionModal {...props.data} />
             ) : props.type === SecurityModals.Fetch ? (
@@ -84,16 +91,16 @@ const SecurityManagerModalComponent = props => (
                         />
                     )}
                 </button>
-                {showLoadAll(props) ? (
+                {props.showLoadAll ? (
                     <button
                         className={styles.loadAllButton}
                         onClick={props.onLoadAll}
                         disabled={!props.enableButtons}
                     >
                         <FormattedMessage
-                            defaultMessage="Run all without sandbox"
-                            description="Button allowing all of this project's extensions to run unsandboxed"
-                            id="mw.securityManager.loadAllSandboxed"
+                            defaultMessage="I made it, bypass all"
+                            description="Button bypassing all security prompts for an owned project"
+                            id="mw.securityManager.ownerBypass"
                         />
                     </button>
                 ) : null}
@@ -133,6 +140,7 @@ SecurityManagerModalComponent.propTypes = {
     intl: intlShape,
     type: PropTypes.oneOf(Object.values(SecurityModals)),
     enableButtons: PropTypes.bool,
+    showLoadAll: PropTypes.bool,
     // Each modal may have different type of data
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,

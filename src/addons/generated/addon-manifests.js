@@ -8,7 +8,6 @@ import _editor_searchable_dropdowns from "../addons/editor-searchable-dropdowns/
 import _data_category_tweaks_v2 from "../addons/data-category-tweaks-v2/_manifest_entry.js";
 import _block_palette_icons from "../addons/block-palette-icons/_manifest_entry.js";
 import _hide_flyout from "../addons/hide-flyout/_manifest_entry.js";
-import _mediarecorder from "../addons/mediarecorder/_manifest_entry.js";
 import _drag_drop from "../addons/drag-drop/_manifest_entry.js";
 import _canvas_screenshot from "../addons/canvas-screenshot/_manifest_entry.js";
 import _mute_project from "../addons/mute-project/_manifest_entry.js";
@@ -17,7 +16,6 @@ import _clones from "../addons/clones/_manifest_entry.js";
 import _mouse_pos from "../addons/mouse-pos/_manifest_entry.js";
 import _color_picker from "../addons/color-picker/_manifest_entry.js";
 import _remove_sprite_confirm from "../addons/remove-sprite-confirm/_manifest_entry.js";
-import _block_count from "../addons/block-count/_manifest_entry.js";
 import _onion_skinning from "../addons/onion-skinning/_manifest_entry.js";
 import _paint_snap from "../addons/paint-snap/_manifest_entry.js";
 import _default_costume_editor_color from "../addons/default-costume-editor-color/_manifest_entry.js";
@@ -29,7 +27,6 @@ import _pick_colors_from_stage from "../addons/pick-colors-from-stage/_manifest_
 import _custom_block_shape from "../addons/custom-block-shape/_manifest_entry.js";
 import _editor_square_inputs from "../addons/editor-square-inputs/_manifest_entry.js";
 import _zebra_striping from "../addons/zebra-striping/_manifest_entry.js";
-import _custom_menu_bar from "../addons/custom-menu-bar/_manifest_entry.js";
 import _editor_theme3 from "../addons/editor-theme3/_manifest_entry.js";
 import _custom_block_text from "../addons/custom-block-text/_manifest_entry.js";
 import _editor_colored_context_menus from "../addons/editor-colored-context-menus/_manifest_entry.js";
@@ -72,10 +69,8 @@ import _fullscreen from "../addons/fullscreen/_manifest_entry.js";
 import _hide_stage from "../addons/hide-stage/_manifest_entry.js";
 import _tw_straighten_comments from "../addons/tw-straighten-comments/_manifest_entry.js";
 import _tw_remove_backpack from "../addons/tw-remove-backpack/_manifest_entry.js";
-import _tw_remove_feedback from "../addons/tw-remove-feedback/_manifest_entry.js";
 import _tw_disable_cloud_variables from "../addons/tw-disable-cloud-variables/_manifest_entry.js";
 import _tw_disable_compiler from "../addons/tw-disable-compiler/_manifest_entry.js";
-import _autosave from "../addons/autosave/_manifest_entry.js";
 import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
 import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _remove_extension_button from "../addons/remove-extension-button/_manifest_entry.js";
@@ -92,7 +87,6 @@ export default {
   "data-category-tweaks-v2": _data_category_tweaks_v2,
   "block-palette-icons": _block_palette_icons,
   "hide-flyout": _hide_flyout,
-  "mediarecorder": _mediarecorder,
   "drag-drop": _drag_drop,
   "canvas-screenshot": _canvas_screenshot,
   "mute-project": _mute_project,
@@ -101,7 +95,6 @@ export default {
   "mouse-pos": _mouse_pos,
   "color-picker": _color_picker,
   "remove-sprite-confirm": _remove_sprite_confirm,
-  "block-count": _block_count,
   "onion-skinning": _onion_skinning,
   "paint-snap": _paint_snap,
   "default-costume-editor-color": _default_costume_editor_color,
@@ -113,7 +106,6 @@ export default {
   "custom-block-shape": _custom_block_shape,
   "editor-square-inputs": _editor_square_inputs,
   "zebra-striping": _zebra_striping,
-  "custom-menu-bar": _custom_menu_bar,
   "editor-theme3": _editor_theme3,
   "custom-block-text": _custom_block_text,
   "editor-colored-context-menus": _editor_colored_context_menus,
@@ -156,10 +148,8 @@ export default {
   "hide-stage": _hide_stage,
   "tw-straighten-comments": _tw_straighten_comments,
   "tw-remove-backpack": _tw_remove_backpack,
-  "tw-remove-feedback": _tw_remove_feedback,
   "tw-disable-cloud-variables": _tw_disable_cloud_variables,
   "tw-disable-compiler": _tw_disable_compiler,
-  "autosave": _autosave,
   "no-category-text": _no_category_text,
   "green-flag-order": _green_flag_order,
   "remove-extension-button": _remove_extension_button,
