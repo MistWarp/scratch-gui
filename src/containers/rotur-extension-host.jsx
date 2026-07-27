@@ -109,6 +109,9 @@ class RoturExtensionHost extends React.Component {
         if (decision !== null) {
             return decision;
         }
+        if (this.props.vm.runtime._mwProjectTrusted === true) {
+            return true;
+        }
         const {showModal} = await this.acquireModalLock();
         const choice = await showModal('share', {
             username: this.currentUser().username,
@@ -153,6 +156,10 @@ class RoturExtensionHost extends React.Component {
             throw new Error('Log in to Rotur to let this project connect');
         }
         if (hasFullGrant(meta, scopes)) {
+            return true;
+        }
+        if (this.props.vm.runtime._mwProjectTrusted === true) {
+            await commitGrant(meta, scopes);
             return true;
         }
         const {showModal} = await this.acquireModalLock();
@@ -222,5 +229,9 @@ const mapStateToProps = state => ({
     id: state.scratchGui.rotur.id,
     projectTitle: state.scratchGui.projectTitle
 });
+
+export {
+    RoturExtensionHost
+};
 
 export default connect(mapStateToProps)(RoturExtensionHost);

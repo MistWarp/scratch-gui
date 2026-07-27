@@ -423,26 +423,26 @@ const createInfoCommand = () => defineCommand('info', async () => {
     return {stdout: `${lines.join('\n')}\n`, stderr: '', exitCode: 0};
 });
 
-const runBrowserCommand = async command => {
+const runBrowserCommand = async (command, cwd = REPO_DIR) => {
     // just-bash's builtin help lists bash builtins it does not implement, and it wins over
     // customCommands, so answer help ourselves before the line reaches the shell.
     if (/^help\s*$/.test(String(command).trim())) {
-        return {stdout: SHELL_HELP, stderr: '', exitCode: 0, worktreeChanged: false};
+        return {stdout: SHELL_HELP, stderr: '', exitCode: 0, worktreeChanged: false, cwd};
     }
     // just-bash's builtin whoami answers with its own sandbox user and wins over customCommands.
     if (/^whoami\s*$/.test(String(command).trim())) {
-        return {stdout: `${currentUser()}\n`, stderr: '', exitCode: 0, worktreeChanged: false};
+        return {stdout: `${currentUser()}\n`, stderr: '', exitCode: 0, worktreeChanged: false, cwd};
     }
     const files = await readWorkspace();
     const state = {usedGit: false, worktreeChanged: false};
     const bash = new Bash({
-        cwd: REPO_DIR,
+        cwd,
         files,
         customCommands: [createGitCommand(state), createInfoCommand()]
     });
     const result = await bash.exec(command);
     const changed = state.usedGit ? state.worktreeChanged : await syncWorkspace(files, bash);
-    return {...result, worktreeChanged: changed};
+    return {...result, worktreeChanged: changed, cwd: result.env.PWD || cwd};
 };
 
 export {runBrowserCommand, setShellUser};
