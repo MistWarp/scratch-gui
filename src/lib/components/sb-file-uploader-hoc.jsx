@@ -220,7 +220,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 // Snapshot the resolved bytes so the async handler below reads a
                 // stable value (projectData may have been reassigned for .html).
                 const loadedBytes = projectData;
-                this.props.vm.loadProject(loadedBytes)
+                this.props.vm.loadProject(loadedBytes, {mwCanTrustProject: true})
                     .then(async () => {
                         if (filename) {
                             const uploadedProjectTitle = this.getProjectTitleFromFilename(filename);

@@ -1,6 +1,8 @@
 import {webcrypto} from 'crypto';
 import {TextEncoder} from 'util';
 import {
+    canTrustLoadedProject,
+    isLocalProjectUrl,
     isOwnedPlatformProject,
     isPlatformTrustedExtension,
     isTrustedExtension,
@@ -30,6 +32,18 @@ test('only the verified owner gets the bypass option', () => {
     expect(isOwnedPlatformProject()).toBe(true);
     window.history.replaceState(null, '', '/editor');
     expect(isOwnedPlatformProject()).toBe(false);
+});
+
+test('file and loopback project loads can offer the bypass option', () => {
+    expect(canTrustLoadedProject({_mwCanTrustProject: true})).toBe(true);
+    expect(isLocalProjectUrl('http://localhost:8000/project.sb3')).toBe(true);
+    expect(isLocalProjectUrl('http://127.0.0.1/project.sb3')).toBe(true);
+    expect(isLocalProjectUrl('http://localhost.example.com/project.sb3')).toBe(false);
+    expect(isLocalProjectUrl('data:application/json,{}')).toBe(false);
+    window.history.replaceState(null, '', '/editor?project_url=http%3A%2F%2Flocalhost%3A8000%2Fproject.sb3');
+    expect(canTrustLoadedProject({})).toBe(true);
+    window.history.replaceState(null, '', '/editor');
+    expect(canTrustLoadedProject({})).toBe(false);
 });
 
 test('platform projects trust only hashes approved by the server', async () => {

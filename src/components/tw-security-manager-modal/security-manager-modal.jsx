@@ -41,8 +41,8 @@ const SecurityManagerModalComponent = props => (
                 <p>
                     <FormattedMessage
                         // eslint-disable-next-line max-len
-                        defaultMessage="Looks like you made this. Bypass every permission popup and give it full access? If not, do not load it."
-                        description="Warning before bypassing security prompts for an owned project"
+                        defaultMessage="Trust this project with full access and bypass every permission popup? Only continue if you made it or checked its contents."
+                        description="Warning before bypassing all security prompts for a trusted project"
                         id="mw.securityManager.ownerBypassWarning"
                     />
                 </p>
@@ -98,8 +98,8 @@ const SecurityManagerModalComponent = props => (
                         disabled={!props.enableButtons}
                     >
                         <FormattedMessage
-                            defaultMessage="I made it, bypass all"
-                            description="Button bypassing all security prompts for an owned project"
+                            defaultMessage="Trust project, bypass all"
+                            description="Button bypassing all security prompts for a trusted project"
                             id="mw.securityManager.ownerBypass"
                         />
                     </button>

@@ -71,6 +71,7 @@ const clearProjectSourceOnForeignLoads = vm => {
     vm._mwClearsProjectSourceUrl = true;
     const originalLoadProject = vm.loadProject.bind(vm);
     vm.loadProject = (...args) => {
+        vm._mwCanTrustProject = Boolean(args[1] && args[1].mwCanTrustProject);
         if (fetchInitiatedLoad) {
             fetchInitiatedLoad = false;
         } else {

@@ -43,7 +43,7 @@ const ProjectLink = ({id}) => {
             cancelled = true;
         };
     }, [id]);
-    return <Link to={projectUrl(id)}>{title || id}</Link>;
+    return <Link className="mw-project-link" to={projectUrl(id)}>{title || id}</Link>;
 };
 
 const projectIdFrom = url => {
