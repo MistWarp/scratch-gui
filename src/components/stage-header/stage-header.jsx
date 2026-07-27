@@ -154,7 +154,7 @@ const StageHeaderComponent = function (props) {
             >
                 <Box
                     className={styles.stageMenuWrapper}
-                    style={{width: stageDimensions.width}}
+                    style={{width: isEmbedded ? '100%' : stageDimensions.width}}
                 >
                     <Controls vm={vm} />
                     <div

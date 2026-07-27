@@ -57,6 +57,23 @@ const isOwnedPlatformProject = () => {
     return Boolean(isPlatformProjectLoad() && project && project.isOwner === true);
 };
 
+const isLocalProjectUrl = url => {
+    try {
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol) &&
+            ['127.0.0.1', 'localhost'].includes(parsed.hostname);
+    } catch (e) {
+        return false;
+    }
+};
+
+const canTrustLoadedProject = vm => {
+    const projectUrl = typeof location === 'undefined' ?
+        null :
+        new URLSearchParams(location.search).get('project_url');
+    return isOwnedPlatformProject() || Boolean(vm._mwCanTrustProject) || isLocalProjectUrl(projectUrl);
+};
+
 const fetchHostsTrustedByUser = new Set();
 const embedHostsTrustedByUser = new Set();
 
@@ -449,7 +466,7 @@ class TWSecurityManagerComponent extends React.Component {
                 <SecurityManagerModal
                     type={this.state.type}
                     data={this.state.data}
-                    showLoadAll={isOwnedPlatformProject()}
+                    showLoadAll={canTrustLoadedProject(this.props.vm)}
                     onAllowed={this.handleAllowed}
                     onDenied={this.handleDenied}
                     onLoadAll={this.handleLoadAll}
@@ -501,5 +518,7 @@ export {
     manuallyTrustExtension,
     isTrustedExtension,
     isPlatformTrustedExtension,
-    isOwnedPlatformProject
+    isOwnedPlatformProject,
+    isLocalProjectUrl,
+    canTrustLoadedProject
 };

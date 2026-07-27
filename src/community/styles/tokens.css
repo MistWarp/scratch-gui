@@ -59,6 +59,11 @@ a {
     text-decoration: none;
 }
 
+.mw-project-link {
+    color: #4C97FF;
+    text-decoration: underline;
+}
+
 button {
     font-family: inherit;
     cursor: pointer;
