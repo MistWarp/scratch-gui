@@ -39,8 +39,10 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => 
     const terminal = useRef(null);
     const commandBusy = useRef(false);
     const commandLine = useRef('');
+    const commandCursor = useRef(0);
     const commandHistory = useRef([]);
     const commandHistoryIndex = useRef(0);
+    const currentDirectory = useRef('/repo');
     const worktreeChanged = useRef(onWorktreeChanged);
     worktreeChanged.current = onWorktreeChanged;
 
@@ -67,18 +69,23 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => 
             xterm.open(element.current);
             terminal.current = xterm;
 
-            const prompt = () => xterm.write('\x1b[36m/repo\x1b[0m $ ');
+            const prompt = () => xterm.write(`\x1b[36m${currentDirectory.current}\x1b[0m $ `);
+            const redrawCommandLine = () => {
+                xterm.write('\r\x1b[2K');
+                prompt();
+                xterm.write(commandLine.current);
+                const moveLeft = commandLine.current.length - commandCursor.current;
+                if (moveLeft) xterm.write(`\x1b[${moveLeft}D`);
+            };
             const replaceCommandLine = value => {
-                while (commandLine.current.length) {
-                    xterm.write('\b \b');
-                    commandLine.current = commandLine.current.slice(0, -1);
-                }
                 commandLine.current = value;
-                xterm.write(value);
+                commandCursor.current = value.length;
+                redrawCommandLine();
             };
             const execute = async () => {
                 const command = commandLine.current.trim();
                 commandLine.current = '';
+                commandCursor.current = 0;
                 xterm.write('\r\n');
                 if (!command) {
                     prompt();
@@ -88,7 +95,9 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => 
                 commandHistoryIndex.current = commandHistory.current.length;
                 commandBusy.current = true;
                 try {
-                    const result = await runBrowserCommand(command);
+                    const result = await runBrowserCommand(command, currentDirectory.current);
+                    // eslint-disable-next-line require-atomic-updates
+                    currentDirectory.current = result.cwd;
                     if (result.stdout) xterm.write(result.stdout);
                     if (result.stderr) xterm.write(`\x1b[31m${result.stderr}\x1b[0m`);
                     if (result.worktreeChanged && worktreeChanged.current) {
@@ -106,14 +115,28 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => 
                 if (data === '\r') {
                     execute();
                 } else if (data === '\u007f') {
-                    if (commandLine.current) {
-                        commandLine.current = commandLine.current.slice(0, -1);
-                        xterm.write('\b \b');
+                    if (commandCursor.current) {
+                        const cursor = commandCursor.current;
+                        commandLine.current =
+                            commandLine.current.slice(0, cursor - 1) + commandLine.current.slice(cursor);
+                        commandCursor.current -= 1;
+                        redrawCommandLine();
                     }
                 } else if (data === '\u0003') {
                     commandLine.current = '';
+                    commandCursor.current = 0;
                     xterm.write('^C\r\n');
                     prompt();
+                } else if (data === '\x1b[D') {
+                    if (commandCursor.current) {
+                        commandCursor.current -= 1;
+                        xterm.write(data);
+                    }
+                } else if (data === '\x1b[C') {
+                    if (commandCursor.current < commandLine.current.length) {
+                        commandCursor.current += 1;
+                        xterm.write(data);
+                    }
                 } else if (data === '\x1b[A') {
                     commandHistoryIndex.current = Math.max(0, commandHistoryIndex.current - 1);
                     replaceCommandLine(commandHistory.current[commandHistoryIndex.current] || '');
@@ -124,8 +147,11 @@ const FractchTerminal = ({className, onWorktreeChanged, style, themeId, vm}) => 
                     );
                     replaceCommandLine(commandHistory.current[commandHistoryIndex.current] || '');
                 } else if (!data.startsWith('\x1b') && data >= ' ') {
-                    commandLine.current += data;
-                    xterm.write(data);
+                    const cursor = commandCursor.current;
+                    commandLine.current =
+                        commandLine.current.slice(0, cursor) + data + commandLine.current.slice(cursor);
+                    commandCursor.current += data.length;
+                    redrawCommandLine();
                 }
             });
 

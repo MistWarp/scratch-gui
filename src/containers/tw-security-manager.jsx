@@ -155,7 +155,6 @@ class TWSecurityManagerComponent extends React.Component {
         bindAll(this, SECURITY_MANAGER_METHODS);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
-        this.loadAllUnsandboxed = false;
         this.state = {
             type: null,
             data: null,
@@ -171,7 +170,7 @@ class TWSecurityManagerComponent extends React.Component {
             vmSecurityManager[method] = withSecurityBypass(
                 method,
                 propsSecurityManager[method] || this[method],
-                () => this.loadAllUnsandboxed ||
+                () => this.props.vm.runtime._mwProjectTrusted === true ||
                     (typeof window !== 'undefined' && window.__mwAllowAllSecurity === true)
             );
         }
@@ -242,13 +241,13 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     handleLoadAll () {
-        this.loadAllUnsandboxed = true;
+        this.props.vm.runtime._mwProjectTrusted = true;
         this.state.callback(true);
     }
 
     handleProjectLoading ({stage}) {
         if (stage !== 'building') return;
-        this.loadAllUnsandboxed = false;
+        this.props.vm.runtime._mwProjectTrusted = false;
         extensionsTrustedByUser.clear();
         fetchHostsTrustedByUser.clear();
         embedHostsTrustedByUser.clear();
@@ -313,7 +312,7 @@ class TWSecurityManagerComponent extends React.Component {
                 unsandboxed: true
             });
         }
-        if (this.loadAllUnsandboxed) return true;
+        if (this.props.vm.runtime._mwProjectTrusted === true) return true;
         const {showModal} = await this.acquireModalLock();
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {
@@ -326,7 +325,7 @@ class TWSecurityManagerComponent extends React.Component {
         });
         if (!allowed) return false;
 
-        if (this.loadAllUnsandboxed) {
+        if (this.props.vm.runtime._mwProjectTrusted === true) {
             return true;
         }
 
@@ -484,7 +483,8 @@ TWSecurityManagerComponent.propTypes = {
         off: PropTypes.func.isRequired,
         runtime: PropTypes.shape({
             on: PropTypes.func.isRequired,
-            off: PropTypes.func.isRequired
+            off: PropTypes.func.isRequired,
+            _mwProjectTrusted: PropTypes.bool
         }).isRequired,
         extensionManager: PropTypes.shape({
             securityManager: PropTypes.shape(
