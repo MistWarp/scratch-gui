@@ -80,18 +80,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 (async () => {
                     try {
                         const [handle] = await this.props.showOpenFilePicker({
-                            multiple: false,
-                            types: [
-                                {
-                                    description: 'Scratch Project',
-                                    accept: {
-                                        // Using application/x.scratch.sb3 as done in scratch-vm causes file pickers
-                                        // to disallow picking any items in Chrome 133 on Android.
-                                        'application/octet-stream': ['.sb', '.sb2', '.sb3'],
-                                        'text/html': ['.html']
-                                    }
-                                }
-                            ]
+                            multiple: false
                         });
                         const file = await handle.getFile();
                         this.handleChange({
@@ -112,7 +101,6 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             } else {
                 // create <input> element and add it to DOM
                 this.inputElement = document.createElement('input');
-                this.inputElement.accept = '.sb,.sb2,.sb3,.html';
                 this.inputElement.style = 'display: none;';
                 this.inputElement.type = 'file';
                 this.inputElement.onchange = this.handleChange; // connects to step 3
