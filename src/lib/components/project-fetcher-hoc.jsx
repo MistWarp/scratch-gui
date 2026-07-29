@@ -31,7 +31,7 @@ import {cloneRepo} from '../git/browser-git.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
-import {getProject as getMistWarpProject, takeProjectHandoff} from '../community/api.js';
+import {getEditorProject as getMistWarpEditorProject} from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 
@@ -84,7 +84,7 @@ const clearProjectSourceOnForeignLoads = vm => {
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
-    const project = source || takeProjectHandoff(id) || (await getMistWarpProject(id)).project;
+    const project = source || (await getMistWarpEditorProject(id)).project;
     if (project.assetsBase && isHttpUrl(project.assetsBase)) {
         storage.addMistWarpAssetStore(project.assetsBase);
     }
@@ -210,7 +210,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             let projectUrl = searchParams && searchParams.get('project_url');
             if (hashProjectId || platformProject) {
                 const id = hashProjectId || platformProject;
-                const source = platformProject && !hashProjectId && projectUrl ? {
+                const source = this.props.isEmbedded && platformProject && !hashProjectId && projectUrl ? {
                     id,
                     projectJsonUrl: projectUrl,
                     assetsBase: mistwarpAssets,
@@ -292,6 +292,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         canSave: PropTypes.bool,
         intl: intlShape.isRequired,
         isCreatingNew: PropTypes.bool,
+        isEmbedded: PropTypes.bool,
         isFetchingWithId: PropTypes.bool,
         isLoadingProject: PropTypes.bool,
         isShowingProject: PropTypes.bool,

@@ -813,7 +813,7 @@ const Project = () => {
                             Remix
                         </button>
                     ) : null}
-                    {locked ? null : (
+                    {!locked && project.canSeeInside !== false ? (
                         <a
                             className={styles.primary}
                             href={seeInsideHref}
@@ -822,7 +822,7 @@ const Project = () => {
                             <ExternalLink size={16} />
                             See inside
                         </a>
-                    )}
+                    ) : null}
                     <div
                         className={styles.menuWrap}
                         ref={menuRef}

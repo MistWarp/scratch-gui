@@ -1058,15 +1058,9 @@ class Blocks extends React.Component {
         // Remove and reattach the workspace listener (but allow flyout events)
         this.cancelDeferredWorkspaceLoad();
         this.workspace.removeChangeListener(this.props.vm.blockListener);
-        // The VM hands us its block objects directly. Reading data.xml instead
-        // would serialize them to a string just so we could parse them back
-        // into a DOM, which costs more than building the blocks does.
-        const descs = data.blocks && data.headerXml &&
-            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromDescs ? data.blocks : null;
-        const blockCount = descs ? Object.keys(descs.blocks).length : 0;
-        const dom = this.ScratchBlocks.Xml.textToDom(descs ? data.headerXml : data.xml);
+        const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
         const useDeferredLoad = !!this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred &&
-            ((descs ? blockCount : dom.getElementsByTagName('block').length) >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
+            (dom.getElementsByTagName('block').length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
                 Object.keys(this.workspace.blockDB_ || {}).length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS);
         try {
             if (useDeferredLoad) {
@@ -1077,11 +1071,8 @@ class Blocks extends React.Component {
                         onDone: () => {
                             this.deferredWorkspaceLoad = null;
                         }
-                    },
-                    descs
+                    }
                 );
-            } else if (descs) {
-                this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromDescs(dom, descs, this.workspace);
             } else {
                 this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
             }

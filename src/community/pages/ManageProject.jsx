@@ -53,6 +53,7 @@ const ManageProject = () => {
             price: project.price || 0,
             commentsOff: Boolean(project.commentsOff),
             remixable: project.remixable !== false,
+            seeInside: project.seeInside !== false,
             visibility: project.visibility || (project.shared ? 'public' : 'private')
         });
     }, [project]);
@@ -68,6 +69,7 @@ const ManageProject = () => {
                 title: form.title.trim(),
                 commentsOff: form.commentsOff,
                 remixable: form.remixable,
+                seeInside: form.seeInside,
                 price: Math.max(0, Math.floor(Number(form.price) || 0))
             });
             if (form.visibility !== (project.visibility || (project.shared ? 'public' : 'private'))) {
@@ -283,6 +285,14 @@ const ManageProject = () => {
                                             onChange={e => set('remixable', e.target.checked)}
                                         />
                                         <span>Allow others to remix this project</span>
+                                    </label>
+                                    <label className={styles.checkboxField}>
+                                        <input
+                                            type="checkbox"
+                                            checked={form.seeInside}
+                                            onChange={e => set('seeInside', e.target.checked)}
+                                        />
+                                        <span>Allow others to see inside this project</span>
                                     </label>
                                     <label className={styles.checkboxField}>
                                         <input
