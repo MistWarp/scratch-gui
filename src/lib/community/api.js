@@ -309,6 +309,8 @@ const checkProjectAssets = (id, assets) => request(`/projects/${id}/assets/check
 
 const getProject = id => request(`/projects/${id}`);
 
+const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
+
 const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
@@ -354,6 +356,7 @@ export {
     updateProject,
     checkProjectAssets,
     getProject,
+    getEditorProject,
     remixProject,
     deleteProject,
     request,

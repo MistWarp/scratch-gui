@@ -1,4 +1,4 @@
-import {exchangeValidator, request} from '../../src/lib/community/api.js';
+import {exchangeValidator, getEditorProject, request} from '../../src/lib/community/api.js';
 import {
     getMistWarpAction,
     getRememberedPlatformProjectState,
@@ -37,6 +37,21 @@ test('MistWarp project identity controls share, remix, and update actions', () =
     expect(getMistWarpAction({isOwner: true, shared: false}, false)).toBe('share');
 });
 
+test('disabled remix permission removes the editor remix action', () => {
+    expect(getMistWarpAction({isOwner: false, canRemix: false}, true)).toBeNull();
+});
+
+test('editor project loads use the permission checked endpoint', async () => {
+    window.fetch = jest.fn(() => Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ok: true, project: {id: 'project-1'}})
+    }));
+
+    await expect(getEditorProject('project-1')).resolves.toMatchObject({project: {id: 'project-1'}});
+    expect(window.fetch.mock.calls[0][0]).toBe('https://mwapi.mistium.com/api/projects/project-1/editor');
+});
+
 test('MistWarp project identity keeps ownership and sharing state', () => {
     rememberPlatformProject({id: 'project-1', isOwner: false, shared: true});
     expect(getRememberedPlatformProjectState()).toEqual({
@@ -44,6 +59,11 @@ test('MistWarp project identity keeps ownership and sharing state', () => {
         isOwner: false,
         shared: true
     });
+});
+
+test('MistWarp project identity keeps disabled remix permission', () => {
+    rememberPlatformProject({id: 'project-1', isOwner: false, shared: true, canRemix: false});
+    expect(getRememberedPlatformProjectState().canRemix).toBe(false);
 });
 
 test('follower leaderboard adds account index and status from profiles', async () => {

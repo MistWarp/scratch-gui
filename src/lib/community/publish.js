@@ -39,6 +39,7 @@ const rememberPlatformProject = project => {
                 id: String(value.id),
                 isOwner: value.isOwner,
                 shared: !!value.shared,
+                canRemix: value.canRemix,
                 projectJsonUrl: value.projectJsonUrl,
                 trustedExtensions: value.trustedExtensions || []
             }));
@@ -72,7 +73,7 @@ const getRememberedPlatformProject = () => {
 
 const getMistWarpAction = (project, changed) => {
     if (!project) return 'save';
-    if (project.isOwner === false) return changed ? 'remix' : null;
+    if (project.isOwner === false) return changed && project.canRemix !== false ? 'remix' : null;
     return changed ? 'update' : null;
 };
 
