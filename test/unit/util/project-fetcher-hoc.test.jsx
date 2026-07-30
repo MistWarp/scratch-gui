@@ -15,13 +15,24 @@ describe('ProjectFetcherHOC', () => {
     beforeEach(() => {
         store = mockStore({
             scratchGui: {
+                mode: {
+                    isEmbedded: true
+                },
                 projectState: {},
                 vm: {
                     clear: () => {},
+                    loadProject: () => {},
                     stop: () => {}
                 }
             }
         });
+    });
+
+    test('reads embedded mode from the store', () => {
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const mounted = mountWithIntl(<WrappedComponent store={store} />);
+        expect(mounted.find(Component).prop('isEmbedded')).toBe(true);
     });
 
     test.skip('when there is an id, it tries to update the store with that id', () => {

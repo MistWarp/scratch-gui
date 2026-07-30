@@ -685,16 +685,6 @@ const EvidencePanel = ({target}) => {
     );
 };
 
-const removeDeletedExtensionProjects = (extensions, deletedProjects) => {
-    const deleted = new Set((deletedProjects || []).map(String));
-    if (!deleted.size) return extensions;
-    return extensions.map(extension => {
-        const projects = (extension.projects || []).filter(id => !deleted.has(String(id)));
-        if (projects.length === (extension.projects || []).length) return extension;
-        return {...extension, projects, projectCount: projects.length};
-    });
-};
-
 const ExtensionManager = () => {
     const [data, setData] = useState(null);
     const [tab, setTab] = useState('untrusted');
@@ -716,20 +706,21 @@ const ExtensionManager = () => {
     }, [load]);
 
     const setPolicy = async (hash, status) => {
-        if (status === 'blocked' && !window.confirm('Block this extension and delete every project using it?')) {
+        if (status === 'blocked' && !window.confirm('Block this extension and unshare every project using it?')) {
             return;
         }
         try {
             const result = await api.admin.setExtensionPolicy(hash, status);
-            setNote(result.deleted ? `Deleted ${result.deleted} projects.` : 'Extension policy updated.');
+            setNote(result.affected ?
+                `Made ${result.affected} affected projects private and notified their owners.` :
+                'Extension policy updated.');
             setSource(null);
             setData(current => ({
                 ...current,
-                extensions: removeDeletedExtensionProjects(current.extensions || [], result.deletedProjects)
-                    .map(extension => {
-                        if (extension.hash === hash) return {...extension, status};
-                        return extension;
-                    })
+                extensions: (current.extensions || []).map(extension => {
+                    if (extension.hash === hash) return {...extension, status};
+                    return extension;
+                })
             }));
         } catch (e) {
             setError(e.message || 'Could not update extension policy.');
@@ -737,14 +728,15 @@ const ExtensionManager = () => {
     };
 
     const setUrlPolicy = async (url, blocked) => {
-        if (blocked && !window.confirm('Block this URL and delete every project using it?')) return;
+        if (blocked && !window.confirm('Block this URL and unshare every project using it?')) return;
         try {
             const result = await api.admin.setExtensionUrlPolicy(url, blocked);
-            setNote(result.deleted ? `Deleted ${result.deleted} projects.` : 'URL policy updated.');
+            setNote(result.affected ?
+                `Made ${result.affected} affected projects private and notified their owners.` :
+                'URL policy updated.');
             setBlockedUrl('');
             setData(current => ({
                 ...current,
-                extensions: removeDeletedExtensionProjects(current.extensions || [], result.deletedProjects),
                 blockedUrls: blocked ?
                     [...new Set([...(current.blockedUrls || []), url])] :
                     (current.blockedUrls || []).filter(blockedEntry => blockedEntry !== url)
@@ -792,6 +784,7 @@ const ExtensionManager = () => {
     });
     const tabs = [
         {status: 'untrusted', label: 'To be verified'},
+        {status: 'ignored', label: 'Ignored'},
         {status: 'trusted', label: 'Trusted'},
         {status: 'blocked', label: 'Blocked'}
     ];
@@ -898,6 +891,17 @@ const ExtensionManager = () => {
                                             className={styles.secondary}
                                             onClick={() => setPolicy(extension.hash, 'untrusted')}
                                         >Untrust</button>
+                                    ) : null}
+                                    {tab === 'untrusted' ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setPolicy(extension.hash, 'ignored')}
+                                        >Ignore</button>
+                                    ) : tab === 'ignored' ? (
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
+                                        >Review again</button>
                                     ) : null}
                                     {!extension.gallery && tab !== 'blocked' ? (
                                         <button
