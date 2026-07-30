@@ -316,6 +316,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
 
     const mapStateToProps = state => ({
         isCreatingNew: getIsCreatingNew(state.scratchGui.projectState.loadingState),
+        isEmbedded: state.scratchGui.mode.isEmbedded,
         isFetchingWithId: getIsFetchingWithId(state.scratchGui.projectState.loadingState),
         isLoadingProject: getIsLoading(state.scratchGui.projectState.loadingState),
         isShowingProject: getIsShowingProject(state.scratchGui.projectState.loadingState),
