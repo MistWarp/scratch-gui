@@ -5,8 +5,6 @@ import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import FileInput from './file-input.jsx';
 import styles from './custom-extension-modal.css';
-import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import {APP_NAME} from '../../lib/constants/brand';
 
 const messages = defineMessages({
     title: {
@@ -168,8 +166,6 @@ CustomExtensionModal.propTypes = {
     onKeyDown: PropTypes.func.isRequired,
     text: PropTypes.string.isRequired,
     onChangeText: PropTypes.func.isRequired,
-    unsandboxed: PropTypes.bool.isRequired,
-    onChangeUnsandboxed: PropTypes.func,
     onLoadExtension: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired
 };
