@@ -5,8 +5,7 @@ import {connect} from 'react-redux';
 import log from '../lib/utils/log';
 import CustomExtensionModalComponent from '../components/tw-custom-extension-modal/custom-extension-modal.jsx';
 import {closeCustomExtensionModal} from '../reducers/modals';
-import {manuallyTrustExtension, isTrustedExtension} from './tw-security-manager.jsx';
-import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/persistence/tw-unsandboxed.js';
+import {manuallyTrustExtension} from './tw-security-manager.jsx';
 
 /**
  * @param {Blob} blob Blob
@@ -35,16 +34,14 @@ class CustomExtensionModal extends React.Component {
             'handleChangeText',
             'handleDragOver',
             'handleDragLeave',
-            'handleDrop',
-            'handleChangeUnsandboxed'
+            'handleDrop'
         ]);
 
         this.state = {
             type: 'url',
             url: '',
             files: null,
-            text: '',
-            unsandboxed: getPersistedUnsandboxed()
+            text: ''
         };
     }
 
@@ -126,11 +123,8 @@ class CustomExtensionModal extends React.Component {
             const urls = await this.getExtensionURLs();
 
             if (this.state.type !== 'url') {
-                setPersistedUnsandboxed(this.state.unsandboxed);
-                if (this.state.unsandboxed) {
-                    for (const url of urls) {
-                        manuallyTrustExtension(url);
-                    }
+                for (const url of urls) {
+                    manuallyTrustExtension(url);
                 }
             }
 
@@ -190,23 +184,6 @@ class CustomExtensionModal extends React.Component {
         }
     }
 
-    isUnsandboxed () {
-        if (this.state.type === 'url') {
-            return isTrustedExtension(this.state.url);
-        }
-        return this.state.unsandboxed;
-    }
-
-    canChangeUnsandboxed () {
-        return this.state.type !== 'url';
-    }
-
-    handleChangeUnsandboxed (e) {
-        this.setState({
-            unsandboxed: e.target.checked
-        });
-    }
-
     render () {
         return (
             <CustomExtensionModalComponent
@@ -225,8 +202,6 @@ class CustomExtensionModal extends React.Component {
                 onKeyDown={this.handleKeyDown}
                 text={this.state.text}
                 onChangeText={this.handleChangeText}
-                unsandboxed={this.isUnsandboxed()}
-                onChangeUnsandboxed={this.canChangeUnsandboxed() ? this.handleChangeUnsandboxed : null}
                 onLoadExtension={this.handleLoadExtension}
                 onClose={this.handleClose}
             />
@@ -255,3 +230,5 @@ export default connect(
     mapStateToProps,
     mapDispatchToProps
 )(CustomExtensionModal);
+
+export {CustomExtensionModal};
