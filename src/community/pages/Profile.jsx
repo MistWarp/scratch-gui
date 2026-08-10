@@ -13,9 +13,12 @@ import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
+import ActivityCard from '../components/ActivityCard.jsx';
+import FeaturedProject from '../components/FeaturedProject.jsx';
 import useLatest from '../use-latest.js';
 import useEscape from '../use-escape.js';
 import setPageMeta from '../page-meta.js';
+import safeIconSvg from '../safe-icon.js';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -183,6 +186,8 @@ const Profile = () => {
     const isOnline = Boolean(presence && presence.presence && presence.presence !== 'offline');
     const statusDotClass = isOnline ? styles.onlineDot : styles.offlineDot;
     const statusText = presence ? (presence.status || presence.presence) : '';
+    const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
+    const badges = Array.isArray(profile.badges) ? profile.badges.slice(0, 6) : [];
 
     return (
         <main className={styles.page}>
@@ -199,195 +204,234 @@ const Profile = () => {
                     onClose={() => setDonating(false)}
                 />
             ) : null}
-            <section className={styles.profileCard}>
-                <div
-                    className={styles.banner}
-                    style={{backgroundImage: `url(${rotur.banner(name)})`}}
-                />
-                <header className={styles.header}>
-                    <Avatar
-                        username={name}
-                        size={96}
-                        className={styles.avatar}
-                    />
-                    <div className={styles.identity}>
-                        <h1>{profile.username || name}</h1>
-                        {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
-                        <p className={styles.bio}>{profile.bio ? <RichText text={profile.bio} /> : 'No bio yet.'}</p>
-                        {presence ? (
-                            <span className={styles.userStatus}>
-                                <span className={statusDotClass} />
-                                <RichText text={statusText || (isOnline ? 'Online' : 'Offline')} />
-                            </span>
-                        ) : null}
-                        <div className={styles.meta}>
-                            <span className={styles.stat}>
-                                <strong>{profile.followers || 0}</strong> followers
-                            </span>
-                            <span className={styles.stat}>
-                                <strong>{profile.following || 0}</strong> following
-                            </span>
-                            {year ? (
-                                <span className={styles.metaItem}>
-                                    <Calendar size={14} />
-                                    Joined {year}
-                                </span>
-                            ) : null}
-                            {typeof profile.index === 'number' ? (
-                                <span className={styles.metaItem}>Account #{profile.index}</span>
+            <div className={styles.layout}>
+                <div className={styles.mainColumn}>
+                    {actionError ? <p className={styles.status}>{actionError}</p> : null}
+
+                    {!onMistWarp ? (
+                        <div className={styles.notOnMistwarp}>
+                            Not on MistWarp yet. This is {profile.username || name}&apos;s Rotur profile.
+                        </div>
+                    ) : null}
+
+                    {featuredProject ? (
+                        <section className={styles.section}>
+                            <FeaturedProject project={featuredProject} />
+                        </section>
+                    ) : null}
+
+                    {otherProjects.length ? (
+                        <section className={styles.section}>
+                            <h2 className={styles.sectionTitle}>Projects</h2>
+                            <div className={styles.grid}>
+                                {otherProjects.map(project => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ) : null}
+
+                    {user && user.isAdmin && unsharedProjects.length ? (
+                        <section className={styles.section}>
+                            <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
+                            <div className={styles.grid}>
+                                {unsharedProjects.map(project => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ) : null}
+
+                    <section className={styles.section}>
+                        <div className={styles.sectionHead}>
+                            <h2 className={styles.sectionTitle}>
+                                Followers - {profile.followers || followers.length}
+                            </h2>
+                            {followers.length ? (
+                                <Link
+                                    to={`/users/${name}/followers`}
+                                    className={styles.seeAll}
+                                >
+                                    See all
+                                    <ChevronRight size={14} />
+                                </Link>
                             ) : null}
                         </div>
-                    </div>
-                    {user && !isSelf ? (
-                        <button
-                            className={profile.followed ? styles.followingButton : styles.followButton}
-                            disabled={followBusy}
-                            onClick={toggleFollow}
-                        >
-                            {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                            {profile.followed ? 'Following' : 'Follow'}
-                        </button>
-                    ) : null}
-                    {user && !isSelf ? (
-                        <button
-                            className={styles.followButton}
-                            title={`Send credits to ${profile.username || name}`}
-                            onClick={() => setDonating(true)}
-                        >
-                            <Coins size={15} />
-                            Donate
-                        </button>
-                    ) : null}
-                    {user && !isSelf ? (
-                        <button
-                            className={styles.followingButton}
-                            title="Report this user"
-                            onClick={() => setReporting(true)}
-                        >
-                            <Flag size={15} />
-                            Report
-                        </button>
-                    ) : null}
-                    {isSelf ? (
-                        <a
-                            className={styles.followButton}
-                            href="https://rotur.dev/me"
-                            target="_blank"
-                            rel="noreferrer"
-                        >
-                            <Pencil size={15} />
-                            Edit profile
-                        </a>
-                    ) : null}
-                </header>
-            </section>
+                        {followers.length ? (
+                            <div className={styles.followersRow}>
+                                {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
+                                    <Link
+                                        key={follower}
+                                        to={`/users/${follower}`}
+                                        className={styles.followerChip}
+                                    >
+                                        <Avatar
+                                            username={follower}
+                                            size={56}
+                                        />
+                                        <span>{follower}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className={styles.sectionEmpty}>No followers yet.</p>
+                        )}
+                    </section>
 
-            {actionError ? <p className={styles.status}>{actionError}</p> : null}
-
-            {!onMistWarp ? (
-                <div className={styles.notOnMistwarp}>
-                    Not on MistWarp yet. This is {profile.username || name}&apos;s Rotur profile.
-                </div>
-            ) : null}
-
-            {featuredProject ? (
-                <section className={styles.section}>
-                    <h2 className={styles.sectionTitle}>Featured project</h2>
-                    <div className={styles.grid}>
-                        <ProjectCard project={featuredProject} />
-                    </div>
-                </section>
-            ) : null}
-
-            {otherProjects.length ? (
-                <section className={styles.section}>
-                    <h2 className={styles.sectionTitle}>Projects</h2>
-                    <div className={styles.grid}>
-                        {otherProjects.map(project => (
-                            <ProjectCard
-                                key={project.id}
-                                project={project}
-                            />
-                        ))}
-                    </div>
-                </section>
-            ) : null}
-
-            {user && user.isAdmin && unsharedProjects.length ? (
-                <section className={styles.section}>
-                    <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
-                    <div className={styles.grid}>
-                        {unsharedProjects.map(project => (
-                            <ProjectCard
-                                key={project.id}
-                                project={project}
-                            />
-                        ))}
-                    </div>
-                </section>
-            ) : null}
-
-            <section className={styles.section}>
-                <div className={styles.sectionHead}>
-                    <h2 className={styles.sectionTitle}>
-                        Followers - {profile.followers || followers.length}
-                    </h2>
-                    {followers.length ? (
-                        <Link
-                            to={`/users/${name}/followers`}
-                            className={styles.seeAll}
-                        >
-                            See all
-                            <ChevronRight size={14} />
-                        </Link>
-                    ) : null}
-                </div>
-                {followers.length ? (
-                    <div className={styles.followersRow}>
-                        {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
-                            <Link
-                                key={follower}
-                                to={`/users/${follower}`}
-                                className={styles.followerChip}
-                            >
-                                <Avatar
-                                    username={follower}
-                                    size={56}
+                    {onMistWarp ? (
+                        <section className={styles.section}>
+                            <div className={styles.sectionHead}>
+                                <h2 className={styles.sectionTitle}>Comments</h2>
+                                {isSelf ? (
+                                    <button
+                                        className={styles.commentsToggle}
+                                        onClick={toggleComments}
+                                        disabled={commentsBusy}
+                                    >
+                                        {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
+                                        {commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                                    </button>
+                                ) : null}
+                            </div>
+                            <div className={styles.feed}>
+                                <CommentThread
+                                    source={commentSource}
+                                    canModerate={isSelf}
+                                    disabled={commentsOff}
+                                    reportContext={`profile ${name}`}
                                 />
-                                <span>{follower}</span>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <p className={styles.sectionEmpty}>No followers yet.</p>
-                )}
-            </section>
-
-            {onMistWarp ? (
-                <section className={styles.section}>
-                    <div className={styles.sectionHead}>
-                        <h2 className={styles.sectionTitle}>Comments</h2>
-                        {isSelf ? (
-                            <button
-                                className={styles.commentsToggle}
-                                onClick={toggleComments}
-                                disabled={commentsBusy}
-                            >
-                                {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
-                                {commentsOff ? 'Turn on comments' : 'Turn off comments'}
-                            </button>
+                            </div>
+                        </section>
+                    ) : null}
+                </div>
+                <aside className={styles.profileRail}>
+                    <section className={styles.profileCard}>
+                        {profile.profile_video ? (
+                            <video
+                                className={styles.profileVideo}
+                                src={profile.profile_video}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                            />
                         ) : null}
-                    </div>
-                    <div className={styles.feed}>
-                        <CommentThread
-                            source={commentSource}
-                            canModerate={isSelf}
-                            disabled={commentsOff}
-                            reportContext={`profile ${name}`}
+                        <div
+                            className={styles.banner}
+                            style={{backgroundImage: `url(${rotur.banner(name)})`}}
                         />
-                    </div>
-                </section>
-            ) : null}
+                        <div className={styles.profileBody}>
+                            <Avatar username={name} size={88} className={styles.avatar} />
+                            <div className={styles.nameRow}>
+                                <h1>{profile.username || name}</h1>
+                                {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
+                            </div>
+                            {presence ? (
+                                <span className={styles.userStatus}>
+                                    <span className={statusDotClass} />
+                                    <RichText text={statusText || (isOnline ? 'Online' : 'Offline')} />
+                                </span>
+                            ) : null}
+                            {badges.length ? (
+                                <div className={styles.badges}>
+                                    {badges.map((badge, index) => {
+                                        const badgeData = typeof badge === 'string' ? {name: badge} : badge;
+                                        if (!badgeData.icon) return null;
+                                        return (
+                                            <span
+                                                key={`${badgeData.name}-${index}`}
+                                                className={styles.badge}
+                                                title={badgeData.description || badgeData.name}
+                                                aria-label={badgeData.name}
+                                                // eslint-disable-next-line react/no-danger
+                                                dangerouslySetInnerHTML={{
+                                                    __html: safeIconSvg(badgeData.icon, {size: 2, viewSize: 20})
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
+                            <div className={styles.profileStats}>
+                                <div><strong>{profile.followers || 0}</strong><span>followers</span></div>
+                                <div><strong>{profile.following || 0}</strong><span>following</span></div>
+                                <div><strong>{profile.currency || 0}</strong><span>credits</span></div>
+                            </div>
+                            <div className={styles.actions}>
+                                {user && !isSelf ? (
+                                    <button
+                                        className={profile.followed ? styles.followingButton : styles.followButton}
+                                        disabled={followBusy}
+                                        onClick={toggleFollow}
+                                    >
+                                        {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                                        {profile.followed ? 'Following' : 'Follow'}
+                                    </button>
+                                ) : null}
+                                {user && !isSelf ? (
+                                    <button
+                                        className={styles.followButton}
+                                        title={`Send credits to ${profile.username || name}`}
+                                        onClick={() => setDonating(true)}
+                                    >
+                                        <Coins size={15} />
+                                        Donate
+                                    </button>
+                                ) : null}
+                                {user && !isSelf ? (
+                                    <button
+                                        className={styles.iconButton}
+                                        title="Report this user"
+                                        aria-label="Report this user"
+                                        onClick={() => setReporting(true)}
+                                    >
+                                        <Flag size={15} />
+                                    </button>
+                                ) : null}
+                                {isSelf ? (
+                                    <a
+                                        className={styles.followButton}
+                                        href="https://rotur.dev/me"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <Pencil size={15} />
+                                        Edit profile
+                                    </a>
+                                ) : null}
+                            </div>
+                            <div className={styles.railSection}>
+                                <h2>About me</h2>
+                                <div className={styles.bio}>
+                                    {profile.bio ? <RichText text={profile.bio} /> : 'No bio yet.'}
+                                </div>
+                            </div>
+                            <div className={styles.accountMeta}>
+                                {year ? (
+                                    <span><Calendar size={14} />Joined {year}</span>
+                                ) : null}
+                                {typeof profile.index === 'number' ? <span>Account #{profile.index}</span> : null}
+                            </div>
+                            {activities.length ? (
+                                <div className={styles.railSection}>
+                                    <h2>Activity</h2>
+                                    <div className={styles.activityList}>
+                                        {activities.slice(0, 3).map((activity, index) => (
+                                            <ActivityCard key={activity.id || index} activity={activity} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </section>
+                </aside>
+            </div>
         </main>
     );
 };

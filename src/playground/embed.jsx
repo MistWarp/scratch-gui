@@ -40,6 +40,13 @@ const onVmInit = _vm => {
 };
 
 const onProjectLoaded = () => {
+    if (window.parent !== window && vm && vm.runtime) {
+        window.parent.postMessage({
+            type: 'mw:stage-size',
+            width: vm.runtime.stageWidth,
+            height: vm.runtime.stageHeight
+        }, '*');
+    }
     if (urlParams.has('autoplay')) {
         vm.start();
         vm.greenFlag();

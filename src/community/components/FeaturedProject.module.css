@@ -1,0 +1,151 @@
+.preview {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.topBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    min-width: 0;
+}
+
+.identity {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.title {
+    overflow: hidden;
+    color: var(--mw-text);
+    font-size: 15px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.owner {
+    color: var(--accent-strong);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.openProject {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 700;
+    flex: none;
+}
+
+.stageWrap {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 0;
+    padding-bottom: calc(75% + 52px);
+    overflow: hidden;
+    background: #000;
+}
+
+.stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+}
+
+.thumbnail,
+.thumbnail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.thumbnail img {
+    object-fit: cover;
+}
+
+.thumbnailFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-raised);
+    color: var(--text-faint);
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.footer {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 11px 14px 13px;
+}
+
+.stats {
+    display: flex;
+    flex: none;
+    gap: 12px;
+}
+
+.stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.description {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+@media (max-width: 620px) {
+    .topBar {
+        padding: 10px;
+    }
+
+    .openProject {
+        padding: 7px;
+        font-size: 0;
+    }
+
+    .footer {
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 400px) {
+    .topBar > a:first-child {
+        display: none;
+    }
+}

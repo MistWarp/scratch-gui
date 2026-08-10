@@ -8,14 +8,14 @@ try {
     // ignore
 }
 
-const storageBlocked = (() => {
+const storageIsBlocked = name => {
     try {
-        window.localStorage.getItem('__mw_probe__');
+        window[name].getItem('__mw_probe__');
         return false;
     } catch (e) {
         return true;
     }
-})();
+};
 
 const createMemoryStorage = () => {
     const map = new Map();
@@ -74,8 +74,10 @@ const define = (name, value) => {
     }
 };
 
-if (storageBlocked) {
-    for (const name of ['localStorage', 'sessionStorage']) {
+const blockedStorage = ['localStorage', 'sessionStorage'].filter(storageIsBlocked);
+
+if (blockedStorage.length) {
+    for (const name of blockedStorage) {
         define(name, createMemoryStorage());
     }
 
