@@ -206,6 +206,8 @@ describe('CloudProvider', () => {
 test('username anonymization', () => {
     const anonymized = new CloudProvider('', null, 'player1234', '');
     expect(anonymized.username).toBe('player');
+    const rotur = new CloudProvider('', null, '@abcdef', '');
+    expect(rotur.username).toBe('abcdef');
     const verbatim = new CloudProvider('', null, 'abcdef', '');
     expect(verbatim.username).toBe('abcdef');
 });
