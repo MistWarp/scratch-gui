@@ -4,7 +4,7 @@ import {
     Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck
+    Palette, Bookmark, BookmarkCheck, Star
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
 import {cachedFetchBuffer, cachedFetchJson} from '../../lib/community/cached-fetch.js';
@@ -165,6 +165,8 @@ const Project = () => {
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [confirmBalance, setConfirmBalance] = useState(null);
     const [savingLibrary, setSavingLibrary] = useState(false);
+    const [savingFeatured, setSavingFeatured] = useState(false);
+    const [featuredProject, setFeaturedProject] = useState('');
     const [projectThemeApplied, setProjectThemeApplied] = useState(false);
     const [revertTheme, setRevertTheme] = useState(false);
     const [followsOwner, setFollowsOwner] = useState(false);
@@ -185,6 +187,10 @@ const Project = () => {
                 e && e.status === 404 ? 'Project not found.' : 'Could not load this project.'
             )));
     }, [id, beginLoad]);
+
+    useEffect(() => {
+        setFeaturedProject((user && user.featuredProject) || '');
+    }, [user]);
 
     useEffect(() => {
         setProject(null);
@@ -636,6 +642,22 @@ const Project = () => {
         }
     };
 
+    const toggleFeatured = async () => {
+        setMenuOpen(false);
+        if (savingFeatured) return;
+        setSavingFeatured(true);
+        const next = featuredProject === id ? '' : id;
+        try {
+            await api.updateProfile({featuredProject: next});
+            setFeaturedProject(next);
+            setActionError(null);
+        } catch (e) {
+            setActionError(e.message || 'Could not update your featured project.');
+        } finally {
+            setSavingFeatured(false);
+        }
+    };
+
     const copyLink = () => {
         setMenuOpen(false);
         navigator.clipboard.writeText(window.location.href)
@@ -868,6 +890,19 @@ const Project = () => {
                                         Remix
                                     </button>
                                 ) : null}
+                                {project.isOwner && project.shared ? (
+                                    <button
+                                        onClick={toggleFeatured}
+                                        disabled={savingFeatured}
+                                    >
+                                        <Star
+                                            size={15}
+                                            fill={featuredProject === project.id ? 'currentColor' : 'none'}
+                                        />
+                                        {featuredProject === project.id ?
+                                            'Remove profile feature' : 'Feature on profile'}
+                                    </button>
+                                ) : null}
                                 {project.isOwner ? (
                                     <button onClick={menuComments}>
                                         {project.commentsOff ?
@@ -1064,7 +1099,8 @@ const Project = () => {
                                     allow="autoplay; fullscreen"
                                     sandbox={unsandboxed ?
                                         null :
-                                        'allow-scripts allow-forms allow-pointer-lock allow-downloads'}
+                                        'allow-scripts allow-forms allow-pointer-lock allow-downloads ' +
+                                        'allow-popups allow-popups-to-escape-sandbox'}
                                 />
                             )}
                         </div>

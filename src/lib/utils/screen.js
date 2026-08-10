@@ -6,6 +6,8 @@ import {
 } from '../constants/layout-constants';
 
 const maxScaleParam = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('scale');
+const isProfilePreview = typeof URLSearchParams !== 'undefined' &&
+    new URLSearchParams(location.search).get('mw_profile_preview') === '1';
 
 /**
  * @typedef {object} StageDimensions
@@ -59,7 +61,7 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
     };
 
     if (isFullScreen) {
-        const menuBarHeight = getMenuBarHeight();
+        const menuBarHeight = isProfilePreview ? 0 : getMenuBarHeight();
         stageDimensions.height = window.innerHeight -
             STAGE_DIMENSION_DEFAULTS.menuHeightAdjustment -
             menuBarHeight -

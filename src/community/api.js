@@ -49,11 +49,17 @@ const themeCustomFor = theme => {
     return themeCustomCacheValue;
 };
 
-const embedUrl = (project, {unsandboxed = false, applyProjectTheme = true} = {}) => {
+const embedUrl = (project, {
+    unsandboxed = false,
+    applyProjectTheme = true,
+    bridge = true,
+    profilePreview = false
+} = {}) => {
     const params = new URLSearchParams();
     params.set('project_url', project.projectJsonUrl);
     params.set('mw_assets', project.assetsBase);
-    params.set('mw_bridge', '1');
+    if (bridge) params.set('mw_bridge', '1');
+    if (profilePreview) params.set('mw_profile_preview', '1');
     if (project.id) params.set('platform_project', project.id);
     if (project.trustedExtensions && project.trustedExtensions.length) {
         params.set('mw_te', JSON.stringify(project.trustedExtensions));

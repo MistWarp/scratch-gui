@@ -338,7 +338,7 @@
     right: 0;
     top: calc(100% + 7px);
     z-index: 5;
-    width: 210px;
+    width: 240px;
     padding: 5px;
     border: 1px solid var(--border);
     border-radius: 9px;
