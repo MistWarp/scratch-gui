@@ -5,7 +5,7 @@ const anonymizeUsername = username => {
     if (/^player\d{2,7}$/i.test(username)) {
         return 'player';
     }
-    return username;
+    return typeof username === 'string' && username.startsWith('@') ? username.slice(1) : username;
 };
 
 class CloudProvider {
