@@ -74,6 +74,48 @@ const define = (name, value) => {
     }
 };
 
+const cookieIsBlocked = (() => {
+    try {
+        void document.cookie;
+        return false;
+    } catch (e) {
+        return true;
+    }
+})();
+
+if (cookieIsBlocked) {
+    const cookies = new Map();
+    try {
+        Object.defineProperty(document, 'cookie', {
+            configurable: true,
+            get: () => [...cookies.entries()]
+                .map(([name, value]) => `${name}=${value}`)
+                .join('; '),
+            set: input => {
+                const parts = String(input)
+                    .split(';')
+                    .map(part => part.trim());
+                const separator = parts[0].indexOf('=');
+                if (separator < 1) return;
+                const name = parts[0].slice(0, separator).trim();
+                const value = parts[0].slice(separator + 1);
+                const attributes = parts.slice(1)
+                    .map(part => part.toLowerCase());
+                const expired = attributes.some(attribute => attribute === 'max-age=0' || (
+                    attribute.startsWith('expires=') && Date.parse(attribute.slice(8)) <= Date.now()
+                ));
+                if (expired) {
+                    cookies.delete(name);
+                } else {
+                    cookies.set(name, value);
+                }
+            }
+        });
+    } catch (e) {
+        String(e);
+    }
+}
+
 const blockedStorage = ['localStorage', 'sessionStorage'].filter(storageIsBlocked);
 
 if (blockedStorage.length) {
