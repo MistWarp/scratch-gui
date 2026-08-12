@@ -18,6 +18,7 @@ const groupScopes = scopes => {
 // of the project iframe). The sandboxed project cannot read or dismiss this, so
 // it can request an action but never approve one on the user's behalf.
 const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll, onShareNo}) => {
+    const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     if (type === 'share') {
         return (
             <Modal
@@ -46,7 +47,7 @@ const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll
     return (
         <Modal
             icon={ShieldCheck}
-            title={type === 'confirm' ? 'Confirm Rotur action' : 'Connect to Rotur'}
+            title={type === 'confirm' ? (payment ? 'Confirm payment' : 'Confirm account action') : 'Connect to Rotur'}
             onDismiss={onDeny}
             actions={
                 <React.Fragment>
@@ -57,17 +58,17 @@ const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll
                         variant="primary"
                         onClick={onAllow}
                     >
-                        {type === 'confirm' ? 'Allow' : 'Connect'}
+                        {payment ? 'Allow payment' : (type === 'confirm' ? 'Allow once' : 'Connect')}
                     </Button>
                 </React.Fragment>
             }
         >
             {type === 'confirm' ? (
                 <p className={styles.lead}>
-                    {'This project wants to '}
-                    <b>{data.label}</b>
-                    {data.username ? ` as @${data.username}.` : '.'}
-                    {' Only allow it if you trust this project.'}
+                    {payment ? `Allow payment of ${data.confirmation.amount} credits to ` : 'Allow this project to '}
+                    <b>{payment ? `@${data.confirmation.recipient}` : data.label}</b>
+                    {payment ? '?' : (data.username ? ` as @${data.username}?` : '?')}
+                    {payment ? '' : ' This action will happen once. It does not give the project ongoing approval.'}
                 </p>
             ) : (
                 <React.Fragment>
