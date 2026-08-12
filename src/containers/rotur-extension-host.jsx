@@ -158,6 +158,10 @@ class RoturExtensionHost extends React.Component {
         if (hasFullGrant(meta, scopes)) {
             return true;
         }
+        if (meta && meta.authenticatedOnly) {
+            await commitGrant(meta, scopes);
+            return true;
+        }
         if (this.props.vm.runtime._mwProjectTrusted === true) {
             await commitGrant(meta, scopes);
             return true;
@@ -186,6 +190,7 @@ class RoturExtensionHost extends React.Component {
             const {showModal} = await this.acquireModalLock();
             const confirmed = await showModal('confirm', {
                 label: opts.label || method,
+                confirmation: opts.confirmation || null,
                 username: this.currentUser().username
             });
             if (!confirmed) {

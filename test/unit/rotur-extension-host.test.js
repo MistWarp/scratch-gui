@@ -42,12 +42,32 @@ test('trusted projects still confirm sensitive Rotur actions', async () => {
 
     await host.call('me.transfer', ['other-user', 10, ''], {
         sensitive: true,
-        label: 'send credits'
+        label: 'me.transfer',
+        confirmation: {type: 'payment', amount: 10, recipient: 'other-user'}
     });
 
     expect(showModal).toHaveBeenCalledWith('confirm', {
-        label: 'send credits',
+        label: 'me.transfer',
+        confirmation: {type: 'payment', amount: 10, recipient: 'other-user'},
         username: 'user'
     });
     expect(callRotur).toHaveBeenCalledWith('me.transfer', ['other-user', 10, '']);
+});
+
+test('authenticated reads expand scopes without prompting', async () => {
+    const host = new RoturExtensionHost({
+        vm: {runtime: {}}
+    });
+    host.acquireModalLock = jest.fn();
+
+    await expect(host.ensureConsent(['credits:view'], {
+        name: 'Project',
+        authenticatedOnly: true
+    })).resolves.toBe(true);
+
+    expect(commitGrant).toHaveBeenCalledWith({
+        name: 'Project',
+        authenticatedOnly: true
+    }, ['credits:view']);
+    expect(host.acquireModalLock).not.toHaveBeenCalled();
 });

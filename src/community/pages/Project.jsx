@@ -383,7 +383,7 @@ const Project = () => {
     // that the sandboxed project cannot read or approve on its own.
     useEffect(() => {
         const identity = userMessage.user;
-        const onMessage = event => {
+        const onMessage = async event => {
             const frame = stageFrame.current;
             if (!frame || event.source !== frame.contentWindow) return;
             const data = event.data;
@@ -419,6 +419,15 @@ const Project = () => {
                 }
                 if (hasFullGrant(meta, scopes)) {
                     reply({id: data.id, ok: true, result: true});
+                    return;
+                }
+                if (meta.authenticatedOnly) {
+                    try {
+                        await commitGrant(meta, scopes);
+                        reply({id: data.id, ok: true, result: true});
+                    } catch (e) {
+                        reply({id: data.id, ok: false, error: String((e && e.message) || e)});
+                    }
                     return;
                 }
                 setRoturModal({
@@ -486,7 +495,11 @@ const Project = () => {
                 if (opts && opts.sensitive) {
                     setRoturModal({
                         type: 'confirm',
-                        data: {label: (opts && opts.label) || method, username: identity.username},
+                        data: {
+                            label: (opts && opts.label) || method,
+                            confirmation: (opts && opts.confirmation) || null,
+                            username: identity.username
+                        },
                         onAllow: () => {
                             setRoturModal(null);
                             perform();
