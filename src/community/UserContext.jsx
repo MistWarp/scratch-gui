@@ -1,8 +1,9 @@
-import React, {createContext, useContext, useEffect, useState, useCallback} from 'react';
+import React, {createContext, useContext, useEffect, useState, useCallback, useRef} from 'react';
 import api from './api';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
+import {subscribeNotifications} from '../lib/rotur/client.js';
 import {
     subscribe as subscribeIdentity,
     restore as identityRestore,
@@ -18,6 +19,19 @@ const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [banMessage, setBanMessage] = useState(null);
+    const notificationsUnsub = useRef(null);
+
+    const handleNotificationPush = useCallback(notification => {
+        if (!notification || notification.read) return;
+        window.dispatchEvent(new CustomEvent('mw:notifications-push', {detail: notification}));
+    }, []);
+
+    const clearNotificationSub = useCallback(() => {
+        if (notificationsUnsub.current) {
+            notificationsUnsub.current();
+            notificationsUnsub.current = null;
+        }
+    }, []);
 
     const applyLoggedIn = useCallback(async identityUser => {
         let me = null;
@@ -49,21 +63,29 @@ const UserProvider = ({children}) => {
     const handleIdentity = useCallback(state => {
         setBanMessage(state.banMessage || null);
         if (state.user) {
+            if (!notificationsUnsub.current) {
+                notificationsUnsub.current = subscribeNotifications(handleNotificationPush);
+            }
             applyLoggedIn(state.user).finally(() => setLoading(false));
         } else {
+            clearNotificationSub();
             setUser(null);
             applyThemeVisuals(detectTheme());
             if (state.status !== 'restoring') {
                 setLoading(false);
             }
         }
-    }, [applyLoggedIn]);
+    }, [applyLoggedIn, clearNotificationSub, handleNotificationPush]);
 
     useEffect(() => {
         const unsubscribe = subscribeIdentity(handleIdentity);
         identityRestore();
         return unsubscribe;
     }, [handleIdentity]);
+
+    useEffect(() => () => {
+        clearNotificationSub();
+    }, [clearNotificationSub]);
 
     const login = useCallback(async () => {
         await identityLogin();

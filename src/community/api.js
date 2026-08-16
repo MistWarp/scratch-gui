@@ -29,6 +29,39 @@ const readStored = key => {
     }
 };
 
+const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
+const EMBED_STORAGE_SEED_LIMIT = 32000;
+
+const storageForProject = projectId => {
+    if (!projectId) return null;
+    const id = String(projectId);
+    const seed = {};
+    let size = 0;
+    const blockedPrefixes = [
+        'mw:',
+        'tw:'
+    ];
+    const isBlockedStorageKey = key => blockedPrefixes.some(prefix => key.startsWith(prefix));
+    try {
+        const prefix = `${EMBED_STORAGE_PREFIX}${id}:`;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !key.startsWith(prefix)) continue;
+            const name = key.slice(prefix.length);
+            if (isBlockedStorageKey(name)) continue;
+            const value = readStored(key);
+            if (value === null) continue;
+            const nextSize = size + name.length + value.length + 6;
+            if (nextSize > EMBED_STORAGE_SEED_LIMIT) return null;
+            seed[name] = value;
+            size = nextSize;
+        }
+    } catch (e) {
+        return null;
+    }
+    return Object.keys(seed).length ? seed : null;
+};
+
 let themeCustomCacheKey;
 let themeCustomCacheValue = '';
 const themeCustomFor = theme => {
@@ -53,7 +86,8 @@ const embedUrl = (project, {
     unsandboxed = false,
     applyProjectTheme = true,
     bridge = true,
-    profilePreview = false
+    profilePreview = false,
+    persistStorage = false
 } = {}) => {
     const params = new URLSearchParams();
     params.set('project_url', project.projectJsonUrl);
@@ -61,6 +95,17 @@ const embedUrl = (project, {
     if (bridge) params.set('mw_bridge', '1');
     if (profilePreview) params.set('mw_profile_preview', '1');
     if (project.id) params.set('platform_project', project.id);
+    if (persistStorage && project.id) {
+        params.set('mw_storage', '1');
+        const seed = storageForProject(project.id);
+        if (seed) {
+            try {
+                params.set('mw_storage_seed', JSON.stringify(seed));
+            } catch (e) {
+                // ignore
+            }
+        }
+    }
     if (project.trustedExtensions && project.trustedExtensions.length) {
         params.set('mw_te', JSON.stringify(project.trustedExtensions));
     }
