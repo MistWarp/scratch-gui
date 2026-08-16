@@ -33,10 +33,15 @@ const parseStorageSeed = raw => {
 };
 
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
+const EMBED_STORAGE_ALLOWED_KEYS = new Set([
+    'tw:theme',
+    'tw:custom-themes'
+]);
 const EMBED_IDB_PREFIX = 'mw:embed-idb:';
 
 const isBlockedStorageKey = key => {
     const value = String(key);
+    if (EMBED_STORAGE_ALLOWED_KEYS.has(value)) return false;
     return EMBED_STORAGE_BLOCKED_PREFIXES.some(prefix => value.startsWith(prefix));
 };
 
