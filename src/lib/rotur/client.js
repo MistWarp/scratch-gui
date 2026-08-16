@@ -25,6 +25,8 @@ const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art
 
 /** @type {Rotur|null} */
 let client = null;
+const notificationListeners = new Set();
+let notificationSocketListener = null;
 
 const getClient = () => {
     if (!client) {
@@ -248,6 +250,13 @@ const clearActivity = () => {
 const logout = () => {
     clearActivity();
     const rotur = getClient();
+    if (notificationSocketListener) {
+        if (rotur.socket && typeof rotur.socket.off === 'function') {
+            rotur.socket.off('notification', notificationSocketListener);
+        }
+        notificationSocketListener = null;
+    }
+    notificationListeners.clear();
     rotur.logout();
     storeToken(null);
     writeRestoreCache(null, null);
@@ -269,6 +278,63 @@ const ensureSocket = async () => {
         console.warn('[Rotur] socket connect failed', error);
         return false;
     }
+};
+
+const notifyNotificationListeners = notification => {
+    if (!notification || notification.read === true) {
+        return;
+    }
+    notificationListeners.forEach(listener => {
+        try {
+            listener(notification);
+        } catch (_) {
+            // ignore
+        }
+    });
+};
+
+const detachNotificationSocketListener = () => {
+    if (!notificationSocketListener) {
+        return;
+    }
+    const rotur = getClient();
+    if (rotur.socket && typeof rotur.socket.off === 'function') {
+        rotur.socket.off('notification', notificationSocketListener);
+    }
+    notificationSocketListener = null;
+};
+
+const ensureNotificationSocketListener = () => {
+    const rotur = getClient();
+    if (
+        !rotur.loggedIn ||
+        !rotur.socket ||
+        !notificationListeners.size ||
+        notificationSocketListener
+    ) {
+        return;
+    }
+    if (typeof rotur.socket.on !== 'function') {
+        return;
+    }
+    notificationSocketListener = payload => notifyNotificationListeners(payload);
+    rotur.socket.on('notification', notificationSocketListener);
+};
+
+const subscribeNotifications = listener => {
+    if (typeof listener !== 'function') {
+        return () => {};
+    }
+    notificationListeners.add(listener);
+    if (getClient().loggedIn) {
+        ensureSocket().then(ensureNotificationSocketListener).catch(() => {});
+    }
+    return () => {
+        notificationListeners.delete(listener);
+        if (!notificationListeners.size) {
+            detachNotificationSocketListener();
+        }
+    };
 };
 
 /**
@@ -496,6 +562,7 @@ export {
     restoreSession,
     login,
     logout,
+    subscribeNotifications,
     syncActivity,
     clearActivity,
     isLoggedIn,

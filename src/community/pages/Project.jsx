@@ -77,6 +77,8 @@ const CATEGORY_COLORS = {
 
 const catLabel = prefix => CATEGORY_NAMES[prefix] || (prefix.charAt(0).toUpperCase() + prefix.slice(1));
 const catColor = prefix => CATEGORY_COLORS[prefix] || 'var(--accent-strong)';
+const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
+const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
 
 const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
 const getProjectThemeMode = () => {
@@ -101,6 +103,25 @@ const buildProjectTheme = payload => {
     }
     return null;
 };
+
+const clearProjectStorage = projectId => {
+    if (!projectId) return;
+    const prefix = `${EMBED_STORAGE_PREFIX}${String(projectId)}:`;
+    try {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(prefix)) keys.push(key);
+        }
+        for (const key of keys) {
+            localStorage.removeItem(key);
+        }
+    } catch (e) {
+        // ignore
+    }
+};
+
+const isBlockedProjectStorageKey = key => EMBED_STORAGE_BLOCKED_PREFIXES.some(prefix => key.startsWith(prefix));
 
 const restoreUserTheme = () => {
     try {
@@ -545,6 +566,39 @@ const Project = () => {
             // ignore
         }
     }, [userLoading, userMessage]);
+
+    useEffect(() => {
+            if (!project || !project.id) return;
+        const projectId = String(project.id);
+        const onMessage = event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            const data = event.data;
+            if (!data || typeof data.type !== 'string') return;
+            if (data.storageProject && String(data.storageProject) !== projectId) return;
+            if (data.type === 'mw:storage-clear') {
+                clearProjectStorage(projectId);
+                return;
+            }
+            if (data.type !== 'mw:storage-set' && data.type !== 'mw:storage-remove') return;
+            const key = typeof data.key === 'string' ? data.key : '';
+            if (!key) return;
+            if (isBlockedProjectStorageKey(key)) return;
+            const storageKey = `${EMBED_STORAGE_PREFIX}${projectId}:${key}`;
+            try {
+                if (data.type === 'mw:storage-set') {
+                    if (!Object.prototype.hasOwnProperty.call(data, 'value')) return;
+                    localStorage.setItem(storageKey, String(data.value));
+                    return;
+                }
+                localStorage.removeItem(storageKey);
+            } catch (e) {
+                // ignore
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, [project && project.id]);
 
     const handleTitleKeyDown = event => {
         if (event.key === 'Enter') {
@@ -1106,7 +1160,7 @@ const Project = () => {
                                     key={`${unsandboxed ? 'u' : 's'}-${themeAllowed ? 't' : 'n'}`}
                                     ref={stageFrame}
                                     className={styles.stage}
-                                    src={embedUrl(project, {unsandboxed, applyProjectTheme: themeAllowed})}
+                                    src={embedUrl(project, {unsandboxed, applyProjectTheme: themeAllowed, persistStorage: !unsandboxed})}
                                     title={project.title}
                                     onLoad={sendThemeToStage}
                                     allow="autoplay; fullscreen"
@@ -1124,7 +1178,7 @@ const Project = () => {
                             <span className={styles.sandboxText}>
                                 {unsandboxed ?
                                     'Running with full access to your account. Only for projects you trust.' :
-                                    'Uses custom extensions, running in a sandbox. Saved data will not persist.'}
+                                    'Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.'}
                             </span>
                             {unsandboxed ? (
                                 <button

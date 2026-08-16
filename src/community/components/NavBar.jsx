@@ -48,14 +48,19 @@ const NavBar = () => {
         };
         refresh();
         const timer = setInterval(refresh, 300000);
+        const onPush = () => {
+            setUnread(u => (u > 0 ? u + 1 : 1));
+        };
         const onRead = () => setUnread(0);
         window.addEventListener('mw:notifications-read', onRead);
+        window.addEventListener('mw:notifications-push', onPush);
         window.addEventListener('mw:reports-updated', refresh);
         document.addEventListener('visibilitychange', refresh);
         return () => {
             stale = true;
             clearInterval(timer);
             window.removeEventListener('mw:notifications-read', onRead);
+            window.removeEventListener('mw:notifications-push', onPush);
             window.removeEventListener('mw:reports-updated', refresh);
             document.removeEventListener('visibilitychange', refresh);
         };
