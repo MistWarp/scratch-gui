@@ -12,7 +12,7 @@ import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
-import {KO_FI_SHOP_URL} from '../credits';
+import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
 import useEscape from '../use-escape.js';
 import styles from './MyStuff.module.css';
@@ -28,8 +28,25 @@ const visibilityLabel = project => {
 };
 
 const Overview = ({stats, account, quota}) => {
+    const [buyBusy, setBuyBusy] = useState(false);
+    const [buyError, setBuyError] = useState('');
     const weekViews = historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0);
     const pct = quota ? (quota.used / quota.limit) * 100 : 0;
+
+    const buyCredits = async () => {
+        if (buyBusy) return;
+        setBuyBusy(true);
+        setBuyError('');
+        try {
+            await openCreditCheckout(CREDIT_PACKS[1]);
+        } catch (e) {
+            setBuyError(e.needsReauth ?
+                'Your current login cannot buy credits. Log out and back in, then try again.' :
+                (e.message || 'Could not open checkout.'));
+        } finally {
+            setBuyBusy(false);
+        }
+    };
     return (
         <section className={styles.dashboard}>
             <div className={styles.dashGrid}>
@@ -76,10 +93,12 @@ const Overview = ({stats, account, quota}) => {
                         <span className={styles.dashIcon}><Wallet size={18} /></span>
                         <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
                         <span className={styles.dashLabel}>Balance</span>
-                        <a
+                        <button
                             className={styles.dashBuy}
-                            href={KO_FI_SHOP_URL}
-                        >Buy credits</a>
+                            onClick={buyCredits}
+                            disabled={buyBusy}
+                        >{buyBusy ? 'Opening…' : 'Buy credits'}</button>
+                        {buyError ? <span className={styles.error}>{buyError}</span> : null}
                     </div>
                 ) : null}
                 {account && account.donationsReceived > 0 ? (

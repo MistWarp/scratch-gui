@@ -459,8 +459,13 @@
     text-decoration: none;
 }
 
-.dashBuy:hover {
+.dashBuy:hover:not(:disabled) {
     background: var(--accent-soft);
+}
+
+.dashBuy:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .layout {
