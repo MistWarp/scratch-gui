@@ -12,35 +12,61 @@
 .list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .item,
 .itemUnread {
+    position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     padding: 12px 14px;
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.item:hover,
+.itemUnread:hover {
+    border-color: var(--accent-border);
+    transform: translateY(-1px);
 }
 
 .itemUnread {
     background: var(--accent-softer);
+    border-color: var(--accent-border);
 }
 
-.avatar {
-    width: 40px;
-    height: 40px;
+.unreadDot {
+    width: 8px;
+    height: 8px;
+    margin-top: 9px;
     border-radius: 50%;
-    object-fit: cover;
-    background: var(--bg-raised);
+    background: var(--accent-strong);
+    flex-shrink: 0;
 }
 
-.icon {
-    color: var(--accent-strong);
+.avatarWrap {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.iconBadge {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
     display: grid;
     place-items: center;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: 2px solid var(--bg-card);
 }
 
 .sysAvatar {
@@ -57,8 +83,9 @@
 .text {
     flex: 1;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.45;
     min-width: 0;
+    padding-top: 1px;
 }
 
 .actor {
@@ -68,6 +95,17 @@
 
 .body {
     color: var(--text-dim);
+    word-break: break-word;
+}
+
+.link {
+    color: var(--accent-strong);
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.link:hover {
+    text-decoration: none;
 }
 
 .body strong {
@@ -75,10 +113,33 @@
     font-weight: 600;
 }
 
+.senderTitle {
+    display: block;
+    font-weight: 700;
+    color: var(--mw-text);
+    margin-bottom: 2px;
+}
+
+.sourceTag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--text-faint);
+    vertical-align: 1px;
+}
+
 .time {
     color: var(--text-faint);
     font-size: 12px;
     flex-shrink: 0;
+    margin-top: 4px;
 }
 
 .status {

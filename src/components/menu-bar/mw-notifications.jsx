@@ -8,7 +8,7 @@ import menuBarStyles from './menu-bar.css';
 import styles from './mw-notifications.css';
 import openMistWarpCommunityWindow from '../../lib/mw/open-mw-community-window.jsx';
 import NotificationsPage from '../../community/pages/Notifications.jsx';
-import api from '../../community/api.js';
+import {fetchNotifications} from '../../lib/rotur/client.js';
 
 const openNotifications = () => openMistWarpCommunityWindow({
     id: 'mw-notifications-window',
@@ -28,21 +28,29 @@ const MwNotifications = ({username}) => {
             return () => {};
         }
         let stale = false;
-        api.notifications()
-            .then(data => {
+        fetchNotifications()
+            .then(items => {
                 if (!stale) {
-                    setUnread((data.notifications || []).filter(n => !n.read).length);
+                    setUnread(items.filter(n => !n.read).length);
                 }
             })
             .catch(() => {});
         const onPush = () => setUnread(u => (u > 0 ? u + 1 : 1));
         const onRead = () => setUnread(0);
+        const onRemoved = event => {
+            if (event.detail && event.detail.read) {
+                return;
+            }
+            setUnread(u => (u > 0 ? u - 1 : 0));
+        };
         window.addEventListener('mw:notifications-read', onRead);
         window.addEventListener('mw:notifications-push', onPush);
+        window.addEventListener('mw:notifications-removed', onRemoved);
         return () => {
             stale = true;
             window.removeEventListener('mw:notifications-read', onRead);
             window.removeEventListener('mw:notifications-push', onPush);
+            window.removeEventListener('mw:notifications-removed', onRemoved);
         };
     }, [username]);
 
