@@ -294,12 +294,10 @@ const Notifications = ({hideHeading}) => {
                         const Icon = ICONS[n.type] || Heart;
                         const ts = n.created || n.timestamp;
                         const time = timeAgo(ts);
-                        const unread = n.read ? null : <span className={styles.unreadDot} />;
 
                         if (n.type === 'notification') {
                             return (
                                 <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                    {unread}
                                     <GenericNotification n={n} />
                                     <span className={styles.time}>{time}</span>
                                 </div>
@@ -309,7 +307,6 @@ const Notifications = ({hideHeading}) => {
                         if (SYSTEM_TYPES.includes(n.type)) {
                             return (
                                 <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                    {unread}
                                     <span className={styles.sysAvatar}><Icon size={20} /></span>
                                     <div className={styles.text}>
                                         {n.type === 'news' && n.newsId ? (
@@ -335,7 +332,6 @@ const Notifications = ({hideHeading}) => {
                         ) : describe(n);
                         return (
                             <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                {unread}
                                 <span className={styles.avatarWrap}>
                                     <Link to={`/users/${actor}`}>
                                         <Avatar username={actor} size={40} />

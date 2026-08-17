@@ -40,15 +40,6 @@
     border-color: var(--accent-border);
 }
 
-.unreadDot {
-    width: 8px;
-    height: 8px;
-    margin-top: 9px;
-    border-radius: 50%;
-    background: var(--accent-strong);
-    flex-shrink: 0;
-}
-
 .avatarWrap {
     position: relative;
     display: inline-block;
