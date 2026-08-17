@@ -3,7 +3,7 @@ import api from './api';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
-import {subscribeNotifications} from '../lib/rotur/client.js';
+import {subscribeNotifications, subscribeNotificationRemovals} from '../lib/rotur/client.js';
 import {
     subscribe as subscribeIdentity,
     restore as identityRestore,
@@ -20,16 +20,26 @@ const UserProvider = ({children}) => {
     const [loading, setLoading] = useState(true);
     const [banMessage, setBanMessage] = useState(null);
     const notificationsUnsub = useRef(null);
+    const removalsUnsub = useRef(null);
 
     const handleNotificationPush = useCallback(notification => {
         if (!notification || notification.read) return;
         window.dispatchEvent(new CustomEvent('mw:notifications-push', {detail: notification}));
     }, []);
 
+    const handleNotificationRemoved = useCallback(payload => {
+        if (!payload || typeof payload.id !== 'string') return;
+        window.dispatchEvent(new CustomEvent('mw:notifications-removed', {detail: payload}));
+    }, []);
+
     const clearNotificationSub = useCallback(() => {
         if (notificationsUnsub.current) {
             notificationsUnsub.current();
             notificationsUnsub.current = null;
+        }
+        if (removalsUnsub.current) {
+            removalsUnsub.current();
+            removalsUnsub.current = null;
         }
     }, []);
 
@@ -65,6 +75,7 @@ const UserProvider = ({children}) => {
         if (state.user) {
             if (!notificationsUnsub.current) {
                 notificationsUnsub.current = subscribeNotifications(handleNotificationPush);
+                removalsUnsub.current = subscribeNotificationRemovals(handleNotificationRemoved);
             }
             applyLoggedIn(state.user).finally(() => setLoading(false));
         } else {
@@ -75,7 +86,7 @@ const UserProvider = ({children}) => {
                 setLoading(false);
             }
         }
-    }, [applyLoggedIn, clearNotificationSub, handleNotificationPush]);
+    }, [applyLoggedIn, clearNotificationSub, handleNotificationPush, handleNotificationRemoved]);
 
     useEffect(() => {
         const unsubscribe = subscribeIdentity(handleIdentity);

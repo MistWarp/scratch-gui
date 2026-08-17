@@ -6,7 +6,8 @@ import bindAll from 'lodash.bindall';
 import {
     syncActivity,
     clearActivity,
-    subscribeNotifications
+    subscribeNotifications,
+    subscribeNotificationRemovals
 } from '../lib/rotur/client.js';
 import {
     subscribe as subscribeIdentity,
@@ -141,17 +142,29 @@ class RoturSession extends React.Component {
         window.dispatchEvent(new CustomEvent('mw:notifications-push', {detail: notification}));
     }
 
+    handleNotificationRemoved (payload) {
+        if (!payload || typeof payload.id !== 'string') {
+            return;
+        }
+        window.dispatchEvent(new CustomEvent('mw:notifications-removed', {detail: payload}));
+    }
+
     ensureNotificationSubscription () {
         if (this.unsubscribeNotifications) {
             return;
         }
         this.unsubscribeNotifications = subscribeNotifications(this.handleNotificationPush);
+        this.unsubscribeNotificationRemovals = subscribeNotificationRemovals(this.handleNotificationRemoved);
     }
 
     clearNotificationSubscription () {
         if (this.unsubscribeNotifications) {
             this.unsubscribeNotifications();
             this.unsubscribeNotifications = null;
+        }
+        if (this.unsubscribeNotificationRemovals) {
+            this.unsubscribeNotificationRemovals();
+            this.unsubscribeNotificationRemovals = null;
         }
     }
 

@@ -13,7 +13,8 @@ const REQUIRED_PERMISSIONS = [
         'following.unfollow',
         'validators.generate',
         'me.transfer',
-        'me.claimDaily'
+        'me.claimDaily',
+        'notifications.list'
     ]),
     'credits:view'
 ];
@@ -26,7 +27,9 @@ const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art
 /** @type {Rotur|null} */
 let client = null;
 const notificationListeners = new Set();
+const notificationRemovalListeners = new Set();
 let notificationSocketListener = null;
+let notificationRemovalSocketListener = null;
 
 const getClient = () => {
     if (!client) {
@@ -280,13 +283,51 @@ const ensureSocket = async () => {
     }
 };
 
+// Notifications are delivered canonically: type/id/timestamp/read/actor at the
+// top level, platform-specific fields inside platform_data. Lift the payload so
+// mistwarp types (love, comment, ...) and platform extras are visible to UI.
+const normalizeNotification = notification => {
+    if (!notification || typeof notification !== 'object') {
+        return notification;
+    }
+    const pd = notification.platform_data;
+    if (!pd || typeof pd !== 'object') {
+        return notification;
+    }
+    const out = {...notification};
+    for (const [k, v] of Object.entries(pd)) {
+        if (k === 'type' || k === 'id' || k === 'timestamp' || k === 'created' || k === 'read') {
+            continue;
+        }
+        out[k] = v;
+    }
+    if (out.platform === 'mistwarp' && typeof pd.type === 'string' && pd.type) {
+        out.type = pd.type;
+    }
+    return out;
+};
+
 const notifyNotificationListeners = notification => {
     if (!notification || notification.read === true) {
         return;
     }
+    const normalized = normalizeNotification(notification);
     notificationListeners.forEach(listener => {
         try {
-            listener(notification);
+            listener(normalized);
+        } catch (_) {
+            // ignore
+        }
+    });
+};
+
+const notifyRemovalListeners = payload => {
+    if (!payload || typeof payload.id !== 'string') {
+        return;
+    }
+    notificationRemovalListeners.forEach(listener => {
+        try {
+            listener(payload);
         } catch (_) {
             // ignore
         }
@@ -300,8 +341,10 @@ const detachNotificationSocketListener = () => {
     const rotur = getClient();
     if (rotur.socket && typeof rotur.socket.off === 'function') {
         rotur.socket.off('notification', notificationSocketListener);
+        rotur.socket.off('notification_removed', notificationRemovalSocketListener);
     }
     notificationSocketListener = null;
+    notificationRemovalSocketListener = null;
 };
 
 const ensureNotificationSocketListener = () => {
@@ -309,7 +352,7 @@ const ensureNotificationSocketListener = () => {
     if (
         !rotur.loggedIn ||
         !rotur.socket ||
-        !notificationListeners.size ||
+        (!notificationListeners.size && !notificationRemovalListeners.size) ||
         notificationSocketListener
     ) {
         return;
@@ -318,7 +361,9 @@ const ensureNotificationSocketListener = () => {
         return;
     }
     notificationSocketListener = payload => notifyNotificationListeners(payload);
+    notificationRemovalSocketListener = payload => notifyRemovalListeners(payload);
     rotur.socket.on('notification', notificationSocketListener);
+    rotur.socket.on('notification_removed', notificationRemovalSocketListener);
 };
 
 const subscribeNotifications = listener => {
@@ -327,11 +372,31 @@ const subscribeNotifications = listener => {
     }
     notificationListeners.add(listener);
     if (getClient().loggedIn) {
-        ensureSocket().then(ensureNotificationSocketListener).catch(() => {});
+        ensureSocket()
+            .then(ensureNotificationSocketListener)
+            .catch(() => {});
     }
     return () => {
         notificationListeners.delete(listener);
-        if (!notificationListeners.size) {
+        if (!notificationListeners.size && !notificationRemovalListeners.size) {
+            detachNotificationSocketListener();
+        }
+    };
+};
+
+const subscribeNotificationRemovals = listener => {
+    if (typeof listener !== 'function') {
+        return () => {};
+    }
+    notificationRemovalListeners.add(listener);
+    if (getClient().loggedIn) {
+        ensureSocket()
+            .then(ensureNotificationSocketListener)
+            .catch(() => {});
+    }
+    return () => {
+        notificationRemovalListeners.delete(listener);
+        if (!notificationListeners.size && !notificationRemovalListeners.size) {
             detachNotificationSocketListener();
         }
     };
@@ -409,6 +474,34 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
 
 const isLoggedIn = () => getClient().loggedIn;
 const getRotur = () => getClient();
+
+// Notifications live on Rotur; the backend only posts them there. Fetch them
+// with the user's own token so each account sees its own notifications.
+const fetchNotifications = async afterDays => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return [];
+    }
+    try {
+        const list = await rotur.notifications.list(afterDays);
+        return Array.isArray(list) ? list.map(normalizeNotification) : [];
+    } catch (_) {
+        return [];
+    }
+};
+
+const markNotificationsRead = async () => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return false;
+    }
+    try {
+        await rotur.notifications.markRead();
+        return true;
+    } catch (_) {
+        return false;
+    }
+};
 
 // Ensure the current session token can exercise every scope in `scopes`. If the
 // token is already sufficient (or is a full-access main token) this is a no-op;
@@ -563,6 +656,7 @@ export {
     login,
     logout,
     subscribeNotifications,
+    subscribeNotificationRemovals,
     syncActivity,
     clearActivity,
     isLoggedIn,
@@ -573,5 +667,7 @@ export {
     getAccountSummary,
     payUser,
     claimDaily,
-    ensureScopes
+    ensureScopes,
+    fetchNotifications,
+    markNotificationsRead
 };
