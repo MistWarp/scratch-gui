@@ -150,10 +150,60 @@
     box-shadow: var(--card-shadow);
     text-decoration: none;
     text-align: center;
+    font: inherit;
+    cursor: pointer;
 }
 
-.tier:hover {
+.tier:hover:not(:disabled) {
     border-color: var(--accent-border);
+}
+
+.tier:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.billingMsg {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--accent-strong);
+}
+
+.checkoutNote {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.checkoutError {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: #d64545;
+}
+
+.portalButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--accent-strong);
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.portalButton:hover:not(:disabled) {
+    background: var(--accent-soft);
+}
+
+.portalButton:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .tierCredits {

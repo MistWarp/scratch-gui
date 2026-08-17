@@ -6,7 +6,7 @@ import {
 import api from '../api';
 import rotur from '../rotur';
 import {payUser} from '../../lib/rotur/client.js';
-import {isInsufficientFunds, KO_FI_SHOP_URL} from '../credits';
+import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -441,6 +441,7 @@ const DonateModal = ({recipient, onClose}) => {
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState(null);
     const [sent, setSent] = useState(0);
+    const [insufficient, setInsufficient] = useState(false);
     useEscape(onClose);
 
     const send = async () => {
@@ -451,17 +452,33 @@ const DonateModal = ({recipient, onClose}) => {
         }
         setBusy(true);
         setStatus(null);
+        setInsufficient(false);
         try {
             await payUser(recipient, value, `MistWarp donation to ${recipient}`);
             setSent(value);
         } catch (e) {
             if (isInsufficientFunds(e)) {
-                window.location.assign(KO_FI_SHOP_URL);
+                setInsufficient(true);
             } else {
                 setStatus(e.needsReauth ?
                     'Your current login cannot send credits. Log out and back in, then try again.' :
                     (e.message || 'Could not send credits.'));
             }
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const buyCredits = async () => {
+        if (busy) return;
+        setBusy(true);
+        setStatus(null);
+        try {
+            await openCreditCheckout(CREDIT_PACKS[1]);
+        } catch (e) {
+            setStatus(e.needsReauth ?
+                'Your current login cannot buy credits. Log out and back in, then try again.' :
+                (e.message || 'Could not open checkout.'));
         } finally {
             setBusy(false);
         }
@@ -515,13 +532,18 @@ const DonateModal = ({recipient, onClose}) => {
                             onChange={event => setAmount(event.target.value)}
                         />
                         {status ? <p className={styles.donateStatus}>{status}</p> : null}
+                        {insufficient ? (
+                            <p className={styles.donateStatus}>
+                                Not enough credits in your balance. Top up through Stripe, then send again.
+                            </p>
+                        ) : null}
                         <button
                             className={styles.donateSend}
-                            onClick={send}
+                            onClick={insufficient ? buyCredits : send}
                             disabled={busy}
                         >
                             <Coins size={16} />
-                            {busy ? 'Sending…' : 'Send credits'}
+                            {busy ? 'Opening…' : insufficient ? 'Buy credits' : 'Send credits'}
                         </button>
                     </div>
                 )}

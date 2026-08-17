@@ -9,7 +9,7 @@ import {
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
 import {cachedFetchBuffer, cachedFetchJson} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
-import {isInsufficientFunds, KO_FI_SHOP_URL} from '../credits';
+import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import {getBalance} from '../../lib/rotur/client.js';
 import {
@@ -183,6 +183,7 @@ const Project = () => {
     const [customExtensions, setCustomExtensions] = useState([]);
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
+    const [checkoutBusy, setCheckoutBusy] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [confirmBalance, setConfirmBalance] = useState(null);
     const [savingLibrary, setSavingLibrary] = useState(false);
@@ -647,6 +648,21 @@ const Project = () => {
         }
     };
 
+    const openCheckout = async () => {
+        if (checkoutBusy) return;
+        setCheckoutBusy(true);
+        setActionError(null);
+        try {
+            await openCreditCheckout(CREDIT_PACKS[1]);
+        } catch (e) {
+            setActionError(e.needsReauth ?
+                'Your current login cannot buy credits. Log out and back in, then try again.' :
+                (e.message || 'Could not open checkout.'));
+        } finally {
+            setCheckoutBusy(false);
+        }
+    };
+
     const doBuy = async () => {
         if (buying) return;
         setBuying(true);
@@ -658,7 +674,7 @@ const Project = () => {
         } catch (e) {
             setConfirmBuy(false);
             if (isInsufficientFunds(e)) {
-                window.location.assign(KO_FI_SHOP_URL);
+                openCheckout();
             } else if (e.needsReauth) {
                 setActionError('Your current login cannot send credits. Log out and back in, then try again.');
             } else {
@@ -1041,13 +1057,15 @@ const Project = () => {
                                 onClick={() => setConfirmBuy(false)}
                             >Cancel</button>
                             {confirmBalance !== null && confirmBalance < price ? (
-                                <a
+                                <button
+                                    type="button"
                                     className={styles.confirmButton}
-                                    href={KO_FI_SHOP_URL}
+                                    onClick={openCheckout}
+                                    disabled={checkoutBusy}
                                 >
                                     <Coins size={15} />
-                                    Buy credits
-                                </a>
+                                    {checkoutBusy ? 'Opening…' : 'Buy credits'}
+                                </button>
                             ) : (
                                 <button
                                     className={styles.confirmButton}
