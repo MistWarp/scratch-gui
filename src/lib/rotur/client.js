@@ -28,6 +28,7 @@ const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art
 let client = null;
 const notificationListeners = new Set();
 const notificationRemovalListeners = new Set();
+const visibleNotificationIds = new Set();
 let notificationSocketListener = null;
 let notificationRemovalSocketListener = null;
 
@@ -260,6 +261,7 @@ const logout = () => {
         notificationSocketListener = null;
     }
     notificationListeners.clear();
+    visibleNotificationIds.clear();
     rotur.logout();
     storeToken(null);
     writeRestoreCache(null, null);
@@ -307,11 +309,37 @@ const normalizeNotification = notification => {
     return out;
 };
 
+// MistWarp only shows its own activity plus Rotur's account-level follow
+// notifications. Other apps share the same Rotur notification inbox.
+const isVisibleNotification = notification => {
+    const normalized = normalizeNotification(notification);
+    if (!normalized || typeof normalized !== 'object') {
+        return false;
+    }
+    if (String(normalized.type || '').toLowerCase() === 'follow') {
+        return true;
+    }
+    const platformData = normalized.platform_data && typeof normalized.platform_data === 'object' ?
+        normalized.platform_data : {};
+    return [
+        normalized.platform,
+        normalized.source,
+        platformData.platform,
+        platformData.source
+    ].some(value => typeof value === 'string' && value.toLowerCase() === 'mistwarp');
+};
+
 const notifyNotificationListeners = notification => {
     if (!notification || notification.read === true) {
         return;
     }
     const normalized = normalizeNotification(notification);
+    if (!isVisibleNotification(normalized)) {
+        return;
+    }
+    if (typeof normalized.id === 'string') {
+        visibleNotificationIds.add(normalized.id);
+    }
     notificationListeners.forEach(listener => {
         try {
             listener(normalized);
@@ -322,9 +350,10 @@ const notifyNotificationListeners = notification => {
 };
 
 const notifyRemovalListeners = payload => {
-    if (!payload || typeof payload.id !== 'string') {
+    if (!payload || typeof payload.id !== 'string' || !visibleNotificationIds.has(payload.id)) {
         return;
     }
+    visibleNotificationIds.delete(payload.id);
     notificationRemovalListeners.forEach(listener => {
         try {
             listener(payload);
@@ -484,7 +513,16 @@ const fetchNotifications = async afterDays => {
     }
     try {
         const list = await rotur.notifications.list(afterDays);
-        return Array.isArray(list) ? list.map(normalizeNotification) : [];
+        if (!Array.isArray(list)) {
+            return [];
+        }
+        const visible = list.map(normalizeNotification).filter(isVisibleNotification);
+        for (const notification of visible) {
+            if (typeof notification.id === 'string') {
+                visibleNotificationIds.add(notification.id);
+            }
+        }
+        return visible;
     } catch (_) {
         return [];
     }
@@ -668,6 +706,7 @@ export {
     payUser,
     claimDaily,
     ensureScopes,
+    isVisibleNotification,
     fetchNotifications,
     markNotificationsRead
 };
