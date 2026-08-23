@@ -25,6 +25,7 @@ class FileInput extends React.Component {
     }
 
     handleClick () {
+        if (this.props.disabled) return;
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = this.props.accept;
@@ -38,7 +39,9 @@ class FileInput extends React.Component {
     render () {
         return (
             <button
+                type="button"
                 className={styles.container}
+                disabled={this.props.disabled}
                 onClick={this.handleClick}
             >
                 {this.props.files ? (
@@ -68,6 +71,7 @@ class FileInput extends React.Component {
 FileInput.propTypes = {
     files: PropTypes.instanceOf(FileList),
     accept: PropTypes.string,
+    disabled: PropTypes.bool,
     onChange: PropTypes.func
 };
 

@@ -1,0 +1,10 @@
+.button {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    padding: 0;
+}
+
+.button svg {
+    display: block;
+}

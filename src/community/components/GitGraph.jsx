@@ -96,6 +96,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                                 ) : null}
                                 {onRestore && node.sha !== currentHead ? (
                                     <button
+                                        type="button"
                                         className={styles.restore}
                                         disabled={restoring === node.sha}
                                         onClick={() => onRestore(node)}

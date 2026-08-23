@@ -62,10 +62,15 @@ class DebuggerStageControls extends React.Component {
     }
 
     handleKeyDown (e) {
-        if (!this.state.showPauseButton) {
+        const target = e.target;
+        const tagName = target && target.tagName;
+        const editing = tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' ||
+            (target && target.isContentEditable);
+        if (!this.state.showPauseButton || e.repeat || editing) {
             return;
         }
-        if (e.altKey && (e.key.toLowerCase() === 'x' || e.keyCode === 88)) {
+        const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+        if (e.altKey && (key === 'x' || e.keyCode === 88)) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleTogglePause();
@@ -82,8 +87,11 @@ class DebuggerStageControls extends React.Component {
             return;
         }
         engine.setPaused(false);
-        runtime._step();
-        engine.setPaused(true);
+        try {
+            runtime._step();
+        } finally {
+            engine.setPaused(true);
+        }
     }
 
     render () {
@@ -91,22 +99,34 @@ class DebuggerStageControls extends React.Component {
         return (
             <React.Fragment>
                 {showPauseButton && (
-                    <img
+                    <button
+                        type="button"
+                        aria-label={paused ? 'Play' : 'Pause'}
                         className={styles.debuggerBtn}
-                        draggable={false}
-                        src={paused ? playIcon : pauseIcon}
                         title={paused ? 'Play' : 'Pause'}
                         onClick={this.handleTogglePause}
-                    />
+                    >
+                        <img
+                            draggable={false}
+                            src={paused ? playIcon : pauseIcon}
+                            alt=""
+                        />
+                    </button>
                 )}
                 {paused && showStepButton && (
-                    <img
+                    <button
+                        type="button"
+                        aria-label="Step one frame"
                         className={classNames(styles.debuggerBtn, styles.stepBtn)}
-                        draggable={false}
-                        src={stepIcon}
-                        title={'Step one frame'}
+                        title="Step one frame"
                         onClick={this.handleStep}
-                    />
+                    >
+                        <img
+                            draggable={false}
+                            src={stepIcon}
+                            alt=""
+                        />
+                    </button>
                 )}
             </React.Fragment>
         );
@@ -115,6 +135,10 @@ class DebuggerStageControls extends React.Component {
 
 DebuggerStageControls.propTypes = {
     vm: PropTypes.instanceOf(VM).isRequired
+};
+
+export {
+    DebuggerStageControls
 };
 
 export default DebuggerStageControls;

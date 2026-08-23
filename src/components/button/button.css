@@ -1,6 +1,13 @@
 @import "../../css/units.css";
+@import "../../css/colors.css";
 
 .outlined-button {
+    appearance: none;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
     cursor: pointer;
     border-radius: $form-radius;
     font-weight: bold;
@@ -10,6 +17,17 @@
     padding-left: .75rem;
     padding-right: .75rem;
     user-select: none;
+}
+
+.outlined-button:disabled,
+.outlined-button[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.outlined-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .icon {

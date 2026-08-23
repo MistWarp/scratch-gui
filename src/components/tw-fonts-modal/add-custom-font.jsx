@@ -26,7 +26,7 @@ export const FONT_FORMATS = [
 
 const formatFontName = filename => {
     // Remove file extension
-    const idx = filename.indexOf('.');
+    const idx = filename.lastIndexOf('.');
     if (idx !== -1) {
         filename = filename.substring(0, idx);
     }
@@ -35,7 +35,7 @@ const formatFontName = filename => {
 
 const getDataFormat = filename => {
     const parts = filename.split('.');
-    const extension = parts[parts.length - 1];
+    const extension = parts[parts.length - 1].toLowerCase();
     if (FONT_FORMATS.includes(extension)) {
         return extension;
     }
@@ -50,6 +50,7 @@ class AddCustomFont extends React.Component {
             'handleChangeFile',
             'handleChangeName',
             'handleChangeFallback',
+            'handleReadError',
             'handleFinish'
         ]);
         this.state = {
@@ -58,29 +59,40 @@ class AddCustomFont extends React.Component {
             name: '',
             format: '',
             fallback: FontFallback.DEFAULT,
-            loading: false
+            loading: false,
+            error: null
         };
+        this.fileReader = null;
+        this.mounted = false;
+    }
+
+    componentDidMount () {
+        this.mounted = true;
     }
 
     componentWillUnmount () {
-        URL.revokeObjectURL(this.state.url);
+        this.mounted = false;
+        if (this.fileReader && this.fileReader.readyState === 1) this.fileReader.abort();
+        if (this.state.url) URL.revokeObjectURL(this.state.url);
     }
 
     handleChangeFile (e) {
         const file = e.target.files[0] || null;
+        if (this.state.url) URL.revokeObjectURL(this.state.url);
         if (file) {
             this.setState({
                 file,
                 name: formatFontName(file.name),
                 format: getDataFormat(file.name),
-                url: URL.createObjectURL(file)
+                url: URL.createObjectURL(file),
+                error: null
             });
         } else {
-            URL.revokeObjectURL(this.state.url);
             this.setState({
                 file,
                 name: null,
-                url: null
+                url: null,
+                error: null
             });
         }
     }
@@ -97,36 +109,58 @@ class AddCustomFont extends React.Component {
         });
     }
 
-    handleFinish () {
+    handleReadError (error) {
+        this.fileReader = null;
+        if (!this.mounted) return;
         this.setState({
-            loading: true
+            loading: false,
+            error: this.props.intl.formatMessage(messages.error, {
+                error: error && error.message ? error.message : `${error || 'Unknown error'}`
+            })
+        });
+    }
+
+    handleFinish () {
+        if (!this.state.file || this.state.loading) return;
+        const {
+            fallback,
+            file,
+            format,
+            name
+        } = this.state;
+        this.setState({
+            loading: true,
+            error: null
         });
 
         const fr = new FileReader();
+        this.fileReader = fr;
         fr.onload = () => {
-            const data = new Uint8Array(fr.result);
-            const storage = this.props.fontManager.runtime.storage;
-            const asset = storage.createAsset(
-                storage.AssetType.Font,
-                this.state.format,
-                data,
-                null,
-                true
-            );
-            this.props.fontManager.addCustomFont(this.state.name, this.state.fallback, asset);
-            this.props.onClose();
+            this.fileReader = null;
+            if (!this.mounted) return;
+            try {
+                const data = new Uint8Array(fr.result);
+                const storage = this.props.fontManager.runtime.storage;
+                const asset = storage.createAsset(
+                    storage.AssetType.Font,
+                    format,
+                    data,
+                    null,
+                    true
+                );
+                this.props.fontManager.addCustomFont(name, fallback, asset);
+                this.props.onClose();
+            } catch (error) {
+                this.handleReadError(error);
+            }
         };
-        fr.onerror = () => {
-            // eslint-disable-next-line no-alert
-            alert(this.props.intl.formatMessage(messages.error), {
-                error: fr.error
-            });
-
-            this.setState({
-                loading: false
-            });
-        };
-        fr.readAsArrayBuffer(this.state.file);
+        fr.onerror = () => this.handleReadError(fr.error);
+        fr.onabort = () => this.handleReadError(new Error('Reading was cancelled'));
+        try {
+            fr.readAsArrayBuffer(file);
+        } catch (error) {
+            this.handleReadError(error);
+        }
     }
 
     render () {
@@ -145,8 +179,12 @@ class AddCustomFont extends React.Component {
                     onChange={this.handleChangeFile}
                     className={styles.fileInput}
                     accept={FONT_FORMATS.map(ext => `.${ext}`).join(',')}
-                    readOnly={this.state.loading}
+                    disabled={this.state.loading}
                 />
+
+                {this.state.error && (
+                    <div className={styles.errorMessage}>{this.state.error}</div>
+                )}
 
                 {this.state.file && (
                     <React.Fragment>
@@ -195,6 +233,12 @@ AddCustomFont.propTypes = {
         })
     }),
     onClose: PropTypes.func.isRequired
+};
+
+export {
+    AddCustomFont,
+    formatFontName,
+    getDataFormat
 };
 
 export default injectIntl(AddCustomFont);

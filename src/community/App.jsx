@@ -73,6 +73,7 @@ const App = () => {
                 <Route path="/project/:id" element={<Project />} />
                 <Route path="/users/:name" element={<Profile />} />
                 <Route path="/users/:name/followers" element={<Followers />} />
+                <Route path="/users/:name/following" element={<Followers mode="following" />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/mystuff" element={<MyStuff />} />
                 <Route path="/mystuff/project/:id" element={<ManageProject />} />

@@ -122,11 +122,24 @@ class RoturLoginModal extends React.Component {
             busy: false,
             localError: null
         };
+        this.loginInFlight = false;
         this.handleLogin = this.handleLogin.bind(this);
+        this.handleRequestClose = this.handleRequestClose.bind(this);
+        this.releaseLogin = this.releaseLogin.bind(this);
+    }
+
+    handleRequestClose () {
+        if (this.loginInFlight || this.state.busy || this.props.status === 'logging-in') return;
+        this.props.onRequestClose();
+    }
+
+    releaseLogin () {
+        this.loginInFlight = false;
     }
 
     async handleLogin () {
-        if (this.state.busy) return;
+        if (this.loginInFlight || this.state.busy || this.props.status === 'logging-in') return;
+        this.loginInFlight = true;
         this.setState({busy: true, localError: null});
         try {
             const api = getRoturSessionApi();
@@ -138,6 +151,7 @@ class RoturLoginModal extends React.Component {
             const message = error && error.message ? error.message : String(error);
             this.setState({localError: message});
         } finally {
+            this.releaseLogin();
             this.setState({busy: false});
         }
     }
@@ -153,7 +167,7 @@ class RoturLoginModal extends React.Component {
                 contentLabel={this.props.intl.formatMessage(loggedIn ? messages.infoTitle : messages.title)}
                 headerClassName={styles.header}
                 id="roturLoginModal"
-                onRequestClose={this.props.onRequestClose}
+                onRequestClose={this.handleRequestClose}
                 resizable
                 maximizable={false}
                 width={440}
@@ -253,7 +267,7 @@ class RoturLoginModal extends React.Component {
                         {loggedIn ? (
                             <button
                                 className={`${styles.button} ${styles.primary}`}
-                                onClick={this.props.onRequestClose}
+                                onClick={this.handleRequestClose}
                                 type="button"
                             >
                                 <FormattedMessage
@@ -266,7 +280,8 @@ class RoturLoginModal extends React.Component {
                             <React.Fragment>
                                 <button
                                     className={`${styles.button} ${styles.secondary}`}
-                                    onClick={this.props.onRequestClose}
+                                    onClick={this.handleRequestClose}
+                                    disabled={busy}
                                     type="button"
                                 >
                                     <FormattedMessage
@@ -312,7 +327,7 @@ class RoturLoginModal extends React.Component {
                                         rel="noopener noreferrer"
                                         target="_blank"
                                     >
-                                        rotur.dev
+                                        {'rotur.dev'}
                                     </a>
                                 )
                             }}
@@ -338,4 +353,5 @@ const mapStateToProps = state => ({
     username: state.scratchGui.rotur.username
 });
 
+export {RoturLoginModal};
 export default injectIntl(connect(mapStateToProps)(RoturLoginModal));

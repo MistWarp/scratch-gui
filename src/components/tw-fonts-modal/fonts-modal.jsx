@@ -27,6 +27,7 @@ const FontModal = props => (
             {props.screen === '' ? (
                 <div className={styles.openButtons}>
                     <button
+                        type="button"
                         className={styles.openButton}
                         onClick={props.onOpenSystemFonts}
                     >
@@ -54,6 +55,7 @@ const FontModal = props => (
                     </button>
 
                     <button
+                        type="button"
                         className={styles.openButton}
                         onClick={props.onOpenCustomFonts}
                     >
@@ -122,7 +124,7 @@ const FontModal = props => (
                         <div className={styles.fonts}>
                             {props.fonts.map((font, index) => (
                                 <ManageFont
-                                    key={index}
+                                    key={font.name}
                                     system={font.system}
                                     name={font.name}
                                     family={font.family}

@@ -12,7 +12,20 @@
 }
 
 .loaded-amount {
-    margin: 0 0 1rem 0;
+    margin: 0;
+}
+
+.reorder-hint {
+    color: $text-primary-transparent;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    margin: 0.35rem 0 1rem;
+}
+
+.reorder-error {
+    color: $error-primary;
+    font-size: 0.8rem;
+    margin: 0.5rem 0;
 }
 
 .extension-card {
@@ -23,6 +36,11 @@
     border-radius: 0.25rem;
     padding: 0.5rem 0.75rem;
     margin: 0.5rem 0;
+    cursor: grab;
+}
+
+.extension-card:active {
+    cursor: grabbing;
 }
 
 .extension-info {
@@ -30,6 +48,11 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
+}
+
+.drag-handle {
+    color: $text-primary-transparent;
+    flex-shrink: 0;
 }
 
 .extension-icon {
@@ -47,6 +70,37 @@
 
 .checkbox-option {
     margin-left: 0.5rem;
+}
+
+.extension-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.reorder-button {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    height: 1.75rem;
+    justify-content: center;
+    padding: 0;
+    width: 1.75rem;
+}
+
+.reorder-button:hover:not(:disabled) {
+    background: $ui-tertiary;
+    border-color: $ui-black-transparent;
+}
+
+.reorder-button:disabled {
+    cursor: default;
+    opacity: 0.3;
 }
 
 .multi-select-row {

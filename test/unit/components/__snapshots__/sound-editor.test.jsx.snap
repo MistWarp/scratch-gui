@@ -24,6 +24,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           disabled={false}
           onClick={[MockFunction]}
           title="Undo"
+          type="button"
         >
           <img
             draggable={false}
@@ -31,6 +32,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             theme={
               Theme {
                 "accent": "red",
+                "appearance": {},
                 "blocks": "three",
                 "fonts": {
                   "google": [],
@@ -56,6 +58,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           disabled={true}
           onClick={[MockFunction]}
           title="Redo"
+          type="button"
         >
           <img
             draggable={false}
@@ -63,6 +66,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             theme={
               Theme {
                 "accent": "red",
+                "appearance": {},
                 "blocks": "three",
                 "fonts": {
                   "google": [],
@@ -87,9 +91,9 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       </div>
     </div>
     <div>
-      <div
+      <button
         className=""
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -97,6 +101,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -120,10 +125,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         <div>
           Copy
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
-        role="button"
+        disabled={false}
+        type="button"
       >
         <img
           draggable={false}
@@ -131,6 +137,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -154,10 +161,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         <div>
           Paste
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -165,6 +172,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -188,12 +196,13 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         <div>
           Copy to New
         </div>
-      </div>
+      </button>
     </div>
-    <div
+    <button
       className=""
+      disabled={false}
       onClick={[MockFunction]}
-      role="button"
+      type="button"
     >
       <img
         draggable={false}
@@ -201,6 +210,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         theme={
           Theme {
             "accent": "red",
+            "appearance": {},
             "blocks": "three",
             "fonts": {
               "google": [],
@@ -224,7 +234,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       <div>
         Delete
       </div>
-    </div>
+    </button>
   </div>
   <div>
     <div>
@@ -327,6 +337,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
                 theme={
                   Theme {
                     "accent": "red",
+                    "appearance": {},
                     "blocks": "three",
                     "fonts": {
                       "google": [],
@@ -372,6 +383,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
                 theme={
                   Theme {
                     "accent": "red",
+                    "appearance": {},
                     "blocks": "three",
                     "fonts": {
                       "google": [],
@@ -438,6 +450,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
                 theme={
                   Theme {
                     "accent": "red",
+                    "appearance": {},
                     "blocks": "three",
                     "fonts": {
                       "google": [],
@@ -483,6 +496,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
                 theme={
                   Theme {
                     "accent": "red",
+                    "appearance": {},
                     "blocks": "three",
                     "fonts": {
                       "google": [],
@@ -529,6 +543,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         className=""
         onClick={[MockFunction]}
         title="Stop"
+        type="button"
       >
         <img
           draggable={false}
@@ -537,10 +552,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       </button>
     </div>
     <div>
-      <div
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -548,6 +563,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -573,11 +589,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Faster
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -585,6 +601,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -610,11 +627,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Slower
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -622,6 +639,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -647,11 +665,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Louder
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -659,6 +677,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -684,10 +703,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Softer
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -695,6 +714,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -720,10 +740,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Mute
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -731,6 +751,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -756,10 +777,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Fade in
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -767,6 +788,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -792,11 +814,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Fade out
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -804,6 +826,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -829,11 +852,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Reverse
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -841,6 +864,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -866,11 +890,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Robot
           </span>
         </div>
-      </div>
-      <div
+      </button>
+      <button
         className=""
         onClick={[MockFunction]}
-        role="button"
+        type="button"
       >
         <img
           draggable={false}
@@ -878,6 +902,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           theme={
             Theme {
               "accent": "red",
+              "appearance": {},
               "blocks": "three",
               "fonts": {
                 "google": [],
@@ -903,7 +928,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
             Echo
           </span>
         </div>
-      </div>
+      </button>
     </div>
   </div>
   <div>

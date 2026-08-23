@@ -1,9 +1,39 @@
 import {
     computeRMS,
     computeChunkedRMS,
+    encodeAndAddSoundToVM,
     downsampleIfNeeded,
     dropEveryOtherSample
 } from '../../../src/lib/audio/audio-util';
+
+describe('encodeAndAddSoundToVM', () => {
+    test('returns the add promise and preserves the requested target', async () => {
+        const callback = jest.fn();
+        const vm = {
+            addSound: jest.fn(() => Promise.resolve()),
+            runtime: {
+                storage: {
+                    AssetType: {Sound: 'sound'},
+                    DataFormat: {WAV: 'wav'},
+                    createAsset: () => ({assetId: 'encoded'})
+                }
+            }
+        };
+
+        const result = await encodeAndAddSoundToVM(
+            vm,
+            new Float32Array([0]),
+            44100,
+            'Copy',
+            callback,
+            'sprite-a'
+        );
+
+        expect(vm.addSound).toHaveBeenCalledWith(expect.objectContaining({name: 'Copy'}), 'sprite-a');
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(result.name).toBe('Copy');
+    });
+});
 
 describe('computeRMS', () => {
     test('returns 0 when given no samples', () => {

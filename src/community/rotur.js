@@ -65,11 +65,10 @@ const followerLeaderboard = async (max = 15) => {
     const users = await cachedGet('/stats/followers', {max});
     return Promise.all(users.map(async user => {
         try {
-            const [profile, status] = await Promise.all([
-                cachedGet(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'}),
-                getStatus(user.username).catch(() => null)
-            ]);
-            return {...user, index: profile.index, status};
+            const profile = await cachedGet(`/profile/${encodeURIComponent(user.username)}`, {
+                include_posts: '0'
+            });
+            return {...user, index: profile.index, status: profile.status || null};
         } catch (e) {
             return user;
         }

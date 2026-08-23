@@ -80,6 +80,11 @@
     background-color: $ui-black-transparent;
 }
 
+.menu-item:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: -3px;
+}
+
 .menu-item.hoverable {
     cursor: pointer;
 }

@@ -104,6 +104,7 @@ const ProjectPage = props => (
         </Header>
         <div className={styles.setting}>
             <button
+                type="button"
                 onClick={props.onStoreProjectOptions}
                 className={styles.button}
             >

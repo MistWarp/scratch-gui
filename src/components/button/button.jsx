@@ -7,31 +7,19 @@ import styles from './button.css';
 const ButtonComponent = ({
     className,
     disabled,
+    href,
     iconClassName,
     iconElem,
     iconSrc,
     onClick,
+    type,
     children,
     ...props
 }) => {
-
-    if (disabled) {
-        onClick = function () {};
-    }
-
     const Icon = iconElem;
     const iconClass = classNames(iconClassName, styles.icon);
-
-    return (
-        <span
-            className={classNames(
-                styles.outlinedButton,
-                className
-            )}
-            role="button"
-            onClick={onClick}
-            {...props}
-        >
+    const content = (
+        <React.Fragment>
             {Icon ? <Icon
                 className={iconClass}
                 size={20}
@@ -42,8 +30,38 @@ const ButtonComponent = ({
                     alt=""
                 /> : null
             )}
-            <div className={styles.content}>{children}</div>
-        </span>
+            <span className={styles.content}>{children}</span>
+        </React.Fragment>
+    );
+    const controlClassName = classNames(
+        styles.outlinedButton,
+        className
+    );
+
+    if (href) {
+        return (
+            <a
+                className={controlClassName}
+                href={disabled ? null : href}
+                aria-disabled={disabled}
+                onClick={disabled ? null : onClick}
+                {...props}
+            >
+                {content}
+            </a>
+        );
+    }
+
+    return (
+        <button
+            className={controlClassName}
+            type={type}
+            disabled={disabled}
+            onClick={onClick}
+            {...props}
+        >
+            {content}
+        </button>
     );
 };
 
@@ -51,12 +69,17 @@ ButtonComponent.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     disabled: PropTypes.bool,
+    href: PropTypes.string,
     iconClassName: PropTypes.string,
     iconSrc: PropTypes.string,
-    iconHeight: PropTypes.number,
-    iconWidth: PropTypes.number,
     iconElem: PropTypes.elementType,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    type: PropTypes.oneOf(['button', 'reset', 'submit'])
+};
+
+ButtonComponent.defaultProps = {
+    disabled: false,
+    type: 'button'
 };
 
 export default ButtonComponent;

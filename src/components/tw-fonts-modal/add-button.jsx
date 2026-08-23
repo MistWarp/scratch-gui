@@ -5,6 +5,7 @@ import styles from './fonts-modal.css';
 
 const AddButton = props => (
     <button
+        type="button"
         onClick={props.onClick}
         disabled={props.disabled}
         className={styles.button}

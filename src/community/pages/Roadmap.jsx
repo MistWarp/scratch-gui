@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {Bug, MessageCircle, Plus, Search, Sparkles} from 'lucide-react';
 import api from '../api';
@@ -10,6 +10,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import {timeAgo} from '../format';
+import useLatest from '../use-latest.js';
 import styles from './Roadmap.module.css';
 
 const STATUS_LABELS = {
@@ -20,7 +21,13 @@ const STATUS_LABELS = {
     declined: 'Not planned'
 };
 
-const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
+export const roadmapPayload = form => ({
+    ...form,
+    title: form.title.trim(),
+    description: form.description.trim()
+});
+
+const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest, busy}) => {
     const [discussionOpen, setDiscussionOpen] = useState(false);
     const source = useMemo(() => ({
         list: () => api.ideaComments(idea._id),
@@ -36,6 +43,8 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
                 downKey="dislike"
                 activeReaction={idea.myVote || ''}
                 onReact={choice => onVote(idea, choice)}
+                disabled={busy}
+                disabledTitle="Saving…"
                 showCounts={false}
                 between={<span className={styles.score}><strong>{idea.score || 0}</strong><small>score</small></span>}
             />
@@ -49,13 +58,20 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
                     </div>
                     {user && user.isAdmin ? (
                         <div className={styles.adminActions}>
-                            <select aria-label="Suggestion status" value={idea.status} onChange={event => onStatus(idea, event.target.value)}>
+                            <select aria-label="Suggestion status" value={idea.status} disabled={busy} onChange={event => onStatus(idea, event.target.value)}>
                                 {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                             </select>
-                            <button className={idea.interested ? styles.officialToggleOn : styles.officialToggle} title={idea.interested ? 'Remove MistWarp interest' : 'Mark MistWarp as interested'} onClick={() => onInterest(idea, !idea.interested)}>
+                            <Button
+                                variant="secondary"
+                                busy={busy}
+                                busyLabel="Saving…"
+                                className={idea.interested ? styles.officialToggleOn : styles.officialToggle}
+                                title={idea.interested ? 'Remove MistWarp interest' : 'Mark MistWarp as interested'}
+                                onClick={() => onInterest(idea, !idea.interested)}
+                            >
                                 <Sparkles size={11} />
                                 {idea.interested ? 'Interested' : 'Mark interested'}
-                            </button>
+                            </Button>
                         </div>
                     ) : null}
                 </div>
@@ -66,15 +82,20 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
                         <Link to={`/users/${idea.author}`}><Avatar username={idea.author} size={24} />{idea.author}</Link>
                         <span>{timeAgo(idea.created)}</span>
                     </div>
-                    <button className={styles.discussionButton} onClick={() => setDiscussionOpen(value => !value)}>
+                    <Button
+                        variant="secondary"
+                        className={styles.discussionButton}
+                        onClick={() => setDiscussionOpen(value => !value)}
+                        aria-expanded={discussionOpen}
+                    >
                         <MessageCircle size={15} />
                         {idea.commentCount || 0} {(idea.commentCount || 0) === 1 ? 'comment' : 'comments'}
                         <span>{discussionOpen ? 'Hide' : 'Discuss'}</span>
-                    </button>
+                    </Button>
                 </div>
                 {discussionOpen ? (
                     <div className={styles.discussion}>
-                        {!user ? <button className={styles.signIn} onClick={login}>Sign in to join the discussion</button> : null}
+                        {!user ? <Button variant="primary" className={styles.signIn} onClick={login}>Sign in to join the discussion</Button> : null}
                         <CommentThread source={source} canModerate={Boolean(user && (user.isAdmin || user.username.toLowerCase() === idea.author.toLowerCase()))} reportContext={`roadmap suggestion ${idea.title}`} />
                     </div>
                 ) : null}
@@ -85,18 +106,33 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
 
 const Roadmap = () => {
     const {user, login} = useUser();
-    const [params] = useSearchParams();
+    const viewerName = (user && user.username) || '';
+    const [params, setParams] = useSearchParams();
     const [ideas, setIdeas] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [creating, setCreating] = useState(params.get('new') === 'bug');
     const [form, setForm] = useState({kind: params.get('new') === 'bug' ? 'bug' : 'idea', title: '', description: '', category: 'Community'});
     const [error, setError] = useState('');
+    const [createBusy, setCreateBusy] = useState(false);
+    const [busyIdea, setBusyIdea] = useState('');
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [sourceFilter, setSourceFilter] = useState('');
     const [kindFilter, setKindFilter] = useState('');
+    const actionLocks = useRef(new Set());
+    const currentViewer = useRef(viewerName);
+    currentViewer.current = viewerName;
+    const beginLoad = useLatest();
     const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
+    const closeComposer = () => {
+        setCreating(false);
+        if (params.has('new')) {
+            const next = new URLSearchParams(params);
+            next.delete('new');
+            setParams(next, {replace: true});
+        }
+    };
 
     const categories = useMemo(() => (ideas ? [...new Set(ideas.map(idea => idea.category).filter(Boolean))].sort() : []), [ideas]);
     const visibleIdeas = useMemo(() => {
@@ -121,14 +157,25 @@ const Roadmap = () => {
     };
 
     const load = useCallback(() => {
+        const fresh = beginLoad();
         setIdeas(null);
         setLoadError(false);
         api.roadmap()
-            .then(data => setIdeas(data.ideas || []))
-            .catch(() => setLoadError(true));
-    }, []);
+            .then(fresh(data => setIdeas(data.ideas || [])))
+            .catch(fresh(() => setLoadError(true)));
+    }, [beginLoad, viewerName]);
 
     useEffect(load, [load]);
+    useEffect(() => {
+        setCreateBusy(false);
+        setBusyIdea('');
+        setError('');
+    }, [viewerName]);
+    useEffect(() => {
+        if (params.get('new') !== 'bug') return;
+        setCreating(true);
+        setForm(current => ({...current, kind: 'bug'}));
+    }, [params]);
     useEffect(() => {
         if (!ideas || !location.hash.startsWith('#idea-')) return;
         const target = document.getElementById(location.hash.slice(1));
@@ -141,14 +188,31 @@ const Roadmap = () => {
             login();
             return;
         }
+        const payload = roadmapPayload(form);
+        if (!payload.title || !payload.description) {
+            setError('Add a title and description before posting.');
+            return;
+        }
+        const actionViewer = viewerName;
+        const actionKey = `${actionViewer}\u0000create`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
+        setCreateBusy(true);
         setError('');
         try {
-            await api.createIdea(form);
-            setForm({kind: 'idea', title: '', description: '', category: 'Community'});
-            setCreating(false);
-            load();
+            await api.createIdea(payload);
+            if (currentViewer.current === actionViewer) {
+                setForm({kind: 'idea', title: '', description: '', category: 'Community'});
+                closeComposer();
+                load();
+            }
         } catch (e) {
-            setError(e.message || 'Could not post the suggestion.');
+            if (currentViewer.current === actionViewer) {
+                setError(e.message || 'Could not post the suggestion.');
+            }
+        } finally {
+            actionLocks.current.delete(actionKey);
+            if (currentViewer.current === actionViewer) setCreateBusy(false);
         }
     };
 
@@ -157,30 +221,65 @@ const Roadmap = () => {
             login();
             return;
         }
+        const actionViewer = viewerName;
+        const actionKey = `${actionViewer}\u0000idea`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
+        setBusyIdea(idea._id);
+        setError('');
         try {
             const data = await api.voteIdea(idea._id, choice);
-            setIdeas(current => current.map(item => (item._id === idea._id ? {...item, ...data} : item))
-                .sort((a, b) => b.score - a.score));
+            if (currentViewer.current === actionViewer) {
+                setIdeas(current => current.map(item => (item._id === idea._id ? {...item, ...data} : item))
+                    .sort((a, b) => b.score - a.score));
+            }
         } catch (e) {
-            setError(e.message || 'Could not save your vote.');
+            if (currentViewer.current === actionViewer) setError(e.message || 'Could not save your vote.');
+        } finally {
+            actionLocks.current.delete(actionKey);
+            if (currentViewer.current === actionViewer) setBusyIdea('');
         }
     };
 
     const updateStatus = async (idea, status) => {
+        const actionViewer = viewerName;
+        const actionKey = `${actionViewer}\u0000idea`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
+        setBusyIdea(idea._id);
+        setError('');
         try {
             await api.updateIdea(idea._id, {status});
-            setIdeas(current => current.map(item => (item._id === idea._id ? {...item, status} : item)));
+            if (currentViewer.current === actionViewer) {
+                setIdeas(current => current.map(item => (item._id === idea._id ? {...item, status} : item)));
+            }
         } catch (e) {
-            setError(e.message || 'Could not update the status.');
+            if (currentViewer.current === actionViewer) setError(e.message || 'Could not update the status.');
+        } finally {
+            actionLocks.current.delete(actionKey);
+            if (currentViewer.current === actionViewer) setBusyIdea('');
         }
     };
 
     const updateInterest = async (idea, interested) => {
+        const actionViewer = viewerName;
+        const actionKey = `${actionViewer}\u0000idea`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
+        setBusyIdea(idea._id);
+        setError('');
         try {
             await api.updateIdea(idea._id, {interested});
-            setIdeas(current => current.map(item => (item._id === idea._id ? {...item, interested} : item)));
+            if (currentViewer.current === actionViewer) {
+                setIdeas(current => current.map(item => (item._id === idea._id ? {...item, interested} : item)));
+            }
         } catch (e) {
-            setError(e.message || 'Could not update MistWarp interest.');
+            if (currentViewer.current === actionViewer) {
+                setError(e.message || 'Could not update MistWarp interest.');
+            }
+        } finally {
+            actionLocks.current.delete(actionKey);
+            if (currentViewer.current === actionViewer) setBusyIdea('');
         }
     };
 
@@ -191,19 +290,19 @@ const Roadmap = () => {
                     <h1>Roadmap</h1>
                     <p>Suggest improvements, report product bugs, vote on what matters, and discuss entries with the community.</p>
                 </div>
-                <Button onClick={() => (user ? setCreating(value => !value) : login())}><Plus size={16} /> Add an entry</Button>
+                <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : setCreating(true)) : login())}><Plus size={16} /> Add an entry</Button>
             </header>
             {creating ? (
                 <form className={styles.form} onSubmit={create}>
-                    <label>Type<select value={form.kind} onChange={event => updateForm('kind', event.target.value)}><option value="idea">Idea</option><option value="bug">Bug report</option></select></label>
-                    <label>Title<input value={form.title} required maxLength={120} placeholder="A clear summary" onChange={event => updateForm('title', event.target.value)} /></label>
-                    <label>Description<textarea value={form.description} required maxLength={3000} placeholder={form.kind === 'bug' ? 'What happened, what did you expect, and how can someone reproduce it?' : 'What should change, and who would it help?'} onChange={event => updateForm('description', event.target.value)} /></label>
-                    <label>Area<select value={form.category} onChange={event => updateForm('category', event.target.value)}>
+                    <label>Type<select value={form.kind} disabled={createBusy} onChange={event => updateForm('kind', event.target.value)}><option value="idea">Idea</option><option value="bug">Bug report</option></select></label>
+                    <label>Title<input value={form.title} disabled={createBusy} required maxLength={120} placeholder="A clear summary" onChange={event => updateForm('title', event.target.value)} /></label>
+                    <label>Description<textarea value={form.description} disabled={createBusy} required maxLength={3000} placeholder={form.kind === 'bug' ? 'What happened, what did you expect, and how can someone reproduce it?' : 'What should change, and who would it help?'} onChange={event => updateForm('description', event.target.value)} /></label>
+                    <label>Area<select value={form.category} disabled={createBusy} onChange={event => updateForm('category', event.target.value)}>
                         <option>Community</option><option>Editor</option><option>Collaboration</option><option>Extensions</option><option>Mobile</option><option>Other</option>
                     </select></label>
                     <div className={styles.formActions}>
-                        <Button type="submit">{form.kind === 'bug' ? 'Report bug' : 'Post idea'}</Button>
-                        <button type="button" onClick={() => setCreating(false)}>Cancel</button>
+                        <Button type="submit" busy={createBusy} busyLabel="Posting…">{form.kind === 'bug' ? 'Report bug' : 'Post idea'}</Button>
+                        <Button variant="secondary" disabled={createBusy} onClick={closeComposer}>Cancel</Button>
                     </div>
                 </form>
             ) : null}
@@ -217,7 +316,7 @@ const Roadmap = () => {
                     <select aria-label="Filter by submitter" value={sourceFilter} onChange={event => setSourceFilter(event.target.value)}><option value="">Anyone</option><option value="community">Community</option><option value="mistwarp">MistWarp</option></select>
                     <div className={styles.filterSummary}>
                         <span>{visibleIdeas.length} {visibleIdeas.length === 1 ? 'result' : 'results'}</span>
-                        {filtering ? <button onClick={clearFilters}>Clear filters</button> : null}
+                        {filtering ? <button type="button" onClick={clearFilters}>Clear filters</button> : null}
                     </div>
                 </div>
             ) : null}
@@ -226,7 +325,7 @@ const Roadmap = () => {
             {ideas && !ideas.length ? <p className={styles.empty}>No suggestions yet. Add the first one.</p> : null}
             {ideas && ideas.length && !visibleIdeas.length ? <p className={styles.empty}>No suggestions match those filters.</p> : null}
             {visibleIdeas.length ? <div className={styles.list}>{visibleIdeas.map(idea => (
-                <IdeaCard key={idea._id} idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onInterest={updateInterest} />
+                <IdeaCard key={idea._id} idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onInterest={updateInterest} busy={busyIdea === idea._id} />
             ))}</div> : null}
         </main>
     );

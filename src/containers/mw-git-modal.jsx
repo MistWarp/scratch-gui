@@ -8,6 +8,7 @@ import GitModalComponent from '../components/mw-git-modal/git-modal.jsx';
 import {closeGitModal} from '../reducers/modals.js';
 
 import downloadBlob from '../lib/utils/download-blob.js';
+import log from '../lib/utils/log.js';
 import {openFractchMode} from '../lib/git/fractch-mode.js';
 import RestorePointAPI from '../lib/api/restore-points.js';
 
@@ -85,6 +86,31 @@ const isDiffable = filepath => /\.(fractch|svg|json|txt|md)$/i.test(filepath || 
 // Cheap content signature so a live-refreshing diff only re-renders when it changed.
 const diffSignature = diff => (diff && Array.isArray(diff.hunks) ? JSON.stringify(diff.hunks) : '');
 
+export const loadClonedProject = async (vm, projectTitle) => {
+    if (!(await repoHasFractch())) {
+        await deleteRepo();
+        throw new Error('That repository is not a fractch project (no .fractch files found).');
+    }
+
+    const fs = getFs();
+    const pfs = fs.promises;
+    const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+    try {
+        await RestorePointAPI.createSafetyRestorePoint(vm, projectTitle);
+    } catch (error) {
+        log.warn('Could not create a restore point before loading the cloned project:', error);
+    }
+    vm.quit();
+    await vm.loadProject(buffer, {skipGitImport: true});
+    try {
+        vm.renderer.draw();
+    } catch (error) {
+        log.warn('Could not redraw the cloned project:', error);
+    }
+};
+
 const palette = [
     '#4db6ac', '#9575cd', '#64b5f6',
     '#f06292', '#ba68c8', '#4fc3f7',
@@ -119,7 +145,7 @@ const stateFromHistory = (data, currentState = {}) => {
     };
 };
 
-class TWGitModal extends React.Component {
+export class TWGitModal extends React.Component {
     constructor (props) {
         super(props);
 
@@ -454,21 +480,8 @@ class TWGitModal extends React.Component {
         }
     }
 
-    async loadProjectFromClonedRepo () {
-        if (!(await repoHasFractch())) {
-            await deleteRepo();
-            throw new Error('That repository is not a fractch project (no .fractch files found).');
-        }
-
-        const fs = getFs();
-        const pfs = fs.promises;
-        const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
-        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-
-        await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
-        this.props.vm.quit();
-        await this.props.vm.loadProject(buffer, {skipGitImport: true});
-        this.props.vm.renderer.draw();
+    loadProjectFromClonedRepo () {
+        return loadClonedProject(this.props.vm, this.props.projectTitle);
     }
 
     async handleCommit () {
@@ -864,6 +877,7 @@ class TWGitModal extends React.Component {
     }
 
     handleClose () {
+        if (this.state.busy) return;
         this.props.onClose();
     }
 

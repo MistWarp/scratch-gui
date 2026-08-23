@@ -62,6 +62,7 @@ class DragRecognizer {
         window.addEventListener('mouseup', this._handleEnd);
         window.addEventListener('mousemove', this._handleMove);
         window.addEventListener('touchend', this._handleEnd);
+        window.addEventListener('touchcancel', this._handleEnd);
         // touchmove must be marked as non-passive, or else it cannot prevent scrolling
         window.addEventListener('touchmove', this._handleMove, {passive: false});
     }
@@ -70,6 +71,7 @@ class DragRecognizer {
         window.removeEventListener('mouseup', this._handleEnd);
         window.removeEventListener('mousemove', this._handleMove);
         window.removeEventListener('touchend', this._handleEnd);
+        window.removeEventListener('touchcancel', this._handleEnd);
         window.removeEventListener('touchmove', this._handleMove, {passive: false});
     }
 

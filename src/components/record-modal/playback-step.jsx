@@ -69,6 +69,7 @@ const PlaybackStep = props => (
         </Box>
         <Box className={styles.mainButtonRow}>
             <button
+                type="button"
                 className={styles.mainButton}
                 onClick={props.playing ? props.onStopPlaying : props.onPlay}
             >
@@ -88,6 +89,7 @@ const PlaybackStep = props => (
         </Box>
         <Box className={styles.buttonRow}>
             <button
+                type="button"
                 className={styles.rerecordButton}
                 onClick={props.onBack}
             >
@@ -98,6 +100,7 @@ const PlaybackStep = props => (
                 {props.intl.formatMessage(messages.reRecordMsg)}
             </button>
             <button
+                type="button"
                 className={styles.okButton}
                 disabled={props.encoding}
                 onClick={props.onSubmit}

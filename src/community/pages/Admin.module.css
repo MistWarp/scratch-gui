@@ -158,6 +158,23 @@
     cursor: pointer;
 }
 
+.primary {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.primary:disabled,
+.danger:disabled,
+.secondary:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .danger {
     background: #e25555;
     color: #fff;

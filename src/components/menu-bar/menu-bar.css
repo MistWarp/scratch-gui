@@ -105,9 +105,22 @@
     cursor: pointer;
 }
 
+.menu-bar-item.nav-button {
+    padding: 0 0.5rem;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+}
+
 .menu-bar-item.active,
 .menu-bar-item.hoverable:hover {
     background-color: $ui-black-transparent;
+}
+
+.menu-bar-item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
 }
 
 .menu-bar-item.growable {
@@ -167,7 +180,12 @@
 .more-menu-button {
     justify-content: center;
     width: $menu-bar-height;
+    margin: 0;
+    border: 0;
     padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
 }
 
 .file-group .menu-bar-item {

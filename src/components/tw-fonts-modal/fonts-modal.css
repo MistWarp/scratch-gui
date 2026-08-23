@@ -129,6 +129,14 @@
     opacity: 0.8;
 }
 
+.error-message {
+    padding: 0.75rem;
+    border: 1px solid $error-primary;
+    border-radius: 0.25rem;
+    color: $error-primary;
+    background: $error-transparent;
+}
+
 .fallback-container {
     display: flex;
     flex-direction: column;
@@ -181,6 +189,50 @@
     border-radius: 0.5rem;
     padding: 0.5rem;
     gap: 0.5rem;
+}
+
+.manage-font-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+}
+
+.manage-font-confirm > div:first-child {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    font-size: 0.8rem;
+}
+
+.manage-font-error {
+    color: $error-primary;
+}
+
+.manage-font-confirm-buttons {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.manage-font-cancel,
+.manage-font-delete {
+    padding: 0.4rem 0.65rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.manage-font-delete {
+    border-color: $error-primary;
+    background: $error-primary;
+    color: white;
 }
 .manage-font-name {
     font-size: 2rem;

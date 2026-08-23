@@ -63,6 +63,7 @@ import {
     subscribeProjectHistory
 } from '../../lib/git/project-history.js';
 import downloadBlob from '../../lib/utils/download-blob.js';
+import {projectFilename} from '../../lib/utils/safe-filename.js';
 import RestorePointAPI from '../../lib/api/restore-points';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
@@ -202,6 +203,46 @@ const twMessages = defineMessages({
     }
 });
 
+const menuLabelMessages = defineMessages({
+    about: {
+        id: 'gui.menuBar.about',
+        defaultMessage: 'About'
+    },
+    bookmarks: {
+        id: 'tw.workspaceBookmarks.menuLabel',
+        defaultMessage: 'Bookmarks',
+        description: 'Workspace bookmarks menu label'
+    },
+    edit: {
+        id: 'gui.menuBar.edit',
+        defaultMessage: 'Edit',
+        description: 'Text for edit dropdown menu'
+    },
+    errors: {
+        id: 'tw.menuBar.errors',
+        defaultMessage: 'Project errors'
+    },
+    file: {
+        id: 'gui.menuBar.file',
+        defaultMessage: 'File',
+        description: 'Text for file dropdown menu'
+    },
+    mode: {
+        id: 'gui.menuBar.modeMenu',
+        defaultMessage: 'Mode',
+        description: 'Mode menu item in the menu bar'
+    },
+    more: {
+        id: 'mw.menuBar.more',
+        defaultMessage: 'More menus'
+    },
+    tools: {
+        id: 'gui.menuBar.tools',
+        defaultMessage: 'Tools',
+        description: 'Text for tools dropdown menu'
+    }
+});
+
 const MenuBarItemTooltip = ({
     children,
     className,
@@ -329,11 +370,15 @@ class MenuBar extends React.Component {
         this.menuBarRef = React.createRef();
         this.blockCountRef = React.createRef();
         this.blockCountController = null;
+        this.mwpSaving = false;
+        this.gitActionInFlight = false;
         this.disposeMenuBarSettings = null;
         this.menuResizeObserver = null;
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
         this.undoRedoChangeListener = null;
+        this.undoRedoWorkspace = null;
+        this.unmounted = false;
         bindAll(this, [
             'handleDocumentMouseDown',
             'handleToggleMoreMenu',
@@ -343,6 +388,7 @@ class MenuBar extends React.Component {
             'handleClickRemix',
             'handleClickSave',
             'handleClickSaveAsCopy',
+            'handleClickLoadFromComputer',
             'handleClickPackager',
             'handleClickRestorePoints',
             'handleClickProjectMetadata',
@@ -353,6 +399,14 @@ class MenuBar extends React.Component {
             'handleClickUndo',
             'handleClickRedo',
             'handleClickCollaboration',
+            'handleClickAddonSettings',
+            'handleClickHelp',
+            'handleClickGitModal',
+            'handleClickFractchTerminal',
+            'handleClickDebugger',
+            'handleClickVariableManager',
+            'handleOpenExtensionLibrary',
+            'handleOpenExtensionManager',
             'handleClickFile',
             'refreshGitMenuState',
             'handleClickGitCommit',
@@ -388,6 +442,7 @@ class MenuBar extends React.Component {
         ]);
     }
     componentDidMount () {
+        this.unmounted = false;
         document.addEventListener('keydown', this.handleKeyPress);
         document.addEventListener('mousedown', this.handleDocumentMouseDown);
         this.observeMenuBarWidth();
@@ -438,8 +493,10 @@ class MenuBar extends React.Component {
         }
 
         this.ensureScratchBlocks().then(ScratchBlocks => {
+            if (this.unmounted) return;
             const workspace = ScratchBlocks.getMainWorkspace();
             if (workspace) {
+                this.undoRedoWorkspace = workspace;
                 this.undoRedoChangeListener = () => {
                     setTimeout(() => this.updateUndoRedoState(), 0);
                 };
@@ -449,6 +506,7 @@ class MenuBar extends React.Component {
         });
     }
     componentWillUnmount () {
+        this.unmounted = true;
         document.removeEventListener('keydown', this.handleKeyPress);
         document.removeEventListener('mousedown', this.handleDocumentMouseDown);
         if (this.blockCountController) this.blockCountController.destroy();
@@ -468,13 +526,10 @@ class MenuBar extends React.Component {
             this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
 
-        if (this.undoRedoChangeListener) {
-            this.ensureScratchBlocks().then(ScratchBlocks => {
-                const workspace = ScratchBlocks.getMainWorkspace();
-                if (workspace) {
-                    workspace.removeChangeListener(this.undoRedoChangeListener);
-                }
-            });
+        if (this.undoRedoChangeListener && this.undoRedoWorkspace) {
+            this.undoRedoWorkspace.removeChangeListener(this.undoRedoChangeListener);
+            this.undoRedoChangeListener = null;
+            this.undoRedoWorkspace = null;
         }
     }
 
@@ -537,20 +592,25 @@ class MenuBar extends React.Component {
         });
     }
 
-    handleClickNew () {
+    async handleClickNew () {
+        if (this.newProjectPending) return false;
+        this.newProjectPending = true;
         // if the project is dirty, and user owns the project, we will autosave.
         // but if they are not logged in and can't save, user should consider
         // downloading or logging in first.
         // Note that if user is logged in and editing someone else's project,
         // they'll lose their work.
-        const readyToReplaceProject = this.props.confirmReadyToReplaceProject(
-            this.props.intl.formatMessage(sharedMessages.replaceProjectWarning)
-        );
         this.props.onRequestCloseFile();
-        if (readyToReplaceProject) {
-            this.props.onClickNew(this.props.canSave && this.props.canCreateNew);
+        try {
+            const readyToReplaceProject = await this.props.confirmReadyToReplaceProject(
+                this.props.intl.formatMessage(sharedMessages.replaceProjectWarning)
+            );
+            if (!readyToReplaceProject) return false;
+            await Promise.resolve(this.props.onClickNew(this.props.canSave && this.props.canCreateNew));
+            return true;
+        } finally {
+            this.newProjectPending = false;
         }
-        this.props.onRequestCloseFile();
     }
     handleClickNewWindow () {
         this.props.onClickNewWindow();
@@ -567,6 +627,10 @@ class MenuBar extends React.Component {
     handleClickSaveAsCopy () {
         this.props.onClickSaveAsCopy();
         this.props.onRequestCloseFile();
+    }
+    handleClickLoadFromComputer () {
+        this.props.onRequestCloseFile();
+        this.props.onStartSelectingFileUpload();
     }
     handleClickPackager () {
         this.props.onClickPackager();
@@ -600,6 +664,39 @@ class MenuBar extends React.Component {
     }
     handleClickCollaboration () {
         this.props.onClickCollaboration();
+        this.props.onRequestCloseTools();
+    }
+    handleClickAddonSettings () {
+        this.props.onRequestCloseEdit();
+        this.props.onClickAddonSettings();
+    }
+    handleClickHelp () {
+        this.props.onClickHelp();
+        this.props.onRequestCloseEdit();
+    }
+    handleClickGitModal () {
+        this.props.onClickGitModal();
+        this.props.onRequestCloseTools();
+    }
+    handleClickFractchTerminal () {
+        openFractchTerminalWindow({vm: this.props.vm});
+        this.props.onRequestCloseTools();
+    }
+    handleClickDebugger () {
+        window.__mistwarpDebuggerToggle();
+        this.props.onRequestCloseTools();
+    }
+    handleClickVariableManager () {
+        window.__mistwarpVariableManagerToggle();
+        this.props.onRequestCloseTools();
+    }
+    handleOpenExtensionLibrary () {
+        this.props.onRequestCloseTools();
+        this.props.onOpenExtensionLibrary();
+    }
+    handleOpenExtensionManager () {
+        this.props.onRequestCloseTools();
+        this.props.onOpenExtensionManagerModal();
     }
     refreshMistWarpShared () {
         const remembered = communityEnabled ? getRememberedPlatformProjectState() : null;
@@ -686,6 +783,8 @@ class MenuBar extends React.Component {
     }
 
     async handleClickGitPush (remote) {
+        if (this.gitActionInFlight) return false;
+        this.gitActionInFlight = true;
         this.props.onRequestCloseFile();
         this.props.onShowGitStatus('gitPushing');
         try {
@@ -696,29 +795,34 @@ class MenuBar extends React.Component {
                 onAuth: this.gitAuth()
             });
             this.props.onGitStatusDone('gitPushSuccess');
+            return true;
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPushing');
-            // eslint-disable-next-line no-alert
-            window.alert(`Push failed: ${e && e.message ? e.message : e}`);
+            this.showAutosaveNotification(`Push failed. ${e && e.message ? e.message : e}`, 'error');
+            return false;
+        } finally {
+            this.gitActionInFlight = false;
         }
     }
 
     async handleClickGitPull (remote) {
+        if (this.gitActionInFlight) return false;
+        this.gitActionInFlight = true;
         this.props.onRequestCloseFile();
-        if (this.props.projectChanged) {
-            // eslint-disable-next-line no-alert
-            const ok = window.confirm(this.props.intl.formatMessage({
-                defaultMessage: 'Pulling will replace your project with the repository version. Continue?',
-                description: 'Confirmation before git pull replaces the open project',
-                id: 'mw.menuBar.gitPull.confirmReplace'
-            }));
-            if (!ok) {
-                return;
-            }
-        }
-        this.props.onShowGitStatus('gitPulling');
         try {
+            if (this.props.projectChanged) {
+                const ok = await this.showConfirm(
+                    'Replace this project?',
+                    this.props.intl.formatMessage({
+                        defaultMessage: 'Pulling will replace your project with the repository version. Continue?',
+                        description: 'Confirmation before git pull replaces the open project',
+                        id: 'mw.menuBar.gitPull.confirmReplace'
+                    })
+                );
+                if (!ok) return false;
+            }
+            this.props.onShowGitStatus('gitPulling');
             await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
             await gitPull({
                 vm: this.props.vm,
@@ -733,54 +837,57 @@ class MenuBar extends React.Component {
             await this.props.vm.loadProject(buffer, {skipGitImport: true});
             this.props.vm.renderer.draw();
             this.props.onGitStatusDone('gitPullSuccess');
+            return true;
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPulling');
-            // eslint-disable-next-line no-alert
-            window.alert(`Pull failed: ${e && e.message ? e.message : e}`);
+            this.showAutosaveNotification(`Pull failed. ${e && e.message ? e.message : e}`, 'error');
+            return false;
+        } finally {
+            this.gitActionInFlight = false;
         }
     }
 
-    handleClickGitCommit () {
+    async handleClickGitCommit () {
+        if (this.gitActionInFlight) return false;
+        this.gitActionInFlight = true;
         this.props.onRequestCloseFile();
-        // Defer so the menu closes before the (blocking) prompt appears.
-        setTimeout(async () => {
-            // eslint-disable-next-line no-alert
-            const message = window.prompt(
+        try {
+            const message = await this.showPrompt(
                 this.props.intl.formatMessage({
                     defaultMessage: 'Commit message',
                     description: 'Prompt title when committing to git from the File menu',
                     id: 'mw.menuBar.gitCommit.prompt'
                 }),
+                'Add a short message describing this version.',
                 ''
             );
             if (message === null || !message.trim()) {
-                return;
+                return false;
             }
             this.props.onShowGitStatus('gitCommitting');
-            try {
-                await commitProject({
-                    vm: this.props.vm,
-                    message: message.trim(),
-                    author: getDefaultAuthor()
-                });
-                await preloadProjectHistory(this.props.vm, {force: true});
-                this.props.onGitStatusDone('gitCommitSuccess');
-            } catch (e) {
-                console.error(e);
-                this.props.onCloseGitStatus('gitCommitting');
-                // eslint-disable-next-line no-alert
-                window.alert(this.props.intl.formatMessage({
-                    defaultMessage: 'Commit failed: ',
-                    description: 'Alert prefix when a git commit from the File menu fails',
-                    id: 'mw.menuBar.gitCommit.failed'
-                }) + (e && e.message ? e.message : e));
-            }
-        }, 0);
+            await commitProject({
+                vm: this.props.vm,
+                message: message.trim(),
+                author: getDefaultAuthor()
+            });
+            await preloadProjectHistory(this.props.vm, {force: true});
+            this.props.onGitStatusDone('gitCommitSuccess');
+            return true;
+        } catch (e) {
+            console.error(e);
+            this.props.onCloseGitStatus('gitCommitting');
+            this.showAutosaveNotification(`Commit failed. ${e && e.message ? e.message : e}`, 'error');
+            return false;
+        } finally {
+            this.gitActionInFlight = false;
+        }
     }
 
     async saveMwp (saveAs) {
         this.props.onRequestCloseFile();
+        if (this.mwpSaving) return false;
+        this.mwpSaving = true;
         try {
             let message = 'Initial version';
             let commitChanges = true;
@@ -790,17 +897,7 @@ class MenuBar extends React.Component {
                 commitChanges = choice !== false;
                 if (commitChanges) message = choice;
             }
-            const platformProject = getRememberedPlatformProjectState();
-            const exported = await createMwp({
-                vm: this.props.vm,
-                projectId: platformProject && platformProject.id,
-                remixParent: platformProject && platformProject.remixParent,
-                baseCommit: platformProject && platformProject.remixBaseCommit,
-                message,
-                commitChanges
-            });
-            await preloadProjectHistory(this.props.vm, {force: true});
-            const filename = `${this.props.projectTitle || 'MistWarp Project'}.mwp`;
+            const filename = projectFilename(this.props.projectTitle, 'MistWarp Project', 'mwp');
             let handle = saveAs ? null : this.state.mwpFileHandle;
             if (!handle && this.props.showSaveFilePicker) {
                 handle = await this.props.showSaveFilePicker({
@@ -812,6 +909,16 @@ class MenuBar extends React.Component {
                     excludeAcceptAllOption: true
                 });
             }
+            const platformProject = getRememberedPlatformProjectState();
+            const exported = await createMwp({
+                vm: this.props.vm,
+                projectId: platformProject && platformProject.id,
+                remixParent: platformProject && platformProject.remixParent,
+                baseCommit: platformProject && platformProject.remixBaseCommit,
+                message,
+                commitChanges
+            });
+            await preloadProjectHistory(this.props.vm, {force: true});
             if (handle) {
                 const writable = await handle.createWritable();
                 await writable.write(exported.blob);
@@ -820,10 +927,17 @@ class MenuBar extends React.Component {
             } else {
                 downloadBlob(filename, exported.blob);
             }
+            this.props.showToast('MistWarp project saved.', 'success');
+            return true;
         } catch (error) {
-            if (error && error.name === 'AbortError') return;
-            // eslint-disable-next-line no-alert
-            window.alert(`Could not save MistWarp project: ${error && error.message ? error.message : error}`);
+            if (error && error.name === 'AbortError') return false;
+            this.props.showToast(
+                `Could not save MistWarp project: ${error && error.message ? error.message : error}`,
+                'error'
+            );
+            return false;
+        } finally {
+            this.mwpSaving = false;
         }
     }
 
@@ -899,14 +1013,11 @@ class MenuBar extends React.Component {
         }
 
         const modifier = isMac ? event.metaKey : event.ctrlKey;
-        if (modifier) {
-            if (event.key.toLowerCase() === 's') {
-                this.props.handleSaveProject();
-                event.preventDefault();
-            } else if (event.key.toLowerCase() === 'o') {
-                event.preventDefault();
-                this.props.onStartSelectingFileUpload();
-            }
+        if (modifier && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 's' &&
+            target && target.dataset && 'projectTitleInput' in target.dataset) {
+            event.preventDefault();
+            target.blur();
+            setTimeout(() => this.props.handleSaveProject(), 0);
         }
     }
 
@@ -1111,10 +1222,11 @@ class MenuBar extends React.Component {
             return;
         }
 
-        let newCategory = bookmark.category || 'General';
+        const currentCategory = bookmark.category || 'General';
+        let categoryInput = null;
         if (enableCategories) {
             const categoryList = this.state.workspaceBookmarksCategories.join(', ');
-            const categoryInput = await this.showPrompt(
+            categoryInput = await this.showPrompt(
                 this.props.intl.formatMessage({
                     defaultMessage: 'Bookmark Category',
                     id: 'tw.workspaceBookmarks.categoryTitle'
@@ -1124,17 +1236,17 @@ class MenuBar extends React.Component {
                     description: 'Prompt for bookmark category',
                     id: 'tw.workspaceBookmarks.categoryPrompt'
                 }, {categories: categoryList}),
-                newCategory
+                currentCategory
             );
-            if (categoryInput !== null) {
-                newCategory = categoryInput.trim() || 'General';
-            }
         }
+        const newCategory = categoryInput === null ? currentCategory : categoryInput.trim() || 'General';
 
         this.setState(prev => {
+            const currentIndex = prev.workspaceBookmarks.findIndex(item => item.timestamp === bookmark.timestamp);
+            if (currentIndex === -1) return null;
             const next = [...prev.workspaceBookmarks];
-            next[index] = {
-                ...next[index],
+            next[currentIndex] = {
+                ...next[currentIndex],
                 name: newName.trim(),
                 category: newCategory
             };
@@ -1318,14 +1430,19 @@ class MenuBar extends React.Component {
             });
         }, 1000);
     }
-    performAutosave () {
+    async performAutosave () {
         if (this.state.menuBarSettings.autosave_only_when_changed && !this.props.projectChanged) return;
         // Save to the current file using the same method as manual save
         if (this.props.handleSaveProject) {
-            this.props.handleSaveProject();
-
-            if (this.state.menuBarSettings.autosave_notifications) {
-                this.showAutosaveNotification('Project autosaved successfully!', 'success');
+            try {
+                const saved = await this.props.handleSaveProject();
+                if (saved !== false && this.state.menuBarSettings.autosave_notifications) {
+                    this.showAutosaveNotification('Project autosaved.', 'success');
+                }
+            } catch (error) {
+                if (this.state.menuBarSettings.autosave_notifications) {
+                    this.showAutosaveNotification('Autosave failed.', 'error');
+                }
             }
         }
     }
@@ -1384,6 +1501,7 @@ class MenuBar extends React.Component {
     handleClickUndo () {
         if (!this.props.isPlayerOnly && this.state.canUndo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
+                if (this.unmounted) return;
                 const workspace = ScratchBlocks.getMainWorkspace();
                 if (workspace) {
                     workspace.undo(false);
@@ -1395,6 +1513,7 @@ class MenuBar extends React.Component {
     handleClickRedo () {
         if (!this.props.isPlayerOnly && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
+                if (this.unmounted) return;
                 const workspace = ScratchBlocks.getMainWorkspace();
                 if (workspace) {
                     workspace.undo(true);
@@ -1406,6 +1525,7 @@ class MenuBar extends React.Component {
     updateUndoRedoState () {
         if (this.props.isPlayerOnly) return;
         this.ensureScratchBlocks().then(ScratchBlocks => {
+            if (this.unmounted) return;
             const workspace = ScratchBlocks.getMainWorkspace();
             if (workspace) {
                 const canUndo = workspace.hasUndoStack ?
@@ -1430,6 +1550,7 @@ class MenuBar extends React.Component {
         // generate a menu with items for each object in the array
         return (
             <MenuLabel
+                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.about)}
                 open={this.props.aboutMenuOpen}
                 onOpen={this.props.onRequestOpenAbout}
                 onClose={this.props.onRequestCloseAbout}
@@ -1556,15 +1677,19 @@ class MenuBar extends React.Component {
                         </span>
                     </a>
                     {this.state.menuCollapsed && (
-                        <div
+                        <button
+                            type="button"
                             className={classNames(styles.menuBarItem, styles.hoverable, styles.moreMenuButton, {
                                 [styles.active]: this.state.moreMenuOpen
                             })}
+                            aria-expanded={this.state.moreMenuOpen}
+                            aria-haspopup="menu"
+                            aria-label={this.props.intl.formatMessage(menuLabelMessages.more)}
                             onClick={this.handleToggleMoreMenu}
                             title="More"
                         >
                             <MenuIcon size={20} />
-                        </div>
+                        </button>
                     )}
                     <div
                         className={classNames(styles.fileGroup, {
@@ -1574,6 +1699,7 @@ class MenuBar extends React.Component {
                     >
                         {this.props.errors.length > 0 && <div data-mw-item="__errors">
                             <MenuLabel
+                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.errors)}
                                 open={this.props.errorsMenuOpen}
                                 onOpen={this.props.onClickErrors}
                                 onClose={this.props.onRequestCloseErrors}
@@ -1616,6 +1742,7 @@ class MenuBar extends React.Component {
                         </div>}
                         {(this.props.canManageFiles) && (
                             <MenuLabel
+                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.file)}
                                 dataItem="file"
                                 open={this.props.fileMenuOpen}
                                 onOpen={this.handleClickFile}
@@ -1671,15 +1798,13 @@ class MenuBar extends React.Component {
                                                 </MenuItem>
                                             )}
                                             {this.props.canCreateCopy && (
-                                                <div>
+                                                <MenuItem
+                                                    onClick={this.handleClickSaveAsCopy}
+                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                >
                                                     <Save />
-                                                    <MenuItem
-                                                        onClick={this.handleClickSaveAsCopy}
-                                                        shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
-                                                    >
-                                                        {createCopyMessage}
-                                                    </MenuItem>
-                                                </div>
+                                                    {createCopyMessage}
+                                                </MenuItem>
                                             )}
                                             {this.props.canRemix && (
                                                 <MenuItem onClick={this.handleClickRemix}>
@@ -1726,7 +1851,7 @@ class MenuBar extends React.Component {
                                     ) : null}
                                     <MenuSection>
                                         <MenuItem
-                                            onClick={this.props.onStartSelectingFileUpload}
+                                            onClick={this.handleClickLoadFromComputer}
                                             shortcut={formatShortcutDisplay('Ctrl+O')}
                                         >
                                             <Upload />
@@ -1747,7 +1872,6 @@ class MenuBar extends React.Component {
                                         {this.state.mwpFileHandle ? (
                                             <MenuItem
                                                 onClick={this.handleClickSaveMwpAs}
-                                                shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
                                             >
                                                 <FileInput />
                                                 <FormattedMessage
@@ -1867,6 +1991,7 @@ class MenuBar extends React.Component {
                             </MenuLabel>
                         )}
                         <MenuLabel
+                            ariaLabel={this.props.intl.formatMessage(menuLabelMessages.edit)}
                             dataItem="edit"
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
@@ -1927,38 +2052,10 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
-                                {this.props.onToggleFractchMode && !this.props.isPlayerOnly && (
-                                    <MenuSection>
-                                        {false && <MenuItem
-                                            onClick={() => {
-                                                this.props.onRequestCloseEdit();
-                                                this.props.onToggleFractchMode();
-                                            }}
-                                        >
-                                            {this.props.fractchMode ? <BlocksIcon /> : <Code2 />}
-                                            {this.props.fractchMode ? (
-                                                <FormattedMessage
-                                                    defaultMessage="Switch to blocks"
-                                                    description="Menu bar item that leaves the Fractch code editor"
-                                                    id="mw.menuBar.switchToBlocks"
-                                                />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Switch to Fractch"
-                                                    description="Menu bar item that opens the Fractch code editor"
-                                                    id="mw.menuBar.switchToFractch"
-                                                />
-                                            )}
-                                        </MenuItem>}
-                                    </MenuSection>
-                                )}
                                 <MenuSection>
                                     {this.props.onClickAddonSettings && (
                                         <MenuItem
-                                            onClick={() => {
-                                                this.props.onRequestCloseEdit();
-                                                this.props.onClickAddonSettings();
-                                            }}
+                                            onClick={this.handleClickAddonSettings}
                                         >
                                             <Puzzle />
                                             <FormattedMessage
@@ -2013,10 +2110,7 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickHelp();
-                                            this.props.onRequestCloseEdit();
-                                        }}
+                                        onClick={this.handleClickHelp}
                                     >
                                         <HelpCircle />
                                         <FormattedMessage
@@ -2030,6 +2124,7 @@ class MenuBar extends React.Component {
                         </MenuLabel>
                         {this.props.isTotallyNormal && (
                             <MenuLabel
+                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.mode)}
                                 dataItem="mode"
                                 open={this.props.modeMenuOpen}
                                 onOpen={this.props.onClickMode}
@@ -2073,6 +2168,7 @@ class MenuBar extends React.Component {
                             </MenuLabel>
                         )}
                         <MenuLabel
+                            ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
                             dataItem="tools"
                             open={this.props.toolsMenuOpen}
                             onOpen={this.props.onClickTools}
@@ -2094,10 +2190,7 @@ class MenuBar extends React.Component {
                             >
                                 <MenuSection>
                                     <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickGitModal();
-                                            this.props.onRequestCloseTools();
-                                        }}
+                                        onClick={this.handleClickGitModal}
                                     >
                                         <GitBranch />
                                         <FormattedMessage
@@ -2107,10 +2200,7 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => {
-                                            openFractchTerminalWindow({vm: this.props.vm});
-                                            this.props.onRequestCloseTools();
-                                        }}
+                                        onClick={this.handleClickFractchTerminal}
                                     >
                                         <TerminalSquare />
                                         <FormattedMessage
@@ -2120,10 +2210,7 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickCollaboration();
-                                            this.props.onRequestCloseTools();
-                                        }}
+                                        onClick={this.handleClickCollaboration}
                                     >
                                         <Handshake size={20} />
                                         <FormattedMessage
@@ -2146,10 +2233,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         {window.__mistwarpDebuggerToggle && (
                                             <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpDebuggerToggle();
-                                                    this.props.onRequestCloseTools();
-                                                }}
+                                                onClick={this.handleClickDebugger}
                                             >
                                                 <Bug />
                                                 <FormattedMessage
@@ -2161,10 +2245,7 @@ class MenuBar extends React.Component {
                                         )}
                                         {window.__mistwarpVariableManagerToggle && (
                                             <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpVariableManagerToggle();
-                                                    this.props.onRequestCloseTools();
-                                                }}
+                                                onClick={this.handleClickVariableManager}
                                             >
                                                 <Database />
                                                 <FormattedMessage
@@ -2178,10 +2259,7 @@ class MenuBar extends React.Component {
                                 ) : null}
                                 <MenuSection>
                                     <MenuItem
-                                        onClick={() => {
-                                            this.props.onRequestCloseTools();
-                                            this.props.onOpenExtensionLibrary();
-                                        }}
+                                        onClick={this.handleOpenExtensionLibrary}
                                         shortcut={formatShortcutDisplay('Ctrl+.')}
                                     >
                                         <PackagePlus />
@@ -2192,10 +2270,7 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => {
-                                            this.props.onRequestCloseTools();
-                                            this.props.onOpenExtensionManagerModal();
-                                        }}
+                                        onClick={this.handleOpenExtensionManager}
                                         shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
                                     >
                                         <FileCog />
@@ -2210,6 +2285,7 @@ class MenuBar extends React.Component {
                         </MenuLabel>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
+                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.bookmarks)}
                                 dataItem="bookmarks"
                                 open={this.props.workspaceBookmarksMenuOpen}
                                 onOpen={this.props.onClickWorkspaceBookmarks}
@@ -2262,6 +2338,7 @@ class MenuBar extends React.Component {
                     )}
                     {!this.props.isPlayerOnly && (
                         <button
+                            type="button"
                             className="sa-block-count-display"
                             data-mw-item="block-count"
                             ref={this.blockCountRef}
@@ -2378,24 +2455,21 @@ class MenuBar extends React.Component {
                         data-mw-item="feedback"
                         className={styles.menuBarItem}
                     >
-                        <a
-                            className={styles.feedbackLink}
+                        <Button
+                            className={classNames(styles.feedbackLink, styles.feedbackButton)}
                             href={FEEDBACK_URL}
                             rel="noopener noreferrer"
                             target="_blank"
                         >
-                            {/* todo: icon */}
-                            <Button className={styles.feedbackButton}>
-                                <FormattedMessage
-                                    defaultMessage="{APP_NAME} Feedback"
-                                    description="Button to give feedback in the menu bar"
-                                    id="tw.feedbackButton"
-                                    values={{
-                                        APP_NAME
-                                    }}
-                                />
-                            </Button>
-                        </a>
+                            <FormattedMessage
+                                defaultMessage="{APP_NAME} Feedback"
+                                description="Button to give feedback in the menu bar"
+                                id="tw.feedbackButton"
+                                values={{
+                                    APP_NAME
+                                }}
+                            />
+                        </Button>
                     </div>
                 </div>
 
@@ -2686,3 +2760,5 @@ export default compose(
         mapDispatchToProps
     )
 )(MenuBar);
+
+export {MenuBar};

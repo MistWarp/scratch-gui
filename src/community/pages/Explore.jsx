@@ -7,6 +7,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
+import {useUser} from '../UserContext.jsx';
 import styles from './Explore.module.css';
 
 const SORTS = [
@@ -17,13 +18,40 @@ const SORTS = [
 ];
 
 const CATEGORIES = ['games', 'animation', 'art', 'music', 'tools', 'tutorial', 'multiplayer', 'mobile'];
+const PAGE_SIZE = 24;
+const MAX_RESTORED_PAGES = 10;
+
+const getPageDepth = value => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? Math.min(MAX_RESTORED_PAGES, Math.max(1, parsed)) : 1;
+};
+
+const mergeProjects = pages => {
+    const seen = new Set();
+    const merged = [];
+    for (const page of pages) {
+        for (const project of page || []) {
+            if (!project || seen.has(project.id)) continue;
+            seen.add(project.id);
+            merged.push(project);
+        }
+    }
+    return merged;
+};
+
+const shouldSkipPageRestore = (expectedParams, currentParams) => (
+    Boolean(expectedParams) && expectedParams === currentParams
+);
 
 const Explore = () => {
+    const {user} = useUser();
+    const viewerName = (user && user.username) || '';
     const [params, setParams] = useSearchParams();
     const requestedSort = params.get('sort') || 'trending';
     const sort = SORTS.some(option => option.key === requestedSort) ? requestedSort : 'trending';
     const q = params.get('q') || '';
     const tag = params.get('tag') || '';
+    const pageDepth = getPageDepth(params.get('page'));
     const [projects, setProjects] = useState([]);
     const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,20 +61,31 @@ const Explore = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadMoreError, setLoadMoreError] = useState('');
     const loadMoreVersion = useRef(0);
+    const loadMoreLocks = useRef(new Set());
+    const skipNextPageRestore = useRef('');
+    const paramsKey = params.toString();
 
     const beginLoad = useLatest();
 
     useEffect(() => {
+        if (shouldSkipPageRestore(skipNextPageRestore.current, paramsKey)) {
+            skipNextPageRestore.current = '';
+            return;
+        }
+        skipNextPageRestore.current = '';
         loadMoreVersion.current += 1;
         setLoadingMore(false);
         setLoadMoreError('');
         const fresh = beginLoad();
         setLoading(true);
         setFailed(false);
-        api.explore({sort, q, tag, limit: 24})
-            .then(fresh(data => {
-                setProjects(data.projects || []);
-                setTotal(data.total || 0);
+        const pageRequests = Array.from({length: pageDepth}, (_, pageIndex) => (
+            api.explore({sort, q, tag, offset: pageIndex * PAGE_SIZE, limit: PAGE_SIZE})
+        ));
+        Promise.all(pageRequests)
+            .then(fresh(pages => {
+                setProjects(mergeProjects(pages.map(page => page.projects)));
+                setTotal(pages.length ? pages[0].total || 0 : 0);
             }))
             .catch(fresh(() => setFailed(true)))
             .finally(fresh(() => setLoading(false)));
@@ -57,11 +96,12 @@ const Explore = () => {
         } else {
             setPeople([]);
         }
-    }, [sort, q, tag, beginLoad, attempt]);
+    }, [sort, q, tag, pageDepth, paramsKey, beginLoad, attempt, viewerName]);
 
     const setSort = key => {
         const next = new URLSearchParams(params);
         next.set('sort', key);
+        next.delete('page');
         setParams(next);
     };
 
@@ -69,22 +109,38 @@ const Explore = () => {
         const next = new URLSearchParams(params);
         if (value) next.set('tag', value);
         else next.delete('tag');
+        next.delete('page');
         setParams(next);
     };
 
     const loadMore = async () => {
-        if (loadingMore) return;
         const version = loadMoreVersion.current;
+        if (loadMoreLocks.current.has(version)) return;
+        loadMoreLocks.current.add(version);
         setLoadingMore(true);
         setLoadMoreError('');
         try {
-            const data = await api.explore({sort, q, tag, offset: projects.length, limit: 24});
+            const data = await api.explore({
+                sort,
+                q,
+                tag,
+                offset: pageDepth * PAGE_SIZE,
+                limit: PAGE_SIZE
+            });
             if (loadMoreVersion.current !== version) return;
-            setProjects(current => [...current, ...(data.projects || [])]);
+            const incoming = data.projects || [];
+            if (incoming.length) {
+                setProjects(current => mergeProjects([current, incoming]));
+                const next = new URLSearchParams(params);
+                next.set('page', String(pageDepth + 1));
+                skipNextPageRestore.current = next.toString();
+                setParams(next, {replace: true});
+            }
             setTotal(data.total || 0);
         } catch (requestError) {
             if (loadMoreVersion.current === version) setLoadMoreError(requestError.message || 'Could not load more projects.');
         } finally {
+            loadMoreLocks.current.delete(version);
             if (loadMoreVersion.current === version) setLoadingMore(false);
         }
     };
@@ -104,9 +160,9 @@ const Explore = () => {
                 />
             </div>
             <div className={styles.categories}>
-                <button className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>All</button>
+                <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>All</button>
                 {CATEGORIES.map(category => (
-                    <button key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
+                    <button type="button" key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
                 ))}
             </div>
             {people.length ? (
@@ -155,7 +211,9 @@ const Explore = () => {
             )}
             {!loading && !failed && projects.length < total ? (
                 <div className={styles.more}>
-                    <Button onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : `Load more (${total - projects.length} left)`}</Button>
+                    <Button busy={loadingMore} busyLabel="Loading…" onClick={loadMore}>
+                        {`Load more (${total - projects.length} left)`}
+                    </Button>
                     {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                 </div>
             ) : null}
@@ -163,4 +221,5 @@ const Explore = () => {
     );
 };
 
+export {getPageDepth, mergeProjects, shouldSkipPageRestore};
 export default Explore;

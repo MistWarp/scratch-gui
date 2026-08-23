@@ -280,7 +280,7 @@ const publishToMistWarp = async ({
         onProgress({phase: 'finish', message: 'Updating version history'});
         await preloadProjectHistory(vm, {force: true});
     } catch (e) {
-        if (createdNow) {
+        if (createdNow && e.code !== 'upload_processing_timeout') {
             try {
                 await deleteProject(platformId);
             } catch (_) {

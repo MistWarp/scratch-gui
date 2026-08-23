@@ -1,19 +1,10 @@
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import {setCloud} from '../reducers/tw';
+import {showStandardAlert} from '../reducers/alerts';
 import isScratchDesktop from '../lib/utils/isScratchDesktop';
-
-const messages = defineMessages({
-    cloudUnavailableAlert: {
-        defaultMessage: 'Cannot use cloud variables, most likely because you opened the editor.',
-        // eslint-disable-next-line max-len
-        description: 'Message displayed when clicking on the option to toggle cloud variables when cloud variables are not available',
-        id: 'tw.menuBar.cloudUnavailableAlert'
-    }
-});
 
 class CloudVariablesToggler extends React.Component {
     constructor (props) {
@@ -24,9 +15,7 @@ class CloudVariablesToggler extends React.Component {
     }
     toggleCloudVariables () {
         if (!this.props.canUseCloudVariables) {
-            const message = this.props.intl.formatMessage(messages.cloudUnavailableAlert);
-            // eslint-disable-next-line no-alert
-            alert(message);
+            this.props.onShowCloudUnavailable();
             return;
         }
         this.props.onCloudChange(!this.props.enabled);
@@ -43,11 +32,11 @@ class CloudVariablesToggler extends React.Component {
 }
 
 CloudVariablesToggler.propTypes = {
-    intl: intlShape,
     children: PropTypes.func,
     enabled: PropTypes.bool,
     username: PropTypes.string,
     onCloudChange: PropTypes.func,
+    onShowCloudUnavailable: PropTypes.func,
     canUseCloudVariables: PropTypes.bool
 };
 
@@ -58,10 +47,15 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onCloudChange: enabled => dispatch(setCloud(enabled))
+    onCloudChange: enabled => dispatch(setCloud(enabled)),
+    onShowCloudUnavailable: () => dispatch(showStandardAlert('cloudUnavailable'))
 });
 
-export default injectIntl(connect(
+export {
+    CloudVariablesToggler
+};
+
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(CloudVariablesToggler));
+)(CloudVariablesToggler);

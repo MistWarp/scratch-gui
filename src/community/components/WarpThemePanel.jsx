@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-no-bind, no-alert */
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
     ArrowLeft, BookmarkPlus, Check, Download, Edit3, FileJson, Flag, Heart, LogIn,
     Palette, Search, Shield, Trash2, Upload, User, X
@@ -10,6 +10,7 @@ import {
     API, TOKEN_MANAGER, request, openSession, storeToken, gradientStyle, exportCurrentTheme
 } from '../../lib/warptheme.js';
 import {CustomTheme, customThemeManager} from '../../lib/themes/custom-themes.js';
+import Modal from './ui/Modal.jsx';
 import styles from './WarpThemePanel.module.css';
 
 const TABS = [
@@ -70,8 +71,13 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
     const [reporting, setReporting] = useState(null);
     const [reportReason, setReportReason] = useState('');
     const [savedIds, setSavedIds] = useState(() => new Set());
+    const [deletingTheme, setDeletingTheme] = useState(null);
+    const [deleteError, setDeleteError] = useState('');
+    const deleteInFlight = useRef(false);
 
     const username = user && user.username;
+    const currentUsername = useRef(username);
+    currentUsername.current = username;
 
     const loadThemes = useCallback(async sessionToken => {
         const data = await request('/themes', sessionToken);
@@ -93,6 +99,8 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
 
     useEffect(() => {
         let active = true;
+        setDeletingTheme(null);
+        setDeleteError('');
         if (!username) {
             storeToken(null);
             setAccount(null);
@@ -242,12 +250,42 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
     });
 
     const deleteTheme = item => {
-        if (!window.confirm(`Delete “${item.name}”? This cannot be undone.`)) return;
-        run(async () => {
+        if (deleteInFlight.current) return;
+        setDeleteError('');
+        setDeletingTheme(item);
+    };
+
+    const confirmDeleteTheme = async () => {
+        if (!deletingTheme || deleteInFlight.current) return;
+        const item = deletingTheme;
+        const actionUsername = username;
+        const releaseDelete = () => {
+            deleteInFlight.current = false;
+        };
+        deleteInFlight.current = true;
+        setBusy(true);
+        setDeleteError('');
+        try {
             await request(`/theme?uuid=${encodeURIComponent(item.uuid)}`, token, {method: 'DELETE'});
+            if (currentUsername.current !== actionUsername) return;
             setSelected(null);
-            await refresh();
-        });
+            setDeletingTheme(null);
+            setNotice(`“${item.name}” deleted.`);
+            try {
+                await refresh();
+            } catch (err) {
+                if (currentUsername.current === actionUsername) {
+                    setError(`Theme deleted, but the list could not refresh: ${err.message}`);
+                }
+            }
+        } catch (err) {
+            if (currentUsername.current === actionUsername) {
+                setDeleteError(err.message || 'Could not delete this theme.');
+            }
+        } finally {
+            releaseDelete();
+            if (currentUsername.current === actionUsername) setBusy(false);
+        }
     };
 
     const submitReport = () => run(async () => {
@@ -274,6 +312,8 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
         setSelected(null);
         setEditing(null);
         setReporting(null);
+        setDeletingTheme(null);
+        setDeleteError('');
         setNotice('');
     };
 
@@ -639,6 +679,37 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
 
     return (
         <div className={styles.panel}>
+            {deletingTheme ? (
+                <Modal
+                    icon={Trash2}
+                    title="Delete theme?"
+                    dismissDisabled={busy}
+                    onClose={() => {
+                        setDeletingTheme(null);
+                        setDeleteError('');
+                    }}
+                    actions={<React.Fragment>
+                        <button
+                            className={styles.secondaryButton}
+                            disabled={busy}
+                            onClick={() => {
+                                setDeletingTheme(null);
+                                setDeleteError('');
+                            }}
+                            type="button"
+                        >Cancel</button>
+                        <button
+                            className={styles.dangerButton}
+                            disabled={busy}
+                            onClick={confirmDeleteTheme}
+                            type="button"
+                        >{busy ? 'Deleting…' : 'Delete theme'}</button>
+                    </React.Fragment>}
+                >
+                    <p>This permanently deletes “{deletingTheme.name}” from WarpTheme.</p>
+                    {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
+                </Modal>
+            ) : null}
             <div
                 className={styles.tabs}
                 role="tablist"

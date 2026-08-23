@@ -22,24 +22,31 @@ class FontName extends React.Component {
             rect: null,
             localFonts: []
         };
+        this.mounted = false;
     }
 
     componentDidMount () {
+        this.mounted = true;
         window.addEventListener('resize', this.handleResize);
 
         // Chrome-only API
         if (typeof queryLocalFonts === 'function') {
             // eslint-disable-next-line no-undef
             queryLocalFonts().then(fonts => {
+                if (!this.mounted) return;
                 const uniqueFamilies = [...new Set(fonts.map(i => i.family))];
                 this.setState({
                     localFonts: uniqueFamilies
                 });
-            });
+            })
+                .catch(() => {
+                    // Font suggestions are optional. Manual entry still works when permission is denied.
+                });
         }
     }
 
     componentWillUnmount () {
+        this.mounted = false;
         window.removeEventListener('resize', this.handleResize);
     }
 
@@ -166,6 +173,10 @@ FontName.propTypes = {
         getUnusedCustomFont: PropTypes.func.isRequired
     }).isRequired,
     isCustom: PropTypes.bool.isRequired
+};
+
+export {
+    FontName
 };
 
 export default FontName;

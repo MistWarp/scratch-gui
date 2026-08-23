@@ -131,6 +131,7 @@ class AssetPreview extends React.Component {
 
                 <div className={styles.previewButtons}>
                     <button
+                        type="button"
                         className={styles.previewButton}
                         onClick={this.handleExport}
                     >
@@ -142,6 +143,7 @@ class AssetPreview extends React.Component {
                         />
                     </button>
                     <button
+                        type="button"
                         className={styles.previewButton}
                         onClick={this.handleDelete}
                     >

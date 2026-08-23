@@ -36,4 +36,30 @@ describe('IconButtonComponent', () => {
         componentShallowWrapper.simulate('click');
         expect(onClick).toHaveBeenCalled();
     });
+
+    test('uses a non-submitting native button', () => {
+        const component = shallow(
+            <IconButton
+                img="imgSrc"
+                title="Text"
+                onClick={() => {}}
+            />
+        );
+
+        expect(component.type()).toBe('button');
+        expect(component.prop('type')).toBe('button');
+    });
+
+    test('passes disabled state to the native button', () => {
+        const component = shallow(
+            <IconButton
+                disabled
+                img="imgSrc"
+                title="Text"
+                onClick={() => {}}
+            />
+        );
+
+        expect(component.prop('disabled')).toBe(true);
+    });
 });

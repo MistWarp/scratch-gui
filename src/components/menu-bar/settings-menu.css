@@ -1,6 +1,20 @@
 @import "../../css/colors.css";
 @import "../../css/filters.css";
 
+.button {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+}
+
 .icon {
     width: 1.5rem;
 }
@@ -463,6 +477,7 @@
 }
 
 .font-item {
+    width: 100%;
     padding: 0.5rem;
     border: 1px solid $ui-black-transparent;
     border-radius: 0.25rem;
@@ -470,11 +485,19 @@
     font-size: 0.875rem;
     transition: background-color 0.2s;
     background-color: $input-background;
+    color: inherit;
+    font-family: inherit;
+    text-align: inherit;
 }
 
 .font-item:hover {
     background-color: $looks-transparent;
     color: white;
+}
+
+.font-item:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .selected-fonts-list {

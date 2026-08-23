@@ -16,7 +16,7 @@ import '!!style-loader!css-loader!./debugger.css';
 const INITIAL_WIDTH = 640;
 const INITIAL_HEIGHT = 460;
 
-class Debugger extends React.Component {
+export class Debugger extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -25,6 +25,7 @@ class Debugger extends React.Component {
             'handleResume',
             'handleStep',
             'handleTabClick',
+            'handleTabKeyDown',
             'handleToolbarButtonClick'
         ]);
 
@@ -109,6 +110,21 @@ class Debugger extends React.Component {
         this.setState({activeTabId: e.currentTarget.dataset.tabId});
     }
 
+    handleTabKeyDown (event) {
+        const currentIndex = this.tabs.findIndex(tab => tab.id === event.currentTarget.dataset.tabId);
+        let nextIndex;
+        if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % this.tabs.length;
+        else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = this.tabs.length - 1;
+        else return;
+
+        event.preventDefault();
+        this.setState({activeTabId: this.tabs[nextIndex].id});
+        const buttons = event.currentTarget.parentElement.querySelectorAll('[role="tab"]');
+        if (buttons[nextIndex]) buttons[nextIndex].focus();
+    }
+
     handleToolbarButtonClick (e) {
         const button = this.getActiveTab().buttons[Number(e.currentTarget.dataset.index)];
         if (button) {
@@ -138,16 +154,19 @@ class Debugger extends React.Component {
                 >
                     {this.tabs.map(tab => (
                         <button
+                            type="button"
                             key={tab.id}
                             role="tab"
                             data-tab-id={tab.id}
                             aria-selected={tab.id === this.state.activeTabId}
+                            tabIndex={tab.id === this.state.activeTabId ? 0 : -1}
                             className={
                                 tab.id === this.state.activeTabId ?
                                     'mw-debugger-tab mw-debugger-tab-active' :
                                     'mw-debugger-tab'
                             }
                             onClick={this.handleTabClick}
+                            onKeyDown={this.handleTabKeyDown}
                         >
                             <span
                                 className="mw-debugger-tab-icon"
@@ -167,6 +186,7 @@ class Debugger extends React.Component {
                     )}
                     {paused && (
                         <button
+                            type="button"
                             className="mw-debugger-toolbar-btn mw-debugger-resume"
                             onClick={this.handleResume}
                         >
@@ -179,6 +199,7 @@ class Debugger extends React.Component {
                     )}
                     {paused && (
                         <button
+                            type="button"
                             className="mw-debugger-toolbar-btn"
                             onClick={this.handleStep}
                         >
@@ -192,6 +213,7 @@ class Debugger extends React.Component {
                     <div className="mw-debugger-toolbar-spacer" />
                     {activeTab.buttons.map((button, index) => (
                         <button
+                            type="button"
                             key={index}
                             className="mw-debugger-toolbar-btn"
                             data-index={index}

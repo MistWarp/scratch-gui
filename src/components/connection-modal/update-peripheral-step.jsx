@@ -208,6 +208,7 @@ class UpdatePeripheralStep extends React.Component {
                     {!showSendUpdate &&
                         <Box className={classNames(styles.bottomAreaItem, styles.buttonRow)}>
                             <button
+                                type="button"
                                 className={styles.connectionButton}
                                 onClick={this.props.onScanning}
                             >
@@ -224,6 +225,7 @@ class UpdatePeripheralStep extends React.Component {
                             </button>
                             {(showGetReady || showBadResults) &&
                                 <button
+                                    type="button"
                                     className={styles.connectionButton}
                                     onClick={this.handleSendUpdate}
                                 >

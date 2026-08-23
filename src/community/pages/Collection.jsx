@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowLeft, Library, MessageCircle, Settings, UserMinus, UserPlus} from 'lucide-react';
 import api from '../api';
@@ -15,12 +15,20 @@ import styles from './Collection.module.css';
 const Collection = ({id, space, user, login, load}) => {
     const [view, setView] = useState('projects');
     const [error, setError] = useState('');
+    const [followBusy, setFollowBusy] = useState(false);
+    const followLocks = useRef(new Set());
+    const currentId = useRef(id);
+    currentId.current = id;
     const commentSource = useMemo(() => ({
         list: () => api.spaceComments(id),
         add: (content, parent) => api.addSpaceComment(id, content, parent),
         remove: commentId => api.deleteSpaceComment(id, commentId),
         react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
     }), [id]);
+    useEffect(() => {
+        setFollowBusy(false);
+        setError('');
+    }, [id]);
     const tabs = [
         {key: 'projects', label: `Projects ${space.projects.length}`},
         {key: 'discussion', label: `Discussion ${space.commentCount || 0}`}
@@ -31,13 +39,22 @@ const Collection = ({id, space, user, login, load}) => {
             login();
             return;
         }
+        const actionId = id;
+        if (followLocks.current.has(actionId)) return;
+        followLocks.current.add(actionId);
+        setFollowBusy(true);
         setError('');
         try {
             if (space.following) await api.unfollowSpace(id);
             else await api.followSpace(id);
-            await load();
+            if (currentId.current === actionId) await load();
         } catch (requestError) {
-            setError(requestError.message || 'Could not update follow status.');
+            if (currentId.current === actionId) {
+                setError(requestError.message || 'Could not update follow status.');
+            }
+        } finally {
+            followLocks.current.delete(actionId);
+            if (currentId.current === actionId) setFollowBusy(false);
         }
     };
 
@@ -47,7 +64,7 @@ const Collection = ({id, space, user, login, load}) => {
             <header className={styles.hero}>
                 <Library size={30} />
                 <div><span>Collection</span><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>Curated by <Link to={`/users/${space.owner}`}>{space.owner}</Link></span></div></div>
-                <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow'}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}</div>
+                <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} busyLabel="Updating…" onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow'}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}</div>
             </header>
             <SectionTabs items={tabs} value={view} onChange={setView} className={styles.tabs} activeClassName={styles.tabActive} ariaLabel="Collection sections" />
             {error ? <p className={styles.error}>{error}</p> : null}

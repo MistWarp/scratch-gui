@@ -37,4 +37,13 @@ describe('Controls component', () => {
         component.find(StopAll).simulate('click');
         expect(props.onStopAllClick).toHaveBeenCalled();
     });
+
+    test('renders stage actions as native buttons', () => {
+        const component = mountWithIntl(<Controls {...defaultProps()} />);
+
+        expect(component.find(GreenFlag).getDOMNode().tagName).toBe('BUTTON');
+        expect(component.find(GreenFlag).getDOMNode().type).toBe('button');
+        expect(component.find(StopAll).getDOMNode().tagName).toBe('BUTTON');
+        expect(component.find(StopAll).getDOMNode().type).toBe('button');
+    });
 });

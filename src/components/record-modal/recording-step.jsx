@@ -62,6 +62,7 @@ const RecordingStep = props => (
         </Box>
         <Box className={styles.mainButtonRow}>
             <button
+                type="button"
                 className={styles.mainButton}
                 disabled={!props.listening}
                 onClick={props.recording ? props.onStopRecording : props.onRecord}

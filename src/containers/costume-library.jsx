@@ -3,10 +3,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import VM from 'scratch-vm';
+import {connect} from 'react-redux';
 
 import {getCostumeLibrary} from '../lib/libraries/tw-async-libraries';
 import spriteTags from '../lib/libraries/sprite-tags';
 import LibraryComponent from '../components/library/library.jsx';
+import {showStandardAlert} from '../reducers/alerts';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -26,13 +28,20 @@ class CostumeLibrary extends React.PureComponent {
         this.state = {
             data: getCostumeLibrary()
         };
+        this._isMounted = false;
     }
     componentDidMount () {
+        this._isMounted = true;
         if (this.state.data.then) {
-            this.state.data.then(data => this.setState({
-                data
-            }));
+            this.state.data.then(data => {
+                if (this._isMounted) this.setState({data});
+            }).catch(error => {
+                if (this._isMounted) this.props.onShowImportError(error);
+            });
         }
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
     }
     handleItemSelected (item) {
         const vmCostume = {
@@ -42,7 +51,8 @@ class CostumeLibrary extends React.PureComponent {
             bitmapResolution: item.bitmapResolution,
             skinId: null
         };
-        this.props.vm.addCostumeFromLibrary(item.md5ext, vmCostume);
+        return this.props.vm.addCostumeFromLibrary(item.md5ext, vmCostume)
+            .catch(this.props.onShowImportError);
     }
     render () {
         return (
@@ -62,7 +72,14 @@ class CostumeLibrary extends React.PureComponent {
 CostumeLibrary.propTypes = {
     intl: intlShape.isRequired,
     onRequestClose: PropTypes.func,
+    onShowImportError: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export default injectIntl(CostumeLibrary);
+const mapDispatchToProps = dispatch => ({
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
+});
+
+export default injectIntl(connect(null, mapDispatchToProps)(CostumeLibrary));
+
+export {CostumeLibrary};

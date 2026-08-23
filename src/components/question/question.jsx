@@ -27,13 +27,17 @@ const QuestionComponent = props => {
                         onKeyPress={onKeyPress}
                     />
                     <button
+                        type="button"
                         className={styles.questionSubmitButton}
+                        aria-label="Submit answer"
+                        title="Submit answer"
                         onClick={onClick}
                     >
                         <img
                             className={styles.questionSubmitButtonIcon}
                             draggable={false}
                             src={enterIcon}
+                            alt=""
                         />
                     </button>
                 </div>

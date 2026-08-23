@@ -15,6 +15,7 @@ import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
 import soundTags from '../lib/libraries/sound-tags';
 
 import {connect} from 'react-redux';
+import {showStandardAlert} from '../reducers/alerts';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -67,24 +68,23 @@ class SoundLibrary extends React.PureComponent {
 
         this._isMounted = false;
 
+        const soundLibrary = getSoundLibrary();
+        this.soundLibraryPromise = soundLibrary.then ? soundLibrary : null;
         this.state = {
-            data: null
+            data: this.soundLibraryPromise ? null : getSoundLibraryThumbnailData(soundLibrary, props.isRtl)
         };
     }
     componentDidMount () {
         this._isMounted = true;
-        const soundLibrary = getSoundLibrary();
-        if (soundLibrary.then) {
-            soundLibrary.then(data => {
+        if (this.soundLibraryPromise) {
+            this.soundLibraryPromise.then(data => {
                 if (this._isMounted) {
                     this.setState({
                         data: getSoundLibraryThumbnailData(data, this.props.isRtl)
                     });
                 }
-            });
-        } else {
-            this.setState({
-                data: getSoundLibraryThumbnailData(soundLibrary, this.props.isRtl)
+            }).catch(error => {
+                if (this._isMounted) this.props.onShowImportError(error);
             });
         }
 
@@ -154,7 +154,7 @@ class SoundLibrary extends React.PureComponent {
 
         // Save the promise so code to stop the sound may queue the stop
         // instruction after the play instruction.
-        this.playingSoundPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5)
+        const playingSoundPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5)
             .then(soundAsset => {
                 if (soundAsset && this._isMounted && this.audioEngine) {
                     const sound = {
@@ -172,13 +172,15 @@ class SoundLibrary extends React.PureComponent {
                             soundPlayer.addListener('stop', this.onStop);
                             // Set that the sound is playing. This affects the type of stop
                             // instruction given if the sound must stop early.
-                            if (this.playingSoundPromise !== null) {
-                                this.playingSoundPromise.isPlaying = true;
+                            if (this.playingSoundPromise === playingSoundPromise) {
+                                playingSoundPromise.isPlaying = true;
                             }
                             return soundPlayer;
                         });
                 }
-            });
+            })
+            .catch(() => null);
+        this.playingSoundPromise = playingSoundPromise;
     }
     handleItemMouseLeave () {
         this.stopPlayingSound();
@@ -191,11 +193,13 @@ class SoundLibrary extends React.PureComponent {
             sampleCount: soundItem.sampleCount,
             name: soundItem.name
         };
-        this.props.vm.addSound(vmSound).then(() => {
-            if (this.props.onNewSound) {
-                this.props.onNewSound();
-            }
-        });
+        return this.props.vm.addSound(vmSound)
+            .then(() => {
+                if (this.props.onNewSound) {
+                    this.props.onNewSound();
+                }
+            })
+            .catch(this.props.onShowImportError);
     }
     render () {
         return (
@@ -220,6 +224,7 @@ SoundLibrary.propTypes = {
     isRtl: PropTypes.bool,
     onNewSound: PropTypes.func,
     onRequestClose: PropTypes.func,
+    onShowImportError: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
@@ -227,9 +232,13 @@ const mapStateToProps = state => ({
     isRtl: state.locales.isRtl
 });
 
-const mapDispatchToProps = () => ({});
+const mapDispatchToProps = dispatch => ({
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
+});
 
 export default injectIntl(connect(
     mapStateToProps,
     mapDispatchToProps
 )(SoundLibrary));
+
+export {SoundLibrary};

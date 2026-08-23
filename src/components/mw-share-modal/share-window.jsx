@@ -16,8 +16,12 @@ class ShareWindow extends React.Component {
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.handleProgress = this.handleProgress.bind(this);
         this.prepareThumbnail = this.prepareThumbnail.bind(this);
+        this.releaseAgreement = this.releaseAgreement.bind(this);
+        this.releasePublish = this.releasePublish.bind(this);
         this.fileInput = React.createRef();
         this.agreementPromise = null;
+        this.agreementInFlight = false;
+        this.publishInFlight = false;
         this.thumbnailPreparation = null;
         this.thumbnailPreparationSource = null;
         this.state = {
@@ -90,8 +94,14 @@ class ShareWindow extends React.Component {
     handleProgress ({phase, message, loaded = 0, total = 0}) {
         this.setState({phase, status: message, loaded, total});
     }
+    releaseAgreement () {
+        this.agreementInFlight = false;
+    }
+    releasePublish () {
+        this.publishInFlight = false;
+    }
     async handlePublish () {
-        if (this.state.status || this.state.agreeBusy) {
+        if (this.publishInFlight || this.state.status || this.state.agreeBusy) {
             return;
         }
         const isUpdate = this.props.action === 'update';
@@ -99,6 +109,7 @@ class ShareWindow extends React.Component {
             this.setState({error: 'Add a short note about what changed.'});
             return;
         }
+        this.publishInFlight = true;
 
         this.setState({
             status: 'Checking your account',
@@ -115,6 +126,7 @@ class ShareWindow extends React.Component {
             const ag = agreementData && agreementData.agreement;
             if (ag && ag.version > 0 && !ag.accepted) {
                 this.setState({status: null, phase: null, agreement: ag, agreeError: ''});
+                this.releasePublish();
                 return;
             }
         } catch (e) {
@@ -158,8 +170,10 @@ class ShareWindow extends React.Component {
                     `Saved to MistWarp, but ${remoteWarnings.map(remote => remote.name).join(', ')} could not sync.` :
                     this.state.notice
             });
+            this.releasePublish();
             this.props.onPublished(result);
         } catch (e) {
+            this.releasePublish();
             this.setState({
                 status: null,
                 phase: null,
@@ -172,12 +186,16 @@ class ShareWindow extends React.Component {
     }
 
     async handleAcceptAgreement () {
+        if (this.agreementInFlight) return;
+        this.agreementInFlight = true;
         this.setState({agreeBusy: true, agreeError: ''});
         try {
             await request('/agreement/accept', {method: 'POST'});
             this.agreementPromise = Promise.resolve({agreement: {version: 0, accepted: true}});
+            this.releaseAgreement();
             this.setState({agreeBusy: false, agreement: null}, this.handlePublish);
         } catch (e) {
+            this.releaseAgreement();
             this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
         }
     }
@@ -188,6 +206,7 @@ class ShareWindow extends React.Component {
                 <div className={styles.error}>{this.state.error}</div>
                 {this.state.errorCode === 'project_too_large' && (
                     <button
+                        type="button"
                         className={styles.reviewStorage}
                         onClick={this.props.onReviewStorage}
                     >
@@ -262,11 +281,13 @@ class ShareWindow extends React.Component {
                     </div>
                     <div className={styles.footer}>
                         <button
+                            type="button"
                             className={styles.secondary}
                             onClick={() => this.setState({agreement: null, agreeError: ''})}
                             disabled={this.state.agreeBusy}
                         >Cancel</button>
                         <button
+                            type="button"
                             className={styles.primary}
                             onClick={this.handleAcceptAgreement}
                             disabled={this.state.agreeBusy}
@@ -294,10 +315,12 @@ class ShareWindow extends React.Component {
                     </div>
                     <div className={styles.footer}>
                         <button
+                            type="button"
                             className={styles.secondary}
                             onClick={this.props.onClose}
                         >Close</button>
                         <button
+                            type="button"
                             className={styles.primary}
                             onClick={() => {
                                 window.open(this.state.done.url, '_blank', 'noopener');
@@ -322,6 +345,7 @@ class ShareWindow extends React.Component {
                             id="mw-share-change"
                             className={styles.input}
                             value={this.state.changeMessage}
+                            disabled={!!this.state.status}
                             maxLength={120}
                             placeholder="For example: Added a new level"
                             onChange={this.handleChangeMessage}
@@ -331,16 +355,19 @@ class ShareWindow extends React.Component {
                     </div>
                     <div className={styles.footer}>
                         <button
+                            type="button"
                             className={styles.secondary}
                             onClick={this.props.onClose}
                             disabled={!!this.state.status}
                         >Cancel</button>
                         <button
+                            type="button"
                             className={styles.secondary}
                             onClick={this.handleSkipVersion}
                             disabled={!!this.state.status}
                         >Skip</button>
                         <button
+                            type="button"
                             className={styles.primary}
                             onClick={this.handlePublish}
                             disabled={!!this.state.status || !this.state.changeMessage.trim()}
@@ -357,6 +384,7 @@ class ShareWindow extends React.Component {
                         id="mw-share-title"
                         className={styles.input}
                         value={this.state.title}
+                        disabled={!!this.state.status}
                         maxLength={100}
                         onChange={this.handleTitleChange}
                     />
@@ -374,11 +402,13 @@ class ShareWindow extends React.Component {
                         )}
                         <div className={styles.thumbButtons}>
                             <button
+                                type="button"
                                 className={styles.secondary}
                                 onClick={this.handleRetake}
                                 disabled={!!this.state.status}
                             >Use current canvas</button>
                             <button
+                                type="button"
                                 className={styles.secondary}
                                 onClick={() => this.fileInput.current && this.fileInput.current.click()}
                                 disabled={!!this.state.status}
@@ -387,6 +417,7 @@ class ShareWindow extends React.Component {
                                 ref={this.fileInput}
                                 className={styles.hiddenInput}
                                 type="file"
+                                disabled={!!this.state.status}
                                 accept="image/*"
                                 onChange={this.handleUpload}
                             />
@@ -401,11 +432,13 @@ class ShareWindow extends React.Component {
                 </div>
                 <div className={styles.footer}>
                     <button
+                        type="button"
                         className={styles.secondary}
                         onClick={this.props.onClose}
                         disabled={!!this.state.status}
                     >Cancel</button>
                     <button
+                        type="button"
                         className={styles.primary}
                         onClick={this.handlePublish}
                         disabled={!!this.state.status || !this.state.title.trim()}

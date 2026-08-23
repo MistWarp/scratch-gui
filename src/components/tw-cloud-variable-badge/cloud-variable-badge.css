@@ -23,6 +23,22 @@
     filter: $filter-icon-gray;
 }
 
+.inline-button {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $link-color;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.inline-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
 .servers {
     display: flex;
     gap: 0.5rem;

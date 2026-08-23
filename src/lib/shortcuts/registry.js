@@ -99,8 +99,8 @@ export const getDefaultShortcuts = () => [
         key: 'F11',
         defaultKey: 'F11',
         category: SHORTCUT_CATEGORIES.VIEW,
-        actionType: 'vm',
-        action: 'setCompilerOptions',
+        actionType: 'callback',
+        action: 'setFullScreen',
         params: [],
         label: 'Toggle Fullscreen'
     },
@@ -209,7 +209,7 @@ export const getDefaultShortcuts = () => [
         key: 'Ctrl+Shift+D',
         defaultKey: 'Ctrl+Shift+D',
         category: SHORTCUT_CATEGORIES.SPRITE_MANAGEMENT,
-        actionType: 'vm',
+        actionType: 'callback',
         action: 'duplicateSprite',
         params: [],
         label: 'Duplicate Sprite'
@@ -229,7 +229,7 @@ export const getDefaultShortcuts = () => [
         key: 'Ctrl+Shift+X',
         defaultKey: 'Ctrl+Shift+X',
         category: SHORTCUT_CATEGORIES.SPRITE_MANAGEMENT,
-        actionType: 'vm',
+        actionType: 'callback',
         action: 'deleteSprite',
         params: [],
         label: 'Delete Sprite'
@@ -249,8 +249,8 @@ export const getDefaultShortcuts = () => [
         key: 'Ctrl+Z',
         defaultKey: 'Ctrl+Z',
         category: SHORTCUT_CATEGORIES.EDIT,
-        actionType: 'vm',
-        action: 'postUndo',
+        actionType: 'callback',
+        action: 'undo',
         params: [],
         label: 'Undo'
     },

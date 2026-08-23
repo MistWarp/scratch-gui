@@ -136,6 +136,14 @@
     text-align: left;
 }
 
+.suggestionStatus {
+    margin: 0;
+    padding: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
 .suggestion:hover {
     background: var(--accent-softer);
 }
@@ -248,6 +256,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
     height: 100%;
     padding: 0 12px;
     border: none;
@@ -255,6 +264,11 @@
     color: var(--menu-bar-foreground, #fff);
     opacity: 0.94;
     cursor: pointer;
+}
+
+.signInLabel {
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .signIn:hover {
@@ -360,6 +374,12 @@
     }
 
     .suggestionMeta {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .signInLabel {
         display: none;
     }
 }

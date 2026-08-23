@@ -64,19 +64,19 @@ const MenubarAlignMenu = ({
     isOpen,
     isRtl,
     onChangeMenuBarAlign,
-    onOpen,
+    onOpen: handleOpen,
     theme
 }) => {
     const MENUBAR_ALIGN_MENUS = Object.keys(MENUBAR_ALIGN).map(id => ({
         id,
         isSelected: theme.menuBarAlign === id,
-        onClick: () => onChangeMenuBarAlign(theme.set('menuBarAlign', id))
+        handleClick: () => onChangeMenuBarAlign(theme.set('menuBarAlign', id))
     }));
-    return (<MenuItem expanded={isOpen}>
-        <div
-            className={styles.option}
-            onClick={onOpen}
-        >
+    return (<MenuItem
+        expanded={isOpen}
+        onClick={handleOpen}
+    >
+        <div className={styles.option}>
             <AlignIcon id={theme.menuBarAlign} />
             <span className={styles.submenuLabel}>
                 <FormattedMessage
@@ -96,7 +96,7 @@ const MenubarAlignMenu = ({
                     key={menu.id}
                     id={menu.id}
                     isSelected={menu.isSelected}
-                    onClick={menu.onClick}
+                    onClick={menu.handleClick}
                 />
             ))}
         </Submenu>

@@ -62,6 +62,7 @@ const UnknownPlatformModal = props => (
             </p>
 
             <button
+                type="button"
                 className={styles.button}
                 onClick={props.onClose}
                 disabled={!props.canClose}

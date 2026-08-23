@@ -4,34 +4,34 @@ import classNames from 'classnames';
 
 import styles from './close-button.css';
 
-const CloseButton = props => {
-    const iconSize = props.size === CloseButton.SIZE_SMALL ? 12 : 20;
-    return (
-        <div
-            aria-label="Close"
-            className={classNames(
-                styles.closeButton,
-                props.className,
-                {
-                    [styles.small]: props.size === CloseButton.SIZE_SMALL,
-                    [styles.large]: props.size === CloseButton.SIZE_LARGE,
-                    [styles.orange]: props.color === CloseButton.COLOR_ORANGE
-                }
-            )}
-            role="button"
-            tabIndex="0"
-            onClick={props.onClick}
-        >
-            {props.buttonType === 'back' ? (
-                <span className={styles.closeText}>←</span>
-            ) : (
-                <span className={classNames(styles.closeText, styles.closeIcon, {
+const CloseButton = props => (
+    <button
+        aria-label={props.buttonType === 'back' ? 'Back' : 'Close'}
+        className={classNames(
+            styles.closeButton,
+            props.className,
+            {
+                [styles.small]: props.size === CloseButton.SIZE_SMALL,
+                [styles.large]: props.size === CloseButton.SIZE_LARGE,
+                [styles.orange]: props.color === CloseButton.COLOR_ORANGE
+            }
+        )}
+        type="button"
+        onClick={props.onClick}
+    >
+        {props.buttonType === 'back' ? (
+            <span className={styles.closeText}>{'←'}</span>
+        ) : (
+            <span
+                className={classNames(styles.closeText, styles.closeIcon, {
                     [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
-                })}>✕</span>
-            )}
-        </div>
-    );
-};
+                })}
+            >
+                {'✕'}
+            </span>
+        )}
+    </button>
+);
 
 CloseButton.SIZE_SMALL = 'small';
 CloseButton.SIZE_LARGE = 'large';

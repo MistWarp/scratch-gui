@@ -37,6 +37,7 @@ import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
 import {updateMetrics} from '../reducers/workspace-metrics';
 import {isTimeTravel2020} from '../reducers/time-travel';
+import {showStandardAlert} from '../reducers/alerts';
 
 import installSystemClipboardForBlocks from '../lib/mw/system-clipboard.js';
 
@@ -104,7 +105,7 @@ class Blocks extends React.Component {
         AddonHooks.blocklyCallbacks.forEach(i => i());
         AddonHooks.blocklyCallbacks.length = [];
 
-        installSystemClipboardForBlocks(this.ScratchBlocks, props.vm);
+        installSystemClipboardForBlocks(this.ScratchBlocks, props.vm, props.onShowImportError);
 
         bindAll(this, [
             'attachVM',
@@ -174,7 +175,7 @@ class Blocks extends React.Component {
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
 
-        installSystemClipboardForBlocks(this.ScratchBlocks, this.props.vm);
+        installSystemClipboardForBlocks(this.ScratchBlocks, this.props.vm, this.props.onShowImportError);
 
         this.ScratchBlocks.FieldColourSlider.activateEyedropper_ = this.props.onActivateColorPicker;
         this.ScratchBlocks.Procedures.externalProcedureDefCallback = this.props.onActivateCustomProcedures;
@@ -1259,29 +1260,44 @@ class Blocks extends React.Component {
         ws.refreshToolboxSelection_();
         ws.toolbox_.scrollToCategoryById('myBlocks');
     }
-    handleDrop (dragInfo) {
-        fetch(dragInfo.payload.bodyUrl)
-            .then(response => response.json())
-            .then(payload => {
-                // based on https://github.com/ScratchAddons/ScratchAddons/pull/7028
-                const metrics = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
-                if (metrics) {
-                    const {x, y} = dragInfo.currentOffset;
-                    const {left, right} = this.workspace.scrollbar.hScroll.outerSvg_.getBoundingClientRect();
-                    const {top} = this.workspace.scrollbar.vScroll.outerSvg_.getBoundingClientRect();
-                    offsetToPosition(
-                        payload,
-                        (this.props.isRtl ? metrics.scrollX - x + right : -metrics.scrollX + x - left) /
-                            metrics.scale,
-                        (-metrics.scrollY - top + y) / metrics.scale
-                    );
-                }
-                return this.props.vm.shareBlocksToTarget(payload, this.props.vm.editingTarget.id);
-            })
-            .then(() => {
+    async handleDrop (dragInfo) {
+        const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
+        if (!targetId) {
+            this.props.onShowImportError();
+            return false;
+        }
+
+        try {
+            const response = await fetch(dragInfo.payload.bodyUrl);
+            if (response.ok === false) throw new Error(`Backpack request failed with status ${response.status}`);
+            const payload = await response.json();
+            if (!payload || typeof payload !== 'object') throw new Error('Backpack code payload is invalid');
+
+            // based on https://github.com/ScratchAddons/ScratchAddons/pull/7028
+            const metrics = this.props.workspaceMetrics.targets[targetId];
+            if (metrics) {
+                const {x, y} = dragInfo.currentOffset;
+                const {left, right} = this.workspace.scrollbar.hScroll.outerSvg_.getBoundingClientRect();
+                const {top} = this.workspace.scrollbar.vScroll.outerSvg_.getBoundingClientRect();
+                offsetToPosition(
+                    payload,
+                    (this.props.isRtl ? metrics.scrollX - x + right : -metrics.scrollX + x - left) /
+                        metrics.scale,
+                    (-metrics.scrollY - top + y) / metrics.scale
+                );
+            }
+            await this.props.vm.shareBlocksToTarget(payload, targetId);
+
+            if (this.props.vm.editingTarget && this.props.vm.editingTarget.id === targetId) {
                 this.props.vm.refreshWorkspace();
                 this.updateToolbox(); // To show new variables/custom blocks
-            });
+            }
+            return true;
+        } catch (error) {
+            log.error(error);
+            this.props.onShowImportError();
+            return false;
+        }
     }
     handleEnableProcedureReturns () {
         console.log('handleEnableProcedureReturns called');
@@ -1327,6 +1343,7 @@ class Blocks extends React.Component {
             onOpenConnectionModal,
             onOpenSoundRecorder,
             onOpenCustomExtensionModal,
+            onShowImportError,
             reduxOnOpenCustomExtensionModal,
             updateToolboxState,
             onActivateCustomProcedures,
@@ -1401,6 +1418,7 @@ Blocks.propTypes = {
     onOpenConnectionModal: PropTypes.func,
     onOpenSoundRecorder: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onShowImportError: PropTypes.func,
     reduxOnOpenCustomExtensionModal: PropTypes.func,
     onRequestCloseCustomProcedures: PropTypes.func,
     onRequestCloseExtensionLibrary: PropTypes.func,
@@ -1494,7 +1512,8 @@ const mapDispatchToProps = dispatch => ({
     },
     updateMetrics: metrics => {
         dispatch(updateMetrics(metrics));
-    }
+    },
+    onShowImportError: () => dispatch(showStandardAlert('blockImportError'))
 });
 
 export default injectIntl(errorBoundaryHOC('Blocks')(
@@ -1503,3 +1522,5 @@ export default injectIntl(errorBoundaryHOC('Blocks')(
         mapDispatchToProps
     )(LoadScratchBlocksHOC(Blocks))
 ));
+
+export {Blocks};

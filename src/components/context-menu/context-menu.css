@@ -24,7 +24,8 @@
     transition: 0.1s ease;
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item:global(.react-contextmenu-item--selected) {
     background: $looks-secondary;
     color: white;
 }
@@ -33,6 +34,7 @@
     border-top: 1px solid $ui-black-transparent;
 }
 
-.menu-item-danger:hover {
+.menu-item-danger:hover,
+.menu-item-danger:global(.react-contextmenu-item--selected) {
     background: $error-primary;
 }

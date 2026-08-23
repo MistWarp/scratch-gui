@@ -36,6 +36,7 @@ class FontFallbackButton extends React.Component {
     render () {
         return (
             <button
+                type="button"
                 className={classNames(styles.fallbackButton, {[styles.fallbackButtonSelected]: this.props.selected})}
                 onClick={this.handleClick}
                 style={{

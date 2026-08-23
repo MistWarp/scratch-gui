@@ -18,25 +18,46 @@ import styles from './Spaces.module.css';
 
 const KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library};
 const KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
+const spaceLoadMessage = error => {
+    if (error && error.status === 404) return 'Space not found.';
+    return 'Could not load this space.';
+};
+
+const normalizeSpace = space => ({
+    ...space,
+    projectIds: Array.isArray(space.projectIds) ? space.projectIds : [],
+    projects: Array.isArray(space.projects) ? space.projects : [],
+    followers: Array.isArray(space.followers) ? space.followers : [],
+    managers: Array.isArray(space.managers) ? space.managers : [],
+    criteria: Array.isArray(space.criteria) ? space.criteria : [],
+    judges: Array.isArray(space.judges) ? space.judges : [],
+    judgeInvites: Array.isArray(space.judgeInvites) ? space.judgeInvites : [],
+    curatorInvites: Array.isArray(space.curatorInvites) ? space.curatorInvites : []
+});
 
 const loadMissingProjects = async space => {
-    const ids = space.projectIds || [];
-    const projects = space.projects || [];
-    if (!ids.length || projects.length === ids.length) return space;
+    const normalized = normalizeSpace(space);
+    const ids = normalized.projectIds;
+    const projects = normalized.projects;
+    if (!ids.length || projects.length === ids.length) return normalized;
     const byId = new Map(projects.map(project => [project.id, project]));
     const missing = ids.filter(projectId => !byId.has(projectId));
     const loaded = await Promise.all(missing.map(projectId => api.getProject(projectId)
         .then(data => data.project)
         .catch(() => null)));
     loaded.filter(Boolean).forEach(project => byId.set(project.id, project));
-    return {...space, projects: ids.map(projectId => byId.get(projectId)).filter(Boolean)};
+    return {...normalized, projects: ids.map(projectId => byId.get(projectId)).filter(Boolean)};
 };
 
 const Space = () => {
     const {id} = useParams();
     const {user, login} = useUser();
+    const viewerName = (user && user.username) || '';
+    const loadContext = `${id}\u0000${viewerName}`;
     const [space, setSpace] = useState(null);
-    const [failed, setFailed] = useState(false);
+    const [spaceLoadContext, setSpaceLoadContext] = useState('');
+    const [failed, setFailed] = useState('');
+    const [failedLoadContext, setFailedLoadContext] = useState('');
     const [error, setError] = useState('');
     const beginLoad = useLatest();
 
@@ -50,24 +71,30 @@ const Space = () => {
     const load = useCallback(() => {
         const fresh = beginLoad();
         return api.getSpace(id)
-            .then(data => loadMissingProjects(data.space))
+            .then(data => {
+                if (!data || !data.space) throw new Error('Space response was incomplete.');
+                return loadMissingProjects(data.space);
+            })
             .then(fresh(loadedSpace => {
                 setSpace(loadedSpace);
-                setFailed(false);
+                setSpaceLoadContext(loadContext);
+                setFailed('');
+                setFailedLoadContext('');
                 return loadedSpace;
             }))
             .catch(fresh(e => {
-                setFailed(true);
+                setFailed(spaceLoadMessage(e));
+                setFailedLoadContext(loadContext);
                 throw e;
             }));
-    }, [beginLoad, id]);
+    }, [beginLoad, id, loadContext]);
 
     useEffect(() => {
         setSpace(null);
-        setFailed(false);
+        setFailed('');
         setError('');
         load().catch(() => {});
-    }, [load]);
+    }, [load, viewerName]);
 
     const follow = async () => {
         if (!user) {
@@ -113,8 +140,24 @@ const Space = () => {
         }
     };
 
-    if (failed) return <main className={styles.page}><p className={styles.status}>Space not found.</p></main>;
-    if (!space) return <main className={styles.page}><p className={styles.status}>Loading space…</p></main>;
+    if (failed && failedLoadContext === loadContext) {
+        return (
+            <main className={styles.page}>
+                <p className={styles.status}>
+                    {failed}{' '}
+                    {failed !== 'Space not found.' ? (
+                        <Button
+                            onClick={() => {
+                                setFailed('');
+                                load().catch(() => {});
+                            }}
+                        >Try again</Button>
+                    ) : null}
+                </p>
+            </main>
+        );
+    }
+    if (!space || spaceLoadContext !== loadContext) return <main className={styles.page}><p className={styles.status}>Loading space…</p></main>;
     if (space.kind === 'challenge') return <Challenge id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'studio') return <Studio id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'collection') return <Collection id={id} space={space} user={user} login={login} load={load} />;
@@ -201,4 +244,5 @@ const Space = () => {
     );
 };
 
+export {normalizeSpace, spaceLoadMessage};
 export default Space;

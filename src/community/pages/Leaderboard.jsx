@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useSearchParams} from 'react-router-dom';
 import {Users, Trophy, Heart, Play} from 'lucide-react';
 import rotur from '../rotur';
 import api from '../api';
 import useLatest from '../use-latest.js';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
+import Button from '../components/ui/Button.jsx';
 import styles from './Leaderboard.module.css';
 
 const PODIUM_CLASSES = [styles.podium1, styles.podium2, styles.podium3];
@@ -30,6 +31,8 @@ const BOARDS = [
         lead: 'Creators with the most views across all their shared projects.'
     }
 ];
+
+export const leaderboardBoard = value => (BOARDS.some(item => item.key === value) ? value : 'followers');
 
 const Stat = ({board, person}) => {
     if (board === 'loves') {
@@ -57,9 +60,11 @@ const Stat = ({board, person}) => {
 };
 
 const Leaderboard = () => {
-    const [board, setBoard] = useState('followers');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const board = leaderboardBoard(searchParams.get('board'));
     const [users, setUsers] = useState(null);
     const [error, setError] = useState('');
+    const [attempt, setAttempt] = useState(0);
     const beginLoad = useLatest();
     const active = BOARDS.find(item => item.key === board);
 
@@ -76,7 +81,14 @@ const Leaderboard = () => {
                 setUsers([]);
                 setError('Could not load the leaderboard.');
             }));
-    }, [board]);
+    }, [attempt, board, beginLoad]);
+
+    const selectBoard = nextBoard => {
+        const next = new URLSearchParams(searchParams);
+        if (nextBoard === 'followers') next.delete('board');
+        else next.set('board', nextBoard);
+        setSearchParams(next, {replace: true});
+    };
 
     return (
         <main className={styles.page}>
@@ -85,7 +97,7 @@ const Leaderboard = () => {
             <SectionTabs
                 items={BOARDS}
                 value={board}
-                onChange={setBoard}
+                onChange={selectBoard}
                 className={styles.tabs}
                 itemClassName={styles.tab}
                 activeClassName={styles.tabActive}
@@ -94,7 +106,10 @@ const Leaderboard = () => {
             {users === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : error ? (
-                <p className={styles.status}>{error}</p>
+                <div className={styles.status}>
+                    <p>{error}</p>
+                    <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button>
+                </div>
             ) : !users.length ? (
                 <p className={styles.status}>No one on this leaderboard yet.</p>
             ) : (

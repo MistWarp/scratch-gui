@@ -25,6 +25,7 @@ const CollabPresence = ({isConnected, users, onOpen}) => {
 
     return (
         <button
+            type="button"
             className={styles.presence}
             onClick={onOpen}
             title={ordered.map(user => user.username).join(', ')}

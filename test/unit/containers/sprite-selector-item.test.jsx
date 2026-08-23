@@ -4,6 +4,7 @@ import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
 
 import SpriteSelectorItem from '../../../src/containers/sprite-selector-item';
+import {SpriteSelectorItem as RawSpriteSelectorItem} from '../../../src/containers/sprite-selector-item.jsx';
 import DeleteButton from '../../../src/components/delete-button/delete-button';
 
 describe('SpriteSelectorItem Container', () => {
@@ -55,5 +56,12 @@ describe('SpriteSelectorItem Container', () => {
         const wrapper = mountWithIntl(getContainer());
         wrapper.find(DeleteButton).simulate('click');
         expect(onDeleteButtonClick).toHaveBeenCalledWith(1337);
+    });
+
+    test('ignores touch events before its tile ref is ready', () => {
+        const item = Object.create(RawSpriteSelectorItem.prototype);
+        item.ref = null;
+
+        expect(() => item.handleTouchEnd({changedTouches: []})).not.toThrow();
     });
 });

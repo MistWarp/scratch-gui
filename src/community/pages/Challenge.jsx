@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowLeft, CalendarDays, Clock3, Gavel, Medal, MessageCircle, Settings, Star, Trophy, UserMinus, UserPlus} from 'lucide-react';
 import api from '../api';
@@ -20,10 +20,42 @@ const PHASES = {
     'results': {label: 'Results published', detail: 'The final standings are ready.'}
 };
 
-const dateTime = value => (value ? new Date(value).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : 'Not set');
+const timestamp = value => {
+    const parsed = typeof value === 'number' ? value :
+        typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const dateTime = value => {
+    const parsed = timestamp(value);
+    return parsed ? new Date(parsed).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : 'Not set';
+};
+
+export const challengePhase = (space, now) => {
+    if (timestamp(space.resultsPublishedAt)) return 'results';
+    const startsAt = timestamp(space.startsAt);
+    const endsAt = timestamp(space.endsAt);
+    const judgingEndsAt = timestamp(space.judgingEndsAt);
+    if (startsAt && now < startsAt) return 'upcoming';
+    if (endsAt && now <= endsAt) return 'submissions';
+    if (judgingEndsAt && now <= judgingEndsAt) return 'judging';
+    return 'awaiting-results';
+};
+
+export const challengeScore = value => {
+    const score = Number(value);
+    return Number.isFinite(score) && score > 0 ? score.toFixed(1) : 'No score';
+};
+
+export const challengeRatingsReady = (criteria, ratings) => (
+    criteria.length > 0 && criteria.every(criterion => {
+        const value = Number(ratings[criterion.id]);
+        return Number.isFinite(value) && value >= 1 && value <= 10;
+    })
+);
 
 const remaining = (value, now) => {
-    const difference = Math.max(0, value - now);
+    const difference = Math.max(0, timestamp(value) - now);
     const days = Math.floor(difference / 86400000);
     const hours = Math.floor((difference % 86400000) / 3600000);
     if (days) return `${days}d ${hours}h`;
@@ -38,22 +70,46 @@ const ScoreForm = ({challengeId, project, criteria, onSaved}) => {
     const [feedback, setFeedback] = useState(prior.feedback || '');
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
+    const saveInFlight = useRef(new Set());
+    const currentContext = useRef(`${challengeId}\u0000${project.id}`);
+    currentContext.current = `${challengeId}\u0000${project.id}`;
+    const ratingsReady = challengeRatingsReady(criteria, ratings);
+
+    useEffect(() => {
+        setSaving(false);
+        setMessage('');
+    }, [challengeId, project.id]);
 
     const save = async event => {
         event.preventDefault();
+        const actionContext = `${challengeId}\u0000${project.id}`;
+        if (saveInFlight.current.has(actionContext)) return;
+        if (!ratingsReady) {
+            setMessage('Give every criterion a score from 1 to 10.');
+            return;
+        }
+        const releaseSave = () => {
+            saveInFlight.current.delete(actionContext);
+        };
+        saveInFlight.current.add(actionContext);
         setSaving(true);
         setMessage('');
         try {
             await api.scoreChallengeEntry(challengeId, project.id, {
                 ratings: criteria.map(criterion => ({criterionId: criterion.id, value: Number(ratings[criterion.id])})),
-                feedback
+                feedback: feedback.trim()
             });
-            setMessage('Score saved.');
-            onSaved();
+            if (currentContext.current === actionContext) {
+                setMessage('Score saved.');
+                onSaved();
+            }
         } catch (error) {
-            setMessage(error.message || 'Could not save this score.');
+            if (currentContext.current === actionContext) {
+                setMessage(error.message || 'Could not save this score.');
+            }
         } finally {
-            setSaving(false);
+            releaseSave();
+            if (currentContext.current === actionContext) setSaving(false);
         }
     };
 
@@ -63,12 +119,13 @@ const ScoreForm = ({challengeId, project, criteria, onSaved}) => {
             {criteria.map(criterion => (
                 <label key={criterion.id} className={styles.scoreCriterion}>
                     <span><strong>{criterion.name}</strong><small>{criterion.description}</small></span>
-                    <input type="number" min="1" max="10" value={ratings[criterion.id]} onChange={event => setRatings(current => ({...current, [criterion.id]: event.target.value}))} />
+                    <input type="number" min="1" max="10" required disabled={saving} value={ratings[criterion.id]} onChange={event => setRatings(current => ({...current, [criterion.id]: event.target.value}))} />
                     <em>/ 10</em>
                 </label>
             ))}
-            <label className={styles.feedbackField}><span>Private feedback for the host</span><textarea maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="Notes on this entry" /></label>
-            <div className={styles.scoreActions}><Button variant="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save score'}</Button>{message ? <span>{message}</span> : null}</div>
+            <label className={styles.feedbackField}><span>Private feedback for the host</span><textarea disabled={saving} maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="Notes on this entry" /></label>
+            {!criteria.length ? <p>No judging criteria are configured.</p> : null}
+            <div className={styles.scoreActions}><Button variant="primary" type="submit" busy={saving} busyLabel="Saving…" disabled={!ratingsReady}>Save score</Button>{message ? <span>{message}</span> : null}</div>
         </form>
     );
 };
@@ -77,21 +134,36 @@ const Entry = ({challengeId, project, challenge, user, login, load, showScore = 
     const canVote = !showScore && challenge.phase === 'judging' && challenge.communityVoting;
     const [voting, setVoting] = useState(false);
     const [voteError, setVoteError] = useState('');
+    const voteInFlight = useRef(new Set());
+    const currentContext = useRef(`${challengeId}\u0000${project.id}`);
+    currentContext.current = `${challengeId}\u0000${project.id}`;
+    useEffect(() => {
+        setVoting(false);
+        setVoteError('');
+    }, [challengeId, project.id]);
     const vote = async value => {
         if (!user) {
             login();
             return;
         }
-        if (voting) return;
+        const actionContext = `${challengeId}\u0000${project.id}`;
+        if (voteInFlight.current.has(actionContext)) return;
+        const releaseVote = () => {
+            voteInFlight.current.delete(actionContext);
+        };
+        voteInFlight.current.add(actionContext);
         setVoting(true);
         setVoteError('');
         try {
             await api.voteChallengeEntry(challengeId, project.id, value);
-            await load();
+            if (currentContext.current === actionContext) await load();
         } catch (requestError) {
-            setVoteError(requestError.message || 'Could not save your rating.');
+            if (currentContext.current === actionContext) {
+                setVoteError(requestError.message || 'Could not save your rating.');
+            }
         } finally {
-            setVoting(false);
+            releaseVote();
+            if (currentContext.current === actionContext) setVoting(false);
         }
     };
     return (
@@ -100,8 +172,8 @@ const Entry = ({challengeId, project, challenge, user, login, load, showScore = 
             <ProjectCard project={project} />
             {challenge.phase === 'results' ? (
                 <div className={styles.entryResults}>
-                    <span><strong>{project.judgeScore ? project.judgeScore.toFixed(1) : 'No score'}</strong> judges</span>
-                    {challenge.communityVoting ? <span><strong>{project.audienceScore ? project.audienceScore.toFixed(1) : 'No score'}</strong> audience</span> : null}
+                    <span><strong>{challengeScore(project.judgeScore)}</strong> judges</span>
+                    {challenge.communityVoting ? <span><strong>{challengeScore(project.audienceScore)}</strong> audience</span> : null}
                 </div>
             ) : null}
             {canVote ? (
@@ -120,8 +192,12 @@ const Entry = ({challengeId, project, challenge, user, login, load, showScore = 
 const Challenge = ({id, space, user, login, load}) => {
     const [tab, setTab] = useState(space.phase === 'results' ? 'results' : 'overview');
     const [error, setError] = useState('');
+    const [actionBusy, setActionBusy] = useState('');
     const [now, setNow] = useState(Date.now());
-    const currentPhase = space.resultsPublishedAt ? 'results' : now < space.startsAt ? 'upcoming' : now <= space.endsAt ? 'submissions' : now <= space.judgingEndsAt ? 'judging' : 'awaiting-results';
+    const actionInFlight = useRef(new Set());
+    const currentId = useRef(id);
+    currentId.current = id;
+    const currentPhase = challengePhase(space, now);
     const phase = PHASES[currentPhase] || PHASES.upcoming;
     const deadline = currentPhase === 'upcoming' ? space.startsAt : currentPhase === 'submissions' ? space.endsAt : space.judgingEndsAt;
     const liveSpace = {...space, phase: currentPhase};
@@ -137,13 +213,30 @@ const Challenge = ({id, space, user, login, load}) => {
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        setActionBusy('');
+        setError('');
+    }, [id]);
+
     const respondToJudgeInvite = async accepted => {
+        const actionId = id;
+        if (actionInFlight.current.has(actionId)) return;
+        const releaseAction = () => {
+            actionInFlight.current.delete(actionId);
+        };
+        actionInFlight.current.add(actionId);
+        setActionBusy('invite');
         setError('');
         try {
             await api.respondJudgeInvitation(id, accepted);
-            await load();
+            if (currentId.current === actionId) await load();
         } catch (requestError) {
-            setError(requestError.message || 'Could not respond to the invitation.');
+            if (currentId.current === actionId) {
+                setError(requestError.message || 'Could not respond to the invitation.');
+            }
+        } finally {
+            releaseAction();
+            if (currentId.current === actionId) setActionBusy('');
         }
     };
 
@@ -152,13 +245,25 @@ const Challenge = ({id, space, user, login, load}) => {
             login();
             return;
         }
+        const actionId = id;
+        if (actionInFlight.current.has(actionId)) return;
+        const releaseAction = () => {
+            actionInFlight.current.delete(actionId);
+        };
+        actionInFlight.current.add(actionId);
+        setActionBusy('join');
         setError('');
         try {
             if (space.joined) await api.leaveChallenge(id);
             else await api.joinChallenge(id);
-            await load();
+            if (currentId.current === actionId) await load();
         } catch (requestError) {
-            setError(requestError.message || 'Could not update your participation.');
+            if (currentId.current === actionId) {
+                setError(requestError.message || 'Could not update your participation.');
+            }
+        } finally {
+            releaseAction();
+            if (currentId.current === actionId) setActionBusy('');
         }
     };
 
@@ -178,7 +283,7 @@ const Challenge = ({id, space, user, login, load}) => {
     return (
         <main className={styles.page}>
             <Link to="/spaces?kind=challenge" className={styles.back}><ArrowLeft size={15} /> All challenges</Link>
-            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong>{space.owner} invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
+            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong>{space.owner} invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
             <header className={styles.hero}>
                 <div className={styles.heroMain}>
                     <span className={styles.phase}>{phase.label}</span>
@@ -188,7 +293,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 </div>
                 <div className={styles.heroSide}>
                     {deadline && currentPhase !== 'results' && currentPhase !== 'awaiting-results' ? <div className={styles.countdown}><Clock3 size={18} /><span>{currentPhase === 'upcoming' ? 'Starts in' : currentPhase === 'submissions' ? 'Ends in' : 'Judging ends in'}</span><strong>{remaining(deadline, now)}</strong></div> : null}
-                    {(currentPhase === 'upcoming' || currentPhase === 'submissions') ? <Button variant={space.joined ? 'secondary' : 'primary'} onClick={toggleJoined}>{space.joined ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.joined ? 'Leave challenge' : 'Join challenge'}</Button> : null}
+                    {(currentPhase === 'upcoming' || currentPhase === 'submissions') ? <Button variant={space.joined ? 'secondary' : 'primary'} busy={actionBusy === 'join'} busyLabel="Updating…" disabled={Boolean(actionBusy)} onClick={toggleJoined}>{space.joined ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.joined ? 'Leave challenge' : 'Join challenge'}</Button> : null}
                     {space.canManage ? <Link className={styles.manage} to={`/spaces/${id}/manage`}><Settings size={16} /> Manage challenge</Link> : null}
                 </div>
             </header>
@@ -222,7 +327,7 @@ const Challenge = ({id, space, user, login, load}) => {
             {tab === 'results' ? (
                 <section className={styles.results}>
                     <header><Medal size={24} /><div><h2>Final results</h2><p>Ranked by the judges using the criteria shown on the overview.</p></div></header>
-                    <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>#{project.place}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>by {project.owner}</span></div><strong>{project.judgeScore ? project.judgeScore.toFixed(1) : 'No score'}<small>/ 10</small></strong></article>)}</div>
+                    {space.projects.length ? <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '—'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>by {project.owner}</span></div><strong>{challengeScore(project.judgeScore)}<small>/ 10</small></strong></article>)}</div> : <div className={styles.empty}><Medal size={28} /><strong>No results</strong><span>This challenge did not receive any submissions.</span></div>}
                 </section>
             ) : null}
             {tab === 'judging' ? (

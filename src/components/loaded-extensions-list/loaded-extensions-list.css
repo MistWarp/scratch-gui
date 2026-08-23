@@ -5,7 +5,7 @@
     margin-bottom: 16px;
 }
 
-.title {
+.header {
     font-size: 18px;
     font-weight: bold;
     color: var(--text-primary);
@@ -15,7 +15,7 @@
     gap: 8px;
 }
 
-.title::before {
+.header::before {
     content: "🧩";
     font-size: 16px;
 }
@@ -29,14 +29,26 @@
     background-color: var(--ui-secondary);
     border-radius: 6px;
     border: 1px solid var(--ui-black-10percent);
-    transition: all 0.2s ease;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.extension-item.clickable {
     cursor: pointer;
 }
 
-.extension-item:hover {
+.extension-item.clickable:hover {
     background-color: var(--ui-tertiary);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.extension-item.clickable:focus-visible {
+    outline: 3px solid var(--looks-secondary);
+    outline-offset: 2px;
 }
 
 .extension-item:last-child {
@@ -112,7 +124,7 @@
     border-color: var(--ui-black-20percent, #4a5568);
 }
 
-[theme="dark"] .extension-item:hover {
+[theme="dark"] .extension-item.clickable:hover {
     background-color: var(--ui-quaternary-dark, #4a5568);
 }
 

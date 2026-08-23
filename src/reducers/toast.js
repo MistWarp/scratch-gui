@@ -1,7 +1,8 @@
 const initialState = {
     visible: false,
     message: null,
-    type: 'info'
+    type: 'info',
+    sequence: 0
 };
 
 const reducer = function (state, action) {
@@ -11,7 +12,8 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             visible: true,
             message: action.message,
-            type: action.toastType || 'info'
+            type: action.toastType || 'info',
+            sequence: (state.sequence || 0) + 1
         });
     case 'scratch-gui/HIDE_TOAST':
         return Object.assign({}, state, {

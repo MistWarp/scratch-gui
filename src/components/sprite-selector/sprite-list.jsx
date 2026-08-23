@@ -73,7 +73,7 @@ const SpriteList = function (props) {
                             className={classNames(styles.spriteWrapper, {
                                 [styles.placeholder]: isSpriteDrag && index === draggingIndex})}
                             index={isSpriteDrag ? ordering.indexOf(index) : index}
-                            key={sprite.name}
+                            key={sprite.id}
                             onAddSortable={onAddSortable}
                             onRemoveSortable={onRemoveSortable}
                         >

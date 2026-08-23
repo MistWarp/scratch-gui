@@ -108,6 +108,44 @@ FileBadge.propTypes = {
     description: PropTypes.string
 };
 
+export const GitFileRow = ({description, filepath, onClick, selected}) => {
+    const content = (
+        <React.Fragment>
+            <FileBadge
+                filepath={filepath}
+                description={description}
+            />
+            <span className={styles.filePath}>{filepath}</span>
+        </React.Fragment>
+    );
+    return (
+        <li className={onClick ? null : styles.fileRow}>
+            {onClick ? (
+                <button
+                    type="button"
+                    className={classNames(styles.fileRow, styles.fileRowButton, {
+                        [styles.commitRowSelected]: selected
+                    })}
+                    data-filepath={filepath}
+                    aria-pressed={selected || null}
+                    onClick={onClick}
+                >
+                    {content}
+                </button>
+            ) : content}
+        </li>
+    );
+};
+
+GitFileRow.propTypes = {
+    description: PropTypes.string,
+    filepath: PropTypes.string.isRequired,
+    onClick: PropTypes.func,
+    selected: PropTypes.bool
+};
+
+const getRoturRepoKey = repo => repo.fullName || repo.cloneUrl || repo.name;
+
 class GitModalComponent extends React.Component {
     constructor (props) {
         super(props);
@@ -116,6 +154,14 @@ class GitModalComponent extends React.Component {
             currentView: ['history', 'branches', 'remote'].includes(requestedView) ? requestedView : 'history'
         };
         this.handleNavigate = this.handleNavigate.bind(this);
+        this.handleNavigateClick = this.handleNavigateClick.bind(this);
+        this.handleDiffChangedFile = this.handleDiffChangedFile.bind(this);
+        this.handleDiffCommitFile = this.handleDiffCommitFile.bind(this);
+        this.handleSetMergeResolution = this.handleSetMergeResolution.bind(this);
+        this.handleRoturPush = this.handleRoturPush.bind(this);
+        this.handleRoturClone = this.handleRoturClone.bind(this);
+        this.handleRoturDelete = this.handleRoturDelete.bind(this);
+        this.handleSelectCommit = this.handleSelectCommit.bind(this);
     }
 
     componentDidMount () {
@@ -140,6 +186,50 @@ class GitModalComponent extends React.Component {
         this.maybeLoadRoturRepos(view);
     }
 
+    handleNavigateClick (event) {
+        this.handleNavigate(event.currentTarget.value);
+    }
+
+    handleDiffChangedFile (event) {
+        this.props.onDiffChangedFile(event.currentTarget.dataset.filepath);
+    }
+
+    handleDiffCommitFile (event) {
+        this.props.onDiffCommitFile(event.currentTarget.dataset.filepath);
+    }
+
+    handleSetMergeResolution (event) {
+        this.props.onSetMergeResolution(
+            event.currentTarget.dataset.filepath,
+            event.currentTarget.value
+        );
+    }
+
+    findRoturRepo (event) {
+        const key = event.currentTarget.dataset.repoKey;
+        return [this.props.connectedRoturRepo, ...(this.props.roturRepos || [])]
+            .find(repo => repo && getRoturRepoKey(repo) === key);
+    }
+
+    handleRoturPush (event) {
+        const repo = this.findRoturRepo(event);
+        if (repo) this.props.onRoturPush(repo);
+    }
+
+    handleRoturClone (event) {
+        const repo = this.findRoturRepo(event);
+        if (repo) this.props.onRoturClone(repo);
+    }
+
+    handleRoturDelete (event) {
+        const repo = this.findRoturRepo(event);
+        if (repo) this.props.onRoturDelete(repo);
+    }
+
+    handleSelectCommit (event) {
+        this.props.onSelectCommit(event.currentTarget.dataset.oid);
+    }
+
     renderNotInitialized () {
         return (
             <Box className={styles.emptyState}>
@@ -152,6 +242,7 @@ class GitModalComponent extends React.Component {
                     />
                 </p>
                 <button
+                    type="button"
                     className={styles.primaryButton}
                     disabled={this.props.busy}
                     onClick={this.props.onInit}
@@ -179,6 +270,7 @@ class GitModalComponent extends React.Component {
                         placeholder="https://git.example.com/user/project.git"
                     />
                     <button
+                        type="button"
                         className={styles.button}
                         disabled={this.props.busy || !this.props.cloneUrl || !this.props.cloneUrl.trim()}
                         onClick={this.props.onClone}
@@ -203,6 +295,7 @@ class GitModalComponent extends React.Component {
                         </p>
                         <Box className={styles.rowButtons}>
                             <button
+                                type="button"
                                 className={classNames(styles.button, styles.dangerButton)}
                                 disabled={this.props.busy}
                                 onClick={this.props.onClone}
@@ -214,6 +307,7 @@ class GitModalComponent extends React.Component {
                                 />
                             </button>
                             <button
+                                type="button"
                                 className={styles.button}
                                 disabled={this.props.busy}
                                 onClick={this.props.onCancelClone}
@@ -264,6 +358,7 @@ class GitModalComponent extends React.Component {
                 />
                 <Box className={styles.rowButtons}>
                     <button
+                        type="button"
                         className={styles.primaryButton}
                         disabled={this.props.busy || !hasChanges}
                         onClick={this.props.onCommit}
@@ -276,6 +371,7 @@ class GitModalComponent extends React.Component {
                         />
                     </button>
                     <button
+                        type="button"
                         className={styles.button}
                         disabled={this.props.busy || !this.props.canUndoCommit}
                         onClick={this.props.onUndoCommit}
@@ -291,19 +387,13 @@ class GitModalComponent extends React.Component {
                 {hasChanges ? (
                     <ul className={styles.fileList}>
                         {changes.map(change => (
-                            <li
+                            <GitFileRow
                                 key={change.filepath}
-                                className={classNames(styles.fileRow, {
-                                    [styles.fileRowClickable]: /\.(fractch|svg|json|txt|md)$/i.test(change.filepath)
-                                })}
-                                onClick={() => this.props.onDiffChangedFile(change.filepath)}
-                            >
-                                <FileBadge
-                                    filepath={change.filepath}
-                                    description={change.description}
-                                />
-                                <span className={styles.filePath}>{change.filepath}</span>
-                            </li>
+                                description={change.description}
+                                filepath={change.filepath}
+                                onClick={/\.(fractch|svg|json|txt|md)$/i.test(change.filepath) ?
+                                    this.handleDiffChangedFile : null}
+                            />
                         ))}
                     </ul>
                 ) : (
@@ -331,6 +421,7 @@ class GitModalComponent extends React.Component {
                         />
                     </h3>
                     <button
+                        type="button"
                         className={classNames(styles.button, styles.dangerButton)}
                         disabled={this.props.busy}
                         onClick={this.props.onDeleteRepo}
@@ -373,9 +464,12 @@ class GitModalComponent extends React.Component {
                                         [styles.commitRowSelected]: this.props.selectedCommitOid === entry.oid
                                     })}
                                 >
-                                    <div
+                                    <button
+                                        type="button"
                                         className={styles.commitMain}
-                                        onClick={() => this.props.onSelectCommit(entry.oid)}
+                                        data-oid={entry.oid}
+                                        aria-pressed={this.props.selectedCommitOid === entry.oid}
+                                        onClick={this.handleSelectCommit}
                                     >
                                         <span className={styles.commitMessage}>{message}</span>
                                         <span className={styles.commitMeta}>
@@ -388,9 +482,10 @@ class GitModalComponent extends React.Component {
                                                 >{b}</span>
                                             ))}
                                         </span>
-                                    </div>
+                                    </button>
                                     <div className={styles.commitActions}>
                                         <button
+                                            type="button"
                                             className={styles.iconButton}
                                             data-oid={entry.oid}
                                             disabled={this.props.busy}
@@ -404,6 +499,7 @@ class GitModalComponent extends React.Component {
                                             <RotateCcw className={styles.buttonIcon} />
                                         </button>
                                         <button
+                                            type="button"
                                             className={styles.iconButton}
                                             data-oid={entry.oid}
                                             disabled={this.props.busy}
@@ -442,19 +538,13 @@ class GitModalComponent extends React.Component {
                         {Array.isArray(this.props.commitFiles) && this.props.commitFiles.length ? (
                             <ul className={styles.fileList}>
                                 {this.props.commitFiles.map(file => (
-                                    <li
+                                    <GitFileRow
                                         key={file.path}
-                                        className={classNames(styles.fileRow, {
-                                            [styles.fileRowClickable]: /\.(fractch|svg|json|txt|md)$/i.test(file.path)
-                                        })}
-                                        onClick={() => this.props.onDiffCommitFile(file.path)}
-                                    >
-                                        <FileBadge
-                                            filepath={file.path}
-                                            description={file.type}
-                                        />
-                                        <span className={styles.filePath}>{file.path}</span>
-                                    </li>
+                                        description={file.type}
+                                        filepath={file.path}
+                                        onClick={/\.(fractch|svg|json|txt|md)$/i.test(file.path) ?
+                                            this.handleDiffCommitFile : null}
+                                    />
                                 ))}
                             </ul>
                         ) : (
@@ -530,6 +620,7 @@ class GitModalComponent extends React.Component {
                             placeholder="feature/my-branch"
                         />
                         <button
+                            type="button"
                             className={styles.button}
                             disabled={this.props.busy || !this.props.newBranchName.trim()}
                             onClick={this.props.onCreateBranch}
@@ -563,6 +654,7 @@ class GitModalComponent extends React.Component {
                             </span>
                             {b !== currentBranch && (
                                 <button
+                                    type="button"
                                     className={styles.iconButton}
                                     data-ref={b}
                                     disabled={this.props.busy}
@@ -610,6 +702,7 @@ class GitModalComponent extends React.Component {
                             ))}
                         </select>
                         <button
+                            type="button"
                             className={styles.button}
                             disabled={this.props.busy || !this.props.mergeSourceBranch}
                             onClick={this.props.onPreviewMerge}
@@ -641,7 +734,11 @@ class GitModalComponent extends React.Component {
                                             className={classNames(styles.chip, {
                                                 [styles.chipActive]: mergeResolutions[path] === 'ours'
                                             })}
-                                            onClick={() => this.props.onSetMergeResolution(path, 'ours')}
+                                            disabled={this.props.busy}
+                                            data-filepath={path}
+                                            value="ours"
+                                            onClick={this.handleSetMergeResolution}
+                                            type="button"
                                         >
                                             <FormattedMessage
                                                 defaultMessage="Ours"
@@ -653,7 +750,11 @@ class GitModalComponent extends React.Component {
                                             className={classNames(styles.chip, {
                                                 [styles.chipActive]: mergeResolutions[path] === 'theirs'
                                             })}
-                                            onClick={() => this.props.onSetMergeResolution(path, 'theirs')}
+                                            disabled={this.props.busy}
+                                            data-filepath={path}
+                                            value="theirs"
+                                            onClick={this.handleSetMergeResolution}
+                                            type="button"
                                         >
                                             <FormattedMessage
                                                 defaultMessage="Theirs"
@@ -669,6 +770,7 @@ class GitModalComponent extends React.Component {
                     {this.props.mergeSourceBranch && (
                         <Box className={styles.rowButtons}>
                             <button
+                                type="button"
                                 className={styles.primaryButton}
                                 disabled={this.props.busy}
                                 onClick={this.props.onApplyMerge}
@@ -680,6 +782,7 @@ class GitModalComponent extends React.Component {
                                 />
                             </button>
                             <button
+                                type="button"
                                 className={styles.button}
                                 disabled={this.props.busy}
                                 onClick={this.props.onResolveInEditor}
@@ -721,20 +824,14 @@ class GitModalComponent extends React.Component {
                 {hasDiffable ? (
                     <ul className={styles.fileList}>
                         {diffableChanges.map(change => (
-                            <li
+                            <GitFileRow
                                 key={change.filepath}
-                                className={classNames(styles.fileRow, styles.fileRowClickable, {
-                                    [styles.commitRowSelected]: this.props.diffFilepath === change.filepath &&
-                                        this.props.diffContext === 'working'
-                                })}
-                                onClick={() => this.props.onDiffChangedFile(change.filepath)}
-                            >
-                                <FileBadge
-                                    filepath={change.filepath}
-                                    description={change.description}
-                                />
-                                <span className={styles.filePath}>{change.filepath}</span>
-                            </li>
+                                description={change.description}
+                                filepath={change.filepath}
+                                selected={this.props.diffFilepath === change.filepath &&
+                                    this.props.diffContext === 'working'}
+                                onClick={this.handleDiffChangedFile}
+                            />
                         ))}
                     </ul>
                 ) : (
@@ -781,6 +878,7 @@ class GitModalComponent extends React.Component {
                                     <span className={styles.remoteUrl}>{remote.url}</span>
                                 </div>
                                 <button
+                                    type="button"
                                     className={styles.iconButton}
                                     data-name={remote.name}
                                     disabled={this.props.busy}
@@ -824,6 +922,7 @@ class GitModalComponent extends React.Component {
                             placeholder="https://github.com/user/repo.git"
                         />
                         <button
+                            type="button"
                             className={styles.button}
                             disabled={this.props.busy}
                             onClick={this.props.onAddRemote}
@@ -853,6 +952,7 @@ class GitModalComponent extends React.Component {
                         type="password"
                         value={this.props.remoteToken}
                         onChange={this.props.onChangeRemoteToken}
+                        disabled={this.props.busy}
                         placeholder="token…"
                     />
                     <p className={styles.muted}>
@@ -869,6 +969,7 @@ class GitModalComponent extends React.Component {
     }
 
     renderRoturRepoRow (repo) {
+        const repoKey = getRoturRepoKey(repo);
         const cloneConfirmPending = this.props.roturCloneConfirm === repo.fullName;
         const deleteConfirmPending = this.props.roturDeleteConfirm === repo.fullName;
         const isConnected = Boolean(
@@ -928,9 +1029,11 @@ class GitModalComponent extends React.Component {
                     )}
                 </div>
                 <button
+                    type="button"
                     className={styles.iconButton}
+                    data-repo-key={repoKey}
                     disabled={this.props.busy}
-                    onClick={() => this.props.onRoturPush(repo)}
+                    onClick={this.handleRoturPush}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Push project to this repo',
                         description: 'Push to rotur repo tooltip',
@@ -940,9 +1043,11 @@ class GitModalComponent extends React.Component {
                     <Upload className={styles.buttonIcon} />
                 </button>
                 <button
+                    type="button"
                     className={styles.iconButton}
+                    data-repo-key={repoKey}
                     disabled={this.props.busy || repo.isEmpty}
-                    onClick={() => this.props.onRoturClone(repo)}
+                    onClick={this.handleRoturClone}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Clone this repo as your project',
                         description: 'Clone rotur repo tooltip',
@@ -965,9 +1070,11 @@ class GitModalComponent extends React.Component {
                     <ExternalLink className={styles.buttonIcon} />
                 </a>
                 <button
+                    type="button"
                     className={styles.iconButton}
+                    data-repo-key={repoKey}
                     disabled={this.props.busy}
-                    onClick={() => this.props.onRoturDelete(repo)}
+                    onClick={this.handleRoturDelete}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Delete repository',
                         description: 'Delete rotur repo tooltip',
@@ -996,6 +1103,7 @@ class GitModalComponent extends React.Component {
                         />
                     </p>
                     <button
+                        type="button"
                         className={styles.primaryButton}
                         disabled={this.props.busy}
                         onClick={this.props.onRoturLogin}
@@ -1062,9 +1170,11 @@ class GitModalComponent extends React.Component {
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 className={styles.iconButton}
+                                data-repo-key={getRoturRepoKey(connected)}
                                 disabled={this.props.busy}
-                                onClick={() => this.props.onRoturPush(connected)}
+                                onClick={this.handleRoturPush}
                                 title={this.props.intl.formatMessage({
                                     defaultMessage: 'Push project to this repo',
                                     description: 'Push to rotur repo tooltip',
@@ -1123,6 +1233,7 @@ class GitModalComponent extends React.Component {
                             })}
                         />
                         <button
+                            type="button"
                             className={styles.primaryButton}
                             disabled={this.props.busy || !this.props.roturNewRepoName.trim()}
                             onClick={this.props.onCreateRoturRepo}
@@ -1159,6 +1270,7 @@ class GitModalComponent extends React.Component {
                             />
                         </label>
                         <button
+                            type="button"
                             className={styles.iconButton}
                             disabled={this.props.busy || roturReposLoading}
                             onClick={this.props.onLoadRoturRepos}
@@ -1220,6 +1332,7 @@ class GitModalComponent extends React.Component {
                             placeholder="owner/repo"
                         />
                         <button
+                            type="button"
                             className={styles.button}
                             disabled={this.props.busy || !this.props.roturCloneOther.trim()}
                             onClick={this.props.onRoturCloneOther}
@@ -1284,6 +1397,7 @@ class GitModalComponent extends React.Component {
                 />
                 <Box className={styles.rowButtons}>
                     <button
+                        type="button"
                         className={styles.primaryButton}
                         disabled={this.props.busy || !this.props.readmeDirty}
                         onClick={this.props.onSaveReadme}
@@ -1361,7 +1475,8 @@ class GitModalComponent extends React.Component {
                                 icon={cat.icon}
                                 label={cat.label}
                                 selected={this.state.currentView === cat.id}
-                                onClick={() => this.handleNavigate(cat.id)}
+                                value={cat.id}
+                                onClick={this.handleNavigateClick}
                             />
                         ))}
                     </ModalSidebar>
@@ -1483,3 +1598,4 @@ GitModalComponent.propTypes = {
 };
 
 export default injectIntl(GitModalComponent);
+export {GitModalComponent};

@@ -2,8 +2,12 @@
 import soundThumbnail from '!base64-loader!./sound-thumbnail.png';
 
 const soundPayload = sound => {
-    const assetDataUrl = sound.asset.encodeDataURI();
     const assetDataFormat = sound.dataFormat;
+    if (!['wav', 'mp3'].includes(assetDataFormat)) {
+        return Promise.reject(new Error(`Unsupported sound format: ${assetDataFormat || 'unknown'}`));
+    }
+
+    const assetDataUrl = sound.asset.encodeDataURI();
     const payload = {
         type: 'sound',
         name: sound.name,
@@ -25,8 +29,6 @@ const soundPayload = sound => {
         // line will have to change.
         payload.body = assetDataUrl.replace('data:audio/x-wav;base64,', '');
         break;
-    default:
-        alert(`Cannot serialize for format: ${assetDataFormat}`); // eslint-disable-line
     }
 
     // Return a promise to make it consistent with other payload constructors like costume-payload

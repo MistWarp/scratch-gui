@@ -323,12 +323,8 @@
     border-color: var(--accent);
 }
 
-.checkboxField {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--mw-text);
+.switches {
+    display: grid;
 }
 
 .formActions {
@@ -382,10 +378,7 @@
 
 .removeTeam {
     align-self: start;
-    width: 40px;
-    height: 40px;
     margin-top: 21px;
-    color: var(--mw-danger);
 }
 
 .removeTeam:hover {

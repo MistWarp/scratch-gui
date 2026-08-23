@@ -32,7 +32,19 @@ const ICONS_BY_FORMAT = {
 class AssetFile extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleDragStart', 'handleClick', 'handleRename']);
+        bindAll(this, [
+            'handleDragStart',
+            'handleClick',
+            'handleNameChange',
+            'handleNameFocus',
+            'handleNameBlur',
+            'handleNameKeyDown',
+            'handleNameMouseDown'
+        ]);
+        this.state = {
+            fileName: props.fileName
+        };
+        this.editingName = false;
     }
 
     handleDragStart (e) {
@@ -46,10 +58,39 @@ class AssetFile extends React.Component {
         this.props.onSelectFile(this.props.index);
     }
 
-    handleRename (e) {
-        this.props.onRename(this.props.index, this.props.folder ?
-            `${this.props.folder}/${e.target.value}` :
-            e.target.value);
+    handleNameChange (e) {
+        this.setState({fileName: e.target.value});
+    }
+
+    handleNameFocus () {
+        this.editingName = true;
+        if (!this.props.selected) this.props.onSelectFile(this.props.index);
+    }
+
+    handleNameBlur () {
+        this.editingName = false;
+        const fileName = this.state.fileName.trim();
+        if (!fileName) {
+            this.setState({fileName: this.props.fileName});
+            return;
+        }
+        if (fileName !== this.props.fileName) {
+            this.props.onRename(this.props.index, this.props.folder ?
+                `${this.props.folder}/${fileName}` :
+                fileName);
+        }
+    }
+
+    handleNameKeyDown (e) {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        } else if (e.key === 'Escape') {
+            this.setState({fileName: this.props.fileName}, () => e.target.blur());
+        }
+    }
+
+    handleNameMouseDown (e) {
+        e.stopPropagation();
     }
 
     render () {
@@ -70,9 +111,14 @@ class AssetFile extends React.Component {
 
                 <input
                     className={styles.fileName}
-                    value={this.props.fileName}
+                    value={this.state.fileName}
                     title={this.props.name}
-                    onChange={this.handleRename}
+                    draggable={false}
+                    onBlur={this.handleNameBlur}
+                    onChange={this.handleNameChange}
+                    onFocus={this.handleNameFocus}
+                    onKeyDown={this.handleNameKeyDown}
+                    onMouseDown={this.handleNameMouseDown}
                 />
 
                 <span className={styles.fileSize}>{formatBytes(this.props.size)}</span>
@@ -93,5 +139,5 @@ AssetFile.propTypes = {
     onRename: PropTypes.func.isRequired
 };
 
-export {DRAG_TYPE};
+export {AssetFile, DRAG_TYPE};
 export default AssetFile;

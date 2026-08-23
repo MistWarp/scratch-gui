@@ -7,6 +7,7 @@
 }
 
 .body {
+    position: relative;
     background: $ui-modal-background;
     padding: 1rem 1.25rem;
     height: 100%;
@@ -15,6 +16,93 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+}
+
+.dialog-overlay {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: color-mix(in srgb, $ui-modal-background 88%, transparent);
+}
+
+.dialog-card {
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    width: min(28rem, 100%);
+    padding: 1.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+    box-shadow: 0 8px 28px $ui-black-transparent;
+    color: $text-primary;
+    text-align: center;
+}
+
+.dialog-card > svg {
+    color: $motion-primary;
+}
+
+.dialog-card p {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.dialog-card label {
+    display: grid;
+    gap: 0.35rem;
+    width: 100%;
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    text-align: left;
+}
+
+.dialog-card input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-modal-background;
+    color: $text-primary;
+    font: inherit;
+}
+
+.dialog-error {
+    color: $error-primary;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dialog-cancel,
+.dialog-confirm,
+.dialog-delete {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-modal-background;
+    color: $text-primary;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.dialog-confirm {
+    border-color: $motion-primary;
+    background: $motion-primary;
+    color: white;
+}
+
+.dialog-delete {
+    border-color: $error-primary;
+    background: $error-primary;
+    color: white;
 }
 
 .toolbar {
@@ -139,6 +227,26 @@
     cursor: pointer;
     padding: 0;
     line-height: 1;
+}
+
+.folder-select {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.folder-toggle:focus-visible,
+.folder-select:focus-visible {
+    outline: 2px solid $motion-primary;
+    outline-offset: 2px;
+    border-radius: 0.2rem;
 }
 
 .folder-icon,

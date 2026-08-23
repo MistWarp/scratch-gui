@@ -34,9 +34,10 @@ const BetaBanner = () => {
             />
             <span className={styles.text}>
                 The new MistWarp is a beta. Expect bugs, and please report them on{' '}
-                <Link to="/users/mist">mist&apos;s profile</Link>.
+                <Link to="/roadmap?new=bug">the bug tracker</Link>.
             </span>
             <button
+                type="button"
                 className={styles.dismiss}
                 aria-label="Dismiss"
                 onClick={dismiss}

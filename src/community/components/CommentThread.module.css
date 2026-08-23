@@ -249,6 +249,42 @@
     border-color: var(--accent-border);
 }
 
+.deleteConfirm {
+    border: 1px solid var(--mw-danger);
+    border-radius: var(--radius-xs);
+    background: var(--mw-danger);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 7px 16px;
+}
+
+.deleteConfirm:disabled {
+    opacity: 0.55;
+}
+
+.modalText,
+.commentPreview {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.modalText {
+    color: var(--text-dim);
+}
+
+.commentPreview {
+    max-height: 8em;
+    overflow: auto;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .error {
     color: #e0245e;
     font-size: 13px;

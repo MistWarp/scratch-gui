@@ -13,6 +13,7 @@ import DragConstants from '../lib/constants/drag-constants';
 import {emptyCostume} from '../lib/utils/empty-assets';
 import sharedMessages from '../lib/constants/shared-messages';
 import downloadBlob from '../lib/utils/download-blob';
+import {projectFilename} from '../lib/utils/safe-filename.js';
 
 import {
     openCostumeLibrary,
@@ -100,6 +101,7 @@ class CostumeTab extends React.Component {
         } else {
             this.state = {selectedCostumeIndex: 0};
         }
+        this.deletingCostumes = new Set();
     }
     UNSAFE_componentWillReceiveProps (nextProps) {
         const {
@@ -113,15 +115,20 @@ class CostumeTab extends React.Component {
             return;
         }
 
+        const oldTarget = this.props.editingTarget && this.props.sprites[this.props.editingTarget] ?
+            this.props.sprites[this.props.editingTarget] : this.props.stage;
+        if (this.props.editingTarget !== editingTarget ||
+            !oldTarget || oldTarget.costumeCount !== target.costumeCount) {
+            this.deletingCostumes.clear();
+        }
+
         if (this.props.editingTarget === editingTarget) {
             // If costumes have been added or removed, change costumes to the editing target's
             // current costume.
-            const oldTarget = this.props.sprites[editingTarget] ?
-                this.props.sprites[editingTarget] : this.props.stage;
             // @todo: Find and switch to the index of the costume that is new. This is blocked by
             // https://github.com/LLK/scratch-vm/issues/967
             // Right now, you can land on the wrong costume if a costume changing script is running.
-            if (oldTarget.costumeCount !== target.costumeCount) {
+            if (!oldTarget || oldTarget.costumeCount !== target.costumeCount) {
                 this.setState({selectedCostumeIndex: target.currentCostume});
             }
         } else {
@@ -135,27 +142,50 @@ class CostumeTab extends React.Component {
         CollaborationService.getInstance().setActivity({assetIndex: costumeIndex});
     }
     handleDeleteCostume (costumeIndex) {
-        const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);
-        this.props.dispatchUpdateRestore({
-            restoreFun: restoreCostumeFun,
-            deletedItem: 'Costume'
-        });
+        if (!this.deletingCostumes) this.deletingCostumes = new Set();
+        if (this.deletingCostumes.has(costumeIndex)) return false;
+        this.deletingCostumes.add(costumeIndex);
+        try {
+            const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);
+            this.props.dispatchUpdateRestore({
+                restoreFun: restoreCostumeFun,
+                deletedItem: 'Costume'
+            });
+            return true;
+        } catch (error) {
+            this.deletingCostumes.delete(costumeIndex);
+            this.props.onShowDeleteError(error);
+            return false;
+        }
     }
     handleDuplicateCostume (costumeIndex) {
-        this.props.vm.duplicateCostume(costumeIndex);
+        try {
+            return Promise.resolve(this.props.vm.duplicateCostume(costumeIndex))
+                .catch(this.props.onShowImportError);
+        } catch (error) {
+            this.props.onShowImportError(error);
+            return Promise.resolve(false);
+        }
     }
     handleExportCostume (costumeIndex) {
-        const item = this.props.vm.editingTarget.sprite.costumes[costumeIndex];
-        const blob = new Blob([
-            this.props.vm.getExportedCostume(item)
-        ], {type: item.asset.assetType.contentType});
-        downloadBlob(`${item.name}.${item.asset.dataFormat}`, blob);
+        try {
+            const item = this.props.vm.editingTarget.sprite.costumes[costumeIndex];
+            const blob = new Blob([
+                this.props.vm.getExportedCostume(item)
+            ], {type: item.asset.assetType.contentType});
+            downloadBlob(projectFilename(item.name, 'Costume', item.asset.dataFormat), blob);
+        } catch (error) {
+            this.props.onShowExportError(error);
+        }
     }
     handleNewCostume (costume, fromCostumeLibrary, targetId) {
         const costumes = Array.isArray(costume) ? costume : [costume];
 
         return Promise.all(costumes.map(c => {
             if (fromCostumeLibrary) {
+                if (targetId) {
+                    return this.props.vm.addCostume(c.md5, c, targetId, 2);
+                }
                 return this.props.vm.addCostumeFromLibrary(c.md5, c);
             }
             // If targetId is falsy, VM should default it to editingTarget.id
@@ -165,56 +195,82 @@ class CostumeTab extends React.Component {
         }));
     }
     handleNewBlankCostume () {
+        const targetId = this.props.vm.editingTarget.id;
         const name = this.props.vm.editingTarget.isStage ?
             this.props.intl.formatMessage(messages.backdrop, {index: 1}) :
             this.props.intl.formatMessage(messages.costume, {index: 1});
-        this.handleNewCostume(emptyCostume(name));
+        return this.handleNewCostume(emptyCostume(name), false, targetId).catch(this.props.onShowImportError);
     }
     async handleSurpriseCostume () {
-        const costumeLibraryContent = await getCostumeLibrary();
-        const item = costumeLibraryContent[Math.floor(Math.random() * costumeLibraryContent.length)];
-        const vmCostume = {
-            name: item.name,
-            md5: item.md5ext,
-            rotationCenterX: item.rotationCenterX,
-            rotationCenterY: item.rotationCenterY,
-            bitmapResolution: item.bitmapResolution,
-            skinId: null
-        };
-        this.handleNewCostume(vmCostume, true /* fromCostumeLibrary */);
+        const targetId = this.props.vm.editingTarget.id;
+        try {
+            const costumeLibraryContent = await getCostumeLibrary();
+            const item = costumeLibraryContent[Math.floor(Math.random() * costumeLibraryContent.length)];
+            if (!item) throw new Error('No costumes are available');
+            const vmCostume = {
+                name: item.name,
+                md5: item.md5ext,
+                rotationCenterX: item.rotationCenterX,
+                rotationCenterY: item.rotationCenterY,
+                bitmapResolution: item.bitmapResolution,
+                skinId: null
+            };
+            await this.handleNewCostume(vmCostume, true /* fromCostumeLibrary */, targetId);
+        } catch (error) {
+            this.props.onShowImportError(error);
+        }
     }
     async handleSurpriseBackdrop () {
-        const backdropLibraryContent = await getBackdropLibrary();
-        const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
-        const vmCostume = {
-            name: item.name,
-            md5: item.md5ext,
-            rotationCenterX: item.rotationCenterX,
-            rotationCenterY: item.rotationCenterY,
-            bitmapResolution: item.bitmapResolution,
-            skinId: null
-        };
-        this.handleNewCostume(vmCostume);
+        const targetId = this.props.vm.editingTarget.id;
+        try {
+            const backdropLibraryContent = await getBackdropLibrary();
+            const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
+            if (!item) throw new Error('No backdrops are available');
+            const vmCostume = {
+                name: item.name,
+                md5: item.md5ext,
+                rotationCenterX: item.rotationCenterX,
+                rotationCenterY: item.rotationCenterY,
+                bitmapResolution: item.bitmapResolution,
+                skinId: null
+            };
+            await this.handleNewCostume(vmCostume, false, targetId);
+        } catch (error) {
+            this.props.onShowImportError(error);
+        }
     }
     handleCostumeUpload (e) {
         const vm = this.props.vm;
         const targetId = this.props.vm.editingTarget.id;
+        const completedFiles = new Set();
+        const finishFile = (fileIndex, fileCount) => {
+            completedFiles.add(fileIndex);
+            if (completedFiles.size === fileCount) {
+                this.props.onCloseImporting();
+            }
+        };
+        const failFile = (error, fileIndex, fileCount) => {
+            this.props.onShowImportError(error);
+            finishFile(fileIndex, fileCount);
+        };
         this.props.onShowImporting();
-        handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, fileCount) => {
+        const fileCount = handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, totalFiles) => {
             costumeUpload(buffer, fileType, vm, vmCostumes => {
                 vmCostumes.forEach((costume, i) => {
                     costume.name = `${fileName}${i ? i + 1 : ''}`;
                 });
                 this.handleNewCostume(vmCostumes, false, targetId).then(() => {
-                    if (fileIndex === fileCount - 1) {
-                        this.props.onCloseImporting();
-                    }
-                });
-            }, this.props.onCloseImporting);
-        }, this.props.onCloseImporting);
+                    finishFile(fileIndex, totalFiles);
+                })
+                    .catch(error => failFile(error, fileIndex, totalFiles));
+            }, error => failFile(error, fileIndex, totalFiles));
+        }, failFile);
+        if (fileCount === 0) this.props.onCloseImporting();
     }
     handleFileUploadClick () {
+        if (!this.fileInput) return false;
         this.fileInput.click();
+        return true;
     }
     handleDrop (dropInfo) {
         if (dropInfo.dragType === DragConstants.COSTUME) {
@@ -224,15 +280,15 @@ class CostumeTab extends React.Component {
                 dropInfo.index, dropInfo.newIndex);
             this.setState({selectedCostumeIndex: sprite.costumes.indexOf(activeCostume)});
         } else if (dropInfo.dragType === DragConstants.BACKPACK_COSTUME) {
-            this.props.vm.addCostume(dropInfo.payload.body, {
+            return this.props.vm.addCostume(dropInfo.payload.body, {
                 name: dropInfo.payload.name
-            });
+            }).catch(this.props.onShowImportError);
         } else if (dropInfo.dragType === DragConstants.BACKPACK_SOUND) {
             this.props.onActivateSoundsTab();
-            this.props.vm.addSound({
+            return this.props.vm.addSound({
                 md5: dropInfo.payload.body,
                 name: dropInfo.payload.name
-            });
+            }).catch(this.props.onShowImportError);
         }
     }
     setFileInput (input) {
@@ -337,6 +393,9 @@ CostumeTab.propTypes = {
     isRtl: PropTypes.bool,
     onActivateSoundsTab: PropTypes.func.isRequired,
     onCloseImporting: PropTypes.func.isRequired,
+    onShowExportError: PropTypes.func.isRequired,
+    onShowDeleteError: PropTypes.func.isRequired,
+    onShowImportError: PropTypes.func.isRequired,
     onNewLibraryBackdropClick: PropTypes.func.isRequired,
     onNewLibraryCostumeClick: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
@@ -379,7 +438,10 @@ const mapDispatchToProps = dispatch => ({
         dispatch(setRestore(restoreState));
     },
     onCloseImporting: () => dispatch(closeAlertWithId('importingAsset')),
-    onShowImporting: () => dispatch(showStandardAlert('importingAsset'))
+    onShowImporting: () => dispatch(showStandardAlert('importingAsset')),
+    onShowExportError: () => dispatch(showStandardAlert('assetExportError')),
+    onShowDeleteError: () => dispatch(showStandardAlert('assetDeleteError')),
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
 });
 
 export default errorBoundaryHOC('Costume Tab')(
@@ -388,3 +450,5 @@ export default errorBoundaryHOC('Costume Tab')(
         mapDispatchToProps
     )(CostumeTab))
 );
+
+export {CostumeTab};

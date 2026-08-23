@@ -48,6 +48,7 @@ const CrashMessage = props => (
                 </p>
             )}
             <button
+                type="button"
                 className={styles.reloadButton}
                 onClick={props.onReload}
             >

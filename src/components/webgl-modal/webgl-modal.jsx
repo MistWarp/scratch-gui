@@ -54,6 +54,7 @@ const WebGlModal = ({intl, ...props}) => (
 
                 <Box className={styles.buttonRow}>
                     <button
+                        type="button"
                         className={styles.backButton}
                         onClick={props.onBack}
                     >

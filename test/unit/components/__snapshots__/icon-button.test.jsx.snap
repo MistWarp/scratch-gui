@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`IconButtonComponent matches snapshot 1`] = `
-<div
+<button
   className="custom-class-name"
   onClick={[MockFunction]}
-  role="button"
+  type="button"
 >
   <img
     draggable={false}
@@ -12,6 +12,7 @@ exports[`IconButtonComponent matches snapshot 1`] = `
     theme={
       Theme {
         "accent": "red",
+        "appearance": {},
         "blocks": "three",
         "fonts": {
           "google": [],
@@ -37,5 +38,5 @@ exports[`IconButtonComponent matches snapshot 1`] = `
       Text
     </div>
   </div>
-</div>
+</button>
 `;

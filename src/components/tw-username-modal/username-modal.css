@@ -67,5 +67,17 @@
     font-weight: bold;
 }
 .reset-link {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
     cursor: pointer;
+}
+
+.reset-link:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
 }

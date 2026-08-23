@@ -66,6 +66,12 @@
     color: #e0245e;
 }
 
+.delete:disabled {
+    color: var(--text-faint);
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .body {
     margin: 8px 0 0;
     color: var(--text-dim);
@@ -105,6 +111,12 @@
 .pollOption:hover,
 .pollOptionVoted {
     border-color: var(--accent-border);
+}
+
+.pollOption:disabled,
+.pollOptionVoted:disabled {
+    cursor: wait;
+    opacity: .7;
 }
 
 .pollOption i,

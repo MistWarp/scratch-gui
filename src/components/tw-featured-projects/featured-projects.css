@@ -16,10 +16,20 @@
     cursor: pointer;
     user-select: none;
     opacity: 0.8;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 0;
 }
 
 .opener-container:hover {
     opacity: 1;
+}
+
+.opener-container:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .opener-content {

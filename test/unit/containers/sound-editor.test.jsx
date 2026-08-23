@@ -4,7 +4,7 @@ import configureStore from 'redux-mock-store';
 import mockAudioBufferPlayer from '../../__mocks__/audio-buffer-player.js';
 import mockAudioEffects from '../../__mocks__/audio-effects.js';
 
-import SoundEditor from '../../../src/containers/sound-editor';
+import SoundEditor, {SoundEditor as SoundEditorContainer} from '../../../src/containers/sound-editor';
 import SoundEditorComponent from '../../../src/components/sound-editor/sound-editor';
 
 jest.mock('../../../src/lib/audio/audio-buffer-player', () => mockAudioBufferPlayer);
@@ -277,6 +277,38 @@ describe('Sound Editor Container', () => {
         await component.props().onRedo();
         expect(mockAudioBufferPlayer.instance.play).toHaveBeenCalled();
         expect(vm.updateSoundBuffer).toHaveBeenCalled();
+    });
+
+    test('keeps the selection when deleting it cannot be saved', async () => {
+        const wrapper = mountWithIntl(
+            <SoundEditor
+                soundIndex={soundIndex}
+                store={store}
+            />
+        );
+        const editor = wrapper.find(SoundEditorContainer).instance();
+        editor.setState({trimStart: 0, trimEnd: 0.5});
+        editor.submitNewSamples = jest.fn(() => Promise.resolve(false));
+
+        await editor.handleDelete();
+
+        expect(editor.state.trimStart).toBe(0);
+        expect(editor.state.trimEnd).toBe(0.5);
+    });
+
+    test('does not delete audio when there is no selection', async () => {
+        const wrapper = mountWithIntl(
+            <SoundEditor
+                soundIndex={soundIndex}
+                store={store}
+            />
+        );
+        const editor = wrapper.find(SoundEditorContainer).instance();
+        editor.submitNewSamples = jest.fn();
+
+        await expect(editor.handleDelete()).resolves.toBe(false);
+        await expect(editor.handleDeleteInverse()).resolves.toBe(false);
+        expect(editor.submitNewSamples).not.toHaveBeenCalled();
     });
 
     test('isStereo numberOfChannels=1', () => {

@@ -38,7 +38,7 @@
     border-right: 1px solid $ui-black-transparent;
 }
 
-.button:focus::before {
+.button:focus-visible::before {
     content: "";
     position: absolute;
     top: -1px;
@@ -52,15 +52,15 @@
 
 .button:first-child,
 [dir="rtl"] .button:last-child,
-.button:first-child:focus::before,
-[dir="rtl"] .button:last-child:focus::before {
+.button:first-child:focus-visible::before,
+[dir="rtl"] .button:last-child:focus-visible::before {
     border-radius: 10px 0 0 10px;
 }
 
 .button:last-child,
 [dir="rtl"] .button:first-child,
-.button:last-child:focus::before,
-[dir="rtl"] .button:first-child:focus::before {
+.button:last-child:focus-visible::before,
+[dir="rtl"] .button:first-child:focus-visible::before {
     border-radius: 0 10px 10px 0;
 }
 
@@ -82,6 +82,8 @@
 
 /* disabled styling */
 
-.disabled .button {
+.disabled .button,
+.button:disabled {
     cursor: default;
+    opacity: 0.55;
 }

@@ -18,10 +18,10 @@ class StageHeader extends React.Component {
         bindAll(this, [
             'handleKeyPress'
         ]);
-        this.checkInvalidStageSizeMode();
     }
     componentDidMount () {
         document.addEventListener('keydown', this.handleKeyPress);
+        this.checkInvalidStageSizeMode();
     }
     componentDidUpdate () {
         this.checkInvalidStageSizeMode();
@@ -104,6 +104,10 @@ const mapDispatchToProps = dispatch => ({
     onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
     onOpenSettings: () => dispatch(openSettingsModal())
 });
+
+export {
+    StageHeader
+};
 
 export default connect(
     mapStateToProps,

@@ -9,18 +9,21 @@ const OPTIONS = [
     {value: 'private', label: 'Unshared', icon: Lock}
 ];
 
-const VisibilityMenu = ({value, onChange}) => {
+const VisibilityMenu = ({value, onChange, disabled = false}) => {
     const current = OPTIONS.find(option => option.value === value) || OPTIONS[0];
     const CurrentIcon = current.icon;
     return (
         <Dropdown
             width={210}
-            renderTrigger={({toggle}) => (
+            renderTrigger={({open, toggle}) => (
                 <button
                     type="button"
                     className={styles.button}
                     onClick={toggle}
+                    disabled={disabled}
                     aria-label="Project visibility"
+                    aria-expanded={open}
+                    aria-haspopup="menu"
                 >
                     <CurrentIcon size={16} />
                     {current.label}
@@ -33,6 +36,7 @@ const VisibilityMenu = ({value, onChange}) => {
                 return (
                     <DropdownItem
                         key={option.value}
+                        disabled={disabled}
                         onClick={() => {
                             close();
                             if (option.value !== value) onChange(option.value);

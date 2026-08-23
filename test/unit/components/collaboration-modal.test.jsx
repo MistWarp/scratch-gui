@@ -200,5 +200,29 @@ describe('CollaborationModal', () => {
 
             expect(props.onKickUser).toHaveBeenCalledWith('user-2');
         });
+
+        test('locks both privacy choices while an update is running', async () => {
+            let finishUpdate;
+            const props = {
+                ...connectedProps(),
+                onChangeRoomPrivacy: jest.fn(() => new Promise(resolve => {
+                    finishUpdate = resolve;
+                }))
+            };
+            const wrapper = mountModal(props);
+            const modal = modalOf(wrapper);
+
+            const firstUpdate = modal.handleSelectPrivatePrivacy();
+            modal.handleSelectPublicPrivacy();
+            wrapper.update();
+
+            await Promise.resolve();
+            expect(props.onChangeRoomPrivacy).toHaveBeenCalledTimes(1);
+            expect(wrapper.find('button[role="radio"]').everyWhere(button => button.prop('disabled'))).toBe(true);
+            finishUpdate();
+            await firstUpdate;
+            wrapper.update();
+            expect(wrapper.find('button[role="radio"]').everyWhere(button => !button.prop('disabled'))).toBe(true);
+        });
     });
 });

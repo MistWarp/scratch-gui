@@ -28,23 +28,36 @@ const ReportModal = ({type, target, context, onClose}) => {
     const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
     const firstRef = useRef(null);
+    const submitLocks = useRef(new Set());
+    const requestKey = `${type}\u0000${target}\u0000${context || ''}`;
+    const currentRequestKey = useRef(requestKey);
+    currentRequestKey.current = requestKey;
 
     useEffect(() => {
         if (firstRef.current) firstRef.current.focus();
-    }, []);
+        setCategory(REASONS[0]);
+        setDetails('');
+        setBusy(false);
+        setError('');
+        setSent(false);
+    }, [requestKey]);
 
     const submit = async () => {
-        if (busy) return;
+        if (submitLocks.current.has(requestKey)) return;
+        submitLocks.current.add(requestKey);
         setBusy(true);
         setError('');
         const reason = details.trim() ? `${category}: ${details.trim()}` : category;
         try {
             await api.report(type, target, reason, context);
-            setSent(true);
+            if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
-            setError(e.message || 'Could not send the report.');
+            if (currentRequestKey.current === requestKey) {
+                setError(e.message || 'Could not send the report.');
+            }
         } finally {
-            setBusy(false);
+            submitLocks.current.delete(requestKey);
+            if (currentRequestKey.current === requestKey) setBusy(false);
         }
     };
 
@@ -53,6 +66,7 @@ const ReportModal = ({type, target, context, onClose}) => {
             icon={Flag}
             title={`Report this ${NOUNS[type] || 'content'}`}
             onClose={onClose}
+            dismissDisabled={busy}
             actions={sent ? (
                 <Button
                     variant="primary"
@@ -60,12 +74,13 @@ const ReportModal = ({type, target, context, onClose}) => {
                 >Done</Button>
             ) : (
                 <React.Fragment>
-                    <Button onClick={onClose}>Cancel</Button>
+                    <Button onClick={onClose} disabled={busy}>Cancel</Button>
                     <Button
                         variant="primary"
-                        disabled={busy}
+                        busy={busy}
+                        busyLabel="Sending…"
                         onClick={submit}
-                    >{busy ? 'Sending…' : 'Send report'}</Button>
+                    >Send report</Button>
                 </React.Fragment>
             )}
         >
@@ -78,6 +93,7 @@ const ReportModal = ({type, target, context, onClose}) => {
                         ref={firstRef}
                         className={styles.select}
                         value={category}
+                        disabled={busy}
                         onChange={e => setCategory(e.target.value)}
                     >
                         {REASONS.map(reason => (
@@ -91,6 +107,7 @@ const ReportModal = ({type, target, context, onClose}) => {
                     <textarea
                         className={styles.textarea}
                         value={details}
+                        disabled={busy}
                         maxLength={1000}
                         placeholder="Add anything that helps a moderator understand the problem."
                         onChange={e => setDetails(e.target.value)}

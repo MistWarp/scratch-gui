@@ -107,6 +107,22 @@
     color: color-mix(in srgb, $text-primary 68%, transparent);
 }
 
+.inline-link-button {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $link-color;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.inline-link-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
 .textSettingLabel {
     margin-bottom: 0.4rem;
     font-weight: 600;
@@ -465,13 +481,30 @@
     padding: 0.375rem 1rem;
     border: 2px solid transparent;
     border-radius: 8px;
-    cursor: pointer;
 }
 .wallpaper-item:hover {
     background: $badge-border;
 }
 .wallpaper-item-selected {
     border-color: $looks-secondary;
+}
+.wallpaper-choice {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+.wallpaper-choice:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 .wallpaper-thumb {
     width: 4rem;
@@ -516,6 +549,19 @@
 }
 .font-row:hover {
     border-color: color-mix(in srgb, $looks-secondary 60%, transparent);
+}
+
+.font-list .font-row {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.font-list .font-row:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 /* ── Custom Themes page ── */
@@ -708,6 +754,41 @@
     gap: 0.1rem;
     padding: 0 0.4rem 0 0;
     flex-shrink: 0;
+}
+
+.ct-delete-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.65rem;
+}
+
+.ct-delete-confirm > span:first-child {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.ct-delete-confirm small {
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+}
+
+.ct-delete-error {
+    color: $error-primary !important;
+}
+
+.ct-delete-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.ct-delete-actions .button,
+.ct-delete-actions .ct-button-secondary {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.75rem;
 }
 
 .ct-empty {

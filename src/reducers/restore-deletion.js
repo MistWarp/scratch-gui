@@ -5,6 +5,27 @@ const initialState = {
     deletedItem: ''
 };
 
+const singleFlightRestore = restoreFun => {
+    if (typeof restoreFun !== 'function') return restoreFun;
+    let restorePromise = null;
+    let restored = false;
+    return () => {
+        if (restored) return Promise.resolve(false);
+        if (restorePromise) return restorePromise;
+        restorePromise = Promise.resolve()
+            .then(() => restoreFun())
+            .then(result => {
+                restored = true;
+                return result;
+            })
+            .catch(error => {
+                restorePromise = null;
+                throw error;
+            });
+        return restorePromise;
+    };
+};
+
 const reducer = function (state, action) {
     if (typeof state === 'undefined') state = initialState;
 
@@ -20,7 +41,7 @@ const setRestore = function (state) {
     return {
         type: RESTORE_UPDATE,
         state: {
-            restoreFun: state.restoreFun,
+            restoreFun: singleFlightRestore(state.restoreFun),
             deletedItem: state.deletedItem
         }
     };
@@ -29,5 +50,6 @@ const setRestore = function (state) {
 export {
     reducer as default,
     initialState as restoreDeletionInitialState,
+    singleFlightRestore,
     setRestore
 };

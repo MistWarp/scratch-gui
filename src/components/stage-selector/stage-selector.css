@@ -23,6 +23,26 @@ $header-height: calc($stage-menu-height - 2px);
     transition: all 0.25s ease;
 }
 
+.stage-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+
+.stage-selection:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: -3px;
+}
+
 .stage-selector.is-selected {
     border-top-left-radius: .625rem;
     border-top-right-radius: .625rem;

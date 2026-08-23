@@ -399,6 +399,14 @@ export const setup = (addon) => {
     return originalGreenFlag.call(this);
   };
 
+  // Stop removes all project threads, so there is nothing left to keep paused.
+  const originalStopAll = vm.runtime.stopAll;
+  vm.runtime.stopAll = function () {
+    const result = originalStopAll.call(this);
+    setPaused(false);
+    return result;
+  };
+
   // Disable edge-activated hats and hats like "when key pressed" while paused.
   const originalStartHats = vm.runtime.startHats;
   vm.runtime.startHats = function (...args) {
