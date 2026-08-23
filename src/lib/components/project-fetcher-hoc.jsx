@@ -49,6 +49,13 @@ const cloneProjectFromRepo = async url => {
 const isHttpUrl = url => /^https?:\/\//.test(url);
 
 let fetchInitiatedLoad = false;
+let projectHistoryLoadQueue = Promise.resolve();
+
+const queueProjectHistoryLoad = task => {
+    const result = projectHistoryLoadQueue.then(task, task);
+    projectHistoryLoadQueue = result.catch(() => {});
+    return result;
+};
 
 const clearProjectSourceFromUrl = () => {
     if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
@@ -90,20 +97,11 @@ const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
     const project = source || (await getMistWarpEditorProject(id)).project;
-    if (project.assetsBase && isHttpUrl(project.assetsBase)) {
-        storage.addMistWarpAssetStore(project.assetsBase);
-    }
-    rememberPlatformProject(project);
-    if (project.workspaceUrl) {
-        await importMwp(await fetchWorkspace(project.workspaceUrl));
-        if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
-    } else {
-        await deleteRepo();
-    }
-    const data = hasBridge() ?
-        await bridgeFetch(project.projectJsonUrl) :
-        await fetchArrayBuffer(project.projectJsonUrl);
-    return {data, title: project.title, platformProject: source ? null : project};
+    const [data, workspace] = await Promise.all([
+        hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl),
+        project.workspaceUrl ? fetchWorkspace(project.workspaceUrl) : Promise.resolve(null)
+    ]);
+    return {data, title: project.title, platformProject: project, workspace};
 };
 
 // TW: Temporary hack for project tokens
@@ -147,6 +145,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             storage.setAssetHost(props.assetHost);
             storage.setTranslatorFunction(props.intl.formatMessage);
             clearProjectSourceOnForeignLoads(props.vm);
+            this.fetchGeneration = 0;
             if (typeof location !== 'undefined' && typeof URLSearchParams !== 'undefined') {
                 const initialPlatformId = new URLSearchParams(location.search).get('platform_project') ||
                     (location.hash.match(/^#mw-([\w-]+)/) || [])[1];
@@ -184,11 +183,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 this.props.onActivateTab(BLOCKS_TAB_INDEX);
             }
         }
+        componentWillUnmount () {
+            this.fetchGeneration++;
+        }
         fetchProject (projectId, loadingState) {
-            // tw: clear and stop the VM before fetching
-            // these will also happen later after the project is fetched, but fetching may take a while and
-            // the project shouldn't be running while fetching the new project
-            this.props.vm.clear();
+            const fetchGeneration = ++this.fetchGeneration;
+            // Stop scripts while fetching, but keep the current project intact until replacement data exists.
             this.props.vm.quit();
             markProjectHistoryLoading();
             this.props.vm._mwPrepareProjectHistory = null;
@@ -210,7 +210,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 null :
                 location.hash.match(/^#mw-([\w-]+)/);
             const hashProjectId = hashMatch && hashMatch[1];
-            rememberPlatformProject(platformProject ? {id: platformProject} : null);
             const mistwarpAssets = searchParams && searchParams.get('mw_assets');
             let mistwarpTrustedExtensions = [];
             try {
@@ -235,7 +234,14 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 assetPromise = loadPlatformProject(id, source);
             } else if (cloneUrl) {
                 sourceProvidesHistory = true;
-                assetPromise = cloneProjectFromRepo(cloneUrl);
+                assetPromise = queueProjectHistoryLoad(async () => {
+                    if (fetchGeneration !== this.fetchGeneration) return null;
+                    rememberPlatformProject(null);
+                    const projectAsset = await cloneProjectFromRepo(cloneUrl);
+                    return fetchGeneration === this.fetchGeneration ?
+                        {...projectAsset, historyPrepared: true} :
+                        null;
+                });
             } else if (projectUrl) {
                 if (
                     !projectUrl.startsWith('http:') &&
@@ -258,8 +264,31 @@ const ProjectFetcherHOC = function (WrappedComponent) {
 
             return assetPromise
                 .then(async projectAsset => {
+                    if (fetchGeneration !== this.fetchGeneration) return;
                     if (projectAsset) {
-                        if (!sourceProvidesHistory) await deleteRepo();
+                        if (!projectAsset.historyPrepared) {
+                            const historyReady = await queueProjectHistoryLoad(async () => {
+                                if (fetchGeneration !== this.fetchGeneration) return false;
+                                if (projectAsset.platformProject) {
+                                    const project = projectAsset.platformProject;
+                                    if (project.assetsBase && isHttpUrl(project.assetsBase)) {
+                                        storage.addMistWarpAssetStore(project.assetsBase);
+                                    }
+                                    rememberPlatformProject(project);
+                                    if (projectAsset.workspace) {
+                                        await importMwp(projectAsset.workspace);
+                                        if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
+                                    } else {
+                                        await deleteRepo();
+                                    }
+                                } else if (!sourceProvidesHistory) {
+                                    rememberPlatformProject(null);
+                                    await deleteRepo();
+                                }
+                                return fetchGeneration === this.fetchGeneration;
+                            });
+                            if (!historyReady || fetchGeneration !== this.fetchGeneration) return;
+                        }
                         fetchInitiatedLoad = true;
                         this.props.vm._mwPrepareProjectHistory = () =>
                             preloadProjectHistory(this.props.vm, {force: true});
@@ -274,6 +303,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(err => {
+                    if (fetchGeneration !== this.fetchGeneration) return;
                     this.props.vm._mwPrepareProjectHistory = null;
                     this.props.onError(err);
                     log.error(err);

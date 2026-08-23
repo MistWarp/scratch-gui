@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Check, GitPullRequest, Pencil, Plus, Users, X, GitFork} from 'lucide-react';
 import api, {projectUrl} from '../api';
@@ -7,6 +7,8 @@ import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
 import SectionTabs from './SectionTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
+import Button from './ui/Button.jsx';
+import IconButton from './ui/IconButton.jsx';
 import styles from './ProjectInfoPanel.module.css';
 
 const INFO_TABS = ['About', 'Team', 'Credits', 'Tags', 'Controls'];
@@ -38,6 +40,15 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     const [credits, setCredits] = useState(project.credits || []);
     const [tagsText, setTagsText] = useState((project.tags || []).join(' '));
     const [compatibility, setCompatibility] = useState(project.compatibility || {mobile: false, keyboard: false, controller: false});
+    const saveLocks = useRef(new Set());
+    const currentProjectId = useRef(project.id);
+    currentProjectId.current = project.id;
+
+    useEffect(() => {
+        setEditing(false);
+        setSaving(false);
+        setSaveError('');
+    }, [project.id]);
 
     const startEdit = () => {
         setInstructions(project.instructions || '');
@@ -55,6 +66,9 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     };
 
     const save = async () => {
+        const projectId = project.id;
+        if (saveLocks.current.has(projectId)) return;
+        saveLocks.current.add(projectId);
         setSaving(true);
         setSaveError('');
         try {
@@ -65,12 +79,17 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 tags: parseTags(tagsText),
                 compatibility
             });
-            setEditing(false);
-            onSaved();
+            if (currentProjectId.current === projectId) {
+                setEditing(false);
+                onSaved();
+            }
         } catch (e) {
-            setSaveError(e.message || 'Could not save your changes.');
+            if (currentProjectId.current === projectId) {
+                setSaveError(e.message || 'Could not save your changes.');
+            }
         } finally {
-            setSaving(false);
+            saveLocks.current.delete(projectId);
+            if (currentProjectId.current === projectId) setSaving(false);
         }
     };
 
@@ -101,6 +120,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                 <textarea
                                     className={styles.panelInput}
                                     value={instructions}
+                                    disabled={saving}
                                     maxLength={5000}
                                     placeholder="How do you play or use this project?"
                                     onChange={e => setInstructions(e.target.value)}
@@ -116,6 +136,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     <textarea
                                         className={styles.panelInput}
                                         value={notes}
+                                        disabled={saving}
                                         maxLength={5000}
                                         placeholder="Development notes, known issues, or anything else worth sharing"
                                         onChange={e => setNotes(e.target.value)}
@@ -163,6 +184,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                         <input
                                             className={styles.creditWho}
                                             value={c.who}
+                                            disabled={saving}
                                             maxLength={60}
                                             placeholder="name or MistWarp username"
                                             aria-label="Name or MistWarp username"
@@ -171,6 +193,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                         <input
                                             className={styles.creditRole}
                                             value={c.role}
+                                            disabled={saving}
                                             maxLength={120}
                                             placeholder="what they did"
                                             aria-label="Contribution"
@@ -180,28 +203,32 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                             className={styles.creditUrl}
                                             type="url"
                                             value={c.url || ''}
+                                            disabled={saving}
                                             maxLength={500}
                                             placeholder="external profile URL (optional)"
                                             aria-label="External profile URL"
                                             onChange={e => updateCredit(i, 'url', e.target.value)}
                                         />
                                     </div>
-                                    <button
+                                    <IconButton
                                         className={styles.creditRemove}
+                                        disabled={saving}
                                         onClick={() => removeCredit(i)}
-                                        title="Remove"
+                                        label={`Remove credit for ${c.who || 'unnamed contributor'}`}
                                     >
                                         <X size={14} />
-                                    </button>
+                                    </IconButton>
                                 </div>
                             ))}
-                            <button
+                            <Button
+                                variant="secondary"
                                 className={styles.creditAdd}
+                                disabled={saving}
                                 onClick={addCredit}
                             >
                                 <Plus size={14} />
                                 Add credit
-                            </button>
+                            </Button>
                         </div>
                     ) : (project.credits && project.credits.length) ? (
                         <ul className={styles.creditList}>
@@ -241,6 +268,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                             <input
                                 className={styles.panelInput}
                                 value={tagsText}
+                                disabled={saving}
                                 placeholder="platformer game pixel-art"
                                 onChange={e => setTagsText(e.target.value)}
                             />
@@ -268,6 +296,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     <input
                                         type="checkbox"
                                         checked={Boolean(compatibility[key])}
+                                        disabled={saving}
                                         onChange={event => {
                                             const {checked} = event.target;
                                             setCompatibility(current => ({...current, [key]: checked}));
@@ -296,20 +325,31 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                     <div className={styles.panelBodyFooter}>
                         {editing ? (
                             <div className={styles.panelBodyActions}>
-                                <button className={styles.panelContentAction} onClick={cancelEdit} disabled={saving}>
+                                <Button
+                                    variant="secondary"
+                                    className={styles.panelContentAction}
+                                    onClick={cancelEdit}
+                                    disabled={saving}
+                                >
                                     <X size={14} />
                                     Cancel
-                                </button>
-                                <button className={styles.panelSave} onClick={save} disabled={saving}>
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    className={styles.panelSave}
+                                    onClick={save}
+                                    busy={saving}
+                                    busyLabel="Saving…"
+                                >
                                     <Check size={14} />
-                                    {saving ? 'Saving…' : 'Save'}
-                                </button>
+                                    Save
+                                </Button>
                             </div>
                         ) : (
-                            <button className={styles.panelContentAction} onClick={startEdit}>
+                            <Button variant="secondary" className={styles.panelContentAction} onClick={startEdit}>
                                 <Pencil size={14} />
                                 Edit details
-                            </button>
+                            </Button>
                         )}
                     </div>
                 ) : null}

@@ -2,41 +2,48 @@
 
 exports[`SpriteSelectorItemComponent matches snapshot when given a number and details to show 1`] = `
 <div
-  className="react-contextmenu-wrapper ponies undefined"
-  onClick={[MockFunction]}
-  onContextMenu={[Function]}
-  onMouseDown={[Function]}
-  onMouseOut={[Function]}
-  onMouseUp={[Function]}
-  onTouchEnd={[Function]}
-  onTouchStart={[Function]}
+  className="ponies undefined"
 >
-  <div>
-    5
-  </div>
-  <div>
+  <button
+    aria-pressed={true}
+    className="react-contextmenu-wrapper"
+    onClick={[MockFunction]}
+    onContextMenu={[Function]}
+    onMouseDown={[Function]}
+    onMouseOut={[Function]}
+    onMouseUp={[Function]}
+    onTouchEnd={[Function]}
+    onTouchStart={[Function]}
+    type="button"
+  >
     <div>
-      <img
-        draggable={false}
-        loading="lazy"
-        src="https://scratch.mit.edu/foo/bar/pony"
-      />
-    </div>
-  </div>
-  <div>
-    <div>
-      Pony sprite
+      5
     </div>
     <div>
-      480 x 360
+      <div>
+        <img
+          draggable={false}
+          loading="lazy"
+          src="https://scratch.mit.edu/foo/bar/pony"
+        />
+      </div>
     </div>
-  </div>
-  <div
+    <div>
+      <div>
+        Pony sprite
+      </div>
+      <div>
+        480 x 360
+      </div>
+    </div>
+  </button>
+  <button
     aria-label="Delete"
     className=""
+    disabled={false}
     onClick={[MockFunction]}
-    role="button"
     tabIndex={0}
+    type="button"
   >
     <div>
       <img
@@ -45,7 +52,7 @@ exports[`SpriteSelectorItemComponent matches snapshot when given a number and de
         src="test-file-stub"
       />
     </div>
-  </div>
+  </button>
   <nav
     className="react-contextmenu"
     onContextMenu={[Function]}
@@ -81,35 +88,42 @@ exports[`SpriteSelectorItemComponent matches snapshot when given a number and de
 
 exports[`SpriteSelectorItemComponent matches snapshot when selected 1`] = `
 <div
-  className="react-contextmenu-wrapper ponies undefined"
-  onClick={[MockFunction]}
-  onContextMenu={[Function]}
-  onMouseDown={[Function]}
-  onMouseOut={[Function]}
-  onMouseUp={[Function]}
-  onTouchEnd={[Function]}
-  onTouchStart={[Function]}
+  className="ponies undefined"
 >
-  <div>
+  <button
+    aria-pressed={true}
+    className="react-contextmenu-wrapper"
+    onClick={[MockFunction]}
+    onContextMenu={[Function]}
+    onMouseDown={[Function]}
+    onMouseOut={[Function]}
+    onMouseUp={[Function]}
+    onTouchEnd={[Function]}
+    onTouchStart={[Function]}
+    type="button"
+  >
     <div>
-      <img
-        draggable={false}
-        loading="lazy"
-        src="https://scratch.mit.edu/foo/bar/pony"
-      />
+      <div>
+        <img
+          draggable={false}
+          loading="lazy"
+          src="https://scratch.mit.edu/foo/bar/pony"
+        />
+      </div>
     </div>
-  </div>
-  <div>
     <div>
-      Pony sprite
+      <div>
+        Pony sprite
+      </div>
     </div>
-  </div>
-  <div
+  </button>
+  <button
     aria-label="Delete"
     className=""
+    disabled={false}
     onClick={[MockFunction]}
-    role="button"
     tabIndex={0}
+    type="button"
   >
     <div>
       <img
@@ -118,7 +132,7 @@ exports[`SpriteSelectorItemComponent matches snapshot when selected 1`] = `
         src="test-file-stub"
       />
     </div>
-  </div>
+  </button>
   <nav
     className="react-contextmenu"
     onContextMenu={[Function]}

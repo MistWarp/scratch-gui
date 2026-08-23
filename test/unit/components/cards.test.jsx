@@ -59,4 +59,12 @@ describe('Cards component', () => {
         expect(imageStep.props().image).toEqual('id1 - img');
         expect(imageStep.props().title).toEqual('id1 - name');
     });
+
+    test('uses native buttons for tutorial actions', () => {
+        const component = mountWithIntl(<Cards {...defaultProps()} />);
+        const buttons = component.find('button');
+
+        expect(buttons.length).toBeGreaterThanOrEqual(3);
+        expect(buttons.everyWhere(button => button.prop('type') === 'button')).toBe(true);
+    });
 });

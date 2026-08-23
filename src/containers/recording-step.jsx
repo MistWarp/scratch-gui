@@ -3,16 +3,10 @@ import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import RecordingStepComponent from '../components/record-modal/recording-step.jsx';
 import AudioRecorder from '../lib/audio/audio-recorder.js';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {injectIntl, intlShape} from 'react-intl';
+import {connect} from 'react-redux';
+import {showStandardAlert} from '../reducers/alerts';
 import log from '../lib/utils/log';
-
-const messages = defineMessages({
-    alertMsg: {
-        defaultMessage: 'Could not start recording',
-        description: 'Alert for recording error',
-        id: 'gui.recordingStep.alertMsg'
-    }
-});
 
 class RecordingStep extends React.Component {
     constructor (props) {
@@ -30,22 +24,27 @@ class RecordingStep extends React.Component {
             level: 0,
             levels: null
         };
+        this._isMounted = false;
     }
     componentDidMount () {
+        this._isMounted = true;
         this.audioRecorder = new AudioRecorder();
         this.audioRecorder.startListening(this.handleStarted, this.handleLevelUpdate, this.handleRecordingError);
     }
     componentWillUnmount () {
+        this._isMounted = false;
         this.audioRecorder.dispose();
     }
     handleStarted () {
+        if (!this._isMounted) return;
         this.setState({listening: true});
     }
     handleRecordingError (error) {
         log.error(error);
-        alert(this.props.intl.formatMessage(messages.alertMsg)); // eslint-disable-line no-alert
+        if (this._isMounted) this.props.onShowRecordingError();
     }
     handleLevelUpdate (level) {
+        if (!this._isMounted) return;
         this.setState({
             level: level,
             levels: this.props.recording ? (this.state.levels || []).concat([level]) : this.state.levels
@@ -81,8 +80,14 @@ class RecordingStep extends React.Component {
 RecordingStep.propTypes = {
     intl: intlShape.isRequired,
     onRecord: PropTypes.func.isRequired,
+    onShowRecordingError: PropTypes.func.isRequired,
     onStopRecording: PropTypes.func.isRequired,
     recording: PropTypes.bool
 };
 
-export default injectIntl(RecordingStep);
+const mapDispatchToProps = dispatch => ({
+    onShowRecordingError: () => dispatch(showStandardAlert('recordingError'))
+});
+
+export {RecordingStep};
+export default injectIntl(connect(null, mapDispatchToProps)(RecordingStep));

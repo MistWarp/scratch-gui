@@ -26,6 +26,11 @@ const messages = defineMessages({
         id: 'gui.library.allTag',
         defaultMessage: 'All',
         description: 'Label for library tag to revert to all items after filtering by tag.'
+    },
+    noMatches: {
+        id: 'gui.library.noMatches',
+        defaultMessage: 'No matches found.',
+        description: 'Message shown when a library search or tag has no matching items'
     }
 });
 
@@ -71,9 +76,6 @@ class LibraryComponent extends React.Component {
         });
         if (this.props.setStopHandler) this.props.setStopHandler(this.handlePlayingEnd);
     }
-    componentWillUnmount () {
-        this._isMounted = false;
-    }
     componentDidUpdate (prevProps, prevState) {
         if (prevState.filterQuery !== this.state.filterQuery ||
             prevState.selectedTag !== this.state.selectedTag) {
@@ -87,6 +89,9 @@ class LibraryComponent extends React.Component {
                 // ignore
             }
         }
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
     }
     handleSelect (id) {
         this.handleClose();
@@ -250,13 +255,15 @@ class LibraryComponent extends React.Component {
         return filteredItems;
     }
     scrollToTop () {
-        this.filteredDataRef.scrollTop = 0;
+        if (this.filteredDataRef) this.filteredDataRef.scrollTop = 0;
     }
     setFilteredDataRef (ref) {
         this.filteredDataRef = ref;
     }
     render () {
         const filteredData = this.state.canDisplay && this.props.data && this.getFilteredData();
+        const showRemovedTrademarks = this.props.removedTrademarks &&
+            this.state.selectedTag === ALL_TAG.tag && !this.state.filterQuery;
         return (
             <Modal
                 fullScreen
@@ -311,7 +318,7 @@ class LibraryComponent extends React.Component {
                         })}
                         ref={this.setFilteredDataRef}
                     >
-                        {filteredData && this.getFilteredData().map((dataItem, index) => (
+                        {filteredData && filteredData.map((dataItem, index) => (
                             dataItem === '---' ? (
                                 <Separator key={index} />
                             ) : (
@@ -350,7 +357,12 @@ class LibraryComponent extends React.Component {
                                 />
                             )
                         ))}
-                        {filteredData && this.props.removedTrademarks && (
+                        {filteredData && filteredData.length === 0 && (
+                            <div className={styles.emptyState}>
+                                {this.props.intl.formatMessage(messages.noMatches)}
+                            </div>
+                        )}
+                        {filteredData && showRemovedTrademarks && (
                             <React.Fragment>
                                 {filteredData.length > 0 && (
                                     <Separator />
@@ -415,3 +427,5 @@ LibraryComponent.defaultProps = {
 };
 
 export default injectIntl(LibraryComponent);
+
+export {LibraryComponent};

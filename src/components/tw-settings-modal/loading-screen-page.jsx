@@ -3,7 +3,7 @@ import React, {useCallback, useState} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import Box from '../box/box.jsx';
-import {BooleanSetting} from './settings-content.jsx';
+import {BooleanSetting} from './setting.jsx';
 import {
     getLoaderSettings,
     resetLoaderSettings,

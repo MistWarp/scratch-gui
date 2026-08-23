@@ -195,6 +195,7 @@ const SoundEditor = props => (
                 </Label>
                 <div className={styles.buttonGroup}>
                     <button
+                        type="button"
                         className={styles.button}
                         disabled={!props.canUndo}
                         title={props.intl.formatMessage(messages.undo)}
@@ -207,6 +208,7 @@ const SoundEditor = props => (
                         />
                     </button>
                     <button
+                        type="button"
                         className={styles.button}
                         disabled={!props.canRedo}
                         title={props.intl.formatMessage(messages.redo)}
@@ -270,6 +272,7 @@ const SoundEditor = props => (
             <div className={classNames(styles.roundButtonOuter, styles.inputGroup)}>
                 {props.playhead ? (
                     <button
+                        type="button"
                         className={classNames(styles.roundButton, styles.stopButtonn)}
                         title={props.intl.formatMessage(messages.stop)}
                         onClick={props.onStop}
@@ -281,6 +284,7 @@ const SoundEditor = props => (
                     </button>
                 ) : (
                     <button
+                        type="button"
                         className={classNames(styles.roundButton, styles.playButton)}
                         title={props.intl.formatMessage(messages.play)}
                         onClick={props.onPlay}

@@ -3,10 +3,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import VM from 'scratch-vm';
+import {connect} from 'react-redux';
 
 import {getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
 import backdropTags from '../lib/libraries/backdrop-tags';
 import LibraryComponent from '../components/library/library.jsx';
+import {showStandardAlert} from '../reducers/alerts';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -26,13 +28,20 @@ class BackdropLibrary extends React.Component {
         this.state = {
             data: getBackdropLibrary()
         };
+        this._isMounted = false;
     }
     componentDidMount () {
+        this._isMounted = true;
         if (this.state.data.then) {
-            this.state.data.then(data => this.setState({
-                data
-            }));
+            this.state.data.then(data => {
+                if (this._isMounted) this.setState({data});
+            }).catch(error => {
+                if (this._isMounted) this.props.onShowImportError(error);
+            });
         }
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
     }
     handleItemSelect (item) {
         const vmBackdrop = {
@@ -43,7 +52,8 @@ class BackdropLibrary extends React.Component {
             skinId: null
         };
         // Do not switch to stage, just add the backdrop
-        this.props.vm.addBackdrop(item.md5ext, vmBackdrop);
+        return this.props.vm.addBackdrop(item.md5ext, vmBackdrop)
+            .catch(this.props.onShowImportError);
     }
     render () {
         return (
@@ -62,7 +72,14 @@ class BackdropLibrary extends React.Component {
 BackdropLibrary.propTypes = {
     intl: intlShape.isRequired,
     onRequestClose: PropTypes.func,
+    onShowImportError: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export default injectIntl(BackdropLibrary);
+const mapDispatchToProps = dispatch => ({
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
+});
+
+export default injectIntl(connect(null, mapDispatchToProps)(BackdropLibrary));
+
+export {BackdropLibrary};

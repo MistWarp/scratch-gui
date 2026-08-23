@@ -488,4 +488,32 @@ describe('projectSaverHOC', () => {
         expect(setSaver).toHaveBeenCalledTimes(2);
         expect(setSaver.mock.calls[1][0]).toBe(null);
     });
+
+    test('a slow server save does not clear edits made after serialization', async () => {
+        let finishSave;
+        const onSetProjectUnchanged = jest.fn();
+        const onUpdateProjectData = jest.fn(() => new Promise(resolve => {
+            finishSave = resolve;
+        }));
+        const Component = () => <div />;
+        const WrappedComponent = projectSaverHOC(Component);
+        const mounted = mount(
+            <WrappedComponent
+                store={store}
+                vm={vm}
+                onSetProjectUnchanged={onSetProjectUnchanged}
+                onUpdateProjectData={onUpdateProjectData}
+            />
+        );
+        const saver = mounted.find(WrappedComponent.WrappedComponent).instance();
+
+        const saving = saver.storeProject('100');
+        await Promise.resolve();
+        vm.emit('PROJECT_CHANGED');
+        finishSave({id: '100'});
+        await saving;
+
+        expect(onSetProjectUnchanged).not.toHaveBeenCalled();
+        mounted.unmount();
+    });
 });

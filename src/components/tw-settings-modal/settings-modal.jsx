@@ -8,7 +8,6 @@ import Modal from '../../containers/windowed-modal.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
-import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import {
     ModalSidebar,
     ModalSidebarContent,
@@ -18,7 +17,6 @@ import {
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
 import styles from './settings-modal.css';
-import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
@@ -49,6 +47,7 @@ import {
     formatActivityStatus
 } from '../../lib/rotur/settings.js';
 import {readActivityGrants, writeActivityGrants} from '../../lib/rotur/extension-bridge.js';
+import {BooleanSetting, LearnMore, Setting} from './setting.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -57,11 +56,6 @@ const messages = defineMessages({
         defaultMessage: 'Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
-    },
-    help: {
-        defaultMessage: 'Click for help',
-        description: 'Hover text of help icon in settings',
-        id: 'tw.settingsModal.help'
     },
     headerFeatured: {
         defaultMessage: 'Featured',
@@ -148,18 +142,6 @@ const messages = defineMessages({
     }
 });
 
-const LearnMore = props => (
-    <React.Fragment>
-        {' '}
-        <DocumentationLink {...props}>
-            <FormattedMessage
-                defaultMessage="Learn more."
-                id="gui.alerts.cloudInfoLearnMore"
-            />
-        </DocumentationLink>
-    </React.Fragment>
-);
-
 const Header = ({children}) => (
     <div className={styles.header}>
         {children}
@@ -168,98 +150,6 @@ const Header = ({children}) => (
 );
 Header.propTypes = {
     children: PropTypes.node
-};
-
-class UnwrappedSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, [
-            'handleClickHelp'
-        ]);
-        this.state = {
-            helpVisible: false
-        };
-    }
-    componentDidUpdate (prevProps) {
-        if (this.props.active && !prevProps.active) {
-            // eslint-disable-next-line react/no-did-update-set-state
-            this.setState({
-                helpVisible: true
-            });
-        }
-    }
-    handleClickHelp () {
-        this.setState(prevState => ({
-            helpVisible: !prevState.helpVisible
-        }));
-    }
-    render () {
-        const {primary, secondary, help, slug, intl} = this.props;
-        const {helpVisible} = this.state;
-
-        return (
-            <div
-                className={classNames(styles.setting, {
-                    [styles.active]: this.props.active
-                })}
-            >
-                <div className={styles.label}>
-                    {primary}
-                    <button
-                        className={styles.helpIcon}
-                        onClick={this.handleClickHelp}
-                        title={intl.formatMessage(messages.help)}
-                    >
-                        <img
-                            src={helpIcon}
-                            draggable={false}
-                        />
-                    </button>
-                </div>
-                {helpVisible && (
-                    <div className={styles.detail}>
-                        {help}
-                        {slug && <LearnMore slug={slug} />}
-                    </div>
-                )}
-                {secondary}
-            </div>
-        );
-    }
-}
-
-UnwrappedSetting.propTypes = {
-    intl: intlShape,
-    active: PropTypes.bool,
-    help: PropTypes.node,
-    primary: PropTypes.node,
-    secondary: PropTypes.node,
-    slug: PropTypes.string
-};
-
-const Setting = injectIntl(UnwrappedSetting);
-
-const BooleanSetting = ({value, onChange, label, ...props}) => (
-    <Setting
-        {...props}
-        active={value}
-        primary={
-            <label className={styles.label}>
-                <FancyCheckbox
-                    className={styles.checkbox}
-                    checked={value}
-                    onChange={onChange}
-                />
-                {label}
-            </label>
-        }
-    />
-);
-
-BooleanSetting.propTypes = {
-    onChange: PropTypes.func.isRequired,
-    value: PropTypes.bool.isRequired,
-    label: PropTypes.node.isRequired
 };
 
 const settingDefinitions = {
@@ -662,36 +552,40 @@ const WindowStyleSelect = props => {
 WindowStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func};
 
 const CustomFPS = ({framerate, onChange, onCustomizeFramerate}) => (
-    <BooleanSetting
-        value={framerate !== 30}
-        onChange={onChange}
-        label={
-            <FormattedMessage
-                defaultMessage="60 FPS (Custom FPS)"
-                description="FPS setting"
-                id="tw.settingsModal.fps"
-            />
+    <Setting
+        active={framerate !== 30}
+        primary={
+            <div className={styles.label}>
+                <label className={styles.label}>
+                    <FancyCheckbox
+                        className={styles.checkbox}
+                        checked={framerate !== 30}
+                        onChange={onChange}
+                    />
+                    <FormattedMessage
+                        defaultMessage="60 FPS"
+                        description="FPS setting"
+                        id="tw.settingsModal.fps"
+                    />
+                </label>
+                <BufferedInput
+                    className={styles.numberInput}
+                    type="number"
+                    value={framerate}
+                    min="0.1"
+                    step="0.1"
+                    aria-label="Custom framerate"
+                    onSubmit={onCustomizeFramerate}
+                />
+                <span>{'FPS'}</span>
+            </div>
         }
         help={
             <FormattedMessage
                 // eslint-disable-next-line max-len
-                defaultMessage="Runs scripts 60 times per second instead of 30. Most projects will not work properly with this enabled. You should try Interpolation with 60 FPS mode disabled if that is the case. {customFramerate}."
+                defaultMessage="Runs scripts at the selected framerate. Many projects expect 30 FPS and may run too quickly at higher values. Try Interpolation first if you only want smoother motion."
                 description="FPS setting help"
                 id="tw.settingsModal.fpsHelp"
-                values={{
-                    customFramerate: (
-                        <a
-                            onClick={onCustomizeFramerate}
-                            tabIndex="0"
-                        >
-                            <FormattedMessage
-                                defaultMessage="Click to use a framerate other than 30 or 60"
-                                description="FPS settings help"
-                                id="tw.settingsModal.fpsHelp.customFramerate"
-                            />
-                        </a>
-                    )
-                }}
             />
         }
         slug="custom-fps"
@@ -781,6 +675,7 @@ const StoreProjectOptions = ({
     <div className={styles.setting}>
         <div>
             <button
+                type="button"
                 onClick={onStoreProjectOptions}
                 className={styles.button}
             >
@@ -1500,6 +1395,7 @@ class UnwrappedRoturPage extends React.Component {
                     </p>
                     {activityGrantCount > 0 ? (
                         <button
+                            type="button"
                             className={styles.button}
                             onClick={this.handleResetActivityGrants}
                         >
@@ -1781,6 +1677,7 @@ class DesktopPage extends React.Component {
                     />
                 ) : null}
                 <button
+                    type="button"
                     className={styles.button}
                     onClick={() => window.EditorPreload.openUserData()}
                 >
@@ -2047,6 +1944,7 @@ class SettingsModalComponent extends React.Component {
                     </ModalSidebar>
                     <ModalSidebarContent className={styles.contentArea}>
                         <button
+                            type="button"
                             className={styles.mobileBackButton}
                             onClick={this.handleMobileBack}
                         >

@@ -1,35 +1,65 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Coins, Wallet as WalletIcon, HeartHandshake, Send, ExternalLink, CalendarCheck} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {getAccountSummary, claimDaily} from '../../lib/rotur/client.js';
 import {CREDIT_PACKS, getBillingStatus, openCreditCheckout, openBillingPortal, consumeBillingResult} from '../credits';
 import {useUser} from '../UserContext.jsx';
+import Button from '../components/ui/Button.jsx';
 import {formatDate} from '../format';
 import styles from './Wallet.module.css';
 
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const Wallet = () => {
-    const {user, loading} = useUser();
+    const {user, loading, login} = useUser();
+    const viewerName = (user && user.username) || '';
+    const walletContext = useRef(viewerName);
+    walletContext.current = viewerName;
     const [account, setAccount] = useState(null);
     const [accountLoaded, setAccountLoaded] = useState(false);
     const [purchases, setPurchases] = useState(null);
+    const [purchaseError, setPurchaseError] = useState('');
+    const [purchaseAttempt, setPurchaseAttempt] = useState(0);
     const [claiming, setClaiming] = useState(false);
     const [claimMsg, setClaimMsg] = useState('');
     const [billing, setBilling] = useState(null);
     const [checkoutBusy, setCheckoutBusy] = useState(false);
     const [checkoutError, setCheckoutError] = useState('');
-    const billingMsg = consumeBillingResult();
+    const [billingResult, setBillingResult] = useState(null);
+    const billingResultConsumed = useRef(false);
+    const actionLocks = useRef(new Set());
+
+    useEffect(() => {
+        if (loading || !viewerName || billingResultConsumed.current) return;
+        billingResultConsumed.current = true;
+        const value = consumeBillingResult();
+        if (value) setBillingResult({viewerName, value});
+    }, [loading, viewerName]);
 
     useEffect(() => {
         if (!user) {
             setAccount(null);
+            setAccountLoaded(false);
             setPurchases(null);
+            setPurchaseError('');
             setBilling(null);
+            setClaimMsg('');
+            setClaiming(false);
+            setCheckoutBusy(false);
+            setCheckoutError('');
             return () => {};
         }
         let stale = false;
+        setAccount(null);
+        setAccountLoaded(false);
+        setPurchases(null);
+        setPurchaseError('');
+        setBilling(null);
+        setClaimMsg('');
+        setClaiming(false);
+        setCheckoutBusy(false);
+        setCheckoutError('');
         getAccountSummary()
             .then(data => {
                 if (stale) return;
@@ -39,37 +69,48 @@ const Wallet = () => {
             .catch(() => !stale && setAccountLoaded(true));
         api.purchases()
             .then(data => !stale && setPurchases(data.purchases || []))
-            .catch(() => !stale && setPurchases([]));
+            .catch(() => !stale && setPurchaseError('Could not load purchase history.'));
         getBillingStatus()
             .then(data => !stale && setBilling(data))
             .catch(() => !stale && setBilling({billing_configured: false}));
         return () => {
             stale = true;
         };
-    }, [user]);
+    }, [user, purchaseAttempt]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
     }
     if (!user) {
-        return <main className={styles.page}><p className={styles.status}>Sign in to view your wallet.</p></main>;
+        return (
+            <main className={styles.page}>
+                <p className={styles.status}>Sign in to view your wallet. <Button onClick={login}>Sign in</Button></p>
+            </main>
+        );
     }
 
     const balance = account && account.balance !== null ? account.balance : null;
+    const billingReady = Boolean(billing && billing.billing_configured);
+    const billingMsg = billingResult && billingResult.viewerName === viewerName ? billingResult.value : null;
 
     const doClaimDaily = async () => {
-        if (claiming) return;
+        const context = walletContext.current;
+        const actionKey = `${context}\u0000claim`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
         setClaiming(true);
         setClaimMsg('');
         try {
             await claimDaily();
+            if (walletContext.current !== context) return;
             setClaimMsg('Daily credits claimed!');
             const data = await getAccountSummary();
-            if (data) {
+            if (data && walletContext.current === context) {
                 setAccount(data);
                 setAccountLoaded(true);
             }
         } catch (e) {
+            if (walletContext.current !== context) return;
             if (e.waitHours) {
                 setClaimMsg(`Already claimed. Come back in ${e.waitHours}h.`);
             } else if (e.needsReauth) {
@@ -78,35 +119,48 @@ const Wallet = () => {
                 setClaimMsg(e.message || 'Could not claim daily credits.');
             }
         } finally {
-            setClaiming(false);
+            actionLocks.current.delete(actionKey);
+            if (walletContext.current === context) setClaiming(false);
         }
     };
 
     const buy = async pack => {
-        if (checkoutBusy) return;
+        const context = walletContext.current;
+        const actionKey = `${context}\u0000billing`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
         setCheckoutBusy(true);
         setCheckoutError('');
         try {
             await openCreditCheckout(pack);
         } catch (e) {
-            setCheckoutError(e.needsReauth ?
-                'Your current login cannot buy credits. Log out and back in, then try again.' :
-                (e.message || 'Could not open checkout.'));
+            if (walletContext.current === context) {
+                setCheckoutError(e.needsReauth ?
+                    'Your current login cannot buy credits. Log out and back in, then try again.' :
+                    (e.message || 'Could not open checkout.'));
+            }
         } finally {
-            setCheckoutBusy(false);
+            actionLocks.current.delete(actionKey);
+            if (walletContext.current === context) setCheckoutBusy(false);
         }
     };
 
     const manageBilling = async () => {
-        if (checkoutBusy) return;
+        const context = walletContext.current;
+        const actionKey = `${context}\u0000billing`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
         setCheckoutBusy(true);
         setCheckoutError('');
         try {
             await openBillingPortal();
         } catch (e) {
-            setCheckoutError(e.message || 'Could not open billing.');
+            if (walletContext.current === context) {
+                setCheckoutError(e.message || 'Could not open billing.');
+            }
         } finally {
-            setCheckoutBusy(false);
+            actionLocks.current.delete(actionKey);
+            if (walletContext.current === context) setCheckoutBusy(false);
         }
     };
 
@@ -132,14 +186,16 @@ const Wallet = () => {
                     </div>
                     {claimMsg ? <div className={styles.claimMsg}>{claimMsg}</div> : null}
                 </div>
-                <button
+                <Button
+                    variant="primary"
                     className={styles.claimBtn}
                     onClick={doClaimDaily}
-                    disabled={claiming}
+                    busy={claiming}
+                    busyLabel="Claiming…"
                 >
                     <CalendarCheck size={16} />
-                    {claiming ? 'Claiming…' : 'Claim daily'}
-                </button>
+                    Claim daily
+                </Button>
             </section>
 
             {account && (account.donationsReceived > 0 || account.donationsGiven > 0) ? (
@@ -178,7 +234,7 @@ const Wallet = () => {
                             type="button"
                             className={styles.tier}
                             onClick={() => buy(pack)}
-                            disabled={checkoutBusy}
+                            disabled={checkoutBusy || !billingReady}
                         >
                             <span className={styles.tierCredits}>
                                 {pack.credits.toLocaleString()}
@@ -189,26 +245,36 @@ const Wallet = () => {
                     ))}
                 </div>
                 {checkoutBusy ? <p className={styles.checkoutNote}>Opening secure Stripe checkout…</p> : null}
+                {!billing ? <p className={styles.checkoutNote}>Checking billing availability…</p> : null}
                 {checkoutError ? <p className={styles.checkoutError}>{checkoutError}</p> : null}
                 {billing && !billing.billing_configured ? (
                     <p className={styles.checkoutError}>Stripe billing is currently unavailable. Try again later.</p>
                 ) : null}
                 {billing && billing.stripe_portal ? (
-                    <button
-                        type="button"
+                    <Button
+                        variant="secondary"
                         className={styles.portalButton}
                         onClick={manageBilling}
-                        disabled={checkoutBusy}
+                        busy={checkoutBusy}
+                        busyLabel="Opening billing…"
                     >
                         <ExternalLink size={14} />
                         Manage billing
-                    </button>
+                    </Button>
                 ) : null}
             </section>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>Purchase history</h2>
-                {purchases === null ? (
+                {purchaseError ? (
+                    <p className={styles.status}>
+                        {purchaseError}{' '}
+                        <Button
+                            variant="secondary"
+                            onClick={() => setPurchaseAttempt(value => value + 1)}
+                        >Try again</Button>
+                    </p>
+                ) : purchases === null ? (
                     <p className={styles.status}>Loading…</p>
                 ) : purchases.length ? (
                     <ul className={styles.purchases}>

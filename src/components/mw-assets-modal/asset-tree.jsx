@@ -159,7 +159,10 @@ class AssetFolder extends React.Component {
             >
                 <div className={styles.folderRow}>
                     <button
+                        type="button"
                         className={styles.folderToggle}
+                        aria-expanded={!this.state.collapsed}
+                        aria-label={`${this.state.collapsed ? 'Expand' : 'Collapse'} ${node.name}`}
                         onClick={this.handleToggle}
                     >
                         {this.state.collapsed ? (
@@ -168,18 +171,25 @@ class AssetFolder extends React.Component {
                             <ChevronDown size={14} />
                         )}
                     </button>
-                    {this.state.collapsed ? (
-                        <Folder
-                            className={styles.folderIcon}
-                            size={15}
-                        />
-                    ) : (
-                        <FolderOpen
-                            className={styles.folderIcon}
-                            size={15}
-                        />
-                    )}
-                    <span className={styles.folderName}>{node.name}</span>
+                    <button
+                        type="button"
+                        className={styles.folderSelect}
+                        aria-pressed={this.props.selected === node.path}
+                        onClick={this.handleClick}
+                    >
+                        {this.state.collapsed ? (
+                            <Folder
+                                className={styles.folderIcon}
+                                size={15}
+                            />
+                        ) : (
+                            <FolderOpen
+                                className={styles.folderIcon}
+                                size={15}
+                            />
+                        )}
+                        <span className={styles.folderName}>{node.name}</span>
+                    </button>
                 </div>
 
                 {!this.state.collapsed && (

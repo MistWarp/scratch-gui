@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
     ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark,
-    Bug, Link2, UserCog, Plus, Trash2
+    Bug, Link2, UserCog, Plus, Trash2, MessageCircle
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -13,9 +13,16 @@ import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Sidebar from '../components/Sidebar.jsx';
+import Button from '../components/ui/Button.jsx';
+import IconButton from '../components/ui/IconButton.jsx';
+import {SwitchRow} from '../components/ui/Switch.jsx';
+import useLatest from '../use-latest.js';
 import styles from './ManageProject.module.css';
 
 const roundCredits = value => Math.round((Number(value) || 0) * 100) / 100;
+const normalizeCollaborators = team => team
+    .filter(member => member.username.trim())
+    .map(member => ({...member, username: member.username.trim()}));
 const ROLE_DESCRIPTIONS = {
     maintainer: 'Can edit, publish, and merge changes.',
     contributor: 'Can work through pull requests.',
@@ -26,6 +33,7 @@ const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: BarChart3},
     {key: 'buyers', label: 'Buyers', icon: Users},
     {key: 'diagnostics', label: 'Diagnostics', icon: Bug},
+    {key: 'feedback', label: 'Feedback', icon: MessageCircle},
     {key: 'preview', label: 'Preview links', icon: Link2},
     {key: 'team', label: 'Team', icon: UserCog},
     {key: 'settings', label: 'Settings', icon: SlidersHorizontal}
@@ -33,34 +41,72 @@ const SECTIONS = [
 
 const ManageProject = () => {
     const {id} = useParams();
-    const {user, loading} = useUser();
+    const {user, loading, login} = useUser();
+    const viewerName = (user && user.username) || '';
+    const loadContext = `${id}\u0000${viewerName}`;
     const [project, setProject] = useState(null);
+    const [projectLoadContext, setProjectLoadContext] = useState('');
     const [error, setError] = useState(null);
+    const [errorLoadContext, setErrorLoadContext] = useState('');
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState(null);
     const [section, setSection] = useState('overview');
     const [form, setForm] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
+    const [diagnosticsError, setDiagnosticsError] = useState('');
     const [feedback, setFeedback] = useState(null);
+    const [feedbackError, setFeedbackError] = useState('');
+    const [feedbackBusy, setFeedbackBusy] = useState('');
     const [preview, setPreview] = useState(null);
+    const [previewBusy, setPreviewBusy] = useState(false);
     const [team, setTeam] = useState([]);
     const [teamSaving, setTeamSaving] = useState(false);
     const [teamStatus, setTeamStatus] = useState('');
+    const actionLocks = useRef(new Set());
+    const currentLoadContext = useRef(loadContext);
+    currentLoadContext.current = loadContext;
+    const beginLoad = useLatest();
+    const beginDiagnostics = useLatest();
+    const beginFeedback = useLatest();
+    const beginPreview = useLatest();
 
     const load = useCallback(() => {
-        api.getProject(id)
-            .then(data => {
+        const fresh = beginLoad();
+        return api.getProject(id)
+            .then(fresh(data => {
+                if (!data || !data.project) throw new Error('Project response was incomplete.');
                 setProject(data.project);
+                setProjectLoadContext(loadContext);
                 setError(null);
-            })
-            .catch(e => setError(e && e.status === 404 ? 'Project not found.' : 'Could not load this project.'));
-    }, [id]);
+                setErrorLoadContext('');
+            }))
+            .catch(fresh(e => {
+                setErrorLoadContext(loadContext);
+                setError(e && e.status === 404 ? 'Project not found.' : 'Could not load this project.');
+            }));
+    }, [beginLoad, id, loadContext]);
 
     useEffect(() => {
+        beginDiagnostics();
+        beginFeedback();
+        beginPreview();
         setProject(null);
         setError(null);
+        setSection('overview');
+        setDiagnostics(null);
+        setDiagnosticsError('');
+        setFeedback(null);
+        setFeedbackError('');
+        setFeedbackBusy('');
+        setPreview(null);
+        setPreviewBusy(false);
+        setSaving(false);
+        setTeamSaving(false);
+        setStatus(null);
+        setTeamStatus('');
+        if (loading || !viewerName) return;
         load();
-    }, [id, load]);
+    }, [beginDiagnostics, beginFeedback, beginPreview, id, load, loading, viewerName]);
 
     useEffect(() => {
         if (!project) return;
@@ -75,19 +121,48 @@ const ManageProject = () => {
         setTeam(project.collaborators || []);
     }, [project]);
 
+    const loadDiagnostics = useCallback(() => {
+        const fresh = beginDiagnostics();
+        setDiagnostics(null);
+        setDiagnosticsError('');
+        api.diagnostics(id)
+            .then(fresh(setDiagnostics))
+            .catch(fresh(() => setDiagnosticsError('Could not load diagnostics.')));
+    }, [beginDiagnostics, id]);
+
+    const loadFeedback = useCallback(() => {
+        const fresh = beginFeedback();
+        setFeedback(null);
+        setFeedbackError('');
+        api.feedback(id)
+            .then(fresh(data => setFeedback(data.feedback || [])))
+            .catch(fresh(() => setFeedbackError('Could not load feedback.')));
+    }, [beginFeedback, id]);
+
     useEffect(() => {
-        if (section === 'diagnostics' && diagnostics === null) {
-            api.diagnostics(id).then(setDiagnostics).catch(() => setDiagnostics({counts: {}, recent: []}));
-        }
-        if (section === 'feedback' && feedback === null) {
-            api.feedback(id).then(data => setFeedback(data.feedback || [])).catch(() => setFeedback([]));
-        }
-    }, [section, id, diagnostics, feedback]);
+        if (section === 'diagnostics' && diagnostics === null && !diagnosticsError) loadDiagnostics();
+        if (section === 'feedback' && feedback === null && !feedbackError) loadFeedback();
+    }, [section, diagnostics, diagnosticsError, feedback, feedbackError, loadDiagnostics, loadFeedback]);
 
     const set = (key, value) => setForm(current => ({...current, [key]: value}));
 
+    const beginAction = name => {
+        const key = `${loadContext}\u0000${name}`;
+        if (actionLocks.current.has(key)) return null;
+        actionLocks.current.add(key);
+        return key;
+    };
+
+    const releaseAction = key => actionLocks.current.delete(key);
+
     const save = async () => {
-        if (saving) return;
+        const actionKey = beginAction('save');
+        if (!actionKey) return;
+        if (!form.title.trim()) {
+            setStatus('Project titles cannot be empty.');
+            releaseAction(actionKey);
+            return;
+        }
         setSaving(true);
         setStatus(null);
         try {
@@ -101,27 +176,78 @@ const ManageProject = () => {
             if (form.visibility !== (project.visibility || (project.shared ? 'public' : 'private'))) {
                 await api.setVisibility(id, form.visibility);
             }
-            setStatus('Saved.');
-            load();
+            if (currentLoadContext.current === loadContext) {
+                setStatus('Saved.');
+                load();
+            }
         } catch (e) {
-            setStatus(e.message || 'Could not save changes.');
+            if (currentLoadContext.current === loadContext) {
+                setStatus(e.message || 'Could not save changes.');
+            }
         } finally {
-            setSaving(false);
+            releaseAction(actionKey);
+            if (currentLoadContext.current === loadContext) setSaving(false);
         }
     };
 
     const saveTeam = async () => {
-        if (teamSaving) return;
+        const actionKey = beginAction('team');
+        if (!actionKey) return;
+        const collaborators = normalizeCollaborators(team);
         setTeamSaving(true);
         setTeamStatus('');
         try {
-            await api.updateProject(id, {collaborators: team.filter(member => member.username.trim())});
-            setTeamStatus('Team saved.');
-            load();
+            await api.updateProject(id, {collaborators});
+            if (currentLoadContext.current === loadContext) {
+                setTeamStatus('Team saved.');
+                load();
+            }
         } catch (e) {
-            setTeamStatus(e.message || 'Could not save the team.');
+            if (currentLoadContext.current === loadContext) {
+                setTeamStatus(e.message || 'Could not save the team.');
+            }
         } finally {
-            setTeamSaving(false);
+            releaseAction(actionKey);
+            if (currentLoadContext.current === loadContext) setTeamSaving(false);
+        }
+    };
+
+    const createPreview = async () => {
+        const actionKey = beginAction('preview');
+        if (!actionKey) return;
+        const fresh = beginPreview();
+        setPreviewBusy(true);
+        setStatus(null);
+        try {
+            const result = await api.createPreview(id, 24);
+            fresh(setPreview)(`${location.origin}${projectUrl(id)}?k=${encodeURIComponent(result.key)}`);
+        } catch (e) {
+            fresh(setStatus)(e.message || 'Could not create a preview link.');
+        } finally {
+            releaseAction(actionKey);
+            fresh(setPreviewBusy)(false);
+        }
+    };
+
+    const updateFeedbackStatus = async (item, nextStatus) => {
+        const actionKey = beginAction('feedback');
+        if (!actionKey) return;
+        setFeedbackBusy(item._id);
+        setFeedbackError('');
+        try {
+            await api.updateFeedback(id, item._id, nextStatus);
+            if (currentLoadContext.current === loadContext) {
+                setFeedback(current => current.map(entry => (
+                    entry._id === item._id ? {...entry, status: nextStatus} : entry
+                )));
+            }
+        } catch (e) {
+            if (currentLoadContext.current === loadContext) {
+                setFeedbackError(e.message || 'Could not update this feedback.');
+            }
+        } finally {
+            releaseAction(actionKey);
+            if (currentLoadContext.current === loadContext) setFeedbackBusy('');
         }
     };
 
@@ -129,12 +255,29 @@ const ManageProject = () => {
         return <main className={styles.page}><p className={styles.statusMsg}>Loading…</p></main>;
     }
     if (!user) {
-        return <main className={styles.page}><p className={styles.statusMsg}>Log in to manage your projects.</p></main>;
+        return (
+            <main className={styles.page}>
+                <p className={styles.statusMsg}>Sign in to manage your projects. <button type="button" onClick={login}>Sign in</button></p>
+            </main>
+        );
     }
-    if (error) {
-        return <main className={styles.page}><p className={styles.statusMsg}>{error}</p></main>;
+    if (error && errorLoadContext === loadContext) {
+        return (
+            <main className={styles.page}>
+                <p className={styles.statusMsg}>
+                    {error}{' '}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setError(null);
+                            load();
+                        }}
+                    >Try again</button>
+                </p>
+            </main>
+        );
     }
-    if (!project || !form) {
+    if (!project || !form || projectLoadContext !== loadContext) {
         return <main className={styles.page}><p className={styles.statusMsg}>Loading…</p></main>;
     }
     if (!project.isOwner) {
@@ -158,7 +301,7 @@ const ManageProject = () => {
         <main className={styles.page}>
             <div className={styles.head}>
                 <Link
-                    to="/mystuff"
+                    to="/mystuff?section=projects"
                     className={styles.back}
                 >
                     <ArrowLeft size={15} />
@@ -180,7 +323,10 @@ const ManageProject = () => {
                         badge: item.key === 'buyers' && buyers.length ? buyers.length : null
                     }))}
                     active={activeSection}
-                    onChange={setSection}
+                    onChange={nextSection => {
+                        setSection(nextSection);
+                        setStatus(null);
+                    }}
                     ariaLabel="Project sections"
                 />
 
@@ -316,6 +462,7 @@ const ManageProject = () => {
                                     <label className={styles.field}>
                                         <span>Title</span>
                                         <input
+                                            disabled={saving}
                                             value={form.title}
                                             maxLength={100}
                                             onChange={e => set('title', e.target.value)}
@@ -325,6 +472,7 @@ const ManageProject = () => {
                                         <div className={styles.field}>
                                             <span>Visibility</span>
                                             <VisibilityMenu
+                                                disabled={saving}
                                                 value={form.visibility}
                                                 onChange={v => set('visibility', v)}
                                             />
@@ -332,6 +480,7 @@ const ManageProject = () => {
                                         <label className={`${styles.field} ${styles.priceField}`}>
                                             <span>Price in credits (0 is free)</span>
                                             <input
+                                                disabled={saving}
                                                 type="number"
                                                 min="0"
                                                 step="1"
@@ -340,40 +489,38 @@ const ManageProject = () => {
                                             />
                                         </label>
                                     </div>
-                                    <label className={styles.checkboxField}>
-                                        <input
-                                            type="checkbox"
+                                    <div className={styles.switches}>
+                                        <SwitchRow
                                             checked={form.remixable}
-                                            onChange={e => set('remixable', e.target.checked)}
+                                            disabled={saving}
+                                            label="Allow others to remix this project"
+                                            onChange={value => set('remixable', value)}
                                         />
-                                        <span>Allow others to remix this project</span>
-                                    </label>
-                                    <label className={styles.checkboxField}>
-                                        <input
-                                            type="checkbox"
+                                        <SwitchRow
                                             checked={form.seeInside}
-                                            onChange={e => set('seeInside', e.target.checked)}
+                                            disabled={saving}
+                                            label="Allow others to see inside this project"
+                                            onChange={value => set('seeInside', value)}
                                         />
-                                        <span>Allow others to see inside this project</span>
-                                    </label>
-                                    <label className={styles.checkboxField}>
-                                        <input
-                                            type="checkbox"
+                                        <SwitchRow
                                             checked={form.commentsOff}
-                                            onChange={e => set('commentsOff', e.target.checked)}
+                                            disabled={saving}
+                                            label="Turn off comments"
+                                            onChange={value => set('commentsOff', value)}
                                         />
-                                        <span>Turn off comments</span>
-                                    </label>
+                                    </div>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
-                                        <button
+                                        <Button
+                                            variant="primary"
                                             className={styles.save}
+                                            busy={saving}
+                                            busyLabel="Saving…"
                                             onClick={save}
-                                            disabled={saving}
                                         >
                                             <Check size={16} />
-                                            {saving ? 'Saving…' : 'Save changes'}
-                                        </button>
+                                            Save changes
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -396,6 +543,8 @@ const ManageProject = () => {
                                         <div className={styles.stat}><span className={styles.statNumber}>{diagnostics.counts.crash || 0}</span><span className={styles.statLabel}>Errors</span></div>
                                         <div className={styles.stat}><span className={styles.statNumber}>{Math.round(diagnostics.averageLoadMs || 0)} ms</span><span className={styles.statLabel}>Average load</span></div>
                                     </div>
+                                ) : diagnosticsError ? (
+                                    <p className={styles.empty}>{diagnosticsError}{' '}<button type="button" onClick={loadDiagnostics}>Try again</button></p>
                                 ) : <p className={styles.empty}>Loading diagnostics…</p>}
                             </div>
                             {diagnostics && diagnostics.recent.some(item => item.error) ? (
@@ -411,7 +560,8 @@ const ManageProject = () => {
                     {activeSection === 'feedback' ? (
                         <div className={styles.card}>
                             <h2 className={styles.cardTitle}>Tracked feedback</h2>
-                            {!feedback ? <p className={styles.empty}>Loading feedback…</p> : null}
+                            {!feedback && !feedbackError ? <p className={styles.empty}>Loading feedback…</p> : null}
+                            {feedbackError ? <p className={styles.empty}>{feedbackError}{' '}<button type="button" onClick={loadFeedback}>Try again</button></p> : null}
                             {feedback && !feedback.length ? <p className={styles.empty}>No feedback yet.</p> : null}
                             {feedback && feedback.length ? (
                                 <ul className={styles.buyers}>
@@ -422,11 +572,9 @@ const ManageProject = () => {
                                                 {item.author}
                                                 <span className={styles.buyerDate}>{new Date(item.created).toLocaleDateString()}</span>
                                                 <select
-                                                    value={item.status || 'open'} onChange={async event => {
-                                                        const nextStatus = event.target.value;
-                                                        await api.updateFeedback(id, item._id, nextStatus);
-                                                        setFeedback(current => current.map(entry => (entry._id === item._id ? {...entry, status: nextStatus} : entry)));
-                                                    }}
+                                                    value={item.status || 'open'}
+                                                    disabled={Boolean(feedbackBusy)}
+                                                    onChange={event => updateFeedbackStatus(item, event.target.value)}
                                                 >
                                                     <option value="open">Open</option>
                                                     <option value="working">Working</option>
@@ -444,20 +592,31 @@ const ManageProject = () => {
                         <div className={styles.card}>
                             <h2 className={styles.cardTitle}>Draft preview</h2>
                             <p className={styles.empty}>Create a private link that expires after 24 hours. Anyone with the link can play the current draft.</p>
-                            <button
-                                className={styles.save} onClick={async () => {
-                                    const result = await api.createPreview(id, 24);
-                                    setPreview(`${location.origin}${projectUrl(id)}?k=${encodeURIComponent(result.key)}`);
-                                }}
-                            ><Link2 size={16} /> Create preview link</button>
+                            <Button
+                                variant="primary"
+                                className={styles.save}
+                                busy={previewBusy}
+                                busyLabel="Creating…"
+                                onClick={createPreview}
+                            ><Link2 size={16} /> Create preview link</Button>
                             {preview ? <div className={styles.form}><input value={preview} readOnly onFocus={event => event.target.select()} /><span className={styles.formStatus}>Expires in 24 hours.</span></div> : null}
+                            {status ? <p className={styles.empty}>{status}</p> : null}
                         </div>
                     ) : null}
                     {activeSection === 'team' ? (
                         <div className={`${styles.card} ${styles.teamCard}`}>
                             <div className={styles.teamHead}>
                                 <div><h2 className={styles.cardTitle}>Project team</h2><p>Give other people access without sharing your account.</p></div>
-                                <button className={styles.addTeam} onClick={() => setTeam(current => [...current, {username: '', role: 'contributor'}])}><Plus size={15} /> Add teammate</button>
+                                <Button
+                                    className={styles.addTeam}
+                                    disabled={teamSaving}
+                                    onClick={() => setTeam(current => [
+                                        ...current,
+                                        {username: '', role: 'contributor'}
+                                    ])}
+                                >
+                                    <Plus size={15} /> Add teammate
+                                </Button>
                             </div>
                             {team.length ? (
                                 <div className={styles.teamList}>
@@ -466,6 +625,7 @@ const ManageProject = () => {
                                             <label className={styles.teamUser}>
                                                 <span>Username</span>
                                                 <input
+                                                    disabled={teamSaving}
                                                     value={member.username}
                                                     placeholder="Rotur username"
                                                     onChange={event => {
@@ -477,6 +637,7 @@ const ManageProject = () => {
                                             <label className={styles.teamRole}>
                                                 <span>Role</span>
                                                 <select
+                                                    disabled={teamSaving}
                                                     value={member.role}
                                                     onChange={event => {
                                                         const {value} = event.target;
@@ -489,14 +650,32 @@ const ManageProject = () => {
                                                 </select>
                                                 <small>{ROLE_DESCRIPTIONS[member.role]}</small>
                                             </label>
-                                            <button className={styles.removeTeam} title="Remove teammate" aria-label="Remove teammate" onClick={() => setTeam(current => current.filter((item, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button>
+                                            <IconButton
+                                                variant="danger"
+                                                className={styles.removeTeam}
+                                                label={`Remove ${member.username || 'teammate'}`}
+                                                disabled={teamSaving}
+                                                onClick={() => setTeam(current => current.filter(
+                                                    (item, itemIndex) => itemIndex !== index
+                                                ))}
+                                            >
+                                                <Trash2 size={15} />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>
                             ) : <div className={styles.teamEmpty}><Users size={22} /><strong>No teammates yet</strong><span>Add someone when you are ready to work together.</span></div>}
                             <div className={styles.teamFooter}>
                                 <span>{teamStatus}</span>
-                                <button className={styles.save} disabled={teamSaving} onClick={saveTeam}><Check size={15} /> {teamSaving ? 'Saving…' : 'Save team'}</button>
+                                <Button
+                                    variant="primary"
+                                    className={styles.save}
+                                    busy={teamSaving}
+                                    busyLabel="Saving…"
+                                    onClick={saveTeam}
+                                >
+                                    <Check size={15} /> Save team
+                                </Button>
                             </div>
                         </div>
                     ) : null}
@@ -506,4 +685,5 @@ const ManageProject = () => {
     );
 };
 
+export {SECTIONS, normalizeCollaborators};
 export default ManageProject;

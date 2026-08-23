@@ -59,6 +59,7 @@ import NativeSpotlight from '../../containers/spotlight.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
+import listenForStagePanelDrag from '../../lib/utils/stage-panel-drag.js';
 import {getFindBarApi} from '../../lib/find-bar/api';
 import {setFractchModeOpener} from '../../lib/git/fractch-mode';
 import {Theme} from '../../lib/themes';
@@ -175,6 +176,7 @@ const GUIComponent = props => {
     const stageAndTargetWrapperRef = useRef(null);
     const stageResizeRafRef = useRef(null);
     const measureRafRef = useRef(null);
+    const stagePanelResizeCleanupRef = useRef(null);
     const syncingModeRef = useRef(false);
     const prevStageSizeModeRef = useRef(null);
     const lastSyncedWidthRef = useRef(null);
@@ -256,7 +258,17 @@ const GUIComponent = props => {
             stageResizeRafRef.current = null;
             window.dispatchEvent(new Event('resize'));
         });
+        return () => {
+            if (stageResizeRafRef.current) {
+                cancelAnimationFrame(stageResizeRafRef.current);
+                stageResizeRafRef.current = null;
+            }
+        };
     }, [stageContainerWidth]);
+
+    useEffect(() => () => {
+        if (stagePanelResizeCleanupRef.current) stagePanelResizeCleanupRef.current();
+    }, []);
 
     const setStageWidth = useCallback(contentWidth => {
         if (contentWidth === null) {
@@ -445,6 +457,8 @@ const GUIComponent = props => {
         if (typeof e.button !== 'undefined' && e.button !== 0) return;
         e.preventDefault();
 
+        if (stagePanelResizeCleanupRef.current) stagePanelResizeCleanupRef.current();
+
         const el = stageAndTargetWrapperRef.current;
         if (!el) return;
         const editorEl = editorWrapperRef.current;
@@ -562,21 +576,22 @@ const GUIComponent = props => {
             });
         };
 
-        const onUp = () => {
+        const cancelPendingMove = () => {
             if (moveRaf) {
                 cancelAnimationFrame(moveRaf);
                 moveRaf = null;
             }
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-            window.removeEventListener('mousemove', onMove);
-            window.removeEventListener('mouseup', onUp);
         };
-
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onUp);
+        const finishResize = () => {
+            cancelPendingMove();
+            stagePanelResizeCleanupRef.current = null;
+        };
+        const removeListeners = listenForStagePanelDrag(onMove, finishResize);
+        stagePanelResizeCleanupRef.current = () => {
+            cancelPendingMove();
+            removeListeners();
+            stagePanelResizeCleanupRef.current = null;
+        };
     }, [
         getStageBorderExtraWidth,
         props.customStageSize
@@ -640,8 +655,6 @@ const GUIComponent = props => {
         onOpenExtensionManagerModal,
         onOpenRegistration,
         onToggleLoginOpen,
-        onActivateCostumesTab,
-        onActivateSoundsTab,
         onActivateTab,
         onClickLogo,
         onExtensionButtonClick,
@@ -984,10 +997,7 @@ const GUIComponent = props => {
                                         />
                                         <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
                                     </Tab>
-                                    <Tab
-                                        className={tabClassNames.tab}
-                                        onClick={onActivateCostumesTab}
-                                    >
+                                    <Tab className={tabClassNames.tab}>
                                         <CostumesIcon size={20} />
                                         {targetIsStage ? (
                                             <FormattedMessage
@@ -1004,10 +1014,7 @@ const GUIComponent = props => {
                                         )}
                                         <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
                                     </Tab>
-                                    <Tab
-                                        className={tabClassNames.tab}
-                                        onClick={onActivateSoundsTab}
-                                    >
+                                    <Tab className={tabClassNames.tab}>
                                         <SoundsIcon size={20} />
                                         <FormattedMessage
                                             defaultMessage="Sounds"
@@ -1046,6 +1053,7 @@ const GUIComponent = props => {
                                             </Box>
                                             <Box className={styles.paletteFooter}>
                                                 <button
+                                                    type="button"
                                                     className={classNames(
                                                         styles.paletteButton,
                                                         styles.paletteSearchButton
@@ -1059,6 +1067,7 @@ const GUIComponent = props => {
                                                     />
                                                 </button>
                                                 <button
+                                                    type="button"
                                                     className={styles.paletteButton}
                                                     title={intl.formatMessage(messages.addExtension)}
                                                     onClick={onExtensionButtonClick}
@@ -1201,8 +1210,6 @@ GUIComponent.propTypes = {
     isTotallyNormal: PropTypes.bool,
     loading: PropTypes.bool,
     logo: PropTypes.string,
-    onActivateCostumesTab: PropTypes.func,
-    onActivateSoundsTab: PropTypes.func,
     onActivateTab: PropTypes.func,
     onClickAccountNav: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
@@ -1297,6 +1304,10 @@ const mapDispatchToProps = dispatch => ({
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
     onRequestCloseRoturLogin: () => dispatch(closeRoturLoginModal())
 });
+
+export {
+    GUIComponent
+};
 
 export default injectIntl(connect(
     mapStateToProps,

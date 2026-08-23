@@ -67,13 +67,15 @@ const ModalSidebarItem = ({
     label,
     onClick,
     selected,
-    title
+    title,
+    value
 }) => (
     <button
         className={classNames(styles.item, {[styles.itemSelected]: selected})}
         onClick={onClick}
         title={title || label}
         type="button"
+        value={value}
     >
         {Icon && (
             <Icon
@@ -99,7 +101,8 @@ ModalSidebarItem.propTypes = {
     label: PropTypes.node.isRequired,
     onClick: PropTypes.func.isRequired,
     selected: PropTypes.bool,
-    title: PropTypes.string
+    title: PropTypes.string,
+    value: PropTypes.string
 };
 
 const ModalSidebarGroup = ({children, className}) => (

@@ -623,6 +623,11 @@
     cursor: pointer;
 }
 
+.iconButton:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .pickerTabs {
     display: flex;
     gap: 5px;
@@ -751,6 +756,17 @@
     font-size: 12px;
 }
 
+.pickerEmpty button {
+    border: 0;
+    background: none;
+    color: currentColor;
+    font: inherit;
+    font-weight: 700;
+    padding: 0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .manageHeader {
     display: flex;
     align-items: flex-end;
@@ -835,6 +851,15 @@
     box-shadow: var(--card-shadow);
 }
 
+.manageFormFields {
+    min-width: 0;
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
 .manageCard > header h2 {
     margin: 0 0 3px;
     font-size: 19px;
@@ -847,7 +872,7 @@
     line-height: 1.5;
 }
 
-.manageCard > label,
+.manageFormFields > label,
 .manageCard .formRow > label {
     display: grid;
     gap: 6px;
@@ -879,26 +904,11 @@
     border-color: var(--accent);
 }
 
-.toggleField {
-    display: flex !important;
+.toggleSwitch {
     min-height: 42px;
-    align-items: center;
     align-self: end;
-    gap: 9px !important;
-}
-
-.toggleField input {
-    flex: 0 0 auto;
-}
-
-.toggleField span {
-    display: grid;
-    gap: 2px;
-}
-
-.toggleField small {
-    color: var(--text-faint);
-    font-weight: 400;
+    margin: 0;
+    border-top: 0;
 }
 
 .manageCardActions {

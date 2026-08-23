@@ -3,6 +3,7 @@
 @import "../../css/units.css";
 
 .play-button {
+    appearance: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -10,6 +11,8 @@
     overflow: hidden;  /* Mask the icon animation */
     width: 2.5rem;
     height: 2.5rem;
+    padding: 0;
+    border: 0;
     background-color: $sound-primary;
     color: $ui-white;
     border-radius: 50%;
@@ -25,8 +28,9 @@
     z-index: auto;
 }
 
-.play-button:focus {
-    outline: none;
+.play-button:focus-visible {
+    outline: 2px solid $sound-primary;
+    outline-offset: 2px;
 }
 
 .play-icon {

@@ -119,6 +119,7 @@ const InvalidProjectModal = props => (
             </p>
 
             <button
+                type="button"
                 className={styles.button}
                 onClick={props.onClickRestorePoints}
             >

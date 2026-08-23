@@ -26,12 +26,15 @@ const ListMonitor = ({draggable, label, width, height, value, onResizeMouseDown,
             />
         </div>
         <div className={styles.listFooter}>
-            <div
+            <button
+                type="button"
+                aria-label="Add list item"
                 className={classNames(draggable ? styles.addButton : null, 'no-drag')}
+                disabled={!draggable}
                 onClick={draggable ? onAdd : null}
             >
                 {'+' /* TODO waiting on asset */}
-            </div>
+            </button>
             <div className={styles.footerLength}>
                 <FormattedMessage
                     defaultMessage="length {length}"

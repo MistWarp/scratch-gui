@@ -33,7 +33,7 @@ const Footer = () => (
                     <Link to="/leaderboard">Leaderboard</Link>
                     <Link to="/news">News</Link>
                     <Link to="/roadmap">Roadmap</Link>
-                    <Link to="/users/mist">Report a bug</Link>
+                    <Link to="/roadmap?new=bug">Report a bug</Link>
                 </div>
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>More</span>

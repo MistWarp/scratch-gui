@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {injectIntl, intlShape} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import {closeAssetsModal} from '../reducers/modals';
+import {showStandardAlert} from '../reducers/alerts';
 import downloadBlob from '../lib/utils/download-blob';
 import storage from '../lib/persistence/storage';
 import log from '../lib/utils/log';
-import AssetsModalComponent, {messages} from '../components/mw-assets-modal/assets-modal.jsx';
+import AssetsModalComponent from '../components/mw-assets-modal/assets-modal.jsx';
 
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
 const AUDIO_FORMATS = ['wav', 'mp3', 'ogg'];
@@ -35,6 +35,7 @@ class MWAssetsModal extends React.Component {
         super(props);
         bindAll(this, [
             'handleAssetsChanged',
+            'handleClose',
             'handleClickAdd',
             'handleNewFolder',
             'handleFileChange',
@@ -46,22 +47,34 @@ class MWAssetsModal extends React.Component {
             'handleRename',
             'handleExport',
             'handleDelete',
+            'handleDialogInput',
+            'handleDialogKeyDown',
+            'handleDialogCancel',
+            'handleDialogConfirm',
             'setFileInput'
         ]);
         this.state = {
             assets: this.getAssets(),
             folders: [],
             selected: '',
-            selectedIndex: null
+            selectedIndex: null,
+            dialog: null,
+            dialogError: '',
+            importing: false
         };
+        this.selectedEntry = null;
+        this.importPromise = null;
+        this.mounted = false;
     }
 
     componentDidMount () {
+        this.mounted = true;
         this.assetManager.on('change', this.handleAssetsChanged);
         document.addEventListener('paste', this.handlePaste);
     }
 
     componentWillUnmount () {
+        this.mounted = false;
         this.assetManager.off('change', this.handleAssetsChanged);
         document.removeEventListener('paste', this.handlePaste);
     }
@@ -114,13 +127,14 @@ class MWAssetsModal extends React.Component {
     }
 
     handleAssetsChanged () {
-        this.setState(state => ({
+        const selectedIndex = this.selectedEntry ?
+            this.assetManager.assets.indexOf(this.selectedEntry) :
+            -1;
+        if (selectedIndex === -1) this.selectedEntry = null;
+        this.setState({
             assets: this.getAssets(),
-            selectedIndex: state.selectedIndex === null ||
-                state.selectedIndex < this.assetManager.assets.length ?
-                state.selectedIndex :
-                null
-        }));
+            selectedIndex: selectedIndex === -1 ? null : selectedIndex
+        });
         this.props.vm.emitWorkspaceUpdate();
     }
 
@@ -128,7 +142,19 @@ class MWAssetsModal extends React.Component {
         this.fileInput = input;
     }
 
-    async addFiles (files, folder) {
+    addFiles (files, folder) {
+        if (this.importPromise) return this.importPromise;
+        this.setState({importing: true});
+        this.importPromise = this.runAddFiles(files, folder).finally(() => {
+            this.importPromise = null;
+            if (this.mounted) this.setState({importing: false});
+        });
+        return this.importPromise;
+    }
+
+    async runAddFiles (files, folder) {
+        let failed = 0;
+        let added = 0;
         for (const file of Array.from(files)) {
             try {
                 const buffer = await file.arrayBuffer();
@@ -141,48 +167,57 @@ class MWAssetsModal extends React.Component {
                 );
                 const path = folder ? `${folder}/${file.name}` : file.name;
                 this.assetManager.addAsset(this.assetManager.getUnusedName(path), asset);
+                added++;
             } catch (e) {
+                failed++;
                 log.error(`could not add custom asset "${file.name}"`, e);
             }
         }
+        if (failed && this.mounted) this.props.onShowImportError();
+        return {added, failed};
+    }
+
+    handleClose () {
+        if (this.importPromise) return;
+        if (this.state.dialog) this.handleDialogCancel();
+        else this.props.onClose();
     }
 
     handleClickAdd () {
-        this.fileInput.click();
+        if (this.fileInput) this.fileInput.click();
     }
 
     handleNewFolder () {
-        // eslint-disable-next-line no-alert
-        const name = prompt(this.props.intl.formatMessage(messages.newFolder));
-        if (!name) {
-            return;
-        }
-        const path = this.state.selected ? `${this.state.selected}/${name}` : name;
-        this.setState(state => ({
-            folders: state.folders.includes(path) ? state.folders : state.folders.concat(path),
-            selected: path,
-            selectedIndex: null
-        }));
+        if (this.state.dialog) return false;
+        this.setState({
+            dialog: {type: 'folder', parent: this.state.selected, value: ''},
+            dialogError: ''
+        });
+        return true;
     }
 
     handleFileChange (e) {
         const files = e.target.files;
         if (files && files.length) {
-            this.addFiles(files, this.state.selected);
+            const adding = this.addFiles(files, this.state.selected);
+            e.target.value = null;
+            return adding;
         }
         e.target.value = null;
+        return Promise.resolve({added: 0, failed: 0});
     }
 
     handlePaste (e) {
         const files = e.clipboardData && e.clipboardData.files;
         if (files && files.length) {
             e.preventDefault();
-            this.addFiles(files, this.state.selected);
+            return this.addFiles(files, this.state.selected);
         }
+        return Promise.resolve({added: 0, failed: 0});
     }
 
     handleDropFiles (files, folder) {
-        this.addFiles(files, folder);
+        return this.addFiles(files, folder);
     }
 
     handleMove (index, folder) {
@@ -195,6 +230,7 @@ class MWAssetsModal extends React.Component {
     }
 
     handleSelect (folder) {
+        this.selectedEntry = null;
         this.setState({
             selected: folder,
             selectedIndex: null
@@ -203,6 +239,7 @@ class MWAssetsModal extends React.Component {
 
     handleSelectFile (index) {
         const entry = this.assetManager.assets[index];
+        this.selectedEntry = entry || null;
         this.setState({
             selectedIndex: index,
             selected: entry ? getFolder(entry.name) : ''
@@ -215,26 +252,71 @@ class MWAssetsModal extends React.Component {
 
     handleExport (index) {
         const entry = this.assetManager.assets[index];
+        if (!entry) return false;
         const blob = new Blob([entry.asset.data]);
         downloadBlob(getBaseName(entry.name), blob);
+        return true;
     }
 
     handleDelete (index) {
         const entry = this.assetManager.assets[index];
-        // eslint-disable-next-line no-alert
-        const allowed = confirm(this.props.intl.formatMessage(messages.delete, {
-            asset: entry.name
-        }));
-        if (allowed) {
-            this.assetManager.deleteAsset(index);
-            this.setState({selectedIndex: null});
+        if (!entry) return false;
+        this.setState({
+            dialog: {type: 'delete', entry},
+            dialogError: ''
+        });
+        return true;
+    }
+
+    handleDialogInput (event) {
+        const value = event.target.value;
+        this.setState(state => ({dialog: {...state.dialog, value}, dialogError: ''}));
+    }
+
+    handleDialogKeyDown (event) {
+        if (event.key === 'Enter') this.handleDialogConfirm();
+    }
+
+    handleDialogCancel () {
+        this.setState({dialog: null, dialogError: ''});
+    }
+
+    handleDialogConfirm () {
+        const {dialog} = this.state;
+        if (!dialog) return false;
+        if (dialog.type === 'folder') {
+            const name = dialog.value.trim();
+            if (!name) {
+                this.setState({dialogError: 'Enter a folder name.'});
+                return false;
+            }
+            const path = dialog.parent ? `${dialog.parent}/${name}` : name;
+            this.selectedEntry = null;
+            this.setState(state => ({
+                folders: state.folders.includes(path) ? state.folders : state.folders.concat(path),
+                selected: path,
+                selectedIndex: null,
+                dialog: null,
+                dialogError: ''
+            }));
+            return true;
         }
+
+        const index = this.assetManager.assets.indexOf(dialog.entry);
+        if (index === -1) {
+            this.setState({dialog: null, dialogError: ''});
+            return false;
+        }
+        this.assetManager.deleteAsset(index);
+        if (this.selectedEntry === dialog.entry) this.selectedEntry = null;
+        this.setState({selectedIndex: null, dialog: null, dialogError: ''});
+        return true;
     }
 
     render () {
         return (
             <AssetsModalComponent
-                onClose={this.props.onClose}
+                onClose={this.handleClose}
                 assets={this.state.assets}
                 folders={this.state.folders}
                 selected={this.state.selected}
@@ -251,14 +333,21 @@ class MWAssetsModal extends React.Component {
                 onRename={this.handleRename}
                 onExport={this.handleExport}
                 onDelete={this.handleDelete}
+                dialog={this.state.dialog}
+                dialogError={this.state.dialogError}
+                importing={this.state.importing}
+                onDialogInput={this.handleDialogInput}
+                onDialogKeyDown={this.handleDialogKeyDown}
+                onDialogCancel={this.handleDialogCancel}
+                onDialogConfirm={this.handleDialogConfirm}
             />
         );
     }
 }
 
 MWAssetsModal.propTypes = {
-    intl: intlShape,
     onClose: PropTypes.func.isRequired,
+    onShowImportError: PropTypes.func.isRequired,
     vm: PropTypes.shape({
         emitWorkspaceUpdate: PropTypes.func,
         runtime: PropTypes.shape({
@@ -281,10 +370,15 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeAssetsModal())
+    onClose: () => dispatch(closeAssetsModal()),
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
 });
 
-export default injectIntl(connect(
+export {
+    MWAssetsModal
+};
+
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(MWAssetsModal));
+)(MWAssetsModal);

@@ -4,6 +4,7 @@ import {ArrowLeft, Layers3, Trophy} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import ProjectCard from './ProjectCard.jsx';
 import SpaceCard from './SpaceCard.jsx';
+import Button from './ui/Button.jsx';
 import styles from './MyStuffSpaces.module.css';
 
 const MyStuffSpaces = ({mode, spaces, libraryProjects, username, error, onRetry}) => {
@@ -11,7 +12,7 @@ const MyStuffSpaces = ({mode, spaces, libraryProjects, username, error, onRetry}
     if (error) {
         return (
             <p className={styles.status}>
-                Could not load your {mode}. <button type="button" onClick={onRetry}>Try again</button>
+                Could not load your {mode}. <Button variant="secondary" onClick={onRetry}>Try again</Button>
             </p>
         );
     }

@@ -36,8 +36,12 @@ const vmManagerHOC = function (WrappedComponent) {
             bindAll(this, [
                 'loadProject'
             ]);
+            this._isMounted = false;
+            this.loadGeneration = 0;
+            this.loadTimeouts = new Set();
         }
         componentDidMount () {
+            this._isMounted = true;
             if (!this.props.vm.initialized) {
                 window.vm = this.props.vm;
 
@@ -69,14 +73,32 @@ const vmManagerHOC = function (WrappedComponent) {
                 this.props.vm.start();
             }
         }
+        componentWillUnmount () {
+            this._isMounted = false;
+            this.loadGeneration++;
+            this.loadTimeouts.forEach(timeout => clearTimeout(timeout));
+            this.loadTimeouts.clear();
+        }
 
         loadProject () {
+            const loadGeneration = ++this.loadGeneration;
+            const {
+                canSave,
+                isStarted,
+                loadingState,
+                onError,
+                onLoadedProject: handleLoadedProject,
+                onSetProjectUnchanged,
+                projectData,
+                vm
+            } = this.props;
             // tw: stop when loading new project
-            this.props.vm.quit();
-            const prepareProjectHistory = this.props.vm._mwPrepareProjectHistory;
-            this.props.vm._mwPrepareProjectHistory = null;
-            return this.props.vm.loadProject(this.props.projectData, {skipGitImport: true})
+            vm.quit();
+            const prepareProjectHistory = vm._mwPrepareProjectHistory;
+            vm._mwPrepareProjectHistory = null;
+            return vm.loadProject(projectData, {skipGitImport: true})
                 .then(async () => {
+                    if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
                     if (prepareProjectHistory) {
                         try {
                             await prepareProjectHistory();
@@ -84,24 +106,41 @@ const vmManagerHOC = function (WrappedComponent) {
                             log.error('Could not preload MistWarp version history:', error);
                         }
                     }
-                    this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+                    if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
+                    handleLoadedProject(loadingState, canSave);
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.
-                    setTimeout(() => this.props.onSetProjectUnchanged());
+                    const unchangedTimeout = setTimeout(() => {
+                        this.loadTimeouts.delete(unchangedTimeout);
+                        if (this._isMounted && loadGeneration === this.loadGeneration) {
+                            onSetProjectUnchanged();
+                        }
+                    });
+                    this.loadTimeouts.add(unchangedTimeout);
 
                     // If the vm is not running, call draw on the renderer manually
                     // This draws the state of the loaded project with no blocks running
                     // which closely matches the 2.0 behavior, except for monitors–
                     // 2.0 runs monitors and shows updates (e.g. timer monitor)
                     // before the VM starts running other hat blocks.
-                    if (!this.props.isStarted) {
+                    if (!isStarted) {
                         // Wrap in a setTimeout because skin loading in
                         // the renderer can be async.
-                        setTimeout(() => this.props.vm.renderer.draw());
+                        const drawTimeout = setTimeout(() => {
+                            this.loadTimeouts.delete(drawTimeout);
+                            if (this._isMounted && loadGeneration === this.loadGeneration) {
+                                vm.renderer.draw();
+                            }
+                        });
+                        this.loadTimeouts.add(drawTimeout);
                     }
+                    return true;
                 })
                 .catch(e => {
-                    this.props.onError(e);
+                    if (this._isMounted && loadGeneration === this.loadGeneration) {
+                        onError(e);
+                    }
+                    return false;
                 });
         }
         render () {

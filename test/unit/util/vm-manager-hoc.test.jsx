@@ -145,7 +145,7 @@ describe('VMManagerHOC', () => {
             loadingState: LoadingState.LOADING_VM_WITH_ID,
             projectData: '100'
         });
-        expect(vm.loadProject).toHaveBeenLastCalledWith('100');
+        expect(vm.loadProject).toHaveBeenLastCalledWith('100', {skipGitImport: true});
         // nextTick needed since vm.loadProject is async, and we have to wait for it :/
         process.nextTick(() => (
             expect(mockedOnLoadedProject).toHaveBeenLastCalledWith(LoadingState.LOADING_VM_WITH_ID, true)
@@ -170,7 +170,7 @@ describe('VMManagerHOC', () => {
             loadingState: LoadingState.LOADING_VM_WITH_ID,
             projectData: '100'
         });
-        expect(vm.loadProject).toHaveBeenLastCalledWith('100');
+        expect(vm.loadProject).toHaveBeenLastCalledWith('100', {skipGitImport: true});
         // nextTick needed since vm.loadProject is async, and we have to wait for it :/
         process.nextTick(() => (
             expect(mockedOnLoadedProject).toHaveBeenLastCalledWith(LoadingState.LOADING_VM_WITH_ID, false)
@@ -195,5 +195,45 @@ describe('VMManagerHOC', () => {
         });
         expect(vm.loadProject).toHaveBeenCalledTimes(0);
         process.nextTick(() => expect(mockedOnLoadedProject).toHaveBeenCalledTimes(0));
+    });
+
+    test('an older load finishing late cannot complete the newer project state', async () => {
+        const loadResolvers = [];
+        vm.loadProject = jest.fn(() => new Promise(resolve => loadResolvers.push(resolve)));
+        const onLoadedProject = jest.fn();
+        const Component = () => <div />;
+        const WrappedComponent = vmManagerHOC(Component);
+        const mounted = mount(
+            <WrappedComponent
+                fontsLoaded
+                isLoadingWithId={false}
+                isStarted
+                onLoadedProject={onLoadedProject}
+                store={store}
+                vm={vm}
+            />
+        );
+
+        mounted.setProps({
+            canSave: false,
+            isLoadingWithId: true,
+            loadingState: LoadingState.LOADING_VM_WITH_ID,
+            projectData: 'old'
+        });
+        mounted.setProps({isLoadingWithId: false});
+        mounted.setProps({
+            canSave: true,
+            isLoadingWithId: true,
+            loadingState: LoadingState.LOADING_VM_WITH_ID,
+            projectData: 'new'
+        });
+
+        loadResolvers[1]();
+        await Promise.resolve();
+        loadResolvers[0]();
+        await Promise.resolve();
+
+        expect(onLoadedProject).toHaveBeenCalledTimes(1);
+        expect(onLoadedProject).toHaveBeenCalledWith(LoadingState.LOADING_VM_WITH_ID, true);
     });
 });

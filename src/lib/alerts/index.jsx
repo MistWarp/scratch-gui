@@ -147,6 +147,88 @@ const alerts = [
         level: AlertLevels.WARN
     },
     {
+        alertId: 'assetExportError',
+        clearList: ['assetExportError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The asset could not be exported. Please try again."
+                description="Message indicating that an asset could not be exported"
+                id="gui.alerts.assetExportError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'assetRestoreError',
+        clearList: ['assetRestoreError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The deleted item could not be restored. Please try again."
+                description="Message indicating that a deleted editor item could not be restored"
+                id="gui.alerts.assetRestoreError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'assetDeleteError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['assetDeleteError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The item could not be deleted."
+                description="Message indicating that an editor item could not be deleted"
+                id="gui.alerts.assetDeleteError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'recordingError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['recordingError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="Could not start recording. Check your microphone permission and try again."
+                description="Message shown when microphone recording cannot start"
+                id="gui.alerts.recordingError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'cloudUnavailable',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['cloudUnavailable'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="Cloud variables are unavailable in this editor session."
+                description="Message shown when cloud variables cannot be enabled"
+                id="gui.alerts.cloudUnavailable"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'usernameChangeUnavailable',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['usernameChangeUnavailable'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="Username cannot be changed while the project is running."
+                description="Message shown when a username cannot be changed while a project is running"
+                id="tw.changeUsername.cannotChangeWhileRunning"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
         alertId: 'saveSuccess',
         alertType: AlertTypes.INLINE,
         clearList: ['saveSuccess', 'saving', 'savingError', 'twSaveToDiskSuccess',
@@ -327,6 +409,34 @@ const alerts = [
         maxDisplaySecs: 5
     },
     {
+        alertId: 'twRestorePointExportError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twRestorePointExportError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="Could not export the restore point. Try again."
+                description="Message shown when a restore point cannot be exported"
+                id="tw.alerts.restorePointExportError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'twRestorePointLoadError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twRestorePointLoadError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="Could not load the restore point. Your current project was not replaced."
+                description="Message shown when a restore point cannot be loaded"
+                id="tw.alerts.restorePointLoadError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
         alertId: 'cloudInfo',
         alertType: AlertTypes.STANDARD,
         clearList: ['cloudInfo'],
@@ -369,6 +479,60 @@ const alerts = [
         ),
         iconSpinner: true,
         level: AlertLevels.SUCCESS
+    },
+    {
+        alertId: 'assetImportError',
+        clearList: ['importingAsset', 'assetImportError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The asset could not be imported. Check the file and try again."
+                description="Message indicating that an asset could not be imported"
+                id="gui.alerts.assetImportError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'listImportError',
+        clearList: ['listImportError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The list could not be imported. Check the file and column number, then try again."
+                description="Message indicating that a list monitor import failed"
+                id="gui.alerts.listImportError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'blockImportError',
+        clearList: ['blockImportError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage="The blocks could not be imported. Try copying or dragging them again."
+                description="Message indicating that blocks could not be imported"
+                id="gui.alerts.blockImportError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'extensionLoadError',
+        clearList: ['extensionLoadError'],
+        closeButton: true,
+        content: (
+            <FormattedMessage
+                defaultMessage={
+                    'The extension could not be loaded. Check the connection or extension source and try again.'
+                }
+                description="Message indicating that an extension failed to load"
+                id="gui.alerts.extensionLoadError"
+            />
+        ),
+        level: AlertLevels.WARN
     }
 ];
 

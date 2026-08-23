@@ -1,6 +1,14 @@
 @import "../../css/colors.css";
 @import "../../css/units.css";
 
+.login-button {
+    padding: 0 0.75rem;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+}
+
 .user-info {
     display: inline-flex;
     flex-wrap: nowrap;

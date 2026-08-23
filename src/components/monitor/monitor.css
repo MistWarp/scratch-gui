@@ -120,6 +120,19 @@
     height: 22px;
 }
 
+.list-value-button {
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    text-align: inherit;
+    cursor: text;
+}
+
+.list-value-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
 .list-footer {
     background: $ui-white-default;
     display: flex;
@@ -168,14 +181,31 @@
 }
 
 .remove-button {
+    appearance: none;
     padding: 0;
     padding-right: 5px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
 }
 
 .add-button {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
     margin-right: 3px;
+}
+
+.remove-button:focus-visible,
+.add-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
 }
 
 .resize-handle {

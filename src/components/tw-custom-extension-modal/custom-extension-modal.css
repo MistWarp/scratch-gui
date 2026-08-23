@@ -23,15 +23,24 @@
     justify-content: space-around;
 }
 .type-selector-button {
+    appearance: none;
     width: 100%;
     cursor: pointer;
+    border: 0;
     border-bottom: 0.25rem solid $ui-tertiary;
+    background: transparent;
+    color: inherit;
+    font: inherit;
     margin: 0 1rem;
     padding: 0.5rem 0;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+.type-selector-button:disabled {
+    cursor: default;
+    opacity: 0.65;
 }
 .type-selector-button[data-active="true"] {
     border-color: $looks-secondary;
@@ -74,6 +83,11 @@
 .trusted-extension {
     background-color: rgba(94, 255, 94, 0.25);
     border: 1px solid green;
+}
+.load-error {
+    color: $error-primary;
+    background: $error-transparent;
+    border: 1px solid $error-primary;
 }
 .unsandboxed-warning {
     background-color: rgba(255, 81, 81, 0.25);

@@ -54,6 +54,11 @@
     color: var(--mw-text);
 }
 
+.close:disabled {
+    color: var(--text-faint);
+    cursor: not-allowed;
+}
+
 .body {
     display: flex;
     flex-direction: column;

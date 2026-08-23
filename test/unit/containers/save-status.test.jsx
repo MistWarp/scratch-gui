@@ -50,6 +50,7 @@ describe('SaveStatus container', () => {
         );
         expect(wrapper.find(InlineMessages).exists()).not.toBe(true);
         expect(wrapper.contains('Save Now')).toBe(true);
+        expect(wrapper.find('button').prop('type')).toBe('button');
 
         // Clicking save now should dispatch the manualUpdateProject action (stubbed above)
         wrapper.find('[children="Save Now"]').simulate('click');

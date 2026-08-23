@@ -41,8 +41,11 @@ class CustomExtensionModal extends React.Component {
             type: 'url',
             url: '',
             files: null,
-            text: ''
+            text: '',
+            loading: false,
+            error: null
         };
+        this.loadPromise = null;
     }
 
     /**
@@ -51,7 +54,7 @@ class CustomExtensionModal extends React.Component {
     getExtensionURLs () {
         if (this.state.type === 'url') {
             return Promise.resolve([
-                this.state.url
+                this.state.url.trim()
             ]);
         }
 
@@ -84,11 +87,11 @@ class CustomExtensionModal extends React.Component {
         }
 
         if (this.state.type === 'file') {
-            return !!this.state.files;
+            return !!(this.state.files && this.state.files.length);
         }
 
         if (this.state.type === 'text') {
-            return !!this.state.text;
+            return !!this.state.text.trim();
         }
 
         return false;
@@ -96,17 +99,20 @@ class CustomExtensionModal extends React.Component {
 
     handleChangeFiles (files) {
         this.setState({
-            files
+            files,
+            error: null
         });
     }
 
     handleChangeURL (e) {
         this.setState({
-            url: e.target.value
+            url: e.target.value,
+            error: null
         });
     }
 
     handleClose () {
+        if (this.loadPromise) return;
         this.props.onClose();
     }
 
@@ -117,52 +123,69 @@ class CustomExtensionModal extends React.Component {
         }
     }
 
-    async handleLoadExtension () {
-        this.handleClose();
-        try {
-            const urls = await this.getExtensionURLs();
+    handleLoadExtension () {
+        if (this.loadPromise || !this.hasValidInput()) return this.loadPromise;
+        this.setState({loading: true, error: null});
 
-            if (this.state.type !== 'url') {
-                for (const url of urls) {
-                    manuallyTrustExtension(url);
+        this.loadPromise = (async () => {
+            try {
+                const urls = await this.getExtensionURLs();
+
+                if (this.state.type !== 'url') {
+                    for (const url of urls) {
+                        manuallyTrustExtension(url);
+                    }
                 }
-            }
 
-            for (const url of urls) {
-                await this.props.vm.extensionManager.loadExtensionURL(url);
+                for (const url of urls) {
+                    await this.props.vm.extensionManager.loadExtensionURL(url);
+                }
+                this.props.onClose();
+                return true;
+            } catch (err) {
+                log.error(err);
+                this.setState({
+                    loading: false,
+                    error: err && err.message ? err.message : String(err)
+                });
+                return false;
             }
-        } catch (err) {
-            log.error(err);
-            // eslint-disable-next-line no-alert
-            alert(err);
-        }
+        })().finally(() => {
+            this.loadPromise = null;
+        });
+        return this.loadPromise;
     }
 
     handleSwitchToFile () {
         this.setState({
-            type: 'file'
+            type: 'file',
+            error: null
         });
     }
 
     handleSwitchToURL () {
         this.setState({
-            type: 'url'
+            type: 'url',
+            error: null
         });
     }
 
     handleSwitchToText () {
         this.setState({
-            type: 'text'
+            type: 'text',
+            error: null
         });
     }
 
     handleChangeText (e) {
         this.setState({
-            text: e.target.value
+            text: e.target.value,
+            error: null
         });
     }
 
     handleDragOver (e) {
+        if (this.loadPromise) return;
         if (e.dataTransfer.types.includes('Files')) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
@@ -174,12 +197,14 @@ class CustomExtensionModal extends React.Component {
     }
 
     handleDrop (e) {
+        if (this.loadPromise) return;
         const files = e.dataTransfer.files;
         if (files.length) {
             e.preventDefault();
             this.setState({
                 type: 'file',
-                files
+                files,
+                error: null
             });
         }
     }
@@ -188,6 +213,8 @@ class CustomExtensionModal extends React.Component {
         return (
             <CustomExtensionModalComponent
                 canLoadExtension={this.hasValidInput()}
+                error={this.state.error}
+                loading={this.state.loading}
                 type={this.state.type}
                 onSwitchToFile={this.handleSwitchToFile}
                 onSwitchToURL={this.handleSwitchToURL}

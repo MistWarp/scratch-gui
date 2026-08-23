@@ -34,7 +34,7 @@ const messages = defineMessages({
     }
 });
 
-const StageSelector = props => {
+export const StageSelector = props => {
     const {
         backdropCount,
         containerRef,
@@ -63,35 +63,41 @@ const StageSelector = props => {
                 [styles.receivedBlocks]: receivedBlocks
             })}
             componentRef={containerRef}
-            onClick={onClick}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             {...componentProps}
         >
-            <div className={styles.header}>
-                <div className={styles.headerTitle}>
+            <button
+                type="button"
+                className={styles.stageSelection}
+                aria-pressed={selected}
+                onClick={onClick}
+            >
+                <div className={styles.header}>
+                    <div className={styles.headerTitle}>
+                        <FormattedMessage
+                            defaultMessage="Stage"
+                            description="Label for the stage in the stage selector"
+                            id="gui.stageSelector.stage"
+                        />
+                    </div>
+                </div>
+                {url ? (
+                    <img
+                        className={styles.costumeCanvas}
+                        src={url}
+                        draggable={false}
+                    />
+                ) : null}
+                <div className={styles.label}>
                     <FormattedMessage
-                        defaultMessage="Stage"
-                        description="Label for the stage in the stage selector"
-                        id="gui.stageSelector.stage"
+                        defaultMessage="Backdrops"
+                        description="Label for the backdrops in the stage selector"
+                        id="gui.stageSelector.backdrops"
                     />
                 </div>
-            </div>
-            {url ? (
-                <img
-                    className={styles.costumeCanvas}
-                    src={url}
-                    draggable={false}
-                />
-            ) : null}
-            <div className={styles.label}>
-                <FormattedMessage
-                    defaultMessage="Backdrops"
-                    description="Label for the backdrops in the stage selector"
-                    id="gui.stageSelector.backdrops"
-                />
-            </div>
-            <div className={styles.count}>{backdropCount}</div>
+                <div className={styles.count}>{backdropCount}</div>
+            </button>
             <ActionMenu
                 className={styles.addButton}
                 img={backdropIcon}

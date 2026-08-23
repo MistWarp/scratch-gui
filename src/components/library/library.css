@@ -88,3 +88,10 @@
     align-items: center;
     justify-content: center;
 }
+
+.empty-state {
+    width: 100%;
+    padding: 3rem 1rem;
+    color: $text-primary;
+    text-align: center;
+}

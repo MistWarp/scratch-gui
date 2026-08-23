@@ -23,7 +23,7 @@ describe('SBFileUploaderHOC', () => {
         shallowWithIntl(component, {context: {store}})
     );
 
-    const unwrappedInstance = () => {
+    const unwrappedInstance = (overrides = {}) => {
         const WrappedComponent = getContainer();
         // default starting state: looking at a project you created, not logged in
         const wrapper = shallowMountWithContext(
@@ -32,12 +32,14 @@ describe('SBFileUploaderHOC', () => {
                 canSave={false}
                 cancelFileUpload={jest.fn()}
                 closeFileMenu={jest.fn()}
+                openSimpleDialog={jest.fn()}
                 requestProjectUpload={jest.fn()}
                 userOwnsProject={false}
                 vm={vm}
                 onLoadingFinished={jest.fn()}
                 onLoadingStarted={jest.fn()}
                 onUpdateProjectTitle={jest.fn()}
+                {...overrides}
             />
         );
         return wrapper
@@ -74,6 +76,71 @@ describe('SBFileUploaderHOC', () => {
     test('correctly sets title with .sb filename', () => {
         const projectName = unwrappedInstance().getProjectTitleFromFilename('my project is great.sb');
         expect(projectName).toBe('my project is great');
+    });
+
+    test('correctly sets title with uppercase project extension', () => {
+        const projectName = unwrappedInstance().getProjectTitleFromFilename('MY PROJECT.HTML');
+        expect(projectName).toBe('MY PROJECT');
+    });
+
+    test('cleans up without requesting a load when file selection is cancelled', () => {
+        const instance = unwrappedInstance();
+        instance.expectingFileUploadFinish = true;
+
+        instance.handleChange({target: {files: []}});
+
+        expect(instance.expectingFileUploadFinish).toBe(false);
+        expect(instance.props.requestProjectUpload).not.toHaveBeenCalled();
+        expect(instance.props.closeFileMenu).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not open two file pickers for the same request', () => {
+        const instance = unwrappedInstance();
+        instance.createFileObjects = jest.fn();
+
+        expect(instance.handleStartSelectingFileUpload()).toBe(true);
+        expect(instance.handleStartSelectingFileUpload()).toBe(false);
+
+        expect(instance.createFileObjects).toHaveBeenCalledTimes(1);
+    });
+
+    test('clears the pending upload when project replacement is declined', async () => {
+        const openSimpleDialog = jest.fn(config => config.onCancel());
+        const instance = unwrappedInstance({openSimpleDialog});
+        instance.expectingFileUploadFinish = true;
+
+        await instance.handleChange({target: {files: [{name: 'replacement.sb3'}]}});
+
+        expect(openSimpleDialog).toHaveBeenCalledWith(expect.objectContaining({type: 'confirm'}));
+        expect(instance.expectingFileUploadFinish).toBe(false);
+        expect(instance.props.requestProjectUpload).not.toHaveBeenCalled();
+    });
+
+    test('loads the selected file when project replacement is accepted', async () => {
+        const requestProjectUpload = jest.fn();
+        const openSimpleDialog = jest.fn(config => config.onOk());
+        const instance = unwrappedInstance({openSimpleDialog, requestProjectUpload});
+        instance.expectingFileUploadFinish = true;
+
+        await instance.handleChange({target: {files: [{name: 'replacement.sb3'}]}});
+
+        expect(requestProjectUpload).toHaveBeenCalledWith(instance.props.loadingState);
+    });
+
+    test('finishes the loading state when reading the selected file fails', () => {
+        const onLoadingFailed = jest.fn();
+        const onLoadingFinished = jest.fn();
+        const instance = unwrappedInstance({onLoadingFailed, onLoadingFinished});
+        instance.fileReader = {};
+        instance.fileToUpload = {name: 'broken.sb3'};
+        const error = new Error('read failed');
+
+        instance.handleFileReadError(error);
+
+        expect(onLoadingFailed).toHaveBeenCalledWith(error);
+        expect(onLoadingFinished).toHaveBeenCalledWith(instance.props.loadingState, false);
+        expect(instance.fileReader).toBeNull();
+        expect(instance.fileToUpload).toBeNull();
     });
 
     test('sets blank title with filename with no extension', () => {

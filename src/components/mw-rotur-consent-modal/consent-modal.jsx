@@ -34,18 +34,21 @@ const RoturConsentModal = props => {
                     </p>
                     <Box className={styles.buttons}>
                         <button
+                            type="button"
                             className={styles.denyButton}
                             onClick={props.onShareNo}
                         >
                             {'Not now'}
                         </button>
                         <button
+                            type="button"
                             className={styles.allowButton}
                             onClick={props.onShareAll}
                         >
                             {'Allow all projects'}
                         </button>
                         <button
+                            type="button"
                             className={styles.allowButton}
                             onClick={props.onShareThis}
                         >
@@ -110,12 +113,14 @@ const RoturConsentModal = props => {
 
                 <Box className={styles.buttons}>
                     <button
+                        type="button"
                         className={styles.denyButton}
                         onClick={props.onDenied}
                     >
                         {type === 'confirm' ? 'Cancel' : 'Not now'}
                     </button>
                     <button
+                        type="button"
                         className={styles.allowButton}
                         onClick={props.onAllowed}
                     >

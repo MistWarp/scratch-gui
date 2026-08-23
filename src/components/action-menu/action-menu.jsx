@@ -13,7 +13,10 @@ class ActionMenu extends React.Component {
         super(props);
         bindAll(this, [
             'clickDelayer',
+            'handleBlur',
             'handleClosePopover',
+            'handleFocus',
+            'handleKeyDown',
             'handleToggleOpenState',
             'handleTouchStart',
             'handleTouchOutside',
@@ -36,17 +39,9 @@ class ActionMenu extends React.Component {
         // Touch start on document is used to trigger close if it is outside
         document.addEventListener('touchstart', this.handleTouchOutside);
     }
-    shouldComponentUpdate (newProps, newState) {
-        // This check prevents re-rendering while the project is updating.
-        // @todo check only the state and the title because it is enough to know
-        //  if anything substantial has changed
-        // This is needed because of the sloppy way the props are passed as a new object,
-        //  which should be refactored.
-        return newState.isOpen !== this.state.isOpen ||
-            newState.forceHide !== this.state.forceHide ||
-            newProps.title !== this.props.title;
-    }
     componentWillUnmount () {
+        if (this.closeTimeoutId) clearTimeout(this.closeTimeoutId);
+        if (this.forceHideTimeoutId) clearTimeout(this.forceHideTimeoutId);
         this.buttonRef.removeEventListener('touchstart', this.handleTouchStart);
         document.removeEventListener('touchstart', this.handleTouchOutside);
     }
@@ -54,6 +49,43 @@ class ActionMenu extends React.Component {
         for (const ref of this.tooltipRefs) {
             if (ref.current) ref.current.close();
         }
+    }
+    handleFocus () {
+        if (this.closeTimeoutId) {
+            clearTimeout(this.closeTimeoutId);
+            this.closeTimeoutId = null;
+        }
+        if (!this.state.isOpen) {
+            this.setState({isOpen: true, forceHide: false});
+        }
+    }
+    handleBlur (event) {
+        if (this.containerRef && this.containerRef.contains(event.relatedTarget)) return;
+        if (this.closeTimeoutId) {
+            clearTimeout(this.closeTimeoutId);
+            this.closeTimeoutId = null;
+        }
+        this.setState({isOpen: false});
+    }
+    handleKeyDown (event) {
+        if (event.key === 'Escape') {
+            this.hideTooltips();
+            if (this.buttonRef) this.buttonRef.focus();
+            this.setState({isOpen: false});
+            event.preventDefault();
+            return;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        const buttons = Array.from(this.containerRef.querySelectorAll('[data-action-menu-more]:not(:disabled)'));
+        if (!buttons.length) return;
+        const currentIndex = buttons.indexOf(document.activeElement);
+        let nextIndex;
+        if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = buttons.length - 1;
+        else if (event.key === 'ArrowDown') nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % buttons.length;
+        else nextIndex = currentIndex < 0 ? buttons.length - 1 : (currentIndex - 1 + buttons.length) % buttons.length;
+        event.preventDefault();
+        buttons[nextIndex].focus();
     }
     handleClosePopover () {
         this.closeTimeoutId = setTimeout(() => {
@@ -74,7 +106,7 @@ class ActionMenu extends React.Component {
         }
     }
     handleTouchOutside (e) {
-        if (this.state.isOpen && !this.containerRef.contains(e.target)) {
+        if (this.state.isOpen && this.containerRef && !this.containerRef.contains(e.target)) {
             this.setState({isOpen: false});
             this.hideTooltips();
         }
@@ -91,7 +123,10 @@ class ActionMenu extends React.Component {
             // This prevents keyboard events from triggering the button
             this.buttonRef.blur();
             this.setState({forceHide: true, isOpen: false}, () => {
-                setTimeout(() => this.setState({forceHide: false}));
+                this.forceHideTimeoutId = setTimeout(() => {
+                    this.forceHideTimeoutId = null;
+                    this.setState({forceHide: false});
+                });
             });
         };
     }
@@ -125,11 +160,17 @@ class ActionMenu extends React.Component {
                     [styles.forceHidden]: this.state.forceHide
                 })}
                 ref={this.setContainerRef}
+                onBlur={this.handleBlur}
+                onFocus={this.handleFocus}
+                onKeyDown={this.handleKeyDown}
                 onMouseEnter={this.handleToggleOpenState}
                 onMouseLeave={this.handleClosePopover}
             >
                 <button
+                    type="button"
                     aria-label={mainTitle}
+                    aria-expanded={this.state.isOpen}
+                    aria-haspopup="menu"
                     className={classNames(styles.button, styles.mainButton)}
                     data-tooltip-content={mainTitle}
                     data-tooltip-id={this.mainTooltipId}
@@ -153,7 +194,10 @@ class ActionMenu extends React.Component {
                     place={tooltipPlace || 'left'}
                     ref={this.tooltipRefs[0]}
                 />
-                <div className={styles.moreButtonsOuter}>
+                <div
+                    className={styles.moreButtonsOuter}
+                    aria-hidden={!this.state.isOpen}
+                >
                     <div className={styles.moreButtons}>
                         {(moreButtons || []).map(({img, title, onClick: handleClick,
                             fileAccept, fileChange, fileInput, fileMultiple}, keyId) => {
@@ -163,13 +207,20 @@ class ActionMenu extends React.Component {
                             return (
                                 <div key={`${tooltipId}-${title}-${keyId}`}>
                                     <button
+                                        type="button"
                                         aria-label={title}
                                         className={classNames(styles.button, styles.moreButton, {
                                             [styles.comingSoon]: isComingSoon
                                         })}
                                         data-tooltip-content={title}
                                         data-tooltip-id={tooltipId}
-                                        onClick={hasFileInput ? handleClick : this.clickDelayer(handleClick)}
+                                        data-action-menu-more
+                                        disabled={isComingSoon}
+                                        tabIndex={this.state.isOpen && !this.state.forceHide && !isComingSoon ? 0 : -1}
+                                        title={isComingSoon ?
+                                            (typeof title === 'string' ? `${title} (coming soon)` : 'Coming soon') :
+                                            null}
+                                        onClick={this.clickDelayer(handleClick)}
                                     >
                                         {typeof img === 'string' ? (
                                             <img
@@ -180,16 +231,16 @@ class ActionMenu extends React.Component {
                                         ) : img ? (
                                             React.createElement(img, {className: styles.moreIcon, size: 20})
                                         ) : null}
-                                        {hasFileInput ? (
-                                            <input
-                                                accept={fileAccept}
-                                                className={styles.fileInput}
-                                                multiple={fileMultiple}
-                                                ref={fileInput}
-                                                type="file"
-                                                onChange={fileChange}
-                                            />) : null}
                                     </button>
+                                    {hasFileInput ? (
+                                        <input
+                                            accept={fileAccept}
+                                            className={styles.fileInput}
+                                            multiple={fileMultiple}
+                                            ref={fileInput}
+                                            type="file"
+                                            onChange={fileChange}
+                                        />) : null}
                                 </div>
                             );
                         })}

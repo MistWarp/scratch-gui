@@ -1,4 +1,9 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
+
+const fallbackTitle = title => {
+    const text = title || '?';
+    return text.length > 5 ? `${text.slice(0, 5)}…` : text;
+};
 
 const ProjectThumbnail = ({
     project,
@@ -8,10 +13,12 @@ const ProjectThumbnail = ({
     onError
 }) => {
     const [failed, setFailed] = useState(false);
+    const thumbUrl = project.thumbUrl;
+    useEffect(() => setFailed(false), [thumbUrl]);
     if (!project.thumbUrl || failed) {
         return (
             <span className={fallbackClassName}>
-                {(project.title || '?').slice(0, 5)}...
+                {fallbackTitle(project.title)}
             </span>
         );
     }
@@ -29,4 +36,5 @@ const ProjectThumbnail = ({
     );
 };
 
+export {fallbackTitle};
 export default ProjectThumbnail;

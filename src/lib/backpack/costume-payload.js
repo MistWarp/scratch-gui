@@ -2,9 +2,13 @@ import createThumbnail from './thumbnail';
 import getCostumeUrl from '../utils/get-costume-url';
 
 const costumePayload = (costume, vm) => {
+    const assetDataFormat = costume.dataFormat;
+    if (!['svg', 'png', 'jpg'].includes(assetDataFormat)) {
+        return Promise.reject(new Error(`Unsupported costume format: ${assetDataFormat || 'unknown'}`));
+    }
+
     // TODO is it ok to base64 encode SVGs? What about unicode text inside them?
     const assetDataUrl = vm.getExportedCostumeBase64(costume);
-    const assetDataFormat = costume.dataFormat;
     const payload = {
         type: 'costume',
         name: costume.name,
@@ -27,8 +31,6 @@ const costumePayload = (costume, vm) => {
         payload.mime = 'image/jpeg';
         payload.body = assetDataUrl;
         break;
-    default:
-        alert(`Cannot serialize for format: ${assetDataFormat}`); // eslint-disable-line
     }
 
     // Do not generate the thumbnail from the raw asset. Instead use the getCostumeUrl

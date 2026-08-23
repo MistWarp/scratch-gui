@@ -24,6 +24,7 @@ describe('ToggleButtons', () => {
         expect(buttons).toHaveLength(2);
         expect(buttons.get(0).props.title).toBe('Button 1');
         expect(buttons.get(1).props.title).toBe('Button 2');
+        expect(buttons.get(0).props.type).toBe('button');
     });
 
     test('calls correct click handler', () => {
@@ -48,5 +49,24 @@ describe('ToggleButtons', () => {
 
         expect(onClick2).toHaveBeenCalled();
         expect(onClick1).not.toHaveBeenCalled();
+    });
+
+    test('supports disabling one option without disabling the group', () => {
+        const component = shallow(<ToggleButtons
+            buttons={[
+                {
+                    title: 'Enabled',
+                    handleClick: () => {}
+                },
+                {
+                    title: 'Disabled',
+                    disabled: true,
+                    handleClick: () => {}
+                }
+            ]}
+        />);
+
+        expect(component.find('button[title="Enabled"]').prop('disabled')).toBeFalsy();
+        expect(component.find('button[title="Disabled"]').prop('disabled')).toBe(true);
     });
 });

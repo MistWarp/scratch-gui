@@ -156,6 +156,12 @@ test('several related alerts can be cleared at once', () => {
     expect(resultState.alertsList[0].alertId).toBe('createSuccess');
 });
 
+test('asset import errors replace the stuck importing alert', () => {
+    let resultState = alertsReducer(undefined, showStandardAlert('importingAsset')); // eslint-disable-line no-undefined
+    resultState = alertsReducer(resultState, showStandardAlert('assetImportError'));
+    expect(resultState.alertsList.map(alert => alert.alertId)).toEqual(['assetImportError']);
+});
+
 test('filterInlineAlerts only returns inline type alerts', () => {
     const alerts = [
         {

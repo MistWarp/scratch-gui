@@ -2,13 +2,22 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api from '../api';
+import Button from '../components/ui/Button.jsx';
 import styles from './InfoPage.module.css';
 
 const Trust = () => {
     const [agreement, setAgreement] = useState(null);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
-        api.agreement().then(data => setAgreement(data.agreement)).catch(() => setAgreement(false));
-    }, []);
+        let active = true;
+        setAgreement(null);
+        api.agreement()
+            .then(data => active && setAgreement(data.agreement))
+            .catch(() => active && setAgreement(false));
+        return () => {
+            active = false;
+        };
+    }, [attempt]);
     return (
         <main className={styles.page}>
             <header className={styles.head}>
@@ -24,7 +33,7 @@ const Trust = () => {
                 <section className={styles.section}>
                     <h2>Your controls</h2>
                     <p>You can export the data tied to your MistWarp profile, delete that data, mute users, and block interactions from your settings or a user profile.</p>
-                    <p><Link to="/settings">Open settings</Link></p>
+                    <p><Link to="/settings?section=data">Open data settings</Link></p>
                 </section>
             </div>
             <section className={styles.section}>
@@ -37,7 +46,7 @@ const Trust = () => {
             <section className={styles.section}>
                 <h2>Community terms</h2>
                 {agreement === null ? <p>Loading the current community agreement…</p> : null}
-                {agreement === false ? <p>Could not load the current agreement. Try again later or contact support.</p> : null}
+                {agreement === false ? <p>Could not load the current agreement. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></p> : null}
                 {agreement ? <div className={styles.agreement}>{agreement.text}</div> : null}
             </section>
             <section className={styles.section}>

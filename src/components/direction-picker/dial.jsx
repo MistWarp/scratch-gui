@@ -8,7 +8,7 @@ import styles from './dial.css';
 import dialFace from '!../../lib/tw-recolor/build!./icon--dial.svg';
 import dialHandle from '!../../lib/tw-recolor/build!./icon--handle.svg';
 
-class Dial extends React.Component {
+export class Dial extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -74,19 +74,22 @@ class Dial extends React.Component {
     unbindMouseEvents () {
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.unbindMouseEvents);
-        window.removeEventListener('touchmove', this.handleMouseMove);
+        window.removeEventListener('touchmove', this.handleMouseMove, {passive: false});
         window.removeEventListener('touchend', this.unbindMouseEvents);
+        window.removeEventListener('touchcancel', this.unbindMouseEvents);
     }
 
     handleMouseDown (e) {
+        if (typeof e.button === 'number' && e.button !== 0) return;
         // Because the drag handle is not a single point, there is some initial
         // difference between the current sprite direction and the direction to the mouse
         // Store this offset to prevent jumping when the mouse is moved.
         this.directionOffset = this.props.direction - this.directionToMouseEvent(e);
         window.addEventListener('mousemove', this.handleMouseMove);
         window.addEventListener('mouseup', this.unbindMouseEvents);
-        window.addEventListener('touchmove', this.handleMouseMove);
+        window.addEventListener('touchmove', this.handleMouseMove, {passive: false});
         window.addEventListener('touchend', this.unbindMouseEvents);
+        window.addEventListener('touchcancel', this.unbindMouseEvents);
         e.preventDefault();
     }
 

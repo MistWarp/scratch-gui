@@ -18,6 +18,10 @@ const LoadedExtensionsList = ({extensions, onExtensionClick}) => {
         );
     }
 
+    const handleExtensionClick = event => {
+        onExtensionClick(event.currentTarget.dataset.extensionId);
+    };
+
     return (
         <Box className={styles.extensionsList}>
             <Box className={styles.header}>
@@ -30,10 +34,13 @@ const LoadedExtensionsList = ({extensions, onExtensionClick}) => {
             {extensions.map(extension => (
                 <Box
                     key={extension.id}
+                    element={onExtensionClick ? 'button' : 'div'}
+                    type={onExtensionClick ? 'button' : null}
+                    data-extension-id={extension.id}
                     className={classNames(styles.extensionItem, {
                         [styles.clickable]: !!onExtensionClick
                     })}
-                    onClick={onExtensionClick ? () => onExtensionClick(extension.id) : null}
+                    onClick={onExtensionClick ? handleExtensionClick : null}
                 >
                     <Box className={styles.extensionInfo}>
                         <Box className={styles.extensionName}>

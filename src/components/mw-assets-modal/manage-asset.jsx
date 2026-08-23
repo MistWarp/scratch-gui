@@ -43,6 +43,7 @@ class ManageAsset extends React.Component {
                 </div>
 
                 <button
+                    type="button"
                     className={styles.assetButton}
                     onClick={this.handleExport}
                 >
@@ -54,6 +55,7 @@ class ManageAsset extends React.Component {
                 </button>
 
                 <button
+                    type="button"
                     className={styles.assetButton}
                     onClick={this.handleDelete}
                 >

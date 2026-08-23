@@ -45,7 +45,10 @@ const encodeBase64Utf8 = value => {
     }
 };
 
-const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
+const installSystemClipboardForBlocks = (ScratchBlocks, vm, onImportError) => {
+    if (ScratchBlocks) {
+        ScratchBlocks.__mistwarpSystemBlocksClipboardImportError = onImportError;
+    }
     if (!ScratchBlocks || ScratchBlocks.__mistwarpSystemBlocksClipboardInstalled) return;
     ScratchBlocks.__mistwarpSystemBlocksClipboardInstalled = true;
 
@@ -217,14 +220,10 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             if (vm.extensionManager.isExtensionLoaded(id)) continue;
 
             const url = urls[id];
-            try {
-                if (url) {
-                    await vm.extensionManager.loadExtensionURL(url);
-                } else {
-                    vm.extensionManager.loadExtensionIdSync(id);
-                }
-            } catch (e) {
-                // ignore
+            if (url) {
+                await vm.extensionManager.loadExtensionURL(url);
+            } else {
+                vm.extensionManager.loadExtensionIdSync(id);
             }
         }
     };
@@ -236,8 +235,11 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
         if (!workspace) return;
         if (workspace.isFlyout) workspace = workspace.targetWorkspace;
         ScratchBlocks.Events.setGroup(true);
-        workspace.paste(ScratchBlocks.clipboardXml_);
-        ScratchBlocks.Events.setGroup(false);
+        try {
+            workspace.paste(ScratchBlocks.clipboardXml_);
+        } finally {
+            ScratchBlocks.Events.setGroup(false);
+        }
     };
 
     const originalCopy = ScratchBlocks.copy_;
@@ -301,11 +303,10 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
 
         systemClipboardActive = true;
 
-        navigator.clipboard.readText()
+        const pasteSystemClipboard = navigator.clipboard.readText()
             .then(async text => {
                 const parsed = parseClipboardTextToBlockXml(text);
                 if (!parsed || !parsed.xml) {
-                    systemClipboardActive = false;
                     return pasteFromCurrentClipboardXml();
                 }
 
@@ -321,12 +322,18 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
                 );
 
                 pasteFromCurrentClipboardXml();
-            })
-            .catch(err => {
+            }, err => {
                 if (err.name === 'NotAllowedError') {
                     readAccessDenied = true;
                 }
                 pasteFromCurrentClipboardXml();
+            });
+
+        pasteSystemClipboard
+            .catch(() => {
+                if (typeof ScratchBlocks.__mistwarpSystemBlocksClipboardImportError === 'function') {
+                    ScratchBlocks.__mistwarpSystemBlocksClipboardImportError();
+                }
             })
             .finally(() => {
                 systemClipboardActive = false;

@@ -3,12 +3,14 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {injectIntl, intlShape, defineMessages} from 'react-intl';
 import VM from 'scratch-vm';
+import {connect} from 'react-redux';
 
 import {getSpriteLibrary} from '../lib/libraries/tw-async-libraries';
 import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
 import spriteTags from '../lib/libraries/sprite-tags';
 
 import LibraryComponent from '../components/library/library.jsx';
+import {showStandardAlert} from '../reducers/alerts';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -27,20 +29,27 @@ class SpriteLibrary extends React.PureComponent {
         this.state = {
             data: getSpriteLibrary()
         };
+        this._isMounted = false;
     }
     componentDidMount () {
+        this._isMounted = true;
         if (this.state.data.then) {
-            this.state.data.then(data => this.setState({
-                data
-            }));
+            this.state.data.then(data => {
+                if (this._isMounted) this.setState({data});
+            }).catch(error => {
+                if (this._isMounted) this.props.onShowImportError(error);
+            });
         }
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
     }
     handleItemSelect (item) {
         // Randomize position of library sprite
         randomizeSpritePosition(item);
-        this.props.vm.addSprite(JSON.stringify(item)).then(() => {
-            this.props.onActivateBlocksTab();
-        });
+        return this.props.vm.addSprite(JSON.stringify(item))
+            .then(() => this.props.onActivateBlocksTab())
+            .catch(this.props.onShowImportError);
     }
     render () {
         return (
@@ -61,7 +70,14 @@ SpriteLibrary.propTypes = {
     intl: intlShape.isRequired,
     onActivateBlocksTab: PropTypes.func.isRequired,
     onRequestClose: PropTypes.func,
+    onShowImportError: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export default injectIntl(SpriteLibrary);
+const mapDispatchToProps = dispatch => ({
+    onShowImportError: () => dispatch(showStandardAlert('assetImportError'))
+});
+
+export default injectIntl(connect(null, mapDispatchToProps)(SpriteLibrary));
+
+export {SpriteLibrary};

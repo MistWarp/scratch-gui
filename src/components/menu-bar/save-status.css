@@ -1,11 +1,25 @@
 @import "../../css/colors.css";
 
 .save-now {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
     padding: 0 0.5rem;
     height: 100%;
     display: flex;
     align-items: center;
+}
+
+.save-now:disabled {
+    cursor: wait;
+}
+
+.save-now:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
 }
 
 .save-now:hover {

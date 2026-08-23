@@ -154,6 +154,17 @@
     color: #e25555;
 }
 
+.error button {
+    border: none;
+    background: none;
+    color: currentColor;
+    font: inherit;
+    font-weight: 700;
+    padding: 0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .status {
     color: var(--accent-strong);
 }

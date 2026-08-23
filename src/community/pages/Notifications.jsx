@@ -97,6 +97,21 @@ const stripSender = (sender, text) => {
     return text.replace(new RegExp(`^${escapeRegex(sender)}[\\s:.,\\u2014-]*`, 'i'), '');
 };
 
+const mergeNotifications = (...lists) => {
+    const seen = new Set();
+    const merged = [];
+    for (const list of lists) {
+        for (const item of list || []) {
+            if (!item) continue;
+            const key = item.id || `${item.type}:${item.created || item.timestamp}:${item.actor || item.title || ''}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(item);
+        }
+    }
+    return merged;
+};
+
 // Prefer a username-shaped title (real actor) over the app account that
 // posted the notification ("MistWarp"). Returns null when no actor is known.
 const actorFor = n => {
@@ -253,7 +268,7 @@ GenericNotification.propTypes = {
 };
 
 const Notifications = ({hideHeading}) => {
-    const {user, loading} = useUser();
+    const {user, loading, login} = useUser();
     const [items, setItems] = useState(null);
     const [preferences, setPreferences] = useState(getNotificationPreferences());
 
@@ -270,12 +285,7 @@ const Notifications = ({hideHeading}) => {
             return () => {};
         }
         return subscribeNotifications(notification => {
-            setItems(prev => {
-                if (!prev || prev.some(item => item.id === notification.id)) {
-                    return prev;
-                }
-                return [notification, ...prev];
-            });
+            setItems(prev => mergeNotifications([notification], prev || []));
         });
     }, [user]);
 
@@ -292,40 +302,59 @@ const Notifications = ({hideHeading}) => {
     }, []);
 
     useEffect(() => {
-        if (!user) {
-            return;
-        }
+        setItems(null);
         setFailed(false);
+        if (!user) {
+            return () => {};
+        }
+        let cancelled = false;
         fetchNotifications()
             .then(list => {
-                setItems(list);
+                if (cancelled) return;
+                setItems(current => mergeNotifications(current || [], list));
                 markNotificationsRead()
-                    .then(() => window.dispatchEvent(new Event('mw:notifications-read')))
+                    .then(() => {
+                        if (!cancelled) window.dispatchEvent(new Event('mw:notifications-read'));
+                    })
                     .catch(() => {});
             })
-            .catch(() => setFailed(true));
+            .catch(() => {
+                if (!cancelled) setFailed(true);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [user, attempt]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
     }
     if (!user) {
-        return <main className={styles.page}><p className={styles.status}>Sign in to see your notifications.</p></main>;
+        return (
+            <main className={styles.page}>
+                <p className={styles.status}>
+                    Sign in to see your notifications. <Button onClick={login}>Sign in</Button>
+                </p>
+            </main>
+        );
     }
+    const visibleItems = (items || [])
+        .filter(item => preferences[categoryForNotification(item.type)] !== false);
 
     return (
         <main className={styles.page}>
             {hideHeading ? null : <h1>Notifications</h1>}
             {failed ? (
                 <p className={styles.status}>
-                    Couldn&apos;t load.{' '}
+                    {items === null ? 'Couldn\'t load notifications.' : 'Some notifications may be missing.'}{' '}
                     <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
                 </p>
-            ) : items === null ? (
+            ) : null}
+            {items === null ? (!failed ? (
                 <p className={styles.status}>Loading…</p>
-            ) : items.filter(item => preferences[categoryForNotification(item.type)] !== false).length ? (
+            ) : null) : visibleItems.length ? (
                 <div className={styles.list}>
-                    {items.filter(item => preferences[categoryForNotification(item.type)] !== false).map(n => {
+                    {visibleItems.map(n => {
                         const Icon = ICONS[n.type] || Heart;
                         const ts = n.created || n.timestamp;
                         const time = timeAgo(ts);
@@ -403,6 +432,11 @@ const Notifications = ({hideHeading}) => {
                         );
                     })}
                 </div>
+            ) : items.length ? (
+                <p className={styles.status}>
+                    Your notification preferences hide all current activity.{' '}
+                    <Link to="/settings?section=notifications">Change preferences</Link>
+                </p>
             ) : (
                 <p className={styles.status}>Nothing yet. Activity on your projects shows up here.</p>
             )}
@@ -414,4 +448,5 @@ Notifications.propTypes = {
     hideHeading: PropTypes.bool
 };
 
+export {mergeNotifications};
 export default Notifications;

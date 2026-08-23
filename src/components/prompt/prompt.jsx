@@ -179,6 +179,7 @@ const PromptComponent = props => (
 
             <Box className={styles.buttonRow}>
                 <button
+                    type="button"
                     className={styles.cancelButton}
                     onClick={props.onCancel}
                 >
@@ -189,6 +190,7 @@ const PromptComponent = props => (
                     />
                 </button>
                 <button
+                    type="button"
                     className={styles.okButton}
                     onClick={props.onOk}
                 >

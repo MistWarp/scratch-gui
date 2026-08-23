@@ -4,6 +4,7 @@ import {injectIntl, intlShape, defineMessages, FormattedMessage} from 'react-int
 import bindAll from 'lodash.bindall';
 import {formatBytes} from '../../lib/utils/bytes';
 import downloadBlob from '../../lib/utils/download-blob';
+import {projectFilename} from '../../lib/utils/safe-filename.js';
 import styles from './fonts-modal.css';
 import deleteIcon from './delete.svg';
 import exportIcon from './export.svg';
@@ -22,79 +23,126 @@ class ManageFont extends React.Component {
         super(props);
         bindAll(this, [
             'handleExport',
-            'handleDelete'
+            'handleDelete',
+            'handleCancelDelete',
+            'handleConfirmDelete'
         ]);
+        this.state = {
+            confirmingDelete: false,
+            deleteError: ''
+        };
     }
 
     handleExport () {
         const blob = new Blob([this.props.data], {
-            contentType: `font/${this.props.format}`
+            type: `font/${this.props.format}`
         });
-        downloadBlob(`${this.props.name}.${this.props.format}`, blob);
+        downloadBlob(projectFilename(this.props.name, 'font', this.props.format), blob);
     }
 
     handleDelete () {
-        // eslint-disable-next-line no-alert
-        const allowed = confirm(this.props.intl.formatMessage(messages.delete, {
-            font: this.props.name
-        }));
-        if (allowed) {
+        this.setState({confirmingDelete: true, deleteError: ''});
+    }
+
+    handleCancelDelete () {
+        this.setState({confirmingDelete: false, deleteError: ''});
+    }
+
+    handleConfirmDelete () {
+        try {
             this.props.fontManager.deleteFont(this.props.index);
+        } catch (error) {
+            this.setState({deleteError: error.message || 'Could not delete this font.'});
         }
     }
 
     render () {
         return (
             <div className={styles.manageFont}>
-                <div>
-                    <div
-                        className={styles.manageFontName}
-                        title={this.props.family}
-                        style={{
-                            fontFamily: this.props.family
-                        }}
-                    >
-                        {this.props.name}
+                {this.state.confirmingDelete ? (
+                    <div className={styles.manageFontConfirm}>
+                        <div>
+                            <strong>{this.props.intl.formatMessage(messages.delete, {font: this.props.name})}</strong>
+                            {this.state.deleteError ? (
+                                <span className={styles.manageFontError}>{this.state.deleteError}</span>
+                            ) : null}
+                        </div>
+                        <div className={styles.manageFontConfirmButtons}>
+                            <button
+                                type="button"
+                                className={styles.manageFontCancel}
+                                onClick={this.handleCancelDelete}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Cancel"
+                                    id="general.cancel"
+                                />
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.manageFontDelete}
+                                onClick={this.handleConfirmDelete}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Delete font"
+                                    id="tw.fonts.delete.action"
+                                />
+                            </button>
+                        </div>
+                    </div>
+                ) : <React.Fragment>
+                    <div>
+                        <div
+                            className={styles.manageFontName}
+                            title={this.props.family}
+                            style={{
+                                fontFamily: this.props.family
+                            }}
+                        >
+                            {this.props.name}
+                        </div>
+
+                        <div className={styles.manageFontDetails}>
+                            {this.props.system ? (
+                                <FormattedMessage
+                                    defaultMessage="System font"
+                                    description="Part of font management modal"
+                                    id="tw.fonts.system"
+                                />
+                            ) : (
+                                formatBytes(this.props.data.byteLength)
+                            )}
+                        </div>
                     </div>
 
-                    <div className={styles.manageFontDetails}>
-                        {this.props.system ? (
-                            <FormattedMessage
-                                defaultMessage="System font"
-                                description="Part of font management modal"
-                                id="tw.fonts.system"
-                            />
-                        ) : (
-                            formatBytes(this.props.data.byteLength)
+                    <div className={styles.manageFontButtons}>
+                        {!this.props.system && (
+                            <button
+                                type="button"
+                                className={styles.manageFontButton}
+                                onClick={this.handleExport}
+                            >
+                                <img
+                                    src={exportIcon}
+                                    alt="Export"
+                                    draggable={false}
+                                />
+                            </button>
                         )}
-                    </div>
-                </div>
 
-                <div className={styles.manageFontButtons}>
-                    {!this.props.system && (
                         <button
+                            type="button"
                             className={styles.manageFontButton}
-                            onClick={this.handleExport}
+                            onClick={this.handleDelete}
                         >
                             <img
-                                src={exportIcon}
-                                alt="Export"
+                                src={deleteIcon}
+                                alt="Delete"
                                 draggable={false}
                             />
                         </button>
-                    )}
-
-                    <button
-                        className={styles.manageFontButton}
-                        onClick={this.handleDelete}
-                    >
-                        <img
-                            src={deleteIcon}
-                            alt="Delete"
-                            draggable={false}
-                        />
-                    </button>
-                </div>
+                    </div>
+                </React.Fragment>}
             </div>
         );
     }
@@ -111,6 +159,10 @@ ManageFont.propTypes = {
     fontManager: PropTypes.shape({
         deleteFont: PropTypes.func.isRequired
     }).isRequired
+};
+
+export {
+    ManageFont
 };
 
 export default injectIntl(ManageFont);

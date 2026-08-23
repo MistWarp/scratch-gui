@@ -205,13 +205,24 @@
     font-size: 0.82rem;
 }
 
-.fileRow:hover,
+.fileRowButton:hover,
 .branchRow:hover {
     background: $ui-tertiary;
 }
 
-.fileRowClickable {
+.fileRowButton {
+    width: 100%;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: inherit;
     cursor: pointer;
+}
+
+.fileRowButton:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .filePath {
@@ -289,6 +300,17 @@
     flex: 1;
     cursor: pointer;
     min-width: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: inherit;
+}
+
+.commitMain:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .commitMessage {

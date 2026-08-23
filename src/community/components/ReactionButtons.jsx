@@ -14,7 +14,7 @@ const ReactionButtons = ({
     reactions, counts, activeReaction, onReact, small, variant, heartKey, downKey, disabled,
     disabledTitle, showCounts, between, interactive, className
 }) => {
-    const {user} = useUser();
+    const {user, login} = useUser();
     const lists = reactions || {};
     const keys = {heart: heartKey, down: downKey};
     const classes = [styles.row, small ? styles.rowSmall : '', styles[variant] || '', className]
@@ -28,7 +28,11 @@ const ReactionButtons = ({
                     activeReaction === key :
                     Boolean(user) && names.some(name => sameUser(name, user.username));
                 const count = counts && Number.isFinite(counts[key]) ? counts[key] : names.length;
-                const inactive = disabled || (Boolean(reactions) && !user);
+                const inactive = disabled;
+                const signedOut = !user;
+                let buttonTitle = label;
+                if (inactive) buttonTitle = disabledTitle || 'Unavailable';
+                else if (signedOut) buttonTitle = 'Sign in to react';
                 const buttonClass = mine ? (kind === 'down' ? styles.buttonDownOn : styles.buttonOn) : styles.button;
                 const content = (
                     <>
@@ -44,10 +48,10 @@ const ReactionButtons = ({
                                 type="button"
                                 className={buttonClass}
                                 disabled={inactive}
-                                title={inactive ? disabledTitle || 'Sign in to react' : label}
+                                title={buttonTitle}
                                 aria-label={label}
                                 aria-pressed={mine}
-                                onClick={() => onReact(key)}
+                                onClick={() => (signedOut ? login() : onReact(key))}
                             >{content}</button>
                         ) : <span className={buttonClass}>{content}</span>}
                     </React.Fragment>

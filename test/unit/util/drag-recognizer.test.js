@@ -56,6 +56,17 @@ describe('DragRecognizer', () => {
         expect(onDrag).toHaveBeenCalledTimes(1); // Still 1
     });
 
+    test('cancelled touch ends and unbinds the drag', () => {
+        dragRecognizer.start({clientX: 100, clientY: 100});
+        window.dispatchEvent(new MouseEvent('touchmove', {clientX: 150, clientY: 106}));
+        window.dispatchEvent(new MouseEvent('touchcancel', {clientX: 150, clientY: 106}));
+        window.dispatchEvent(new MouseEvent('touchmove', {clientX: 160, clientY: 106}));
+
+        expect(onDrag).toHaveBeenCalledTimes(1);
+        expect(onDragEnd).toHaveBeenCalledTimes(1);
+        expect(dragRecognizer.gestureInProgress()).toBe(false);
+    });
+
     test('start -> end calls dragEnd callback after resetting internal state', done => {
         onDragEnd = () => {
             expect(dragRecognizer.gestureInProgress()).toBe(false);

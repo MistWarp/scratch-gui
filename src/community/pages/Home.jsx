@@ -41,14 +41,22 @@ const SectionHead = ({icon: Icon, title, link, linkLabel}) => (
 
 const PanelLoading = () => <div className={styles.feedScroll}>{[0, 1].map(i => <div key={i} className={styles.skeleton} />)}</div>;
 
-const NewsSection = () => {
+const NewsSection = ({viewerName}) => {
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
-    const load = () => {
+    const [attempt, setAttempt] = useState(0);
+    const load = () => setAttempt(value => value + 1);
+    useEffect(() => {
+        let active = true;
+        setItems(null);
         setFailed(false);
-        api.news().then(data => setItems(data.news || [])).catch(() => setFailed(true));
-    };
-    useEffect(load, []);
+        api.news()
+            .then(data => active && setItems(data.news || []))
+            .catch(() => active && setFailed(true));
+        return () => {
+            active = false;
+        };
+    }, [attempt, viewerName]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Megaphone} title="News" link="/news" linkLabel="All updates" />
@@ -63,14 +71,15 @@ const NewsSection = () => {
 const FriendsSection = ({user, login}) => {
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
+        setFailed(false);
         if (!user) {
             setItems([]);
             return () => {};
         }
         setItems(null);
-        setFailed(false);
         rotur.following(user.username).then(data => {
             const following = data.following || [];
             return following.length ? api.activity(following) : {activity: []};
@@ -78,13 +87,13 @@ const FriendsSection = ({user, login}) => {
         return () => {
             active = false;
         };
-    }, [user]);
+    }, [user, attempt]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Users} title="From people you follow" />
-            {!user ? <div className={styles.empty}>Sign in to see projects, reviews, and activity from people you follow. <button onClick={login}>Sign in with Rotur</button></div> : null}
+            {!user ? <div className={styles.empty}>Sign in to see projects, reviews, and activity from people you follow. <button type="button" onClick={login}>Sign in with Rotur</button></div> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>Couldn&apos;t load activity.</div> : null}
+            {failed ? <div className={styles.empty}>Couldn&apos;t load activity. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
             {items && !items.length && user ? <div className={styles.empty}>No recent activity from people you follow.</div> : null}
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
@@ -108,19 +117,26 @@ const FriendsSection = ({user, login}) => {
     );
 };
 
-const RoadmapSection = () => {
+const RoadmapSection = ({viewerName}) => {
     const [ideas, setIdeas] = useState(null);
+    const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
-        api.roadmap().then(data => active && setIdeas(data.ideas || [])).catch(() => active && setIdeas([]));
+        setIdeas(null);
+        setFailed(false);
+        api.roadmap()
+            .then(data => active && setIdeas(data.ideas || []))
+            .catch(() => active && setFailed(true));
         return () => {
             active = false;
         };
-    }, []);
+    }, [attempt, viewerName]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Lightbulb} title="Roadmap" link="/roadmap" linkLabel="Suggest and vote" />
-            {!ideas ? <PanelLoading /> : null}
+            {!ideas && !failed ? <PanelLoading /> : null}
+            {failed ? <div className={styles.empty}>Couldn&apos;t load roadmap suggestions. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
             {ideas && !ideas.length ? <div className={styles.empty}>No suggestions yet. <Link to="/roadmap">Add the first one</Link></div> : null}
             {ideas && ideas.length ? (
                 <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
@@ -178,22 +194,29 @@ const notificationLink = item => {
 
 const NotificationsSection = ({user, login}) => {
     const [items, setItems] = useState(null);
+    const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
+        setFailed(false);
         if (!user) {
             setItems([]);
             return () => {};
         }
-        fetchNotifications().then(data => active && setItems(data || [])).catch(() => active && setItems([]));
+        setItems(null);
+        fetchNotifications()
+            .then(data => active && setItems(data || []))
+            .catch(() => active && setFailed(true));
         return () => {
             active = false;
         };
-    }, [user]);
+    }, [user, attempt]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Bell} title="Recent notifications" link={user ? '/notifications' : null} linkLabel="See all" />
-            {!user ? <div className={styles.empty}>Sign in to see your notifications. <button onClick={login}>Sign in with Rotur</button></div> : null}
-            {user && !items ? <PanelLoading /> : null}
+            {!user ? <div className={styles.empty}>Sign in to see your notifications. <button type="button" onClick={login}>Sign in with Rotur</button></div> : null}
+            {user && !items && !failed ? <PanelLoading /> : null}
+            {failed ? <div className={styles.empty}>Couldn&apos;t load notifications. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
             {items && !items.length && user ? <div className={styles.empty}>Nothing new yet.</div> : null}
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
@@ -222,6 +245,7 @@ const NotificationsSection = ({user, login}) => {
 
 const Home = () => {
     const {user, login} = useUser();
+    const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
     const [projects, setProjects] = useState({trending: null, recent: null});
     const [projectAttempt, setProjectAttempt] = useState(0);
@@ -234,6 +258,7 @@ const Home = () => {
     }, []);
     useEffect(() => {
         let active = true;
+        setProjects({trending: null, recent: null});
         Promise.all([
             api.explore({sort: 'trending', limit: 8}).catch(() => null),
             api.explore({sort: 'recent', limit: 8}).catch(() => null)
@@ -244,7 +269,7 @@ const Home = () => {
         return () => {
             active = false;
         };
-    }, [projectAttempt]);
+    }, [projectAttempt, viewerName]);
     return (
         <main className={styles.page}>
             <section className={styles.hero}>
@@ -253,17 +278,17 @@ const Home = () => {
                     <p>{t('home.lead')}</p>
                     <div className={styles.heroActions}>
                         <a className={styles.primaryButton} href={editorUrl()}>{t('home.start')}</a>
-                        {user ? <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link> : <button className={styles.secondaryButton} onClick={login}>{t('home.signin')}</button>}
+                        {user ? <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link> : <button type="button" className={styles.secondaryButton} onClick={login}>{t('home.signin')}</button>}
                         <a className={styles.secondaryButton} href="https://github.com/mistwarp" target="_blank" rel="noreferrer"><Github size={16} />{t('home.github')}</a>
                     </div>
                 </div>
                 <div className={styles.heroArt}><img src={logo} alt="" className={styles.heroLogo} /></div>
             </section>
             <div className={styles.dashboardGrid}>
-                <NewsSection />
+                <NewsSection viewerName={viewerName} />
                 <FriendsSection user={user} login={login} />
                 <NotificationsSection user={user} login={login} />
-                <RoadmapSection />
+                <RoadmapSection viewerName={viewerName} />
             </div>
             <ProjectRow
                 title="Trending"
@@ -294,4 +319,5 @@ const ProjectRow = ({title, icon: Icon, projects, link, onRetry}) => (
     </section>
 );
 
+export {FriendsSection, RoadmapSection, NotificationsSection};
 export default Home;

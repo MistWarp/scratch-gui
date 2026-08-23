@@ -1244,27 +1244,6 @@
     color: var(--accent-strong);
 }
 
-.confirmOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: color-mix(in srgb, #000 55%, transparent);
-}
-
-.confirmModal {
-    width: 100%;
-    max-width: 380px;
-    padding: 22px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-}
-
 .forkModal {
     max-width: 500px;
 }
@@ -1404,11 +1383,6 @@
     color: var(--accent-strong);
 }
 
-.confirmTitle {
-    margin: 0 0 10px;
-    font-size: 18px;
-}
-
 .confirmText {
     margin: 0 0 6px;
     font-size: 15px;
@@ -1455,8 +1429,24 @@
     text-decoration: none;
 }
 
+.deleteConfirmButton {
+    border-color: var(--mw-danger);
+    background: var(--mw-danger);
+    color: #fff;
+}
+
+.confirmError {
+    margin: 0;
+    color: var(--mw-danger);
+    font-size: 13px;
+}
+
 .confirmButton:hover {
     background: var(--accent-strong);
+}
+
+.deleteConfirmButton:hover {
+    background: color-mix(in srgb, var(--mw-danger) 86%, #000);
 }
 
 .confirmButton:disabled {

@@ -21,6 +21,7 @@ import {connect} from 'react-redux';
 import storage from '../lib/persistence/storage';
 import VM from 'scratch-vm';
 import {updateCallbacks} from '../lib/shortcuts/event-router.js';
+import {openSimpleDialog} from '../reducers/modals';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
@@ -93,6 +94,10 @@ class Backpack extends React.Component {
         this.resizeSession = null;
         this.contentsRequest = null;
         this.loadAllContents = false;
+        this.dropRequest = null;
+        this.deletingItems = new Set();
+        this.renamingItems = new Set();
+        this.unmounted = false;
 
         const DEFAULT_HEIGHT = 5.5 * 16;
         const MIN_HEIGHT = DEFAULT_HEIGHT;
@@ -134,6 +139,7 @@ class Backpack extends React.Component {
         }
     }
     componentDidMount () {
+        this.unmounted = false;
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.addListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
 
@@ -143,6 +149,7 @@ class Backpack extends React.Component {
         updateCallbacks({toggleBackpack: this.handleToggle});
     }
     componentWillUnmount () {
+        this.unmounted = true;
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.removeListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
 
@@ -194,14 +201,15 @@ class Backpack extends React.Component {
         }
     }
     handleError (error) {
+        if (this.unmounted) return false;
         this.setState({
             error: `${error}`,
             loading: false
         });
-        // Log error to console and make the Promise reject.
-        throw error;
+        return false;
     }
     handleDrop (dragInfo) {
+        if (this.dropRequest) return this.dropRequest;
         let payloader = null;
         let presaveAsset = null;
         switch (dragInfo.dragType) {
@@ -220,87 +228,109 @@ class Backpack extends React.Component {
             payloader = codePayload;
             break;
         }
-        if (!payloader) return;
+        if (!payloader) return Promise.resolve(false);
 
         // Creating the payload is async, so set loading before starting
-        this.setState({loading: true}, () => {
-            payloader(dragInfo.payload, this.props.vm)
-                .then(payload => {
-                    // Force the asset to save to the asset server before storing in backpack
-                    // Ensures any asset present in the backpack is also on the asset server
-                    if (presaveAsset && !presaveAsset.clean && !this.props.host === LOCAL_API) {
-                        return storage.store(
-                            presaveAsset.assetType,
-                            presaveAsset.dataFormat,
-                            presaveAsset.data,
-                            presaveAsset.assetId
-                        ).then(() => payload);
-                    }
-                    return payload;
-                })
-                .then(payload => saveBackpackObject({
-                    host: this.props.host,
-                    token: this.props.token,
-                    username: this.props.username,
-                    ...payload
-                }))
-                .then(item => {
-                    this.setState({
-                        loading: false,
-                        contents: [item].concat(this.state.contents)
-                    });
-                })
-                .catch(error => {
-                    this.handleError(error);
-                });
-        });
-    }
-    handleDelete (id) {
-        this.setState({loading: true}, () => {
-            deleteBackpackObject({
+        this.setState({loading: true, error: false});
+        this.dropRequest = payloader(dragInfo.payload, this.props.vm)
+            .then(payload => {
+                // Force the asset to save to the asset server before storing in backpack
+                // Ensures any asset present in the backpack is also on the asset server
+                if (presaveAsset && !presaveAsset.clean && this.props.host !== LOCAL_API) {
+                    return storage.store(
+                        presaveAsset.assetType,
+                        presaveAsset.dataFormat,
+                        presaveAsset.data,
+                        presaveAsset.assetId
+                    ).then(() => payload);
+                }
+                return payload;
+            })
+            .then(payload => saveBackpackObject({
                 host: this.props.host,
                 token: this.props.token,
                 username: this.props.username,
-                id: id
+                ...payload
+            }))
+            .then(item => {
+                if (this.unmounted) return false;
+                this.setState(oldState => ({
+                    loading: false,
+                    contents: [item].concat(oldState.contents.filter(existing => existing.id !== item.id))
+                }));
+                return true;
             })
-                .then(() => {
-                    this.setState({
-                        loading: false,
-                        contents: this.state.contents.filter(o => o.id !== id)
-                    });
-                })
-                .catch(error => {
-                    this.handleError(error);
-                });
-        });
+            .catch(error => this.handleError(error))
+            .then(result => {
+                this.dropRequest = null;
+                return result;
+            });
+        return this.dropRequest;
+    }
+    handleDelete (id) {
+        if (this.deletingItems.has(id)) return Promise.resolve(false);
+        this.deletingItems.add(id);
+        this.setState({loading: true, error: false});
+        return deleteBackpackObject({
+            host: this.props.host,
+            token: this.props.token,
+            username: this.props.username,
+            id: id
+        })
+            .then(() => {
+                if (this.unmounted) return false;
+                this.setState(oldState => ({
+                    loading: false,
+                    contents: oldState.contents.filter(o => o.id !== id)
+                }));
+                return true;
+            })
+            .catch(error => this.handleError(error))
+            .then(result => {
+                this.deletingItems.delete(id);
+                return result;
+            });
     }
     findItemById (id) {
         return this.state.contents.find(i => i.id === id);
     }
     async handleRename (id) {
+        if (this.renamingItems.has(id)) return false;
         const item = this.findItemById(id);
-        // prompt() returns Promise in desktop app
-        // eslint-disable-next-line no-alert
-        const newName = await prompt(this.props.intl.formatMessage(messages.rename), item.name);
-        if (!newName) {
-            return;
-        }
-        this.setState({loading: true}, () => {
-            updateBackpackObject({
+        if (!item) return false;
+        this.renamingItems.add(id);
+        try {
+            const response = await new Promise(resolve => {
+                this.props.openSimpleDialog({
+                    type: 'prompt',
+                    title: this.props.intl.formatMessage(messages.rename),
+                    message: this.props.intl.formatMessage(messages.rename),
+                    defaultValue: item.name,
+                    onOk: resolve,
+                    onCancel: () => resolve(null)
+                });
+            });
+            if (response === null || this.unmounted) return false;
+            const newName = `${response}`.trim();
+            if (!newName || newName === item.name) return false;
+
+            this.setState({loading: true, error: false});
+            const newItem = await updateBackpackObject({
                 host: this.props.host,
                 ...item,
                 name: newName
-            })
-                .then(newItem => {
-                    this.setState({
-                        loading: false,
-                        contents: this.state.contents.map(i => (i === item ? newItem : i))
-                    });
-                })
-                .catch(error => {
-                    this.handleError(error);
-                });
-        });
+            });
+            if (this.unmounted) return false;
+            this.setState(oldState => ({
+                loading: false,
+                contents: oldState.contents.map(i => (i.id === id ? newItem : i))
+            }));
+            return true;
+        } catch (error) {
+            return this.handleError(error);
+        } finally {
+            this.renamingItems.delete(id);
+        }
     }
     getContents (loadAll = false) {
         if ((!this.props.token || !this.props.username) && this.props.host !== LOCAL_API) return;
@@ -326,12 +356,22 @@ class Backpack extends React.Component {
 
         this.contentsRequest = loadPage()
             .then(moreToLoad => {
-                this.setState({contents: loaded, moreToLoad, loading: false});
+                if (this.unmounted) return false;
+                this.setState(oldState => {
+                    const loadedIds = new Set(loaded.map(item => item.id));
+                    const newerItems = oldState.contents.filter(item => !loadedIds.has(item.id));
+                    return {
+                        contents: newerItems.concat(loaded),
+                        moreToLoad,
+                        loading: false
+                    };
+                });
+                return true;
             })
             .catch(error => {
                 this.contentsRequest = null;
                 this.loadAllContents = false;
-                this.handleError(error);
+                return this.handleError(error);
             })
             .then(() => {
                 this.contentsRequest = null;
@@ -453,6 +493,7 @@ Backpack.propTypes = {
     host: PropTypes.string,
     token: PropTypes.string,
     username: PropTypes.string,
+    openSimpleDialog: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM)
 };
 
@@ -483,7 +524,9 @@ const mapStateToProps = state => Object.assign(
     getTokenAndUsername(state)
 );
 
-const mapDispatchToProps = () => ({});
+const mapDispatchToProps = dispatch => ({
+    openSimpleDialog: config => dispatch(openSimpleDialog(config))
+});
 
-export {filterBackpackContents};
+export {Backpack, filterBackpackContents};
 export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(Backpack));

@@ -2,6 +2,8 @@ import React from 'react';
 import {mountWithIntl, shallowWithIntl, componentWithIntl} from '../../helpers/intl-helpers.jsx';
 import SpriteSelectorItemComponent from '../../../src/components/sprite-selector-item/sprite-selector-item';
 import DeleteButton from '../../../src/components/delete-button/delete-button';
+import {ContextMenu as StyledContextMenu} from '../../../src/components/context-menu/context-menu.jsx';
+import {ContextMenuTrigger} from 'react-contextmenu';
 
 describe('SpriteSelectorItemComponent', () => {
     let className;
@@ -59,10 +61,13 @@ describe('SpriteSelectorItemComponent', () => {
         expect(wrapper.find(DeleteButton).exists()).toBe(false);
     });
 
-    test('triggers callback when Box component is clicked', () => {
+    test('uses a native selection button and triggers its callback', () => {
         // Use `mount` here because of the way ContextMenuTrigger consumes onClick
         const wrapper = mountWithIntl(getComponent());
-        wrapper.simulate('click');
+        const selection = wrapper.find('button[aria-pressed=true]').hostNodes();
+
+        expect(selection.prop('type')).toBe('button');
+        selection.simulate('click');
         expect(onClick).toHaveBeenCalled();
     });
 
@@ -79,5 +84,15 @@ describe('SpriteSelectorItemComponent', () => {
 
         contextMenu.find('[children="delete"]').simulate('click');
         expect(onDeleteButtonClick).toHaveBeenCalled();
+    });
+
+    test('keeps the trigger and context menu paired across rerenders', () => {
+        const wrapper = shallowWithIntl(getComponent());
+        const firstId = wrapper.find(ContextMenuTrigger).prop('id');
+
+        expect(wrapper.find(StyledContextMenu).prop('id')).toBe(firstId);
+        wrapper.setProps({selected: false});
+        expect(wrapper.find(ContextMenuTrigger).prop('id')).toBe(firstId);
+        expect(wrapper.find(StyledContextMenu).prop('id')).toBe(firstId);
     });
 });

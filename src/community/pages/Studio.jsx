@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowLeft, Clock3, FolderOpen, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
@@ -17,6 +17,10 @@ import styles from './Studio.module.css';
 const Studio = ({id, space, user, login, load}) => {
     const [tab, setTab] = useState('projects');
     const [error, setError] = useState('');
+    const [actionBusy, setActionBusy] = useState('');
+    const actionLocks = useRef(new Set());
+    const currentId = useRef(id);
+    currentId.current = id;
     const commentSource = useMemo(() => ({
         list: () => api.spaceComments(id),
         add: (content, parent) => api.addSpaceComment(id, content, parent),
@@ -24,28 +28,51 @@ const Studio = ({id, space, user, login, load}) => {
         react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
     }), [id]);
 
+    useEffect(() => {
+        setActionBusy('');
+        setError('');
+    }, [id]);
+
     const follow = async () => {
         if (!user) {
             login();
             return;
         }
+        const actionId = id;
+        if (actionLocks.current.has(actionId)) return;
+        actionLocks.current.add(actionId);
+        setActionBusy('follow');
         setError('');
         try {
             if (space.following) await api.unfollowSpace(id);
             else await api.followSpace(id);
-            await load();
+            if (currentId.current === actionId) await load();
         } catch (requestError) {
-            setError(requestError.message || 'Could not update follow status.');
+            if (currentId.current === actionId) {
+                setError(requestError.message || 'Could not update follow status.');
+            }
+        } finally {
+            actionLocks.current.delete(actionId);
+            if (currentId.current === actionId) setActionBusy('');
         }
     };
 
     const respondToInvite = async accepted => {
+        const actionId = id;
+        if (actionLocks.current.has(actionId)) return;
+        actionLocks.current.add(actionId);
+        setActionBusy('invite');
         setError('');
         try {
             await api.respondSpaceInvitation(id, accepted);
-            await load();
+            if (currentId.current === actionId) await load();
         } catch (requestError) {
-            setError(requestError.message || 'Could not respond to the invitation.');
+            if (currentId.current === actionId) {
+                setError(requestError.message || 'Could not respond to the invitation.');
+            }
+        } finally {
+            actionLocks.current.delete(actionId);
+            if (currentId.current === actionId) setActionBusy('');
         }
     };
 
@@ -59,14 +86,14 @@ const Studio = ({id, space, user, login, load}) => {
     return (
         <main className={styles.page}>
             <Link to="/spaces?kind=studio" className={styles.back}><ArrowLeft size={15} /> All studios</Link>
-            {space.invited ? <section className={styles.invite}><Users size={20} /><div><strong>You have been invited to curate this studio.</strong><span>Curators can organise projects and update studio details.</span></div><Button variant="primary" onClick={() => respondToInvite(true)}>Accept</Button><Button onClick={() => respondToInvite(false)}>Decline</Button></section> : null}
+            {space.invited ? <section className={styles.invite}><Users size={20} /><div><strong>You have been invited to curate this studio.</strong><span>Curators can organise projects and update studio details.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToInvite(false)}>Decline</Button></section> : null}
             <div className={styles.layout}>
                 <aside className={styles.sidebar}>
                     <h1>{space.title}</h1>
                     <div className={styles.cover}>{space.thumbnailUrl ? <img className={styles.coverImage} src={space.thumbnailUrl} alt="" /> : coverProject ? <ProjectThumbnail project={coverProject} className={styles.coverImage} fallbackClassName={styles.coverFallback} /> : <FolderOpen size={44} />}</div>
                     <div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div>
                     <div className={styles.actions}>
-                        <Button variant={space.following ? 'secondary' : 'primary'} onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow studio'}</Button>
+                        <Button variant={space.following ? 'secondary' : 'primary'} busy={actionBusy === 'follow'} busyLabel="Updating…" disabled={Boolean(actionBusy)} onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow studio'}</Button>
                         {space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}
                     </div>
                     <dl className={styles.stats}>

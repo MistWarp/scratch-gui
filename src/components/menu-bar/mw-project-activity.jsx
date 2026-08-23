@@ -25,10 +25,12 @@ const MwProjectActivity = ({projectId}) => {
         <div className={styles.page}>
             <div className={styles.tabs}>
                 <button
+                    type="button"
                     className={tab === 'comments' ? styles.active : ''}
                     onClick={() => setTab('comments')}
                 >Comments</button>
                 <button
+                    type="button"
                     className={tab === 'pulls' ? styles.active : ''}
                     onClick={() => setTab('pulls')}
                 >Pull requests</button>

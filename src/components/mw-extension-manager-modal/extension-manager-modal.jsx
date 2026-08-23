@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {ChevronDown, ChevronUp, GripVertical} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
@@ -38,12 +39,43 @@ const messages = defineMessages({
         defaultMessage: '{count} loaded extensions',
         description: 'Label shown when multiple extensions are loaded',
         id: 'tw.extensionManager.manyLoaded'
+    },
+    reorderHint: {
+        defaultMessage: 'Drag extensions or use the arrow buttons to change their order in the block palette.',
+        description: 'Help text for reordering extension categories',
+        id: 'tw.extensionManager.reorderHint'
+    },
+    moveUp: {
+        defaultMessage: 'Move up',
+        description: 'Button to move an extension category up',
+        id: 'tw.extensionManager.moveUp'
+    },
+    moveDown: {
+        defaultMessage: 'Move down',
+        description: 'Button to move an extension category down',
+        id: 'tw.extensionManager.moveDown'
+    },
+    reorderError: {
+        defaultMessage: 'The extension order could not be changed. Please try again.',
+        description: 'Message shown when reordering extension categories fails',
+        id: 'tw.extensionManager.reorderError'
     }
 });
 
-const ExtensionManagerModal = props => {
+export const reorderItems = (items, fromIndex, toIndex) => {
+    if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) return items;
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+};
+
+export const ExtensionManagerModal = props => {
     const [selected, setSelected] = useState([]);
     const [dragIndex, setDragIndex] = useState(null);
+    const [reordering, setReordering] = useState(false);
+    const [reorderError, setReorderError] = useState(false);
+    const reorderInProgress = useRef(false);
 
     const [blockIconURIs, setBlockIconURIs] = useState({});
 
@@ -180,6 +212,37 @@ const ExtensionManagerModal = props => {
         e.stopPropagation();
     };
 
+    const reorderExtension = async (fromIndex, toIndex) => {
+        if (reorderInProgress.current || fromIndex === toIndex) return;
+        const manager = props.vm && props.vm.extensionManager;
+        if (!manager || typeof manager.reorderExtension !== 'function') return;
+        if (fromIndex < 0 || fromIndex >= extensionIds.length || toIndex < 0 || toIndex >= extensionIds.length) return;
+
+        reorderInProgress.current = true;
+        setReordering(true);
+        setReorderError(false);
+        setExtensionIds(old => reorderItems(old, fromIndex, toIndex));
+        try {
+            await manager.reorderExtension(fromIndex, toIndex);
+            updateExtensionIds();
+        } catch (error) {
+            updateExtensionIds();
+            setReorderError(true);
+        } finally {
+            // This ref is the single-flight lock for the operation above.
+            // eslint-disable-next-line require-atomic-updates
+            reorderInProgress.current = false;
+            setReordering(false);
+        }
+    };
+
+    const handleMoveClick = e => {
+        e.stopPropagation();
+        const fromIndex = Number(e.currentTarget.dataset.index);
+        const offset = Number(e.currentTarget.dataset.offset);
+        reorderExtension(fromIndex, fromIndex + offset);
+    };
+
     const removeSelected = () => {
         if (!props.vm || !props.vm.extensionManager) return;
         if (typeof props.vm.extensionManager.removeExtension !== 'function') return;
@@ -221,26 +284,15 @@ const ExtensionManagerModal = props => {
         let fromIndex = dragIndex;
         if (e.dataTransfer) {
             const raw = e.dataTransfer.getData('text/plain');
-            const parsed = Number(raw);
+            const parsed = raw === '' ? NaN : Number(raw);
             if (!Number.isNaN(parsed)) {
                 fromIndex = parsed;
             }
         }
 
         if (fromIndex === null || fromIndex === index) return;
-
-        setExtensionIds(old => {
-            const next = [...old];
-            const [moved] = next.splice(fromIndex, 1);
-            next.splice(index, 0, moved);
-            return next;
-        });
         setDragIndex(null);
-
-        if (props.vm && props.vm.extensionManager && typeof props.vm.extensionManager.reorderExtension === 'function') {
-            props.vm.extensionManager.reorderExtension(fromIndex, index);
-            updateExtensionIds();
-        }
+        reorderExtension(fromIndex, index);
     };
 
     const handleDragOver = e => {
@@ -260,12 +312,18 @@ const ExtensionManagerModal = props => {
         >
             <Box className={styles.body}>
                 <p className={styles.loadedAmount}>{loadedAmountText}</p>
+                {extensionIds.length > 1 ? (
+                    <p className={styles.reorderHint}>{props.intl.formatMessage(messages.reorderHint)}</p>
+                ) : null}
+                {reorderError ? (
+                    <p className={styles.reorderError}>{props.intl.formatMessage(messages.reorderError)}</p>
+                ) : null}
 
                 {extensionIds.map((extensionId, index) => (
                     <div
                         className={styles.extensionCard}
                         key={extensionId}
-                        draggable={props.draggable}
+                        draggable={props.draggable && !reordering}
                         data-index={index}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
@@ -273,6 +331,10 @@ const ExtensionManagerModal = props => {
                         onDrop={handleDrop}
                     >
                         <div className={styles.extensionInfo}>
+                            <GripVertical
+                                className={styles.dragHandle}
+                                size={18}
+                            />
                             {getExtensionIconURL(extensionId) ? (
                                 <img
                                     className={styles.extensionIcon}
@@ -285,16 +347,44 @@ const ExtensionManagerModal = props => {
                             <p className={styles.extensionName}>{getExtensionName(extensionId)}</p>
                         </div>
 
-                        <FancyCheckbox
-                            className={styles.checkboxOption}
-                            checked={selected.includes(extensionId)}
-                            onChange={updateSelection}
-                            value={extensionId}
-                            draggable={false}
+                        <div
+                            className={styles.extensionActions}
                             onClick={stopDragAndClickBubbling}
                             onMouseDown={stopDragAndClickBubbling}
                             onDragStart={stopDragAndClickBubbling}
-                        />
+                        >
+                            <button
+                                aria-label={props.intl.formatMessage(messages.moveUp)}
+                                className={styles.reorderButton}
+                                data-index={index}
+                                data-offset={-1}
+                                disabled={index === 0 || reordering}
+                                title={props.intl.formatMessage(messages.moveUp)}
+                                type="button"
+                                onClick={handleMoveClick}
+                            >
+                                <ChevronUp size={17} />
+                            </button>
+                            <button
+                                aria-label={props.intl.formatMessage(messages.moveDown)}
+                                className={styles.reorderButton}
+                                data-index={index}
+                                data-offset={1}
+                                disabled={index === extensionIds.length - 1 || reordering}
+                                title={props.intl.formatMessage(messages.moveDown)}
+                                type="button"
+                                onClick={handleMoveClick}
+                            >
+                                <ChevronDown size={17} />
+                            </button>
+                            <FancyCheckbox
+                                className={styles.checkboxOption}
+                                checked={selected.includes(extensionId)}
+                                onChange={updateSelection}
+                                value={extensionId}
+                                draggable={false}
+                            />
+                        </div>
                     </div>
                 ))}
 

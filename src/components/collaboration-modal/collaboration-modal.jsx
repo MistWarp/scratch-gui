@@ -27,10 +27,12 @@ class CollaborationModal extends Component {
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
-            showJoinRequest: false
+            showJoinRequest: false,
+            privacyBusy: false
         };
 
         this._autoJoinKey = null;
+        this._privacyPromise = null;
 
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
         this.handleRoomIdKeyPress = this.handleRoomIdKeyPress.bind(this);
@@ -54,8 +56,8 @@ class CollaborationModal extends Component {
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
         this.resetToJoinScreen = this.resetToJoinScreen.bind(this);
         this.handleCancelClick = this.handleCancelClick.bind(this);
-        this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
-        this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
+        this.handleSelectPublicPrivacy = this.handleSelectPublicPrivacy.bind(this);
+        this.handleSelectPrivatePrivacy = this.handleSelectPrivatePrivacy.bind(this);
     }
 
     componentDidMount () {
@@ -153,12 +155,12 @@ class CollaborationModal extends Component {
         this.props.onCancelConnection();
     }
 
-    togglePublicPrivacy () {
-        this.handleChangeCurrentRoomPrivacy('public');
+    handleSelectPublicPrivacy () {
+        return this.handleChangeCurrentRoomPrivacy('public');
     }
 
-    togglePrivatePrivacy () {
-        this.handleChangeCurrentRoomPrivacy('private');
+    handleSelectPrivatePrivacy () {
+        return this.handleChangeCurrentRoomPrivacy('private');
     }
 
     handleRoomIdChange (event) {
@@ -419,11 +421,19 @@ class CollaborationModal extends Component {
     }
 
     async handleChangeCurrentRoomPrivacy (newPrivacy) {
+        if (this._privacyPromise || newPrivacy === this.props.roomPrivacy) return this._privacyPromise;
+
+        this.setState({privacyBusy: true, error: null});
+        const request = Promise.resolve().then(() => this.props.onChangeRoomPrivacy(newPrivacy));
+        this._privacyPromise = request;
         try {
-            await this.props.onChangeRoomPrivacy(newPrivacy);
+            await request;
         } catch (error) {
             console.error('Failed to change room privacy:', error);
             this.setState({error: 'Failed to change room privacy'});
+        } finally {
+            if (this._privacyPromise === request) this._privacyPromise = null;
+            this.setState({privacyBusy: false});
         }
     }
 
@@ -510,6 +520,7 @@ class CollaborationModal extends Component {
                     />
                     {!this.props.roturHandle && (
                         <button
+                            type="button"
                             className={styles.editUsernameButton}
                             onClick={this.props.onOpenChangeUsername}
                             title="Change username"
@@ -824,9 +835,12 @@ class CollaborationModal extends Component {
                                 className={classNames(styles.privacyOption, {
                                     [styles.privacyOptionActive]: this.props.roomPrivacy === 'public'
                                 })}
+                                disabled={this.state.privacyBusy}
                                 role="radio"
                                 aria-checked={this.props.roomPrivacy === 'public'}
-                                onClick={this.togglePublicPrivacy}
+                                aria-busy={this.state.privacyBusy || null}
+                                onClick={this.handleSelectPublicPrivacy}
+                                type="button"
                             >
                                 <div className={styles.privacyCardTitle}>
                                     <FormattedMessage
@@ -847,9 +861,12 @@ class CollaborationModal extends Component {
                                 className={classNames(styles.privacyOption, {
                                     [styles.privacyOptionActive]: this.props.roomPrivacy === 'private'
                                 })}
+                                disabled={this.state.privacyBusy}
                                 role="radio"
                                 aria-checked={this.props.roomPrivacy === 'private'}
-                                onClick={this.togglePrivatePrivacy}
+                                aria-busy={this.state.privacyBusy || null}
+                                onClick={this.handleSelectPrivatePrivacy}
+                                type="button"
                             >
                                 <div className={styles.privacyCardTitle}>
                                     <FormattedMessage

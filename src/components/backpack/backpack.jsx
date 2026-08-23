@@ -68,17 +68,21 @@ const Backpack = ({
                 onPointerDown={onResizePointerDown}
             />
         ) : null}
-        <div
-            className={styles.backpackHeader}
-            onClick={onToggle}
-        >
-            {onToggle ? (
+        {onToggle ? (
+            <button
+                type="button"
+                className={styles.backpackHeader}
+                aria-expanded={expanded}
+                onClick={onToggle}
+            >
                 <FormattedMessage
                     defaultMessage="Backpack"
                     description="Button to open the backpack"
                     id="gui.backpack.header"
                 />
-            ) : (
+            </button>
+        ) : (
+            <div className={styles.backpackHeader}>
                 <ComingSoonTooltip
                     place="top"
                     tooltipId="backpack-tooltip"
@@ -89,8 +93,8 @@ const Backpack = ({
                         id="gui.backpack.header"
                     />
                 </ComingSoonTooltip>
-            )}
-        </div>
+            </div>
+        )}
         {expanded ? (
             <div
                 className={classNames(styles.backpackList, {
@@ -159,6 +163,7 @@ const Backpack = ({
                                     ))}
                                     {showMore && (
                                         <button
+                                            type="button"
                                             className={styles.more}
                                             onClick={onMore}
                                         >

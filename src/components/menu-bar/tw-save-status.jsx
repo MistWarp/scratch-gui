@@ -1,6 +1,6 @@
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import React, {useCallback} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
@@ -20,15 +20,29 @@ const TWSaveStatus = ({
     onProjectUnchanged,
     vm
 }) => {
+    const savingRef = useRef(false);
+    const [saving, setSaving] = useState(false);
     const platformState = communityEnabled && roturReady ? getRememberedPlatformProjectState() : null;
     const mistwarpAction = communityEnabled && roturReady ?
         getMistWarpAction(platformState, projectChanged) :
         null;
-    const onSaveClick = useCallback(() => smartSave({
-        vm,
-        title: projectTitle,
-        onSaved: onProjectUnchanged
-    }), [vm, projectTitle, onProjectUnchanged]);
+    const onSaveClick = useCallback(async () => {
+        if (savingRef.current) return false;
+        savingRef.current = true;
+        setSaving(true);
+        try {
+            return await smartSave({
+                vm,
+                title: projectTitle,
+                onSaved: onProjectUnchanged
+            });
+        } finally {
+            // This ref is the lock for this invocation, not state derived before the await.
+            // eslint-disable-next-line require-atomic-updates
+            savingRef.current = false;
+            setSaving(false);
+        }
+    }, [vm, projectTitle, onProjectUnchanged]);
     if (filterInlineAlerts(alertsList).length > 0) {
         return <InlineMessages />;
     }
@@ -38,16 +52,20 @@ const TWSaveStatus = ({
     if (!platformState || !mistwarpAction) return null;
     const mistwarpLabel = mistwarpAction === 'remix' ? 'Remix to MistWarp' : 'Save to MistWarp';
     return (
-        <div
+        <button
+            type="button"
             className={styles.saveNow}
+            aria-busy={saving || null}
+            aria-label={saving ? 'Saving to MistWarp' : mistwarpLabel}
+            disabled={saving}
             onClick={onSaveClick}
-            title={mistwarpLabel}
+            title={saving ? 'Saving…' : mistwarpLabel}
         >
             <Save
                 className={styles.saveIconAlways}
                 size={18}
             />
-        </div>
+        </button>
     );
 };
 
@@ -80,3 +98,5 @@ export default connect(
     mapStateToProps,
     mapDispatchToProps
 )(TWSaveStatus);
+
+export {TWSaveStatus};

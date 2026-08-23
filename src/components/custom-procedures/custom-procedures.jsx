@@ -40,6 +40,7 @@ const CustomProcedures = props => (
             />
             <Box className={styles.addButtons}>
                 <button
+                    type="button"
                     className={styles.addButton}
                     onClick={props.onAddTextNumber}
                 >
@@ -65,6 +66,7 @@ const CustomProcedures = props => (
                     </span>
                 </button>
                 <button
+                    type="button"
                     className={styles.addButton}
                     onClick={props.onAddBoolean}
                 >
@@ -90,6 +92,7 @@ const CustomProcedures = props => (
                     </span>
                 </button>
                 <button
+                    type="button"
                     className={styles.addButton}
                     onClick={props.onAddLabel}
                 >
@@ -133,6 +136,7 @@ const CustomProcedures = props => (
                 </label>
                 <Box className={styles.footerButtons}>
                     <button
+                        type="button"
                         className={styles.cancelButton}
                         onClick={props.onCancel}
                     >
@@ -143,6 +147,7 @@ const CustomProcedures = props => (
                         />
                     </button>
                     <button
+                        type="button"
                         className={styles.okButton}
                         disabled={props.emptyName}
                         onClick={props.onOk}

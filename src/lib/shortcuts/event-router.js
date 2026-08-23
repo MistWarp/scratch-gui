@@ -268,11 +268,6 @@ const executeVMAction = shortcut => {
                 vm.setTurboMode(!vm.runtime.turboMode);
             }
             break;
-        case 'duplicateSprite':
-            if (vm.duplicateSprite && vm.editingTarget) {
-                vm.duplicateSprite(vm.editingTarget.id);
-            }
-            break;
         case 'emit':
             if (vm.emit && shortcut.params && shortcut.params[0]) {
                 vm.emit(shortcut.params[0]);
@@ -285,18 +280,6 @@ const executeVMAction = shortcut => {
                 const nextIndex = (currentIndex + 1) % targets.length;
                 vm.setEditingTarget(targets[nextIndex].id);
             }
-            break;
-        case 'deleteSprite':
-            if (vm.deleteSprite && vm.editingTarget) {
-                const spriteId = vm.editingTarget.id;
-                // eslint-disable-next-line no-alert
-                if (window.confirm('Are you sure you want to delete this sprite?')) {
-                    vm.deleteSprite(spriteId);
-                }
-            }
-            break;
-        case 'postUndo':
-            if (vm.postUndo) vm.postUndo();
             break;
         case 'postRedo':
             if (vm.postRedo) vm.postRedo();
@@ -324,6 +307,23 @@ const executeCallbackAction = shortcut => {
         case 'saveSmart':
             if (callbacks.saveSmart) {
                 callbacks.saveSmart();
+            }
+            break;
+        case 'duplicateSprite':
+            if (callbacks.duplicateSprite) {
+                callbacks.duplicateSprite();
+            }
+            break;
+        case 'deleteSprite':
+            if (callbacks.deleteSprite) {
+                callbacks.deleteSprite();
+            }
+            break;
+        case 'undo':
+            if (callbacks.undo) {
+                callbacks.undo();
+            } else if (vm && vm.postUndo) {
+                vm.postUndo();
             }
             break;
         case 'loadFromComputer':
@@ -412,15 +412,7 @@ const updateShortcuts = customShortcuts => {
 const getShortcuts = () => shortcuts;
 
 const updateCallbacks = newCallbacks => {
-    // Only update callbacks if they don't already exist
-    const updatedCallbacks = {...callbacks};
-    for (const key of Object.keys(newCallbacks)) {
-        const existing = updatedCallbacks[key];
-        if (!(key in updatedCallbacks) || existing === null || typeof existing === 'undefined') {
-            updatedCallbacks[key] = newCallbacks[key];
-        }
-    }
-    callbacks = updatedCallbacks;
+    callbacks = {...callbacks, ...newCallbacks};
 };
 
 const dispose = () => {
@@ -428,13 +420,15 @@ const dispose = () => {
         document.removeEventListener('keydown', handleKeyDown);
         isInitialized = false;
     }
+    dispatch = null;
+    vm = null;
+    callbacks = {};
 };
 
 const initialize = (dispatchFn, vmInstance, callbacksFn) => {
     dispatch = dispatchFn;
     vm = vmInstance;
-    // Merge provided callbacks with existing, with existing taking precedence
-    callbacks = {...callbacksFn, ...callbacks};
+    callbacks = {...callbacksFn};
     shortcuts = getDefaultShortcuts();
     loadCustomShortcuts();
 

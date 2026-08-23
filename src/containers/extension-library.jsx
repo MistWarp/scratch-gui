@@ -4,6 +4,8 @@ import React from 'react';
 import VM from 'scratch-vm';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import log from '../lib/utils/log';
+import {connect} from 'react-redux';
+import {showStandardAlert} from '../reducers/alerts';
 
 import extensionLibraryContent, {
     galleryError,
@@ -42,18 +44,33 @@ const translateGalleryItem = (extension, locale) => ({
 
 let cachedGallery = null;
 
+const fetchCatalog = async (name, url) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`${name} extensions: HTTP status ${response.status}`);
+    const data = await response.json();
+    if (!data || !Array.isArray(data.extensions)) {
+        throw new Error(`${name} extensions: Invalid catalog response`);
+    }
+    return data.extensions;
+};
+
 const fetchLibrary = async () => {
-    const [twRes, mistiumRes] = await Promise.all([
-        fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json'),
-        fetch('https://extensions.mistium.com/generated-metadata/extensions-v0.json')
+    const [twResult, mistiumResult] = await Promise.allSettled([
+        fetchCatalog('TurboWarp', 'https://extensions.turbowarp.org/generated-metadata/extensions-v0.json'),
+        fetchCatalog('Mistium', 'https://extensions.mistium.com/generated-metadata/extensions-v0.json')
     ]);
 
-    if (!twRes.ok) throw new Error(`TurboWarp extensions: HTTP status ${twRes.status}`);
-    if (!mistiumRes.ok) throw new Error(`Mistium extensions: HTTP status ${mistiumRes.status}`);
-    const [twData, mistiumData] = await Promise.all([twRes.json(), mistiumRes.json()]);
+    if (twResult.status === 'rejected' && mistiumResult.status === 'rejected') {
+        throw new Error(`${twResult.reason.message}; ${mistiumResult.reason.message}`);
+    }
+    if (twResult.status === 'rejected') log.error(twResult.reason);
+    if (mistiumResult.status === 'rejected') log.error(mistiumResult.reason);
+
+    const twData = twResult.status === 'fulfilled' ? twResult.value : [];
+    const mistiumData = mistiumResult.status === 'fulfilled' ? mistiumResult.value : [];
     
     // Process TurboWarp extensions
-    const twExtensions = twData.extensions.map(extension => ({
+    const twExtensions = twData.map(extension => ({
         name: extension.name,
         nameTranslations: extension.nameTranslations || {},
         description: extension.description,
@@ -91,7 +108,7 @@ const fetchLibrary = async () => {
     }));
     
     // Process Mistium extensions
-    const mistiumExtensions = mistiumData.extensions
+    const mistiumExtensions = mistiumData
         .filter(ext => ext.featured)
         .map(extension => ({
             name: extension.name,
@@ -145,31 +162,48 @@ class ExtensionLibrary extends React.PureComponent {
             galleryError: null,
             galleryTimedOut: false
         };
+        this._isMounted = false;
+        this.galleryTimeout = null;
+        this.loadingExtensions = new Set();
     }
     componentDidMount () {
+        this._isMounted = true;
         if (!this.state.gallery) {
-            const timeout = setTimeout(() => {
-                this.setState({
-                    galleryTimedOut: true
-                });
+            this.galleryTimeout = setTimeout(() => {
+                if (this._isMounted) {
+                    this.setState({
+                        galleryTimedOut: true
+                    });
+                }
             }, 750);
 
             fetchLibrary()
                 .then(gallery => {
                     cachedGallery = gallery;
-                    this.setState({
-                        gallery
-                    });
-                    clearTimeout(timeout);
+                    if (this._isMounted) {
+                        this.setState({
+                            gallery
+                        });
+                    }
+                    clearTimeout(this.galleryTimeout);
+                    this.galleryTimeout = null;
                 })
                 .catch(error => {
                     log.error(error);
-                    this.setState({
-                        galleryError: error
-                    });
-                    clearTimeout(timeout);
+                    if (this._isMounted) {
+                        this.setState({
+                            galleryError: error
+                        });
+                    }
+                    clearTimeout(this.galleryTimeout);
+                    this.galleryTimeout = null;
                 });
         }
+    }
+    componentWillUnmount () {
+        this._isMounted = false;
+        clearTimeout(this.galleryTimeout);
+        this.galleryTimeout = null;
     }
     handleItemSelect (item) {
         if (item.href) {
@@ -207,16 +241,22 @@ class ExtensionLibrary extends React.PureComponent {
                     this.props.onCategorySelected(extensionId);
                 }
             } else {
-                this.props.vm.extensionManager.loadExtensionURL(url)
+                if (this.loadingExtensions.has(extensionId)) return;
+                this.loadingExtensions.add(extensionId);
+                return this.props.vm.extensionManager.loadExtensionURL(url)
                     .then(() => {
                         if (typeof this.props.onCategorySelected === 'function') {
                             this.props.onCategorySelected(extensionId);
                         }
+                        return true;
                     })
                     .catch(err => {
                         log.error(err);
-                        // eslint-disable-next-line no-alert
-                        alert(err);
+                        this.props.onShowExtensionError();
+                        return false;
+                    })
+                    .finally(() => {
+                        this.loadingExtensions.delete(extensionId);
                     });
             }
         }
@@ -270,8 +310,15 @@ ExtensionLibrary.propTypes = {
     onEnableProcedureReturns: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
     onRequestClose: PropTypes.func,
+    onShowExtensionError: PropTypes.func.isRequired,
     visible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired // eslint-disable-line react/no-unused-prop-types
 };
 
-export default injectIntl(ExtensionLibrary);
+const mapDispatchToProps = dispatch => ({
+    onShowExtensionError: () => dispatch(showStandardAlert('extensionLoadError'))
+});
+
+export default injectIntl(connect(null, mapDispatchToProps)(ExtensionLibrary));
+
+export {ExtensionLibrary, fetchLibrary};

@@ -7,6 +7,7 @@ import {
     logout,
     createProject,
     uploadProject,
+    prepareSparseProjectUpload,
     stashProjectHandoff
 } from '../lib/community/api.js';
 
@@ -157,6 +158,7 @@ const api = {
     },
     createProject,
     uploadProject,
+    prepareSparseProjectUpload,
     updateProject: (id, patch) => request(`/projects/${id}`, {method: 'PUT', body: patch}),
     setThumbnail: (id, blob) => {
         const form = new FormData();

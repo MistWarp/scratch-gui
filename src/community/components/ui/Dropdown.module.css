@@ -42,8 +42,10 @@
     cursor: pointer;
 }
 
-.item:hover {
+.item:hover:not(:disabled),
+.item:focus-visible {
     background: var(--bg-raised);
+    outline: none;
 }
 
 .item:disabled {
@@ -55,6 +57,7 @@
     color: #e25555;
 }
 
-.item-danger:hover {
+.item-danger:hover:not(:disabled),
+.item-danger:focus-visible {
     background: color-mix(in srgb, #e25555 10%, transparent);
 }

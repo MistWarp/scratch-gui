@@ -22,4 +22,25 @@ describe('ButtonComponent', () => {
         componentShallowWrapper.simulate('click');
         expect(onClick).toHaveBeenCalled();
     });
+
+    test('uses a non-submitting native button by default', () => {
+        const component = shallow(<ButtonComponent />);
+
+        expect(component.type()).toBe('button');
+        expect(component.prop('type')).toBe('button');
+    });
+
+    test('passes disabled state to the native button', () => {
+        const component = shallow(<ButtonComponent disabled />);
+
+        expect(component.prop('disabled')).toBe(true);
+    });
+
+    test('renders links without nesting another interactive control', () => {
+        const component = shallow(<ButtonComponent href="https://example.com">Open</ButtonComponent>);
+
+        expect(component.type()).toBe('a');
+        expect(component.prop('href')).toBe('https://example.com');
+        expect(component.find('button')).toHaveLength(0);
+    });
 });

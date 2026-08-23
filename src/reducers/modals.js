@@ -1,5 +1,6 @@
 const OPEN_MODAL = 'scratch-gui/modals/OPEN_MODAL';
 const CLOSE_MODAL = 'scratch-gui/modals/CLOSE_MODAL';
+let nextSimpleDialogId = 0;
 
 const MODAL_BACKDROP_LIBRARY = 'backdropLibrary';
 const MODAL_COSTUME_LIBRARY = 'costumeLibrary';
@@ -202,7 +203,9 @@ const closeHelpModal = function () {
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
-        dialogConfig
+        dialogConfig: Object.assign({}, dialogConfig, {
+            dialogId: ++nextSimpleDialogId
+        })
     };
 };
 const closeBackdropLibrary = function () {

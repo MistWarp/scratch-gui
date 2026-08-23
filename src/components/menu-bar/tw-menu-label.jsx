@@ -9,7 +9,9 @@ class MenuLabel extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'focusFirstItem',
             'handleClick',
+            'handleKeyDown',
             'handleMouseDown',
             'handleMouseUp',
             'menuRef'
@@ -24,7 +26,14 @@ class MenuLabel extends React.Component {
         if (!this.props.open && prevProps.open) this.removeListeners();
     }
     componentWillUnmount () {
+        if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
         this.removeListeners();
+    }
+    focusFirstItem () {
+        this.focusFrame = null;
+        if (!this.menuEl) return;
+        const firstItem = this.menuEl.querySelector('[role="menuitem"]:not([aria-disabled="true"])');
+        if (firstItem) firstItem.focus();
     }
     addListeners () {
         document.addEventListener('mousedown', this.handleMouseDown);
@@ -54,6 +63,28 @@ class MenuLabel extends React.Component {
             }
         }
     }
+    handleKeyDown (e) {
+        if (e.key === 'Escape' && this.props.open) {
+            e.preventDefault();
+            this.props.onClose();
+            if (this.menuEl) this.menuEl.focus();
+            return;
+        }
+        if (e.currentTarget !== e.target) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (this.props.open) {
+                this.props.onClose();
+            } else {
+                this.props.onOpen();
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!this.props.open) this.props.onOpen();
+            if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
+            this.focusFrame = requestAnimationFrame(this.focusFirstItem);
+        }
+    }
     handleMouseDown (e) {
         // Track whether the mousedown happened inside the menu
         this.mouseDownInsideMenu = this.menuEl && this.menuEl.contains(e.target);
@@ -81,8 +112,14 @@ class MenuLabel extends React.Component {
                 className={classNames(styles.menuBarItem, styles.hoverable, {
                     [styles.active]: this.props.open
                 })}
+                aria-expanded={this.props.open}
+                aria-haspopup="menu"
+                aria-label={this.props.ariaLabel}
                 onClick={this.handleClick}
+                onKeyDown={this.handleKeyDown}
                 ref={this.menuRef}
+                role="button"
+                tabIndex={0}
             >
                 {this.props.children}
             </div>
@@ -91,6 +128,7 @@ class MenuLabel extends React.Component {
 }
 
 MenuLabel.propTypes = {
+    ariaLabel: PropTypes.string,
     children: PropTypes.node,
     dataItem: PropTypes.string,
     open: PropTypes.bool,

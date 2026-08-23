@@ -10,7 +10,7 @@ const MESSAGES = {
 };
 
 const StandingBanner = () => {
-    const {user, banMessage, dismissBan} = useUser();
+    const {user, banMessage, dismissBan, signInError, dismissSignInError} = useUser();
     if (banMessage) {
         return (
             <div className={styles.banner}>
@@ -24,6 +24,15 @@ const StandingBanner = () => {
                     className={styles.link}
                     onClick={dismissBan}
                 >Dismiss</button>
+            </div>
+        );
+    }
+    if (signInError) {
+        return (
+            <div className={styles.banner}>
+                <ShieldAlert className={styles.icon} size={16} />
+                <span className={styles.text}>{signInError}</span>
+                <button type="button" className={styles.link} onClick={dismissSignInError}>Dismiss</button>
             </div>
         );
     }

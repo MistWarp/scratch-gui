@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 
 import AddonWindow from '../../addons/window-system/window.jsx';
-import downloadBlob from '../../addons/libraries/common/cs/download-blob.js';
+import downloadBlob from '../../lib/utils/download-blob.js';
+import {projectFilename} from '../../lib/utils/safe-filename.js';
 import styles from './media-recorder.css';
 
 const MIME_TYPES = [
@@ -45,7 +46,8 @@ class MediaRecorderButton extends React.Component {
             elapsed: 0,
             bytes: 0,
             countdown: 0,
-            error: ''
+            error: '',
+            starting: false
         };
         this.recorder = null;
         this.chunks = [];
@@ -60,15 +62,19 @@ class MediaRecorderButton extends React.Component {
         this.mixContext = null;
         this.projectAudioDestination = null;
         this.startedAt = 0;
+        this.starting = false;
+        this.startRequest = 0;
         this.unmounted = false;
     }
 
     componentWillUnmount () {
         this.unmounted = true;
+        this.startRequest++;
         this.cancelRecording();
     }
 
     getMimeType () {
+        if (typeof window.MediaRecorder !== 'function') return '';
         return MIME_TYPES.find(type => window.MediaRecorder.isTypeSupported(type)) || '';
     }
 
@@ -137,7 +143,13 @@ class MediaRecorderButton extends React.Component {
     };
 
     handleClose = () => {
-        this.setState({open: false});
+        if (this.starting) {
+            this.startRequest++;
+            this.starting = false;
+            this.setState({open: false, starting: false});
+        } else {
+            this.setState({open: false});
+        }
     };
 
     handleNumberChange = event => {
@@ -153,18 +165,26 @@ class MediaRecorderButton extends React.Component {
     };
 
     handleStart = async () => {
+        if (this.starting) return;
         if (!this.getMimeType()) {
             this.setState({error: 'This browser cannot encode a supported video format.'});
             return;
         }
-        this.setState({error: '', elapsed: 0, bytes: 0});
+        this.starting = true;
+        const request = ++this.startRequest;
+        this.setState({error: '', elapsed: 0, bytes: 0, starting: true});
         if (this.state.microphone) {
             try {
                 this.micStream = await navigator.mediaDevices.getUserMedia({audio: true});
             } catch (error) {
+                if (request !== this.startRequest || this.unmounted) return;
                 const unavailable = error.name === 'NotAllowedError' || error.name === 'NotFoundError';
                 if (!unavailable) {
-                    this.setState({error: error.message || 'Microphone access failed.'});
+                    this.starting = false;
+                    this.setState({
+                        error: error.message || 'Microphone access failed.',
+                        starting: false
+                    });
                     return;
                 }
                 this.setState({microphone: false,
@@ -172,18 +192,21 @@ class MediaRecorderButton extends React.Component {
                     'Microphone access was unavailable. Recording will continue without it.'});
             }
         }
-        if (this.unmounted) {
+        if (request !== this.startRequest || this.unmounted) {
+            this.starting = false;
             this.releaseStreams();
             return;
         }
+        this.starting = false;
         if (this.state.startOnFlag) {
-            this.setState({phase: 'waiting'});
+            this.setState({phase: 'waiting', starting: false});
             this.flagListener = () => {
                 this.flagListener = null;
                 this.beginDelay();
             };
             this.props.vm.runtime.once('PROJECT_START', this.flagListener);
         } else {
+            this.setState({starting: false});
             this.beginDelay();
         }
     };
@@ -268,7 +291,7 @@ class MediaRecorderButton extends React.Component {
         const mimeType = this.getMimeType();
         this.cleanupCapture();
         if (shouldSave && chunks.length) {
-            const filename = `${this.props.projectTitle || 'video'}.${this.getExtension()}`;
+            const filename = projectFilename(this.props.projectTitle, 'video', this.getExtension());
             downloadBlob(filename, new Blob(chunks, {type: mimeType}));
         }
         if (!this.unmounted) this.setState({phase: 'options', elapsed: 0, bytes: 0, countdown: 0});
@@ -354,6 +377,7 @@ class MediaRecorderButton extends React.Component {
                 )}
                 <div className={styles.actions}>
                     <button
+                        type="button"
                         className={styles.secondaryButton}
                         onClick={this.handleClose}
                     >
@@ -361,11 +385,13 @@ class MediaRecorderButton extends React.Component {
                         {'Cancel'}
                     </button>
                     <button
+                        type="button"
                         className={styles.primaryButton}
+                        disabled={this.state.starting}
                         onClick={this.handleStart}
                     >
                         <Video size={17} />
-                        {'Start recording'}
+                        {this.state.starting ? 'Starting…' : 'Start recording'}
                     </button>
                 </div>
             </React.Fragment>
@@ -439,6 +465,7 @@ class MediaRecorderButton extends React.Component {
                 )}
                 <div className={styles.actions}>
                     <button
+                        type="button"
                         className={styles.secondaryButton}
                         onClick={this.handleCancel}
                     >
@@ -447,6 +474,7 @@ class MediaRecorderButton extends React.Component {
                     </button>
                     {!waiting && !delaying && (
                         <button
+                            type="button"
                             className={styles.primaryButton}
                             onClick={this.handleStopAndSave}
                         >
@@ -511,3 +539,4 @@ MediaRecorderButton.propTypes = {
 };
 
 export default injectIntl(MediaRecorderButton);
+export {MediaRecorderButton};

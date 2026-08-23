@@ -766,36 +766,6 @@
     filter: brightness(1.1);
 }
 
-.confirmOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: color-mix(in srgb, #000 55%, transparent);
-}
-
-.confirmModal {
-    width: 100%;
-    max-width: 380px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 22px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    box-shadow: var(--card-shadow);
-}
-
-.confirmTitle {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 700;
-}
-
 .confirmText {
     margin: 0;
     font-size: 14px;
@@ -810,24 +780,8 @@
     font-size: 13px;
 }
 
-.confirmActions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 6px;
-}
-
 .agreeModal {
-    width: 100%;
     max-width: 600px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 24px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    box-shadow: var(--card-shadow);
     max-height: 90vh;
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -28,33 +27,31 @@ const openProjectActivity = projectId => openMistWarpCommunityWindow({
     height: 560
 });
 
-const NavItem = ({title, icon: Icon, onClick}) => {
-    const handleKeyDown = e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick();
-        }
-    };
-    return (
-        <div
-            className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
-            title={title}
-            aria-label={title}
-            role="button"
-            tabIndex={0}
-            onClick={onClick}
-            onKeyDown={handleKeyDown}
-        >
-            <Icon size={18} />
-        </div>
-    );
-};
+export const NavItem = ({title, icon: Icon, onClick, value}) => (
+    <button
+        type="button"
+        className={classNames(
+            menuBarStyles.menuBarItem,
+            menuBarStyles.hoverable,
+            menuBarStyles.navButton
+        )}
+        title={title}
+        aria-label={title}
+        value={value}
+        onClick={onClick}
+    >
+        <Icon size={18} />
+    </button>
+);
 
 NavItem.propTypes = {
     icon: PropTypes.elementType.isRequired,
     onClick: PropTypes.func.isRequired,
-    title: PropTypes.string.isRequired
+    title: PropTypes.string.isRequired,
+    value: PropTypes.string
 };
+
+const handleOpenProjectActivity = event => openProjectActivity(event.currentTarget.value);
 
 const MwEditorNav = ({username}) => {
     if (!username) {
@@ -72,7 +69,8 @@ const MwEditorNav = ({username}) => {
                 <NavItem
                     title="Project comments and pull requests"
                     icon={MessageSquare}
-                    onClick={() => openProjectActivity(projectId)}
+                    value={projectId}
+                    onClick={handleOpenProjectActivity}
                 />
             ) : null}
             <MwNotifications />

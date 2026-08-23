@@ -114,6 +114,7 @@ const AutoScanningStep = props => {
             <Box className={classNames(styles.bottomAreaItem, styles.buttonRow)}>
                 {props.phase === PHASES.prescan && (
                     <button
+                        type="button"
                         className={styles.connectionButton}
                         onClick={props.onStartScan}
                     >
@@ -127,6 +128,7 @@ const AutoScanningStep = props => {
                 {props.phase === PHASES.pressbutton && (
                     <div className={styles.segmentedButton}>
                         <button
+                            type="button"
                             disabled
                             className={styles.connectionButton}
                         >
@@ -137,6 +139,7 @@ const AutoScanningStep = props => {
                             />
                         </button>
                         <button
+                            type="button"
                             className={styles.connectionButton}
                             onClick={props.onRefresh}
                         >
@@ -150,6 +153,7 @@ const AutoScanningStep = props => {
                 )}
                 {props.phase === PHASES.notfound && (
                     <button
+                        type="button"
                         className={styles.connectionButton}
                         onClick={props.onRefresh}
                     >
@@ -167,6 +171,7 @@ const AutoScanningStep = props => {
                 )}
                 {showUpdate && (
                     <button
+                        type="button"
                         className={classNames(styles.bottomAreaItem, styles.connectionButton)}
                         onClick={props.onUpdatePeripheral}
                     >
