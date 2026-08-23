@@ -2,7 +2,25 @@
 
 const API_BASE = 'https://mwapi.mistium.com/api';
 const AVATARS = 'https://avatars.rotur.dev';
+const DEFAULT_IMAGE = 'https://warp.mistium.com/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
+
+const STATIC_META = {
+    '/spaces': {
+        title: 'Spaces - MistWarp',
+        description: 'Browse studios, collections, and community challenges on MistWarp.'
+    },
+    '/roadmap': {
+        title: 'Roadmap - MistWarp',
+        description: 'Suggest, discuss, and vote on ideas for MistWarp.'
+    }
+};
+
+const escapeAttribute = value => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
 class AttrSetter {
     constructor (name, value) {
@@ -22,6 +40,23 @@ class TextReplacer {
     text (chunk) {
         chunk.replace(this.first ? this.value : '');
         this.first = false;
+    }
+}
+
+class HeadAppender {
+    constructor (meta, url) {
+        this.meta = meta;
+        this.url = url;
+    }
+    element (el) {
+        const title = escapeAttribute(this.meta.title);
+        const description = escapeAttribute(this.meta.description);
+        const image = escapeAttribute(this.meta.image);
+        const url = escapeAttribute(this.url);
+        el.append(`<meta name="twitter:title" content="${title}">` +
+            `<meta name="twitter:description" content="${description}">` +
+            `<meta name="twitter:image" content="${image}">` +
+            `<link rel="canonical" href="${url}">`, {html: true});
     }
 }
 
@@ -67,33 +102,95 @@ const userMeta = async name => {
     };
 };
 
+const spaceMeta = async id => {
+    const data = await fetchJson(`/spaces/${encodeURIComponent(id)}`);
+    if (!data || !data.space || data.space.visibility === 'private') return null;
+    const space = data.space;
+    const kind = {
+        studio: 'studio',
+        collection: 'collection',
+        challenge: 'challenge'
+    }[space.kind] || 'space';
+    const projectImage = (space.projects || []).find(project => project.thumbUrl);
+    const image = space.thumbnailUrl || (projectImage && projectImage.thumbUrl) || null;
+    return {
+        title: `${space.title} - MistWarp`,
+        description: flatten(space.description) ||
+            `${space.title} is a MistWarp ${kind} by ${space.owner}.`,
+        image,
+        card: image ? 'summary_large_image' : 'summary'
+    };
+};
+
+const decodeSegment = segment => {
+    try {
+        return decodeURIComponent(segment);
+    } catch (e) {
+        return null;
+    }
+};
+
+const metaForPath = pathname => {
+    const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+    if (STATIC_META[normalizedPath]) return STATIC_META[normalizedPath];
+
+    const projectMatch = normalizedPath.match(/^\/project\/([^/]+)$/);
+    if (projectMatch) {
+        const id = decodeSegment(projectMatch[1]);
+        return id === null ? null : projectMeta(id);
+    }
+
+    const userMatch = normalizedPath.match(/^\/users\/([^/]+)(?:\/followers)?$/);
+    if (userMatch) {
+        const name = decodeSegment(userMatch[1]);
+        return name === null ? null : userMeta(name);
+    }
+
+    const spaceMatch = normalizedPath.match(/^\/spaces\/([^/]+)$/);
+    if (spaceMatch) {
+        const id = decodeSegment(spaceMatch[1]);
+        return id === null ? null : spaceMeta(id);
+    }
+
+    if (/^\/spaces\/[^/]+\/manage$/.test(normalizedPath)) {
+        return {
+            title: 'Manage space - MistWarp',
+            description: 'Manage a studio, collection, or challenge on MistWarp.'
+        };
+    }
+
+    return null;
+};
+
 export const onRequest = async context => {
     const {request, next} = context;
     const url = new URL(request.url);
 
-    const projectMatch = url.pathname.match(/^\/project\/([^/]+)\/?$/);
-    const userMatch = url.pathname.match(/^\/users\/([^/]+)(\/followers)?\/?$/);
-    if (!projectMatch && !userMatch) return next();
+    const metaPromise = metaForPath(url.pathname);
+    if (!STATIC_META[url.pathname.replace(/\/+$/, '') || '/'] &&
+        !/^\/(?:project|users|spaces)\//.test(url.pathname)) return next();
 
     const response = await next();
     if (!(response.headers.get('content-type') || '').includes('text/html')) return response;
 
-    const meta = projectMatch ?
-        await projectMeta(decodeURIComponent(projectMatch[1])) :
-        await userMeta(decodeURIComponent(userMatch[1]));
+    const meta = await metaPromise;
     if (!meta) return response;
 
-    let rewriter = new HTMLRewriter()
-        .on('title', new TextReplacer(meta.title))
-        .on('meta[name="description"]', new AttrSetter('content', meta.description))
-        .on('meta[property="og:title"]', new AttrSetter('content', meta.title))
-        .on('meta[property="og:description"]', new AttrSetter('content', meta.description))
-        .on('meta[property="og:url"]', new AttrSetter('content', url.href))
-        .on('meta[name="twitter:card"]', new AttrSetter('content', meta.card));
+    const canonicalUrl = `${url.origin}${url.pathname}`;
+    const completeMeta = {
+        ...meta,
+        image: meta.image || DEFAULT_IMAGE,
+        card: meta.card || 'summary'
+    };
 
-    if (meta.image) {
-        rewriter = rewriter.on('meta[property="og:image"]', new AttrSetter('content', meta.image));
-    }
-
-    return rewriter.transform(response);
+    return new HTMLRewriter()
+        .on('title', new TextReplacer(completeMeta.title))
+        .on('meta[name="description"]', new AttrSetter('content', completeMeta.description))
+        .on('meta[property="og:title"]', new AttrSetter('content', completeMeta.title))
+        .on('meta[property="og:description"]', new AttrSetter('content', completeMeta.description))
+        .on('meta[property="og:url"]', new AttrSetter('content', canonicalUrl))
+        .on('meta[property="og:image"]', new AttrSetter('content', completeMeta.image))
+        .on('meta[name="twitter:card"]', new AttrSetter('content', completeMeta.card))
+        .on('head', new HeadAppender(completeMeta, canonicalUrl))
+        .transform(response);
 };
