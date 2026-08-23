@@ -175,7 +175,8 @@
 
 .followButton,
 .followingButton,
-.iconButton {
+.iconButton,
+.blockedButton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -186,6 +187,14 @@
     padding: 9px 12px;
     border-radius: var(--radius-sm);
     flex: 1;
+}
+
+.blockedButton {
+    flex: 0 0 36px;
+    border: 1px solid var(--mw-danger);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--mw-danger) 14%, transparent);
+    color: var(--mw-danger);
 }
 
 .followButton {

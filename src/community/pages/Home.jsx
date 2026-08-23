@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Clock, GitFork, Github, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Users} from 'lucide-react';
+import {Bell, Bug, Clock, GitFork, Github, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchNotifications} from '../../lib/rotur/client.js';
@@ -136,6 +136,7 @@ const RoadmapSection = () => {
                             />
                             <div className={styles.roadmapBody}>
                                 <div className={styles.roadmapLabels}>
+                                    {idea.kind === 'bug' ? <span><Bug size={10} /> Bug</span> : null}
                                     <span>{idea.category}</span>
                                     <span className={styles[`roadmapStatus${idea.status}`]}>{ROADMAP_STATUS_LABELS[idea.status] || idea.status}</span>
                                     {idea.interested ? <span className={styles.roadmapOfficial}><Sparkles size={10} /> MistWarp is interested</span> : null}

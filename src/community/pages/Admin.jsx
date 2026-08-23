@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import React, {useEffect, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
 import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3, AlertTriangle, Puzzle} from 'lucide-react';
@@ -987,6 +988,18 @@ const Admin = () => {
         }
     };
 
+    const replyToSupport = async report => {
+        const message = window.prompt(`Message @${report.reporter}:`);
+        if (!message || !message.trim()) return;
+        try {
+            setError('');
+            await api.admin.messageUser(report.reporter, message.trim());
+            await act(report.id, 'dismiss');
+        } catch (e) {
+            setError(e.message || 'Could not send the reply.');
+        }
+    };
+
     const warnFromReport = report => {
         const reason = window.prompt('Reason for the warning (shown to the user):');
         if (reason === null) return; // cancelled
@@ -1105,7 +1118,7 @@ const Admin = () => {
                                         >
                                             <div className={styles.rowInfo}>
                                                 <span className={styles.rowTitle}>
-                                                    {report.type === 'project' ? (
+                                                    {report.type === 'support' ? `${report.supportType || 'Support'} request from @${report.reporter}` : report.type === 'project' ? (
                                                         <Link
                                                             to={projectUrl(report.target)}
                                                         >{`Project ${report.target}`}</Link>
@@ -1141,28 +1154,30 @@ const Admin = () => {
                                                 </span>
                                                 <span className={styles.rowMeta}>
                                                     {`Reported by @${report.reporter} · ${timeAgo(report.created)} ago`}
-                                                    {report.context ? ` · in ${report.context}` : ''}
+                                                    {report.type !== 'support' && report.context ? ` · in ${report.context}` : ''}
                                                 </span>
                                                 <span className={styles.reason}>{report.reason}</span>
+                                                {report.type === 'support' && report.context ? <span className={styles.reason}>{report.context}</span> : null}
                                                 {report.type === 'project' ? (
                                                     <EvidencePanel target={report.target} />
                                                 ) : null}
                                             </div>
                                             <div className={styles.rowActions}>
+                                                {report.type === 'support' ? <button className={styles.secondary} onClick={() => replyToSupport(report)}>Reply and close</button> : null}
                                                 {report.type === 'project' ? (
                                                     <button
                                                         className={styles.secondary}
                                                         onClick={() => act(report.id, 'unshare_project')}
                                                     >Unshare</button>
                                                 ) : null}
-                                                <button
+                                                {report.type !== 'support' ? <button
                                                     className={styles.secondary}
                                                     onClick={() => warnFromReport(report)}
-                                                >{report.type === 'project' ? 'Warn owner' : 'Warn user'}</button>
-                                                <button
+                                                >{report.type === 'project' ? 'Warn owner' : 'Warn user'}</button> : null}
+                                                {report.type !== 'support' ? <button
                                                     className={styles.danger}
                                                     onClick={() => banFromReport(report)}
-                                                >{report.type === 'project' ? 'Ban owner' : 'Ban user'}</button>
+                                                >{report.type === 'project' ? 'Ban owner' : 'Ban user'}</button> : null}
                                                 <button
                                                     className={styles.secondary}
                                                     onClick={() => act(report.id, 'dismiss')}

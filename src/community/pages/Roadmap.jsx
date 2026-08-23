@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
-import {MessageCircle, Plus, Search, Sparkles} from 'lucide-react';
+import {Link, useSearchParams} from 'react-router-dom';
+import {Bug, MessageCircle, Plus, Search, Sparkles} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -42,6 +42,7 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
             <div className={styles.ideaBody}>
                 <div className={styles.ideaTop}>
                     <div className={styles.labels}>
+                        <span className={idea.kind === 'bug' ? styles.bugLabel : styles.ideaLabel}>{idea.kind === 'bug' ? <Bug size={11} /> : null}{idea.kind === 'bug' ? 'Bug' : 'Idea'}</span>
                         <span title="Area">{idea.category}</span>
                         {!user || !user.isAdmin ? <span className={styles[`status${idea.status}`]} title="Status">{STATUS_LABELS[idea.status] || idea.status}</span> : null}
                         {(!user || !user.isAdmin) && idea.interested ? <span className={styles.official} title="MistWarp is interested in this suggestion"><Sparkles size={11} /> MistWarp is interested</span> : null}
@@ -84,15 +85,17 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest}) => {
 
 const Roadmap = () => {
     const {user, login} = useUser();
+    const [params] = useSearchParams();
     const [ideas, setIdeas] = useState(null);
     const [loadError, setLoadError] = useState(false);
-    const [creating, setCreating] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', category: 'Community'});
+    const [creating, setCreating] = useState(params.get('new') === 'bug');
+    const [form, setForm] = useState({kind: params.get('new') === 'bug' ? 'bug' : 'idea', title: '', description: '', category: 'Community'});
     const [error, setError] = useState('');
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [sourceFilter, setSourceFilter] = useState('');
+    const [kindFilter, setKindFilter] = useState('');
     const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
 
     const categories = useMemo(() => (ideas ? [...new Set(ideas.map(idea => idea.category).filter(Boolean))].sort() : []), [ideas]);
@@ -103,16 +106,18 @@ const Roadmap = () => {
             if (statusFilter && idea.status !== statusFilter) return false;
             if (categoryFilter && idea.category !== categoryFilter) return false;
             if (sourceFilter && idea.source !== sourceFilter) return false;
+            if (kindFilter && (idea.kind || 'idea') !== kindFilter) return false;
             if (!normalizedQuery) return true;
             return `${idea.title} ${idea.description} ${idea.author} ${idea.category}`.toLowerCase().includes(normalizedQuery);
         });
-    }, [ideas, query, statusFilter, categoryFilter, sourceFilter]);
-    const filtering = Boolean(query || statusFilter || categoryFilter || sourceFilter);
+    }, [ideas, query, statusFilter, categoryFilter, sourceFilter, kindFilter]);
+    const filtering = Boolean(query || statusFilter || categoryFilter || sourceFilter || kindFilter);
     const clearFilters = () => {
         setQuery('');
         setStatusFilter('');
         setCategoryFilter('');
         setSourceFilter('');
+        setKindFilter('');
     };
 
     const load = useCallback(() => {
@@ -139,7 +144,7 @@ const Roadmap = () => {
         setError('');
         try {
             await api.createIdea(form);
-            setForm({title: '', description: '', category: 'Community'});
+            setForm({kind: 'idea', title: '', description: '', category: 'Community'});
             setCreating(false);
             load();
         } catch (e) {
@@ -184,19 +189,20 @@ const Roadmap = () => {
             <header className={styles.head}>
                 <div>
                     <h1>Roadmap</h1>
-                    <p>Suggest improvements, vote on what matters, and discuss ideas with the community. Popular ideas help shape what gets built, but they are not promises.</p>
+                    <p>Suggest improvements, report product bugs, vote on what matters, and discuss entries with the community.</p>
                 </div>
-                <Button onClick={() => (user ? setCreating(value => !value) : login())}><Plus size={16} /> Suggest something</Button>
+                <Button onClick={() => (user ? setCreating(value => !value) : login())}><Plus size={16} /> Add an entry</Button>
             </header>
             {creating ? (
                 <form className={styles.form} onSubmit={create}>
+                    <label>Type<select value={form.kind} onChange={event => updateForm('kind', event.target.value)}><option value="idea">Idea</option><option value="bug">Bug report</option></select></label>
                     <label>Title<input value={form.title} required maxLength={120} placeholder="A clear summary" onChange={event => updateForm('title', event.target.value)} /></label>
-                    <label>Description<textarea value={form.description} required maxLength={3000} placeholder="What should change, and who would it help?" onChange={event => updateForm('description', event.target.value)} /></label>
+                    <label>Description<textarea value={form.description} required maxLength={3000} placeholder={form.kind === 'bug' ? 'What happened, what did you expect, and how can someone reproduce it?' : 'What should change, and who would it help?'} onChange={event => updateForm('description', event.target.value)} /></label>
                     <label>Area<select value={form.category} onChange={event => updateForm('category', event.target.value)}>
                         <option>Community</option><option>Editor</option><option>Collaboration</option><option>Extensions</option><option>Mobile</option><option>Other</option>
                     </select></label>
                     <div className={styles.formActions}>
-                        <Button type="submit">Post suggestion</Button>
+                        <Button type="submit">{form.kind === 'bug' ? 'Report bug' : 'Post idea'}</Button>
                         <button type="button" onClick={() => setCreating(false)}>Cancel</button>
                     </div>
                 </form>
@@ -204,7 +210,8 @@ const Roadmap = () => {
             {error ? <p className={styles.error}>{error}</p> : null}
             {ideas && ideas.length ? (
                 <div className={styles.filters}>
-                    <div className={styles.searchFilter}><Search size={16} /><input aria-label="Search suggestions" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search suggestions" /></div>
+                    <div className={styles.searchFilter}><Search size={16} /><input aria-label="Search roadmap" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search ideas and bugs" /></div>
+                    <select aria-label="Filter by type" value={kindFilter} onChange={event => setKindFilter(event.target.value)}><option value="">Ideas and bugs</option><option value="idea">Ideas</option><option value="bug">Bugs</option></select>
                     <select aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="">Any status</option>{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
                     <select aria-label="Filter by area" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}><option value="">Any area</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select>
                     <select aria-label="Filter by submitter" value={sourceFilter} onChange={event => setSourceFilter(event.target.value)}><option value="">Anyone</option><option value="community">Community</option><option value="mistwarp">MistWarp</option></select>

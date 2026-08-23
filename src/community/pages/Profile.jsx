@@ -1,7 +1,8 @@
+/* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
-    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, X, Star
+    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, X, Star, Ban, VolumeX
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
@@ -48,6 +49,7 @@ const Profile = () => {
     const [presence, setPresence] = useState(null);
     const [donating, setDonating] = useState(false);
     const [reviews, setReviews] = useState(null);
+    const [safetyBusy, setSafetyBusy] = useState(false);
 
     const beginLoad = useLatest();
 
@@ -166,6 +168,29 @@ const Profile = () => {
             setActionError(e.message || 'Could not update comments.');
         } finally {
             setCommentsBusy(false);
+        }
+    };
+
+    const toggleSafety = async kind => {
+        if (!mwUser || safetyBusy) return;
+        const active = kind === 'block' ? mwUser.viewerBlocked : mwUser.viewerMuted;
+        if (kind === 'block' && !active && !window.confirm(`Block ${name} on MistWarp? You will no longer receive MistWarp comments or notifications from each other.`)) return;
+        setSafetyBusy(true);
+        setActionError(null);
+        try {
+            if (kind === 'block') {
+                if (active) await api.unblockUser(name);
+                else await api.blockUser(name);
+                setMwUser(current => ({...current, viewerBlocked: !active}));
+            } else {
+                if (active) await api.unmuteUser(name);
+                else await api.muteUser(name);
+                setMwUser(current => ({...current, viewerMuted: !active}));
+            }
+        } catch (e) {
+            setActionError(e.message || 'Could not update your safety settings.');
+        } finally {
+            setSafetyBusy(false);
         }
     };
 
@@ -421,6 +446,8 @@ const Profile = () => {
                                         {profile.followed ? 'Following' : 'Follow'}
                                     </button>
                                 ) : null}
+                                {user && !isSelf && mwUser && mwUser.exists !== false ? <button className={styles.iconButton} disabled={safetyBusy} title={mwUser.viewerMuted ? 'Unmute MistWarp notifications' : 'Mute MistWarp notifications'} aria-label={mwUser.viewerMuted ? 'Unmute MistWarp notifications' : 'Mute MistWarp notifications'} onClick={() => toggleSafety('mute')}><VolumeX size={15} /></button> : null}
+                                {user && !isSelf && mwUser && mwUser.exists !== false ? <button className={mwUser.viewerBlocked ? styles.blockedButton : styles.iconButton} disabled={safetyBusy} title={mwUser.viewerBlocked ? 'Unblock on MistWarp' : 'Block on MistWarp'} aria-label={mwUser.viewerBlocked ? 'Unblock on MistWarp' : 'Block on MistWarp'} onClick={() => toggleSafety('block')}><Ban size={15} /></button> : null}
                                 {user && !isSelf ? (
                                     <button
                                         className={styles.followButton}

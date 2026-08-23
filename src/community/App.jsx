@@ -23,6 +23,10 @@ import Spaces from './pages/Spaces.jsx';
 import Space from './pages/Space.jsx';
 import ManageSpace from './pages/ManageSpace.jsx';
 import Roadmap from './pages/Roadmap.jsx';
+import Trust from './pages/Trust.jsx';
+import Support from './pages/Support.jsx';
+import Status from './pages/Status.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 const ROUTE_TITLES = [
     ['/explore', 'Explore'],
@@ -36,6 +40,9 @@ const ROUTE_TITLES = [
     ['/spaces/', 'Space'],
     ['/spaces', 'Spaces'],
     ['/roadmap', 'Roadmap'],
+    ['/trust', 'Trust and safety'],
+    ['/support', 'Support'],
+    ['/status', 'Service status'],
     ['/users/', 'Profile'],
     ['/project/', 'Project']
 ];
@@ -74,7 +81,11 @@ const App = () => (
                 <Route path="/spaces/:id" element={<Space />} />
                 <Route path="/spaces/:id/manage" element={<ManageSpace />} />
                 <Route path="/roadmap" element={<Roadmap />} />
+                <Route path="/trust" element={<Trust />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/status" element={<Status />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </div>
         <Footer />
