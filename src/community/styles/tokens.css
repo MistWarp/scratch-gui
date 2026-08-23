@@ -1,4 +1,11 @@
 :root {
+    --mw-accent: var(--looks-secondary, hsl(260, 60%, 60%));
+    --mw-accent-text: var(--accent-foreground, #ffffff);
+    --mw-border: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    --mw-panel: var(--ui-secondary, #1e1e1e);
+    --mw-input: var(--ui-tertiary, #1a1a1a);
+    --mw-text-muted: color-mix(in srgb, var(--text-primary, #eeeeee) 80%, transparent);
+    --mw-danger: #d94747;
     --accent: var(--looks-secondary, hsl(260, 60%, 60%));
     --accent-strong: var(--looks-secondary, var(--accent));
     --accent-dim: var(--looks-secondary-dark, var(--accent));

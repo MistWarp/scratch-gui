@@ -1,6 +1,7 @@
+/* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet} from 'lucide-react';
+import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet, Layers3} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import {fetchNotifications} from '../../lib/rotur/client.js';
@@ -11,6 +12,47 @@ import ProjectThumbnail from './ProjectThumbnail.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
 import styles from './NavBar.module.css';
 
+const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
+
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onSubmit, open, projects, people, spaces, onProject, onProfile, onSpace}) => (
+    <form className={`${styles.search} ${className}`} onSubmit={onSubmit} ref={containerRef}>
+        <Search size={17} className={styles.searchIcon} />
+        <input
+            ref={inputRef}
+            className={styles.searchInput}
+            placeholder="Search projects, people, and spaces"
+            value={query}
+            onChange={event => onQuery(event.target.value)}
+            onFocus={onFocus}
+        />
+        {open && (people.length || projects.length || spaces.length) ? (
+            <div className={styles.suggestions}>
+                {projects.map(project => (
+                    <button key={project.id} type="button" className={styles.suggestion} onClick={() => onProject(project.id)}>
+                        <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
+                        <span>{project.title}</span>
+                        <span className={styles.suggestionMeta}>by {project.owner}</span>
+                    </button>
+                ))}
+                {people.map(person => (
+                    <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
+                        <Avatar username={person.username} size={26} />
+                        <span>{person.username}</span>
+                        <span className={styles.suggestionMeta}>{person.followers ?? 0} followers · {person.projects} projects</span>
+                    </button>
+                ))}
+                {spaces.map(space => (
+                    <button key={space._id} type="button" className={styles.suggestion} onClick={() => onSpace(space._id)}>
+                        <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
+                        <span>{space.title}</span>
+                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || 'Space'} · by {space.owner}</span>
+                    </button>
+                ))}
+            </div>
+        ) : null}
+    </form>
+);
+
 const NavBar = () => {
     const {user, loading, login, logout} = useUser();
     const [loginError, setLoginError] = useState('');
@@ -18,12 +60,32 @@ const NavBar = () => {
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [projectSuggestions, setProjectSuggestions] = useState([]);
+    const [spaceSuggestions, setSpaceSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
     const [unread, setUnread] = useState(0);
     const [openReports, setOpenReports] = useState(0);
     const navigate = useNavigate();
-    const searchRef = useRef(null);
+    const desktopSearchRef = useRef(null);
+    const mobileSearchRef = useRef(null);
+    const desktopSearchInputRef = useRef(null);
+    const mobileSearchInputRef = useRef(null);
+
+    useEffect(() => {
+        const focusSearch = event => {
+            const target = event.target;
+            const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+            if ((event.key === '/' && !typing) || (event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey))) {
+                event.preventDefault();
+                const mobile = window.matchMedia('(max-width: 680px)').matches;
+                const input = mobile ? mobileSearchInputRef.current : desktopSearchInputRef.current;
+                input?.focus();
+                setSuggestionsOpen(true);
+            }
+        };
+        window.addEventListener('keydown', focusSearch);
+        return () => window.removeEventListener('keydown', focusSearch);
+    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -84,17 +146,20 @@ const NavBar = () => {
         if (q.length < 2) {
             setSuggestions([]);
             setProjectSuggestions([]);
+            setSpaceSuggestions([]);
             return;
         }
         let stale = false;
         const timer = setTimeout(() => {
             Promise.all([
                 api.searchUsers(q).catch(() => ({users: []})),
-                api.explore({q, limit: 5}).catch(() => ({projects: []}))
-            ]).then(([u, p]) => {
+                api.explore({q, limit: 5}).catch(() => ({projects: []})),
+                api.spaces({q}).catch(() => ({spaces: []}))
+            ]).then(([u, p, s]) => {
                 if (stale) return;
                 setSuggestions(u.users || []);
                 setProjectSuggestions(p.projects || []);
+                setSpaceSuggestions((s.spaces || []).slice(0, 5));
             });
         }, 200);
         return () => {
@@ -105,7 +170,9 @@ const NavBar = () => {
 
     useEffect(() => {
         const close = event => {
-            if (searchRef.current && !searchRef.current.contains(event.target)) {
+            const outsideDesktop = desktopSearchRef.current && !desktopSearchRef.current.contains(event.target);
+            const outsideMobile = mobileSearchRef.current && !mobileSearchRef.current.contains(event.target);
+            if (outsideDesktop && outsideMobile) {
                 setSuggestionsOpen(false);
             }
         };
@@ -152,6 +219,12 @@ const NavBar = () => {
         navigate(`/project/${id}`);
     };
 
+    const goToSpace = id => {
+        setSuggestionsOpen(false);
+        setQuery('');
+        navigate(`/spaces/${id}`);
+    };
+
     return (
         <header className={styles.bar}>
             <div className={styles.inner}>
@@ -182,65 +255,34 @@ const NavBar = () => {
                         <Compass size={17} />
                         <span className={styles.linkLabel}>Explore</span>
                     </Link>
+                    <Link
+                        to="/spaces"
+                        className={styles.link}
+                    >
+                        <Layers3 size={17} />
+                        <span className={styles.linkLabel}>Spaces</span>
+                    </Link>
                 </nav>
 
-                <form
-                    className={styles.search}
+                <SearchBox
+                    className={styles.desktopSearch}
+                    containerRef={desktopSearchRef}
+                    inputRef={desktopSearchInputRef}
+                    query={query}
+                    onQuery={value => {
+                        setQuery(value);
+                        setSuggestionsOpen(true);
+                    }}
+                    onFocus={() => setSuggestionsOpen(true)}
                     onSubmit={submitSearch}
-                    ref={searchRef}
-                >
-                    <Search
-                        size={17}
-                        className={styles.searchIcon}
-                    />
-                    <input
-                        className={styles.searchInput}
-                        placeholder="Search projects and people"
-                        value={query}
-                        onChange={e => {
-                            setQuery(e.target.value);
-                            setSuggestionsOpen(true);
-                        }}
-                        onFocus={() => setSuggestionsOpen(true)}
-                    />
-                    {suggestionsOpen && (suggestions.length || projectSuggestions.length) ? (
-                        <div className={styles.suggestions}>
-                            {projectSuggestions.map(project => (
-                                <button
-                                    key={project.id}
-                                    type="button"
-                                    className={styles.suggestion}
-                                    onClick={() => goToProject(project.id)}
-                                >
-                                    <ProjectThumbnail
-                                        project={project}
-                                        className={styles.suggestionThumb}
-                                        fallbackClassName={styles.suggestionThumbFallback}
-                                    />
-                                    <span>{project.title}</span>
-                                    <span className={styles.suggestionMeta}>by {project.owner}</span>
-                                </button>
-                            ))}
-                            {suggestions.map(person => (
-                                <button
-                                    key={person.username}
-                                    type="button"
-                                    className={styles.suggestion}
-                                    onClick={() => goToProfile(person.username)}
-                                >
-                                    <Avatar
-                                        username={person.username}
-                                        size={26}
-                                    />
-                                    <span>{person.username}</span>
-                                    <span className={styles.suggestionMeta}>
-                                        {person.followers ?? 0} followers · {person.projects} projects
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    ) : null}
-                </form>
+                    open={suggestionsOpen}
+                    projects={projectSuggestions}
+                    people={suggestions}
+                    spaces={spaceSuggestions}
+                    onProject={goToProject}
+                    onProfile={goToProfile}
+                    onSpace={goToSpace}
+                />
 
                 <div className={styles.account}>
                     {user ? (
@@ -308,6 +350,25 @@ const NavBar = () => {
                     )}
                 </div>
             </div>
+            <SearchBox
+                className={styles.mobileSearch}
+                containerRef={mobileSearchRef}
+                inputRef={mobileSearchInputRef}
+                query={query}
+                onQuery={value => {
+                    setQuery(value);
+                    setSuggestionsOpen(true);
+                }}
+                onFocus={() => setSuggestionsOpen(true)}
+                onSubmit={submitSearch}
+                open={suggestionsOpen}
+                projects={projectSuggestions}
+                people={suggestions}
+                spaces={spaceSuggestions}
+                onProject={goToProject}
+                onProfile={goToProfile}
+                onSpace={goToSpace}
+            />
             {loginError ? (
                 <div
                     className={styles.loginError}

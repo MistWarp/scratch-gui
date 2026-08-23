@@ -67,6 +67,10 @@
     align-items: center;
 }
 
+.mobileSearch {
+    display: none;
+}
+
 .searchIcon {
     position: absolute;
     left: 13px;
@@ -165,6 +169,17 @@
     font-size: 9px;
     color: var(--text-dim);
     overflow: hidden;
+}
+
+.suggestionSpaceIcon {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 8px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    flex-shrink: 0;
 }
 
 .account {
@@ -275,6 +290,10 @@
 }
 
 @media (max-width: 680px) {
+    :global(body) {
+        padding-bottom: 74px;
+    }
+
     .inner {
         gap: 8px;
         padding: 0 10px;
@@ -292,20 +311,52 @@
         display: none;
     }
 
-    .search {
-        min-width: 0;
+    .desktopSearch {
+        display: none;
     }
 
-    .searchInput {
-        height: 36px;
-        padding-left: 34px;
-    }
-
-    .suggestions {
+    .mobileSearch {
         position: fixed;
-        top: 54px;
-        left: 10px;
         right: 10px;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: 10px;
+        z-index: 70;
+        display: flex;
+        box-sizing: border-box;
+        width: auto;
+        max-width: none;
+        height: 54px;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        background: var(--bg-card);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, .38);
+    }
+
+    .mobileSearch .searchIcon {
+        left: 18px;
+        color: var(--text-faint);
+    }
+
+    .mobileSearch .searchInput {
+        height: 40px;
+        padding-left: 38px;
+        border-color: var(--border-soft);
+        color: var(--mw-text);
+        background: var(--bg-raised);
+    }
+
+    .mobileSearch .searchInput::placeholder {
+        color: var(--text-faint);
+    }
+
+    .mobileSearch .suggestions {
+        top: auto;
+        right: 0;
+        bottom: calc(100% + 8px);
+        left: 0;
+        max-height: min(420px, calc(100vh - 90px));
+        overflow-y: auto;
     }
 
     .suggestionMeta {

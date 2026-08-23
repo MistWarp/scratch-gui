@@ -29,8 +29,10 @@ const Footer = () => (
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>Community</span>
                     <Link to="/explore">Explore</Link>
+                    <Link to="/spaces">Spaces and challenges</Link>
                     <Link to="/leaderboard">Leaderboard</Link>
                     <Link to="/news">News</Link>
+                    <Link to="/roadmap">Roadmap</Link>
                     <Link to="/users/mist">Report a bug</Link>
                 </div>
                 <div className={styles.column}>

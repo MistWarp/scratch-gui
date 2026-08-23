@@ -19,9 +19,10 @@
 .panelTabs {
     display: flex;
     align-items: center;
-    gap: 2px;
-    padding: 6px 8px;
+    gap: 4px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--border);
+    overflow-x: auto;
 }
 
 .panelTab,
@@ -30,40 +31,72 @@
     background: none;
     color: var(--mw-text);
     font-weight: 600;
-    font-size: 13px;
-    padding: 7px 11px;
-    border-radius: 8px;
+    flex: 0 0 auto;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 7px;
     cursor: pointer;
 }
 
 .panelTabActive {
     color: var(--accent-strong);
     background: var(--accent-soft);
-}
-
-.panelEdit {
-    margin-left: auto;
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 8px;
-    background: none;
-    color: var(--text-dim);
-    cursor: pointer;
-}
-
-.panelEdit:hover {
-    background: var(--bg-raised);
-    color: var(--mw-text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .panelBody {
-    padding: 14px 16px;
+    padding: 17px 18px;
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.panelBodyFooter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 18px;
+}
+
+.panelBodyActions {
+    display: flex;
+    gap: 6px;
+}
+
+.panelContentAction,
+.panelSave {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.panelContentAction:hover {
+    border-color: var(--accent-border);
+    color: var(--mw-text);
+}
+
+.panelSave {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
+}
+
+.panelContentAction:disabled,
+.panelSave:disabled {
+    cursor: default;
+    opacity: .6;
 }
 
 .panelInput {
@@ -78,6 +111,29 @@
     font-size: 14px;
     padding: 10px 12px;
     outline: none;
+}
+
+.aboutSections {
+    display: grid;
+    gap: 20px;
+}
+
+.aboutSections section + section {
+    padding-top: 17px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.aboutSections h3 {
+    margin: 0 0 8px;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.aboutSections .panelInput {
+    min-height: 100px;
 }
 
 .panelInput:focus {
@@ -114,11 +170,20 @@
 .creditEditRow {
     display: flex;
     gap: 6px;
-    align-items: center;
+    align-items: flex-start;
+}
+
+.creditFields {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
 }
 
 .creditWho,
-.creditRole {
+.creditRole,
+.creditUrl {
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--bg-raised);
@@ -127,19 +192,18 @@
     font-size: 13px;
     padding: 7px 9px;
     outline: none;
+    width: 100%;
     min-width: 0;
+    box-sizing: border-box;
 }
 
-.creditWho {
-    flex: 0 0 38%;
-}
-
-.creditRole {
-    flex: 1;
+.creditUrl {
+    grid-column: 1 / -1;
 }
 
 .creditWho:focus,
-.creditRole:focus {
+.creditRole:focus,
+.creditUrl:focus {
     border-color: var(--accent);
 }
 
@@ -154,6 +218,7 @@
     background: none;
     color: var(--text-faint);
     cursor: pointer;
+    margin-top: 1px;
 }
 
 .creditRemove:hover {
@@ -214,6 +279,69 @@
 
 .tag:hover {
     background: var(--accent-softer);
+}
+
+.controlEditor {
+    display: grid;
+    gap: 8px;
+}
+
+.controlEditor > p {
+    margin: 0 0 5px;
+    color: var(--text-faint);
+    font-size: 13px;
+}
+
+.controlOption,
+.controlOptionActive {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.controlOptionActive {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: var(--accent-soft);
+}
+
+.controlOption span,
+.controlOptionActive span,
+.controlCard span {
+    display: grid;
+    gap: 1px;
+}
+
+.controlOption strong,
+.controlOptionActive strong,
+.controlCard strong {
+    font-size: 13px;
+}
+
+.controlOption small,
+.controlOptionActive small,
+.controlCard small {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.controlGrid {
+    display: grid;
+    gap: 8px;
+}
+
+.controlCard {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: var(--bg-raised);
+    color: var(--accent-strong);
 }
 
 .remixOf {

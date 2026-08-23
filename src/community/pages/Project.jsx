@@ -1,13 +1,14 @@
+/* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
-    Heart, ThumbsDown, ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
+    ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck, Star
+    Palette, Bookmark, BookmarkCheck, Star, Library
 } from 'lucide-react';
-import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff} from '../api';
-import {cachedFetchBuffer, cachedFetchJson} from '../../lib/community/cached-fetch.js';
+import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff, themeCustomFor} from '../api';
+import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
 import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
@@ -26,25 +27,20 @@ import {applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance'
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
+import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
-import {timeAgo, sameUser} from '../format';
+import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
+import Button from '../components/ui/Button.jsx';
+import RichText from '../components/RichText.jsx';
+import ReactionButtons from '../components/ReactionButtons.jsx';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
 import {hashExtensionUrl} from '../../lib/community/api.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
-
-const formatDate = ms => {
-    if (!ms) return null;
-    try {
-        return new Date(ms).toLocaleDateString([], {year: 'numeric', month: 'short', day: 'numeric'});
-    } catch (e) {
-        return null;
-    }
-};
 
 const CATEGORY_NAMES = {
     motion: 'Motion',
@@ -133,36 +129,23 @@ const restoreUserTheme = () => {
 
 const topFive = counts => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-const getCustomExtensions = async (data, trustedExtensions) => {
-    const urls = {...(data.extensionURLs || {})};
-    for (const target of data.targets || []) {
-        Object.assign(urls, (target && target.extensionURLs) || {});
-    }
-    const custom = Object.values(urls).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url));
+const getCustomExtensions = async (urls, trustedExtensions) => {
+    const custom = (urls || []).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url));
     const trusted = new Set(trustedExtensions || []);
     const hashes = await Promise.all(custom.map(hashExtensionUrl));
     return custom.filter((url, index) => !trusted.has(hashes[index]));
 };
 
-const analyzeBlocks = data => {
-    const categories = {};
-    let total = 0;
-    for (const target of data.targets || []) {
-        for (const block of Object.values(target.blocks || {})) {
-            if (!block || typeof block !== 'object' || !block.opcode) continue;
-            total += 1;
-            const prefix = block.opcode.split('_')[0];
-            categories[prefix] = (categories[prefix] || 0) + 1;
-        }
-    }
+const analyzeBlocks = summary => {
+    const categories = (summary && summary.categories) || {};
     const topCategories = topFive(categories)
         .map(([prefix, count]) => ({id: prefix, label: catLabel(prefix), count, color: catColor(prefix)}));
-    return {total, topCategories};
+    return {total: Number(summary && summary.total) || 0, topCategories};
 };
 
 const Project = () => {
     const {id} = useParams();
-    const {user, loading: userLoading} = useUser();
+    const {user, loading: userLoading, login} = useUser();
     const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [error, setError] = useState(null);
@@ -175,12 +158,14 @@ const Project = () => {
     const [reporting, setReporting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [collectionOpen, setCollectionOpen] = useState(false);
     const menuRef = useRef(null);
     const thumbMenuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const [blockStats, setBlockStats] = useState(null);
     const [customExtensions, setCustomExtensions] = useState([]);
+    const [contentError, setContentError] = useState(false);
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
     const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -188,6 +173,7 @@ const Project = () => {
     const [confirmBalance, setConfirmBalance] = useState(null);
     const [savingLibrary, setSavingLibrary] = useState(false);
     const [savingFeatured, setSavingFeatured] = useState(false);
+    const [savingComments, setSavingComments] = useState(false);
     const [featuredProject, setFeaturedProject] = useState('');
     const [projectThemeApplied, setProjectThemeApplied] = useState(false);
     const [revertTheme, setRevertTheme] = useState(false);
@@ -288,37 +274,65 @@ const Project = () => {
     }, [project]);
 
     useEffect(() => {
+        const onMessage = event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            if (!event.data || event.data.type !== 'mw:diagnostic') return;
+            api.recordDiagnostic(id, event.data.diagnostic).catch(() => {});
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, [id]);
+
+    useEffect(() => {
         if (!project) return;
         setPageMeta({
             title: `${project.title} by ${project.owner}`,
             description: project.instructions || project.description,
-            image: project.thumbUrl
+            image: project.cardUrl || project.thumbUrl,
+            card: 'summary_large_image'
         });
     }, [project]);
 
     const projectJsonUrl = project && project.projectJsonUrl;
-    const projectJsonBytes = project && project.jsonBytes;
     useEffect(() => {
         setBlockStats(null);
         setCustomExtensions([]);
+        setContentError(false);
         setUnsandboxed(false);
-        let cancelled = false;
-        if (projectJsonUrl && !(projectJsonBytes > 5 * 1024 * 1024)) {
-            cachedFetchJson(projectJsonUrl)
-                .then(async data => {
-                    if (cancelled) return;
-                    setBlockStats(analyzeBlocks(data));
-                    setCustomExtensions(await getCustomExtensions(
-                        data,
-                        project.trustedExtensions || []
-                    ));
-                })
-                .catch(() => !cancelled && setBlockStats(null));
+        let active = true;
+        if (projectJsonUrl) {
+            preloadContent(projectJsonUrl).catch(() => {
+                if (active) setContentError(true);
+            });
         }
         return () => {
-            cancelled = true;
+            active = false;
         };
-    }, [projectJsonUrl, projectJsonBytes, project && project.trustedExtensions]);
+    }, [projectJsonUrl]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const onMessage = event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            const data = event.data;
+            if (!data || data.type !== 'mw:project-metadata') return;
+            setBlockStats(analyzeBlocks(data.blockStats));
+            getCustomExtensions(data.customExtensions, (project && project.trustedExtensions) || [])
+                .then(urls => {
+                    if (!cancelled) setCustomExtensions(urls);
+                })
+                .catch(() => {
+                    if (!cancelled) setCustomExtensions([]);
+                });
+        };
+        window.addEventListener('message', onMessage);
+        return () => {
+            cancelled = true;
+            window.removeEventListener('message', onMessage);
+        };
+    }, [projectJsonUrl, project && project.trustedExtensions]);
 
     const runUnsandboxed = () => {
         // eslint-disable-next-line no-alert
@@ -555,10 +569,11 @@ const Project = () => {
         try {
             const frame = stageFrame.current;
             if (!frame || !frame.contentWindow) return;
+            const theme = localStorage.getItem('tw:theme');
             frame.contentWindow.postMessage({
                 type: 'mw:apply-theme',
-                theme: localStorage.getItem('tw:theme'),
-                customThemes: localStorage.getItem('tw:custom-themes')
+                theme,
+                customThemes: theme ? themeCustomFor(theme) : ''
             }, '*');
             if (!userLoading) {
                 frame.contentWindow.postMessage(userMessage, '*');
@@ -569,7 +584,7 @@ const Project = () => {
     }, [userLoading, userMessage]);
 
     useEffect(() => {
-            if (!project || !project.id) return;
+        if (!project || !project.id) return;
         const projectId = String(project.id);
         const onMessage = event => {
             const frame = stageFrame.current;
@@ -686,12 +701,16 @@ const Project = () => {
     };
 
     const toggleComments = async () => {
+        if (savingComments) return;
+        setSavingComments(true);
         try {
             await api.updateProject(id, {commentsOff: !project.commentsOff});
             setActionError(null);
             load();
         } catch (e) {
             setActionError(e.message || 'Could not update comments.');
+        } finally {
+            setSavingComments(false);
         }
     };
 
@@ -755,10 +774,6 @@ const Project = () => {
     const menuRemix = () => {
         setMenuOpen(false);
         remix();
-    };
-    const menuComments = () => {
-        setMenuOpen(false);
-        toggleComments();
     };
     const menuReport = () => {
         setMenuOpen(false);
@@ -856,9 +871,11 @@ const Project = () => {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
     }
 
+    const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
 
-    const commentTabs = project.repo ? ['Comments', 'History', 'Pull requests'] : ['Comments'];
+    const commentTabs = ['Comments', 'Reviews', 'Releases', 'Feedback'];
+    if (project.repo) commentTabs.push('History', 'Pull requests', 'Contribute');
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
@@ -955,6 +972,18 @@ const Project = () => {
                                         {project.saved ? 'Remove from library' : 'Save to library'}
                                     </button>
                                 ) : null}
+                                {user ? (
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            setCollectionOpen(true);
+                                        }}
+                                    >
+                                        <Library size={15} />
+                                        Save to collection
+                                    </button>
+                                ) : null}
+                                {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
                                 {project.isOwner ? (
                                     <Link
                                         to={`/mystuff/project/${project.id}`}
@@ -986,20 +1015,14 @@ const Project = () => {
                                             'Remove profile feature' : 'Feature on profile'}
                                     </button>
                                 ) : null}
-                                {project.isOwner ? (
-                                    <button onClick={menuComments}>
-                                        {project.commentsOff ?
-                                            <MessageSquare size={15} /> :
-                                            <MessageSquareOff size={15} />}
-                                        {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
-                                    </button>
-                                ) : null}
+                                {user && !sameUser(project.owner, user.username) ? <div className={styles.menuSeparator} role="separator" /> : null}
                                 {user && !sameUser(project.owner, user.username) ? (
                                     <button onClick={menuReport}>
                                         <Flag size={15} />
                                         Report
                                     </button>
                                 ) : null}
+                                {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
                                 {project.isOwner ? (
                                     <button
                                         className={styles.menuDanger}
@@ -1014,6 +1037,8 @@ const Project = () => {
                     </div>
                 </div>
             </div>
+
+            {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
 
             {reporting ? (
                 <ReportModal
@@ -1173,6 +1198,14 @@ const Project = () => {
                                         <p className={styles.paywallHint}>Log in to buy this project.</p>
                                     ) : null}
                                 </div>
+                            ) : contentError ? (
+                                <div className={styles.paywall}>
+                                    <ShieldAlert size={32} />
+                                    <h2 className={styles.paywallTitle}>Project unavailable</h2>
+                                    <p className={styles.paywallText}>
+                                        The project file could not be loaded. The creator may need to save it again.
+                                    </p>
+                                </div>
                             ) : (
                                 <iframe
                                     key={`${unsandboxed ? 'u' : 's'}-${themeAllowed ? 't' : 'n'}`}
@@ -1212,30 +1245,14 @@ const Project = () => {
                         </div>
                     ) : null}
                     <div className={styles.statsBar}>
-                        <button
-                            className={project.myReaction === 'heart' ? styles.statOn : styles.statButton}
-                            onClick={() => react('heart')}
+                        <ReactionButtons
+                            variant="bordered"
+                            counts={{heart: project.loveCount || 0, brokenheart: project.brokenHeartCount || 0}}
+                            activeReaction={project.myReaction || ''}
+                            onReact={react}
                             disabled={!user || locked}
-                            title={locked ? 'Buy this project to react' : (!user ? 'Sign in to react' : null)}
-                        >
-                            <Heart
-                                size={16}
-                                fill={project.myReaction === 'heart' ? 'currentColor' : 'none'}
-                            />
-                            {project.loveCount || 0}
-                        </button>
-                        <button
-                            className={project.myReaction === 'brokenheart' ? styles.statOn : styles.statButton}
-                            onClick={() => react('brokenheart')}
-                            disabled={!user || locked}
-                            title={locked ? 'Buy this project to react' : (!user ? 'Sign in to react' : null)}
-                        >
-                            <ThumbsDown
-                                size={16}
-                                fill={project.myReaction === 'brokenheart' ? 'currentColor' : 'none'}
-                            />
-                            {project.brokenHeartCount || 0}
-                        </button>
+                            disabledTitle={locked ? 'Buy this project to react' : 'Sign in to react'}
+                        />
                         <span className={styles.statMuted}>
                             <Play size={15} />
                             {project.views || 0}
@@ -1310,6 +1327,18 @@ const Project = () => {
                         ) : (
                             <h2 className={styles.colTitle}>Comments</h2>
                         )}
+                        {project.isOwner && tab === 'Comments' ? (
+                            <button
+                                className={styles.commentsToggle}
+                                onClick={toggleComments}
+                                disabled={savingComments}
+                            >
+                                {project.commentsOff ?
+                                    <MessageSquare size={14} /> :
+                                    <MessageSquareOff size={14} />}
+                                {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                            </button>
+                        ) : null}
                     </div>
                     {tab === 'Comments' && (
                         <CommentThread
@@ -1322,6 +1351,9 @@ const Project = () => {
                         />
                     )}
                     {tab === 'History' && <HistoryList id={id} />}
+                    {tab === 'Reviews' && <ReviewPanel id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
+                    {tab === 'Releases' && <ReleaseList id={id} isOwner={project.isOwner} />}
+                    {tab === 'Feedback' && <FeedbackPanel id={id} user={user} login={login} />}
                     {tab === 'Pull requests' && (
                         <PullList
                             id={id}
@@ -1329,6 +1361,7 @@ const Project = () => {
                             onChange={load}
                         />
                     )}
+                    {tab === 'Contribute' && <ContributionPanel id={id} user={user} login={login} />}
                 </section>
 
                 <aside className={styles.remixCol}>
@@ -1550,6 +1583,250 @@ const PullList = ({id, canMerge, onChange}) => {
                 </li>
             ))}
         </ul>
+    );
+};
+
+const ReviewStars = ({rating, onChange}) => (
+    <div className={onChange ? styles.reviewStarPicker : styles.reviewStars} aria-label={`${rating} out of 5 stars`}>
+        {[1, 2, 3, 4, 5].map(value => {
+            if (onChange) {
+                return (
+                    <button key={value} type="button" aria-label={`${value} stars`} onClick={() => onChange(value)}>
+                        <Star size={20} fill={value <= rating ? 'currentColor' : 'none'} />
+                    </button>
+                );
+            }
+            return <Star key={value} size={15} fill={value <= rating ? 'currentColor' : 'none'} />;
+        })}
+    </div>
+);
+
+const ReviewPanel = ({id, user, login, ownsProject}) => {
+    const [reviews, setReviews] = useState(null);
+    const [summary, setSummary] = useState({average: 0, count: 0});
+    const [rating, setRating] = useState(0);
+    const [message, setMessage] = useState('');
+    const [hasReview, setHasReview] = useState(false);
+    const [status, setStatus] = useState('');
+
+    const load = useCallback(() => {
+        api.reviews(id)
+            .then(data => {
+                setReviews(data.reviews || []);
+                setSummary({average: Number(data.average) || 0, count: Number(data.count) || 0});
+                const mine = data.myReview && data.myReview._id ? data.myReview : null;
+                setHasReview(Boolean(mine));
+                setRating(mine ? Number(mine.rating) : 0);
+                setMessage(mine ? mine.message || '' : '');
+            })
+            .catch(() => setReviews([]));
+    }, [id]);
+
+    useEffect(load, [load]);
+
+    const submit = async event => {
+        event.preventDefault();
+        if (!user) {
+            login();
+            return;
+        }
+        if (!rating) {
+            setStatus('Choose a star rating first.');
+            return;
+        }
+        setStatus('Saving…');
+        try {
+            await api.saveReview(id, {rating, message});
+            setStatus('Review saved.');
+            load();
+        } catch (e) {
+            setStatus(e.message || 'Could not save your review.');
+        }
+    };
+
+    const remove = async () => {
+        if (!window.confirm('Delete your review?')) return;
+        try {
+            await api.deleteReview(id);
+            setRating(0);
+            setMessage('');
+            setStatus('Review deleted.');
+            load();
+        } catch (e) {
+            setStatus(e.message || 'Could not delete your review.');
+        }
+    };
+
+    return (
+        <div className={styles.reviewPanel}>
+            <div className={styles.reviewSummary}>
+                <strong>{summary.count ? summary.average.toFixed(1) : '0.0'}</strong>
+                <div>
+                    <ReviewStars rating={Math.round(summary.average)} />
+                    <span>{summary.count} {summary.count === 1 ? 'review' : 'reviews'}</span>
+                </div>
+            </div>
+            {!ownsProject ? (
+                <form className={styles.reviewForm} onSubmit={submit}>
+                    <div>
+                        <h3>{hasReview ? 'Your review' : 'Review this project'}</h3>
+                        <ReviewStars rating={rating} onChange={setRating} />
+                    </div>
+                    <textarea value={message} maxLength={2000} placeholder="What worked well? What should change?" onChange={event => setMessage(event.target.value)} />
+                    <div className={styles.reviewActions}>
+                        <Button type="submit">{user ? 'Save review' : 'Sign in to review'}</Button>
+                        {hasReview ? <Button type="button" variant="secondary" onClick={remove}>Delete</Button> : null}
+                        {status ? <span>{status}</span> : null}
+                    </div>
+                </form>
+            ) : <p className={styles.reviewOwnerHint}>You cannot review your own project.</p>}
+            {!reviews ? <p className={styles.status}>Loading reviews…</p> : null}
+            {reviews && !reviews.length ? <p className={styles.reviewEmpty}>No reviews yet.</p> : null}
+            {reviews && reviews.map(review => (
+                <article key={review._id} className={styles.reviewCard}>
+                    <Link to={`/users/${review.author}`}><Avatar username={review.author} size={34} /></Link>
+                    <div>
+                        <header>
+                            <Link to={`/users/${review.author}`}>{review.author}</Link>
+                            <span className={styles.reviewPlaytime}>{formatPlaytime(review.playtimeMs)}</span>
+                            <span>{timeAgo(review.edited || review.created)}</span>
+                        </header>
+                        <ReviewStars rating={review.rating} />
+                        {review.message ? <p><RichText text={review.message} /></p> : null}
+                    </div>
+                </article>
+            ))}
+        </div>
+    );
+};
+
+const ReleaseList = ({id, isOwner}) => {
+    const [releases, setReleases] = useState(null);
+    const [form, setForm] = useState({version: '', channel: 'stable', notes: ''});
+    const [error, setError] = useState('');
+    const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
+
+    const load = useCallback(() => {
+        api.releases(id).then(data => setReleases(data.releases || [])).catch(() => setReleases([]));
+    }, [id]);
+
+    useEffect(load, [load]);
+
+    const create = async event => {
+        event.preventDefault();
+        setError('');
+        try {
+            await api.createRelease(id, form);
+            setForm({version: '', channel: 'stable', notes: ''});
+            load();
+        } catch (e) {
+            setError(e.message || 'Could not create the release.');
+        }
+    };
+
+    return (
+        <div className={styles.toolPanel}>
+            {isOwner ? (
+                <form className={styles.inlineForm} onSubmit={create}>
+                    <h3>Publish a release</h3>
+                    <div className={styles.inlineFields}>
+                        <input value={form.version} required maxLength={50} placeholder="Version, such as 1.2.0" onChange={event => updateForm('version', event.target.value)} />
+                        <select value={form.channel} onChange={event => updateForm('channel', event.target.value)}>
+                            <option value="stable">Stable</option>
+                            <option value="beta">Beta</option>
+                            <option value="development">Development</option>
+                        </select>
+                    </div>
+                    <textarea value={form.notes} placeholder="What changed?" onChange={event => updateForm('notes', event.target.value)} />
+                    <Button type="submit">Publish release</Button>
+                    {error ? <p className={styles.actionError}>{error}</p> : null}
+                </form>
+            ) : null}
+            {!releases ? <p className={styles.status}>Loading releases…</p> : null}
+            {releases && !releases.length ? <p className={styles.status}>No releases yet.</p> : null}
+            {releases && releases.map(release => (
+                <article className={styles.release} key={release._id}>
+                    <div><strong>{release.version}</strong> <span className={styles.releaseChannel}>{release.channel}</span></div>
+                    <span className={styles.muted}>{timeAgo(release.created)}</span>
+                    {release.notes ? <RichText text={release.notes} /> : null}
+                    {release.jsonUrl ? <a className={styles.primary} href={embedUrl({id, projectJsonUrl: release.jsonUrl, assetsBase: release.assetsBase})}>Play this release</a> : null}
+                </article>
+            ))}
+        </div>
+    );
+};
+
+const FeedbackPanel = ({id, user, login}) => {
+    const [type, setType] = useState('bug');
+    const [message, setMessage] = useState('');
+    const [status, setStatus] = useState('');
+
+    const submit = async event => {
+        event.preventDefault();
+        if (!user) {
+            login();
+            return;
+        }
+        setStatus('Sending…');
+        try {
+            await api.sendFeedback(id, {type, message});
+            setMessage('');
+            setStatus('Sent to the creator.');
+        } catch (e) {
+            setStatus(e.message || 'Could not send feedback.');
+        }
+    };
+
+    return (
+        <form className={styles.inlineForm} onSubmit={submit}>
+            <h3>Send useful feedback</h3>
+            <p className={styles.muted}>Use comments for conversation. Use this form for something the creator should track.</p>
+            <select value={type} onChange={event => setType(event.target.value)}>
+                <option value="bug">Bug</option>
+                <option value="idea">Idea</option>
+                <option value="confusing">Something is confusing</option>
+                <option value="other">Other</option>
+            </select>
+            <textarea value={message} required maxLength={2000} placeholder="What happened, or what would you change?" onChange={event => setMessage(event.target.value)} />
+            <Button type="submit">{user ? 'Send feedback' : 'Sign in to send feedback'}</Button>
+            {status ? <p className={styles.muted}>{status}</p> : null}
+        </form>
+    );
+};
+
+const ContributionPanel = ({id, user, login}) => {
+    const [remixProjectId, setRemixProjectId] = useState('');
+    const [title, setTitle] = useState('');
+    const [body, setBody] = useState('');
+    const [status, setStatus] = useState('');
+
+    const submit = async event => {
+        event.preventDefault();
+        if (!user) {
+            login();
+            return;
+        }
+        setStatus('Sending…');
+        try {
+            const data = await api.contribute(id, {remixProjectId, title, body});
+            setStatus(`Contribution #${data.pull.index} sent.`);
+            setTitle('');
+            setBody('');
+        } catch (e) {
+            setStatus(e.message || 'Could not send the contribution.');
+        }
+    };
+
+    return (
+        <form className={styles.inlineForm} onSubmit={submit}>
+            <h3>Send changes back</h3>
+            <p className={styles.muted}>Remix this project, make your changes, save them, then enter the remix project ID here.</p>
+            <input value={remixProjectId} required placeholder="Your remix project ID" onChange={event => setRemixProjectId(event.target.value)} />
+            <input value={title} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
+            <textarea value={body} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
+            <Button type="submit">{user ? 'Send contribution' : 'Sign in to contribute'}</Button>
+            {status ? <p className={styles.muted}>{status}</p> : null}
+        </form>
     );
 };
 

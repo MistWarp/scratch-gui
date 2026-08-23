@@ -1,5 +1,5 @@
 .page {
-    max-width: 820px;
+    max-width: 1060px;
     margin: 0 auto;
     padding: 28px 22px 88px;
 }
@@ -188,6 +188,12 @@
 .actionMenu a:hover,
 .actionMenu button:hover {
     background: var(--bg-raised);
+}
+
+.menuSeparator {
+    height: 1px;
+    margin: 5px 7px;
+    background: var(--border-soft);
 }
 
 .secondary {
@@ -811,7 +817,6 @@
     margin-top: 6px;
 }
 
-/* Agreement upload modal — wider than the confirm modal */
 .agreeModal {
     width: 100%;
     max-width: 600px;

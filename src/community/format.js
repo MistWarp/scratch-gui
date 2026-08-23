@@ -18,4 +18,24 @@ const formatBytes = bytes => {
     return `${value} B`;
 };
 
-export {timeAgo, sameUser, formatBytes};
+const formatDate = (value, fallback = '') => {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return fallback;
+    return date.toLocaleDateString([], {year: 'numeric', month: 'short', day: 'numeric'});
+};
+
+const formatPlaytime = (value, includeLabel = true) => {
+    const milliseconds = Number(value);
+    const minutes = Number.isFinite(milliseconds) && milliseconds > 0 ? Math.floor(milliseconds / 60000) : 0;
+    let duration;
+    if (minutes < 60) duration = `${minutes}m`;
+    else {
+        const hours = Math.floor(minutes / 60);
+        const remainder = minutes % 60;
+        duration = remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+    }
+    return includeLabel ? `${duration} played` : duration;
+};
+
+export {timeAgo, sameUser, formatBytes, formatDate, formatPlaytime};

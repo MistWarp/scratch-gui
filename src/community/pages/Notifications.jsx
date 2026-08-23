@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    AppWindow, AtSign, Coins, Flag, GitFork, Heart, Megaphone,
-    MessageCircle, Reply, ShieldAlert, UserPlus
+    AppWindow, AtSign, Coins, Flag, Gavel, GitFork, Heart, Megaphone,
+    MessageCircle, Reply, ShieldAlert, UserPlus, GitPullRequest, Layers3, Lightbulb, Star, Users
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
@@ -12,6 +12,7 @@ import {useUser} from '../UserContext.jsx';
 import {fetchNotifications, markNotificationsRead, subscribeNotifications} from '../../lib/rotur/client.js';
 import {timeAgo} from '../format';
 import styles from './Notifications.module.css';
+import {getNotificationPreferences, categoryForNotification} from '../notification-preferences';
 
 const ICONS = {
     love: Heart,
@@ -39,6 +40,19 @@ const ICONS = {
     moderation: ShieldAlert,
     news: Megaphone,
     report_update: Flag,
+    contribution: GitPullRequest,
+    space_project: Layers3,
+    space_comment: MessageCircle,
+    space_curator_invite: UserPlus,
+    space_curator_accepted: Users,
+    space_curator_declined: Users,
+    space_curator_removed: ShieldAlert,
+    challenge_judge_invite: Gavel,
+    challenge_judge_accepted: Gavel,
+    challenge_join: UserPlus,
+    project_feedback: Lightbulb,
+    project_review: Star,
+    roadmap_comment: Lightbulb,
     notification: AppWindow
 };
 
@@ -150,6 +164,27 @@ const describe = n => {
     case 'moderation': return <span>{n.message || 'A moderator sent you a message.'}</span>;
     case 'news': return <span>New announcement: <strong>{n.title}</strong></span>;
     case 'report_update': return <span>Your report was {REPORT_OUTCOMES[n.action] || 'reviewed'}.</span>;
+    case 'contribution': return <span>sent changes for <strong>{n.projectTitle}</strong></span>;
+    case 'space_project': return (
+        <span>added <strong>{n.projectTitle}</strong> to <strong>{n.spaceTitle}</strong></span>
+    );
+    case 'space_comment': return <span>commented on <strong>{n.spaceTitle}</strong></span>;
+    case 'space_curator_invite': return <span>invited you to curate <strong>{n.spaceTitle}</strong></span>;
+    case 'space_curator_accepted': return (
+        <span>accepted your invitation to curate <strong>{n.spaceTitle}</strong></span>
+    );
+    case 'space_curator_declined': return (
+        <span>declined your invitation to curate <strong>{n.spaceTitle}</strong></span>
+    );
+    case 'space_curator_removed': return <span>removed you as a curator of <strong>{n.spaceTitle}</strong></span>;
+    case 'challenge_judge_invite': return <span>invited you to judge <strong>{n.spaceTitle}</strong></span>;
+    case 'challenge_judge_accepted': return (
+        <span>accepted your invitation to judge <strong>{n.spaceTitle}</strong></span>
+    );
+    case 'challenge_join': return <span>joined <strong>{n.spaceTitle}</strong></span>;
+    case 'project_feedback': return <span>sent {n.feedbackType} feedback for <strong>{n.projectTitle}</strong></span>;
+    case 'project_review': return <span>rated <strong>{n.projectTitle}</strong> {n.rating} out of 5</span>;
+    case 'roadmap_comment': return <span>commented on <strong>{n.roadmapTitle}</strong></span>;
     default: return <span>did something</span>;
     }
 };
@@ -227,6 +262,13 @@ GenericNotification.propTypes = {
 const Notifications = ({hideHeading}) => {
     const {user, loading} = useUser();
     const [items, setItems] = useState(null);
+    const [preferences, setPreferences] = useState(getNotificationPreferences());
+
+    useEffect(() => {
+        const update = () => setPreferences(getNotificationPreferences());
+        window.addEventListener('mw:notification-preferences', update);
+        return () => window.removeEventListener('mw:notification-preferences', update);
+    }, []);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
 
@@ -288,9 +330,9 @@ const Notifications = ({hideHeading}) => {
                 </p>
             ) : items === null ? (
                 <p className={styles.status}>Loading…</p>
-            ) : items.length ? (
+            ) : items.filter(item => preferences[categoryForNotification(item.type)] !== false).length ? (
                 <div className={styles.list}>
-                    {items.map(n => {
+                    {items.filter(item => preferences[categoryForNotification(item.type)] !== false).map(n => {
                         const Icon = ICONS[n.type] || Heart;
                         const ts = n.created || n.timestamp;
                         const time = timeAgo(ts);
@@ -341,7 +383,17 @@ const Notifications = ({hideHeading}) => {
                                 <div className={styles.text}>
                                     <Link to={`/users/${actor}`} className={styles.actor}>{actor}</Link>
                                     {' '}
-                                    {n.projectId ? (
+                                    {n.spaceId ? (
+                                        <Link
+                                            to={`/spaces/${n.spaceId}`}
+                                            className={styles.body}
+                                        >{body}</Link>
+                                    ) : n.roadmapId ? (
+                                        <Link
+                                            to={`/roadmap#idea-${n.roadmapId}`}
+                                            className={styles.body}
+                                        >{body}</Link>
+                                    ) : n.projectId ? (
                                         <Link
                                             to={`${projectUrl(n.projectId)}${commentAnchor(n)}`}
                                             className={styles.body}

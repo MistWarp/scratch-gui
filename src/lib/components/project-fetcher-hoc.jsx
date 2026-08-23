@@ -90,7 +90,7 @@ const loadPlatformProject = async (id, source) => {
     }
     rememberPlatformProject(project);
     const data = hasBridge() ?
-        await bridgeFetch(project.projectJsonUrl).catch(() => fetchArrayBuffer(project.projectJsonUrl)) :
+        await bridgeFetch(project.projectJsonUrl) :
         await fetchArrayBuffer(project.projectJsonUrl);
     return {data, title: project.title};
 };
@@ -228,10 +228,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     projectUrl = `https://${projectUrl}`;
                 }
                 const jsonUrl = projectUrl;
-                assetPromise = (hasBridge() ?
-                    bridgeFetch(jsonUrl).catch(() => fetchArrayBuffer(jsonUrl)) :
-                    fetchArrayBuffer(jsonUrl)
-                ).then(buffer => ({data: buffer}));
+                assetPromise = (hasBridge() ? bridgeFetch(jsonUrl) : fetchArrayBuffer(jsonUrl))
+                    .then(buffer => ({data: buffer}));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)

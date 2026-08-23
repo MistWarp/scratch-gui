@@ -19,6 +19,10 @@ import Notifications from './pages/Notifications.jsx';
 import News from './pages/News.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
 import Admin from './pages/Admin.jsx';
+import Spaces from './pages/Spaces.jsx';
+import Space from './pages/Space.jsx';
+import ManageSpace from './pages/ManageSpace.jsx';
+import Roadmap from './pages/Roadmap.jsx';
 
 const ROUTE_TITLES = [
     ['/explore', 'Explore'],
@@ -29,6 +33,9 @@ const ROUTE_TITLES = [
     ['/notifications', 'Notifications'],
     ['/news', 'News'],
     ['/leaderboard', 'Leaderboard'],
+    ['/spaces/', 'Space'],
+    ['/spaces', 'Spaces'],
+    ['/roadmap', 'Roadmap'],
     ['/users/', 'Profile'],
     ['/project/', 'Project']
 ];
@@ -63,6 +70,10 @@ const App = () => (
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/news" element={<News />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/spaces" element={<Spaces />} />
+                <Route path="/spaces/:id" element={<Space />} />
+                <Route path="/spaces/:id/manage" element={<ManageSpace />} />
+                <Route path="/roadmap" element={<Roadmap />} />
                 <Route path="/admin" element={<Admin />} />
             </Routes>
         </div>

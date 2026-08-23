@@ -1,9 +1,9 @@
 import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
-    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, X
+    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, X, Star
 } from 'lucide-react';
-import api from '../api';
+import api, {projectUrl} from '../api';
 import rotur from '../rotur';
 import {payUser} from '../../lib/rotur/client.js';
 import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
@@ -19,6 +19,7 @@ import useLatest from '../use-latest.js';
 import useEscape from '../use-escape.js';
 import setPageMeta from '../page-meta.js';
 import safeIconSvg from '../safe-icon.js';
+import {timeAgo} from '../format';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -46,6 +47,7 @@ const Profile = () => {
     const [adminProjects, setAdminProjects] = useState([]);
     const [presence, setPresence] = useState(null);
     const [donating, setDonating] = useState(false);
+    const [reviews, setReviews] = useState(null);
 
     const beginLoad = useLatest();
 
@@ -57,6 +59,9 @@ const Profile = () => {
         api.getUser(name)
             .then(fresh(setMwUser))
             .catch(fresh(() => setMwUser(null)));
+        api.userReviews(name)
+            .then(fresh(data => setReviews(data.reviews || [])))
+            .catch(fresh(() => setReviews([])));
         rotur.followers(name)
             .then(fresh(data => setFollowers(data.followers || [])))
             .catch(fresh(() => setFollowers([])));
@@ -66,6 +71,7 @@ const Profile = () => {
         setProfile(null);
         setMwUser(null);
         setFollowers([]);
+        setReviews(null);
         setError(null);
         setReporting(false);
         load();
@@ -245,6 +251,47 @@ const Profile = () => {
                                     />
                                 ))}
                             </div>
+                        </section>
+                    ) : null}
+
+                    {onMistWarp ? (
+                        <section className={styles.section}>
+                            <h2 className={styles.sectionTitle}>Recent reviews</h2>
+                            {reviews === null ? <p className={styles.sectionEmpty}>Loading reviews…</p> : null}
+                            {reviews && !reviews.length ? <p className={styles.sectionEmpty}>No reviews yet.</p> : null}
+                            {reviews && reviews.length ? (
+                                <div className={styles.reviewGrid}>
+                                    {reviews.slice(0, 6).map(review => (
+                                        <Link
+                                            key={review._id}
+                                            to={projectUrl(review.projectId)}
+                                            className={styles.reviewCard}
+                                        >
+                                            <div className={styles.reviewHead}>
+                                                <strong>{review.projectTitle}</strong>
+                                                <span>{timeAgo(review.edited || review.created)}</span>
+                                            </div>
+                                            <div
+                                                className={styles.reviewStars}
+                                                aria-label={`${review.rating} out of 5 stars`}
+                                            >
+                                                {[1, 2, 3, 4, 5].map(value => (
+                                                    <Star
+                                                        key={value}
+                                                        size={14}
+                                                        fill={value <= review.rating ? 'currentColor' : 'none'}
+                                                    />
+                                                ))}
+                                            </div>
+                                            {review.message ? (
+                                                <p><RichText text={review.message} /></p>
+                                            ) : (
+                                                <p className={styles.reviewNoText}>No written review.</p>
+                                            )}
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : null}
                         </section>
                     ) : null}
 

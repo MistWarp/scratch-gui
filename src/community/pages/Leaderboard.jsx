@@ -4,6 +4,7 @@ import {Users, Trophy, Heart, Play} from 'lucide-react';
 import rotur from '../rotur';
 import api from '../api';
 import useLatest from '../use-latest.js';
+import SectionTabs from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
 import styles from './Leaderboard.module.css';
 
@@ -81,17 +82,15 @@ const Leaderboard = () => {
         <main className={styles.page}>
             <h1>{active.title}</h1>
             <p className={styles.lead}>{active.lead}</p>
-            <div className={styles.tabs}>
-                {BOARDS.map(item => (
-                    <button
-                        key={item.key}
-                        className={item.key === board ? styles.tabActive : styles.tab}
-                        onClick={() => setBoard(item.key)}
-                    >
-                        {item.label}
-                    </button>
-                ))}
-            </div>
+            <SectionTabs
+                items={BOARDS}
+                value={board}
+                onChange={setBoard}
+                className={styles.tabs}
+                itemClassName={styles.tab}
+                activeClassName={styles.tabActive}
+                ariaLabel="Leaderboard type"
+            />
             {users === null ? (
                 <p className={styles.status}>Loading…</p>
             ) : error ? (
