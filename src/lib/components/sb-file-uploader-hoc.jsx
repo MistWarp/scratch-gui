@@ -8,6 +8,7 @@ import sharedMessages from '../constants/shared-messages';
 import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
 import {importRepoFromSb3} from '../git/browser-git';
+import {buildSb3FromCurrentRepo, importMwp} from '../git/mwp.js';
 import RestorePointAPI from '../api/restore-points';
 
 import {
@@ -172,8 +173,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         getProjectTitleFromFilename (fileInputFilename) {
             if (!fileInputFilename) return '';
             // only parse title with valid scratch project extensions
-            // (.sb, .sb2, .sb3, or .html)
-            const matches = fileInputFilename.match(/^(.*)\.(?:sb[23]?|html)$/);
+            // (.sb, .sb2, .sb3, .mwp, or .html)
+            const matches = fileInputFilename.match(/^(.*)\.(?:sb[23]?|mwp|html)$/);
             if (!matches) return '';
             return matches[1].substring(0, 100); // truncate project title to max 100 chars
         }
@@ -190,6 +191,21 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 // tw: stop when loading new project
                 this.props.vm.quit();
                 let projectData = this.fileReader.result;
+                const isMwp = filename && filename.toLowerCase().endsWith('.mwp');
+
+                if (isMwp) {
+                    try {
+                        await importMwp(projectData);
+                        projectData = await buildSb3FromCurrentRepo();
+                        projectData = await projectData.arrayBuffer();
+                    } catch (mwpError) {
+                        log.error('Failed to open MistWarp project:', mwpError);
+                        this.props.onLoadingFailed(mwpError);
+                        this.props.onLoadingFinished(this.props.loadingState, false);
+                        this.removeFileObjects();
+                        return;
+                    }
+                }
 
                 if (filename && filename.endsWith('.html')) {
                     try {
@@ -218,7 +234,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                         // Restore any git history embedded in the .sb3 (fractch tree + .git),
                         // or clear a stale repo if the loaded project has none.
                         try {
-                            await importRepoFromSb3(loadedBytes);
+                            if (!isMwp) await importRepoFromSb3(loadedBytes);
                         } catch (gitError) {
                             log.error('Failed to restore embedded git history:', gitError);
                         }

@@ -6,22 +6,40 @@ import Button from '../components/ui/Button.jsx';
 import styles from './InfoPage.module.css';
 
 const Status = () => {
-    const [apiStatus, setApiStatus] = useState('checking');
+    const [health, setHealth] = useState(null);
+    const [failed, setFailed] = useState(false);
     const check = useCallback(() => {
-        setApiStatus('checking');
-        api.request('/health', {cache: false}).then(() => setApiStatus('ok')).catch(() => setApiStatus('bad'));
+        setHealth(null);
+        setFailed(false);
+        api.request('/health/dependencies', {cache: false})
+            .then(setHealth)
+            .catch(() => setFailed(true));
     }, []);
     useEffect(check, [check]);
-    const label = apiStatus === 'ok' ? 'Operational' : apiStatus === 'bad' ? 'Unavailable' : 'Checking';
+    const dependencies = health?.dependencies || {};
+    const rows = [
+        ['Community website', {status: 'operational'}],
+        ['MistWarp API', failed ? {status: 'unavailable'} : dependencies.api],
+        ['Project metadata', dependencies.storage],
+        ['Project assets', dependencies.assets],
+        ['Rotur sign-in', dependencies.rotur],
+        ['Git and pull requests', dependencies.gitea]
+    ];
+    const statusLabel = status => status === 'operational' ? 'Operational' : status === 'misconfigured' ? 'Misconfigured' : status === 'unavailable' ? 'Unavailable' : 'Checking';
+    const statusClass = status => status === 'operational' ? styles.statusOk : status === 'unavailable' || status === 'misconfigured' ? styles.statusBad : styles.statusChecking;
     return (
         <main className={styles.page}>
             <header className={styles.head}><h1>Service status</h1><p>A live check of the services needed by the MistWarp community.</p></header>
-            <section className={styles.section}>
-                <div className={styles.statusRow}><span>Community website</span><span className={styles.statusOk}>Operational</span></div>
-                <div className={styles.statusRow}><span>MistWarp API</span><span className={styles[`status${apiStatus === 'ok' ? 'Ok' : apiStatus === 'bad' ? 'Bad' : 'Checking'}`]}>{label}</span></div>
+            <section className={styles.section} aria-live="polite" aria-busy={!health && !failed}>
+                {rows.map(([name, dependency]) => (
+                    <div className={styles.statusRow} key={name}>
+                        <span>{name}</span>
+                        <span className={statusClass(dependency?.status)}>{statusLabel(dependency?.status)}</span>
+                    </div>
+                ))}
                 <div className={styles.actions}><Button onClick={check}>Check again</Button></div>
             </section>
-            <section className={styles.section}><h2>Still having trouble?</h2><p>This check does not cover Rotur sign-in, git.rotur.dev, or project asset storage. If a problem continues, use the <Link to="/support">support page</Link>.</p></section>
+            <section className={styles.section}><h2>Still having trouble?</h2><p>This check cannot detect browser-specific problems. If a problem continues, use the <Link to="/support">support page</Link>.</p></section>
         </main>
     );
 };

@@ -155,6 +155,65 @@
     font-size: 14px;
 }
 
+.teamPanel {
+    display: grid;
+    gap: 14px;
+}
+
+.teamSummary,
+.acceptedChanges {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.teamSummary svg,
+.acceptedChanges svg {
+    color: var(--accent-strong);
+}
+
+.teamSummary strong,
+.acceptedChanges strong {
+    color: var(--mw-text);
+    font-size: 16px;
+}
+
+.teamList {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.teamList a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px;
+    border-radius: 8px;
+    color: var(--mw-text);
+}
+
+.teamList a:hover {
+    background: var(--bg-raised);
+}
+
+.teamList span {
+    display: grid;
+}
+
+.teamList strong {
+    font-size: 13px;
+}
+
+.teamList small {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
 .panelError {
     margin: 0 0 8px;
     color: #e0245e;

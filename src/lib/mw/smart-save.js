@@ -3,7 +3,7 @@ import {getRememberedPlatformProjectState, publishToMistWarp} from '../community
 import {request} from '../community/api.js';
 import communityEnabled from '../community/enabled.js';
 import downloadBlob from '../utils/download-blob';
-import {embedRepoIntoSb3Blob} from '../git/browser-git.js';
+import {createMwp} from '../git/mwp.js';
 
 const agreementAccepted = async () => {
     try {
@@ -16,14 +16,14 @@ const agreementAccepted = async () => {
 
 // Ctrl+S / save button. Own project already on MistWarp -> upload the current
 // version silently. Someone else's project -> the window (remix makes a copy).
-// Not on MistWarp yet -> download an sb3. The window only reappears for an
+// Not on MistWarp yet -> download the native .mwp. The window only reappears for an
 // update when a new upload agreement needs accepting, or the silent upload fails.
 const smartSave = async ({vm, title, onSaved = () => {}}) => {
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
     if (!platform) {
-        const blob = await embedRepoIntoSb3Blob(await vm.saveProjectSb3());
-        downloadBlob(`${title || 'project'}.sb3`, blob);
+        const {blob} = await createMwp({vm, message: 'Save MistWarp project'});
+        downloadBlob(`${title || 'project'}.mwp`, blob);
         return;
     }
 

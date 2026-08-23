@@ -3,6 +3,7 @@ import {
     createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, remixProject,
     deleteProject
 } from './api';
+import {createMwp} from '../git/mwp.js';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
@@ -41,7 +42,12 @@ const rememberPlatformProject = project => {
                 shared: !!value.shared,
                 canRemix: value.canRemix,
                 projectJsonUrl: value.projectJsonUrl,
-                trustedExtensions: value.trustedExtensions || []
+                trustedExtensions: value.trustedExtensions || [],
+                workspaceUrl: value.workspaceUrl,
+                gitHead: value.gitHead,
+                gitBranch: value.gitBranch,
+                remixParent: value.remixParent,
+                remixBaseCommit: value.remixBaseCommit
             }));
         } else {
             sessionStorage.removeItem(PLATFORM_ID_KEY);
@@ -235,6 +241,13 @@ const publishToMistWarp = async ({
             sb3Blob = await vm.saveProjectSb3();
         }
         const thumbnail = updateOnly ? null : (thumbnailBlob || await captureThumbnail(vm));
+        const mwp = await createMwp({
+            vm,
+            projectId: platformId,
+            remixParent: platformProject && platformProject.remixParent,
+            baseCommit: platformProject && platformProject.remixBaseCommit,
+            message: createdNow ? 'Create MistWarp project' : 'Save to MistWarp'
+        });
         onProgress({phase: 'upload', message: 'Uploading project'});
         try {
             await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
@@ -245,7 +258,7 @@ const publishToMistWarp = async ({
                     loaded,
                     total
                 });
-            });
+            }, {workspace: mwp.blob, git: mwp.manifest});
         } catch (e) {
             if (e.code !== 'debounced' || createdNow) {
                 throw e;

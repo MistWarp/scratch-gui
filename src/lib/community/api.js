@@ -278,10 +278,19 @@ const collectExtensionSources = async sb3Blob => {
     return sources;
 };
 
-const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress) => {
+const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
+    workspace,
+    git,
+    expectedHead,
+    pullId
+} = {}) => {
     const form = new FormData();
     form.append('project', sb3Blob, 'project.sb3');
     form.append('extensions', JSON.stringify(await collectExtensionSources(sb3Blob)));
+    if (workspace) form.append('workspace', workspace, 'project.mwp');
+    if (git) form.append('git', JSON.stringify(git));
+    if (expectedHead) form.append('expectedHead', expectedHead);
+    if (pullId) form.append('pullId', String(pullId));
     if (thumbnailBlob) {
         form.append('thumbnail', thumbnailBlob, 'thumb.png');
     }
@@ -301,6 +310,15 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress) => {
     }
 };
 
+const fetchWorkspace = async url => {
+    const path = String(url)
+        .replace(/^https?:\/\/[^/]+\/api/, '')
+        .replace(/^\/api/, '');
+    const response = await request(path, {raw: true, cache: false});
+    if (!response.ok) throw new Error(`Could not load MistWarp history (${response.status})`);
+    return response.blob();
+};
+
 const publishProject = id => request(`/projects/${id}/publish`, {method: 'POST'});
 
 const updateProject = (id, patch) => request(`/projects/${id}`, {method: 'PUT', body: patch});
@@ -311,7 +329,7 @@ const getProject = id => request(`/projects/${id}`);
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
-const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
+const remixProject = (id, setup) => request(`/projects/${id}/remix`, {method: 'POST', body: setup});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
@@ -362,5 +380,6 @@ export {
     request,
     getCustomExtensionUrls,
     hashExtensionUrl,
-    extensionSourceUrl
+    extensionSourceUrl,
+    fetchWorkspace
 };

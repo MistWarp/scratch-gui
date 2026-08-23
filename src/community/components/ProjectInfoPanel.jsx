@@ -1,13 +1,15 @@
 /* eslint-disable max-len */
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Check, Pencil, Plus, X, GitFork} from 'lucide-react';
+import {Check, GitPullRequest, Pencil, Plus, Users, X, GitFork} from 'lucide-react';
 import api, {projectUrl} from '../api';
+import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
+import SectionTabs from './SectionTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import styles from './ProjectInfoPanel.module.css';
 
-const INFO_TABS = ['About', 'Credits', 'Tags', 'Controls'];
+const INFO_TABS = ['About', 'Team', 'Credits', 'Tags', 'Controls'];
 
 const parseTags = text => {
     const seen = [];
@@ -80,16 +82,16 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
 
     return (
         <aside className={embedded ? `${styles.sidePanel} ${styles.sidePanelEmbedded}` : styles.sidePanel}>
-            <div className={styles.panelTabs}>
-                {INFO_TABS.map(name => (
-                    <button
-                        key={name}
-                        className={name === tab ? styles.panelTabActive : styles.panelTab}
-                        onClick={() => setTab(name)}
-                    >{name}</button>
-                ))}
-            </div>
-            <div className={styles.panelBody}>
+            <SectionTabs
+                items={INFO_TABS.map(name => ({key: name, label: name}))}
+                value={tab}
+                onChange={setTab}
+                className={styles.panelTabs}
+                itemClassName={styles.panelTab}
+                activeClassName={styles.panelTabActive}
+                ariaLabel="Project information"
+            />
+            <div className={styles.panelBody} role="tabpanel">
                 {saveError ? <p className={styles.panelError}>{saveError}</p> : null}
                 {tab === 'About' && (
                     <div className={styles.aboutSections}>
@@ -121,6 +123,31 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                 ) : <p className={styles.panelText}><RichText text={project.notes} /></p>}
                             </section>
                         ) : null}
+                    </div>
+                )}
+
+                {tab === 'Team' && (
+                    <div className={styles.teamPanel}>
+                        <div className={styles.teamSummary}>
+                            <Users size={17} />
+                            <strong>{project.collaboration?.teamSize || 1}</strong>
+                            <span>{(project.collaboration?.teamSize || 1) === 1 ? 'person has worked on this project' : 'people have worked on this project'}</span>
+                        </div>
+                        <ul className={styles.teamList}>
+                            <li>
+                                <Link to={`/users/${project.owner}`}><Avatar username={project.owner} size={30} /><span><strong>{project.owner}</strong><small>Owner</small></span></Link>
+                            </li>
+                            {(project.collaboration?.contributors || []).map(username => (
+                                <li key={username}>
+                                    <Link to={`/users/${username}`}><Avatar username={username} size={30} /><span><strong>{username}</strong><small>Contributor</small></span></Link>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className={styles.acceptedChanges}>
+                            <GitPullRequest size={16} />
+                            <strong>{project.collaboration?.acceptedChanges || 0}</strong>
+                            <span>accepted {(project.collaboration?.acceptedChanges || 0) === 1 ? 'contribution' : 'contributions'}</span>
+                        </div>
                     </div>
                 )}
 

@@ -240,7 +240,7 @@ const api = {
     view: id => request(`/projects/${id}/view`, {method: 'POST'}),
     remixes: id => request(`/projects/${id}/remixes`),
     remixTree: id => request(`/projects/${id}/remixtree`),
-    remix: id => request(`/projects/${id}/remix`, {method: 'POST'}),
+    remix: (id, setup) => request(`/projects/${id}/remix`, {method: 'POST', body: setup}),
     createPreview: (id, hours = 24) => request(`/projects/${id}/preview`, {method: 'POST', body: {hours}}),
     releases: id => request(`/projects/${id}/releases`),
     createRelease: (id, release) => request(`/projects/${id}/releases`, {method: 'POST', body: release}),
@@ -299,13 +299,10 @@ const api = {
     pulls: id => request(`/projects/${id}/pulls`),
     getPull: (id, index) => request(`/projects/${id}/pulls/${index}`),
     pullDiff: (id, index) =>
-        request(`/projects/${id}/pulls/${index}/diff`, {raw: true}).then(response => {
-            if (!response.ok) {
-                throw new Error(`Could not load diff (${response.status})`);
-            }
-            return response.text();
-        }),
+        request(`/projects/${id}/pulls/${index}/diff`, {cache: false}),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
+    uploadPullMerge: (id, {sb3, mwp, git, expectedHead, pullId}) =>
+        uploadProject(id, sb3, null, null, {workspace: mwp, git, expectedHead, pullId}),
     request
 };
 
