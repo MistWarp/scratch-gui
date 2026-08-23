@@ -84,6 +84,13 @@
     cursor: pointer;
 }
 
+.menu-item.disabled,
+.menu-item.disabled:hover {
+    background: transparent;
+    cursor: not-allowed;
+    opacity: 0.48;
+}
+
 .menu-item:has(.shortcut) {
     display: flex;
     align-items: center;

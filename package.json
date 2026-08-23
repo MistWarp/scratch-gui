@@ -223,6 +223,7 @@
       "rotur-sdk": "link:../../rotur-sdk"
     },
     "patchedDependencies": {
+      "@isomorphic-git/lightning-fs": "patches/@isomorphic-git__lightning-fs.patch",
       "scratch-parser": "patches/scratch-parser.patch",
       "@turbowarp/scratch-svg-renderer": "patches/@turbowarp__scratch-svg-renderer.patch"
     },

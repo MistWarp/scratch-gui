@@ -5,6 +5,7 @@ import {
     rememberPlatformProject
 } from '../../src/lib/community/publish.js';
 import rotur from '../../src/community/rotur.js';
+import api from '../../src/community/api.js';
 
 test('a rejected /me request clears the saved session', async () => {
     localStorage.setItem('mw:mistwarp-session', 'expired');
@@ -29,12 +30,12 @@ test('a rejected Rotur validator is marked for token invalidation', async () => 
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {
-    expect(getMistWarpAction(null, false)).toBe('share');
+    expect(getMistWarpAction(null, false)).toBe('save');
     expect(getMistWarpAction({isOwner: false, shared: true}, false)).toBeNull();
     expect(getMistWarpAction({isOwner: false, shared: true}, true)).toBe('remix');
     expect(getMistWarpAction({isOwner: true, shared: true}, false)).toBeNull();
     expect(getMistWarpAction({isOwner: true, shared: true}, true)).toBe('update');
-    expect(getMistWarpAction({isOwner: true, shared: false}, false)).toBe('share');
+    expect(getMistWarpAction({isOwner: true, shared: false}, false)).toBeNull();
 });
 
 test('disabled remix permission removes the editor remix action', () => {
@@ -52,12 +53,28 @@ test('editor project loads use the permission checked endpoint', async () => {
     expect(window.fetch.mock.calls[0][0]).toBe('https://mwapi.mistium.com/api/projects/project-1/editor');
 });
 
+test('project comments include their selected type', async () => {
+    window.fetch = jest.fn(() => Promise.resolve({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve({ok: true})
+    }));
+
+    await api.addComment('project-1', 'The start button does nothing', null, 'bug');
+    expect(JSON.parse(window.fetch.mock.calls[0][1].body)).toEqual({
+        content: 'The start button does nothing',
+        parent: null,
+        kind: 'bug'
+    });
+});
+
 test('MistWarp project identity keeps ownership and sharing state', () => {
     rememberPlatformProject({id: 'project-1', isOwner: false, shared: true});
     expect(getRememberedPlatformProjectState()).toEqual({
         id: 'project-1',
         isOwner: false,
-        shared: true
+        shared: true,
+        trustedExtensions: []
     });
 });
 

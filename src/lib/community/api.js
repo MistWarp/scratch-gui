@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
+import {trackApiSuccess} from '../../community/analytics.js';
 
 const API_BASE = 'https://mwapi.mistium.com/api';
 
@@ -188,6 +189,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
         return response;
     }
     const data = await parseResponse(response);
+    trackApiSuccess(path, method);
     if (cacheable) {
         writeApiCache(path, data);
     }
@@ -282,11 +284,14 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     workspace,
     git,
     expectedHead,
-    pullId
+    pullId,
+    extensions
 } = {}) => {
     const form = new FormData();
     form.append('project', sb3Blob, 'project.sb3');
-    form.append('extensions', JSON.stringify(await collectExtensionSources(sb3Blob)));
+    form.append('extensions', JSON.stringify(
+        typeof extensions === 'undefined' ? await collectExtensionSources(sb3Blob) : extensions
+    ));
     if (workspace) form.append('workspace', workspace, 'project.mwp');
     if (git) form.append('git', JSON.stringify(git));
     if (expectedHead) form.append('expectedHead', expectedHead);
@@ -317,6 +322,13 @@ const fetchWorkspace = async url => {
     const response = await request(path, {raw: true, cache: false});
     if (!response.ok) throw new Error(`Could not load MistWarp history (${response.status})`);
     return response.blob();
+};
+
+const bootstrapProjectHistory = (id, {workspace, git}) => {
+    const form = new FormData();
+    form.append('workspace', workspace, 'project.mwp');
+    form.append('git', JSON.stringify(git));
+    return uploadXhr(`/projects/${id}/history/bootstrap`, form);
 };
 
 const publishProject = id => request(`/projects/${id}/publish`, {method: 'POST'});
@@ -379,7 +391,9 @@ export {
     deleteProject,
     request,
     getCustomExtensionUrls,
+    collectExtensionSources,
     hashExtensionUrl,
     extensionSourceUrl,
-    fetchWorkspace
+    fetchWorkspace,
+    bootstrapProjectHistory
 };

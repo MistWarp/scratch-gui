@@ -10,7 +10,7 @@ const MwProjectActivity = ({projectId}) => {
     const [pulls, setPulls] = useState(null);
     const source = useMemo(() => ({
         list: () => api.getComments(projectId),
-        add: (content, parent) => api.addComment(projectId, content, parent),
+        add: (content, parent, kind) => api.addComment(projectId, content, parent, kind),
         remove: commentId => api.deleteComment(projectId, commentId),
         react: (commentId, type) => api.reactComment(projectId, commentId, type)
     }), [projectId]);
@@ -34,6 +34,7 @@ const MwProjectActivity = ({projectId}) => {
                 >Pull requests</button>
             </div>
             {tab === 'comments' ? <CommentThread
+                projectComments
                 source={source}
                 reportContext={`project ${projectId}`}
             /> : null}

@@ -29,10 +29,14 @@ import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
 import {cloneRepo, deleteRepo} from '../git/browser-git.js';
 import {checkoutMwpBranch, importMwp} from '../git/mwp.js';
+import {markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
-import {fetchWorkspace, getEditorProject as getMistWarpEditorProject} from '../community/api.js';
+import {
+    fetchWorkspace,
+    getEditorProject as getMistWarpEditorProject
+} from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 
@@ -93,13 +97,13 @@ const loadPlatformProject = async (id, source) => {
     if (project.workspaceUrl) {
         await importMwp(await fetchWorkspace(project.workspaceUrl));
         if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
-    } else if (!source) {
+    } else {
         await deleteRepo();
     }
     const data = hasBridge() ?
         await bridgeFetch(project.projectJsonUrl) :
         await fetchArrayBuffer(project.projectJsonUrl);
-    return {data, title: project.title};
+    return {data, title: project.title, platformProject: source ? null : project};
 };
 
 // TW: Temporary hack for project tokens
@@ -186,6 +190,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             // the project shouldn't be running while fetching the new project
             this.props.vm.clear();
             this.props.vm.quit();
+            markProjectHistoryLoading();
+            this.props.vm._mwPrepareProjectHistory = null;
+            this.props.vm._mwHistoryBootstrapError = null;
 
             const isInitialFetch = !this.hasFetchedProject;
             this.hasFetchedProject = true;
@@ -215,7 +222,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
             let projectUrl = searchParams && searchParams.get('project_url');
+            let sourceProvidesHistory = false;
             if (hashProjectId || platformProject) {
+                sourceProvidesHistory = true;
                 const id = hashProjectId || platformProject;
                 const source = this.props.isEmbedded && platformProject && !hashProjectId && projectUrl ? {
                     id,
@@ -225,6 +234,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 } : null;
                 assetPromise = loadPlatformProject(id, source);
             } else if (cloneUrl) {
+                sourceProvidesHistory = true;
                 assetPromise = cloneProjectFromRepo(cloneUrl);
             } else if (projectUrl) {
                 if (
@@ -247,9 +257,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             }
 
             return assetPromise
-                .then(projectAsset => {
+                .then(async projectAsset => {
                     if (projectAsset) {
+                        if (!sourceProvidesHistory) await deleteRepo();
                         fetchInitiatedLoad = true;
+                        this.props.vm._mwPrepareProjectHistory = () =>
+                            preloadProjectHistory(this.props.vm, {force: true});
                         if (projectAsset.title) {
                             this.props.onSetProjectTitle(projectAsset.title);
                         }
@@ -261,6 +274,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(err => {
+                    this.props.vm._mwPrepareProjectHistory = null;
                     this.props.onError(err);
                     log.error(err);
                 });

@@ -178,7 +178,8 @@ const api = {
     searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),
     activity: users => request(`/activity?users=${encodeURIComponent(users.join(','))}`),
     getComments: id => request(`/projects/${id}/comments`),
-    addComment: (id, content, parent) => request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent}}),
+    addComment: (id, content, parent, kind = 'comment') =>
+        request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind}}),
     deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, {method: 'DELETE'}),
     getProfileComments: name => request(`/users/${name}/comments`),
     addProfileComment: (name, content, parent) =>

@@ -27,6 +27,7 @@ import Trust from './pages/Trust.jsx';
 import Support from './pages/Support.jsx';
 import Status from './pages/Status.jsx';
 import NotFound from './pages/NotFound.jsx';
+import {useCommunityIntl} from './i18n.jsx';
 
 const ROUTE_TITLES = [
     ['/explore', 'Explore'],
@@ -57,13 +58,15 @@ const RouteMeta = () => {
     return null;
 };
 
-const App = () => (
-    <UserProvider>
+const App = () => {
+    const {t} = useCommunityIntl();
+    return (<UserProvider>
+        <a className="mw-skip-link" href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />
         <NavBar />
         <BetaBanner />
         <StandingBanner />
-        <div className="mw-app-content">
+        <div className="mw-app-content" id="mw-main-content" tabIndex="-1">
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/explore" element={<Explore />} />
@@ -89,7 +92,7 @@ const App = () => (
             </Routes>
         </div>
         <Footer />
-    </UserProvider>
-);
+    </UserProvider>);
+};
 
 export default App;

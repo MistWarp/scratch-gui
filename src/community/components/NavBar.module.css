@@ -289,7 +289,7 @@
     cursor: pointer;
 }
 
-@media (max-width: 680px) {
+@media (max-width: 760px) {
     :global(body) {
         padding-bottom: 74px;
     }

@@ -26,6 +26,8 @@ import {presenceSupported} from '../../lib/rotur/client.js';
 import styles from './Settings.module.css';
 import {getNotificationPreferences, setNotificationPreferences} from '../notification-preferences';
 import api from '../api';
+import {analyticsEnabled, setAnalyticsEnabled} from '../analytics.js';
+import {LOCALES, useCommunityIntl} from '../i18n.jsx';
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
@@ -64,6 +66,7 @@ const SECTIONS = [
 
 const Settings = () => {
     const {user, login, logout} = useUser();
+    const {preference: localePreference, setPreference: setLocalePreference, t} = useCommunityIntl();
     const [theme, setTheme] = useState(detectTheme());
     const [username, setUsername] = useState(getUsernameOverride() || '');
     const [accentMenuBar, setAccentMenuBarState] = useState(getAccentMenuBar());
@@ -78,6 +81,7 @@ const Settings = () => {
     const [safetyError, setSafetyError] = useState('');
     const [dataStatus, setDataStatus] = useState('');
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
+    const [shareAnalytics, setShareAnalytics] = useState(analyticsEnabled());
 
     useEffect(() => {
         if (!user) {
@@ -155,6 +159,10 @@ const Settings = () => {
         setNotificationPreferencesState(next);
         setNotificationPreferences(next);
         notifyLocalChange();
+    };
+    const changeAnalytics = enabled => {
+        setAnalyticsEnabled(enabled);
+        setShareAnalytics(enabled);
     };
     const removeSafetyEntry = async (kind, name) => {
         setSafetyError('');
@@ -329,6 +337,13 @@ const Settings = () => {
                                 />
                                 <small>Changes the value reported by the username block in projects. Leave this blank to use your Rotur username.</small>
                             </label>
+                            <label className={styles.field} htmlFor="community-locale">
+                                <span>{t('settings.language')}</span>
+                                <select id="community-locale" className={styles.input} value={localePreference} onChange={event => setLocalePreference(event.target.value)}>
+                                    {LOCALES.map(locale => <option value={locale.value} key={locale.value}>{locale.label}</option>)}
+                                </select>
+                                <small>{t('settings.languageHelp')}</small>
+                            </label>
                         </section>
                     ) : null}
 
@@ -350,6 +365,7 @@ const Settings = () => {
                         <section className={styles.card}>
                             <h2>Your MistWarp data</h2>
                             <p className={styles.lead}>These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.</p>
+                            <div className={styles.dataAction}><div><h3>{t('settings.analytics')}</h3><p>{t('settings.analyticsHelp')}</p></div><label><span className={styles.srOnly}>{t('settings.analytics')}</span><input className={styles.checkbox} type="checkbox" checked={shareAnalytics} onChange={event => changeAnalytics(event.target.checked)} /></label></div>
                             {!user ? <button className={styles.riskAction} type="button" onClick={login}>Sign in with Rotur</button> : <React.Fragment>
                                 <div className={styles.dataAction}><div><h3>Download your data</h3><p>Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.</p></div><button type="button" onClick={downloadData}>Download</button></div>
                                 <div className={styles.dangerZone}><h3>Delete your MistWarp data</h3><p>This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.</p><label className={styles.field}>Type <strong>{user.username}</strong> to confirm<input className={styles.input} value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} /></label><button type="button" className={styles.deleteButton} disabled={deleteConfirmation.toLowerCase() !== user.username.toLowerCase()} onClick={deleteData}>Delete MistWarp data</button></div>

@@ -46,6 +46,7 @@ import {
     chooseMergeBinary,
     finishMwpMerge,
     inspectMwpPull,
+    restoreMwpVersion,
     startMwpMerge,
     updateMergeConflict
 } from '../../lib/git/mwp.js';
@@ -158,6 +159,7 @@ const Project = () => {
     const {user, loading: userLoading, login} = useUser();
     const navigate = useNavigate();
     const [project, setProject] = useState(null);
+    const [versionHistory, setVersionHistory] = useState(null);
     const [error, setError] = useState(null);
     const [actionError, setActionError] = useState(null);
     const [tab, setTab] = useState('Comments');
@@ -198,6 +200,9 @@ const Project = () => {
 
     const load = useCallback(() => {
         const fresh = beginLoad();
+        api.commits(id)
+            .then(fresh(setVersionHistory))
+            .catch(fresh(() => setVersionHistory({commits: []})));
         return api.getProject(id)
             .then(fresh(data => {
                 setProject(data.project);
@@ -214,6 +219,7 @@ const Project = () => {
 
     useEffect(() => {
         setProject(null);
+        setVersionHistory(null);
         setError(null);
         setActionError(null);
         setReporting(false);
@@ -887,7 +893,7 @@ const Project = () => {
 
     const commentSource = useMemo(() => ({
         list: () => api.getComments(id),
-        add: (content, parent) => api.addComment(id, content, parent),
+        add: (content, parent, kind) => api.addComment(id, content, parent, kind),
         remove: commentId => api.deleteComment(id, commentId),
         react: (commentId, type) => api.reactComment(id, commentId, type)
     }), [id]);
@@ -902,8 +908,7 @@ const Project = () => {
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
 
-    const commentTabs = ['Comments', 'Reviews', 'Releases', 'Feedback'];
-    if (project.workspaceUrl || project.gitHead) commentTabs.push('History', 'Pull requests', 'Contribute');
+    const commentTabs = ['Comments', 'Reviews', 'Releases', 'History', 'Pull requests', 'Contribute'];
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
@@ -1408,33 +1413,40 @@ const Project = () => {
                         ) : (
                             <h2 className={styles.colTitle}>Comments</h2>
                         )}
-                        {project.isOwner && tab === 'Comments' ? (
-                            <button
-                                className={styles.commentsToggle}
-                                onClick={toggleComments}
-                                disabled={savingComments}
-                            >
-                                {project.commentsOff ?
-                                    <MessageSquare size={14} /> :
-                                    <MessageSquareOff size={14} />}
-                                {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
-                            </button>
-                        ) : null}
                     </div>
                     {tab === 'Comments' && (
                         <CommentThread
+                            projectComments
                             source={commentSource}
                             canModerate={project.isOwner}
                             disabled={Boolean(project.commentsOff) || locked}
                             disabledReason={locked && !project.commentsOff ?
                                 'Buy this project to comment.' : 'Comments are turned off.'}
                             reportContext={`project ${id}`}
+                            composerAction={project.isOwner ? (
+                                <button
+                                    className={styles.commentsToggle}
+                                    onClick={toggleComments}
+                                    disabled={savingComments}
+                                >
+                                    {project.commentsOff ?
+                                        <MessageSquare size={14} /> :
+                                        <MessageSquareOff size={14} />}
+                                    {project.commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                                </button>
+                            ) : null}
                         />
                     )}
-                    {tab === 'History' && <HistoryList id={id} />}
+                    {tab === 'History' && (
+                        <HistoryList
+                            id={id}
+                            history={versionHistory}
+                            canRestore={project.isOwner}
+                            onChange={load}
+                        />
+                    )}
                     {tab === 'Reviews' && <ReviewPanel id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
                     {tab === 'Releases' && <ReleaseList id={id} isOwner={project.isOwner} />}
-                    {tab === 'Feedback' && <FeedbackPanel id={id} user={user} login={login} />}
                     {tab === 'Pull requests' && (
                         <PullList
                             id={id}
@@ -1567,16 +1579,46 @@ const RemixTree = ({id}) => {
     );
 };
 
-const HistoryList = ({id}) => {
-    const [history, setHistory] = useState(null);
-    useEffect(() => {
-        api.commits(id).then(setHistory).catch(() => setHistory({commits: []}));
-    }, [id]);
+const HistoryList = ({id, history, canRestore, onChange}) => {
+    const [restoring, setRestoring] = useState(null);
+    const [restoreError, setRestoreError] = useState(null);
+    const restore = async commit => {
+        const label = (commit.message || 'this version').split('\n')[0];
+        if (!window.confirm(`Restore "${label}"? MistWarp will keep the newer versions in your history.`)) return;
+        setRestoring(commit.sha);
+        setRestoreError(null);
+        try {
+            const {project} = await api.getProject(id);
+            if (!project.workspaceUrl) throw new Error('This project does not have a saved version archive');
+            const workspace = await fetchWorkspace(project.workspaceUrl);
+            const result = await restoreMwpVersion({workspace, oid: commit.sha});
+            await api.uploadProject(id, result.sb3, null, null, {
+                workspace: result.mwp,
+                git: result.manifest,
+                expectedHead: result.expectedHead
+            });
+            if (onChange) await onChange();
+        } catch (error) {
+            setRestoreError(error.message || 'Could not restore this version.');
+        } finally {
+            setRestoring(null);
+        }
+    };
     if (!history) return <p className={styles.status}>Loading…</p>;
     const commits = history.commits || [];
-    if (!commits.length) return <p className={styles.status}>No commit history available.</p>;
+    if (!commits.length) return <p className={styles.status}>No version history available.</p>;
     if (history.graph?.nodes?.length) {
-        return <GitGraph graph={history.graph} currentBranch={history.branch} />;
+        return (
+            <>
+                {restoreError ? <p className={styles.status}>{restoreError}</p> : null}
+                <GitGraph
+                    graph={history.graph}
+                    currentBranch={history.branch}
+                    onRestore={canRestore ? restore : null}
+                    restoring={restoring}
+                />
+            </>
+        );
     }
     return (
         <ul className={styles.commitList}>
@@ -1967,44 +2009,6 @@ const ReleaseList = ({id, isOwner}) => {
                 </article>
             ))}
         </div>
-    );
-};
-
-const FeedbackPanel = ({id, user, login}) => {
-    const [type, setType] = useState('bug');
-    const [message, setMessage] = useState('');
-    const [status, setStatus] = useState('');
-
-    const submit = async event => {
-        event.preventDefault();
-        if (!user) {
-            login();
-            return;
-        }
-        setStatus('Sending…');
-        try {
-            await api.sendFeedback(id, {type, message});
-            setMessage('');
-            setStatus('Sent to the creator.');
-        } catch (e) {
-            setStatus(e.message || 'Could not send feedback.');
-        }
-    };
-
-    return (
-        <form className={styles.inlineForm} onSubmit={submit}>
-            <h3>Send useful feedback</h3>
-            <p className={styles.muted}>Use comments for conversation. Use this form for something the creator should track.</p>
-            <select value={type} onChange={event => setType(event.target.value)}>
-                <option value="bug">Bug</option>
-                <option value="idea">Idea</option>
-                <option value="confusing">Something is confusing</option>
-                <option value="other">Other</option>
-            </select>
-            <textarea value={message} required maxLength={2000} placeholder="What happened, or what would you change?" onChange={event => setMessage(event.target.value)} />
-            <Button type="submit">{user ? 'Send feedback' : 'Sign in to send feedback'}</Button>
-            {status ? <p className={styles.muted}>{status}</p> : null}
-        </form>
     );
 };
 

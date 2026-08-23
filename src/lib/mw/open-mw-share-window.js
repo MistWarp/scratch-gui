@@ -33,7 +33,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
         title: action === 'remix' ? 'Remix to MistWarp' :
             action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
         width: 460,
-        height: 380,
+        height: 430,
         minWidth: 360,
         minHeight: 300,
         className: 'mw-share-window',

@@ -127,6 +127,7 @@
 }
 
 .statusOk,
+.statusWarn,
 .statusBad,
 .statusChecking {
     font-weight: 700;
@@ -140,8 +141,39 @@
     color: var(--mw-danger);
 }
 
+.statusWarn {
+    color: #b7791f;
+}
+
 .statusChecking {
     color: var(--mw-text-muted);
+}
+
+.statusRow > span:first-child {
+    display: grid;
+    gap: 4px;
+}
+
+.statusRow small,
+.actions time,
+.incident time {
+    color: var(--mw-text-muted);
+    font-size: 12px;
+}
+
+.incident {
+    padding: 16px 0;
+    border-top: 1px solid var(--mw-border);
+}
+
+.incident > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.incident p {
+    margin: 8px 0;
 }
 
 .notFound {

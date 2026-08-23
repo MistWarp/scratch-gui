@@ -37,10 +37,11 @@ const point = node => ({
     y: (node.row * ROW_HEIGHT) + (ROW_HEIGHT / 2)
 });
 
-const GitGraph = ({graph, currentBranch = 'main'}) => {
+const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
     const layout = useMemo(() => layoutGraph(graph, currentBranch), [graph, currentBranch]);
     if (!layout.rows.length) return null;
     const height = layout.rows.length * ROW_HEIGHT;
+    const currentHead = graph.branchLogs?.find(entry => entry.branch === currentBranch)?.oids?.[0];
     return (
         <div className={styles.graph}>
             <div className={styles.canvas} style={{width: layout.width, height}} aria-hidden="true">
@@ -92,6 +93,15 @@ const GitGraph = ({graph, currentBranch = 'main'}) => {
                                     <time dateTime={new Date(node.date).toISOString()}>
                                         {new Date(node.date).toLocaleString()}
                                     </time>
+                                ) : null}
+                                {onRestore && node.sha !== currentHead ? (
+                                    <button
+                                        className={styles.restore}
+                                        disabled={restoring === node.sha}
+                                        onClick={() => onRestore(node)}
+                                    >
+                                        {restoring === node.sha ? 'Restoring…' : 'Restore this version'}
+                                    </button>
                                 ) : null}
                             </div>
                         </li>

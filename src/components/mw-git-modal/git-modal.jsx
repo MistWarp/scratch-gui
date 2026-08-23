@@ -6,7 +6,6 @@ import {
     GitBranch,
     History,
     GitCommit,
-    FileDiff,
     Cloud,
     FileText,
     Plus,
@@ -39,7 +38,7 @@ import styles from './git-modal.css';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Version Control',
+        defaultMessage: 'Version history',
         description: 'Title of the git window',
         id: 'mw.git.title'
     },
@@ -64,7 +63,7 @@ const messages = defineMessages({
         id: 'mw.git.nav.diff'
     },
     remote: {
-        defaultMessage: 'Remote',
+        defaultMessage: 'Connections',
         description: 'Remote sidebar item',
         id: 'mw.git.nav.remote'
     },
@@ -112,7 +111,10 @@ FileBadge.propTypes = {
 class GitModalComponent extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {currentView: takeGitModalInitialView() || 'changes'};
+        const requestedView = takeGitModalInitialView();
+        this.state = {
+            currentView: ['history', 'branches', 'remote'].includes(requestedView) ? requestedView : 'history'
+        };
         this.handleNavigate = this.handleNavigate.bind(this);
     }
 
@@ -144,7 +146,7 @@ class GitModalComponent extends React.Component {
                 <GitCommit className={styles.emptyIcon} />
                 <p>
                     <FormattedMessage
-                        defaultMessage="This project isn't under version control yet."
+                        defaultMessage="This project doesn't have version history yet."
                         description="Shown when no repository exists"
                         id="mw.git.empty.description"
                     />
@@ -155,7 +157,7 @@ class GitModalComponent extends React.Component {
                     onClick={this.props.onInit}
                 >
                     <FormattedMessage
-                        defaultMessage="Initialize repository"
+                        defaultMessage="Start version history"
                         description="Init button"
                         id="mw.git.empty.init"
                     />
@@ -351,7 +353,7 @@ class GitModalComponent extends React.Component {
             <Box className={styles.section}>
                 <h2 className={styles.sectionTitle}>
                     <FormattedMessage
-                        defaultMessage="Commit history"
+                        defaultMessage="Version history"
                         description="History section heading"
                         id="mw.git.history.heading"
                     />
@@ -761,7 +763,7 @@ class GitModalComponent extends React.Component {
             <Box className={styles.section}>
                 <h2 className={styles.sectionTitle}>
                     <FormattedMessage
-                        defaultMessage="Remotes"
+                        defaultMessage="Connections"
                         description="Remote section heading"
                         id="mw.git.remote.heading"
                     />
@@ -798,7 +800,7 @@ class GitModalComponent extends React.Component {
                     <div className={styles.remoteEmpty}>
                         <Cloud className={styles.remoteEmptyIcon} />
                         <FormattedMessage
-                            defaultMessage="No remotes yet. Add one below to push your project."
+                            defaultMessage="No connections yet. Add a repository URL to sync it whenever you save."
                             description="No remotes message"
                             id="mw.git.remote.none"
                         />
@@ -807,20 +809,12 @@ class GitModalComponent extends React.Component {
                 <Box className={styles.field}>
                     <label className={styles.fieldLabel}>
                         <FormattedMessage
-                            defaultMessage="Add remote"
+                            defaultMessage="Repository URL"
                             description="Add remote label"
                             id="mw.git.remote.add"
                         />
                     </label>
                     <Box className={styles.inlineForm}>
-                        <input
-                            className={styles.inputSmall}
-                            type="text"
-                            value={this.props.newRemoteName}
-                            onChange={this.props.onChangeNewRemoteName}
-                            disabled={this.props.busy}
-                            placeholder="origin"
-                        />
                         <input
                             className={styles.input}
                             type="text"
@@ -838,10 +832,18 @@ class GitModalComponent extends React.Component {
                         </button>
                     </Box>
                 </Box>
+                <p className={styles.muted}>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="MistWarp syncs every connection after Save to MistWarp. RoturGit URLs use your Rotur sign-in automatically."
+                        description="Explains automatic repository syncing"
+                        id="mw.git.remote.syncNote"
+                    />
+                </p>
                 <Box className={styles.field}>
                     <label className={styles.fieldLabel}>
                         <FormattedMessage
-                            defaultMessage="Access token / password (stored locally)"
+                            defaultMessage="Token or password for other services (stored locally)"
                             description="Token label"
                             id="mw.git.remote.token"
                         />
@@ -855,75 +857,10 @@ class GitModalComponent extends React.Component {
                     />
                     <p className={styles.muted}>
                         <FormattedMessage
-                            defaultMessage="Your commit author name (Settings) is used as the remote username."
+                            // eslint-disable-next-line max-len
+                            defaultMessage="RoturGit does not need this. Other services use your author name as the username."
                             description="Explains that the author name is the git username"
                             id="mw.git.remote.usernameNote"
-                        />
-                    </p>
-                </Box>
-                <Box className={styles.field}>
-                    <label className={styles.fieldLabel}>
-                        <FormattedMessage
-                            defaultMessage="Push a branch"
-                            description="Push branch label"
-                            id="mw.git.remote.pushBranch"
-                        />
-                    </label>
-                    <Box className={styles.inlineForm}>
-                        <select
-                            className={styles.select}
-                            value={this.props.pushRemote}
-                            disabled={this.props.busy || !remotes || remotes.length === 0}
-                            onChange={this.props.onChangePushRemote}
-                        >
-                            {(!remotes || remotes.length === 0) && (
-                                <option value="">
-                                    {this.props.intl.formatMessage({
-                                        defaultMessage: 'No remotes',
-                                        description: 'Placeholder when no remotes exist',
-                                        id: 'mw.git.remote.noneOption'
-                                    })}
-                                </option>
-                            )}
-                            {(remotes || []).map(remote => (
-                                <option
-                                    key={remote.name}
-                                    value={remote.name}
-                                >{remote.name}</option>
-                            ))}
-                        </select>
-                        <select
-                            className={styles.select}
-                            value={this.props.pushBranch || ''}
-                            disabled={this.props.busy}
-                            onChange={this.props.onChangePushBranch}
-                        >
-                            {(this.props.branches || []).map(b => (
-                                <option
-                                    key={b}
-                                    value={b}
-                                >{b}</option>
-                            ))}
-                        </select>
-                        <button
-                            className={styles.primaryButton}
-                            disabled={this.props.busy || !remotes || remotes.length === 0 || !this.props.pushBranch}
-                            onClick={this.props.onPush}
-                        >
-                            <Upload className={styles.buttonIcon} />
-                            <FormattedMessage
-                                defaultMessage="Push"
-                                description="Push button"
-                                id="mw.git.remote.push"
-                            />
-                        </button>
-                    </Box>
-                    <p className={styles.muted}>
-                        <FormattedMessage
-                            // eslint-disable-next-line max-len
-                            defaultMessage="Creates the branch on the remote and sets it as upstream (like git push -u)."
-                            description="Push help text"
-                            id="mw.git.remote.pushHelp"
                         />
                     </p>
                 </Box>
@@ -1364,39 +1301,27 @@ class GitModalComponent extends React.Component {
     }
 
     renderContent () {
-        if (this.state.currentView === 'rotur') {
-            return this.renderRotur();
-        }
         if (!this.props.initialized) {
             return this.renderNotInitialized();
         }
         switch (this.state.currentView) {
-        case 'readme':
-            return this.renderReadme();
         case 'history':
             return this.renderHistory();
         case 'branches':
             return this.renderBranches();
-        case 'diff':
-            return this.renderDiff();
         case 'remote':
             return this.renderRemote();
-        case 'changes':
         default:
-            return this.renderChanges();
+            return this.renderHistory();
         }
     }
 
     render () {
         const {intl} = this.props;
         const categories = [
-            {id: 'changes', label: intl.formatMessage(messages.changes), icon: GitCommit},
             {id: 'history', label: intl.formatMessage(messages.history), icon: History},
             {id: 'branches', label: intl.formatMessage(messages.branches), icon: GitBranch},
-            {id: 'diff', label: intl.formatMessage(messages.diff), icon: FileDiff},
-            {id: 'remote', label: intl.formatMessage(messages.remote), icon: Cloud},
-            {id: 'rotur', label: intl.formatMessage(messages.rotur), icon: Globe},
-            {id: 'readme', label: intl.formatMessage(messages.readme), icon: FileText}
+            {id: 'remote', label: intl.formatMessage(messages.remote), icon: Cloud}
         ];
 
         return (
@@ -1486,10 +1411,7 @@ GitModalComponent.propTypes = {
     canUndoCommit: PropTypes.bool,
     changes: PropTypes.arrayOf(PropTypes.object),
     remotes: PropTypes.arrayOf(PropTypes.object),
-    newRemoteName: PropTypes.string,
     newRemoteUrl: PropTypes.string,
-    pushRemote: PropTypes.string,
-    pushBranch: PropTypes.string,
     remoteToken: PropTypes.string,
     diffLoading: PropTypes.bool,
     diffFilepath: PropTypes.string,
@@ -1526,14 +1448,10 @@ GitModalComponent.propTypes = {
     onSelectCommit: PropTypes.func,
     onDiffCommitFile: PropTypes.func,
     onClearDiff: PropTypes.func,
-    onChangeNewRemoteName: PropTypes.func,
     onChangeNewRemoteUrl: PropTypes.func,
-    onChangePushRemote: PropTypes.func,
-    onChangePushBranch: PropTypes.func,
     onChangeRemoteToken: PropTypes.func,
     onAddRemote: PropTypes.func,
     onRemoveRemote: PropTypes.func,
-    onPush: PropTypes.func,
     onClose: PropTypes.func,
     roturUsername: PropTypes.string,
     roturRepos: PropTypes.arrayOf(PropTypes.object),

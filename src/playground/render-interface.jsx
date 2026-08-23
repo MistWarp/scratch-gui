@@ -31,6 +31,7 @@ import TWPackagerIntegrationHOC from '../lib/components/tw-packager-integration-
 import SettingsStore from '../addons/settings-store-singleton';
 import '../lib/api/fix-history.js';
 import GUI from './render-gui.jsx';
+import {trackOnce} from '../community/analytics.js';
 import MenuBar from '../components/menu-bar/menu-bar.jsx';
 import ProjectInput from '../components/tw-project-input/project-input.jsx';
 import FeaturedProjects from '../components/tw-featured-projects/featured-projects.jsx';
@@ -46,6 +47,8 @@ import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 import windowManager from '../addons/window-system/window-manager';
 
 import styles from './interface.css';
+
+trackOnce('editor_open', {source: 'editor'});
 
 // Import window manager dynamically
 let settingsWindow = null;

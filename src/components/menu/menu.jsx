@@ -62,18 +62,25 @@ Submenu.propTypes = {
 const MenuItem = ({
     children,
     className,
+    disabled = false,
     expanded = false,
     onClick,
-    shortcut
+    shortcut,
+    title
 }) => (
     <li
         className={classNames(
             styles.menuItem,
-            styles.hoverable,
+            {[styles.hoverable]: !disabled},
             className,
-            {[styles.expanded]: expanded}
+            {
+                [styles.expanded]: expanded,
+                [styles.disabled]: disabled
+            }
         )}
-        onClick={onClick}
+        aria-disabled={disabled || null}
+        onClick={disabled ? null : onClick}
+        title={title}
     >
         {children}
         {shortcut && <span className={styles.shortcut}>{shortcut}</span>}
@@ -83,9 +90,11 @@ const MenuItem = ({
 MenuItem.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
+    disabled: PropTypes.bool,
     expanded: PropTypes.bool,
     onClick: PropTypes.func,
-    shortcut: PropTypes.string
+    shortcut: PropTypes.string,
+    title: PropTypes.string
 };
 
 

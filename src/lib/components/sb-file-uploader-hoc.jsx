@@ -9,6 +9,7 @@ import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
 import {importRepoFromSb3} from '../git/browser-git';
 import {buildSb3FromCurrentRepo, importMwp} from '../git/mwp.js';
+import {markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
 import RestorePointAPI from '../api/restore-points';
 
 import {
@@ -192,6 +193,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 this.props.vm.quit();
                 let projectData = this.fileReader.result;
                 const isMwp = filename && filename.toLowerCase().endsWith('.mwp');
+                markProjectHistoryLoading();
 
                 if (isMwp) {
                     try {
@@ -238,6 +240,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                         } catch (gitError) {
                             log.error('Failed to restore embedded git history:', gitError);
                         }
+                        await preloadProjectHistory(this.props.vm, {force: true});
                         loadingSuccess = true;
                     })
                     .catch(error => {

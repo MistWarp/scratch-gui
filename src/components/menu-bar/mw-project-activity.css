@@ -1,5 +1,14 @@
 .page {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
     padding: 18px;
+}
+
+.page textarea,
+.page input {
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 .tabs {
