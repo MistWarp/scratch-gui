@@ -1,0 +1,16 @@
+.mention {
+    display: inline-block;
+    margin: 0 1px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-weight: 700;
+    line-height: 1.25;
+    text-decoration: none;
+}
+
+.mention:hover {
+    background: var(--accent-softer);
+    text-decoration: underline;
+}
