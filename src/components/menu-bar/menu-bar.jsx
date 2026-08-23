@@ -55,6 +55,8 @@ import {
     getFs as getGitFs
 } from '../../lib/git/browser-git';
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
+import {createMwp} from '../../lib/git/mwp.js';
+import downloadBlob from '../../lib/utils/download-blob.js';
 import RestorePointAPI from '../../lib/api/restore-points';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
@@ -310,6 +312,7 @@ class MenuBar extends React.Component {
             canRedo: true,
             gitRepoExists: false,
             gitRemotes: [],
+            mwpFileHandle: null,
             menuCollapsed: false,
             moreMenuOpen: false,
             menuBarSettings: getMenuBarSettings(),
@@ -347,6 +350,8 @@ class MenuBar extends React.Component {
             'handleClickGitCommit',
             'handleClickGitPush',
             'handleClickGitPull',
+            'handleClickSaveMwp',
+            'handleClickSaveMwpAs',
             'handleSetMode',
             'handleKeyPress',
             'handleRestoreOption',
@@ -745,6 +750,52 @@ class MenuBar extends React.Component {
                 }) + (e && e.message ? e.message : e));
             }
         }, 0);
+    }
+
+    async saveMwp (saveAs) {
+        this.props.onRequestCloseFile();
+        try {
+            const platformProject = getRememberedPlatformProjectState();
+            const exported = await createMwp({
+                vm: this.props.vm,
+                projectId: platformProject && platformProject.id,
+                remixParent: platformProject && platformProject.remixParent,
+                baseCommit: platformProject && platformProject.remixBaseCommit,
+                message: 'Export MistWarp project'
+            });
+            const filename = `${this.props.projectTitle || 'MistWarp Project'}.mwp`;
+            let handle = saveAs ? null : this.state.mwpFileHandle;
+            if (!handle && this.props.showSaveFilePicker) {
+                handle = await this.props.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{
+                        description: 'MistWarp Project',
+                        accept: {'application/x-mistwarp-project': ['.mwp']}
+                    }],
+                    excludeAcceptAllOption: true
+                });
+            }
+            if (handle) {
+                const writable = await handle.createWritable();
+                await writable.write(exported.blob);
+                await writable.close();
+                this.setState({mwpFileHandle: handle});
+            } else {
+                downloadBlob(filename, exported.blob);
+            }
+        } catch (error) {
+            if (error && error.name === 'AbortError') return;
+            // eslint-disable-next-line no-alert
+            window.alert(`Could not save MistWarp project: ${error && error.message ? error.message : error}`);
+        }
+    }
+
+    handleClickSaveMwp () {
+        return this.saveMwp(false);
+    }
+
+    handleClickSaveMwpAs () {
+        return this.saveMwp(true);
     }
     handleSetMode (mode) {
         return () => {
@@ -1640,47 +1691,65 @@ class MenuBar extends React.Component {
                                             <Upload />
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
                                         </MenuItem>
+                                        <MenuItem
+                                            onClick={this.handleClickSaveMwp}
+                                            shortcut={formatShortcutDisplay('Ctrl+S')}
+                                        >
+                                            <GitBranch />
+                                            <FormattedMessage
+                                                defaultMessage="Save MistWarp project"
+                                                description={
+                                                    'File menu item to save the native project with its Git history'
+                                                }
+                                                id="mw.menuBar.saveMwp"
+                                            />
+                                        </MenuItem>
+                                        <MenuItem
+                                            onClick={this.handleClickSaveMwpAs}
+                                            shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                        >
+                                            <FileInput />
+                                            <FormattedMessage
+                                                defaultMessage="Save MistWarp project as…"
+                                                description="File menu item to save a new native MistWarp project file"
+                                                id="mw.menuBar.saveMwpAs"
+                                            />
+                                        </MenuItem>
                                         <SB3Downloader
                                             showSaveFilePicker={this.props.showSaveFilePicker}
                                         >
-                                            {(_className, downloadProject, extended) => (
-                                                <React.Fragment>
-                                                    {extended.available && (
-                                                        <React.Fragment>
-                                                            {extended.name !== null && (
-                                                                <MenuItem
-                                                                    // eslint-disable-next-line max-len
-                                                                    onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}
-                                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
-                                                                >
-                                                                    <FileInput />
-                                                                    <FormattedMessage
-                                                                        defaultMessage="Save to {file}"
-                                                                        // eslint-disable-next-line max-len
-                                                                        description="Menu bar item to save project to an existing file on the user's computer"
-                                                                        id="tw.saveTo"
-                                                                        values={{
-                                                                            file: extended.name
-                                                                        }}
-                                                                    />
-                                                                </MenuItem>
-                                                            )}
-                                                            {/* eslint-disable-next-line max-len */}
-                                                            <MenuItem
-                                                                onClick={this.getSaveToComputerHandler(extended.saveAsNew)}
-                                                                shortcut={formatShortcutDisplay('Ctrl+S')}
-                                                            >
-                                                                <Save />
-                                                                <FormattedMessage
-                                                                    defaultMessage="Save as..."
-                                                                    // eslint-disable-next-line max-len
-                                                                    description="Menu bar item to select a new file to save the project as"
-                                                                    id="tw.saveAs"
-                                                                />
-                                                            </MenuItem>
-                                                        </React.Fragment>
-                                                    )}
-                                                </React.Fragment>
+                                            {(_className, downloadProject) => (
+                                                <MenuItem>
+                                                    <div className={styles.submenuRow}>
+                                                        <Download />
+                                                        <span className={styles.submenuRowLabel}>
+                                                            <FormattedMessage
+                                                                defaultMessage="Export"
+                                                                description={
+                                                                    'File menu submenu for other project formats'
+                                                                }
+                                                                id="mw.menuBar.export"
+                                                            />
+                                                        </span>
+                                                        <ChevronDown className={styles.submenuCaret} />
+                                                    </div>
+                                                    <Submenu
+                                                        place={this.props.isRtl ? 'left' : 'right'}
+                                                    >
+                                                        <MenuItem
+                                                            onClick={this.getSaveToComputerHandler(downloadProject)}
+                                                        >
+                                                            <Save />
+                                                            <FormattedMessage
+                                                                defaultMessage="Scratch project (.sb3)"
+                                                                description={
+                                                                    'Export as SB3 without history'
+                                                                }
+                                                                id="mw.menuBar.exportSb3"
+                                                            />
+                                                        </MenuItem>
+                                                    </Submenu>
+                                                </MenuItem>
                                             )}
                                         </SB3Downloader>
                                     </MenuSection>

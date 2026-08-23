@@ -34,12 +34,21 @@ import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
+import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
-import {hashExtensionUrl} from '../../lib/community/api.js';
+import {fetchWorkspace, hashExtensionUrl} from '../../lib/community/api.js';
+import {
+    cancelMwpMerge,
+    chooseMergeBinary,
+    finishMwpMerge,
+    inspectMwpPull,
+    startMwpMerge,
+    updateMergeConflict
+} from '../../lib/git/mwp.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
@@ -180,6 +189,8 @@ const Project = () => {
     const [revertTheme, setRevertTheme] = useState(false);
     const [followsOwner, setFollowsOwner] = useState(false);
     const [roturModal, setRoturModal] = useState(null);
+    const [forkSetup, setForkSetup] = useState(null);
+    const [creatingFork, setCreatingFork] = useState(false);
     const themeMode = getProjectThemeMode();
     useEscape(confirmBuy ? () => setConfirmBuy(false) : null);
 
@@ -633,13 +644,29 @@ const Project = () => {
         }
     };
 
-    const remix = async () => {
+    const remix = () => {
         if (!user) return;
+        setMenuOpen(false);
+        setActionError(null);
+        setForkSetup({
+            title: `${project.title} fork`,
+            branch: project.gitBranch || 'main'
+        });
+    };
+
+    const createFork = async event => {
+        event.preventDefault();
+        if (!forkSetup || creatingFork) return;
+        setCreatingFork(true);
         try {
-            const result = await api.remix(id);
+            const result = await api.remix(id, {
+                title: forkSetup.title.trim(),
+                branch: forkSetup.branch.trim()
+            });
             window.location.href = editorUrl({platformProject: result.id});
         } catch (e) {
-            setActionError('Could not remix this project.');
+            setActionError(e.message || 'Could not create this fork.');
+            setCreatingFork(false);
         }
     };
 
@@ -876,7 +903,7 @@ const Project = () => {
     const seeInsideHref = editorUrl({platformProject: project.id});
 
     const commentTabs = ['Comments', 'Reviews', 'Releases', 'Feedback'];
-    if (project.repo) commentTabs.push('History', 'Pull requests', 'Contribute');
+    if (project.workspaceUrl || project.gitHead) commentTabs.push('History', 'Pull requests', 'Contribute');
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
@@ -1040,6 +1067,58 @@ const Project = () => {
             </div>
 
             {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
+
+            {forkSetup ? (
+                <div className={styles.confirmOverlay} onClick={() => !creatingFork && setForkSetup(null)}>
+                    <form
+                        className={`${styles.confirmModal} ${styles.forkModal}`}
+                        onSubmit={createFork}
+                        onClick={event => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="fork-setup-title"
+                    >
+                        <h3 className={styles.confirmTitle} id="fork-setup-title">Set up your fork</h3>
+                        <p className={styles.forkIntro}>
+                            This creates a private working copy with the full MistWarp history. You can send its changes back as a pull request.
+                        </p>
+                        <label className={styles.forkField}>
+                            <span>Project name</span>
+                            <input
+                                value={forkSetup.title}
+                                maxLength={100}
+                                required
+                                autoFocus
+                                onChange={event => setForkSetup({...forkSetup, title: event.target.value})}
+                            />
+                        </label>
+                        <label className={styles.forkField}>
+                            <span>Working branch</span>
+                            <input
+                                value={forkSetup.branch}
+                                maxLength={100}
+                                required
+                                pattern="[A-Za-z0-9][A-Za-z0-9._/-]*"
+                                onChange={event => setForkSetup({...forkSetup, branch: event.target.value})}
+                            />
+                        </label>
+                        <dl className={styles.forkSummary}>
+                            <div><dt>Forked from</dt><dd>{project.owner}/{project.title}</dd></div>
+                            <div><dt>Base commit</dt><dd><code>{project.gitHead ? project.gitHead.slice(0, 7) : 'Current version'}</code></dd></div>
+                            <div><dt>Visibility</dt><dd>Private draft</dd></div>
+                        </dl>
+                        <div className={styles.confirmActions}>
+                            <button type="button" className={styles.confirmCancel} onClick={() => setForkSetup(null)} disabled={creatingFork}>
+                                Cancel
+                            </button>
+                            <button className={styles.confirmButton} type="submit" disabled={creatingFork}>
+                                <GitFork size={15} />
+                                {creatingFork ? 'Creating fork…' : 'Create fork'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
 
             {reporting ? (
                 <ReportModal
@@ -1363,7 +1442,14 @@ const Project = () => {
                             onChange={load}
                         />
                     )}
-                    {tab === 'Contribute' && <ContributionPanel id={id} user={user} login={login} />}
+                    {tab === 'Contribute' && (
+                        <ContributionPanel
+                            id={project.remixParent || id}
+                            sourceProjectId={project.remixParent ? id : ''}
+                            user={user}
+                            login={login}
+                        />
+                    )}
                 </section>
 
                 <aside className={styles.remixCol}>
@@ -1482,12 +1568,16 @@ const RemixTree = ({id}) => {
 };
 
 const HistoryList = ({id}) => {
-    const [commits, setCommits] = useState(null);
+    const [history, setHistory] = useState(null);
     useEffect(() => {
-        api.commits(id).then(d => setCommits(d.commits || [])).catch(() => setCommits([]));
+        api.commits(id).then(setHistory).catch(() => setHistory({commits: []}));
     }, [id]);
-    if (!commits) return <p className={styles.status}>Loading…</p>;
+    if (!history) return <p className={styles.status}>Loading…</p>;
+    const commits = history.commits || [];
     if (!commits.length) return <p className={styles.status}>No commit history available.</p>;
+    if (history.graph?.nodes?.length) {
+        return <GitGraph graph={history.graph} currentBranch={history.branch} />;
+    }
     return (
         <ul className={styles.commitList}>
             {commits.map(commit => (
@@ -1507,6 +1597,15 @@ const PullList = ({id, canMerge, onChange}) => {
     const [diff, setDiff] = useState(null);
     const [merging, setMerging] = useState(false);
     const [mergeError, setMergeError] = useState(null);
+    const [mergeSession, setMergeSession] = useState(null);
+
+    const loadPullFiles = async data => {
+        const [target, source] = await Promise.all([
+            fetchWorkspace(data.targetWorkspaceUrl),
+            fetchWorkspace(data.sourceWorkspaceUrl)
+        ]);
+        return {target, source};
+    };
 
     const reload = useCallback(() => {
         api.pulls(id).then(d => setPulls(d.pulls || [])).catch(() => setPulls([]));
@@ -1519,10 +1618,33 @@ const PullList = ({id, canMerge, onChange}) => {
         setDiff(null);
         setMergeError(null);
         try {
-            setDiff(await api.pullDiff(id, pull.index));
+            const data = await api.pullDiff(id, pull.index);
+            const files = await loadPullFiles(data);
+            const inspected = await inspectMwpPull({
+                ...files,
+                pullId: pull.index,
+                baseCommit: data.pull.baseCommit,
+                headCommit: data.pull.headCommit
+            });
+            setDiff(inspected.diff || 'No textual changes.');
         } catch (e) {
             setDiff('Could not load diff.');
         }
+    };
+
+    const uploadMerge = async (pull, data) => {
+        const result = await finishMwpMerge();
+        await api.uploadPullMerge(id, {
+            sb3: result.sb3,
+            mwp: result.mwp,
+            git: result.manifest,
+            expectedHead: data.expectedHead,
+            pullId: pull.index
+        });
+        setMergeSession(null);
+        setOpenPull(null);
+        reload();
+        onChange();
     };
 
     const merge = async pull => {
@@ -1530,17 +1652,63 @@ const PullList = ({id, canMerge, onChange}) => {
         setMerging(true);
         setMergeError(null);
         try {
-            await api.mergePull(id, pull.index);
-            setOpenPull(null);
-            reload();
-            onChange();
+            const data = await api.mergePull(id, pull.index);
+            const files = await loadPullFiles(data);
+            const result = await startMwpMerge({
+                ...files,
+                pullId: pull.index,
+                baseCommit: data.pull.baseCommit,
+                headCommit: data.pull.headCommit
+            });
+            if (result.conflicts.length || result.binaryConflicts.length) {
+                setMergeSession({
+                    pull,
+                    data,
+                    conflicts: result.conflicts,
+                    binaryConflicts: result.binaryConflicts.map(path => ({path, choice: ''}))
+                });
+            } else {
+                await uploadMerge(pull, data);
+            }
         } catch (e) {
-            setMergeError(e.code === 'conflict' ?
-                'This pull request has conflicts. Open it in the editor and pull to resolve.' :
-                'Merge failed.');
+            await cancelMwpMerge();
+            setMergeError(e.message || 'Merge failed.');
         } finally {
             setMerging(false);
         }
+    };
+
+    const updateConflict = (path, content) => {
+        setMergeSession(session => ({
+            ...session,
+            conflicts: session.conflicts.map(file => (file.path === path ? {...file, content} : file))
+        }));
+    };
+
+    const resolveConflicts = async () => {
+        if (!mergeSession || merging) return;
+        setMerging(true);
+        setMergeError(null);
+        try {
+            for (const file of mergeSession.conflicts) {
+                await updateMergeConflict(file.path, file.content);
+            }
+            for (const file of mergeSession.binaryConflicts) {
+                if (!file.choice) throw new Error(`Choose a version for ${file.path}`);
+                await chooseMergeBinary(file.path, file.choice);
+            }
+            await uploadMerge(mergeSession.pull, mergeSession.data);
+        } catch (e) {
+            setMergeError(e.message || 'The conflicts could not be resolved.');
+        } finally {
+            setMerging(false);
+        }
+    };
+
+    const closePull = async () => {
+        await cancelMwpMerge();
+        setMergeSession(null);
+        setOpenPull(null);
     };
 
     if (!pulls) return <p className={styles.status}>Loading…</p>;
@@ -1549,7 +1717,7 @@ const PullList = ({id, canMerge, onChange}) => {
             <div>
                 <button
                     className={styles.backLink}
-                    onClick={() => setOpenPull(null)}
+                    onClick={closePull}
                 >
                     <ArrowLeft size={14} />
                     Back to pull requests
@@ -1559,11 +1727,55 @@ const PullList = ({id, canMerge, onChange}) => {
                     #{openPull.index} by {openPull.user} into {openPull.baseBranch}
                 </p>
                 {mergeError ? <div className={styles.actionError}>{mergeError}</div> : null}
+                {mergeSession ? (
+                    <div className={styles.conflictEditor}>
+                        <h4>Resolve merge conflicts</h4>
+                        <p>Remove the conflict markers and leave the exact text this file should contain.</p>
+                        {mergeSession.conflicts.map(file => (
+                            <label key={file.path} className={styles.conflictFile}>
+                                <span>{file.path}</span>
+                                <textarea
+                                    value={file.content}
+                                    onChange={event => updateConflict(file.path, event.target.value)}
+                                    spellCheck={false}
+                                />
+                            </label>
+                        ))}
+                        {mergeSession.binaryConflicts.map(file => (
+                            <div key={file.path} className={styles.binaryConflict}>
+                                <span>{file.path}</span>
+                                <div>
+                                    <button
+                                        type="button"
+                                        className={file.choice === 'ours' ? styles.binaryChoiceActive : ''}
+                                        onClick={() => setMergeSession(session => ({
+                                            ...session,
+                                            binaryConflicts: session.binaryConflicts.map(item =>
+                                                (item.path === file.path ? {...item, choice: 'ours'} : item))
+                                        }))}
+                                    >Keep current project</button>
+                                    <button
+                                        type="button"
+                                        className={file.choice === 'theirs' ? styles.binaryChoiceActive : ''}
+                                        onClick={() => setMergeSession(session => ({
+                                            ...session,
+                                            binaryConflicts: session.binaryConflicts.map(item =>
+                                                (item.path === file.path ? {...item, choice: 'theirs'} : item))
+                                        }))}
+                                    >Use fork version</button>
+                                </div>
+                            </div>
+                        ))}
+                        <button className={styles.primary} onClick={resolveConflicts} disabled={merging}>
+                            {merging ? 'Finishing merge…' : 'Save resolutions and merge'}
+                        </button>
+                    </div>
+                ) : null}
                 {canMerge && openPull.state === 'open' ? (
                     <button
                         className={styles.primary}
                         onClick={() => merge(openPull)}
-                        disabled={merging}
+                        disabled={merging || Boolean(mergeSession)}
                     >{merging ? 'Merging…' : 'Merge'}</button>
                 ) : null}
                 <DiffView diff={diff} />
@@ -1796,11 +2008,13 @@ const FeedbackPanel = ({id, user, login}) => {
     );
 };
 
-const ContributionPanel = ({id, user, login}) => {
-    const [remixProjectId, setRemixProjectId] = useState('');
+const ContributionPanel = ({id, sourceProjectId, user, login}) => {
+    const [remixProjectId, setRemixProjectId] = useState(sourceProjectId);
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [status, setStatus] = useState('');
+
+    useEffect(() => setRemixProjectId(sourceProjectId), [sourceProjectId]);
 
     const submit = async event => {
         event.preventDefault();
@@ -1822,8 +2036,19 @@ const ContributionPanel = ({id, user, login}) => {
     return (
         <form className={styles.inlineForm} onSubmit={submit}>
             <h3>Send changes back</h3>
-            <p className={styles.muted}>Remix this project, make your changes, save them, then enter the remix project ID here.</p>
-            <input value={remixProjectId} required placeholder="Your remix project ID" onChange={event => setRemixProjectId(event.target.value)} />
+            <p className={styles.muted}>
+                {sourceProjectId ?
+                    'Describe the changes on this fork and send them to its parent project.' :
+                    'Fork this project, make your changes, save them, then enter the fork project ID here.'}
+            </p>
+            {!sourceProjectId ? (
+                <input
+                    value={remixProjectId}
+                    required
+                    placeholder="Your fork project ID"
+                    onChange={event => setRemixProjectId(event.target.value)}
+                />
+            ) : null}
             <input value={title} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
             <textarea value={body} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
             <Button type="submit">{user ? 'Send contribution' : 'Sign in to contribute'}</Button>

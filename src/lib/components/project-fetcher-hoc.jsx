@@ -27,11 +27,12 @@ import storage from '../persistence/storage.js';
 
 import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
-import {cloneRepo} from '../git/browser-git.js';
+import {cloneRepo, deleteRepo} from '../git/browser-git.js';
+import {checkoutMwpBranch, importMwp} from '../git/mwp.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
-import {getEditorProject as getMistWarpEditorProject} from '../community/api.js';
+import {fetchWorkspace, getEditorProject as getMistWarpEditorProject} from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 
@@ -89,6 +90,12 @@ const loadPlatformProject = async (id, source) => {
         storage.addMistWarpAssetStore(project.assetsBase);
     }
     rememberPlatformProject(project);
+    if (project.workspaceUrl) {
+        await importMwp(await fetchWorkspace(project.workspaceUrl));
+        if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
+    } else if (!source) {
+        await deleteRepo();
+    }
     const data = hasBridge() ?
         await bridgeFetch(project.projectJsonUrl) :
         await fetchArrayBuffer(project.projectJsonUrl);

@@ -46,7 +46,6 @@ const Profile = () => {
     const [commentsBusy, setCommentsBusy] = useState(false);
     const [reporting, setReporting] = useState(false);
     const [adminProjects, setAdminProjects] = useState([]);
-    const [presence, setPresence] = useState(null);
     const [donating, setDonating] = useState(false);
     const [reviews, setReviews] = useState(null);
     const [safetyBusy, setSafetyBusy] = useState(false);
@@ -78,17 +77,6 @@ const Profile = () => {
         setReporting(false);
         load();
     }, [name, load]);
-
-    useEffect(() => {
-        setPresence(null);
-        let active = true;
-        rotur.status(name)
-            .then(data => active && setPresence(data))
-            .catch(() => active && setPresence(null));
-        return () => {
-            active = false;
-        };
-    }, [name]);
 
     useEffect(() => {
         if (!user || !user.isAdmin) {
@@ -214,9 +202,16 @@ const Profile = () => {
     const unsharedProjects = adminProjects.filter(project => !project.shared);
     const onMistWarp = !mwUser || mwUser.exists !== false;
     const year = joinYear(profile.created);
-    const isOnline = Boolean(presence && presence.presence && presence.presence !== 'offline');
-    const statusDotClass = isOnline ? styles.onlineDot : styles.offlineDot;
-    const statusText = presence ? (presence.status || presence.presence) : '';
+    const presence = profile.status || null;
+    const presenceState = presence && typeof presence.presence === 'string' ?
+        presence.presence.toLowerCase() : 'offline';
+    const statusDotClass = presenceState === 'online' ? styles.onlineDot :
+        presenceState === 'idle' ? styles.idleDot :
+            presenceState === 'dnd' ? styles.dndDot : styles.offlineDot;
+    const rawStatusText = presence && typeof presence.status === 'string' ? presence.status : '';
+    const hasStatusText = rawStatusText.replace(/[\s\u2800\u3164\uFFA0]/g, '').length > 0;
+    const statusText = hasStatusText ? rawStatusText :
+        `${presenceState.charAt(0).toUpperCase()}${presenceState.slice(1)}`;
     const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
     const badges = Array.isArray(profile.badges) ? profile.badges.slice(0, 6) : [];
 
@@ -396,10 +391,15 @@ const Profile = () => {
                         ) : null}
                         <div
                             className={styles.banner}
-                            style={{backgroundImage: `url(${rotur.banner(name)})`}}
+                            style={{backgroundImage: `url(${profile.banner || rotur.banner(name)})`}}
                         />
                         <div className={styles.profileBody}>
-                            <Avatar username={name} size={88} className={styles.avatar} />
+                            <Avatar
+                                username={name}
+                                src={profile.pfp}
+                                size={88}
+                                className={styles.avatar}
+                            />
                             <div className={styles.nameRow}>
                                 <h1>{profile.username || name}</h1>
                                 {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
@@ -407,7 +407,7 @@ const Profile = () => {
                             {presence ? (
                                 <span className={styles.userStatus}>
                                     <span className={statusDotClass} />
-                                    <RichText text={statusText || (isOnline ? 'Online' : 'Offline')} />
+                                    <RichText text={statusText} />
                                 </span>
                             ) : null}
                             {badges.length ? (
@@ -437,36 +437,55 @@ const Profile = () => {
                             </div>
                             <div className={styles.actions}>
                                 {user && !isSelf ? (
-                                    <button
-                                        className={profile.followed ? styles.followingButton : styles.followButton}
-                                        disabled={followBusy}
-                                        onClick={toggleFollow}
-                                    >
-                                        {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                                        {profile.followed ? 'Following' : 'Follow'}
-                                    </button>
-                                ) : null}
-                                {user && !isSelf && mwUser && mwUser.exists !== false ? <button className={styles.iconButton} disabled={safetyBusy} title={mwUser.viewerMuted ? 'Unmute MistWarp notifications' : 'Mute MistWarp notifications'} aria-label={mwUser.viewerMuted ? 'Unmute MistWarp notifications' : 'Mute MistWarp notifications'} onClick={() => toggleSafety('mute')}><VolumeX size={15} /></button> : null}
-                                {user && !isSelf && mwUser && mwUser.exists !== false ? <button className={mwUser.viewerBlocked ? styles.blockedButton : styles.iconButton} disabled={safetyBusy} title={mwUser.viewerBlocked ? 'Unblock on MistWarp' : 'Block on MistWarp'} aria-label={mwUser.viewerBlocked ? 'Unblock on MistWarp' : 'Block on MistWarp'} onClick={() => toggleSafety('block')}><Ban size={15} /></button> : null}
-                                {user && !isSelf ? (
-                                    <button
-                                        className={styles.followButton}
-                                        title={`Send credits to ${profile.username || name}`}
-                                        onClick={() => setDonating(true)}
-                                    >
-                                        <Coins size={15} />
-                                        Donate
-                                    </button>
-                                ) : null}
-                                {user && !isSelf ? (
-                                    <button
-                                        className={styles.iconButton}
-                                        title="Report this user"
-                                        aria-label="Report this user"
-                                        onClick={() => setReporting(true)}
-                                    >
-                                        <Flag size={15} />
-                                    </button>
+                                    <React.Fragment>
+                                        <div className={styles.primaryActions}>
+                                            <button
+                                                className={profile.followed ? styles.followingButton : styles.followButton}
+                                                disabled={followBusy}
+                                                onClick={toggleFollow}
+                                            >
+                                                {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                                                {profile.followed ? 'Following' : 'Follow'}
+                                            </button>
+                                            <button
+                                                className={styles.followButton}
+                                                title={`Send credits to ${profile.username || name}`}
+                                                onClick={() => setDonating(true)}
+                                            >
+                                                <Coins size={15} />
+                                                Donate
+                                            </button>
+                                        </div>
+                                        <div className={styles.utilityActions}>
+                                            {mwUser && mwUser.exists !== false ? (
+                                                <button
+                                                    className={styles.iconButton}
+                                                    disabled={safetyBusy}
+                                                    onClick={() => toggleSafety('mute')}
+                                                >
+                                                    <VolumeX size={15} />
+                                                    {mwUser.viewerMuted ? 'Unmute' : 'Mute'}
+                                                </button>
+                                            ) : null}
+                                            {mwUser && mwUser.exists !== false ? (
+                                                <button
+                                                    className={mwUser.viewerBlocked ? styles.blockedButton : styles.iconButton}
+                                                    disabled={safetyBusy}
+                                                    onClick={() => toggleSafety('block')}
+                                                >
+                                                    <Ban size={15} />
+                                                    {mwUser.viewerBlocked ? 'Unblock' : 'Block'}
+                                                </button>
+                                            ) : null}
+                                            <button
+                                                className={styles.iconButton}
+                                                onClick={() => setReporting(true)}
+                                            >
+                                                <Flag size={15} />
+                                                Report
+                                            </button>
+                                        </div>
+                                    </React.Fragment>
                                 ) : null}
                                 {isSelf ? (
                                     <a

@@ -1265,6 +1265,145 @@
     box-shadow: var(--card-shadow);
 }
 
+.forkModal {
+    max-width: 500px;
+}
+
+.forkIntro {
+    margin: 0 0 18px;
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.forkField {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.forkField input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+    font-weight: 500;
+}
+
+.forkField input:focus {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent-soft);
+}
+
+.forkSummary {
+    display: grid;
+    gap: 8px;
+    margin: 18px 0;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    font-size: 12px;
+}
+
+.forkSummary div {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 10px;
+}
+
+.forkSummary dt {
+    color: var(--text-dim);
+}
+
+.forkSummary dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.conflictEditor {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0;
+    padding: 16px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+}
+
+.conflictEditor h4,
+.conflictEditor p {
+    margin: 0;
+}
+
+.conflictEditor p {
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.conflictFile {
+    display: grid;
+    gap: 6px;
+    color: var(--mw-text);
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.conflictFile textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--mw-text);
+    font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    tab-size: 4;
+}
+
+.binaryConflict {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.binaryConflict div {
+    display: flex;
+    gap: 6px;
+}
+
+.binaryConflict button {
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    cursor: pointer;
+}
+
+.binaryConflict .binaryChoiceActive {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
 .confirmTitle {
     margin: 0 0 10px;
     font-size: 18px;

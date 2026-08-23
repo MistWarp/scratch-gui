@@ -1,0 +1,81 @@
+.graph {
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.canvas {
+    flex: 0 0 auto;
+}
+
+.canvas svg {
+    display: block;
+}
+
+.commits {
+    flex: 1;
+    min-width: 340px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.commit {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 14px 0 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.commit:last-child {
+    border-bottom: 0;
+}
+
+.subject,
+.meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.subject > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.branch {
+    flex: 0 0 auto;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.meta {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.meta code {
+    color: inherit;
+}
+
+@media (max-width: 620px) {
+    .commits {
+        min-width: 260px;
+    }
+
+    .meta time {
+        display: none;
+    }
+}
