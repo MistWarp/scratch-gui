@@ -57,6 +57,23 @@ body {
     flex: 1;
 }
 
+.mw-skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 1000;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    font-weight: 700;
+    transform: translateY(-160%);
+}
+
+.mw-skip-link:focus {
+    transform: translateY(0);
+}
+
 body[data-splash-theme] {
     background: var(--bg);
 }

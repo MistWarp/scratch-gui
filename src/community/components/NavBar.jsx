@@ -10,23 +10,29 @@ import Avatar from './Avatar.jsx';
 import setFaviconBadge from '../faviconBadge';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
+import {useCommunityIntl} from '../i18n.jsx';
 import styles from './NavBar.module.css';
 
 const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 
-const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onSubmit, open, projects, people, spaces, onProject, onProfile, onSpace}) => (
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onSubmit, open, projects, people, spaces, onProject, onProfile, onSpace, searchLabel, suggestionId}) => (
     <form className={`${styles.search} ${className}`} onSubmit={onSubmit} ref={containerRef}>
         <Search size={17} className={styles.searchIcon} />
         <input
             ref={inputRef}
             className={styles.searchInput}
-            placeholder="Search projects, people, and spaces"
+            placeholder={searchLabel}
+            aria-label={searchLabel}
+            role="combobox"
+            aria-expanded={Boolean(open)}
+            aria-controls={suggestionId}
+            aria-autocomplete="list"
             value={query}
             onChange={event => onQuery(event.target.value)}
             onFocus={onFocus}
         />
         {open && (people.length || projects.length || spaces.length) ? (
-            <div className={styles.suggestions}>
+            <div className={styles.suggestions} id={suggestionId} role="listbox">
                 {projects.map(project => (
                     <button key={project.id} type="button" className={styles.suggestion} onClick={() => onProject(project.id)}>
                         <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
@@ -55,6 +61,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
 
 const NavBar = () => {
     const {user, loading, login, logout} = useUser();
+    const {t} = useCommunityIntl();
     const [loginError, setLoginError] = useState('');
     const [signingIn, setSigningIn] = useState(false);
     const [query, setQuery] = useState('');
@@ -231,6 +238,7 @@ const NavBar = () => {
                 <Link
                     to="/"
                     className={styles.brand}
+                    aria-label="MistWarp"
                 >
                     <img
                         className={styles.logo}
@@ -240,27 +248,26 @@ const NavBar = () => {
                     <span className={styles.wordmark}>MistWarp</span>
                 </Link>
 
-                <nav className={styles.links}>
-                    <a
-                        href={editorUrl()}
-                        className={styles.link}
-                    >
+                <nav className={styles.links} aria-label={t('nav.main')}>
+                    <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')}>
                         <Plus size={17} />
-                        <span className={styles.linkLabel}>Create</span>
+                        <span className={styles.linkLabel}>{t('nav.create')}</span>
                     </a>
                     <Link
                         to="/explore"
                         className={styles.link}
+                        aria-label={t('nav.explore')}
                     >
                         <Compass size={17} />
-                        <span className={styles.linkLabel}>Explore</span>
+                        <span className={styles.linkLabel}>{t('nav.explore')}</span>
                     </Link>
                     <Link
                         to="/spaces"
                         className={styles.link}
+                        aria-label={t('nav.spaces')}
                     >
                         <Layers3 size={17} />
-                        <span className={styles.linkLabel}>Spaces</span>
+                        <span className={styles.linkLabel}>{t('nav.spaces')}</span>
                     </Link>
                 </nav>
 
@@ -282,6 +289,8 @@ const NavBar = () => {
                     onProject={goToProject}
                     onProfile={goToProfile}
                     onSpace={goToSpace}
+                    searchLabel={t('nav.search')}
+                    suggestionId="mw-search-suggestions-desktop"
                 />
 
                 <div className={styles.account}>
@@ -368,6 +377,8 @@ const NavBar = () => {
                 onProject={goToProject}
                 onProfile={goToProfile}
                 onSpace={goToSpace}
+                searchLabel={t('nav.search')}
+                suggestionId="mw-search-suggestions-mobile"
             />
             {loginError ? (
                 <div

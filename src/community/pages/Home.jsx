@@ -14,6 +14,8 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import logo from '../assets/mistwarp-logo.png';
+import {track} from '../analytics.js';
+import {useCommunityIntl} from '../i18n.jsx';
 import styles from './Home.module.css';
 
 const ACTIVITY_ICONS = {love: Heart, favorite: Star, share: Globe, remix: GitFork, review: Star};
@@ -220,12 +222,16 @@ const NotificationsSection = ({user, login}) => {
 
 const Home = () => {
     const {user, login} = useUser();
+    const {t} = useCommunityIntl();
     const [projects, setProjects] = useState({trending: null, recent: null});
     const [projectAttempt, setProjectAttempt] = useState(0);
     const retryProjects = () => {
         setProjects({trending: null, recent: null});
         setProjectAttempt(value => value + 1);
     };
+    useEffect(() => {
+        track('home_view');
+    }, []);
     useEffect(() => {
         let active = true;
         Promise.all([
@@ -243,12 +249,12 @@ const Home = () => {
         <main className={styles.page}>
             <section className={styles.hero}>
                 <div className={styles.heroText}>
-                    <h1>Build, share, and remix projects together.</h1>
-                    <p>A visual coding community on the MistWarp editor, with version control, forking, and pull requests behind every project.</p>
+                    <h1>{t('home.title')}</h1>
+                    <p>{t('home.lead')}</p>
                     <div className={styles.heroActions}>
-                        <a className={styles.primaryButton} href={editorUrl()}>Start creating</a>
-                        {user ? <Link className={styles.secondaryButton} to="/explore">Explore projects</Link> : <button className={styles.secondaryButton} onClick={login}>Sign in with Rotur</button>}
-                        <a className={styles.secondaryButton} href="https://github.com/mistwarp" target="_blank" rel="noreferrer"><Github size={16} />Follow on GitHub</a>
+                        <a className={styles.primaryButton} href={editorUrl()}>{t('home.start')}</a>
+                        {user ? <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link> : <button className={styles.secondaryButton} onClick={login}>{t('home.signin')}</button>}
+                        <a className={styles.secondaryButton} href="https://github.com/mistwarp" target="_blank" rel="noreferrer"><Github size={16} />{t('home.github')}</a>
                     </div>
                 </div>
                 <div className={styles.heroArt}><img src={logo} alt="" className={styles.heroLogo} /></div>

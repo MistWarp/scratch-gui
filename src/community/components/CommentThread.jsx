@@ -10,6 +10,14 @@ import {timeAgo, sameUser, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
+const COMMENT_KINDS = [
+    {value: 'comment', label: 'Comment'},
+    {value: 'bug', label: 'Bug report'},
+    {value: 'suggestion', label: 'Suggestion'},
+    {value: 'question', label: 'Question'}
+];
+const kindLabel = kind => COMMENT_KINDS.find(item => item.value === kind)?.label || 'Comment';
+
 const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, canDelete, canReport, isReply, id}) => (
     <div id={id} className={isReply ? styles.replyRow : styles.row}>
         <Link to={`/users/${comment.author}`}>
@@ -24,6 +32,11 @@ const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, ca
                     to={`/users/${comment.author}`}
                     className={styles.author}
                 >{comment.author}</Link>
+                {!isReply && comment.kind && comment.kind !== 'comment' ? (
+                    <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
+                        {kindLabel(comment.kind)}
+                    </span>
+                ) : null}
                 {Number.isFinite(comment.playtimeMs) ? (
                     <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
                 ) : null}
@@ -71,13 +84,33 @@ const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, ca
     </div>
 );
 
-const InlineComposer = ({user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small}) => (
+const InlineComposer = ({
+    user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small, kind, onKindChange,
+    composerAction
+}) => (
     <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
         <Avatar
             username={user.username}
             size={small ? 28 : 36}
         />
         <div className={styles.composerBody}>
+            {!small && (onKindChange || composerAction) ? (
+                <div className={styles.composerToolbar}>
+                    {onKindChange ? (
+                        <select
+                            className={styles.kindSelect}
+                            value={kind}
+                            onChange={event => onKindChange(event.target.value)}
+                            aria-label="Comment type"
+                        >
+                            {COMMENT_KINDS.map(item => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                        </select>
+                    ) : null}
+                    {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
+                </div>
+            ) : null}
             <textarea
                 className={styles.input}
                 placeholder={placeholder}
@@ -103,10 +136,15 @@ const InlineComposer = ({user, value, onChange, onSubmit, onCancel, placeholder,
     </div>
 );
 
-const CommentThread = ({source, canModerate, disabled, disabledReason, reportContext}) => {
+const CommentThread = ({
+    source, canModerate, disabled, disabledReason, reportContext, projectComments = false, composerAction
+}) => {
     const {user} = useUser();
     const [comments, setComments] = useState([]);
     const [content, setContent] = useState('');
+    const [kind, setKind] = useState('comment');
+    const [kindFilter, setKindFilter] = useState('all');
+    const [search, setSearch] = useState('');
     const [replyTo, setReplyTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [busy, setBusy] = useState(false);
@@ -164,13 +202,14 @@ const CommentThread = ({source, canModerate, disabled, disabledReason, reportCon
         }
     }, [comments]);
 
-    const submit = async (text, parent) => {
+    const submit = async (text, parent, commentKind = 'comment') => {
         if (!text.trim() || busy) return;
         setBusy(true);
         setError(null);
         try {
-            await source.add(text.trim(), parent);
+            await source.add(text.trim(), parent, commentKind);
             setContent('');
+            setKind('comment');
             setReplyText('');
             setReplyTo(null);
             load();
@@ -237,26 +276,66 @@ const CommentThread = ({source, canModerate, disabled, disabledReason, reportCon
         return {roots: comments.filter(c => !c.parent), replyMap: map};
     }, [comments]);
     const repliesOf = parentId => replyMap.get(parentId) || [];
+    const filteredRoots = useMemo(() => {
+        const query = search.trim().toLowerCase();
+        return roots.filter(comment => {
+            const commentKind = comment.kind || 'comment';
+            if (projectComments && kindFilter !== 'all' && commentKind !== kindFilter) return false;
+            if (!projectComments || !query) return true;
+            const matches = item => `${item.author || ''}\n${item.content || ''}`.toLowerCase().includes(query);
+            return matches(comment) || (replyMap.get(comment.id) || []).some(matches);
+        });
+    }, [roots, replyMap, kindFilter, search, projectComments]);
 
     return (
         <div className={styles.thread}>
             {disabled ? (
-                <p className={styles.signedOut}>{disabledReason || 'Comments are turned off.'}</p>
+                <>
+                    {composerAction ? (
+                        <div className={styles.disabledComposerAction}>{composerAction}</div>
+                    ) : null}
+                    <p className={styles.signedOut}>{disabledReason || 'Comments are turned off.'}</p>
+                </>
             ) : user ? (
                 <InlineComposer
                     user={user}
                     value={content}
                     onChange={setContent}
-                    onSubmit={() => submit(content, null)}
+                    onSubmit={() => submit(content, null, kind)}
                     placeholder="Add a comment"
                     busy={busy}
                     error={replyTo === null ? error : null}
+                    kind={projectComments ? kind : null}
+                    onKindChange={projectComments ? setKind : null}
+                    composerAction={composerAction}
                 />
             ) : (
                 <p className={styles.signedOut}>Sign in to comment.</p>
             )}
 
-            {roots.length ? roots.map(comment => (
+            {projectComments && comments.length ? (
+                <div className={styles.commentTools}>
+                    <input
+                        type="search"
+                        value={search}
+                        placeholder="Search comments"
+                        aria-label="Search comments"
+                        onChange={event => setSearch(event.target.value)}
+                    />
+                    <select
+                        value={kindFilter}
+                        aria-label="Filter comments by type"
+                        onChange={event => setKindFilter(event.target.value)}
+                    >
+                        <option value="all">All types</option>
+                        {COMMENT_KINDS.map(item => (
+                            <option key={item.value} value={item.value}>{item.label}</option>
+                        ))}
+                    </select>
+                </div>
+            ) : null}
+
+            {filteredRoots.length ? filteredRoots.map(comment => (
                 <div
                     key={comment.id}
                     id={`comment-group-${comment.id}`}
@@ -331,7 +410,8 @@ const CommentThread = ({source, canModerate, disabled, disabledReason, reportCon
                 </div>
             )) : (
                 <p className={styles.empty}>
-                    {loadFailed ? 'Comments could not be loaded right now.' : 'No comments yet.'}
+                    {loadFailed ? 'Comments could not be loaded right now.' :
+                        comments.length ? 'No comments match those filters.' : 'No comments yet.'}
                 </p>
             )}
             {reportId ? (

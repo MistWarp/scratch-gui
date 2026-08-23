@@ -3,7 +3,7 @@ import React, {useEffect, useState, useCallback} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
     ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark,
-    Bug, MessageSquare, Link2, UserCog, Plus, Trash2
+    Bug, Link2, UserCog, Plus, Trash2
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -26,7 +26,6 @@ const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: BarChart3},
     {key: 'buyers', label: 'Buyers', icon: Users},
     {key: 'diagnostics', label: 'Diagnostics', icon: Bug},
-    {key: 'feedback', label: 'Feedback', icon: MessageSquare},
     {key: 'preview', label: 'Preview links', icon: Link2},
     {key: 'team', label: 'Team', icon: UserCog},
     {key: 'settings', label: 'Settings', icon: SlidersHorizontal}

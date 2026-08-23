@@ -11,12 +11,25 @@ class ShareWindow extends React.Component {
         this.handleRetake = this.handleRetake.bind(this);
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
+        this.handleChangeMessage = this.handleChangeMessage.bind(this);
+        this.handleSkipVersion = this.handleSkipVersion.bind(this);
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
+        this.handleProgress = this.handleProgress.bind(this);
+        this.prepareThumbnail = this.prepareThumbnail.bind(this);
         this.fileInput = React.createRef();
+        this.agreementPromise = null;
+        this.thumbnailPreparation = null;
+        this.thumbnailPreparationSource = null;
         this.state = {
             title: props.initialTitle || 'Untitled',
+            changeMessage: '',
+            skipVersion: false,
             thumbnail: null,
+            thumbnailBlob: null,
             status: null,
+            phase: null,
+            loaded: 0,
+            total: 0,
             error: props.initialError ? props.initialError.message : null,
             errorCode: props.initialError ? props.initialError.code : null,
             notice: null,
@@ -27,22 +40,40 @@ class ShareWindow extends React.Component {
         };
     }
     componentDidMount () {
+        this.agreementPromise = request('/agreement').catch(() => null);
         if (this.props.action === 'update') {
             return;
         }
         captureThumbnailDataUri(this.props.vm).then(thumbnail => {
             if (thumbnail && !this.state.thumbnail) {
-                this.setState({thumbnail});
+                this.prepareThumbnail(thumbnail);
             }
         });
     }
     handleTitleChange (event) {
         this.setState({title: event.target.value});
     }
+    handleChangeMessage (event) {
+        this.setState({changeMessage: event.target.value, skipVersion: false});
+    }
+    handleSkipVersion () {
+        this.setState({skipVersion: true}, this.handlePublish);
+    }
+    prepareThumbnail (thumbnail) {
+        this.thumbnailPreparationSource = thumbnail;
+        this.setState({thumbnail, thumbnailBlob: null});
+        this.thumbnailPreparation = prepareThumbnailBlob(thumbnail).then(thumbnailBlob => {
+            if (this.thumbnailPreparationSource === thumbnail) {
+                this.setState({thumbnailBlob});
+            }
+            return thumbnailBlob;
+        });
+        return this.thumbnailPreparation;
+    }
     handleRetake () {
         captureThumbnailDataUri(this.props.vm).then(thumbnail => {
             if (thumbnail) {
-                this.setState({thumbnail});
+                this.prepareThumbnail(thumbnail);
             }
         });
     }
@@ -53,32 +84,54 @@ class ShareWindow extends React.Component {
             return;
         }
         const reader = new FileReader();
-        reader.onload = () => this.setState({thumbnail: reader.result});
+        reader.onload = () => this.prepareThumbnail(reader.result);
         reader.readAsDataURL(file);
+    }
+    handleProgress ({phase, message, loaded = 0, total = 0}) {
+        this.setState({phase, status: message, loaded, total});
     }
     async handlePublish () {
         if (this.state.status || this.state.agreeBusy) {
             return;
         }
         const isUpdate = this.props.action === 'update';
+        if (isUpdate && !this.state.skipVersion && !this.state.changeMessage.trim()) {
+            this.setState({error: 'Add a short note about what changed.'});
+            return;
+        }
 
-        // Check agreement acceptance before uploading
+        this.setState({
+            status: 'Checking your account',
+            phase: 'check',
+            loaded: 0,
+            total: 0,
+            error: null,
+            errorCode: null,
+            notice: null,
+            agreement: null
+        });
         try {
-            const agreementData = await request('/agreement');
-            const ag = agreementData.agreement;
-            if (ag.version > 0 && !ag.accepted) {
-                this.setState({agreement: ag, agreeError: ''});
+            const agreementData = await (this.agreementPromise || request('/agreement'));
+            const ag = agreementData && agreementData.agreement;
+            if (ag && ag.version > 0 && !ag.accepted) {
+                this.setState({status: null, phase: null, agreement: ag, agreeError: ''});
                 return;
             }
         } catch (e) {
             // proceed with upload if agreement check fails
         }
 
-        this.setState({status: 'Saving…', error: null, errorCode: null, notice: null, agreement: null});
+        this.setState({status: 'Preparing your project', phase: 'package'});
         let thumbnailBlob = null;
         if (!isUpdate && this.state.thumbnail) {
             try {
-                thumbnailBlob = await prepareThumbnailBlob(this.state.thumbnail);
+                thumbnailBlob = this.state.thumbnailBlob;
+                if (!thumbnailBlob && this.thumbnailPreparationSource === this.state.thumbnail) {
+                    thumbnailBlob = await this.thumbnailPreparation;
+                }
+                if (!thumbnailBlob) {
+                    thumbnailBlob = await this.prepareThumbnail(this.state.thumbnail);
+                }
             } catch (e) {
                 thumbnailBlob = null;
                 this.setState({notice: 'Couldn\'t attach thumbnail; publishing without it.'});
@@ -88,14 +141,33 @@ class ShareWindow extends React.Component {
             const result = await publishToMistWarp({
                 vm: this.props.vm,
                 title: isUpdate ? null : this.state.title,
+                changeMessage: this.state.changeMessage,
+                commitChanges: !this.state.skipVersion,
                 thumbnailBlob,
                 updateOnly: isUpdate,
-                onProgress: ({message}) => this.setState({status: message})
+                onProgress: this.handleProgress
             });
-            this.setState({status: null, done: result});
+            const remoteWarnings = result.remoteWarnings || [];
+            this.setState({
+                status: null,
+                phase: null,
+                loaded: 0,
+                total: 0,
+                done: result,
+                notice: remoteWarnings.length ?
+                    `Saved to MistWarp, but ${remoteWarnings.map(remote => remote.name).join(', ')} could not sync.` :
+                    this.state.notice
+            });
             this.props.onPublished(result);
         } catch (e) {
-            this.setState({status: null, error: e.message || 'Could not save', errorCode: e.code || null});
+            this.setState({
+                status: null,
+                phase: null,
+                loaded: 0,
+                total: 0,
+                error: e.message || 'Could not save',
+                errorCode: e.code || null
+            });
         }
     }
 
@@ -103,9 +175,8 @@ class ShareWindow extends React.Component {
         this.setState({agreeBusy: true, agreeError: ''});
         try {
             await request('/agreement/accept', {method: 'POST'});
-            this.setState({agreeBusy: false, agreement: null});
-            // proceed with the save now that agreement is accepted
-            this.handlePublish();
+            this.agreementPromise = Promise.resolve({agreement: {version: 0, accepted: true}});
+            this.setState({agreeBusy: false, agreement: null}, this.handlePublish);
         } catch (e) {
             this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
         }
@@ -123,6 +194,51 @@ class ShareWindow extends React.Component {
                         {'Check project storage'}
                     </button>
                 )}
+            </div>
+        );
+    }
+    renderStatus () {
+        if (!this.state.status) return null;
+        const uploading = this.state.phase === 'upload';
+        const hasUploadTotal = uploading && this.state.total > 0;
+        const uploadComplete = hasUploadTotal && this.state.loaded >= this.state.total;
+        let detail = 'Nothing has been uploaded yet.';
+        if (this.state.phase === 'register') {
+            detail = 'Setting up the project page.';
+        } else if (this.state.phase === 'package') {
+            detail = 'Compressing the project and its version history on this device.';
+        } else if (uploading && uploadComplete) {
+            detail = 'Upload complete. MistWarp is validating and storing the files.';
+        } else if (uploading && hasUploadTotal) {
+            const loadedMb = (this.state.loaded / 1048576).toFixed(1);
+            const totalMb = (this.state.total / 1048576).toFixed(1);
+            detail = `${loadedMb} MB of ${totalMb} MB sent.`;
+        } else if (uploading) {
+            detail = 'Sending the project to MistWarp.';
+        } else if (this.state.phase === 'sync') {
+            detail = 'The project is saved. Updating its connected repositories.';
+        } else if (this.state.phase === 'finish') {
+            detail = 'The project is saved. Refreshing local version history.';
+        } else if (this.state.phase === 'publish') {
+            detail = 'Making the saved project visible to other people.';
+        }
+        const percent = hasUploadTotal ? Math.min(100, (this.state.loaded / this.state.total) * 100) : null;
+        return (
+            <div
+                className={styles.uploadStatus}
+                aria-live="polite"
+            >
+                <div className={styles.statusHeader}>
+                    <span className={styles.spinner} />
+                    <strong>{this.state.status}</strong>
+                </div>
+                <div className={styles.statusDetail}>{detail}</div>
+                <div className={styles.progressTrack}>
+                    <div
+                        className={percent === null ? styles.progressIndeterminate : styles.progressValue}
+                        style={percent === null ? null : {width: `${percent}%`}}
+                    />
+                </div>
             </div>
         );
     }
@@ -174,6 +290,7 @@ class ShareWindow extends React.Component {
                                 'Your project is saved to MistWarp. ' +
                                 'It stays private until you share it from its project page.'}
                         </p>
+                        {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                     </div>
                     <div className={styles.footer}>
                         <button
@@ -200,6 +317,16 @@ class ShareWindow extends React.Component {
                             {'Upload the current version of this project to MistWarp. ' +
                             'The title and thumbnail stay as they are; edit those on the project page.'}
                         </p>
+                        <label className={styles.label} htmlFor="mw-share-change">What changed?</label>
+                        <input
+                            id="mw-share-change"
+                            className={styles.input}
+                            value={this.state.changeMessage}
+                            maxLength={120}
+                            placeholder="For example: Added a new level"
+                            onChange={this.handleChangeMessage}
+                        />
+                        {this.renderStatus()}
                         {this.renderError()}
                     </div>
                     <div className={styles.footer}>
@@ -209,10 +336,15 @@ class ShareWindow extends React.Component {
                             disabled={!!this.state.status}
                         >Cancel</button>
                         <button
+                            className={styles.secondary}
+                            onClick={this.handleSkipVersion}
+                            disabled={!!this.state.status}
+                        >Skip</button>
+                        <button
                             className={styles.primary}
                             onClick={this.handlePublish}
-                            disabled={!!this.state.status}
-                        >{this.state.status || actionLabel}</button>
+                            disabled={!!this.state.status || !this.state.changeMessage.trim()}
+                        >{this.state.status ? 'Saving…' : actionLabel}</button>
                     </div>
                 </div>
             );
@@ -264,6 +396,7 @@ class ShareWindow extends React.Component {
                     {this.state.notice ? (
                         <div className={styles.notice}>{this.state.notice}</div>
                     ) : null}
+                    {this.renderStatus()}
                     {this.renderError()}
                 </div>
                 <div className={styles.footer}>
@@ -276,7 +409,7 @@ class ShareWindow extends React.Component {
                         className={styles.primary}
                         onClick={this.handlePublish}
                         disabled={!!this.state.status || !this.state.title.trim()}
-                    >{this.state.status || actionLabel}</button>
+                    >{this.state.status ? 'Saving…' : actionLabel}</button>
                 </div>
             </div>
         );

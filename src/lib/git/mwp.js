@@ -164,10 +164,12 @@ const exportCurrentMwp = async metadata => {
     return {blob, manifest};
 };
 
-const createMwp = async ({vm, projectId, remixParent, baseCommit, message = 'Save project'} = {}) => {
+const createMwp = async ({
+    vm, projectId, remixParent, baseCommit, message = 'Save project', commitChanges = true
+} = {}) => {
     if (!(await repoExists())) {
-        await initRepo({defaultBranch: 'main', vm});
-    } else if (vm) {
+        await initRepo({defaultBranch: 'main', vm, initialMessage: message});
+    } else if (vm && commitChanges) {
         try {
             await commitProject({vm, message, author: getDefaultAuthor()});
         } catch (error) {
@@ -232,6 +234,53 @@ const prepareMwpPull = async ({target, source, pullId, baseCommit, headCommit}) 
 const restorePreviousRepo = async previous => {
     if (previous) await importMwp(previous);
     else await deleteRepo();
+};
+
+const restoreMwpVersion = async ({workspace, oid, message} = {}) => {
+    if (!workspace || !oid) throw new Error('Choose a version to restore');
+    const previous = (await repoExists()) ? (await exportCurrentMwp({})).blob : null;
+    try {
+        const manifest = await importMwp(workspace);
+        const fs = getFs();
+        const branch = await git.currentBranch({fs, dir: REPO_DIR, fullname: false}) || manifest.branch || 'main';
+        const head = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
+        if (head === oid) throw new Error('This is already the current version');
+        const target = await git.readCommit({fs, dir: REPO_DIR, oid});
+        const author = getDefaultAuthor();
+        const identity = {
+            ...author,
+            timestamp: Math.floor(Date.now() / 1000),
+            timezoneOffset: new Date().getTimezoneOffset()
+        };
+        const restoredHead = await git.writeCommit({
+            fs,
+            dir: REPO_DIR,
+            commit: {
+                tree: target.commit.tree,
+                parent: [head],
+                author: identity,
+                committer: identity,
+                message: message || `Restored version ${oid.slice(0, 7)}`
+            }
+        });
+        await git.writeRef({
+            fs,
+            dir: REPO_DIR,
+            ref: `refs/heads/${branch}`,
+            value: restoredHead,
+            force: true
+        });
+        await git.checkout({fs, dir: REPO_DIR, ref: branch, force: true});
+        const mwp = await exportCurrentMwp({
+            projectId: manifest.projectId,
+            remixParent: manifest.remixParent,
+            baseCommit: manifest.baseCommit
+        });
+        const sb3 = await buildSb3FromCurrentRepo();
+        return {mwp: mwp.blob, sb3, manifest: mwp.manifest, expectedHead: head};
+    } finally {
+        await restorePreviousRepo(previous);
+    }
 };
 
 const inspectMwpPull = async options => {
@@ -313,6 +362,7 @@ export {
     importMwp,
     inspectMwpPull,
     loadMwp,
+    restoreMwpVersion,
     startMwpMerge,
     updateMergeConflict
 };

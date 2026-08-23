@@ -16,6 +16,7 @@ import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
 import ShareButton from './share-button.jsx';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import requestVersionMessage from '../../lib/mw/request-version-message.jsx';
 import {
     getRememberedPlatformProjectState,
     getMistWarpAction,
@@ -56,6 +57,11 @@ import {
 } from '../../lib/git/browser-git';
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
 import {createMwp} from '../../lib/git/mwp.js';
+import {
+    getProjectHistoryState,
+    preloadProjectHistory,
+    subscribeProjectHistory
+} from '../../lib/git/project-history.js';
 import downloadBlob from '../../lib/utils/download-blob.js';
 import RestorePointAPI from '../../lib/api/restore-points';
 
@@ -171,8 +177,8 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench, Send,
-    Download, AppWindow, Computer, Shield, Code, Code2, MessageCircle, TerminalSquare,
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
+    Download, AppWindow, Computer, Shield, Code, Code2, TerminalSquare,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle
 } from 'lucide-react';
 
@@ -302,6 +308,8 @@ const addonMessage = (intl, addonId) => (id, values) => intl.formatMessage({
 class MenuBar extends React.Component {
     constructor (props) {
         super(props);
+        const history = getProjectHistoryState();
+        const historyData = history.phase === 'ready' && history.data ? history.data : null;
         this.state = {
             autosaveTimeRemaining: 0,
             autosavePaused: false,
@@ -310,8 +318,8 @@ class MenuBar extends React.Component {
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
             canRedo: true,
-            gitRepoExists: false,
-            gitRemotes: [],
+            gitRepoExists: Boolean(historyData && historyData.status && historyData.status.initialized),
+            gitRemotes: historyData && Array.isArray(historyData.remotes) ? historyData.remotes : [],
             mwpFileHandle: null,
             menuCollapsed: false,
             moreMenuOpen: false,
@@ -385,6 +393,17 @@ class MenuBar extends React.Component {
         this.observeMenuBarWidth();
         this.startAutosaveCountdown();
         this.refreshMistWarpShared();
+        this.disposeProjectHistory = subscribeProjectHistory(historyState => {
+            if (historyState.phase === 'loading') {
+                this.setState({gitRepoExists: false, gitRemotes: []});
+                return;
+            }
+            if (historyState.phase !== 'ready' || !historyState.data) return;
+            this.setState({
+                gitRepoExists: Boolean(historyState.data.status && historyState.data.status.initialized),
+                gitRemotes: Array.isArray(historyState.data.remotes) ? historyState.data.remotes : []
+            });
+        });
         if (this.blockCountRef.current) {
             this.blockCountController = initBlockCount({
                 vm: this.props.vm,
@@ -434,6 +453,7 @@ class MenuBar extends React.Component {
         document.removeEventListener('mousedown', this.handleDocumentMouseDown);
         if (this.blockCountController) this.blockCountController.destroy();
         if (this.disposeMenuBarSettings) this.disposeMenuBarSettings();
+        if (this.disposeProjectHistory) this.disposeProjectHistory();
         if (this.menuResizeObserver) {
             this.menuResizeObserver.disconnect();
             this.menuResizeObserver = null;
@@ -630,8 +650,14 @@ class MenuBar extends React.Component {
     }
 
     async refreshGitMenuState () {
-        // Keep this cheap (no project re-serialization): existence + remotes only.
-        // "Has changes" is derived from the redux projectChanged flag in render.
+        const history = getProjectHistoryState();
+        if (history.phase === 'ready' && history.data) {
+            this.setState({
+                gitRepoExists: Boolean(history.data.status && history.data.status.initialized),
+                gitRemotes: Array.isArray(history.data.remotes) ? history.data.remotes : []
+            });
+            return;
+        }
         try {
             if (!(await repoExists())) {
                 this.setState({gitRepoExists: false, gitRemotes: []});
@@ -738,6 +764,7 @@ class MenuBar extends React.Component {
                     message: message.trim(),
                     author: getDefaultAuthor()
                 });
+                await preloadProjectHistory(this.props.vm, {force: true});
                 this.props.onGitStatusDone('gitCommitSuccess');
             } catch (e) {
                 console.error(e);
@@ -755,14 +782,24 @@ class MenuBar extends React.Component {
     async saveMwp (saveAs) {
         this.props.onRequestCloseFile();
         try {
+            let message = 'Initial version';
+            let commitChanges = true;
+            if (await repoExists()) {
+                const choice = await requestVersionMessage();
+                if (choice === null) return;
+                commitChanges = choice !== false;
+                if (commitChanges) message = choice;
+            }
             const platformProject = getRememberedPlatformProjectState();
             const exported = await createMwp({
                 vm: this.props.vm,
                 projectId: platformProject && platformProject.id,
                 remixParent: platformProject && platformProject.remixParent,
                 baseCommit: platformProject && platformProject.remixBaseCommit,
-                message: 'Export MistWarp project'
+                message,
+                commitChanges
             });
+            await preloadProjectHistory(this.props.vm, {force: true});
             const filename = `${this.props.projectTitle || 'MistWarp Project'}.mwp`;
             let handle = saveAs ? null : this.state.mwpFileHandle;
             if (!handle && this.props.showSaveFilePicker) {
@@ -1653,24 +1690,28 @@ class MenuBar extends React.Component {
                                     )}
                                     {this.props.roturReady ? (
                                         <MenuSection>
-                                            {mistwarpAction ? (
-                                                <MenuItem onClick={this.handleClickMistWarpShare}>
-                                                    <Globe />
-                                                    {mistwarpAction === 'remix' ? (
-                                                        <FormattedMessage
-                                                            defaultMessage="Remix to MistWarp"
-                                                            description="File menu item to remix a MistWarp project"
-                                                            id="mw.menuBar.remix"
-                                                        />
-                                                    ) : (
-                                                        <FormattedMessage
-                                                            defaultMessage="Save to MistWarp"
-                                                            description="File menu item to save the project to MistWarp"
-                                                            id="mw.menuBar.share"
-                                                        />
-                                                    )}
-                                                </MenuItem>
-                                            ) : null}
+                                            <MenuItem
+                                                disabled={!mistwarpAction}
+                                                onClick={this.handleClickMistWarpShare}
+                                                shortcut={this.state.mistwarpProject ?
+                                                    formatShortcutDisplay('Ctrl+S') : null}
+                                                title={mistwarpAction ? null : 'No new changes'}
+                                            >
+                                                <Globe />
+                                                {mistwarpAction === 'remix' ? (
+                                                    <FormattedMessage
+                                                        defaultMessage="Remix to MistWarp"
+                                                        description="File menu item to remix a MistWarp project"
+                                                        id="mw.menuBar.remix"
+                                                    />
+                                                ) : (
+                                                    <FormattedMessage
+                                                        defaultMessage="Save to MistWarp"
+                                                        description="File menu item to save the project to MistWarp"
+                                                        id="mw.menuBar.share"
+                                                    />
+                                                )}
+                                            </MenuItem>
                                             {this.state.mistwarpProject ? (
                                                 <MenuItem onClick={this.handleClickSeeMistWarpPage}>
                                                     <ExternalLink />
@@ -1693,28 +1734,29 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                         <MenuItem
                                             onClick={this.handleClickSaveMwp}
-                                            shortcut={formatShortcutDisplay('Ctrl+S')}
+                                            shortcut={this.state.mistwarpProject ?
+                                                null : formatShortcutDisplay('Ctrl+S')}
                                         >
-                                            <GitBranch />
+                                            <Save />
                                             <FormattedMessage
-                                                defaultMessage="Save MistWarp project"
-                                                description={
-                                                    'File menu item to save the native project with its Git history'
-                                                }
+                                                defaultMessage="Save to your computer"
+                                                description="File menu item to save the native project to the computer"
                                                 id="mw.menuBar.saveMwp"
                                             />
                                         </MenuItem>
-                                        <MenuItem
-                                            onClick={this.handleClickSaveMwpAs}
-                                            shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
-                                        >
-                                            <FileInput />
-                                            <FormattedMessage
-                                                defaultMessage="Save MistWarp project as…"
-                                                description="File menu item to save a new native MistWarp project file"
-                                                id="mw.menuBar.saveMwpAs"
-                                            />
-                                        </MenuItem>
+                                        {this.state.mwpFileHandle ? (
+                                            <MenuItem
+                                                onClick={this.handleClickSaveMwpAs}
+                                                shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                            >
+                                                <FileInput />
+                                                <FormattedMessage
+                                                    defaultMessage="Save as…"
+                                                    description="File menu item to save a new native project file"
+                                                    id="mw.menuBar.saveMwpAs"
+                                                />
+                                            </MenuItem>
+                                        ) : null}
                                         <SB3Downloader
                                             showSaveFilePicker={this.props.showSaveFilePicker}
                                         >
@@ -1748,72 +1790,25 @@ class MenuBar extends React.Component {
                                                                 id="mw.menuBar.exportSb3"
                                                             />
                                                         </MenuItem>
+                                                        {this.props.onClickPackager ? (
+                                                            <MenuItem
+                                                                onClick={this.handleClickPackager}
+                                                                shortcut={formatShortcutDisplay('Ctrl+P')}
+                                                            >
+                                                                <Package />
+                                                                <FormattedMessage
+                                                                    defaultMessage="Package project"
+                                                                    // eslint-disable-next-line max-len
+                                                                    description="Menu item to open the current project in the packager"
+                                                                    id="tw.menuBar.package"
+                                                                />
+                                                            </MenuItem>
+                                                        ) : null}
                                                     </Submenu>
                                                 </MenuItem>
                                             )}
                                         </SB3Downloader>
                                     </MenuSection>
-                                    {this.props.onClickPackager && (
-                                        <MenuSection>
-                                            <MenuItem
-                                                onClick={this.handleClickPackager}
-                                                shortcut={formatShortcutDisplay('Ctrl+P')}
-                                            >
-                                                <Package />
-                                                <FormattedMessage
-                                                    defaultMessage="Package project"
-                                                    // eslint-disable-next-line max-len
-                                                    description="Menu bar item to open the current project in the packager"
-                                                    id="tw.menuBar.package"
-                                                />
-                                            </MenuItem>
-                                        </MenuSection>
-                                    )}
-                                    {(
-                                        (this.state.gitRepoExists && this.props.projectChanged) ||
-                                        (this.state.gitRepoExists && this.state.gitRemotes.length > 0)
-                                    ) && (
-                                        <MenuSection>
-                                            {this.state.gitRepoExists && this.props.projectChanged && (
-                                                <MenuItem onClick={this.handleClickGitCommit}>
-                                                    <GitBranch />
-                                                    <FormattedMessage
-                                                        defaultMessage="Commit to Git…"
-                                                        description="Menu bar item to make a git commit with a message"
-                                                        id="mw.menuBar.gitCommit"
-                                                    />
-                                                </MenuItem>
-                                            )}
-                                            {this.state.gitRepoExists && this.state.gitRemotes.map(remote => (
-                                                <MenuItem
-                                                    key={`push-${remote.name}`}
-                                                    onClick={() => this.handleClickGitPush(remote.name)}
-                                                >
-                                                    <Send />
-                                                    <FormattedMessage
-                                                        defaultMessage="Push to {remote}"
-                                                        description="Menu bar item to push to a git remote"
-                                                        id="mw.menuBar.gitPush"
-                                                        values={{remote: remote.name}}
-                                                    />
-                                                </MenuItem>
-                                            ))}
-                                            {this.state.gitRepoExists && this.state.gitRemotes.map(remote => (
-                                                <MenuItem
-                                                    key={`pull-${remote.name}`}
-                                                    onClick={() => this.handleClickGitPull(remote.name)}
-                                                >
-                                                    <Download />
-                                                    <FormattedMessage
-                                                        defaultMessage="Pull from {remote}"
-                                                        description="Menu bar item to pull from a git remote"
-                                                        id="mw.menuBar.gitPull"
-                                                        values={{remote: remote.name}}
-                                                    />
-                                                </MenuItem>
-                                            ))}
-                                        </MenuSection>
-                                    )}
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickRestorePoints}
@@ -2031,16 +2026,6 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
-                                <MenuSection>
-                                    <MenuItemLink href="https://originchats.mistium.com?server=chats.mistium.com">
-                                        <MessageCircle />
-                                        <FormattedMessage
-                                            defaultMessage="originChats"
-                                            description="Menu bar item to join originChats"
-                                            id="tw.menuBar.joinDiscord"
-                                        />
-                                    </MenuItemLink>
-                                </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
                         {this.props.isTotallyNormal && (
@@ -2116,8 +2101,8 @@ class MenuBar extends React.Component {
                                     >
                                         <GitBranch />
                                         <FormattedMessage
-                                            defaultMessage="Git"
-                                            description="Menu bar item to open git window"
+                                            defaultMessage="Version history"
+                                            description="Menu bar item to open project version history"
                                             id="mw.menuBar.git"
                                         />
                                     </MenuItem>

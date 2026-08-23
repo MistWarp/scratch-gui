@@ -24,8 +24,8 @@ const openProjectActivity = projectId => openMistWarpCommunityWindow({
     title: 'Project activity',
     initialPath: `/project/${projectId}`,
     element: <MwProjectActivity projectId={projectId} />,
-    width: 620,
-    height: 680
+    width: 820,
+    height: 560
 });
 
 const NavItem = ({title, icon: Icon, onClick}) => {

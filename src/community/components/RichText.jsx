@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api, {projectUrl} from '../api';
+import styles from './RichText.module.css';
 
-const TOKEN = /https?:\/\/[^\s]+|@[A-Za-z0-9_]+/g;
+const MENTION = /^@[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
+const TOKEN = /https?:\/\/[^\s]+|@[A-Za-z0-9][A-Za-z0-9_-]{0,19}/g;
 
 const splitParts = text => {
     const parts = [];
@@ -12,7 +14,7 @@ const splitParts = text => {
     while ((match = TOKEN.exec(text)) !== null) {
         const start = match.index;
         const value = match[0];
-        if (value.startsWith('@') && start > 0 && /[A-Za-z0-9_]/.test(text[start - 1])) {
+        if (value.startsWith('@') && start > 0 && /[A-Za-z0-9_-]/.test(text[start - 1])) {
             continue;
         }
         parts.push(text.slice(last, start));
@@ -61,10 +63,11 @@ const projectIdFrom = url => {
 
 const RichText = ({text}) => splitParts(String(text || ''))
     .map((part, index) => {
-        if (/^@[A-Za-z0-9_]+$/.test(part)) {
+        if (MENTION.test(part)) {
             return (
                 <Link
                     key={index}
+                    className={styles.mention}
                     to={`/users/${part.slice(1)}`}
                 >{part}</Link>
             );

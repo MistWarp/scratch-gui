@@ -13,7 +13,6 @@ import RestorePointAPI from '../lib/api/restore-points.js';
 
 import {
     getDefaultAuthor,
-    getRepoStatus,
     getRepoChanges,
     getFs,
     REPO_DIR,
@@ -29,14 +28,12 @@ import {
     mergeBranchesApply,
     startEditorMerge,
     restoreProjectFromCurrentRef,
-    computeCommitGraph,
     getRemotes,
     addRemote,
     removeRemote,
     push,
     cloneRepo,
     repoHasFractch,
-    readReadme,
     writeReadme
 } from '../lib/git/browser-git.js';
 import {buildSb3FromFractchTree} from '../lib/git/fractch-tree.js';
@@ -56,8 +53,13 @@ import {
     getCommitParents,
     computeLineDiff
 } from '../lib/git/git-diff.js';
+import {TOKEN_KEY, authForRemoteUrl} from '../lib/git/sync-remotes.js';
+import {
+    getProjectHistoryState,
+    preloadProjectHistory,
+    subscribeProjectHistory
+} from '../lib/git/project-history.js';
 
-const TOKEN_KEY = 'mw:git-token';
 const DEFAULT_BRANCH_KEY = 'mw:git-default-branch';
 const AUTO_COMMIT_KEY = 'mw:git-autocommit';
 
@@ -83,23 +85,61 @@ const isDiffable = filepath => /\.(fractch|svg|json|txt|md)$/i.test(filepath || 
 // Cheap content signature so a live-refreshing diff only re-renders when it changed.
 const diffSignature = diff => (diff && Array.isArray(diff.hunks) ? JSON.stringify(diff.hunks) : '');
 
+const palette = [
+    '#4db6ac', '#9575cd', '#64b5f6',
+    '#f06292', '#ba68c8', '#4fc3f7',
+    '#81c784', '#ffb74d', '#e57373'
+];
+
+const stateFromHistory = (data, currentState = {}) => {
+    const status = data && data.status ? data.status : {};
+    const graph = data && data.graph ? data.graph : {branches: [], nodes: [], branchLogs: []};
+    const hasCommits = Array.isArray(status.commits) && status.commits.length > 0;
+    const branchColors = {};
+    (graph.branches || []).forEach((branch, index) => {
+        branchColors[branch] = palette[index % palette.length];
+    });
+    const remotes = Array.isArray(data && data.remotes) ? data.remotes : [];
+    return {
+        initialized: Boolean(status.initialized) && hasCommits,
+        currentBranch: status.currentBranch || null,
+        branches: status.branches || [],
+        commits: status.commits || [],
+        graphBranches: graph.branches || [],
+        graphNodes: graph.nodes || [],
+        graphBranchLogs: graph.branchLogs || [],
+        branchColors,
+        changes: status.changes || [],
+        remotes,
+        readmeContent: currentState.readmeDirty ? currentState.readmeContent : ((data && data.readme) || ''),
+        pushRemote: (remotes[0] && remotes[0].name) || currentState.pushRemote || 'origin',
+        pushBranch: currentState.pushBranch || status.currentBranch ||
+            (Array.isArray(status.branches) && status.branches.includes('main') ?
+                'main' : (status.branches && status.branches[0])) || ''
+    };
+};
+
 class TWGitModal extends React.Component {
     constructor (props) {
         super(props);
 
         const author = getDefaultAuthor();
+        const historyState = getProjectHistoryState();
+        const preloaded = historyState.phase === 'ready' ? stateFromHistory(historyState.data) : {};
 
         this.state = {
-            busy: false,
-            busyMessage: null,
+            busy: historyState.phase === 'loading',
+            busyMessage: historyState.phase === 'loading' ? 'Loading version history…' : null,
             busyProgress: null,
             error: null,
-            initialized: false,
-            currentBranch: null,
-            branches: [],
-            commits: [],
-            graphBranches: [],
-            graphNodes: [],
+            initialized: preloaded.initialized || false,
+            currentBranch: preloaded.currentBranch || null,
+            branches: preloaded.branches || [],
+            commits: preloaded.commits || [],
+            graphBranches: preloaded.graphBranches || [],
+            graphNodes: preloaded.graphNodes || [],
+            graphBranchLogs: preloaded.graphBranchLogs || [],
+            branchColors: preloaded.branchColors || {},
             commitMessage: '',
             authorName: author.name,
             authorEmail: author.email,
@@ -107,19 +147,19 @@ class TWGitModal extends React.Component {
             mergeSourceBranch: '',
             mergeConflicts: [],
             mergeResolutions: {},
-            changes: [],
+            changes: preloaded.changes || [],
             // Remotes
-            remotes: [],
+            remotes: preloaded.remotes || [],
             newRemoteName: 'origin',
             newRemoteUrl: '',
-            pushRemote: 'origin',
-            pushBranch: '',
+            pushRemote: preloaded.pushRemote || 'origin',
+            pushBranch: preloaded.pushBranch || '',
             remoteToken: readLocal(TOKEN_KEY, ''),
             // Clone
             cloneUrl: '',
             cloneConfirm: false,
             // Readme
-            readmeContent: '',
+            readmeContent: preloaded.readmeContent || '',
             readmeDirty: false,
             // Diff
             diffLoading: false,
@@ -151,6 +191,7 @@ class TWGitModal extends React.Component {
 
         bindAll(this, [
             'refresh',
+            'handleHistoryState',
             'pollChanges',
             'computeWorkingDiff',
             'handleProjectChanged',
@@ -209,7 +250,13 @@ class TWGitModal extends React.Component {
     }
 
     componentDidMount () {
-        this.refresh();
+        this._unsubscribeHistory = subscribeProjectHistory(this.handleHistoryState);
+        const historyState = getProjectHistoryState();
+        if (historyState.phase === 'ready') {
+            this.handleHistoryState(historyState);
+        } else if (historyState.phase !== 'loading') {
+            this.refresh();
+        }
         // Re-check working changes only when the VM reports an actual project
         // edit, debounced so a burst of edits triggers a single re-serialization.
         if (this.props.vm && typeof this.props.vm.on === 'function') {
@@ -218,12 +265,35 @@ class TWGitModal extends React.Component {
     }
 
     componentWillUnmount () {
+        if (this._unsubscribeHistory) this._unsubscribeHistory();
         if (this.props.vm && typeof this.props.vm.off === 'function') {
             this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
         }
         if (this._pollTimer) {
             clearTimeout(this._pollTimer);
             this._pollTimer = null;
+        }
+    }
+
+    handleHistoryState (historyState) {
+        if (historyState.phase === 'loading') {
+            this.setState({busy: true, busyMessage: 'Loading version history…', error: null});
+        } else if (historyState.phase === 'ready') {
+            this.setState(current => ({
+                ...stateFromHistory(historyState.data, current),
+                busy: false,
+                busyMessage: null,
+                busyProgress: null,
+                error: this.props.vm._mwHistoryBootstrapError ?
+                    `Version history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
+            }));
+        } else if (historyState.phase === 'error') {
+            this.setState({
+                busy: false,
+                busyMessage: null,
+                error: historyState.error && historyState.error.message ?
+                    historyState.error.message : 'Could not load version history'
+            });
         }
     }
 
@@ -308,59 +378,8 @@ class TWGitModal extends React.Component {
     async refresh () {
         this.setState({busy: true, busyMessage: 'Refreshing…', busyProgress: null, error: null});
         try {
-            const status = await getRepoStatus(this.props.vm);
-            const hasCommits = Array.isArray(status.commits) && status.commits.length > 0;
-            const graph = status.initialized ?
-                (await computeCommitGraph({depth: 50})) :
-                {branches: [], nodes: [], branchLogs: []};
-
-            const palette = [
-                '#4db6ac', '#9575cd', '#64b5f6',
-                '#f06292', '#ba68c8', '#4fc3f7',
-                '#81c784', '#ffb74d', '#e57373'
-            ];
-            const branchColors = {};
-            graph.branches.forEach((b, i) => {
-                branchColors[b] = palette[i % palette.length];
-            });
-
-            let remotes = [];
-            let readme = this.state.readmeContent;
-            if (status.initialized) {
-                try {
-                    remotes = await getRemotes(this.props.vm);
-                } catch (e) {
-                    remotes = [];
-                }
-                // Don't clobber unsaved README edits with the on-disk copy.
-                if (!this.state.readmeDirty) {
-                    try {
-                        readme = await readReadme();
-                    } catch (e) {
-                        readme = '';
-                    }
-                }
-            }
-
-            this.setState({
-                initialized: Boolean(status.initialized) && hasCommits,
-                currentBranch: status.currentBranch,
-                branches: status.branches,
-                commits: status.commits,
-                graphBranches: graph.branches,
-                graphNodes: graph.nodes,
-                graphBranchLogs: graph.branchLogs,
-                branchColors,
-                changes: status.changes,
-                remotes,
-                readmeContent: readme,
-                pushRemote: (remotes[0] && remotes[0].name) || this.state.pushRemote,
-                pushBranch: this.state.pushBranch ||
-                    status.currentBranch ||
-                    (Array.isArray(status.branches) && status.branches.includes('main') ?
-                        'main' : (status.branches && status.branches[0])) ||
-                    ''
-            });
+            const data = await preloadProjectHistory(this.props.vm, {force: true});
+            this.setState(current => stateFromHistory(data, current));
         } catch (err) {
             this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
@@ -500,7 +519,7 @@ class TWGitModal extends React.Component {
             await this.waitForPollIdle();
             const snapshot = await readSnapshotAtCommit(previous.oid);
             this.props.vm.quit();
-            await this.props.vm.loadProject(snapshot);
+            await this.props.vm.loadProject(snapshot, {skipGitImport: true});
 
             const headLine = head && head.commit && head.commit.message ? head.commit.message.split('\n')[0] : '';
             const undoMessage = `Undo: ${headLine || head.oid.slice(0, 7)}`;
@@ -742,11 +761,17 @@ class TWGitModal extends React.Component {
     }
 
     async handleAddRemote () {
-        const name = this.state.newRemoteName.trim();
         const url = this.state.newRemoteUrl.trim();
-        if (!name || !url) {
-            this.setState({error: 'Remote name and URL are required'});
+        if (!url) {
+            this.setState({error: 'Enter a repository URL'});
             return;
+        }
+        const existing = new Set((this.state.remotes || []).map(remote => remote.name));
+        let name = existing.size ? 'connected' : 'origin';
+        let suffix = 2;
+        while (existing.has(name)) {
+            name = `connected-${suffix}`;
+            suffix++;
         }
         this.setState({busy: true, busyMessage: 'Adding remote…', busyProgress: null, error: null});
         try {
@@ -782,9 +807,7 @@ class TWGitModal extends React.Component {
     async handlePush () {
         const remote = this.state.pushRemote;
         const branch = this.state.pushBranch || this.state.currentBranch;
-        const token = this.state.remoteToken;
-        // The commit author name doubles as the remote username (Settings tab).
-        const username = (this.state.authorName || '').trim();
+        const selected = (this.state.remotes || []).find(item => item.name === remote);
         if (!remote) {
             this.setState({error: 'Select a remote to push to'});
             return;
@@ -801,12 +824,7 @@ class TWGitModal extends React.Component {
                 ref: branch,
                 setUpstream: true,
                 onProgress: this.handleGitProgress,
-                // Standard Basic auth: commit author name as username, token as
-                // password (Gitea/GitLab/self-hosted). Falls back to token-as-username
-                // (GitHub PAT style) if no author name is set.
-                onAuth: () => (username ?
-                    {username, password: token} :
-                    {username: token || 'x-access-token', password: token})
+                onAuth: authForRemoteUrl(selected ? selected.url : '')
             });
             this.setState({error: null, busyMessage: 'Pushed'});
         } catch (err) {

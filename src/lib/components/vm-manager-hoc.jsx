@@ -73,8 +73,17 @@ const vmManagerHOC = function (WrappedComponent) {
         loadProject () {
             // tw: stop when loading new project
             this.props.vm.quit();
-            return this.props.vm.loadProject(this.props.projectData)
-                .then(() => {
+            const prepareProjectHistory = this.props.vm._mwPrepareProjectHistory;
+            this.props.vm._mwPrepareProjectHistory = null;
+            return this.props.vm.loadProject(this.props.projectData, {skipGitImport: true})
+                .then(async () => {
+                    if (prepareProjectHistory) {
+                        try {
+                            await prepareProjectHistory();
+                        } catch (error) {
+                            log.error('Could not preload MistWarp version history:', error);
+                        }
+                    }
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.

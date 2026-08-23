@@ -227,7 +227,7 @@ const clearWorkdirExceptGit = async pfs => {
     }
 };
 
-const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) => {
+const initRepo = async ({defaultBranch = 'main', vm = null, initialMessage = 'Initial version', onProgress} = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
     }
@@ -263,7 +263,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
             await git.commit({
                 fs,
                 dir: REPO_DIR,
-                message: 'Initialize repository',
+                message: initialMessage,
                 author: getDefaultAuthor()
             });
         } catch (e) {

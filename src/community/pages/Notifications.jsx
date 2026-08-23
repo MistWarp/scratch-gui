@@ -8,6 +8,7 @@ import {
 import {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import RichText from '../components/RichText.jsx';
 import {useUser} from '../UserContext.jsx';
 import {fetchNotifications, markNotificationsRead, subscribeNotifications} from '../../lib/rotur/client.js';
 import {timeAgo} from '../format';
@@ -84,15 +85,7 @@ const REPORT_OUTCOMES = {
 
 const escapeRegex = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Split text into plain segments and clickable URL segments.
-const linkify = text => {
-    const parts = String(text || '').split(/(https?:\/\/[^\s]+)/g);
-    return parts.map((part, i) => (
-        /^https?:\/\//.test(part) ? (
-            <a key={i} href={part} target="_blank" rel="noreferrer" className={styles.link}>{part}</a>
-        ) : part
-    ));
-};
+const linkify = text => <RichText text={text} />;
 
 // Generic notifications carry the sender in `title` (MistWarp posts
 // title = actor) and the full sentence in `body`; drop the duplicated

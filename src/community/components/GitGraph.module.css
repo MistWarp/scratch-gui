@@ -70,6 +70,27 @@
     color: inherit;
 }
 
+.restore {
+    margin-left: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.restore:hover:not(:disabled) {
+    border-color: var(--accent-strong);
+    color: var(--accent-strong);
+}
+
+.restore:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 @media (max-width: 620px) {
     .commits {
         min-width: 260px;
