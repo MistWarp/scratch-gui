@@ -39,6 +39,41 @@
     font-size: 16px;
 }
 
+.themeTabs {
+    display: flex;
+    gap: 4px;
+    margin: -8px -8px 22px;
+    padding: 6px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--mw-border);
+}
+
+.themeTab {
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--mw-text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 12px;
+}
+
+.themeTabActive {
+    background: var(--mw-accent);
+    color: var(--mw-accent-text);
+}
+
+.themeContent {
+    min-height: 220px;
+}
+
+.appearanceSection {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--mw-border);
+}
+
 .risk {
     margin: 0 0 14px;
     border: 1px solid color-mix(in srgb, #e0245e 35%, transparent);
@@ -65,6 +100,80 @@
     color: var(--text-dim);
     font-size: 14px;
     margin: 14px 0 0;
+}
+
+.note a,
+.card a {
+    color: var(--mw-accent);
+    text-decoration: underline;
+}
+
+.error {
+    color: var(--mw-danger);
+}
+
+.safetyGroups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.safetyGroups h3,
+.dataAction h3,
+.dangerZone h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.safetyRow,
+.dataAction {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-top: 1px solid var(--mw-border);
+    padding: 10px 0;
+}
+
+.safetyRow button,
+.dataAction button,
+.deleteButton {
+    border: 1px solid var(--mw-border);
+    border-radius: 8px;
+    background: var(--mw-input);
+    color: var(--mw-text);
+    padding: 8px 12px;
+}
+
+.dataAction p,
+.dangerZone p {
+    margin: 0;
+    color: var(--mw-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.dangerZone {
+    margin-top: 22px;
+    border: 1px solid color-mix(in srgb, var(--mw-danger) 50%, transparent);
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.dangerZone .field {
+    margin-top: 14px;
+}
+
+.deleteButton {
+    margin-top: 12px;
+    border-color: var(--mw-danger);
+    background: var(--mw-danger);
+    color: #fff;
+}
+
+.deleteButton:disabled {
+    opacity: .45;
+    cursor: not-allowed;
 }
 
 .field {
@@ -153,5 +262,9 @@
 
     .card {
         padding: 20px;
+    }
+
+    .safetyGroups {
+        grid-template-columns: 1fr;
     }
 }

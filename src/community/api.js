@@ -138,6 +138,14 @@ const api = {
         get: () => request('/me/settings'),
         put: settings => request('/me/settings', {method: 'PUT', body: settings})
     },
+    exportMyData: () => request('/me/export'),
+    deleteMyData: username => request('/me/data', {method: 'DELETE', body: {username}}),
+    safety: () => request('/me/safety'),
+    blockUser: name => request(`/me/blocks/${encodeURIComponent(name)}`, {method: 'POST'}),
+    unblockUser: name => request(`/me/blocks/${encodeURIComponent(name)}`, {method: 'DELETE'}),
+    muteUser: name => request(`/me/mutes/${encodeURIComponent(name)}`, {method: 'POST'}),
+    unmuteUser: name => request(`/me/mutes/${encodeURIComponent(name)}`, {method: 'DELETE'}),
+    support: ticket => request('/support', {method: 'POST', body: ticket}),
     notifications: () => request('/notifications'),
     readNotifications: () => request('/notifications/read', {method: 'POST'}),
     explore: ({sort = 'recent', q = '', tag = '', offset = 0, limit = 24} = {}) =>

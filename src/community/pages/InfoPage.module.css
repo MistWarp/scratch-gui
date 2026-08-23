@@ -1,0 +1,167 @@
+.page {
+    width: min(920px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 42px 0 88px;
+}
+
+.head {
+    margin-bottom: 28px;
+}
+
+.head h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+}
+
+.head p,
+.section p,
+.section li {
+    color: var(--mw-text-muted);
+    line-height: 1.65;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.section {
+    margin-bottom: 18px;
+    border: 1px solid var(--mw-border);
+    border-radius: 12px;
+    background: var(--mw-panel);
+    padding: 22px 24px;
+}
+
+.section h2 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.section h3 {
+    margin: 22px 0 8px;
+    font-size: 15px;
+}
+
+.section p:last-child,
+.section ul:last-child {
+    margin-bottom: 0;
+}
+
+.section a,
+.link {
+    color: var(--mw-accent);
+    text-decoration: underline;
+}
+
+.agreement {
+    white-space: pre-wrap;
+}
+
+.form {
+    display: grid;
+    gap: 16px;
+}
+
+.form label {
+    display: grid;
+    gap: 7px;
+    color: var(--mw-text-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form input,
+.form select,
+.form textarea {
+    width: 100%;
+    border: 1px solid var(--mw-border);
+    border-radius: 8px;
+    background: var(--mw-input);
+    color: var(--mw-text);
+    font: inherit;
+    padding: 10px 12px;
+}
+
+.form textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+    border-color: var(--mw-accent);
+    outline: none;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.error {
+    color: var(--mw-danger);
+}
+
+.success {
+    border: 1px solid color-mix(in srgb, #37a866 45%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, #37a866 12%, transparent);
+    padding: 12px 14px;
+}
+
+.statusRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--mw-border);
+}
+
+.statusRow:first-of-type {
+    border-top: 0;
+}
+
+.statusOk,
+.statusBad,
+.statusChecking {
+    font-weight: 700;
+}
+
+.statusOk {
+    color: #37a866;
+}
+
+.statusBad {
+    color: var(--mw-danger);
+}
+
+.statusChecking {
+    color: var(--mw-text-muted);
+}
+
+.notFound {
+    min-height: 55vh;
+    display: grid;
+    place-items: center;
+    text-align: center;
+}
+
+.notFound h1 {
+    margin: 0;
+    font-size: 72px;
+}
+
+@media (max-width: 700px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page {
+        padding-top: 28px;
+    }
+}

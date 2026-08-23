@@ -37,6 +37,8 @@ const Footer = () => (
                 </div>
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>More</span>
+                    <a href="/docs/">Documentation</a>
+                    <a href="https://packager.warp.mistium.com/">Packager</a>
                     <a
                         href="https://github.com/mistwarp"
                         target="_blank"
@@ -52,6 +54,12 @@ const Footer = () => (
                         rel="noreferrer"
                     >Rotur</a>
                     <a href="/credits">Credits</a>
+                </div>
+                <div className={styles.column}>
+                    <span className={styles.columnTitle}>Help and safety</span>
+                    <Link to="/support">Support</Link>
+                    <Link to="/trust">Trust, privacy, and terms</Link>
+                    <Link to="/status">Service status</Link>
                 </div>
             </div>
         </div>

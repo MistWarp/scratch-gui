@@ -161,6 +161,18 @@
     gap: 7px;
 }
 
+.bugLabel,
+.ideaLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bugLabel {
+    border-color: color-mix(in srgb, var(--mw-danger) 45%, transparent) !important;
+    color: var(--mw-danger) !important;
+}
+
 .labels > span {
     display: inline-flex;
     align-items: center;
@@ -282,7 +294,7 @@
 
 .filters {
     display: grid;
-    grid-template-columns: minmax(250px, 1fr) repeat(3, minmax(110px, 140px)) auto;
+    grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(100px, 130px)) auto;
     gap: 10px;
     margin-bottom: 18px;
 }
