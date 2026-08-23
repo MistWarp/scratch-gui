@@ -1,0 +1,58 @@
+.compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.compactIcon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--mw-border);
+    border-radius: 7px;
+    background: var(--mw-panel);
+    color: var(--mw-text-muted);
+}
+
+.screenReaderOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.grid {
+    display: grid;
+    gap: 8px;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: var(--bg-raised);
+    color: var(--accent-strong);
+}
+
+.card span {
+    display: grid;
+    gap: 1px;
+}
+
+.card strong {
+    font-size: 13px;
+}
+
+.card small {
+    color: var(--text-faint);
+    font-size: 11px;
+}

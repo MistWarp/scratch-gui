@@ -309,39 +309,20 @@
 }
 
 .controlOption span,
-.controlOptionActive span,
-.controlCard span {
+.controlOptionActive span {
     display: grid;
     gap: 1px;
 }
 
 .controlOption strong,
-.controlOptionActive strong,
-.controlCard strong {
+.controlOptionActive strong {
     font-size: 13px;
 }
 
 .controlOption small,
-.controlOptionActive small,
-.controlCard small {
+.controlOptionActive small {
     color: var(--text-faint);
     font-size: 11px;
-}
-
-.controlGrid {
-    display: grid;
-    gap: 8px;
-}
-
-.controlCard {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 12px;
-    border: 1px solid var(--border-soft);
-    border-radius: 9px;
-    background: var(--bg-raised);
-    color: var(--accent-strong);
 }
 
 .remixOf {
