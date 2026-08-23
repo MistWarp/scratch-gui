@@ -250,6 +250,7 @@ const Project = () => {
     }, [user]);
 
     useEffect(() => {
+        if (userLoading) return;
         setProject(null);
         setVersionHistory(null);
         setError(null);
@@ -280,8 +281,12 @@ const Project = () => {
         setFollowsOwner(false);
         restoreUserTheme();
         load();
+    }, [actionContext, id, load, userLoading]);
+
+    useEffect(() => {
+        if (userLoading) return;
         api.view(id).catch(() => {});
-    }, [actionContext, id, load]);
+    }, [id, userLoading]);
 
     useEffect(() => {
         const onMessage = event => {
@@ -1532,6 +1537,7 @@ const Project = () => {
                                     title={project.title}
                                     onLoad={sendThemeToStage}
                                     allow="autoplay; fullscreen"
+                                    allowFullScreen
                                     sandbox={unsandboxed ?
                                         null :
                                         'allow-scripts allow-forms allow-pointer-lock allow-downloads ' +

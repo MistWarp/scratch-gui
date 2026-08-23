@@ -69,6 +69,7 @@ const FeaturedProject = ({project}) => {
                         src={embedUrl(details, {bridge: false, profilePreview: true})}
                         title={displayProject.title}
                         allow="autoplay; fullscreen"
+                        allowFullScreen
                         sandbox={'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads ' +
                             'allow-popups allow-popups-to-escape-sandbox'}
                     />
