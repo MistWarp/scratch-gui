@@ -1,0 +1,25 @@
+diff --git a/src/DefaultBackend.js b/src/DefaultBackend.js
+index d184ca4..d2d555c 100644
+--- a/src/DefaultBackend.js
++++ b/src/DefaultBackend.js
+@@ -6,7 +6,6 @@ const { ENOENT, ENOTEMPTY, ETIMEDOUT } = require("./errors.js");
+ const IdbBackend = require("./IdbBackend.js");
+ const HttpBackend = require("./HttpBackend.js")
+ const Mutex = require("./Mutex.js");
+-const Mutex2 = require("./Mutex2.js");
+ 
+ const path = require("./path.js");
+ 
+@@ -28,7 +27,11 @@ module.exports = class DefaultBackend {
+   } = {}) {
+     this._name = name
+     this._idb = db || new IdbBackend(fileDbName, fileStoreName);
+-    this._mutex = navigator.locks ? new Mutex2(name) : new Mutex(lockDbName, lockStoreName);
++    // Some embedded and sandboxed browser contexts expose navigator.locks but
++    // reject every request with SecurityError. The IndexedDB mutex is supported
++    // in those contexts and is also the existing fallback for browsers without
++    // the Web Locks API.
++    this._mutex = new Mutex(lockDbName, lockStoreName);
+     this._cache = new CacheFS(name);
+     this._opts = { wipe, url };
+     this._needsWipe = !!wipe;
