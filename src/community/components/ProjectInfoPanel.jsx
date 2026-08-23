@@ -1,18 +1,13 @@
 /* eslint-disable max-len */
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Check, Pencil, Plus, X, GitFork, Smartphone, Keyboard, Gamepad2} from 'lucide-react';
+import {Check, Pencil, Plus, X, GitFork} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import RichText from './RichText.jsx';
+import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import styles from './ProjectInfoPanel.module.css';
 
-const INFO_TABS = ['About', 'Credits', 'Tags', 'How to play'];
-
-const CONTROL_TYPES = [
-    {key: 'mobile', label: 'Touch', detail: 'Works on phones and tablets', Icon: Smartphone},
-    {key: 'keyboard', label: 'Keyboard', detail: 'Uses keyboard controls', Icon: Keyboard},
-    {key: 'controller', label: 'Gamepad', detail: 'Supports a game controller', Icon: Gamepad2}
-];
+const INFO_TABS = ['About', 'Credits', 'Tags', 'Controls'];
 
 const parseTags = text => {
     const seen = [];
@@ -237,7 +232,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                     ) : <p className={styles.panelEmpty}>No tags yet.</p>
                 )}
 
-                {tab === 'How to play' && (
+                {tab === 'Controls' && (
                     editing ? (
                         <div className={styles.controlEditor}>
                             <p>Choose the controls you have tested with this project.</p>
@@ -257,14 +252,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                             ))}
                         </div>
                     ) : Object.entries(project.compatibility || {}).some(([, supported]) => supported) ? (
-                        <div className={styles.controlGrid}>
-                            {CONTROL_TYPES.filter(control => project.compatibility[control.key]).map(({key, label, detail, Icon}) => (
-                                <div key={key} className={styles.controlCard}>
-                                    <Icon size={20} />
-                                    <span><strong>{label}</strong><small>{detail}</small></span>
-                                </div>
-                            ))}
-                        </div>
+                        <ProjectCompatibility compatibility={project.compatibility} />
                     ) : <p className={styles.panelEmpty}>The creator has not listed the controls for this project.</p>
                 )}
 

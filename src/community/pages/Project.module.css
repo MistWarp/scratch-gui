@@ -223,6 +223,29 @@
     margin-top: 12px;
 }
 
+.statButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--mw-border);
+    border-radius: 8px;
+    background: var(--mw-panel);
+    color: var(--mw-text-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.statButton:hover:enabled {
+    border-color: var(--mw-accent);
+    color: var(--mw-text);
+}
+
+.statButton:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
 .sandboxNotice,
 .sandboxNoticeOpen {
     display: flex;

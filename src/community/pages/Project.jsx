@@ -27,6 +27,7 @@ import {applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance'
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
+import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
@@ -1263,6 +1264,7 @@ const Project = () => {
                                 {blockStats.total.toLocaleString()} blocks
                             </span>
                         ) : null}
+                        <ProjectCompatibility compatibility={project.compatibility} compact />
                         <span className={styles.statSpacer} />
                         {project.isOwner ? (
                             <div
