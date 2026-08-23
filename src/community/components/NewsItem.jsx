@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Trash2} from 'lucide-react';
+import {Trash2, ExternalLink} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
@@ -8,7 +8,7 @@ import RichText from './RichText.jsx';
 import styles from './NewsItem.module.css';
 
 const NewsItem = ({item, onChanged}) => {
-    const {user} = useUser();
+    const {user, login} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
     const [error, setError] = useState('');
 
@@ -33,8 +33,32 @@ const NewsItem = ({item, onChanged}) => {
         }
     };
 
+    const vote = async option => {
+        if (!user) {
+            login();
+            return;
+        }
+        setError('');
+        try {
+            await api.voteNewsPoll(item.id, option);
+            onChanged();
+        } catch (e) {
+            setError(e.message || 'Could not vote.');
+        }
+    };
+
+    const category = item.category || 'update';
+    const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+    const pollTotal = item.poll ? Number(item.poll.total) || 0 : 0;
+    const linkProps = item.link && item.link.url.startsWith('http') ? {target: '_blank', rel: 'noreferrer'} : {};
+
     return (
         <article className={styles.item}>
+            {category === 'update' ? null : (
+                <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''}`}>
+                    {categoryLabel}
+                </span>
+            )}
             <div className={styles.head}>
                 <h3>{item.title}</h3>
                 <span className={styles.date}>{timeAgo(item.created)}</span>
@@ -49,6 +73,31 @@ const NewsItem = ({item, onChanged}) => {
                 ) : null}
             </div>
             <p className={styles.body}><RichText text={item.body} /></p>
+            {item.poll && item.poll.options ? (
+                <div className={styles.poll}>
+                    {item.poll.options.map(option => {
+                        const percent = pollTotal ? Math.round((option.votes / pollTotal) * 100) : 0;
+                        return (
+                            <button
+                                key={option.id}
+                                className={option.voted ? styles.pollOptionVoted : styles.pollOption}
+                                onClick={() => vote(option.id)}
+                            >
+                                <i style={{width: `${percent}%`}} />
+                                <span>{option.text}</span>
+                                <strong>{option.votes} {option.votes === 1 ? 'vote' : 'votes'} · {percent}%</strong>
+                            </button>
+                        );
+                    })}
+                    <span className={styles.pollTotal}>{pollTotal} total {pollTotal === 1 ? 'vote' : 'votes'}</span>
+                </div>
+            ) : null}
+            {item.link && item.link.url ? (
+                <a className={styles.postLink} href={item.link.url} {...linkProps}>
+                    {item.link.label}
+                    <ExternalLink size={13} />
+                </a>
+            ) : null}
             <div className={styles.footer}>
                 <ReactionButtons
                     reactions={item.reactions}

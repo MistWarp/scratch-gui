@@ -1,11 +1,11 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, Play, Coins} from 'lucide-react';
+import {Heart, Play, Coins, TrendingUp} from 'lucide-react';
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './ProjectCard.module.css';
 
-const ProjectCard = ({project}) => {
+const ProjectCard = ({project, showTrend = false}) => {
     const price = project.price || 0;
     return (
         <Link
@@ -17,6 +17,12 @@ const ProjectCard = ({project}) => {
                     <span className={styles.priceBadge}>
                         <Coins size={12} />
                         {project.bought ? 'Owned' : price}
+                    </span>
+                ) : null}
+                {showTrend && project.weekViews > 0 ? (
+                    <span className={styles.trendBadge} title="Views in the last seven days">
+                        <TrendingUp size={12} />
+                        {project.weekViews} this week
                     </span>
                 ) : null}
                 <ProjectThumbnail

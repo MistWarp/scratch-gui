@@ -1,5 +1,6 @@
+/* eslint-disable max-len */
 import React, {useState, useEffect} from 'react';
-import {Menu, Palette, Radio, Store, SwatchBook, User, Brush} from 'lucide-react';
+import {Menu, Palette, Radio, Store, SwatchBook, User, Brush, Bell} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
@@ -8,7 +9,8 @@ import Sidebar from '../components/Sidebar.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
     getUsernameOverride,
-    setUsernameOverride
+    setUsernameOverride,
+    notifyLocalChange
 } from '../../lib/rotur/cloud-sync.js';
 import {
     getAccentMenuBar,
@@ -20,6 +22,7 @@ import {
 import {getRoturSettings, updateRoturSettings} from '../../lib/rotur/settings.js';
 import {presenceSupported} from '../../lib/rotur/client.js';
 import styles from './Settings.module.css';
+import {getNotificationPreferences, setNotificationPreferences} from '../notification-preferences';
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
@@ -48,6 +51,7 @@ const SECTIONS = [
     {key: 'warptheme', label: 'WarpTheme', icon: Store},
     {key: 'menu-bar', label: 'Menu bar', icon: Menu},
     {key: 'presence', label: 'Presence', icon: Radio},
+    {key: 'notifications', label: 'Notifications', icon: Bell},
     {key: 'identity', label: 'Identity', icon: User}
 ];
 
@@ -61,6 +65,7 @@ const Settings = () => {
     const [projectThemeMode, setProjectThemeMode] = useState(getProjectThemeMode());
     const [activeSection, setActiveSection] = useState(SECTIONS[0].key);
     const [presenceOk, setPresenceOk] = useState(true);
+    const [notificationPreferences, setNotificationPreferencesState] = useState(getNotificationPreferences());
 
     useEffect(() => {
         if (!user) {
@@ -124,6 +129,12 @@ const Settings = () => {
     const changePresence = (key, enabled) => {
         updateRoturSettings({[key]: enabled});
         setPresence(current => ({...current, [key]: enabled}));
+    };
+    const changeNotificationPreference = (key, enabled) => {
+        const next = {...notificationPreferences, [key]: enabled};
+        setNotificationPreferencesState(next);
+        setNotificationPreferences(next);
+        notifyLocalChange();
     };
     return (
         <main className={styles.page}>
@@ -266,6 +277,26 @@ const Settings = () => {
                                     ))}
                                 </select>
                             </label>
+                        </section>
+                    ) : null}
+
+                    {activeSection === 'notifications' ? (
+                        <section className={styles.card}>
+                            <h2>Notifications</h2>
+                            <p className={styles.lead}>Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.</p>
+                            <div className={styles.settingRows}>
+                                {[
+                                    ['social', 'Comments, mentions, follows, and reactions'],
+                                    ['projects', 'Remixes, contributions, feedback, and spaces'],
+                                    ['economy', 'Purchases, donations, and items'],
+                                    ['system', 'Moderation, reports, and announcements']
+                                ].map(([key, label]) => (
+                                    <label key={key} className={styles.settingRow}>
+                                        <span>{label}</span>
+                                        <input className={styles.checkbox} type="checkbox" checked={notificationPreferences[key]} onChange={event => changeNotificationPreference(key, event.target.checked)} />
+                                    </label>
+                                ))}
+                            </div>
                         </section>
                     ) : null}
 

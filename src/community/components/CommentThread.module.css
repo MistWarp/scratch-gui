@@ -59,6 +59,16 @@
     font-size: 12px;
 }
 
+.playtime {
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: var(--accent-strong);
+    background: var(--accent-softer);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .iconAction {
     display: inline-flex;
     align-items: center;

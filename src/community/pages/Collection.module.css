@@ -1,0 +1,177 @@
+.page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+    color: var(--mw-text);
+}
+
+.back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hero {
+    display: grid;
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 22px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.hero > svg {
+    color: var(--accent-strong);
+}
+
+.hero span:first-child {
+    color: var(--accent-strong);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.hero h1 {
+    margin: 4px 0 7px;
+    font-size: 34px;
+}
+
+.description {
+    max-width: 720px;
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.description a {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+.owner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.owner a {
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tabs {
+    display: flex;
+    gap: 24px;
+    margin: 20px 0 26px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+    margin-bottom: -1px;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tabs .tabActive {
+    border-bottom-color: var(--accent);
+    color: var(--mw-text);
+}
+
+.projects > header,
+.discussion > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.projects h2,
+.discussion h2 {
+    margin: 0 0 3px;
+    font-size: 22px;
+}
+
+.projects header p,
+.discussion header p {
+    margin: 0;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.discussion > header {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+}
+
+.empty {
+    display: grid;
+    min-height: 220px;
+    place-items: center;
+    align-content: center;
+    gap: 7px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-faint);
+}
+
+.empty strong {
+    color: var(--mw-text);
+}
+
+.empty span,
+.error {
+    font-size: 12px;
+}
+
+.error {
+    color: var(--mw-danger);
+}
+
+@media (max-width: 650px) {
+    .hero {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .actions {
+        grid-column: 2;
+    }
+}

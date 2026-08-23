@@ -6,28 +6,74 @@
 }
 
 .button,
-.buttonOn {
+.buttonOn,
+.buttonDownOn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     border: none;
     background: none;
-    color: var(--text-dim);
+    color: var(--mw-text-muted);
     font-size: 13px;
     padding: 4px 8px;
-    border-radius: var(--radius-xs);
+    border-radius: 8px;
 }
 
 .button:hover:enabled,
-.buttonOn:hover:enabled {
-    background: var(--accent-softer);
+.buttonOn:hover:enabled,
+.buttonDownOn:hover:enabled {
+    background: color-mix(in srgb, var(--mw-accent) 8%, transparent);
 }
 
 .button:disabled,
-.buttonOn:disabled {
+.buttonOn:disabled,
+.buttonDownOn:disabled {
     cursor: default;
 }
 
 .buttonOn {
-    color: var(--accent-strong);
+    color: var(--mw-accent);
+}
+
+.buttonDownOn {
+    color: var(--mw-danger);
+}
+
+.bordered .button,
+.bordered .buttonOn,
+.bordered .buttonDownOn {
+    padding: 7px 10px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-panel);
+    font-weight: 700;
+}
+
+.bordered .button:hover:enabled,
+.bordered .buttonOn:hover:enabled,
+.bordered .buttonDownOn:hover:enabled {
+    border-color: var(--mw-accent);
+}
+
+.vertical {
+    align-self: flex-start;
+    flex-direction: column;
+}
+
+.vertical .button,
+.vertical .buttonOn,
+.vertical .buttonDownOn {
+    width: 38px;
+    justify-content: center;
+    padding: 7px;
+    border: 1px solid transparent;
+}
+
+.vertical .buttonOn {
+    border-color: var(--mw-accent);
+    background: color-mix(in srgb, var(--mw-accent) 15%, transparent);
+}
+
+.vertical .buttonDownOn {
+    border-color: color-mix(in srgb, var(--mw-danger) 45%, transparent);
+    background: color-mix(in srgb, var(--mw-danger) 10%, transparent);
 }

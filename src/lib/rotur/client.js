@@ -20,6 +20,7 @@ const REQUIRED_PERMISSIONS = [
 ];
 const PRESENCE_PERMISSION = 'account:profile';
 const LOGIN_PERMISSIONS = [...REQUIRED_PERMISSIONS, PRESENCE_PERMISSION];
+const LOGIN_SYSTEM = 'mistwarp';
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://warp.mistium.com';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -211,7 +212,7 @@ const restoreSession = async () => {
 
 const buildAuthUrl = (returnTo = (typeof window === 'undefined' ? '' : window.location.href)) => {
     const params = new URLSearchParams({
-        system: 'rotur',
+        system: LOGIN_SYSTEM,
         return_to: returnTo,
         requires: LOGIN_PERMISSIONS.join(',')
     });
@@ -222,7 +223,7 @@ const buildAuthUrl = (returnTo = (typeof window === 'undefined' ? '' : window.lo
 const login = async () => {
     const rotur = getClient();
     await rotur.login({
-        system: 'rotur',
+        system: LOGIN_SYSTEM,
         timeout: 120000,
         requires: LOGIN_PERMISSIONS
     });
@@ -297,6 +298,9 @@ const normalizeNotification = notification => {
         return notification;
     }
     const out = {...notification};
+    const isMistWarpRelay = String(out.platform || '').toLowerCase() === 'mistwarp' &&
+        String(out.type || '').toLowerCase() === 'notification' &&
+        String(out.actor || '').toLowerCase() === 'mistwarp';
     for (const [k, v] of Object.entries(pd)) {
         if (k === 'type' || k === 'id' || k === 'timestamp' || k === 'created' || k === 'read') {
             continue;
@@ -306,6 +310,13 @@ const normalizeNotification = notification => {
     if (out.platform === 'mistwarp' && typeof pd.type === 'string' && pd.type) {
         out.type = pd.type;
     }
+    const payloadActor = pd.actor || pd.from;
+    if (out.platform === 'mistwarp' && typeof payloadActor === 'string' && payloadActor) {
+        out.actor = payloadActor;
+    }
+    if (isMistWarpRelay && String(pd.type || '').toLowerCase() === 'follow') {
+        out.mwDiscard = true;
+    }
     return out;
 };
 
@@ -314,6 +325,9 @@ const normalizeNotification = notification => {
 const isVisibleNotification = notification => {
     const normalized = normalizeNotification(notification);
     if (!normalized || typeof normalized !== 'object') {
+        return false;
+    }
+    if (normalized.mwDiscard) {
         return false;
     }
     if (String(normalized.type || '').toLowerCase() === 'follow') {
@@ -573,7 +587,7 @@ const ensureScopes = async scopes => {
         return true;
     }
     await rotur.login({
-        system: 'rotur',
+        system: LOGIN_SYSTEM,
         timeout: 120000,
         requires: [...new Set([...LOGIN_PERMISSIONS, ...wanted])]
     });

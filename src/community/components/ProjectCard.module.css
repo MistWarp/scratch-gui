@@ -38,6 +38,22 @@
     font-weight: 700;
 }
 
+.trendBadge {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 7px;
+    border-radius: 6px;
+    color: #fff;
+    background: color-mix(in srgb, #111 76%, transparent);
+    font-size: 10px;
+    font-weight: 700;
+}
+
 .thumb img {
     width: 100%;
     height: 100%;

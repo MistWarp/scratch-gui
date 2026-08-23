@@ -6,7 +6,7 @@ import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
 import ReportModal from './ReportModal.jsx';
 import RichText from './RichText.jsx';
-import {timeAgo, sameUser} from '../format';
+import {timeAgo, sameUser, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
@@ -24,6 +24,9 @@ const CommentRow = ({comment, onReply, onDelete, onReact, onReport, canReply, ca
                     to={`/users/${comment.author}`}
                     className={styles.author}
                 >{comment.author}</Link>
+                {Number.isFinite(comment.playtimeMs) ? (
+                    <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
+                ) : null}
                 {comment.created ? (
                     <span className={styles.time}>{timeAgo(comment.created)}</span>
                 ) : null}

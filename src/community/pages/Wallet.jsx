@@ -5,18 +5,10 @@ import api, {projectUrl} from '../api';
 import {getAccountSummary, claimDaily} from '../../lib/rotur/client.js';
 import {CREDIT_PACKS, getBillingStatus, openCreditCheckout, openBillingPortal, consumeBillingResult} from '../credits';
 import {useUser} from '../UserContext.jsx';
+import {formatDate} from '../format';
 import styles from './Wallet.module.css';
 
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
-
-const formatDate = ms => {
-    if (!ms) return '';
-    try {
-        return new Date(ms).toLocaleDateString([], {year: 'numeric', month: 'short', day: 'numeric'});
-    } catch (e) {
-        return '';
-    }
-};
 
 const Wallet = () => {
     const {user, loading} = useUser();

@@ -27,7 +27,9 @@
 }
 
 .titleInput,
-.bodyInput {
+.bodyInput,
+.composer input,
+.composer select {
     background: var(--bg-raised);
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
@@ -46,6 +48,59 @@
 .bodyInput {
     min-height: 110px;
     resize: vertical;
+}
+
+.composerRow {
+    display: grid;
+    grid-template-columns: 120px 1fr 1.5fr;
+    gap: 8px;
+}
+
+.composerRow label {
+    display: grid;
+    gap: 5px;
+}
+
+.composerRow span,
+.pollEditor legend {
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pollEditor {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+}
+
+.pollEditor > div {
+    display: flex;
+    gap: 7px;
+}
+
+.pollEditor input {
+    min-width: 0;
+    flex: 1;
+}
+
+.pollEditor button {
+    width: fit-content;
+    border: 0;
+    background: none;
+    color: var(--accent-strong);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+@media (max-width: 640px) {
+    .composerRow {
+        grid-template-columns: 1fr;
+    }
 }
 
 .submit {

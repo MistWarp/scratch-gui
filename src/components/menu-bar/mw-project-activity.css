@@ -1,0 +1,42 @@
+.page {
+    padding: 18px;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--mw-border, rgba(0, 0, 0, 0.15));
+}
+
+.tabs button {
+    padding: 10px 14px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: inherit;
+    background: transparent;
+}
+
+.tabs .active {
+    border-bottom-color: var(--looks-secondary, #855cd6);
+}
+
+.pulls {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pulls li {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--mw-border, rgba(0, 0, 0, 0.15));
+    border-radius: 8px;
+}
+
+.pulls span {
+    opacity: 0.7;
+}

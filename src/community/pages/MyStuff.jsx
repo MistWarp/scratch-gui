@@ -2,19 +2,21 @@ import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, Bookmark, LayoutDashboard,
-    RefreshCw, AlertTriangle, CheckCircle
+    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
+    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
 import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
-import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
+import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
+import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
 import useEscape from '../use-escape.js';
+import useLatest from '../use-latest.js';
 import styles from './MyStuff.module.css';
 
 const fmt = value => (Number(value) || 0).toLocaleString();
@@ -288,20 +290,26 @@ const UploadUsage = ({quota, onRefresh}) => {
 
 const AgreementTab = () => {
     const [agreement, setAgreement] = useState(null);
+    const [loadError, setLoadError] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
         let stale = false;
+        setAgreement(null);
+        setLoadError(false);
         api.agreement()
             .then(data => {
                 if (!stale) setAgreement(data.agreement);
             })
-            .catch(() => {});
+            .catch(() => {
+                if (!stale) setLoadError(true);
+            });
         return () => {
             stale = true;
         };
-    }, []);
+    }, [attempt]);
 
     const handleAccept = async () => {
         setBusy(true);
@@ -318,6 +326,19 @@ const AgreementTab = () => {
             setBusy(false);
         }
     };
+
+    if (loadError) {
+        return (
+            <p className={styles.status}>
+                Could not load the agreement.{' '}
+                <button
+                    type="button"
+                    className={styles.secondary}
+                    onClick={() => setAttempt(value => value + 1)}
+                >Try again</button>
+            </p>
+        );
+    }
 
     if (!agreement) {
         return <p className={styles.status}>Loading agreement…</p>;
@@ -369,8 +390,8 @@ const SECTIONS = [
     {key: 'projects', label: 'My Projects', icon: FolderOpen},
     {key: 'uploads', label: 'Uploads', icon: HardDrive},
     {key: 'agreement', label: 'Agreement', icon: HeartHandshake},
-    {key: 'library', label: 'My Library', icon: Bookmark},
-    {key: 'loves', label: 'My Loved', icon: Heart}
+    {key: 'collections', label: 'Collections', icon: Library},
+    {key: 'spaces', label: 'Spaces', icon: Layers3}
 ];
 
 const MyStuff = () => {
@@ -382,6 +403,7 @@ const MyStuff = () => {
     const [actionError, setActionError] = useState('');
     const [failed, setFailed] = useState(false);
     const [openMenu, setOpenMenu] = useState('');
+    const [collectionProject, setCollectionProject] = useState(null);
     const [quota, setQuota] = useState(null);
     const [stats, setStats] = useState(null);
     const [account, setAccount] = useState(null);
@@ -390,8 +412,24 @@ const MyStuff = () => {
     const [agreeData, setAgreeData] = useState(null);
     const [agreeBusy, setAgreeBusy] = useState(false);
     const [agreeError, setAgreeError] = useState('');
+    const [mySpaces, setMySpaces] = useState(null);
+    const [libraryProjects, setLibraryProjects] = useState(null);
+    const [spacesFailed, setSpacesFailed] = useState(false);
+    const [libraryFailed, setLibraryFailed] = useState(false);
+    const [directoriesLoading, setDirectoriesLoading] = useState(false);
     const uploadInput = useRef(null);
     const menuRef = useRef(null);
+    const beginDirectoryLoad = useLatest();
+    const username = user ? user.username : '';
+
+    useEffect(() => {
+        beginDirectoryLoad();
+        setMySpaces(null);
+        setLibraryProjects(null);
+        setSpacesFailed(false);
+        setLibraryFailed(false);
+        setDirectoriesLoading(false);
+    }, [beginDirectoryLoad, username]);
 
     useEffect(() => {
         if (!user) {
@@ -440,17 +478,12 @@ const MyStuff = () => {
     }, [user]);
 
     const load = useCallback(() => {
-        if (!user || tab === 'overview' || tab === 'uploads') {
+        if (!user || tab !== 'projects') {
             return;
         }
         setProjects(null);
         setFailed(false);
-        const fetchTab = tab === 'loves' ?
-            api.userLoves(user.username) :
-            tab === 'library' ?
-                api.library() :
-                api.myProjects(user.username);
-        fetchTab
+        api.myProjects(user.username)
             .then(data => setProjects(data.projects || []))
             .catch(() => setFailed(true));
     }, [user, tab]);
@@ -458,6 +491,33 @@ const MyStuff = () => {
     useEffect(() => {
         load();
     }, [load]);
+
+    const loadDirectories = useCallback(() => {
+        const fresh = beginDirectoryLoad();
+        setDirectoriesLoading(true);
+        setSpacesFailed(false);
+        setLibraryFailed(false);
+        Promise.allSettled([api.mySpaces(), api.library()]).then(fresh(([spacesResult, libraryResult]) => {
+            if (spacesResult.status === 'fulfilled') setMySpaces(spacesResult.value.spaces || []);
+            else setSpacesFailed(true);
+            if (libraryResult.status === 'fulfilled') setLibraryProjects(libraryResult.value.projects || []);
+            else setLibraryFailed(true);
+            setDirectoriesLoading(false);
+        }));
+    }, [beginDirectoryLoad]);
+
+    useEffect(() => {
+        if (!user || !['collections', 'spaces'].includes(tab)) return;
+        if (directoriesLoading || spacesFailed || (tab === 'collections' && libraryFailed)) return;
+        if (mySpaces !== null && (tab === 'spaces' || libraryProjects !== null)) return;
+        loadDirectories();
+    }, [directoriesLoading, libraryFailed, libraryProjects, loadDirectories, mySpaces, spacesFailed, tab, user]);
+
+    const retryDirectories = () => {
+        setMySpaces(null);
+        setLibraryProjects(null);
+        loadDirectories();
+    };
 
     useEffect(() => {
         if (!openMenu) return () => {};
@@ -737,6 +797,16 @@ const MyStuff = () => {
                         />
                     ) : tab === 'agreement' ? (
                         <AgreementTab />
+                    ) : tab === 'collections' || tab === 'spaces' ? (
+                        <MyStuffSpaces
+                            key={tab}
+                            mode={tab}
+                            spaces={mySpaces}
+                            libraryProjects={libraryProjects}
+                            username={user.username}
+                            error={spacesFailed || (tab === 'collections' && libraryFailed)}
+                            onRetry={retryDirectories}
+                        />
                     ) : failed ? (
                         <p className={styles.status}>
                             Couldn&apos;t load.{' '}
@@ -747,23 +817,6 @@ const MyStuff = () => {
                         </p>
                     ) : projects === null ? (
                         <p className={styles.status}>Loading…</p>
-                    ) : tab !== 'projects' ? (
-                        projects.length ? (
-                            <div className={styles.grid}>
-                                {projects.map(project => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className={styles.status}>
-                                {tab === 'library' ?
-                                    'Projects you buy or save to your library show up here.' :
-                                    'Projects you heart show up here.'}
-                            </p>
-                        )
                     ) : projects.length ? (
                         <div className={styles.list}>
                             {projects.map(project => {
@@ -853,14 +906,24 @@ const MyStuff = () => {
                                                             <Pencil size={14} />
                                                             Open in editor
                                                         </a>
-                                                        <Link to={`/mystuff/project/${project.id}`}>
-                                                            <SlidersHorizontal size={14} />
-                                                            Manage &amp; analytics
-                                                        </Link>
                                                         <Link to={projectUrl(project.id)}>
                                                             <ExternalLink size={14} />
                                                             Project page
                                                         </Link>
+                                                        <div className={styles.menuSeparator} role="separator" />
+                                                        <Link to={`/mystuff/project/${project.id}`}>
+                                                            <SlidersHorizontal size={14} />
+                                                            Manage &amp; analytics
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => {
+                                                                setOpenMenu('');
+                                                                setCollectionProject(project);
+                                                            }}
+                                                        >
+                                                            <Library size={14} />
+                                                            Save to collection
+                                                        </button>
                                                         {project.shared ? (
                                                             <button onClick={() => toggleFeatured(project.id)}>
                                                                 <Star
@@ -871,6 +934,7 @@ const MyStuff = () => {
                                                                     'Remove profile feature' : 'Feature on profile'}
                                                             </button>
                                                         ) : null}
+                                                        <div className={styles.menuSeparator} role="separator" />
                                                         <button
                                                             className={styles.danger}
                                                             onClick={() => deleteProject(project.id)}
@@ -891,6 +955,12 @@ const MyStuff = () => {
                     )}
                 </div>
             </div>
+            {collectionProject ? (
+                <CollectionSaveModal
+                    project={collectionProject}
+                    onClose={() => setCollectionProject(null)}
+                />
+            ) : null}
         </main>
     );
 };

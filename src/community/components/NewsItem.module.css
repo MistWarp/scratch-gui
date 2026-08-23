@@ -5,6 +5,34 @@
     padding: 16px 20px;
 }
 
+.category {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.categoryRelease {
+    color: #67c99a;
+    background: color-mix(in srgb, #67c99a 13%, transparent);
+}
+
+.categoryEvent {
+    color: #e1a94f;
+    background: color-mix(in srgb, #e1a94f 13%, transparent);
+}
+
+.categoryPoll {
+    color: #c584e5;
+    background: color-mix(in srgb, #c584e5 13%, transparent);
+}
+
 .head {
     display: flex;
     align-items: baseline;
@@ -49,6 +77,84 @@
 .body a {
     color: var(--accent-strong);
     font-weight: 600;
+}
+
+.poll {
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.pollOption,
+.pollOptionVoted {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 38px;
+    padding: 0 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--mw-text);
+    background: var(--bg-raised);
+    font: inherit;
+    overflow: hidden;
+}
+
+.pollOption:hover,
+.pollOptionVoted {
+    border-color: var(--accent-border);
+}
+
+.pollOption i,
+.pollOptionVoted i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    pointer-events: none;
+}
+
+.pollOptionVoted i {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.pollOption span,
+.pollOptionVoted span,
+.pollOption strong,
+.pollOptionVoted strong {
+    z-index: 1;
+}
+
+.pollOption span,
+.pollOptionVoted span {
+    text-align: left;
+}
+
+.pollOption strong,
+.pollOptionVoted strong {
+    color: var(--text-faint);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pollTotal {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.postLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--accent-border);
+    border-radius: 7px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .footer {
