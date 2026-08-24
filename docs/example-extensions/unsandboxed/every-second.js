@@ -1,1 +1,0 @@
-!function(e){"use strict";setInterval(()=>{e.vm.runtime.startHats("everysecondexample_everySecond")},1e3),e.extensions.register(new class{getInfo(){return{id:"everysecondexample",name:"Every Second",blocks:[{opcode:"everySecond",blockType:e.BlockType.HAT,text:"every second",isEdgeActivated:!1}]}}})}(Scratch);
