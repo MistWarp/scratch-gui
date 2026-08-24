@@ -10,6 +10,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import {timeAgo} from '../format';
+import {roadmapStatusMatches} from '../roadmap-filters';
 import useLatest from '../use-latest.js';
 import styles from './Roadmap.module.css';
 
@@ -139,7 +140,7 @@ const Roadmap = () => {
         if (!ideas) return [];
         const normalizedQuery = query.trim().toLowerCase();
         return ideas.filter(idea => {
-            if (statusFilter && idea.status !== statusFilter) return false;
+            if (!roadmapStatusMatches(idea.status, statusFilter)) return false;
             if (categoryFilter && idea.category !== categoryFilter) return false;
             if (sourceFilter && idea.source !== sourceFilter) return false;
             if (kindFilter && (idea.kind || 'idea') !== kindFilter) return false;
@@ -311,7 +312,7 @@ const Roadmap = () => {
                 <div className={styles.filters}>
                     <div className={styles.searchFilter}><Search size={16} /><input aria-label="Search roadmap" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search ideas and bugs" /></div>
                     <select aria-label="Filter by type" value={kindFilter} onChange={event => setKindFilter(event.target.value)}><option value="">Ideas and bugs</option><option value="idea">Ideas</option><option value="bug">Bugs</option></select>
-                    <select aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="">Any status</option>{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+                    <select aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="">Active statuses</option>{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
                     <select aria-label="Filter by area" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}><option value="">Any area</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select>
                     <select aria-label="Filter by submitter" value={sourceFilter} onChange={event => setSourceFilter(event.target.value)}><option value="">Anyone</option><option value="community">Community</option><option value="mistwarp">MistWarp</option></select>
                     <div className={styles.filterSummary}>

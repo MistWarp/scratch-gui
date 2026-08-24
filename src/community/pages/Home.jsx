@@ -13,6 +13,7 @@ import NewsItem from '../components/NewsItem.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
+import {roadmapStatusMatches} from '../roadmap-filters';
 import logo from '../assets/mistwarp-logo.png';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -132,15 +133,17 @@ const RoadmapSection = ({viewerName}) => {
             active = false;
         };
     }, [attempt, viewerName]);
+    const activeIdeas = ideas ? ideas.filter(idea => roadmapStatusMatches(idea.status, '')) : null;
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Lightbulb} title="Roadmap" link="/roadmap" linkLabel="Suggest and vote" />
             {!ideas && !failed ? <PanelLoading /> : null}
             {failed ? <div className={styles.empty}>Couldn&apos;t load roadmap suggestions. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
             {ideas && !ideas.length ? <div className={styles.empty}>No suggestions yet. <Link to="/roadmap">Add the first one</Link></div> : null}
-            {ideas && ideas.length ? (
+            {ideas && ideas.length && !activeIdeas.length ? <div className={styles.empty}>No active suggestions. <Link to="/roadmap">View the roadmap</Link></div> : null}
+            {activeIdeas && activeIdeas.length ? (
                 <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
-                    {ideas.slice(0, 4).map(idea => (
+                    {activeIdeas.slice(0, 4).map(idea => (
                         <Link key={idea._id} to={`/roadmap#idea-${idea._id}`} className={styles.roadmapItem}>
                             <ReactionButtons
                                 variant="vertical"
