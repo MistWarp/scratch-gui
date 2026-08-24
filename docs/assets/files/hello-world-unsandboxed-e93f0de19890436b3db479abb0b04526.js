@@ -1,0 +1,1 @@
+!function(e){"use strict";if(!e.extensions.unsandboxed)throw new Error("This Hello World example must run unsandboxed");e.extensions.register(new class{getInfo(){return{id:"helloworldunsandboxed",name:"Unsandboxed Hello World",blocks:[{opcode:"hello",blockType:e.BlockType.REPORTER,text:"Hello!"}]}}hello(){return"World!"}})}(Scratch);

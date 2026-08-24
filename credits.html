@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="MistWarp is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations."/><meta property="og:title" content="MistWarp Credits"/><meta property="og:description" content="MistWarp is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations."/><meta property="og:type" content="website"/><meta property="og:image" content="https://warp.mistium.com/images/apple-touch-icon.png"/><meta property="og:url" content="https://warp.mistium.com/"/><meta property="og:site_name" content="MistWarp"/><meta name="twitter:card" content="summary"/><title>MistWarp Credits</title><style>body[data-splash-theme="dark"] {
+        background: #111;
+      }
+
+      noscript {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #app {
+        height: 100%;
+      }</style></head><body><noscript><h1>This page requires JavaScript</h1></noscript><script>(function() {
+        var theme = '';
+
+        try {
+          var themeSetting = localStorage.getItem('tw:theme');
+        } catch (e) {
+          // ignore
+        }
+        if (themeSetting === 'light') {
+          theme = 'light';
+        } else if (themeSetting === 'dark') {
+          theme = 'dark';
+        } else if (themeSetting) {
+          try {
+            var parsed = JSON.parse(themeSetting);
+            if (parsed.gui === 'dark' || parsed.gui === 'light') {
+              theme = parsed.gui;
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (!theme) {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        document.body.setAttribute('data-splash-theme', theme);
+      })();</script><div id="app"></div><script src="/js/gleba/vendors~addon-settings~community~credits~editor~embed~fullscreen~player.16a04f0cf5b1cd2a3fe3.js"></script><script src="/js/gleba/addon-settings~community~credits~editor~embed~fullscreen~player.3523c1594dc21c7c6ebc.js"></script><script src="/js/gleba/credits.6f21e4c570351621698f.js"></script></body></html>
