@@ -1,0 +1,27 @@
+(window["webpackJsonpGUI"] = window["webpackJsonpGUI"] || []).push([["addon-entry-merge-operators"],{
+
+/***/ "./src/addons/addons/merge-operators/_runtime_entry.js":
+/*!*************************************************************!*\
+  !*** ./src/addons/addons/merge-operators/_runtime_entry.js ***!
+  \*************************************************************/
+/*! exports provided: resources */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, \"resources\", function() { return resources; });\n/* harmony import */ var _userscript_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./userscript.js */ \"./src/addons/addons/merge-operators/userscript.js\");\n\nconst resources = {\n  'userscript.js': _userscript_js__WEBPACK_IMPORTED_MODULE_0__[\"default\"]\n};//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvYWRkb25zL2FkZG9ucy9tZXJnZS1vcGVyYXRvcnMvX3J1bnRpbWVfZW50cnkuanMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9HVUkvLi9zcmMvYWRkb25zL2FkZG9ucy9tZXJnZS1vcGVyYXRvcnMvX3J1bnRpbWVfZW50cnkuanM/ZmM2MSJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgdXNlcnNjcmlwdCBmcm9tICcuL3VzZXJzY3JpcHQuanMnO1xuXG5leHBvcnQgY29uc3QgcmVzb3VyY2VzID0geyd1c2Vyc2NyaXB0LmpzJzogdXNlcnNjcmlwdH07XG4iXSwibWFwcGluZ3MiOiJBQUFBO0FBQUE7QUFBQTtBQUFBO0FBRUE7QUFBQTtBQUFBIiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/addons/addons/merge-operators/_runtime_entry.js\n");
+
+/***/ }),
+
+/***/ "./src/addons/addons/merge-operators/userscript.js":
+/*!*********************************************************!*\
+  !*** ./src/addons/addons/merge-operators/userscript.js ***!
+  \*********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n// eslint-disable-next-line require-jsdoc\n/* harmony default export */ __webpack_exports__[\"default\"] = (async function (_ref) {\n  let addon = _ref.addon;\n  const Blockly = await addon.tab.traps.getBlockly();\n  const populate = Blockly.Toolbox.prototype.populate_;\n  Blockly.Toolbox.prototype.populate_ = function (tree) {\n    if (addon.self.disabled) return populate.call(this, tree);\n    const merged = tree.cloneNode(true);\n    const operators = Array.from(merged.children).find(category => category.id === 'operators');\n    const strings = Array.from(merged.children).find(category => category.id === 'mwStrings');\n    if (operators && strings) {\n      while (strings.firstChild) operators.appendChild(strings.firstChild);\n      strings.remove();\n    }\n    return populate.call(this, merged);\n  };\n  const updateToolbox = () => {\n    const workspace = Blockly.getMainWorkspace();\n    if (workspace) workspace.updateToolbox(workspace.options.languageTree);\n  };\n  updateToolbox();\n  addon.self.addEventListener('disabled', updateToolbox);\n  addon.self.addEventListener('reenabled', updateToolbox);\n});//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvYWRkb25zL2FkZG9ucy9tZXJnZS1vcGVyYXRvcnMvdXNlcnNjcmlwdC5qcy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL0dVSS8uL3NyYy9hZGRvbnMvYWRkb25zL21lcmdlLW9wZXJhdG9ycy91c2Vyc2NyaXB0LmpzPzMzNTUiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gZXNsaW50LWRpc2FibGUtbmV4dC1saW5lIHJlcXVpcmUtanNkb2NcbmV4cG9ydCBkZWZhdWx0IGFzeW5jIGZ1bmN0aW9uICh7YWRkb259KSB7XG4gICAgY29uc3QgQmxvY2tseSA9IGF3YWl0IGFkZG9uLnRhYi50cmFwcy5nZXRCbG9ja2x5KCk7XG4gICAgY29uc3QgcG9wdWxhdGUgPSBCbG9ja2x5LlRvb2xib3gucHJvdG90eXBlLnBvcHVsYXRlXztcblxuICAgIEJsb2NrbHkuVG9vbGJveC5wcm90b3R5cGUucG9wdWxhdGVfID0gZnVuY3Rpb24gKHRyZWUpIHtcbiAgICAgICAgaWYgKGFkZG9uLnNlbGYuZGlzYWJsZWQpIHJldHVybiBwb3B1bGF0ZS5jYWxsKHRoaXMsIHRyZWUpO1xuICAgICAgICBjb25zdCBtZXJnZWQgPSB0cmVlLmNsb25lTm9kZSh0cnVlKTtcbiAgICAgICAgY29uc3Qgb3BlcmF0b3JzID0gQXJyYXkuZnJvbShtZXJnZWQuY2hpbGRyZW4pLmZpbmQoY2F0ZWdvcnkgPT4gY2F0ZWdvcnkuaWQgPT09ICdvcGVyYXRvcnMnKTtcbiAgICAgICAgY29uc3Qgc3RyaW5ncyA9IEFycmF5LmZyb20obWVyZ2VkLmNoaWxkcmVuKS5maW5kKGNhdGVnb3J5ID0+IGNhdGVnb3J5LmlkID09PSAnbXdTdHJpbmdzJyk7XG4gICAgICAgIGlmIChvcGVyYXRvcnMgJiYgc3RyaW5ncykge1xuICAgICAgICAgICAgd2hpbGUgKHN0cmluZ3MuZmlyc3RDaGlsZCkgb3BlcmF0b3JzLmFwcGVuZENoaWxkKHN0cmluZ3MuZmlyc3RDaGlsZCk7XG4gICAgICAgICAgICBzdHJpbmdzLnJlbW92ZSgpO1xuICAgICAgICB9XG4gICAgICAgIHJldHVybiBwb3B1bGF0ZS5jYWxsKHRoaXMsIG1lcmdlZCk7XG4gICAgfTtcblxuICAgIGNvbnN0IHVwZGF0ZVRvb2xib3ggPSAoKSA9PiB7XG4gICAgICAgIGNvbnN0IHdvcmtzcGFjZSA9IEJsb2NrbHkuZ2V0TWFpbldvcmtzcGFjZSgpO1xuICAgICAgICBpZiAod29ya3NwYWNlKSB3b3Jrc3BhY2UudXBkYXRlVG9vbGJveCh3b3Jrc3BhY2Uub3B0aW9ucy5sYW5ndWFnZVRyZWUpO1xuICAgIH07XG5cbiAgICB1cGRhdGVUb29sYm94KCk7XG4gICAgYWRkb24uc2VsZi5hZGRFdmVudExpc3RlbmVyKCdkaXNhYmxlZCcsIHVwZGF0ZVRvb2xib3gpO1xuICAgIGFkZG9uLnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigncmVlbmFibGVkJywgdXBkYXRlVG9vbGJveCk7XG59XG4iXSwibWFwcGluZ3MiOiJBQUFBO0FBQUE7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBIiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/addons/addons/merge-operators/userscript.js\n");
+
+/***/ })
+
+}]);
