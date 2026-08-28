@@ -790,11 +790,6 @@ class Blocks extends React.Component {
                 }
             });
 
-            if (blocksThemeChanged && this.workspace.getFlyout && this.workspace.setVisible) {
-                this.workspace.setVisible(false);
-                this.workspace.setVisible(this.props.isVisible);
-            }
-
             this.requestToolboxUpdate();
 
             setTimeout(() => {

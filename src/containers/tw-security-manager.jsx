@@ -17,6 +17,13 @@ import {extensionSourceUrl, hashExtensionUrl} from '../lib/community/api.js';
  */
 const extensionsTrustedByUser = new Set();
 
+/**
+ * Extension URLs discovered while loading the current platform project. Only these URLs may be
+ * rewritten to the server's saved-source endpoint. Extensions added from the library or custom
+ * extension modal do not exist in the saved project index yet and must load from their original URL.
+ */
+const platformProjectExtensionUrls = new Set();
+
 const manuallyTrustExtension = url => {
     extensionsTrustedByUser.add(url);
 };
@@ -249,6 +256,7 @@ class TWSecurityManagerComponent extends React.Component {
         if (stage !== 'building') return;
         this.props.vm.runtime._mwProjectTrusted = false;
         extensionsTrustedByUser.clear();
+        platformProjectExtensionUrls.clear();
         fetchHostsTrustedByUser.clear();
         embedHostsTrustedByUser.clear();
         allowedAudio = false;
@@ -272,7 +280,13 @@ class TWSecurityManagerComponent extends React.Component {
 
     async rewriteExtensionURL (url) {
         const project = isPlatformProjectLoad() && getRememberedPlatformProjectState();
-        if (project && project.id && project.projectJsonUrl && !isGalleryExtensionUrl(url)) {
+        if (
+            project &&
+            project.id &&
+            project.projectJsonUrl &&
+            platformProjectExtensionUrls.has(url) &&
+            !isGalleryExtensionUrl(url)
+        ) {
             const rewritten = await extensionSourceUrl(project, url);
             return rewritten;
         }
@@ -294,25 +308,32 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} Whether the extension can be loaded
      */
     async canLoadExtensionFromProject (url) {
+        const allowProjectExtension = () => {
+            if (isPlatformProjectLoad()) {
+                platformProjectExtensionUrls.add(url);
+            }
+            return true;
+        };
         const dangerousJs = jsExecutionExtension(url);
         if (await isPlatformTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
-            return true;
+            return allowProjectExtension();
         }
         if (!dangerousJs && isTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
-            return true;
+            return allowProjectExtension();
         }
         if (url === 'builtin:patching' || dangerousJs) {
             const {showModal} = await this.acquireModalLock();
-            return showModal(SecurityModals.LoadExtension, {
+            const allowed = await showModal(SecurityModals.LoadExtension, {
                 url,
                 dangerousBuiltin: !dangerousJs,
                 dangerousJs,
                 unsandboxed: true
             });
+            return allowed ? allowProjectExtension() : false;
         }
-        if (this.props.vm.runtime._mwProjectTrusted === true) return true;
+        if (this.props.vm.runtime._mwProjectTrusted === true) return allowProjectExtension();
         const {showModal} = await this.acquireModalLock();
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {
@@ -326,14 +347,14 @@ class TWSecurityManagerComponent extends React.Component {
         if (!allowed) return false;
 
         if (this.props.vm.runtime._mwProjectTrusted === true) {
-            return true;
+            return allowProjectExtension();
         }
 
         setPersistedUnsandboxed(unsandboxed);
         if (unsandboxed) {
             manuallyTrustExtension(url);
         }
-        return true;
+        return allowProjectExtension();
     }
 
     /**
@@ -515,6 +536,7 @@ const ConnectedSecurityManagerComponent = connect(
 
 export {
     ConnectedSecurityManagerComponent as default,
+    TWSecurityManagerComponent,
     manuallyTrustExtension,
     isTrustedExtension,
     isPlatformTrustedExtension,
