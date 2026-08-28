@@ -1,12 +1,12 @@
 const CACHE_NAME = 'mw-project-content';
 const TTL = 5 * 60 * 1000;
 const CACHED_AT_HEADER = 'x-mw-cached-at';
+const ETAG_HEADER = 'x-mw-etag';
 const PRELOAD_TTL = 30 * 1000;
-const FAILURE_TTL = 5 * 1000;
 
 const inflight = new Map();
 const preloaded = new Map();
-const failures = new Map();
+const cacheWrites = new Map();
 
 const openCache = async () => {
     try {
@@ -17,31 +17,85 @@ const openCache = async () => {
     }
 };
 
+const getHeader = (headers, name) => {
+    if (!headers) return null;
+    if (typeof headers.get === 'function') return headers.get(name);
+    return headers[name] || headers[name.toLowerCase()] || null;
+};
+
 const fetchAndStore = async url => {
     const cache = await openCache();
+    let cachedHit = null;
+    let storedEtag = null;
     if (cache) {
         try {
             const hit = await cache.match(url);
             if (hit) {
-                const at = Number(hit.headers.get(CACHED_AT_HEADER));
+                const at = Number(getHeader(hit.headers, CACHED_AT_HEADER));
                 if (at && Date.now() - at < TTL) {
                     return hit.arrayBuffer();
                 }
+                storedEtag = getHeader(hit.headers, ETAG_HEADER) || getHeader(hit.headers, 'etag');
+                cachedHit = hit;
             }
         } catch (e) {
             // fall through to network
         }
     }
-    const response = await fetch(url);
+
+    const requestHeaders = {};
+    if (storedEtag) {
+        requestHeaders['If-None-Match'] = storedEtag;
+    }
+
+    let response;
+    try {
+        response = await fetch(url, Object.keys(requestHeaders).length ? {headers: requestHeaders} : {});
+    } catch (err) {
+        if (cachedHit) {
+            return cachedHit.arrayBuffer();
+        }
+        throw err;
+    }
+
+    if (response.status === 304 && cachedHit) {
+        const buffer = await cachedHit.arrayBuffer();
+        if (cache) {
+            const headers = {
+                [CACHED_AT_HEADER]: String(Date.now()),
+                ...(storedEtag ? {[ETAG_HEADER]: storedEtag} : {})
+            };
+            const write = cache.put(url, new Response(buffer, {headers})).catch(() => null);
+            cacheWrites.set(url, write);
+            write.finally(() => {
+                if (cacheWrites.get(url) === write) cacheWrites.delete(url);
+            });
+        }
+        return buffer;
+    }
+
     if (!response.ok) {
         const error = new Error(`Request returned status ${response.status}`);
         error.status = response.status;
         throw error;
     }
+
+    const etag = getHeader(response.headers, 'etag');
     const buffer = await response.arrayBuffer();
     if (cache) {
         try {
-            cache.put(url, new Response(buffer, {headers: {[CACHED_AT_HEADER]: String(Date.now())}})).catch(() => null);
+            const headers = {
+                [CACHED_AT_HEADER]: String(Date.now()),
+                ...(etag ? {[ETAG_HEADER]: etag} : {})
+            };
+            const write = cache.put(
+                url,
+                new Response(buffer, {headers})
+            ).catch(() => null);
+            cacheWrites.set(url, write);
+            write.finally(() => {
+                if (cacheWrites.get(url) === write) cacheWrites.delete(url);
+            });
         } catch (e) {
             // cache full or unavailable; the fetch still succeeded
         }
@@ -50,18 +104,9 @@ const fetchAndStore = async url => {
 };
 
 const sharedFetch = url => {
-    const failed = failures.get(url);
-    if (failed && Date.now() - failed.at < FAILURE_TTL) {
-        return Promise.reject(failed.error);
-    }
-    if (failed) failures.delete(url);
     let promise = inflight.get(url);
     if (!promise) {
         promise = fetchAndStore(url)
-            .catch(error => {
-                failures.set(url, {error, at: Date.now()});
-                throw error;
-            })
             .finally(() => inflight.delete(url));
         inflight.set(url, promise);
     }
@@ -72,16 +117,23 @@ const cachedFetchBuffer = url => {
     const warmed = preloaded.get(url);
     if (warmed && Date.now() - warmed.at < PRELOAD_TTL) {
         preloaded.delete(url);
-        return Promise.resolve(warmed.buffer.slice(0));
+        return Promise.resolve(warmed.buffer);
     }
     if (warmed) preloaded.delete(url);
-    return sharedFetch(url).then(buffer => buffer.slice(0));
+    // Project consumers treat the downloaded bytes as immutable. Returning the
+    // shared buffer avoids copying the entire project before JSZip reads it.
+    return sharedFetch(url);
 };
 
 const cachedFetchJson = url => sharedFetch(url)
     .then(buffer => JSON.parse(new TextDecoder().decode(buffer)));
 
-const preloadContent = url => sharedFetch(url).then(buffer => {
+const preloadContent = url => sharedFetch(url).then(async buffer => {
+    // A project page and its player/editor can run in separate JS realms, so
+    // the persistent cache is the handoff between them. Wait for that handoff
+    // here, but never make a direct editor load wait for a cache write.
+    const cacheWrite = cacheWrites.get(url);
+    if (cacheWrite) await cacheWrite;
     const entry = {buffer, at: Date.now()};
     preloaded.set(url, entry);
     setTimeout(() => {
@@ -92,7 +144,6 @@ const preloadContent = url => sharedFetch(url).then(buffer => {
 
 const clearContentCache = () => {
     preloaded.clear();
-    failures.clear();
     try {
         if (typeof caches !== 'undefined') {
             caches.delete(CACHE_NAME).catch(() => null);

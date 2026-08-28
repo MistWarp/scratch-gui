@@ -4,9 +4,23 @@ import api, {projectUrl} from '../api';
 import styles from './RichText.module.css';
 
 const MENTION = /^@[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
-const TOKEN = /https?:\/\/[^\s]+|@[A-Za-z0-9][A-Za-z0-9_-]{0,19}/g;
+const MARKDOWN_LINK = /^\[([^\]\n]{1,80})\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)$/;
+const TOKEN = new RegExp(
+    '\\[[^\\]\\n]{1,80}\\]\\((?:https?:\\/\\/[^\\s)]+|\\/[^\\s)]*)\\)|' +
+    'https?:\\/\\/[^\\s]+|@[A-Za-z0-9][A-Za-z0-9_-]{0,19}',
+    'g'
+);
+const PUBLIC_ROUTES = [
+    /^\/$/,
+    /^\/explore\/?$/,
+    /^\/project\/[A-Za-z0-9]+\/?$/,
+    /^\/users\/[A-Za-z0-9][A-Za-z0-9_-]{0,19}(?:\/(?:followers|following))?\/?$/,
+    /^\/spaces\/?$/,
+    /^\/spaces\/[A-Za-z0-9_-]+\/?$/,
+    /^\/(?:news|leaderboard|roadmap|trust|support|status)\/?$/
+];
 
-const splitParts = text => {
+export const splitParts = text => {
     const parts = [];
     let last = 0;
     let match;
@@ -26,6 +40,7 @@ const splitParts = text => {
 };
 
 const titleCache = new Map();
+const spaceCache = new Map();
 
 const fetchTitle = id => {
     if (!titleCache.has(id)) {
@@ -45,20 +60,64 @@ const ProjectLink = ({id}) => {
             cancelled = true;
         };
     }, [id]);
-    return <Link className="mw-project-link" to={projectUrl(id)}>{title || id}</Link>;
+    return <Link className={styles.internalLink} to={projectUrl(id)}>{title || id}</Link>;
 };
 
-const projectIdFrom = url => {
+const fetchSpace = id => {
+    if (!spaceCache.has(id)) {
+        spaceCache.set(id, api.getSpace(id)
+            .then(data => data.space || null)
+            .catch(() => null));
+    }
+    return spaceCache.get(id);
+};
+
+const SpaceLink = ({id}) => {
+    const [space, setSpace] = useState(null);
+    useEffect(() => {
+        let cancelled = false;
+        fetchSpace(id).then(value => !cancelled && setSpace(value));
+        return () => {
+            cancelled = true;
+        };
+    }, [id]);
+    return (
+        <Link className={styles.internalLink} to={`/spaces/${id}`}>
+            {space && space.title ? space.title : id}
+        </Link>
+    );
+};
+
+export const internalMistWarpRoute = destination => {
     try {
-        const parsed = new URL(url);
-        if (parsed.host !== 'warp.mistium.com' && parsed.host !== window.location.host) {
-            return null;
-        }
-        const match = parsed.pathname.match(/^\/project\/([A-Za-z0-9]+)\/?$/);
-        return match ? match[1] : null;
+        if (destination.startsWith('//')) return null;
+        const base = typeof window === 'undefined' ? 'https://warp.mistium.com' : window.location.origin;
+        const parsed = new URL(destination, base);
+        const localHosts = ['warp.mistium.com'];
+        if (typeof window !== 'undefined') localHosts.push(window.location.host);
+        if (!localHosts.includes(parsed.host)) return null;
+        if (!PUBLIC_ROUTES.some(pattern => pattern.test(parsed.pathname))) return null;
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
     } catch (e) {
         return null;
     }
+};
+
+export const markdownLink = value => {
+    const match = String(value).match(MARKDOWN_LINK);
+    return match ? {label: match[1], destination: match[2]} : null;
+};
+
+const InternalLink = ({route, label}) => {
+    if (label) return <Link className={styles.internalLink} to={route}>{label}</Link>;
+    if (route === '/') return <Link className={styles.internalLink} to="/">MistWarp</Link>;
+    const project = route.match(/^\/project\/([A-Za-z0-9]+)\/?$/);
+    if (project) return <ProjectLink id={project[1]} />;
+    const space = route.match(/^\/spaces\/([A-Za-z0-9_-]+)\/?$/);
+    if (space) return <SpaceLink id={space[1]} />;
+    const user = route.match(/^\/users\/([A-Za-z0-9][A-Za-z0-9_-]{0,19})\/?$/);
+    if (user) return <Link className={styles.mention} to={route}>@{user[1]}</Link>;
+    return <Link className={styles.internalLink} to={route}>{route}</Link>;
 };
 
 const RichText = ({text}) => splitParts(String(text || ''))
@@ -72,17 +131,33 @@ const RichText = ({text}) => splitParts(String(text || ''))
                 >{part}</Link>
             );
         }
+        const markdown = markdownLink(part);
+        if (markdown) {
+            const route = internalMistWarpRoute(markdown.destination);
+            if (route) return <InternalLink key={index} route={route} label={markdown.label} />;
+            return (
+                <a
+                    key={index}
+                    className={styles.externalLink}
+                    href={markdown.destination}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    {markdown.label}
+                </a>
+            );
+        }
         if (!/^https?:\/\//.test(part)) {
             return part;
         }
         const trailing = part.match(/[.,!?)]+$/);
         const url = trailing ? part.slice(0, -trailing[0].length) : part;
         const rest = trailing ? trailing[0] : '';
-        const id = projectIdFrom(url);
-        if (id) {
+        const route = internalMistWarpRoute(url);
+        if (route) {
             return (
                 <React.Fragment key={index}>
-                    <ProjectLink id={id} />
+                    <InternalLink route={route} />
                     {rest}
                 </React.Fragment>
             );
@@ -90,6 +165,7 @@ const RichText = ({text}) => splitParts(String(text || ''))
         return (
             <React.Fragment key={index}>
                 <a
+                    className={styles.externalLink}
                     href={url}
                     target="_blank"
                     rel="noreferrer"

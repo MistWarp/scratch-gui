@@ -20,6 +20,10 @@ const SpaceProjectPicker = ({space, onAdded}) => {
     const [open, setOpen] = useState(false);
     const [tab, setTab] = useState('mine');
     const [mine, setMine] = useState(null);
+    const [mineOffset, setMineOffset] = useState(0);
+    const [mineTotal, setMineTotal] = useState(0);
+    const [mineMoreBusy, setMineMoreBusy] = useState(false);
+    const [mineMoreError, setMineMoreError] = useState(false);
     const [mineError, setMineError] = useState('');
     const [mineAttempt, setMineAttempt] = useState(0);
     const [results, setResults] = useState([]);
@@ -50,12 +54,18 @@ const SpaceProjectPicker = ({space, onAdded}) => {
         }
         let active = true;
         setMine(null);
+        setMineOffset(0);
+        setMineTotal(0);
+        setMineMoreBusy(false);
+        setMineMoreError(false);
         setMineError('');
-        api.myProjects(username)
+        api.myProjectPage(username, {offset: 0, limit: 24})
             .then(data => {
                 if (active) {
                     setMine((data.projects || [])
                         .filter(project => project.shared || project.visibility === 'unlisted'));
+                    setMineOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : (data.projects || []).length);
+                    setMineTotal(Number.isFinite(data.total) ? data.total : (data.projects || []).length);
                 }
             })
             .catch(() => {
@@ -65,6 +75,30 @@ const SpaceProjectPicker = ({space, onAdded}) => {
             active = false;
         };
     }, [mineAttempt, open, username]);
+
+    const loadMoreMine = async () => {
+        if (mineMoreBusy || mineOffset >= mineTotal) return;
+        const context = actionContext;
+        setMineMoreBusy(true);
+        setMineMoreError(false);
+        try {
+            const data = await api.myProjectPage(username, {offset: mineOffset, limit: 24});
+            if (currentContext.current !== context) return;
+            const eligible = (data.projects || [])
+                .filter(project => project.shared || project.visibility === 'unlisted');
+            setMine(current => {
+                const byId = new Map((current || []).map(project => [project.id, project]));
+                eligible.forEach(project => byId.set(project.id, project));
+                return Array.from(byId.values());
+            });
+            setMineOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : mineOffset + (data.projects || []).length);
+            setMineTotal(Number.isFinite(data.total) ? data.total : mineTotal);
+        } catch (e) {
+            if (currentContext.current === context) setMineMoreError(true);
+        } finally {
+            if (currentContext.current === context) setMineMoreBusy(false);
+        }
+    };
 
     const show = () => {
         if (!user) {
@@ -156,7 +190,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
             {tab === 'mine' && mine === null && !mineError ? <p className={styles.pickerEmpty}>Loading your projects…</p> : null}
             {tab === 'mine' && mineError ? <p className={styles.pickerEmpty}>{mineError} <button type="button" onClick={() => setMineAttempt(attempt => attempt + 1)}>Try again</button></p> : null}
             {tab === 'search' && !results.length && !searching ? <p className={styles.pickerEmpty}>Search for a public project to add.</p> : null}
-            {tab === 'mine' && mine && !mine.length && !mineError ? <p className={styles.pickerEmpty}>You do not have any shared or unlisted projects yet.</p> : null}
+            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? <p className={styles.pickerEmpty}>You do not have any shared or unlisted projects yet.</p> : null}
             <div className={styles.pickerResults}>
                 {projects.map(project => {
                     const added = existingIds.has(project.id);
@@ -181,6 +215,12 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                     );
                 })}
             </div>
+            {tab === 'mine' && mineOffset < mineTotal ? (
+                <Button variant="secondary" busy={mineMoreBusy} busyLabel="Loading…" onClick={loadMoreMine}>
+                    Load more projects
+                </Button>
+            ) : null}
+            {tab === 'mine' && mineMoreError ? <p className={styles.pickerEmpty}>Could not load more projects. Try again.</p> : null}
         </section>
     );
 };

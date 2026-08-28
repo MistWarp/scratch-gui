@@ -87,12 +87,34 @@
 }
 
 @media (max-width: 620px) {
+    .footer {
+        margin-top: 36px;
+    }
+
     .inner {
         flex-direction: column;
         gap: 26px;
+        padding: 28px 14px 22px;
     }
 
     .columns {
-        gap: 30px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 26px 20px;
+        width: 100%;
+    }
+
+    .column {
+        min-width: 0;
+    }
+
+    .column a {
+        display: flex;
+        min-height: 36px;
+        align-items: center;
+    }
+
+    .legal {
+        padding: 0 14px 22px;
     }
 }

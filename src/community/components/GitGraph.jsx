@@ -1,4 +1,5 @@
 import React, {useMemo} from 'react';
+import {safeDate} from '../format.js';
 import styles from './GitGraph.module.css';
 
 const COLORS = ['#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec4899', '#eab308', '#3b82f6'];
@@ -78,6 +79,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                 {layout.rows.map(node => {
                     const tipBranches = layout.branches.filter(branch =>
                         graph.branchLogs?.find(entry => entry.branch === branch)?.oids?.[0] === node.sha);
+                    const nodeDate = safeDate(node.date);
                     return (
                         <li key={node.sha} className={styles.commit} style={{height: ROW_HEIGHT}}>
                             <div className={styles.subject}>
@@ -89,9 +91,9 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                             <div className={styles.meta}>
                                 <code>{node.sha.slice(0, 7)}</code>
                                 {node.author ? <span>{node.author}</span> : null}
-                                {node.date ? (
-                                    <time dateTime={new Date(node.date).toISOString()}>
-                                        {new Date(node.date).toLocaleString()}
+                                {nodeDate ? (
+                                    <time dateTime={nodeDate.toISOString()}>
+                                        {nodeDate.toLocaleString()}
                                     </time>
                                 ) : null}
                                 {onRestore && node.sha !== currentHead ? (

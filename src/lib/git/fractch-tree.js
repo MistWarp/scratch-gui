@@ -143,7 +143,18 @@ const clearWorkingTree = async ({pfs, dir}) => {
     }));
 };
 
-const loadSb3Zip = async ({vm, sb3ArrayBuffer}) => {
+const loadSb3Zip = async ({vm, sb3ArrayBuffer, sb3Files}) => {
+    if (sb3Files) {
+        const zip = new JSZip();
+        for (const [name, data] of Object.entries(sb3Files)) {
+            zip.file(name, data);
+        }
+        const projectEntry = zip.file('project.json');
+        if (!projectEntry) {
+            throw new Error('Invalid sb3 files: no project.json');
+        }
+        return {zip, projectJson: JSON.parse(await projectEntry.async('string'))};
+    }
     let buffer = sb3ArrayBuffer;
     if (!buffer) {
         if (!vm || typeof vm.saveProjectSb3 !== 'function') {
@@ -164,7 +175,9 @@ const loadSb3Zip = async ({vm, sb3ArrayBuffer}) => {
     return {zip, projectJson};
 };
 
-const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgress, clear = true} = {}) => {
+const writeProjectToFractchTree = async ({
+    vm, sb3ArrayBuffer, sb3Files, fs, dir, onProgress, clear = true
+} = {}) => {
     if (!fs || !dir) {
         throw new Error('Invalid filesystem or directory');
     }
@@ -173,7 +186,7 @@ const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgres
         onProgress({phase: 'write', message: 'Reading project…', completed: 0, total: 1});
     }
 
-    const {zip, projectJson} = await loadSb3Zip({vm, sb3ArrayBuffer});
+    const {zip, projectJson} = await loadSb3Zip({vm, sb3ArrayBuffer, sb3Files});
 
     if (clear) {
         await clearWorkingTree({pfs: fs, dir});

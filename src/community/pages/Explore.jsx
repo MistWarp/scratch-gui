@@ -2,11 +2,14 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useSearchParams, Link} from 'react-router-dom';
 import api from '../api';
+import rotur from '../rotur';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
+import ExploreNav from '../components/ExploreNav.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import {useUser} from '../UserContext.jsx';
 import styles from './Explore.module.css';
 
@@ -43,6 +46,22 @@ const shouldSkipPageRestore = (expectedParams, currentParams) => (
     Boolean(expectedParams) && expectedParams === currentParams
 );
 
+const normalizeExploreParams = currentParams => {
+    const next = new URLSearchParams(currentParams);
+    const requestedSort = next.get('sort');
+    if (!SORTS.some(option => option.key === requestedSort) || requestedSort === 'trending') next.delete('sort');
+    const query = (next.get('q') || '').trim();
+    if (query) next.set('q', query);
+    else next.delete('q');
+    const tag = (next.get('tag') || '').trim();
+    if (tag) next.set('tag', tag);
+    else next.delete('tag');
+    const pageDepth = getPageDepth(next.get('page'));
+    if (pageDepth > 1) next.set('page', String(pageDepth));
+    else next.delete('page');
+    return next;
+};
+
 const Explore = () => {
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
@@ -68,6 +87,11 @@ const Explore = () => {
     const beginLoad = useLatest();
 
     useEffect(() => {
+        const normalized = normalizeExploreParams(params);
+        if (normalized.toString() !== paramsKey) setParams(normalized, {replace: true});
+    }, [params, paramsKey, setParams]);
+
+    useEffect(() => {
         if (shouldSkipPageRestore(skipNextPageRestore.current, paramsKey)) {
             skipNextPageRestore.current = '';
             return;
@@ -91,7 +115,8 @@ const Explore = () => {
             .finally(fresh(() => setLoading(false)));
         if (q.trim()) {
             api.searchUsers(q.trim())
-                .then(fresh(data => setPeople((data.users || []).slice(0, 5))))
+                .then(data => rotur.withGroupTags((data.users || []).slice(0, 5)))
+                .then(fresh(setPeople))
                 .catch(fresh(() => setPeople([])));
         } else {
             setPeople([]);
@@ -100,7 +125,8 @@ const Explore = () => {
 
     const setSort = key => {
         const next = new URLSearchParams(params);
-        next.set('sort', key);
+        if (key === 'trending') next.delete('sort');
+        else next.set('sort', key);
         next.delete('page');
         setParams(next);
     };
@@ -147,6 +173,7 @@ const Explore = () => {
 
     return (
         <main className={styles.page}>
+            <ExploreNav active="projects" />
             <div className={styles.head}>
                 <h1>{q ? `Results for "${q}"` : 'Explore'}</h1>
                 <SectionTabs
@@ -179,6 +206,7 @@ const Explore = () => {
                             />
                             <div className={styles.personInfo}>
                                 <span className={styles.personName}>{person.username}</span>
+                                {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                                 <span className={styles.personMeta}>
                                     {person.followers ?? 0} {person.followers === 1 ? 'follower' : 'followers'}
                                     <br />
@@ -221,5 +249,5 @@ const Explore = () => {
     );
 };
 
-export {getPageDepth, mergeProjects, shouldSkipPageRestore};
+export {getPageDepth, mergeProjects, normalizeExploreParams, shouldSkipPageRestore};
 export default Explore;

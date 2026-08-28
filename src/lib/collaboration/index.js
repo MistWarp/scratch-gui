@@ -56,9 +56,10 @@ class CollabService extends Emitter {
      * @param {boolean} isHost Create (true) or join (false).
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
+     * @param {number} [maxUsers] Maximum number of people in a hosted room.
      * @returns {Promise<string>} Our peer id.
      */
-    async connectToRoom (roomId, username, isHost = false, privacy = 'public', handle = null) {
+    async connectToRoom (roomId, username, isHost = false, privacy = 'public', handle = null, maxUsers = 3) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
         if (this._transport) this.disconnect();
@@ -88,7 +89,7 @@ class CollabService extends Emitter {
 
         try {
             const id = isHost ?
-                await this._connectAsHost(roomId, privacy) :
+                await this._connectAsHost(roomId, privacy, maxUsers) :
                 await this._connectAsClient(roomId);
             this.isConnected = true;
             if (this._workspace) this._adapter.attach(this._workspace);
@@ -99,14 +100,15 @@ class CollabService extends Emitter {
         }
     }
 
-    async _connectAsHost (roomId, privacy) {
+    async _connectAsHost (roomId, privacy, maxUsers) {
         const session = new HostSession({
             transport: this._transport,
             applier: this._applier,
             roomId,
             username: this.username,
             handle: this.handle,
-            privacy
+            privacy,
+            maxUsers
         });
         this._session = session;
 

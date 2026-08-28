@@ -7,6 +7,11 @@ const API_BASE = 'https://mwapi.mistium.com/api';
 
 const SESSION_KEY = 'mw:mistwarp-session';
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
+const GET_CACHE_PREFIX = 'mw:api-cache:';
+const GET_CACHE_TTL = 60 * 1000;
+
+let cacheGeneration = 0;
+const inFlightGets = new Map();
 
 const loadRoturToken = () => {
     try {
@@ -28,18 +33,20 @@ const loadSession = () => {
 
 const storeSession = token => {
     try {
+        const previous = localStorage.getItem(SESSION_KEY);
         if (token) {
             localStorage.setItem(SESSION_KEY, token);
         } else {
             localStorage.removeItem(SESSION_KEY);
         }
+        if (previous !== token) {
+            cacheGeneration += 1;
+            inFlightGets.clear();
+        }
     } catch (e) {
         // ignore
     }
 };
-
-const GET_CACHE_PREFIX = 'mw:api-cache:';
-const GET_CACHE_TTL = 60 * 1000;
 
 const getCacheKey = path => {
     const session = loadSession();
@@ -47,6 +54,8 @@ const getCacheKey = path => {
 };
 
 const clearApiCache = () => {
+    cacheGeneration += 1;
+    inFlightGets.clear();
     try {
         for (let i = sessionStorage.length - 1; i >= 0; i--) {
             const key = sessionStorage.key(i);
@@ -59,9 +68,9 @@ const clearApiCache = () => {
     }
 };
 
-const readApiCache = path => {
+const readApiCache = key => {
     try {
-        const raw = sessionStorage.getItem(getCacheKey(path));
+        const raw = sessionStorage.getItem(key);
         if (!raw) return null;
         const {data, at} = JSON.parse(raw);
         if (!at || Date.now() - at > GET_CACHE_TTL) return null;
@@ -71,9 +80,9 @@ const readApiCache = path => {
     }
 };
 
-const writeApiCache = (path, data) => {
+const writeApiCache = (key, data) => {
     try {
-        sessionStorage.setItem(getCacheKey(path), JSON.stringify({data, at: Date.now()}));
+        sessionStorage.setItem(key, JSON.stringify({data, at: Date.now()}));
     } catch (e) {
         clearApiCache();
     }
@@ -85,6 +94,8 @@ const parseResponse = async response => {
         const error = new Error(data.error || `Request failed (${response.status})`);
         error.status = response.status;
         error.code = data.code;
+        const isRestricted = data.code === 'banned' || data.code === 'account_blocked';
+        error.redirectUrl = data.redirectUrl || data.redirect_url || (isRestricted ? 'https://rotur.dev/me' : null);
         error.data = data;
         throw error;
     }
@@ -99,9 +110,11 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     const validator = validatorData.validator;
     if (!validator) {
         const error = new Error(validatorData.error || 'Could not validate Rotur login');
-        if (validatorData.error || validatorResponse.status === 403) {
-            error.code = 'VALIDATOR_GENERATION_FAILED';
-        }
+        error.status = validatorResponse.status;
+        const defaultCode = validatorResponse.status === 403 ? 'account_blocked' : 'VALIDATOR_GENERATION_FAILED';
+        error.code = validatorData.code || defaultCode;
+        error.redirectUrl = validatorData.redirect_url || 'https://rotur.dev/me';
+        error.data = validatorData;
         throw error;
     }
     const authResponse = await fetch(
@@ -130,8 +143,8 @@ const runExchange = token => {
                 if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
                     authInvalidHandler();
                 }
-                if (error.code === 'banned' && bannedHandler) {
-                    bannedHandler(error.message);
+                if ((error.code === 'banned' || error.code === 'account_blocked') && bannedHandler) {
+                    bannedHandler(error.message, error.redirectUrl || 'https://rotur.dev/me');
                 }
                 throw error;
             })
@@ -144,56 +157,70 @@ const runExchange = token => {
 
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
+    const cacheKey = cacheable ? getCacheKey(path) : '';
     if (cacheable) {
-        const hit = readApiCache(path);
+        const hit = readApiCache(cacheKey);
         if (hit) return hit;
+        const pending = inFlightGets.get(cacheKey);
+        if (pending) return pending;
     } else if (method !== 'GET' && !path.endsWith('/view')) {
         clearApiCache();
     }
-    const doFetch = () => {
-        const session = loadSession();
-        const finalHeaders = {...headers};
-        if (session) {
-            finalHeaders.Authorization = `Bearer ${session}`;
-        }
-        const options = {method, headers: finalHeaders};
-        if (body instanceof FormData) {
-            options.body = body;
-        } else if (typeof body !== 'undefined') {
-            finalHeaders['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(body);
-        }
-        return fetch(`${API_BASE}${path}`, options);
-    };
-    let response = await doFetch();
-    if (
-        response.status === 401 &&
-        !path.startsWith('/auth') &&
-        !path.startsWith('/logout')
-    ) {
-        storeSession(null);
-        const roturToken = loadRoturToken();
-        if (roturToken) {
-            try {
-                await runExchange(roturToken);
-                response = await doFetch();
-            } catch (e) {
-                // keep the original 401 response
+    const generation = cacheGeneration;
+    const run = async () => {
+        const doFetch = () => {
+            const session = loadSession();
+            const finalHeaders = {...headers};
+            if (session) {
+                finalHeaders.Authorization = `Bearer ${session}`;
+            }
+            const options = {method, headers: finalHeaders};
+            if (body instanceof FormData) {
+                options.body = body;
+            } else if (typeof body !== 'undefined') {
+                finalHeaders['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            return fetch(`${API_BASE}${path}`, options);
+        };
+        let response = await doFetch();
+        if (
+            response.status === 401 &&
+            !path.startsWith('/auth') &&
+            !path.startsWith('/logout')
+        ) {
+            storeSession(null);
+            const roturToken = loadRoturToken();
+            if (roturToken) {
+                try {
+                    await runExchange(roturToken);
+                    response = await doFetch();
+                } catch (e) {
+                    // keep the original 401 response
+                }
             }
         }
+        if (path === '/me' && response.status === 401) {
+            storeSession(null);
+        }
+        if (raw) return response;
+        const data = await parseResponse(response);
+        trackApiSuccess(path, method);
+        if (cacheable && generation === cacheGeneration) {
+            writeApiCache(cacheKey, data);
+        }
+        return data;
+    };
+    if (!cacheable) return run();
+    const pending = run();
+    inFlightGets.set(cacheKey, pending);
+    try {
+        return await pending;
+    } finally {
+        if (inFlightGets.get(cacheKey) === pending) {
+            inFlightGets.delete(cacheKey);
+        }
     }
-    if (path === '/me' && response.status === 401) {
-        storeSession(null);
-    }
-    if (raw) {
-        return response;
-    }
-    const data = await parseResponse(response);
-    trackApiSuccess(path, method);
-    if (cacheable) {
-        writeApiCache(path, data);
-    }
-    return data;
 };
 
 const logout = async () => {
@@ -394,6 +421,8 @@ const updateProject = (id, patch) => request(`/projects/${id}`, {method: 'PUT', 
 
 const getProject = id => request(`/projects/${id}`);
 
+const getPerks = () => request('/perks');
+
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
 const remixProject = (id, setup) => request(`/projects/${id}/remix`, {method: 'POST', body: setup});
@@ -442,6 +471,7 @@ export {
     updateProject,
     checkProjectAssets,
     getProject,
+    getPerks,
     getEditorProject,
     remixProject,
     deleteProject,

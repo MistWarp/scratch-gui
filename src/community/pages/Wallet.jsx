@@ -1,15 +1,27 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Coins, Wallet as WalletIcon, HeartHandshake, Send, ExternalLink, CalendarCheck} from 'lucide-react';
+import {
+    ArrowDownLeft, ArrowUpRight, Coins, Wallet as WalletIcon, HeartHandshake, Send, ExternalLink, CalendarCheck
+} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {getAccountSummary, claimDaily} from '../../lib/rotur/client.js';
-import {CREDIT_PACKS, getBillingStatus, openCreditCheckout, openBillingPortal, consumeBillingResult} from '../credits';
+import {
+    CREDIT_PACKS, getBillingStatus, openCreditCheckout, openBillingPortal, consumeBillingResult, getCommerceEarnings
+} from '../credits';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
-import {formatDate} from '../format';
+import {formatDate, safeDate} from '../format';
 import styles from './Wallet.module.css';
 
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
+
+const donationDate = value => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString([], {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+};
 
 const Wallet = () => {
     const {user, loading, login} = useUser();
@@ -18,9 +30,14 @@ const Wallet = () => {
     walletContext.current = viewerName;
     const [account, setAccount] = useState(null);
     const [accountLoaded, setAccountLoaded] = useState(false);
+    const [accountError, setAccountError] = useState('');
+    const [accountAttempt, setAccountAttempt] = useState(0);
     const [purchases, setPurchases] = useState(null);
     const [purchaseError, setPurchaseError] = useState('');
     const [purchaseAttempt, setPurchaseAttempt] = useState(0);
+    const [earnings, setEarnings] = useState(null);
+    const [earningsError, setEarningsError] = useState('');
+    const [earningsAttempt, setEarningsAttempt] = useState(0);
     const [claiming, setClaiming] = useState(false);
     const [claimMsg, setClaimMsg] = useState('');
     const [billing, setBilling] = useState(null);
@@ -38,45 +55,93 @@ const Wallet = () => {
     }, [loading, viewerName]);
 
     useEffect(() => {
-        if (!user) {
+        setClaimMsg('');
+        setClaiming(false);
+        setCheckoutBusy(false);
+        setCheckoutError('');
+    }, [viewerName]);
+
+    useEffect(() => {
+        if (!viewerName) {
             setAccount(null);
             setAccountLoaded(false);
-            setPurchases(null);
-            setPurchaseError('');
-            setBilling(null);
-            setClaimMsg('');
-            setClaiming(false);
-            setCheckoutBusy(false);
-            setCheckoutError('');
+            setAccountError('');
             return () => {};
         }
         let stale = false;
         setAccount(null);
         setAccountLoaded(false);
-        setPurchases(null);
-        setPurchaseError('');
-        setBilling(null);
-        setClaimMsg('');
-        setClaiming(false);
-        setCheckoutBusy(false);
-        setCheckoutError('');
+        setAccountError('');
         getAccountSummary()
             .then(data => {
                 if (stale) return;
                 setAccount(data);
                 setAccountLoaded(true);
             })
-            .catch(() => !stale && setAccountLoaded(true));
+            .catch(() => {
+                if (stale) return;
+                setAccountError('Could not load your wallet data.');
+                setAccountLoaded(true);
+            });
+        return () => {
+            stale = true;
+        };
+    }, [accountAttempt, viewerName]);
+
+    useEffect(() => {
+        if (!viewerName) {
+            setPurchases(null);
+            setPurchaseError('');
+            return () => {};
+        }
+        let stale = false;
+        setPurchases(null);
+        setPurchaseError('');
         api.purchases()
             .then(data => !stale && setPurchases(data.purchases || []))
             .catch(() => !stale && setPurchaseError('Could not load purchase history.'));
+        return () => {
+            stale = true;
+        };
+    }, [purchaseAttempt, viewerName]);
+
+    useEffect(() => {
+        if (!viewerName) {
+            setEarnings(null);
+            setEarningsError('');
+            return () => {};
+        }
+        let stale = false;
+        setEarnings(null);
+        setEarningsError('');
+        const earningsRequest = typeof getCommerceEarnings === 'function' ?
+            getCommerceEarnings() : Promise.resolve(null);
+        earningsRequest
+            .then(data => {
+                if (stale) return;
+                if (!data) throw new Error('Creator earnings are unavailable.');
+                setEarnings(data);
+            })
+            .catch(() => !stale && setEarningsError('Could not load creator earnings.'));
+        return () => {
+            stale = true;
+        };
+    }, [earningsAttempt, viewerName]);
+
+    useEffect(() => {
+        if (!viewerName) {
+            setBilling(null);
+            return () => {};
+        }
+        let stale = false;
+        setBilling(null);
         getBillingStatus()
             .then(data => !stale && setBilling(data))
             .catch(() => !stale && setBilling({billing_configured: false}));
         return () => {
             stale = true;
         };
-    }, [user, purchaseAttempt]);
+    }, [viewerName]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -197,6 +262,12 @@ const Wallet = () => {
                     Claim daily
                 </Button>
             </section>
+            {accountError ? (
+                <p className={styles.status}>
+                    {accountError}{' '}
+                    <Button variant="secondary" onClick={() => setAccountAttempt(value => value + 1)}>Try again</Button>
+                </p>
+            ) : null}
 
             {account && (account.donationsReceived > 0 || account.donationsGiven > 0) ? (
                 <div className={styles.donationRow}>
@@ -214,6 +285,94 @@ const Wallet = () => {
                     ) : null}
                 </div>
             ) : null}
+
+            <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Creator earnings</h2>
+                <p className={styles.sectionLead}>Tips, project sales, revenue shares, and bounties paid to you.</p>
+                {earnings ? (
+                    <React.Fragment>
+                        <div className={styles.earningsGrid}>
+                            <div><span>Today</span><strong>{fmtCredits(earnings.totals.today)} credits</strong></div>
+                            <div>
+                                <span>Last 30 days</span>
+                                <strong>{fmtCredits(earnings.totals.last_30_days)} credits</strong>
+                            </div>
+                            <div>
+                                <span>Recorded total</span>
+                                <strong>{fmtCredits(earnings.totals.lifetime)} credits</strong>
+                            </div>
+                        </div>
+                        {earnings.history && earnings.history.length ? (
+                            <ul className={styles.earningsList}>
+                                {earnings.history.slice(0, 10).map(entry => (
+                                    <li key={entry.id} className={styles.earningEntry}>
+                                        <span>
+                                            <strong>
+                                                {entry.note || String(entry.kind || 'earning').replace(/_/g, ' ')}
+                                            </strong>
+                                            <small>{entry.payer ? `From ${entry.payer}` : entry.source}</small>
+                                        </span>
+                                        <strong>+{fmtCredits(entry.amount)} credits</strong>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className={styles.empty}>No creator earnings yet.</p>}
+                    </React.Fragment>
+                ) : earningsError ? (
+                    <p className={styles.empty}>
+                        {earningsError}{' '}
+                        <Button
+                            variant="secondary"
+                            onClick={() => setEarningsAttempt(value => value + 1)}
+                        >Try again</Button>
+                    </p>
+                ) : <p className={styles.empty}>Loading creator earnings…</p>}
+            </section>
+
+            <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Donation history</h2>
+                <p className={styles.sectionLead}>Credits you have sent or received through MistWarp profiles.</p>
+                {account && Array.isArray(account.donations) && account.donations.length ? (
+                    <ul className={styles.donations}>
+                        {account.donations.map(donation => {
+                            const received = donation.direction === 'received';
+                            const donatedAt = safeDate(donation.time);
+                            return (
+                                <li key={donation.id} className={styles.donationEntry}>
+                                    <span className={received ? styles.receivedIcon : styles.givenIcon}>
+                                        {received ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
+                                    </span>
+                                    <span className={styles.donationDetails}>
+                                        <strong>{received ? 'Received' : 'Sent'}</strong>
+                                        {donation.user ? (
+                                            <span>
+                                                {received ? 'From ' : 'To '}
+                                                <Link to={`/users/${donation.user}`}>{donation.user}</Link>
+                                            </span>
+                                        ) : null}
+                                        {donatedAt ? (
+                                            <time dateTime={donatedAt.toISOString()}>
+                                                {donationDate(donation.time)}
+                                            </time>
+                                        ) : null}
+                                    </span>
+                                    <strong className={received ? styles.receivedAmount : styles.givenAmount}>
+                                        {received ? '+' : '-'}{fmtCredits(donation.amount)} credits
+                                    </strong>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                ) : accountError ? (
+                    <p className={styles.empty}>
+                        Donation history is unavailable. Try loading your wallet data again above.
+                    </p>
+                ) : accountLoaded ? (
+                    <p className={styles.empty}>No profile donations yet.</p>
+                ) : (
+                    <p className={styles.empty}>Loading donation history…</p>
+                )}
+            </section>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>Buy credits</h2>

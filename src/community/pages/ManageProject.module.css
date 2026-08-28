@@ -94,7 +94,64 @@
 .stack {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
+}
+
+.pageHeading {
+    padding: 2px 2px 4px;
+}
+
+.pageHeading h1 {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: 22px;
+    letter-spacing: -.015em;
+}
+
+.pageHeading p {
+    margin: 5px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.pageTabs {
+    display: flex;
+    gap: 4px;
+    width: fit-content;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+}
+
+.pageTab,
+.pageTabActive {
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 7px;
+    color: var(--text-dim);
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pageTab:hover {
+    color: var(--mw-text);
+    background: var(--bg-raised);
+}
+
+.pageTabActive {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+}
+
+.pageTab:focus-visible,
+.pageTabActive:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .statGrid {
@@ -276,6 +333,21 @@
     gap: 14px;
 }
 
+.form > input,
+.form > textarea {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--mw-text);
+    font: inherit;
+    padding: 10px 12px;
+}
+
+.form > textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
 .fieldRow {
     display: flex;
     flex-wrap: wrap;
@@ -283,8 +355,93 @@
     gap: 16px;
 }
 
+.brandingGrid,
+.settingsGrid {
+    display: grid;
+    grid-template-columns: minmax(130px, .4fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+.settingsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cardHint {
+    margin: 10px 0 0;
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.inlineAction {
+    margin-top: 14px;
+}
+
+.previewResult {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.previewResult input,
+.transferAction input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--mw-text);
+    background: var(--bg);
+    font: inherit;
+}
+
+.previewResult span {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.dangerCard {
+    border-color: color-mix(in srgb, var(--mw-danger) 28%, var(--border));
+}
+
+.transferAction {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    margin-top: 14px;
+}
+
 .priceField {
     width: 200px;
+}
+
+.priceField small {
+    max-width: 230px;
+    color: var(--text-dim);
+}
+
+.teamShare {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 105px;
+}
+
+.teamShare > span {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.shareInput {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.shareInput input {
+    width: 72px;
 }
 
 .field {
@@ -333,6 +490,35 @@
     justify-content: flex-end;
     gap: 12px;
     margin-top: 2px;
+}
+
+.transferBox {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 220px) auto;
+    align-items: end;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+}
+
+.transferBox > div {
+    display: grid;
+    gap: 4px;
+}
+
+.transferBox small {
+    color: var(--text-dim);
+}
+
+.transferBox input {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--mw-text);
 }
 
 .formStatus {
@@ -412,7 +598,7 @@
 
 .teamMember {
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(190px, .8fr) 40px;
+    grid-template-columns: minmax(150px, 1.25fr) minmax(160px, 1fr) 96px 40px;
     align-items: start;
     gap: 12px;
     padding: 13px;
@@ -421,7 +607,8 @@
 }
 
 .teamUser,
-.teamRole {
+.teamRole,
+.teamShare {
     display: grid;
     gap: 5px;
     min-width: 0;
@@ -458,6 +645,16 @@
     color: var(--text-faint);
     font-size: 10px;
     line-height: 1.35;
+}
+
+.teamMember .shareInput {
+    gap: 5px;
+}
+
+.teamMember .shareInput input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
 }
 
 .teamEmpty {
@@ -523,6 +720,21 @@
     cursor: not-allowed;
 }
 
+@media (max-width: 900px) and (min-width: 721px) {
+    .teamMember {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .teamShare {
+        width: 96px;
+    }
+
+    .removeTeam {
+        justify-self: end;
+        margin-top: 20px;
+    }
+}
+
 @media (max-width: 720px) {
     .layout {
         grid-template-columns: 1fr;
@@ -541,6 +753,21 @@
         grid-template-columns: 1fr;
     }
 
+    .brandingGrid,
+    .settingsGrid,
+    .transferAction {
+        grid-template-columns: 1fr;
+    }
+
+    .pageTabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .transferBox {
+        grid-template-columns: 1fr;
+    }
+
     .removeTeam {
         width: 100%;
         margin-top: 0;
@@ -550,4 +777,33 @@
 .statSaves .statIcon {
     background: color-mix(in srgb, #0FBD8C 18%, transparent);
     color: #0FBD8C;
+}
+.vanityField {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: 9px;
+    background: var(--ui-primary-bg);
+}
+
+.vanityField > span {
+    padding-left: 11px;
+    color: var(--ui-secondary-text);
+}
+
+.vanityField input {
+    flex: 1;
+    border: 0 !important;
+}
+
+.analyticsTools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--ui-secondary-text);
 }

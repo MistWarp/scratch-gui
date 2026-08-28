@@ -188,3 +188,14 @@
     font-size: 13px;
     margin: 8px 0 0;
 }
+
+@media (max-width: 520px) {
+    .compact .body {
+        display: -webkit-box;
+        max-height: 7.75em;
+        white-space: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 5;
+        overflow: hidden;
+    }
+}

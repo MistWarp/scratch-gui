@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Link, useNavigate, useParams} from 'react-router-dom';
+import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ArrowLeft, CalendarClock, Check, Gavel, Image as ImageIcon, LayoutGrid, Plus, Search, Settings, Trash2, UserPlus, Users, X} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
@@ -11,6 +11,7 @@ import Modal from '../components/ui/Modal.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
 import useLatest from '../use-latest.js';
+import {formatDateTime} from '../format.js';
 import styles from './Spaces.module.css';
 
 const SECTIONS = [
@@ -28,6 +29,12 @@ const CHALLENGE_SECTIONS = [
     {key: 'curators', label: 'Host team', Icon: Users},
     {key: 'danger', label: 'Danger zone', Icon: Trash2}
 ];
+
+const normalizeSpaceSectionParam = (value, kind, isOwner) => {
+    const sections = kind === 'challenge' ? CHALLENGE_SECTIONS : SECTIONS;
+    const allowed = sections.some(section => section.key === value && (value !== 'danger' || isOwner));
+    return allowed ? value : 'general';
+};
 
 const spaceTimestamp = value => {
     const parsed = typeof value === 'number' ? value :
@@ -69,6 +76,13 @@ const spaceConfirmationDetails = (confirmation, space) => {
             action: 'Delete space'
         };
     }
+    if (confirmation.type === 'transfer-space') {
+        return {
+            title: 'Transfer space?',
+            body: `Transfer "${space.title}" to @${confirmation.owner}? Its group assignment will be cleared and your access may change.`,
+            action: `Transfer to @${confirmation.owner}`
+        };
+    }
     return null;
 };
 
@@ -100,6 +114,7 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
     const patch = {
         title: form.title,
         description: form.description,
+        groupTag: form.groupTag || '',
         visibility: form.visibility,
         openSubmissions: form.openSubmissions,
         theme: form.theme,
@@ -122,6 +137,8 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
 const ManageSpace = () => {
     const {id} = useParams();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const loadContext = `${id}\u0000${viewerName}`;
@@ -143,12 +160,21 @@ const ManageSpace = () => {
     const [confirmation, setConfirmation] = useState(null);
     const [confirmationError, setConfirmationError] = useState('');
     const [thumbnailBusy, setThumbnailBusy] = useState(false);
+    const [transferOwner, setTransferOwner] = useState('');
+    const [transferBusy, setTransferBusy] = useState(false);
     const destructiveActionInFlight = useRef(new Set());
     const actionLocks = useRef(new Set());
     const currentLoadContext = useRef(loadContext);
     currentLoadContext.current = loadContext;
     const beginSearch = useLatest();
     const beginLoad = useLatest();
+
+    const setRouteSection = useCallback((value, {replace = false} = {}) => {
+        const next = new URLSearchParams(searchParams);
+        if (value && value !== 'general') next.set('section', value);
+        else next.delete('section');
+        setSearchParams(next, {replace});
+    }, [searchParams, setSearchParams]);
 
     const load = useCallback(() => {
         const fresh = beginLoad();
@@ -201,6 +227,14 @@ const ManageSpace = () => {
             activeRequest = false;
         };
     }, [id, load, loading, viewerName]);
+
+    useEffect(() => {
+        if (!space) return;
+        const normalized = normalizeSpaceSectionParam(requestedSection, space.kind, space.isOwner);
+        setActive(normalized);
+        const routeValue = normalized === 'general' ? '' : normalized;
+        if ((requestedSection || '') !== routeValue) setRouteSection(routeValue, {replace: true});
+    }, [requestedSection, setRouteSection, space]);
 
     useEffect(() => {
         const query = inviteQuery.trim();
@@ -294,6 +328,13 @@ const ManageSpace = () => {
             releaseAction(actionKey);
             if (currentLoadContext.current === context) setSaving(false);
         }
+    };
+
+    const requestSpaceTransfer = () => {
+        const nextOwner = transferOwner.trim();
+        if (!nextOwner || transferBusy) return;
+        setConfirmationError('');
+        setConfirmation({type: 'transfer-space', owner: nextOwner});
     };
 
     const invite = async username => {
@@ -445,6 +486,7 @@ const ManageSpace = () => {
         if (action.type === 'remove-project') setBusyProject(action.project.id);
         if (action.type === 'publish-results') setPublishing(true);
         if (action.type === 'delete-space') setDeleting(true);
+        if (action.type === 'transfer-space') setTransferBusy(true);
         setError('');
         setConfirmationError('');
         try {
@@ -458,12 +500,17 @@ const ManageSpace = () => {
             } else if (action.type === 'delete-space') {
                 await api.deleteSpace(id);
                 if (currentLoadContext.current === actionContext) navigate('/spaces');
+            } else if (action.type === 'transfer-space') {
+                await api.updateSpace(id, {owner: action.owner});
+                if (currentLoadContext.current === actionContext) navigate(`/spaces/${id}`);
             }
             if (currentLoadContext.current === actionContext) setConfirmation(null);
         } catch (e) {
             if (currentLoadContext.current === actionContext) {
                 const fallback = action.type === 'remove-project' ? 'Could not remove this project.' :
-                    action.type === 'publish-results' ? 'Could not publish results.' : 'Could not delete this space.';
+                    action.type === 'publish-results' ? 'Could not publish results.' :
+                        action.type === 'transfer-space' ? 'Could not transfer this space.' :
+                            'Could not delete this space.';
                 setConfirmationError(e.message || fallback);
             }
         } finally {
@@ -472,6 +519,7 @@ const ManageSpace = () => {
                 if (action.type === 'remove-project') setBusyProject('');
                 if (action.type === 'publish-results') setPublishing(false);
                 if (action.type === 'delete-space') setDeleting(false);
+                if (action.type === 'transfer-space') setTransferBusy(false);
             }
         }
     };
@@ -516,7 +564,7 @@ const ManageSpace = () => {
         <main className={`${styles.page} ${styles.managePage}`}>
             {confirmationDetails ? (
                 <Modal
-                    icon={Trash2}
+                    icon={confirmation.type === 'transfer-space' ? Users : Trash2}
                     title={confirmationDetails.title}
                     dismissDisabled={destructiveActionInFlight.current.has(loadContext)}
                     onClose={() => {
@@ -560,6 +608,7 @@ const ManageSpace = () => {
                                 setActive(key);
                                 setError('');
                                 setStatus('');
+                                setRouteSection(key);
                             }}
                         ><Icon size={16} /> {label}</button>
                     ))}
@@ -574,6 +623,11 @@ const ManageSpace = () => {
                                 {space.kind === 'studio' ? <div className={styles.thumbnailEditor}>{space.thumbnailUrl ? <img src={space.thumbnailUrl} alt="" /> : <span><ImageIcon size={28} /> No thumbnail</span>}<label><strong>{thumbnailBusy ? 'Uploading…' : 'Choose image'}</strong><small>PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.</small><input type="file" accept="image/png,image/jpeg,image/webp" disabled={thumbnailBusy} onChange={uploadThumbnail} /></label></div> : null}
                                 <label><span>Name</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
                                 <label><span>Description</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
+                                <label><span>Owning group</span><input value={form.groupTag || ''} maxLength={32} placeholder="Optional Rotur group tag" onChange={event => updateForm('groupTag', event.target.value)} /><small>Enter a group tag to transfer this space into the group. Clear it to move the space back out.</small></label>
+                                <div className={styles.transferOwner}>
+                                    <span><strong>Transfer to another user</strong><small>The new owner receives this {space.kind}. Its group assignment is cleared.</small></span>
+                                    <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder="Rotur username" onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>Transfer</Button></div>
+                                </div>
                                 {space.kind === 'challenge' ? <><label><span>Theme</span><input value={form.theme || ''} maxLength={200} placeholder="Optional theme or prompt" onChange={event => updateForm('theme', event.target.value)} /></label><label><span>Rules</span><textarea value={form.rules || ''} maxLength={10000} placeholder="Eligibility, team rules, allowed tools, and anything that could disqualify an entry" onChange={event => updateForm('rules', event.target.value)} /></label></> : null}
                                 <div className={styles.formRow}>
                                     <label><span>Visibility</span><select value={form.visibility} onChange={event => updateForm('visibility', event.target.value)}><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></label>
@@ -633,7 +687,7 @@ const ManageSpace = () => {
                             </section>
                             <section className={styles.manageCard}>
                                 <header><h2>Results</h2><p>Publishing reveals the ranked judge scores on the public challenge page.</p></header>
-                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? `Published ${new Date(space.resultsPublishedAt).toLocaleString()}` : `${space.projects.filter(project => project.judgeScoreCount > 0).length} of ${space.projects.length} entries scored`}</span>{!space.resultsPublishedAt ? <Button
+                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? `Published ${formatDateTime(space.resultsPublishedAt, 'date unavailable')}` : `${space.projects.filter(project => project.judgeScoreCount > 0).length} of ${space.projects.length} entries scored`}</span>{!space.resultsPublishedAt ? <Button
                                     variant="primary" busy={publishing} busyLabel="Publishing…" onClick={publishResults}
                                 >Publish results</Button> : <span className={styles.published}><Check size={15} /> Results are live</span>}</div>
                             </section>
@@ -689,5 +743,11 @@ const ManageSpace = () => {
     );
 };
 
-export {buildSpacePatch, scheduleIsValid, spaceConfirmationDetails, spaceTimestamp};
+export {
+    buildSpacePatch,
+    normalizeSpaceSectionParam,
+    scheduleIsValid,
+    spaceConfirmationDetails,
+    spaceTimestamp
+};
 export default ManageSpace;

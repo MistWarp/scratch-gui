@@ -34,6 +34,14 @@ const BOARDS = [
 
 export const leaderboardBoard = value => (BOARDS.some(item => item.key === value) ? value : 'followers');
 
+export const normalizeLeaderboardParams = currentParams => {
+    const next = new URLSearchParams(currentParams);
+    const board = leaderboardBoard(next.get('board'));
+    if (board === 'followers') next.delete('board');
+    else next.set('board', board);
+    return next;
+};
+
 const Stat = ({board, person}) => {
     if (board === 'loves') {
         return (
@@ -69,6 +77,11 @@ const Leaderboard = () => {
     const active = BOARDS.find(item => item.key === board);
 
     useEffect(() => {
+        const normalized = normalizeLeaderboardParams(searchParams);
+        if (normalized.toString() !== searchParams.toString()) setSearchParams(normalized, {replace: true});
+    }, [searchParams, setSearchParams]);
+
+    useEffect(() => {
         const fresh = beginLoad();
         setUsers(null);
         setError('');
@@ -87,7 +100,7 @@ const Leaderboard = () => {
         const next = new URLSearchParams(searchParams);
         if (nextBoard === 'followers') next.delete('board');
         else next.set('board', nextBoard);
-        setSearchParams(next, {replace: true});
+        setSearchParams(next);
     };
 
     return (

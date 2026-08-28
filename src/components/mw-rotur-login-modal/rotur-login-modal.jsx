@@ -260,7 +260,19 @@ class RoturLoginModal extends React.Component {
                     </ul>
 
                     {error ? (
-                        <p className={styles.error}>{error}</p>
+                        <div>
+                            <p className={styles.error}>{error}</p>
+                            <p style={{marginTop: '4px', fontSize: '0.85rem', textAlign: 'center'}}>
+                                <a
+                                    href="https://rotur.dev/me"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{color: '#c299cf', textDecoration: 'underline'}}
+                                >
+                                    {'Check account standing on rotur.dev'}
+                                </a>
+                            </p>
+                        </div>
                     ) : null}
 
                     <div className={styles.actions}>

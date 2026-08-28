@@ -90,6 +90,18 @@
     text-align: center;
 }
 
+.loadMore {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.moreError {
+    margin: 10px 0 0;
+    color: var(--mw-text-muted);
+    text-align: center;
+}
+
 @media (max-width: 600px) {
     .header {
         align-items: flex-start;

@@ -29,7 +29,9 @@ const Footer = () => (
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>Community</span>
                     <Link to="/explore">Explore</Link>
-                    <Link to="/spaces">Spaces and challenges</Link>
+                    <Link to="/spaces?kind=studio">Studios</Link>
+                    <Link to="/spaces?kind=challenge">Challenges</Link>
+                    <Link to="/themes">Themes</Link>
                     <Link to="/leaderboard">Leaderboard</Link>
                     <Link to="/news">News</Link>
                     <Link to="/roadmap">Roadmap</Link>
@@ -37,6 +39,7 @@ const Footer = () => (
                 </div>
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>More</span>
+                    <Link to="/perks">Paid perks</Link>
                     <a href="/docs/">Documentation</a>
                     <a href="https://packager.warp.mistium.com/">Packager</a>
                     <a

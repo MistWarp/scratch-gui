@@ -68,6 +68,22 @@
     border: 1px solid transparent;
 }
 
+@media (max-width: 760px) {
+    .button,
+    .buttonOn,
+    .buttonDownOn {
+        min-height: 38px;
+        padding: 7px 10px;
+    }
+
+    .vertical .button,
+    .vertical .buttonOn,
+    .vertical .buttonDownOn {
+        width: 44px;
+        min-height: 44px;
+    }
+}
+
 .vertical .buttonOn {
     border-color: var(--mw-accent);
     background: color-mix(in srgb, var(--mw-accent) 15%, transparent);

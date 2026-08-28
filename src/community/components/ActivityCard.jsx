@@ -31,10 +31,16 @@ const ActivityCard = ({activity}) => {
     const Icon = isListening ? Headphones : activity.type === 0 ? Gamepad2 : Radio;
 
     useEffect(() => {
-        if (!start) return () => {};
-        const interval = setInterval(() => setNow(Date.now()), 1000);
+        const initialNow = Date.now();
+        setNow(initialNow);
+        if (!start || (end && end <= initialNow)) return () => {};
+        const interval = setInterval(() => {
+            const nextNow = Date.now();
+            setNow(nextNow);
+            if (end && nextNow >= end) clearInterval(interval);
+        }, 1000);
         return () => clearInterval(interval);
-    }, [start]);
+    }, [start, end]);
 
     const timing = useMemo(() => {
         if (!start) return null;

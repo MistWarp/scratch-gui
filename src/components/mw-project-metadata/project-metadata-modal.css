@@ -123,6 +123,23 @@
     line-height: 1.4;
 }
 
+.perk-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0.25rem 0 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, $motion-primary 38%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, $motion-primary 10%, $ui-modal-background);
+}
+
+.perk-notice span {
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
 .summary {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1,9 +1,13 @@
 import React from 'react';
 
 let realScratchPaint;
+const setScratchPaint = scratchPaint => {
+    realScratchPaint = scratchPaint;
+};
+
 const getRealScratchPaint = () => {
     if (!realScratchPaint) {
-        realScratchPaint = require('scratch-paint');
+        throw new Error('scratch-paint was not loaded by this entry point');
     }
     return realScratchPaint;
 };
@@ -23,5 +27,6 @@ const ScratchPaintReducer = (state, action) => {
 
 export {
     PaintEditor as default,
-    ScratchPaintReducer
+    ScratchPaintReducer,
+    setScratchPaint
 };

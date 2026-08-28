@@ -1,12 +1,14 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Trash2, Reply, Flag} from 'lucide-react';
+import {Trash2, Reply, Flag, Search} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
 import ReportModal from './ReportModal.jsx';
 import Modal from './ui/Modal.jsx';
+import SelectMenu from './ui/SelectMenu.jsx';
 import RichText from './RichText.jsx';
+import GroupTag from './GroupTag.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
@@ -17,6 +19,18 @@ const COMMENT_KINDS = [
     {value: 'suggestion', label: 'Suggestion'},
     {value: 'question', label: 'Question'}
 ];
+const ROOT_PAGE = 20;
+export const addCreatedComment = (comments, comment) => {
+    const previous = (comments || []).find(item => sameUser(item.author, comment.author));
+    const created = previous && Number.isFinite(previous.playtimeMs) ?
+        {...comment, playtimeMs: previous.playtimeMs} : comment;
+    return [created, ...(comments || []).filter(item => item.id !== created.id)];
+};
+export const mergeCommentPages = (current, incoming) => {
+    const byId = new Map((current || []).map(comment => [comment.id, comment]));
+    for (const comment of incoming || []) byId.set(comment.id, comment);
+    return Array.from(byId.values()).sort((a, b) => (b.created || 0) - (a.created || 0));
+};
 const kindLabel = kind => COMMENT_KINDS.find(item => item.value === kind)?.label || 'Comment';
 
 const CommentRow = ({
@@ -36,12 +50,13 @@ const CommentRow = ({
                     to={`/users/${comment.author}`}
                     className={styles.author}
                 >{comment.author}</Link>
+                <GroupTag username={comment.author} compact />
                 {!isReply && comment.kind && comment.kind !== 'comment' ? (
                     <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
                         {kindLabel(comment.kind)}
                     </span>
                 ) : null}
-                {Number.isFinite(comment.playtimeMs) ? (
+                {Number.isFinite(comment.playtimeMs) && comment.playtimeMs > 0 ? (
                     <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
                 ) : null}
                 {comment.created ? (
@@ -107,24 +122,6 @@ const InlineComposer = ({
             size={small ? 28 : 36}
         />
         <div className={styles.composerBody}>
-            {!small && (onKindChange || composerAction) ? (
-                <div className={styles.composerToolbar}>
-                    {onKindChange ? (
-                        <select
-                            className={styles.kindSelect}
-                            value={kind}
-                            disabled={busy}
-                            onChange={event => onKindChange(event.target.value)}
-                            aria-label="Comment type"
-                        >
-                            {COMMENT_KINDS.map(item => (
-                                <option key={item.value} value={item.value}>{item.label}</option>
-                            ))}
-                        </select>
-                    ) : null}
-                    {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
-                </div>
-            ) : null}
             <textarea
                 className={styles.input}
                 placeholder={placeholder}
@@ -134,28 +131,44 @@ const InlineComposer = ({
                 onChange={e => onChange(e.target.value)}
             />
             {error ? <div className={styles.error}>{error}</div> : null}
-            <div className={styles.composerButtons}>
-                <button
-                    type="button"
-                    className={styles.post}
-                    disabled={busy || !value.trim()}
-                    onClick={onSubmit}
-                >{small ? 'Reply' : 'Post'}</button>
-                {onCancel ? (
+            <div className={styles.composerFooter}>
+                {!small && onKindChange ? (
+                    <SelectMenu
+                        compact
+                        className={styles.kindMenu}
+                        options={COMMENT_KINDS}
+                        value={kind}
+                        disabled={busy}
+                        onChange={onKindChange}
+                        ariaLabel="Comment type"
+                        width={180}
+                    />
+                ) : null}
+                {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
+                <div className={styles.composerButtons}>
+                    {onCancel ? (
+                        <button
+                            type="button"
+                            className={styles.cancel}
+                            disabled={busy}
+                            onClick={onCancel}
+                        >Cancel</button>
+                    ) : null}
                     <button
                         type="button"
-                        className={styles.cancel}
-                        disabled={busy}
-                        onClick={onCancel}
-                    >Cancel</button>
-                ) : null}
+                        className={styles.post}
+                        disabled={busy || !value.trim()}
+                        onClick={onSubmit}
+                    >{small ? 'Reply' : 'Post'}</button>
+                </div>
             </div>
         </div>
     </div>
 );
 
 const CommentThread = ({
-    source, canModerate, disabled, disabledReason, reportContext, projectComments = false, composerAction
+    source, canModerate, disabled, disabledReason, reportContext, projectComments = false, composerAction,
+    onCountChange = null
 }) => {
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
@@ -175,6 +188,12 @@ const CommentThread = ({
     const [removingId, setRemovingId] = useState(null);
     const [deleteId, setDeleteId] = useState(null);
     const [reactingId, setReactingId] = useState(null);
+    const [rootLimit, setRootLimit] = useState(ROOT_PAGE);
+    const [totalRoots, setTotalRoots] = useState(0);
+    const [nextOffset, setNextOffset] = useState(0);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [moreFailed, setMoreFailed] = useState(false);
+    const [allCommentsLoaded, setAllCommentsLoaded] = useState(false);
     const sourceRef = useRef(source);
     const viewerRef = useRef(viewerName);
     const actionLocks = useRef(new Map());
@@ -197,6 +216,7 @@ const CommentThread = ({
     };
 
     const beginLoad = useLatest();
+    const beginExtraLoad = useLatest();
 
     const INITIAL_LIMIT = 3;
     const REPLY_PAGE = 5;
@@ -221,9 +241,22 @@ const CommentThread = ({
         setLoadingComments(true);
         setLoadFailed(false);
         Promise.resolve()
-            .then(() => source.list())
+            .then(() => {
+                const anchorMatch = window.location.hash.match(/^#comment-id-(.+)$/);
+                return source.list({
+                    offset: 0,
+                    limit: ROOT_PAGE,
+                    anchor: anchorMatch ? anchorMatch[1] : ''
+                });
+            })
             .then(fresh(d => {
-                setComments((d.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0)));
+                const loaded = (d.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0));
+                const loadedRoots = loaded.filter(comment => !comment.parent).length;
+                const hasPaging = Number.isFinite(d.totalRoots) && Number.isFinite(d.nextOffset);
+                setComments(loaded);
+                setTotalRoots(hasPaging ? d.totalRoots : loadedRoots);
+                setNextOffset(hasPaging ? d.nextOffset : loadedRoots);
+                setAllCommentsLoaded(!hasPaging || d.nextOffset >= d.totalRoots);
                 setLoadingComments(false);
             }))
             .catch(fresh(() => {
@@ -247,10 +280,70 @@ const CommentThread = ({
         setRemovingId(null);
         setDeleteId(null);
         setReactingId(null);
+        setRootLimit(ROOT_PAGE);
+        setTotalRoots(0);
+        setNextOffset(0);
+        setLoadingMore(false);
+        setMoreFailed(false);
+        setAllCommentsLoaded(false);
         setLoadingComments(true);
         setLoadFailed(false);
+        beginExtraLoad();
         load();
-    }, [load]);
+    }, [beginExtraLoad, load]);
+
+    const loadMore = async () => {
+        if (loadingMore || nextOffset >= totalRoots) return;
+        const actionSource = source;
+        const actionViewer = viewerName;
+        setLoadingMore(true);
+        setMoreFailed(false);
+        try {
+            const data = await actionSource.list({offset: nextOffset, limit: ROOT_PAGE});
+            if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            setComments(current => mergeCommentPages(current, data.comments));
+            const next = Number.isFinite(data.nextOffset) ? data.nextOffset : nextOffset + ROOT_PAGE;
+            const total = Number.isFinite(data.totalRoots) ? data.totalRoots : totalRoots;
+            setNextOffset(next);
+            setTotalRoots(total);
+            setAllCommentsLoaded(next >= total);
+            setRootLimit(limit => limit + ROOT_PAGE);
+        } catch (e) {
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setMoreFailed(true);
+        } finally {
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!projectComments || allCommentsLoaded || loadingComments || loadingMore) return;
+        if (!search.trim() && kindFilter === 'all') return;
+        const actionSource = source;
+        const actionViewer = viewerName;
+        const fresh = beginExtraLoad();
+        const timer = window.setTimeout(() => {
+            setLoadingMore(true);
+            setMoreFailed(false);
+            actionSource.list({all: true})
+                .then(fresh(data => {
+                    if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+                    const loaded = (data.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0));
+                    const rootCount = Number.isFinite(data.totalRoots) ?
+                        data.totalRoots : loaded.filter(comment => !comment.parent).length;
+                    setComments(loaded);
+                    setTotalRoots(rootCount);
+                    setNextOffset(rootCount);
+                    setAllCommentsLoaded(true);
+                    setLoadingMore(false);
+                }))
+                .catch(fresh(() => {
+                    setMoreFailed(true);
+                    setLoadingMore(false);
+                }));
+        }, 250);
+        return () => window.clearTimeout(timer);
+    }, [allCommentsLoaded, beginExtraLoad, kindFilter, loadingComments, loadingMore, projectComments,
+        search, source, viewerName]);
 
     // If the page was opened deep-linking to a reply (e.g. from a notification),
     // expand that reply's thread so the anchor can be found and scrolled to.
@@ -259,6 +352,9 @@ const CommentThread = ({
         const match = window.location.hash.match(/^#comment-id-(.+)$/);
         if (!match) return;
         const target = comments.find(c => String(c.id) === match[1]);
+        const rootId = target && (target.parent || target.id);
+        const rootIndex = comments.filter(c => !c.parent).findIndex(c => c.id === rootId);
+        if (rootIndex >= 0) setRootLimit(limit => Math.max(limit, rootIndex + 1));
         if (target && target.parent) {
             const replyCount = comments.filter(c => c.parent === target.parent).length;
             setReplyLimits(prev => ({...prev, [target.parent]: replyCount}));
@@ -274,13 +370,20 @@ const CommentThread = ({
         setBusy(true);
         setError(null);
         try {
-            await actionSource.add(text.trim(), parent, commentKind);
+            const data = await actionSource.add(text.trim(), parent, commentKind);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            if (data && data.comment) {
+                setComments(current => addCreatedComment(current, data.comment));
+                if (!data.comment.parent) {
+                    setTotalRoots(total => total + 1);
+                    setNextOffset(offset => offset + 1);
+                }
+                if (onCountChange) onCountChange(1);
+            }
             setContent('');
             setKind('comment');
             setReplyText('');
             setReplyTo(null);
-            load();
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
                 setError(e.message || 'Could not post comment.');
@@ -297,10 +400,17 @@ const CommentThread = ({
         const releaseAction = beginAction(actionSource, actionViewer, 'remove');
         if (!releaseAction) return;
         setRemovingId(commentId);
+        const removingComment = comments.find(comment => comment.id === commentId);
         try {
             await actionSource.remove(commentId);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            const removedCount = comments.filter(c => c.id === commentId || c.parent === commentId).length;
             setComments(cs => cs.filter(c => c.id !== commentId && c.parent !== commentId));
+            if (removingComment && !removingComment.parent) {
+                setTotalRoots(total => Math.max(0, total - 1));
+                setNextOffset(offset => Math.max(0, offset - 1));
+            }
+            if (onCountChange && removedCount) onCountChange(-removedCount);
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
@@ -380,6 +490,7 @@ const CommentThread = ({
             return matches(comment) || (replyMap.get(comment.id) || []).some(matches);
         });
     }, [roots, replyMap, kindFilter, search, projectComments]);
+    const visibleRoots = filteredRoots.slice(0, rootLimit);
 
     return (
         <div className={styles.thread}>
@@ -411,112 +522,144 @@ const CommentThread = ({
 
             {projectComments && comments.length ? (
                 <div className={styles.commentTools}>
-                    <input
-                        type="search"
-                        value={search}
-                        placeholder="Search comments"
-                        aria-label="Search comments"
-                        onChange={event => setSearch(event.target.value)}
-                    />
-                    <select
+                    <label className={styles.searchField}>
+                        <Search size={15} aria-hidden="true" />
+                        <input
+                            type="search"
+                            value={search}
+                            placeholder="Search comments"
+                            aria-label="Search comments"
+                            onChange={event => {
+                                setSearch(event.target.value);
+                                setRootLimit(ROOT_PAGE);
+                            }}
+                        />
+                    </label>
+                    <SelectMenu
+                        compact
+                        options={[{value: 'all', label: 'All types'}, ...COMMENT_KINDS]}
                         value={kindFilter}
-                        aria-label="Filter comments by type"
-                        onChange={event => setKindFilter(event.target.value)}
-                    >
-                        <option value="all">All types</option>
-                        {COMMENT_KINDS.map(item => (
-                            <option key={item.value} value={item.value}>{item.label}</option>
-                        ))}
-                    </select>
+                        className={styles.filterMenu}
+                        ariaLabel="Filter comments by type"
+                        onChange={nextKind => {
+                            setKindFilter(nextKind);
+                            setRootLimit(ROOT_PAGE);
+                        }}
+                        width={180}
+                    />
                 </div>
             ) : null}
 
-            {filteredRoots.length ? filteredRoots.map(comment => (
-                <div
-                    key={comment.id}
-                    id={`comment-group-${comment.id}`}
-                    className={styles.commentGroup}
-                >
-                    <CommentRow
-                        comment={comment}
-                        id={`comment-id-${comment.id}`}
-                        onReply={() => openReply(comment.id)}
-                        onDelete={() => {
-                            setError(null);
-                            setDeleteId(comment.id);
-                        }}
-                        onReact={type => react(comment.id, type)}
-                        onReport={() => setReportId(comment.id)}
-                        canReply={canReply}
-                        canDelete={canDelete(comment)}
-                        canReport={canReport(comment)}
-                        deleting={removingId !== null}
-                        reacting={reactingId !== null}
-                    />
-                    <div className={styles.replies}>
-                        {(() => {
-                            const all = repliesOf(comment.id);
-                            const limit = replyLimits[comment.id] ?? INITIAL_LIMIT;
-                            const visible = all.slice(0, limit);
-                            const hidden = all.length - visible.length;
-                            return (
-                                <>
-                                    {visible.map(reply => (
-                                        <CommentRow
-                                            key={reply.id}
-                                            comment={reply}
-                                            id={`comment-id-${reply.id}`}
-                                            isReply
-                                            canReply={canReply}
-                                            canDelete={canDelete(reply)}
-                                            canReport={canReport(reply)}
-                                            deleting={removingId !== null}
-                                            reacting={reactingId !== null}
-                                            onReply={() => openReply(comment.id, `@${reply.author} `)}
-                                            onDelete={() => {
-                                                setError(null);
-                                                setDeleteId(reply.id);
-                                            }}
-                                            onReact={type => react(reply.id, type)}
-                                            onReport={() => setReportId(reply.id)}
-                                        />
-                                    ))}
-                                    {hidden > 0 ? (
-                                        <button
-                                            type="button"
-                                            className={styles.showMore}
-                                            onClick={() => showMoreReplies(comment.id)}
-                                        >
-                                            Show {hidden} more {hidden === 1 ? 'reply' : 'replies'}
-                                        </button>
-                                    ) : all.length > INITIAL_LIMIT ? (
-                                        <button
-                                            type="button"
-                                            className={styles.showMore}
-                                            onClick={() => hideReplies(comment.id)}
-                                        >
-                                            Hide replies
-                                        </button>
-                                    ) : null}
-                                </>
-                            );
-                        })()}
-                        {replyTo === comment.id && user ? (
-                            <InlineComposer
-                                small
-                                user={user}
-                                value={replyText}
-                                onChange={setReplyText}
-                                onSubmit={() => submit(replyText, comment.id)}
-                                onCancel={() => setReplyTo(null)}
-                                placeholder={`Reply to ${comment.author}`}
-                                busy={busy}
-                                error={error}
+            {filteredRoots.length ? (
+                <>
+                    {visibleRoots.map(comment => (
+                        <div
+                            key={comment.id}
+                            id={`comment-group-${comment.id}`}
+                            className={styles.commentGroup}
+                        >
+                            <CommentRow
+                                comment={comment}
+                                id={`comment-id-${comment.id}`}
+                                onReply={() => openReply(comment.id)}
+                                onDelete={() => {
+                                    setError(null);
+                                    setDeleteId(comment.id);
+                                }}
+                                onReact={type => react(comment.id, type)}
+                                onReport={() => setReportId(comment.id)}
+                                canReply={canReply}
+                                canDelete={canDelete(comment)}
+                                canReport={canReport(comment)}
+                                deleting={removingId !== null}
+                                reacting={reactingId !== null}
                             />
-                        ) : null}
-                    </div>
-                </div>
-            )) : (
+                            <div className={styles.replies}>
+                                {(() => {
+                                    const all = repliesOf(comment.id);
+                                    const limit = replyLimits[comment.id] ?? INITIAL_LIMIT;
+                                    const visible = all.slice(0, limit);
+                                    const hidden = all.length - visible.length;
+                                    return (
+                                        <>
+                                            {visible.map(reply => (
+                                                <CommentRow
+                                                    key={reply.id}
+                                                    comment={reply}
+                                                    id={`comment-id-${reply.id}`}
+                                                    isReply
+                                                    canReply={canReply}
+                                                    canDelete={canDelete(reply)}
+                                                    canReport={canReport(reply)}
+                                                    deleting={removingId !== null}
+                                                    reacting={reactingId !== null}
+                                                    onReply={() => openReply(comment.id, `@${reply.author} `)}
+                                                    onDelete={() => {
+                                                        setError(null);
+                                                        setDeleteId(reply.id);
+                                                    }}
+                                                    onReact={type => react(reply.id, type)}
+                                                    onReport={() => setReportId(reply.id)}
+                                                />
+                                            ))}
+                                            {hidden > 0 ? (
+                                                <button
+                                                    type="button"
+                                                    className={styles.showMore}
+                                                    onClick={() => showMoreReplies(comment.id)}
+                                                >
+                                                    Show {hidden} more {hidden === 1 ? 'reply' : 'replies'}
+                                                </button>
+                                            ) : all.length > INITIAL_LIMIT ? (
+                                                <button
+                                                    type="button"
+                                                    className={styles.showMore}
+                                                    onClick={() => hideReplies(comment.id)}
+                                                >
+                                                    Hide replies
+                                                </button>
+                                            ) : null}
+                                        </>
+                                    );
+                                })()}
+                                {replyTo === comment.id && user ? (
+                                    <InlineComposer
+                                        small
+                                        user={user}
+                                        value={replyText}
+                                        onChange={setReplyText}
+                                        onSubmit={() => submit(replyText, comment.id)}
+                                        onCancel={() => setReplyTo(null)}
+                                        placeholder={`Reply to ${comment.author}`}
+                                        busy={busy}
+                                        error={error}
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+                    ))}
+                    {visibleRoots.length < filteredRoots.length ? (
+                        <button
+                            type="button"
+                            className={`${styles.showMore} ${styles.rootMore}`}
+                            onClick={() => setRootLimit(limit => limit + ROOT_PAGE)}
+                        >
+                            Show {Math.min(ROOT_PAGE, filteredRoots.length - visibleRoots.length)} more comments
+                        </button>
+                    ) : nextOffset < totalRoots ? (
+                        <button
+                            type="button"
+                            className={`${styles.showMore} ${styles.rootMore}`}
+                            disabled={loadingMore}
+                            onClick={loadMore}
+                        >
+                            {loadingMore ? 'Loading…' :
+                                `Show ${Math.min(ROOT_PAGE, totalRoots - nextOffset)} more comments`}
+                        </button>
+                    ) : null}
+                    {moreFailed ? <p className={styles.moreError}>Could not load more comments. Try again.</p> : null}
+                </>
+            ) : (
                 <p className={styles.empty}>
                     {loadingComments ? 'Loading comments…' : loadFailed ? (
                         <>

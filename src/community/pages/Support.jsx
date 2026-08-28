@@ -14,22 +14,47 @@ const supportPayload = (form, user) => ({
     message: form.message.trim()
 });
 
+const normalizeSupportParams = currentParams => {
+    const next = new URLSearchParams(currentParams);
+    const topic = next.get('topic');
+    if (!TOPICS.includes(topic) || topic === 'account') next.delete('topic');
+    return next;
+};
+
+const withSupportTopic = (currentParams, topic) => {
+    const next = new URLSearchParams(currentParams);
+    if (topic === 'account') next.delete('topic');
+    else next.set('topic', topic);
+    return next;
+};
+
+const resetSupportForm = (form, user) => ({
+    ...form,
+    username: user?.username || form.username,
+    subject: '',
+    message: ''
+});
+
 const Support = () => {
     const {user} = useUser();
-    const [params] = useSearchParams();
-    const requestedTopic = params.get('topic');
+    const [params, setParams] = useSearchParams();
+    const requestedTopic = TOPICS.includes(params.get('topic')) ? params.get('topic') : 'account';
     const viewerName = (user && user.username) || '';
     const requestContext = `${viewerName}\u0000${requestedTopic || ''}`;
     const requestContextRef = useRef(requestContext);
     requestContextRef.current = requestContext;
-    const [form, setForm] = useState({type: TOPICS.includes(requestedTopic) ? requestedTopic : 'account', username: user ? user.username : '', subject: '', message: ''});
+    const [form, setForm] = useState({type: requestedTopic, username: user ? user.username : '', subject: '', message: ''});
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
     const submitLocks = useRef(new Set());
     const update = (key, value) => setForm(current => ({...current, [key]: value}));
     useEffect(() => {
-        if (TOPICS.includes(requestedTopic)) update('type', requestedTopic);
+        const normalized = normalizeSupportParams(params);
+        if (normalized.toString() !== params.toString()) setParams(normalized, {replace: true});
+    }, [params, setParams]);
+    useEffect(() => {
+        update('type', requestedTopic);
         setSent(false);
         setError('');
         setBusy(false);
@@ -74,9 +99,20 @@ const Support = () => {
             </section>
             <section className={styles.section}>
                 <h2>Send a private request</h2>
-                {sent ? <p className={styles.success}>Your request was sent to the MistWarp moderators.</p> : (
+                {sent ? (
+                    <div className={styles.success}>
+                        <p>Your request was sent to the MistWarp moderators.</p>
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setForm(current => resetSupportForm(current, user));
+                                setSent(false);
+                            }}
+                        >Send another request</Button>
+                    </div>
+                ) : (
                     <form className={styles.form} onSubmit={submit}>
-                        <label>Topic<select value={form.type} disabled={busy} onChange={event => update('type', event.target.value)}><option value="account">Account help</option><option value="safety">Safety concern</option><option value="legal">Legal or copyright</option><option value="appeal">Moderation appeal</option></select></label>
+                        <label>Topic<select value={form.type} disabled={busy} onChange={event => setParams(withSupportTopic(params, event.target.value))}><option value="account">Account help</option><option value="safety">Safety concern</option><option value="legal">Legal or copyright</option><option value="appeal">Moderation appeal</option></select></label>
                         <label>Rotur username<input value={user ? user.username : form.username} disabled={Boolean(user) || busy} required maxLength={80} onChange={event => update('username', event.target.value)} /></label>
                         <label>Subject<input value={form.subject} disabled={busy} required maxLength={120} onChange={event => update('subject', event.target.value)} /></label>
                         <label>Message<textarea value={form.message} disabled={busy} required maxLength={3000} onChange={event => update('message', event.target.value)} /></label>
@@ -89,5 +125,5 @@ const Support = () => {
     );
 };
 
-export {supportPayload};
+export {normalizeSupportParams, resetSupportForm, supportPayload, withSupportTopic};
 export default Support;

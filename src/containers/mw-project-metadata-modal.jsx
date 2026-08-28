@@ -23,7 +23,7 @@ import {
 } from '../components/modal-sidebar/modal-sidebar.jsx';
 import {closeProjectMetadataModal} from '../reducers/modals';
 import {getLoadedProjectMeta} from '../lib/mw-project-metadata';
-import {getProject} from '../lib/community/api';
+import {getPerks, getProject} from '../lib/community/api';
 import {getRememberedPlatformProject} from '../lib/community/publish';
 
 import styles from '../components/mw-project-metadata/project-metadata-modal.css';
@@ -71,7 +71,7 @@ const variableValueSize = value => {
     return Math.round(size * value.length / samples);
 };
 
-const buildSizeReport = vm => {
+const buildSizeReport = (vm, limits = LIMITS) => {
     const entries = new Map();
     const addAsset = (asset, category, label) => {
         if (!asset) return;
@@ -139,9 +139,9 @@ const buildSizeReport = vm => {
         localAssetSize,
         variableDataSize,
         largestAsset,
-        overAssetLimit: largestAsset > LIMITS.asset,
-        overAssetsLimit: localAssetSize > LIMITS.assets,
-        overExpandedLimit: variableDataSize > LIMITS.expandedJson,
+        overAssetLimit: largestAsset > limits.asset,
+        overAssetsLimit: localAssetSize > limits.assets,
+        overExpandedLimit: variableDataSize > limits.expandedJson,
         contents: {
             sprites,
             costumes,
@@ -223,12 +223,28 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
     const [refresh, setRefresh] = React.useState(0);
     const [serverProject, setServerProject] = React.useState(null);
     const [serverLoading, setServerLoading] = React.useState(false);
+    const [perks, setPerks] = React.useState(null);
     const handleRefresh = React.useCallback(() => setRefresh(value => value + 1), []);
-    const report = React.useMemo(() => buildSizeReport(vm), [vm, refresh]);
+    const limits = React.useMemo(() => ({
+        ...LIMITS,
+        asset: perks?.mistwarp?.maxProjectAssetBytes || LIMITS.asset,
+        assets: perks?.mistwarp?.maxProjectAssetsBytes || LIMITS.assets
+    }), [perks]);
+    const report = React.useMemo(() => buildSizeReport(vm, limits), [vm, refresh, limits]);
     const meta = getLoadedProjectMeta() || {};
     const author = meta.author;
     const platform = meta.platform;
     const projectId = getRememberedPlatformProject();
+
+    React.useEffect(() => {
+        let active = true;
+        getPerks()
+            .then(data => active && setPerks(data.current || null))
+            .catch(() => active && setPerks(null));
+        return () => {
+            active = false;
+        };
+    }, [roturUsername]);
 
     React.useEffect(() => {
         if (!projectId) return;
@@ -251,12 +267,16 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
 
     const serverStoredJson = serverProject && serverProject.storedJsonBytes;
     const hasLocalProblem = report.overAssetLimit || report.overAssetsLimit || report.overExpandedLimit;
-    const hasServerProblem = serverStoredJson > LIMITS.storedJson;
+    const hasServerProblem = serverStoredJson > limits.storedJson;
     const storageStatus = hasLocalProblem || hasServerProblem ?
         'This project is over a MistWarp upload limit.' :
         serverProject ?
             'The saved project is within MistWarp’s storage limits.' :
             'MistWarp checks compressed project data when you upload.';
+    const perkSummary = perks ?
+        `${formatSize(limits.assets)} of assets per project, ${formatSize(limits.asset)} per asset, ` +
+            `${formatSize(perks.mistwarp.weeklyUploadBytes)} of uploads each week.` :
+        '';
     const groups = [
         {
             label: 'Project',
@@ -301,6 +321,12 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                         {'Sizes in the editor come directly from the VM. Final compression is measured during upload.'}
                     </span>
                 </div>
+                {perks && (
+                    <div className={styles.perkNotice}>
+                        <strong>{`${perks.tier} Rotur benefits are active`}</strong>
+                        <span>{perkSummary}</span>
+                    </div>
+                )}
                 <div className={styles.summary}>
                     <div>
                         <span>{'Editor estimate'}</span>
@@ -340,20 +366,20 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                     <Meter
                         current={serverStoredJson}
                         label="Compressed project data on server"
-                        limit={LIMITS.storedJson}
+                        limit={limits.storedJson}
                         note="Exact size from the last upload"
                     />
                 )}
                 <Meter
                     current={report.localAssetSize}
                     label="Assets in the editor"
-                    limit={LIMITS.assets}
+                    limit={limits.assets}
                     note="Costumes, sounds, fonts and custom assets"
                 />
                 <Meter
                     current={report.largestAsset}
                     label="Largest single asset"
-                    limit={LIMITS.asset}
+                    limit={limits.asset}
                 />
                 <Meter
                     current={serverProject && typeof serverProject.jsonBytes === 'number' ?
@@ -362,14 +388,15 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                     label={serverProject && typeof serverProject.jsonBytes === 'number' ?
                         'Expanded project data on server' :
                         'Variable and list data in the editor'}
-                    limit={LIMITS.expandedJson}
+                    limit={limits.expandedJson}
                     note={serverProject && typeof serverProject.jsonBytes === 'number' ?
                         'Exact size from the last upload' :
                         'Fast lower-bound estimate from the VM'}
                 />
                 <p className={styles.detail}>
-                    {'MistWarp allows 20 MB of compressed project data, 1 GB expanded, ' +
-                        '50 MB of assets, and 10 MB per asset.'}
+                    {`Your current limits are ${formatSize(limits.storedJson)} of compressed project data, ` +
+                        `${formatSize(limits.expandedJson)} expanded, ${formatSize(limits.assets)} of assets, ` +
+                        `and ${formatSize(limits.asset)} per asset.`}
                 </p>
             </React.Fragment>
         );

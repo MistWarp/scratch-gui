@@ -41,7 +41,7 @@ class HostSession extends Emitter {
      * @param {string} options.username Host's display name.
      * @param {string} [options.privacy] 'public' or 'private'.
      */
-    constructor ({transport, applier, roomId, username, handle, privacy}) {
+    constructor ({transport, applier, roomId, username, handle, privacy, maxUsers = 3}) {
         super();
         this.transport = transport;
         this.applier = applier;
@@ -49,6 +49,7 @@ class HostSession extends Emitter {
         this.username = username;
         this.handle = handle || null;
         this.privacy = privacy === 'private' ? 'private' : 'public';
+        this.maxUsers = Math.max(1, Number(maxUsers) || 3);
 
         this.seq = 0;
         this.opLog = [];
@@ -147,6 +148,10 @@ class HostSession extends Emitter {
     approveJoinRequest (requesterId) {
         const request = this.pendingJoinRequests.get(requesterId);
         if (!request) return;
+        if (this.users.size >= this.maxUsers) {
+            this.denyJoinRequest(requesterId, `This room is full. The host's plan allows ${this.maxUsers} people.`);
+            return;
+        }
         this.pendingJoinRequests.delete(requesterId);
         this._admitClient(requesterId, request.username, request.lastAppliedSeq, request.handle);
     }
@@ -310,6 +315,14 @@ class HostSession extends Emitter {
         }
         if (this.users.has(peerId)) {
             this._admitClient(peerId, payload.username, payload.lastAppliedSeq, payload.handle);
+            return;
+        }
+
+        if (this.users.size >= this.maxUsers) {
+            this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
+                reason: `This room is full. The host's plan allows ${this.maxUsers} people.`
+            }));
+            this.transport.closeConnection(peerId);
             return;
         }
 

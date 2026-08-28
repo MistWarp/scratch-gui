@@ -33,6 +33,7 @@ import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance.js'
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setShellUser} from '../lib/git/browser-terminal';
+import {setAuthorName} from '../lib/git/config.js';
 import describeActivity from '../lib/collaboration/describe-activity.js';
 import {setProjectAuthor} from '../lib/mw-project-metadata.js';
 
@@ -67,6 +68,7 @@ class RoturSession extends React.Component {
     componentDidMount () {
         this.editingSince = Date.now();
         setShellUser({rotur: this.props.roturUsername});
+        if (this.props.roturUsername) setAuthorName(this.props.roturUsername);
         this.syncProjectAuthor();
         setRoturSessionApi({
             login: this.handleLogin,
@@ -80,6 +82,7 @@ class RoturSession extends React.Component {
     componentDidUpdate (prevProps) {
         if (this.props.roturUsername !== prevProps.roturUsername) {
             setShellUser({rotur: this.props.roturUsername});
+            if (this.props.roturUsername) setAuthorName(this.props.roturUsername);
         }
         if (
             this.props.roturUsername !== prevProps.roturUsername ||

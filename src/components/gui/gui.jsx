@@ -8,48 +8,16 @@ import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 
-import Blocks from '../../containers/blocks.jsx';
-import CostumeTab from '../../containers/costume-tab.jsx';
-import SoundTab from '../../containers/sound-tab.jsx';
-import ExtensionLibrary from '../../containers/extension-library.jsx';
-import TargetPane from '../../containers/target-pane.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
-import MenuBar from '../menu-bar/menu-bar.jsx';
-import CostumeLibrary from '../../containers/costume-library.jsx';
-import SoundLibrary from '../../containers/sound-library.jsx';
-import BackdropLibrary from '../../containers/backdrop-library.jsx';
-import Watermark from '../../containers/watermark.jsx';
-
-import Backpack from '../../containers/backpack.jsx';
-import BrowserModal from '../browser-modal/browser-modal.jsx';
-import TipsLibrary from '../../containers/tips-library.jsx';
-import Cards from '../../containers/cards.jsx';
 import Alerts from '../../containers/alerts.jsx';
 import NotificationsProvider from '../../lib/notifications-provider.jsx';
-import DragLayer from '../../containers/drag-layer.jsx';
-import ConnectionModal from '../../containers/connection-modal.jsx';
-import CollaborationContainer from '../../containers/collaboration-container.jsx';
-import CollabLoader from '../collab-loader/collab-loader.jsx';
-import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
-import TWUsernameModal from '../../containers/tw-username-modal.jsx';
-import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
-import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
-import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
-import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
-import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
-import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
-import TWDebugger from '../../containers/tw-debugger.jsx';
-import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
-import TWGitModal from '../../containers/mw-git-modal.jsx';
-import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
-import MWHelpModal from '../../containers/mw-help-modal.jsx';
-import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
+import MistWarpGameHost from '../../containers/mistwarp-game-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import {closeRoturLoginModal} from '../../reducers/modals.js';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
@@ -71,8 +39,7 @@ import {setStageSize} from '../../reducers/stage-size';
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
-
-const FractchWorkspace = React.lazy(() => import('../mw-fractch-workspace/fractch-workspace.jsx'));
+import {getGuiComponents} from './gui-components';
 
 const messages = defineMessages({
     addExtension: {
@@ -135,6 +102,42 @@ const getCachedBorderWidth = element => {
 };
 
 const GUIComponent = props => {
+    const {
+        FractchWorkspace,
+        Blocks,
+        CostumeTab,
+        SoundTab,
+        ExtensionLibrary,
+        TargetPane,
+        MenuBar,
+        CostumeLibrary,
+        SoundLibrary,
+        BackdropLibrary,
+        Watermark,
+        Backpack,
+        BrowserModal,
+        TipsLibrary,
+        Cards,
+        DragLayer,
+        ConnectionModal,
+        CollaborationContainer,
+        CollabLoader,
+        TelemetryModal,
+        TWUsernameModal,
+        TWSettingsModal,
+        TWCustomExtensionModal,
+        TWRestorePointManager,
+        TWFontsModal,
+        MWAssetsModal,
+        MWProjectMetadataModal,
+        TWDebugger,
+        TWUnknownPlatformModal,
+        TWGitModal,
+        MWExtensionManagerModal,
+        MWHelpModal,
+        MWProjectThemeModal,
+        loadExtensionLibrary
+    } = getGuiComponents();
     const [fractchMode, setFractchMode] = useState(false);
     const [fractchExitRequested, setFractchExitRequested] = useState(false);
     const handleToggleFractchMode = useCallback(() => {
@@ -156,6 +159,18 @@ const GUIComponent = props => {
         });
         return () => setFractchModeOpener(null);
     }, [props.onActivateTab]);
+    useEffect(() => {
+        if (props.isPlayerOnly) return;
+
+        const preload = () => loadExtensionLibrary();
+        if (window.requestIdleCallback) {
+            const idleCallback = window.requestIdleCallback(preload);
+            return () => window.cancelIdleCallback(idleCallback);
+        }
+
+        const timeout = window.setTimeout(preload, 0);
+        return () => window.clearTimeout(timeout);
+    }, [props.isPlayerOnly, loadExtensionLibrary]);
     const handleEnableProcedureReturns = useCallback(() => {
         try {
             const workspace = AddonHooks.blocklyWorkspace;
@@ -737,26 +752,29 @@ const GUIComponent = props => {
         <React.Fragment>
             <RoturSession />
             {!isEmbedded && <RoturExtensionHost />}
+            <MistWarpGameHost />
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
-            <TWRestorePointManager />
-            <MWExtensionManagerModal />
-            <MWHelpModal />
-            <MWProjectThemeModal />
-            {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
-            {settingsModalVisible && (
-                <TWSettingsModal
-                    isRtl={isRtl}
-                    visible={settingsModalVisible}
-                />
-            )}
-            {customExtensionModalVisible && <TWCustomExtensionModal />}
-            {fontsModalVisible && <TWFontsModal />}
-            {assetsModalVisible && <MWAssetsModal />}
-            {projectMetadataModalVisible && <MWProjectMetadataModal />}
-            {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
+            <React.Suspense fallback={null}>
+                {!isPlayerOnly && <TWRestorePointManager />}
+                {!isPlayerOnly && <MWExtensionManagerModal />}
+                {!isPlayerOnly && <MWHelpModal />}
+                {!isPlayerOnly && <MWProjectThemeModal />}
+                {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
+                {settingsModalVisible && (
+                    <TWSettingsModal
+                        isRtl={isRtl}
+                        visible={settingsModalVisible}
+                    />
+                )}
+                {customExtensionModalVisible && <TWCustomExtensionModal />}
+                {fontsModalVisible && <TWFontsModal />}
+                {assetsModalVisible && <MWAssetsModal />}
+                {projectMetadataModalVisible && <MWProjectMetadataModal />}
+                {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
+                {gitModalVisible && <TWGitModal />}
+            </React.Suspense>
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
-            {gitModalVisible && <TWGitModal />}
             {roturLoginModalVisible && (
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
             )}
@@ -776,7 +794,8 @@ const GUIComponent = props => {
         gitModalVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
-        isEmbedded
+        isEmbedded,
+        isPlayerOnly
     ]);
 
     const minDimensions = useMemo(() => {
@@ -850,303 +869,307 @@ const GUIComponent = props => {
                 {alwaysEnabledModals}
             </React.Fragment>
         ) : (
-            <Box
-                className={styles.pageWrapper}
-                dir={isRtl ? 'rtl' : 'ltr'}
-                style={minDimensions}
-                {...componentProps}
-            >
-                {alwaysEnabledModals}
-                <TWDebugger />
-                {telemetryModalVisible ? (
-                    <TelemetryModal
-                        isRtl={isRtl}
-                        isTelemetryEnabled={isTelemetryEnabled}
-                        onCancel={onTelemetryModalCancel}
-                        onOptIn={onTelemetryModalOptIn}
-                        onOptOut={onTelemetryModalOptOut}
-                        onRequestClose={onRequestCloseTelemetryModal}
-                        onShowPrivacyPolicy={onShowPrivacyPolicy}
-                    />
-                ) : null}
-                {loading ? (
-                    <Loader isFullScreen />
-                ) : null}
-                {isCreating ? (
-                    <Loader
-                        isFullScreen
-                        messageId="gui.loader.creating"
-                    />
-                ) : null}
-                <CollabLoader />
-                {isBrowserSupported() ? null : (
-                    <BrowserModal
-                        isRtl={isRtl}
+            <React.Suspense fallback={<Loader isFullScreen />}>
+                <Box
+                    className={styles.pageWrapper}
+                    dir={isRtl ? 'rtl' : 'ltr'}
+                    style={minDimensions}
+                    {...componentProps}
+                >
+                    {alwaysEnabledModals}
+                    <TWDebugger />
+                    {telemetryModalVisible ? (
+                        <TelemetryModal
+                            isRtl={isRtl}
+                            isTelemetryEnabled={isTelemetryEnabled}
+                            onCancel={onTelemetryModalCancel}
+                            onOptIn={onTelemetryModalOptIn}
+                            onOptOut={onTelemetryModalOptOut}
+                            onRequestClose={onRequestCloseTelemetryModal}
+                            onShowPrivacyPolicy={onShowPrivacyPolicy}
+                        />
+                    ) : null}
+                    {loading ? (
+                        <Loader isFullScreen />
+                    ) : null}
+                    {isCreating ? (
+                        <Loader
+                            isFullScreen
+                            messageId="gui.loader.creating"
+                        />
+                    ) : null}
+                    <CollabLoader />
+                    {isBrowserSupported() ? null : (
+                        <BrowserModal
+                            isRtl={isRtl}
+                            onClickDesktopSettings={onClickDesktopSettings}
+                        />
+                    )}
+                    {tipsLibraryVisible ? (
+                        <TipsLibrary />
+                    ) : null}
+                    {cardsVisible ? (
+                        <Cards />
+                    ) : null}
+                    {alertsVisible ? (
+                        <Alerts className={styles.alertsContainer} />
+                    ) : null}
+                    {connectionModalVisible ? (
+                        <ConnectionModal
+                            vm={vm}
+                        />
+                    ) : null}
+                    <CollaborationContainer />
+                    {costumeLibraryVisible ? (
+                        <CostumeLibrary
+                            vm={vm}
+                            onRequestClose={onRequestCloseCostumeLibrary}
+                        />
+                    ) : null}
+                    {backdropLibraryVisible ? (
+                        <BackdropLibrary
+                            vm={vm}
+                            onRequestClose={onRequestCloseBackdropLibrary}
+                        />
+                    ) : null}
+                    {soundLibraryVisible ? (
+                        <SoundLibrary
+                            vm={vm}
+                            onRequestClose={onRequestCloseSoundLibrary}
+                        />
+                    ) : null}
+                    <MenuBar
+                        accountNavOpen={accountNavOpen}
+                        fractchMode={fractchMode}
+                        onToggleFractchMode={handleToggleFractchMode}
+                        authorId={authorId}
+                        authorThumbnailUrl={authorThumbnailUrl}
+                        authorUsername={authorUsername}
+                        canChangeLanguage={canChangeLanguage}
+                        canChangeTheme={canChangeTheme}
+                        canCreateCopy={canCreateCopy}
+                        canCreateNew={canCreateNew}
+                        canEditTitle={canEditTitle}
+                        canManageFiles={canManageFiles}
+                        canRemix={canRemix}
+                        canSave={canSave}
+                        canShare={canShare}
+                        className={styles.menuBarPosition}
+                        enableCommunity={enableCommunity}
+                        isShared={isShared}
+                        isTotallyNormal={isTotallyNormal}
+                        logo={logo}
+                        renderLogin={renderLogin}
+                        showComingSoon={showComingSoon}
+                        showOpenFilePicker={showOpenFilePicker}
+                        showSaveFilePicker={showSaveFilePicker}
+                        onClickAbout={onClickAbout}
+                        onClickAccountNav={onClickAccountNav}
+                        onClickAddonSettings={onClickAddonSettings}
                         onClickDesktopSettings={onClickDesktopSettings}
+                        onClickNewWindow={onClickNewWindow}
+                        onClickPackager={onClickPackager}
+                        onClickLogo={onClickLogo}
+                        onCloseAccountNav={onCloseAccountNav}
+                        onLogOut={onLogOut}
+                        onOpenExtensionLibrary={onOpenExtensionLibrary}
+                        onOpenExtensionManagerModal={onOpenExtensionManagerModal}
+                        onOpenRegistration={onOpenRegistration}
+                        onProjectTelemetryEvent={onProjectTelemetryEvent}
+                        onSeeCommunity={onSeeCommunity}
+                        onShare={onShare}
+                        onStartSelectingFileUpload={onStartSelectingFileUpload}
+                        onToggleLoginOpen={onToggleLoginOpen}
                     />
-                )}
-                {tipsLibraryVisible ? (
-                    <TipsLibrary />
-                ) : null}
-                {cardsVisible ? (
-                    <Cards />
-                ) : null}
-                {alertsVisible ? (
-                    <Alerts className={styles.alertsContainer} />
-                ) : null}
-                {connectionModalVisible ? (
-                    <ConnectionModal
-                        vm={vm}
-                    />
-                ) : null}
-                <CollaborationContainer />
-                {costumeLibraryVisible ? (
-                    <CostumeLibrary
-                        vm={vm}
-                        onRequestClose={onRequestCloseCostumeLibrary}
-                    />
-                ) : null}
-                {backdropLibraryVisible ? (
-                    <BackdropLibrary
-                        vm={vm}
-                        onRequestClose={onRequestCloseBackdropLibrary}
-                    />
-                ) : null}
-                {soundLibraryVisible ? (
-                    <SoundLibrary
-                        vm={vm}
-                        onRequestClose={onRequestCloseSoundLibrary}
-                    />
-                ) : null}
-                <MenuBar
-                    accountNavOpen={accountNavOpen}
-                    fractchMode={fractchMode}
-                    onToggleFractchMode={handleToggleFractchMode}
-                    authorId={authorId}
-                    authorThumbnailUrl={authorThumbnailUrl}
-                    authorUsername={authorUsername}
-                    canChangeLanguage={canChangeLanguage}
-                    canChangeTheme={canChangeTheme}
-                    canCreateCopy={canCreateCopy}
-                    canCreateNew={canCreateNew}
-                    canEditTitle={canEditTitle}
-                    canManageFiles={canManageFiles}
-                    canRemix={canRemix}
-                    canSave={canSave}
-                    canShare={canShare}
-                    className={styles.menuBarPosition}
-                    enableCommunity={enableCommunity}
-                    isShared={isShared}
-                    isTotallyNormal={isTotallyNormal}
-                    logo={logo}
-                    renderLogin={renderLogin}
-                    showComingSoon={showComingSoon}
-                    showOpenFilePicker={showOpenFilePicker}
-                    showSaveFilePicker={showSaveFilePicker}
-                    onClickAbout={onClickAbout}
-                    onClickAccountNav={onClickAccountNav}
-                    onClickAddonSettings={onClickAddonSettings}
-                    onClickDesktopSettings={onClickDesktopSettings}
-                    onClickNewWindow={onClickNewWindow}
-                    onClickPackager={onClickPackager}
-                    onClickLogo={onClickLogo}
-                    onCloseAccountNav={onCloseAccountNav}
-                    onLogOut={onLogOut}
-                    onOpenExtensionLibrary={onOpenExtensionLibrary}
-                    onOpenExtensionManagerModal={onOpenExtensionManagerModal}
-                    onOpenRegistration={onOpenRegistration}
-                    onProjectTelemetryEvent={onProjectTelemetryEvent}
-                    onSeeCommunity={onSeeCommunity}
-                    onShare={onShare}
-                    onStartSelectingFileUpload={onStartSelectingFileUpload}
-                    onToggleLoginOpen={onToggleLoginOpen}
-                />
-                <Box className={styles.bodyWrapper}>
-                    <Box className={styles.flexWrapper}>
-                        <Box
-                            className={styles.editorWrapper}
-                            ref={editorWrapperRef}
-                        >
-                            <NativeFindBar
-                                activeTabIndex={activeTabIndex}
-                                isPlayerOnly={isPlayerOnly}
-                                locale={locale}
-                                vm={vm}
-                            />
-                            <NativeSpotlight
-                                activeTabIndex={activeTabIndex}
-                                isPlayerOnly={isPlayerOnly}
-                                locale={locale}
-                                vm={vm}
-                            />
-                            <Tabs
-                                forceRenderTabPanel
-                                className={tabClassNames.tabs}
-                                selectedIndex={activeTabIndex}
-                                selectedTabClassName={tabClassNames.tabSelected}
-                                selectedTabPanelClassName={tabClassNames.tabPanelSelected}
-                                onSelect={onActivateTab}
+                    <Box className={styles.bodyWrapper}>
+                        <Box className={styles.flexWrapper}>
+                            <Box
+                                className={styles.editorWrapper}
+                                ref={editorWrapperRef}
                             >
-                                <TabList className={tabClassNames.tabList}>
-                                    <Tab className={tabClassNames.tab}>
-                                        <BlocksIcon size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Code"
-                                            description="Button to get to the code panel"
-                                            id="gui.gui.codeTab"
-                                        />
-                                        <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
-                                    </Tab>
-                                    <Tab className={tabClassNames.tab}>
-                                        <CostumesIcon size={20} />
-                                        {targetIsStage ? (
+                                <NativeFindBar
+                                    activeTabIndex={activeTabIndex}
+                                    isPlayerOnly={isPlayerOnly}
+                                    locale={locale}
+                                    vm={vm}
+                                />
+                                <NativeSpotlight
+                                    activeTabIndex={activeTabIndex}
+                                    isPlayerOnly={isPlayerOnly}
+                                    locale={locale}
+                                    vm={vm}
+                                />
+                                <Tabs
+                                    forceRenderTabPanel
+                                    className={tabClassNames.tabs}
+                                    selectedIndex={activeTabIndex}
+                                    selectedTabClassName={tabClassNames.tabSelected}
+                                    selectedTabPanelClassName={tabClassNames.tabPanelSelected}
+                                    onSelect={onActivateTab}
+                                >
+                                    <TabList className={tabClassNames.tabList}>
+                                        <Tab className={tabClassNames.tab}>
+                                            <BlocksIcon size={20} />
                                             <FormattedMessage
-                                                defaultMessage="Backdrops"
-                                                description="Button to get to the backdrops panel"
-                                                id="gui.gui.backdropsTab"
+                                                defaultMessage="Code"
+                                                description="Button to get to the code panel"
+                                                id="gui.gui.codeTab"
                                             />
-                                        ) : (
+                                            <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
+                                        </Tab>
+                                        <Tab className={tabClassNames.tab}>
+                                            <CostumesIcon size={20} />
+                                            {targetIsStage ? (
+                                                <FormattedMessage
+                                                    defaultMessage="Backdrops"
+                                                    description="Button to get to the backdrops panel"
+                                                    id="gui.gui.backdropsTab"
+                                                />
+                                            ) : (
+                                                <FormattedMessage
+                                                    defaultMessage="Costumes"
+                                                    description="Button to get to the costumes panel"
+                                                    id="gui.gui.costumesTab"
+                                                />
+                                            )}
+                                            <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
+                                        </Tab>
+                                        <Tab className={tabClassNames.tab}>
+                                            <SoundsIcon size={20} />
                                             <FormattedMessage
-                                                defaultMessage="Costumes"
-                                                description="Button to get to the costumes panel"
-                                                id="gui.gui.costumesTab"
+                                                defaultMessage="Sounds"
+                                                description="Button to get to the sounds panel"
+                                                id="gui.gui.soundsTab"
                                             />
-                                        )}
-                                        <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
-                                    </Tab>
-                                    <Tab className={tabClassNames.tab}>
-                                        <SoundsIcon size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Sounds"
-                                            description="Button to get to the sounds panel"
-                                            id="gui.gui.soundsTab"
-                                        />
-                                        <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
-                                    </Tab>
-                                </TabList>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    {fractchMode ? (
-                                        <React.Suspense fallback={<Loader />}>
-                                            <FractchWorkspace
-                                                exitRequested={fractchExitRequested}
-                                                theme={theme}
-                                                vm={vm}
-                                                onExit={handleExitFractchMode}
-                                            />
-                                        </React.Suspense>
-                                    ) : (
-                                        <React.Fragment>
-                                            <Box className={styles.blocksWrapper}>
-                                                <Blocks
-                                                    key={`${blocksId}/${theme.getBlocksThemeId()}`}
-                                                    canUseCloud={canUseCloud}
-                                                    grow={1}
-                                                    isVisible={blocksTabVisible}
-                                                    options={{
-                                                        media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
-                                                    }}
-                                                    stageSize={stageSize}
-                                                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                            <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
+                                        </Tab>
+                                    </TabList>
+                                    <TabPanel className={tabClassNames.tabPanel}>
+                                        {fractchMode ? (
+                                            <React.Suspense fallback={<Loader />}>
+                                                <FractchWorkspace
+                                                    exitRequested={fractchExitRequested}
                                                     theme={theme}
                                                     vm={vm}
+                                                    onExit={handleExitFractchMode}
                                                 />
-                                            </Box>
-                                            <Box className={styles.paletteFooter}>
-                                                <button
-                                                    type="button"
-                                                    className={classNames(
-                                                        styles.paletteButton,
-                                                        styles.paletteSearchButton
-                                                    )}
-                                                    title={intl.formatMessage(messages.findBlocks)}
-                                                    onClick={handleOpenSearch}
-                                                >
-                                                    <Search
-                                                        className={styles.paletteButtonIcon}
-                                                        size={22}
+                                            </React.Suspense>
+                                        ) : (
+                                            <React.Fragment>
+                                                <Box className={styles.blocksWrapper}>
+                                                    <Blocks
+                                                        key={`${blocksId}/${theme.getBlocksThemeId()}`}
+                                                        canUseCloud={canUseCloud}
+                                                        grow={1}
+                                                        isVisible={blocksTabVisible}
+                                                        options={{
+                                                            media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                                        }}
+                                                        stageSize={stageSize}
+                                                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                                        theme={theme}
+                                                        vm={vm}
                                                     />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.paletteButton}
-                                                    title={intl.formatMessage(messages.addExtension)}
-                                                    onClick={onExtensionButtonClick}
-                                                >
-                                                    <ExtensionIcon
-                                                        className={styles.extensionButtonIcon}
-                                                        draggable={false}
-                                                    />
-                                                </button>
-                                            </Box>
-                                            <Box className={styles.watermark}>
-                                                <Watermark />
-                                            </Box>
-                                        </React.Fragment>
-                                    )}
-                                </TabPanel>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    {costumesTabVisible ? <CostumeTab
-                                        vm={vm}
-                                    /> : null}
-                                </TabPanel>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    {soundsTabVisible ? <SoundTab vm={vm} /> : null}
-                                </TabPanel>
-                            </Tabs>
-                            {backpackVisible && !fractchMode ? (
-                                <Backpack host={backpackHost} />
-                            ) : null}
-                        </Box>
+                                                </Box>
+                                                <Box className={styles.paletteFooter}>
+                                                    <button
+                                                        type="button"
+                                                        className={classNames(
+                                                            styles.paletteButton,
+                                                            styles.paletteSearchButton
+                                                        )}
+                                                        title={intl.formatMessage(messages.findBlocks)}
+                                                        onClick={handleOpenSearch}
+                                                    >
+                                                        <Search
+                                                            className={styles.paletteButtonIcon}
+                                                            size={22}
+                                                        />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={styles.paletteButton}
+                                                        title={intl.formatMessage(messages.addExtension)}
+                                                        onClick={onExtensionButtonClick}
+                                                    >
+                                                        <ExtensionIcon
+                                                            className={styles.extensionButtonIcon}
+                                                            draggable={false}
+                                                        />
+                                                    </button>
+                                                </Box>
+                                                <Box className={styles.watermark}>
+                                                    <Watermark />
+                                                </Box>
+                                            </React.Fragment>
+                                        )}
+                                    </TabPanel>
+                                    <TabPanel className={tabClassNames.tabPanel}>
+                                        {costumesTabVisible ? <CostumeTab
+                                            vm={vm}
+                                        /> : null}
+                                    </TabPanel>
+                                    <TabPanel className={tabClassNames.tabPanel}>
+                                        {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                    </TabPanel>
+                                </Tabs>
+                                {backpackVisible && !fractchMode ? (
+                                    <Backpack host={backpackHost} />
+                                ) : null}
+                            </Box>
 
-                        <Box
-                            className={styles.stagePaneResizer}
-                            onPointerDown={handleStagePanelResizePointerDown}
-                            onDoubleClick={handleStagePanelResizeDoubleClick}
-                            role="separator"
-                            aria-orientation="vertical"
-                            tabIndex={-1}
-                        />
-
-                        <Box
-                            className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
-                                [styles.stageHidden]: isStageHidden
-                            })}
-                            ref={stageAndTargetWrapperRef}
-                            style={stagePanelStyle}
-                        >
-                            <StageWrapper
-                                isFullScreen={isFullScreen}
-                                isRendererSupported={isRendererSupported()}
-                                isRtl={isRtl}
-                                isStageHidden={isStageHidden}
-                                stageSize={stageSize}
-                                stageContainerWidth={
-                                    typeof stageContainerWidth === 'number' ? stageContainerWidth : null
-                                }
-                                vm={vm}
+                            <Box
+                                className={styles.stagePaneResizer}
+                                onPointerDown={handleStagePanelResizePointerDown}
+                                onDoubleClick={handleStagePanelResizeDoubleClick}
+                                role="separator"
+                                aria-orientation="vertical"
+                                tabIndex={-1}
                             />
-                            {isStageHidden ? null : (
-                                <Box className={styles.targetWrapper}>
-                                    <TargetPane
-                                        stageSize={stageSize}
-                                        vm={vm}
-                                    />
-                                </Box>
-                            )}
+
+                            <Box
+                                className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
+                                    [styles.stageHidden]: isStageHidden
+                                })}
+                                ref={stageAndTargetWrapperRef}
+                                style={stagePanelStyle}
+                            >
+                                <StageWrapper
+                                    isFullScreen={isFullScreen}
+                                    isRendererSupported={isRendererSupported()}
+                                    isRtl={isRtl}
+                                    isStageHidden={isStageHidden}
+                                    stageSize={stageSize}
+                                    stageContainerWidth={
+                                        typeof stageContainerWidth === 'number' ? stageContainerWidth : null
+                                    }
+                                    vm={vm}
+                                />
+                                {isStageHidden ? null : (
+                                    <Box className={styles.targetWrapper}>
+                                        <TargetPane
+                                            stageSize={stageSize}
+                                            vm={vm}
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
                         </Box>
                     </Box>
+                    <React.Suspense fallback={null}>
+                        {extensionLibraryVisible ? (
+                            <ExtensionLibrary
+                                vm={vm}
+                                visible={extensionLibraryVisible}
+                                onRequestClose={onRequestCloseExtensionLibrary}
+                                onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                onEnableProcedureReturns={handleEnableProcedureReturns}
+                            />
+                        ) : null}
+                    </React.Suspense>
+                    <DragLayer />
                 </Box>
-                {extensionLibraryVisible ? (
-                    <ExtensionLibrary
-                        vm={vm}
-                        visible={extensionLibraryVisible}
-                        onRequestClose={onRequestCloseExtensionLibrary}
-                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                        onEnableProcedureReturns={handleEnableProcedureReturns}
-                    />
-                ) : null}
-                <DragLayer />
-            </Box>
+            </React.Suspense>
         );
     }}</MediaQuery>);
 };

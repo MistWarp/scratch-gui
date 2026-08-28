@@ -1,0 +1,33 @@
+.nav {
+    display: flex;
+    gap: 22px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+    display: none;
+}
+
+.link,
+.active {
+    flex: 0 0 auto;
+    margin-bottom: -1px;
+    padding: 10px 1px;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.link:hover {
+    color: var(--mw-text);
+}
+
+.active {
+    border-bottom-color: var(--accent);
+    color: var(--mw-text);
+}

@@ -6,7 +6,7 @@ import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import {timeAgo, formatBytes} from '../format';
+import {timeAgo, formatBytes, formatDateTime, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './Admin.module.css';
 
@@ -24,14 +24,23 @@ const SECTIONS = [
 
 const dayLabel = dayNumber => {
     const d = new Date(dayNumber * 86400000);
-    return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+    return d.toLocaleDateString([], {month: 'short', day: 'numeric', timeZone: 'UTC'});
 };
 
-const buildSeries = (byDay, days) => {
+const buildSeries = (byDay, days, samplesByDay) => {
     const today = Math.floor(Date.now() / 86400000);
     return Array.from({length: days}, (unused, idx) => {
         const dayNumber = today - (days - 1 - idx);
-        return {label: dayLabel(dayNumber), value: (byDay && byDay[String(dayNumber)]) || 0};
+        const key = String(dayNumber);
+        return {
+            key,
+            label: dayLabel(dayNumber),
+            fullLabel: new Date(dayNumber * 86400000).toLocaleDateString([], {
+                year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+            }),
+            value: samplesByDay && !Number(samplesByDay[key]) ? null : Number(byDay && byDay[key]) || 0,
+            samples: Number(samplesByDay && samplesByDay[key]) || 0
+        };
     });
 };
 
@@ -42,29 +51,85 @@ const StatTile = ({label, value}) => (
     </div>
 );
 
-const MiniChart = ({title, series}) => {
-    const max = series.reduce((m, point) => Math.max(m, point.value), 0);
+const num = v => Number(v || 0).toLocaleString();
+const formatCompact = value => new Intl.NumberFormat([], {notation: 'compact', maximumFractionDigits: 1}).format(value);
+const formatLoadTime = value => (value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`);
+
+const AnalyticsChart = ({title, description, series, yLabel, formatValue = num, accent = 'var(--accent)'}) => {
+    const width = 640;
+    const height = 220;
+    const plot = {left: 58, right: 16, top: 14, bottom: 42};
+    const plotWidth = width - plot.left - plot.right;
+    const plotHeight = height - plot.top - plot.bottom;
+    const max = series.reduce((highest, point) => Math.max(highest, Number(point.value) || 0), 0);
+    const scaleMax = max || 1;
+    const coordinates = series.map((point, index) => ({
+        ...point,
+        x: plot.left + ((index / Math.max(1, series.length - 1)) * plotWidth),
+        y: Number.isFinite(point.value) ? plot.top + plotHeight - ((point.value / scaleMax) * plotHeight) : null
+    }));
+    let segmentOpen = false;
+    const linePath = coordinates.map(point => {
+        if (!Number.isFinite(point.y)) {
+            segmentOpen = false;
+            return '';
+        }
+        const command = segmentOpen ? 'L' : 'M';
+        segmentOpen = true;
+        return `${command} ${point.x} ${point.y}`;
+    }).join(' ');
+    const tickIndexes = [...new Set([0, Math.floor((series.length - 1) / 2), series.length - 1])];
     return (
-        <div className={styles.chart}>
-            <h3 className={styles.chartTitle}>{title}</h3>
-            <div className={styles.chartBars}>
-                {series.map((point, idx) => (
-                    <div
-                        key={idx}
-                        className={styles.chartCol}
-                        title={`${point.label}: ${point.value}`}
-                    >
-                        <div
-                            className={styles.chartBar}
-                            style={{height: `${max ? (point.value / max) * 100 : 0}%`}}
-                        />
-                        <span className={styles.chartLabel}>{point.label}</span>
-                    </div>
-                ))}
+        <div className={styles.chart} role="group" aria-label={`${title}. ${description}`}>
+            <div className={styles.chartHeader}>
+                <h3 className={styles.chartTitle}>{title}</h3>
+                <p>{description}</p>
             </div>
+            <svg className={styles.chartPlot} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${title} by date`}>
+                {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                    const y = plot.top + plotHeight - (ratio * plotHeight);
+                    return (
+                        <g key={ratio}>
+                            <line className={styles.chartGridLine} x1={plot.left} x2={plot.left + plotWidth} y1={y} y2={y} />
+                            <text className={styles.chartTick} x={plot.left - 9} y={y + 4} textAnchor="end">
+                                {formatCompact(scaleMax * ratio)}
+                            </text>
+                        </g>
+                    );
+                })}
+                <path d={linePath} fill="none" stroke={accent} className={styles.chartLine} />
+                {coordinates.filter(point => Number.isFinite(point.y)).map(point => (
+                    <circle key={point.key} cx={point.x} cy={point.y} r="5" fill="transparent" stroke="transparent">
+                        <title>{`${point.fullLabel}: ${formatValue(point.value)}${point.samples ? ` from ${num(point.samples)} samples` : ''}`}</title>
+                    </circle>
+                ))}
+                {tickIndexes.map(index => (coordinates[index] ? (
+                    <text
+                        key={coordinates[index].key}
+                        className={styles.chartTick}
+                        x={coordinates[index].x}
+                        y={height - 19}
+                        textAnchor={index === 0 ? 'start' : index === series.length - 1 ? 'end' : 'middle'}
+                    >
+                        {coordinates[index].label}
+                    </text>
+                ) : null))}
+                <text className={styles.chartAxisLabel} x={plot.left + (plotWidth / 2)} y={height - 2} textAnchor="middle">Date</text>
+                <text
+                    className={styles.chartAxisLabel}
+                    x="13"
+                    y={plot.top + (plotHeight / 2)}
+                    textAnchor="middle"
+                    transform={`rotate(-90 13 ${plot.top + (plotHeight / 2)})`}
+                >
+                    {yLabel}
+                </text>
+            </svg>
         </div>
     );
 };
+
+export {AnalyticsChart, buildSeries};
 
 const QuotaTile = ({quota}) => {
     const pct = (quota.used / quota.limit) * 100;
@@ -84,8 +149,6 @@ const QuotaTile = ({quota}) => {
         </div>
     );
 };
-
-const num = v => Number(v || 0).toLocaleString();
 
 const AdminActionDialog = ({dialog, busy, error, onChange, onCancel, onConfirm}) => {
     if (!dialog) return null;
@@ -135,17 +198,49 @@ const StatsOverview = () => {
     const [stats, setStats] = useState(null);
     const [quota, setQuota] = useState(null);
     const [error, setError] = useState('');
+    const [days, setDays] = useState(30);
+    const [statsBusy, setStatsBusy] = useState(false);
+    const [showDailyData, setShowDailyData] = useState(false);
     const [payoutBusy, setPayoutBusy] = useState(false);
     const [payoutNote, setPayoutNote] = useState('');
     const payoutLocks = useRef(new Set());
+    const mounted = useRef(true);
+    const currentDays = useRef(days);
+    currentDays.current = days;
+
+    useEffect(() => () => {
+        mounted.current = false;
+    }, []);
 
     useEffect(() => {
-        api.admin.stats()
-            .then(setStats)
-            .catch(e => setError(e.message || 'Could not load stats.'));
+        let active = true;
+        setStatsBusy(true);
+        setError('');
+        api.admin.stats(days)
+            .then(result => {
+                if (active) setStats(result);
+            })
+            .catch(e => {
+                if (active) setError(e.message || 'Could not load stats.');
+            })
+            .finally(() => {
+                if (active) setStatsBusy(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, [days]);
+
+    useEffect(() => {
+        let active = true;
         api.quota()
-            .then(setQuota)
+            .then(result => {
+                if (active) setQuota(result);
+            })
             .catch(() => {});
+        return () => {
+            active = false;
+        };
     }, []);
 
     const retryPayouts = async () => {
@@ -155,26 +250,79 @@ const StatsOverview = () => {
         setPayoutNote('');
         try {
             const result = await api.admin.retryPayouts();
+            if (!mounted.current) return;
             setPayoutNote(`Paid ${result.paid}, ${result.remaining} still pending.`);
-            const fresh = await api.admin.stats();
-            setStats(fresh);
+            const refreshDays = currentDays.current;
+            const fresh = await api.admin.stats(refreshDays);
+            if (mounted.current && currentDays.current === refreshDays) setStats(fresh);
         } catch (e) {
-            setPayoutNote(e.message || 'Could not retry payouts.');
+            if (mounted.current) setPayoutNote(e.message || 'Could not retry payouts.');
         } finally {
             payoutLocks.current.delete('retry');
-            setPayoutBusy(false);
+            if (mounted.current) setPayoutBusy(false);
         }
     };
 
-    if (error) {
+    if (error && !stats) {
         return <div><h2>Overview</h2><p className={styles.error}>{error}</p></div>;
     }
     if (!stats) {
         return <div><h2>Overview</h2><p className={styles.status}>Loading…</p></div>;
     }
+    const projectSeries = buildSeries(stats.projectsByDay, days);
+    const updateSeries = buildSeries(stats.projectUpdatesByDay, days);
+    const userSeries = buildSeries(stats.usersByDay, days);
+    const loginSeries = buildSeries(stats.loginsByDay, days);
+    const loadSeries = buildSeries(stats.loadsByDay, days);
+    const loadTimeSeries = buildSeries(stats.averageLoadMsByDay, days, stats.loadSamplesByDay);
+    const startSeries = buildSeries(stats.startsByDay, days);
+    const crashSeries = buildSeries(stats.crashesByDay, days);
+    const dailyRows = projectSeries.map((projectPoint, index) => ({
+        date: projectPoint.fullLabel,
+        projects: projectPoint.value,
+        updates: updateSeries[index].value,
+        users: userSeries[index].value,
+        sessions: loginSeries[index].value,
+        loads: loadSeries[index].value,
+        averageLoadMs: loadTimeSeries[index].value,
+        loadSamples: loadTimeSeries[index].samples,
+        starts: startSeries[index].value,
+        crashes: crashSeries[index].value
+    }));
+    const exportDailyData = () => {
+        const headings = ['Date', 'Projects uploaded', 'Projects updated', 'Users joined', 'Current sessions created', 'Player loads', 'Average load ms', 'Load samples', 'Player starts', 'Crashes'];
+        const lines = dailyRows.map(row => [row.date, row.projects, row.updates, row.users, row.sessions, row.loads, row.loadSamples ? Math.round(row.averageLoadMs) : '', row.loadSamples, row.starts, row.crashes].join(','));
+        const url = URL.createObjectURL(new Blob([[headings.join(','), ...lines].join('\n')], {type: 'text/csv'}));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mistwarp-analytics-${days}-days.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div>
-            <h2>Overview</h2>
+            <div className={styles.overviewHeader}>
+                <div>
+                    <h2>Overview</h2>
+                    <p>Platform totals and project-player diagnostics.</p>
+                </div>
+                <div className={styles.rangePicker} aria-label="Analytics date range">
+                    {[7, 30, 90, 365].map(option => (
+                        <button
+                            key={option}
+                            type="button"
+                            className={days === option ? styles.rangeActive : styles.rangeButton}
+                            aria-pressed={days === option}
+                            onClick={() => setDays(option)}
+                        >
+                            {option === 365 ? '1 year' : `${option} days`}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            {statsBusy ? <p className={styles.refreshStatus}>Updating charts…</p> : null}
+            {error ? <p className={styles.error}>{error}</p> : null}
 
             {stats.pendingPayouts > 0 ? (
                 <div className={styles.quotaWarning}>
@@ -250,18 +398,97 @@ const StatsOverview = () => {
                 {quota ? <QuotaTile quota={quota} /> : null}
             </div>
             <div className={styles.charts}>
-                <MiniChart
-                    title="Projects uploaded (14 days)"
-                    series={buildSeries(stats.projectsByDay, 14)}
+                <AnalyticsChart
+                    title="Average project load time"
+                    description={`${num(stats.loadTimeSamples)} completed player loads in this period. Days without a sample appear as gaps.`}
+                    series={loadTimeSeries}
+                    yLabel="Milliseconds"
+                    formatValue={formatLoadTime}
                 />
-                <MiniChart
-                    title="Logins (7 days)"
-                    series={buildSeries(stats.loginsByDay, 7)}
+                <AnalyticsChart
+                    title="Project uploads"
+                    description="Projects created each day, including shared and unshared projects."
+                    series={projectSeries}
+                    yLabel="Projects"
+                />
+                <AnalyticsChart
+                    title="Project updates"
+                    description="Projects grouped by their latest edit date. Each project appears once."
+                    series={updateSeries}
+                    yLabel="Projects"
+                    accent="#8b7cf6"
+                />
+                <AnalyticsChart
+                    title="Player loads"
+                    description="Completed loads from embedded MistWarp project players."
+                    series={loadSeries}
+                    yLabel="Loads"
+                    accent="#36b37e"
+                />
+                <AnalyticsChart
+                    title="New users"
+                    description="Accounts grouped by the date their MistWarp profile was created."
+                    series={userSeries}
+                    yLabel="Users"
+                    accent="#e5a84b"
+                />
+                <AnalyticsChart
+                    title="Current sessions by sign-in date"
+                    description="Unexpired sign-in sessions only. MistWarp removes sessions after seven days."
+                    series={loginSeries}
+                    yLabel="Sessions"
+                    accent="#dc6d9a"
                 />
             </div>
+
+            <h2>Player detail</h2>
+            <div className={styles.statGrid}>
+                <StatTile label={`Average load, ${days} days`} value={formatLoadTime(stats.averageLoadMs || 0)} />
+                <StatTile label="Completed load samples" value={num(stats.loadTimeSamples)} />
+                <StatTile label="Player starts" value={num(stats.totalStarts)} />
+                <StatTile
+                    label="Crashes per 100 loads"
+                    value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
+                />
+                <StatTile label="Recorded playtime, all time" value={formatPlaytime(stats.totalPlaytimeMs || 0, false)} />
+                <StatTile label="Average project size, all time" value={formatBytes(stats.averageProjectBytes || 0)} />
+                <StatTile label="Average views per project" value={Number(stats.averageViews || 0).toFixed(1)} />
+                <StatTile label="Average loves per project" value={Number(stats.averageLoves || 0).toFixed(1)} />
+                <StatTile label="Desktop loads" value={num((stats.loadsByDevice || {}).desktop)} />
+                <StatTile label="Touch loads" value={num((stats.loadsByDevice || {}).touch)} />
+                <StatTile label="Other device loads" value={num((stats.loadsByDevice || {}).other)} />
+                <StatTile label="Remix projects, all time" value={num(stats.totalRemixes)} />
+            </div>
+
+            <div className={styles.dataHeader}>
+                <div>
+                    <h2>Daily data</h2>
+                    <p>Exact values behind the charts. Load averages only use completed loads with a recorded duration.</p>
+                </div>
+                <div className={styles.dataActions}>
+                    <button type="button" className={styles.secondary} onClick={() => setShowDailyData(!showDailyData)}>
+                        {showDailyData ? 'Hide data' : 'View data'}
+                    </button>
+                    <button type="button" className={styles.secondary} onClick={exportDailyData}>Download CSV</button>
+                </div>
+            </div>
+            {showDailyData ? (
+                <div className={styles.dataTableWrap}>
+                    <table className={styles.dataTable}>
+                        <thead><tr><th>Date</th><th>Uploads</th><th>Updates</th><th>Users</th><th>Sessions</th><th>Loads</th><th>Average load</th><th>Samples</th><th>Starts</th><th>Crashes</th></tr></thead>
+                        <tbody>{dailyRows.map(row => (
+                            <tr key={row.date}>
+                                <th scope="row">{row.date}</th><td>{num(row.projects)}</td><td>{num(row.updates)}</td><td>{num(row.users)}</td><td>{num(row.sessions)}</td><td>{num(row.loads)}</td><td>{row.loadSamples ? formatLoadTime(row.averageLoadMs) : 'No sample'}</td><td>{num(row.loadSamples)}</td><td>{num(row.starts)}</td><td>{num(row.crashes)}</td>
+                            </tr>
+                        ))}</tbody>
+                    </table>
+                </div>
+            ) : null}
         </div>
     );
 };
+
+export {StatsOverview};
 
 const ProjectManager = () => {
     const [query, setQuery] = useState('');
@@ -673,20 +900,27 @@ const UserManager = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(null);
+    const [loadAttempt, setLoadAttempt] = useState(0);
 
     useEffect(() => {
+        let active = true;
         setLoading(true);
         setError('');
         api.admin.users()
             .then(data => {
+                if (!active) return;
                 setUsers(data.users || []);
                 setLoading(false);
             })
             .catch(e => {
+                if (!active) return;
                 setError(e.message || 'Could not load users.');
                 setLoading(false);
             });
-    }, []);
+        return () => {
+            active = false;
+        };
+    }, [loadAttempt]);
 
     const filtered = query.trim() ?
         users.filter(u => u.username.toLowerCase().includes(query.toLowerCase())) :
@@ -715,10 +949,17 @@ const UserManager = () => {
                     {users.length} total
                 </span>
             </div>
-            {error ? <p className={styles.error}>{error}</p> : null}
+            {error ? (
+                <div className={styles.error} role="alert">
+                    {error}{' '}
+                    <button type="button" className={styles.secondary} onClick={() => setLoadAttempt(value => value + 1)}>
+                        Try again
+                    </button>
+                </div>
+            ) : null}
             {loading ? (
                 <p className={styles.status}>Loading users…</p>
-            ) : filtered.length ? (
+            ) : error ? null : filtered.length ? (
                 <div className={styles.list}>
                     {filtered.map(user => {
                         const pct = user.quotaLimit > 0 ? (user.quotaUsed / user.quotaLimit) * 100 : 0;
@@ -731,7 +972,10 @@ const UserManager = () => {
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={e => {
-                                    if (e.key === 'Enter') setSelected(user.username);
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setSelected(user.username);
+                                    }
                                 }}
                             >
                                 <Avatar username={user.username} size={32} />
@@ -773,6 +1017,8 @@ const UserManager = () => {
     );
 };
 
+export {UserManager};
+
 const EvidenceDetails = ({data}) => {
     const config = data.config || {};
     const buyers = config.buyers || [];
@@ -787,7 +1033,7 @@ const EvidenceDetails = ({data}) => {
                 {config.revenue ? <li><strong>Revenue:</strong> {` ${config.revenue} credits`}</li> : null}
                 {buyers.length ? <li><strong>Buyers:</strong> {` ${buyers.length}`}</li> : null}
                 {config.snapshotAt ? (
-                    <li><strong>Captured:</strong> {` ${new Date(config.snapshotAt).toLocaleString()}`}</li>
+                    <li><strong>Captured:</strong> {` ${formatDateTime(config.snapshotAt, 'Date unavailable')}`}</li>
                 ) : null}
             </ul>
             {config.description ? <p className={styles.evidenceText}>{config.description}</p> : null}

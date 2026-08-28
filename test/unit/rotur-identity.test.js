@@ -5,15 +5,21 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
     getRotur: () => ({token: 'new-rotur-token'})
 }));
 
-jest.mock('../../src/lib/community/api.js', () => ({
-    exchangeValidator: jest.fn(() => Promise.resolve({token: 'new-mist-session'})),
-    loadSession: () => global.localStorage.getItem('mw:mistwarp-session'),
-    storeSession: token => {
-        if (token) global.localStorage.setItem('mw:mistwarp-session', token);
-        else global.localStorage.removeItem('mw:mistwarp-session');
-    },
-    logout: jest.fn()
-}));
+jest.mock('../../src/lib/community/api.js', () => {
+    const exchangeValidator = jest.fn(() => Promise.resolve({token: 'new-mist-session'}));
+    return {
+        exchangeValidator,
+        runExchange: token => exchangeValidator(token),
+        onAuthInvalid: jest.fn(),
+        onBanned: jest.fn(),
+        loadSession: () => global.localStorage.getItem('mw:mistwarp-session'),
+        storeSession: token => {
+            if (token) global.localStorage.setItem('mw:mistwarp-session', token);
+            else global.localStorage.removeItem('mw:mistwarp-session');
+        },
+        logout: jest.fn()
+    };
+});
 
 jest.mock('../../src/lib/rotur/cloud-sync.js', () => ({onRoturLogout: jest.fn()}));
 jest.mock('../../src/lib/rotur/git-api.js', () => ({clearGitAuth: jest.fn()}));

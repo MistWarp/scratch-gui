@@ -4,7 +4,7 @@
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     overflow: hidden;
-    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-soft);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -19,8 +19,8 @@
 .panelTabs {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 8px 10px;
+    gap: 2px;
+    padding: 7px 9px;
     border-bottom: 1px solid var(--border);
     overflow-x: auto;
 }
@@ -45,7 +45,7 @@
 }
 
 .panelBody {
-    padding: 17px 18px;
+    padding: 18px;
     overflow-y: auto;
     flex: 1;
     min-height: 0;
@@ -118,18 +118,25 @@
     gap: 20px;
 }
 
-.aboutSections section + section {
+.aboutSections section + section,
+.detailSections section + section {
     padding-top: 17px;
     border-top: 1px solid var(--border-soft);
 }
 
-.aboutSections h3 {
+.aboutSections h3,
+.detailSections h3 {
     margin: 0 0 8px;
     color: var(--text-faint);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .07em;
     text-transform: uppercase;
+}
+
+.detailSections {
+    display: grid;
+    gap: 17px;
 }
 
 .aboutSections .panelInput {
@@ -153,6 +160,29 @@
     margin: 0;
     color: var(--text-faint);
     font-size: 14px;
+}
+
+.tagInput {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+}
+
+.tagInput:focus {
+    border-color: var(--accent);
+}
+
+.fieldHint {
+    margin: 7px 0 0;
+    color: var(--text-faint);
+    font-size: 12px;
 }
 
 .teamPanel {

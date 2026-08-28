@@ -117,6 +117,78 @@
     color: var(--mw-text);
 }
 
+.donations {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.donationEntry {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.receivedIcon,
+.givenIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: color-mix(in srgb, #35a866 14%, transparent);
+    color: #35a866;
+}
+
+.givenIcon {
+    background: color-mix(in srgb, #FF8C1A 14%, transparent);
+    color: #d76f08;
+}
+
+.donationDetails {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.donationDetails > strong {
+    color: var(--mw-text);
+    font-size: 14px;
+}
+
+.donationDetails a {
+    color: var(--accent-strong);
+    font-weight: 650;
+}
+
+.donationDetails time {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.receivedAmount,
+.givenAmount {
+    color: #279456;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.givenAmount {
+    color: #d76f08;
+}
+
 .section {
     margin-bottom: 28px;
 }
@@ -130,6 +202,55 @@
     margin: 0 0 14px;
     font-size: 14px;
     color: var(--text-dim);
+}
+
+.earningsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.earningsGrid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.earningsGrid span,
+.earningEntry small {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.earningsList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.earningEntry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.earningEntry > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .tiers {
@@ -296,7 +417,34 @@
 }
 
 @media (max-width: 520px) {
+    .page {
+        padding: 20px 14px 64px;
+    }
+
     .tiers {
         grid-template-columns: 1fr;
+    }
+
+    .earningsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .donationEntry {
+        grid-template-columns: 38px minmax(0, 1fr);
+    }
+
+    .receivedAmount,
+    .givenAmount {
+        grid-column: 2;
+    }
+
+    .purchaseRow {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .purchaseMeta {
+        width: 100%;
+        justify-content: space-between;
     }
 }

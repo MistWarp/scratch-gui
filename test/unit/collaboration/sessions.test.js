@@ -12,6 +12,22 @@ const moveBlock = (targetId, blockId, x, y) => blockEvent(targetId, {
 });
 
 describe('join flow', () => {
+    test('the host plan limits the total number of people in a room', async () => {
+        const room = await createRoom({clientCount: 0, maxUsers: 2});
+        const first = await room.addClient('anna');
+        room.hub.flush();
+        const second = await room.addClient('ben');
+        const denied = jest.fn();
+        second.session.on('join-denied', denied);
+        room.hub.flush();
+
+        expect(first.session.isApproved).toBe(true);
+        expect(second.session.isApproved).toBe(false);
+        expect(denied).toHaveBeenCalledWith(expect.stringMatching(/2 people/));
+        expect(room.host.session.getUsers()).toHaveLength(2);
+        room.destroy();
+    });
+
     test('public room: three clients join, everyone sees the same user list', async () => {
         const room = await createRoom({clientCount: 3});
         const {host, clients} = room;

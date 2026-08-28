@@ -11,24 +11,22 @@ const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
 // Only ship project.json plus assets the server does not already have;
 // assets are content-addressed server-side so everything else is reused.
-const buildSparseSb3 = async (vm, platformId) => {
-    const files = vm.saveProjectSb3DontZip();
-    const names = Object.keys(files).filter(name => name !== 'project.json');
-    const {missing} = await checkProjectAssets(platformId, names);
-    const missingSet = new Set(missing);
+const zipProjectFiles = (files, include) => {
     const zip = new JSZip();
-    const addFile = (name, data) => {
+    for (const [name, data] of Object.entries(files)) {
+        if (!include(name)) continue;
         zip.file(name, data, {
             compression: ZIP_COMPRESSABLE.some(ext => name.endsWith(ext)) ? 'DEFLATE' : 'STORE'
         });
-    };
-    addFile('project.json', files['project.json']);
-    for (const name of names) {
-        if (missingSet.has(name)) {
-            addFile(name, files[name]);
-        }
     }
     return zip.generateAsync({type: 'blob', mimeType: 'application/x.scratch.sb3'});
+};
+
+const buildSparseSb3 = async (files, platformId) => {
+    const names = Object.keys(files).filter(name => name !== 'project.json');
+    const {missing} = await checkProjectAssets(platformId, names);
+    const missingSet = new Set(missing);
+    return zipProjectFiles(files, name => name === 'project.json' || missingSet.has(name));
 };
 
 const PLATFORM_ID_KEY = 'mw:mistwarp-current-project';
@@ -239,18 +237,21 @@ const publishToMistWarp = async ({
         const thumbnailPromise = updateOnly ? Promise.resolve(null) :
             Promise.resolve(thumbnailBlob || captureThumbnail(vm));
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+        const sb3Files = vm.saveProjectSb3DontZip();
         let sb3Blob;
         try {
-            sb3Blob = await buildSparseSb3(vm, platformId);
+            sb3Blob = await buildSparseSb3(sb3Files, platformId);
         } catch (e) {
-            sb3Blob = await vm.saveProjectSb3();
+            sb3Blob = await zipProjectFiles(sb3Files, () => true);
         }
         onProgress({phase: 'package', message: 'Preparing version history and extensions'});
         const mwpPromise = createMwp({
             vm,
+            sb3Files,
             projectId: platformId,
             remixParent: platformProject && platformProject.remixParent,
             baseCommit: platformProject && platformProject.remixBaseCommit,
+            remoteHead: platformProject && platformProject.workspaceUrl ? platformProject.gitHead : '',
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
             commitChanges
         });

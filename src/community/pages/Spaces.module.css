@@ -37,6 +37,18 @@
     line-height: 1.5;
 }
 
+.heroActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mineLink {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .detailHero {
     padding: 18px;
     border-radius: var(--radius-sm);
@@ -91,6 +103,15 @@
 .status {
     padding: 36px 0;
     text-align: center;
+}
+
+.more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 0 8px;
+    color: var(--mw-danger);
 }
 
 .form {
@@ -1229,6 +1250,39 @@
 
 .dangerCard {
     border-color: color-mix(in srgb, var(--mw-danger) 35%, var(--border));
+}
+
+.transferRow {
+    display: flex;
+    gap: 10px;
+}
+
+.transferRow input {
+    min-width: 0;
+    flex: 1;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+}
+
+.transferOwner {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+}
+
+.transferOwner > span {
+    display: grid;
+    gap: 4px;
+}
+
+.transferOwner small {
+    color: var(--text-dim);
 }
 
 @media (max-width: 640px) {

@@ -14,6 +14,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
+import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import logo from '../assets/mistwarp-logo.png';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -42,7 +43,7 @@ const SectionHead = ({icon: Icon, title, link, linkLabel}) => (
 
 const PanelLoading = () => <div className={styles.feedScroll}>{[0, 1].map(i => <div key={i} className={styles.skeleton} />)}</div>;
 
-const NewsSection = ({viewerName}) => {
+const NewsSection = () => {
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -57,38 +58,39 @@ const NewsSection = ({viewerName}) => {
         return () => {
             active = false;
         };
-    }, [attempt, viewerName]);
+    }, [attempt]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Megaphone} title="News" link="/news" linkLabel="All updates" />
             {!items && !failed ? <PanelLoading /> : null}
             {failed ? <div className={styles.empty}>Couldn&apos;t load news. <Button onClick={load}>Try again</Button></div> : null}
             {items && !items.length ? <div className={styles.empty}>No updates yet.</div> : null}
-            {items && items.length ? <div className={`${styles.newsList} ${styles.feedScroll}`}>{items.map(item => <NewsItem key={item.id} item={item} onChanged={load} />)}</div> : null}
+            {items && items.length ? <div className={`${styles.newsList} ${styles.feedScroll}`}>{items.map(item => <NewsItem compact key={item.id} item={item} onChanged={load} />)}</div> : null}
         </section>
     );
 };
 
 const FriendsSection = ({user, login}) => {
+    const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
         setFailed(false);
-        if (!user) {
+        if (!viewerName) {
             setItems([]);
             return () => {};
         }
         setItems(null);
-        rotur.following(user.username).then(data => {
+        rotur.following(viewerName).then(data => {
             const following = data.following || [];
             return following.length ? api.activity(following) : {activity: []};
         }).then(data => active && setItems(data.activity || [])).catch(() => active && setFailed(true));
         return () => {
             active = false;
         };
-    }, [user, attempt]);
+    }, [attempt, viewerName]);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Users} title="From people you follow" />
@@ -196,13 +198,20 @@ const notificationLink = item => {
 };
 
 const NotificationsSection = ({user, login}) => {
+    const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
+    const [preferences, setPreferences] = useState(getNotificationPreferences());
+    useEffect(() => {
+        const update = () => setPreferences(getNotificationPreferences());
+        window.addEventListener('mw:notification-preferences', update);
+        return () => window.removeEventListener('mw:notification-preferences', update);
+    }, []);
     useEffect(() => {
         let active = true;
         setFailed(false);
-        if (!user) {
+        if (!viewerName) {
             setItems([]);
             return () => {};
         }
@@ -213,7 +222,9 @@ const NotificationsSection = ({user, login}) => {
         return () => {
             active = false;
         };
-    }, [user, attempt]);
+    }, [attempt, viewerName]);
+    const visibleItems = (items || [])
+        .filter(item => preferences[categoryForNotification(item.type)] !== false);
     return (
         <section className={styles.feedBox}>
             <SectionHead icon={Bell} title="Recent notifications" link={user ? '/notifications' : null} linkLabel="See all" />
@@ -221,9 +232,15 @@ const NotificationsSection = ({user, login}) => {
             {user && !items && !failed ? <PanelLoading /> : null}
             {failed ? <div className={styles.empty}>Couldn&apos;t load notifications. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
             {items && !items.length && user ? <div className={styles.empty}>Nothing new yet.</div> : null}
-            {items && items.length ? (
+            {items && items.length && !visibleItems.length ? (
+                <div className={styles.empty}>
+                    Your notification preferences hide all recent activity.{' '}
+                    <Link to="/settings?section=notifications">Change preferences</Link>
+                </div>
+            ) : null}
+            {visibleItems.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
-                    {items.slice(0, 4).map((item, index) => {
+                    {visibleItems.slice(0, 4).map((item, index) => {
                         const actor = item.actor || item.title || 'MistWarp';
                         const target = notificationLink(item);
                         return (
@@ -250,29 +267,9 @@ const Home = () => {
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
-    const [projects, setProjects] = useState({trending: null, recent: null});
-    const [projectAttempt, setProjectAttempt] = useState(0);
-    const retryProjects = () => {
-        setProjects({trending: null, recent: null});
-        setProjectAttempt(value => value + 1);
-    };
     useEffect(() => {
         track('home_view');
     }, []);
-    useEffect(() => {
-        let active = true;
-        setProjects({trending: null, recent: null});
-        Promise.all([
-            api.explore({sort: 'trending', limit: 8}).catch(() => null),
-            api.explore({sort: 'recent', limit: 8}).catch(() => null)
-        ]).then(([trending, recent]) => {
-            if (!active) return;
-            setProjects({trending: trending ? trending.projects || [] : false, recent: recent ? recent.projects || [] : false});
-        });
-        return () => {
-            active = false;
-        };
-    }, [projectAttempt, viewerName]);
     return (
         <main className={styles.page}>
             <section className={styles.hero}>
@@ -288,27 +285,53 @@ const Home = () => {
                 <div className={styles.heroArt}><img src={logo} alt="" className={styles.heroLogo} /></div>
             </section>
             <div className={styles.dashboardGrid}>
-                <NewsSection viewerName={viewerName} />
+                <NewsSection />
                 <FriendsSection user={user} login={login} />
                 <NotificationsSection user={user} login={login} />
                 <RoadmapSection viewerName={viewerName} />
             </div>
-            <ProjectRow
+            <ProjectFeedRow
                 title="Trending"
                 icon={Sparkles}
-                projects={projects.trending}
+                sort="trending"
                 link="/explore?sort=trending"
-                onRetry={retryProjects}
             />
             <ChallengeCalendar className={styles.homeCalendar} />
-            <ProjectRow
+            <ProjectFeedRow
                 title="Freshly shared"
                 icon={Clock}
-                projects={projects.recent}
+                sort="recent"
                 link="/explore?sort=recent"
-                onRetry={retryProjects}
             />
         </main>
+    );
+};
+
+const ProjectFeedRow = ({title, icon, sort, link}) => {
+    const [projects, setProjects] = useState(null);
+    const [attempt, setAttempt] = useState(0);
+    useEffect(() => {
+        let active = true;
+        setProjects(null);
+        api.explore({sort, limit: 8})
+            .then(data => {
+                if (active) setProjects(data.projects || []);
+            })
+            .catch(() => {
+                if (active) setProjects(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, [attempt, sort]);
+    return (
+        <ProjectRow
+            title={title}
+            icon={icon}
+            projects={projects}
+            link={link}
+            onRetry={() => setAttempt(value => value + 1)}
+        />
     );
 };
 
@@ -322,5 +345,5 @@ const ProjectRow = ({title, icon: Icon, projects, link, onRetry}) => (
     </section>
 );
 
-export {FriendsSection, RoadmapSection, NotificationsSection};
+export {FriendsSection, NewsSection, NotificationsSection, ProjectFeedRow, RoadmapSection};
 export default Home;

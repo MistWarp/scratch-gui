@@ -6,6 +6,8 @@ import useEscape from '../../use-escape.js';
 import styles from './Modal.module.css';
 
 let nextModalId = 0;
+const focusableSelector = '[autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), ' +
+    'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
 const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClose, onDismiss, title}) => {
     const dismiss = onDismiss || onClose;
@@ -18,18 +20,39 @@ const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClo
 
     useEffect(() => {
         const previousFocus = document.activeElement;
-        const bodyControl = bodyRef.current && bodyRef.current.querySelector(
-            '[autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), ' +
-            'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-        );
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        const bodyControl = bodyRef.current && bodyRef.current.querySelector(focusableSelector);
         const initialFocus = bodyControl ||
             (closeRef.current && !closeRef.current.disabled ? closeRef.current : modalRef.current);
         if (initialFocus) initialFocus.focus();
 
         return () => {
+            document.body.style.overflow = previousBodyOverflow;
             if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
         };
     }, []);
+
+    const trapFocus = event => {
+        if (event.key !== 'Tab' || !modalRef.current) return;
+        const controls = Array.from(modalRef.current.querySelectorAll(focusableSelector));
+        if (!controls.length) {
+            event.preventDefault();
+            modalRef.current.focus();
+            return;
+        }
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        const focusOutside = !modalRef.current.contains(document.activeElement);
+        if (event.shiftKey && (document.activeElement === first || focusOutside)) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey &&
+            (document.activeElement === last || focusOutside)) {
+            event.preventDefault();
+            first.focus();
+        }
+    };
 
     return (
         <div
@@ -44,6 +67,7 @@ const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClo
                 aria-modal="true"
                 aria-labelledby={titleId}
                 tabIndex="-1"
+                onKeyDown={trapFocus}
             >
                 <div className={styles.head}>
                     <span id={titleId} className={styles.title}>

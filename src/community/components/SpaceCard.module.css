@@ -69,6 +69,10 @@
 }
 
 .owner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
     margin-bottom: 6px;
     color: var(--mw-accent);
     font-size: 11px;

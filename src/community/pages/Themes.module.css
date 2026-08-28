@@ -1,0 +1,266 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+    color: var(--mw-text);
+}
+
+.hero,
+.publishIntro {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.hero {
+    margin-bottom: 22px;
+}
+
+.hero h1,
+.publishIntro h2 {
+    margin: 0 0 5px;
+}
+
+.hero h1 {
+    font-size: 26px;
+}
+
+.hero p,
+.publishIntro p {
+    margin: 0;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.search {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+}
+
+.search input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--mw-text);
+    font: inherit;
+}
+
+.tools select {
+    padding: 10px 32px 10px 12px;
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.resultCount {
+    align-self: center;
+    margin-left: auto;
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.tools select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.status,
+.gate {
+    padding: 48px 16px;
+    color: var(--text-dim);
+    text-align: center;
+}
+
+.empty {
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    padding: 52px 16px;
+    color: var(--text-dim);
+    text-align: center;
+}
+
+.empty h2,
+.empty p {
+    margin: 0;
+}
+
+.empty h2 {
+    color: var(--mw-text);
+    font-size: 18px;
+}
+
+.empty p {
+    margin-bottom: 7px;
+    font-size: 13px;
+}
+
+.gate {
+    display: grid;
+    justify-items: center;
+    gap: 9px;
+}
+
+.gate h2,
+.gate p {
+    margin: 0;
+}
+
+.gate p {
+    margin-bottom: 6px;
+}
+
+.error,
+.perk {
+    padding: 11px 13px;
+    border-radius: var(--radius-xs);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.error {
+    border: 1px solid color-mix(in srgb, var(--mw-danger) 35%, transparent);
+    background: color-mix(in srgb, var(--mw-danger) 10%, transparent);
+}
+
+.publish {
+    display: grid;
+    max-width: 760px;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.sourceRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.source,
+.sourceActive {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    text-align: left;
+}
+
+.sourceActive {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.source span,
+.sourceActive span {
+    display: grid;
+    gap: 2px;
+}
+
+.source small,
+.sourceActive small {
+    color: var(--text-dim);
+}
+
+.publish label {
+    display: grid;
+    gap: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.publish input,
+.publish textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    font: inherit;
+}
+
+.publish textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.perk {
+    margin: 0;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-softer);
+}
+
+@media (max-width: 1000px) {
+    .grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 820px) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .page {
+        padding: 22px 14px 80px;
+    }
+
+    .hero,
+    .tools {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sourceRow {
+        grid-template-columns: 1fr;
+    }
+
+    .resultCount {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}

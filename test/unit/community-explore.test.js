@@ -1,4 +1,4 @@
-import {getPageDepth, mergeProjects, shouldSkipPageRestore} from '../../src/community/pages/Explore.jsx';
+import {getPageDepth, mergeProjects, normalizeExploreParams, shouldSkipPageRestore} from '../../src/community/pages/Explore.jsx';
 
 describe('Explore pagination state', () => {
     test('normalizes restored page depth', () => {
@@ -18,5 +18,11 @@ describe('Explore pagination state', () => {
     test('only skips the exact URL update made by load more', () => {
         expect(shouldSkipPageRestore('sort=recent&page=2', 'sort=recent&page=2')).toBe(true);
         expect(shouldSkipPageRestore('sort=recent&page=2', 'sort=recent&tag=games')).toBe(false);
+    });
+
+    test('canonicalizes fallback sort, whitespace, and restored page depth', () => {
+        expect(normalizeExploreParams(new URLSearchParams('sort=unknown&q=++cats++&tag=+art+&page=999')).toString())
+            .toBe('q=cats&tag=art&page=10');
+        expect(normalizeExploreParams(new URLSearchParams('sort=trending&page=1')).toString()).toBe('');
     });
 });

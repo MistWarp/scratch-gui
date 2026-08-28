@@ -9,6 +9,16 @@ const DATABASE_NAME = 'TW_Backpack';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'backpack';
 
+const SOUND_FORMAT_BY_MIME = {
+    'audio/mp3': 'mp3',
+    'audio/mpeg': 'mp3',
+    'audio/ogg': 'ogg',
+    'application/ogg': 'ogg',
+    'audio/wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/x-wav': 'wav'
+};
+
 const idbItemToBackpackItem = item => {
     // convert id to string
     item.id = `${item.id}`;
@@ -39,7 +49,9 @@ const idbItemToBackpackItem = item => {
     }
 
     if (assetType) {
-        const extension = assetType.runtimeFormat;
+        const extension = item.type === 'sound' ?
+            SOUND_FORMAT_BY_MIME[item.mime] || assetType.runtimeFormat :
+            assetType.runtimeFormat;
         const itemMD5 = item.bodyMD5;
         const md5ext = `${itemMD5}.${extension}`;
         item.body = md5ext;

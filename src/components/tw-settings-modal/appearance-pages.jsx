@@ -117,35 +117,6 @@ const UnconnectedThemePage = ({theme, onChangeTheme}) => (
     <Box className={styles.body}>
         <PageHeader>
             <FormattedMessage
-                defaultMessage="Theme"
-                description="Label for menu to choose theme"
-                id="tw.menuBar.theme"
-            />
-        </PageHeader>
-        <div className={styles.setting}>
-            <FormattedMessage
-                defaultMessage="Theme and accent colors apply across all of MistWarp and live in your MistWarp settings."
-                description="Explains that global theming moved to the MistWarp site settings"
-                id="mw.settings.themeMoved"
-            />
-        </div>
-        <div className={styles.setting}>
-            <button
-                type="button"
-                className={styles.button}
-                onClick={() => window.open('/settings', '_blank')}
-            >
-                <FormattedMessage
-                    defaultMessage="Edit my MistWarp settings"
-                    id="mw.settings.editCommunitySettings"
-                />
-                {' '}
-                <ExternalLink size={14} />
-            </button>
-        </div>
-
-        <PageHeader>
-            <FormattedMessage
                 defaultMessage="Block Colors"
                 description="Label for to choose what color blocks should be, eg. original or high contrast"
                 id="tw.menuBar.blockColors"

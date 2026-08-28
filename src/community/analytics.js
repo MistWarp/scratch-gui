@@ -39,8 +39,13 @@ export const track = (name, properties = {}) => {
     if (!session) return;
     const body = JSON.stringify({name, session, properties});
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon(`${STATUS_BASE}/v1/events`, new Blob([body], {type: 'application/json'}));
-        return;
+        try {
+            if (navigator.sendBeacon(`${STATUS_BASE}/v1/events`, new Blob([body], {type: 'application/json'}))) {
+                return;
+            }
+        } catch (e) {
+            // Fall back to fetch if the browser rejects the beacon.
+        }
     }
     fetch(`${STATUS_BASE}/v1/events`, {
         method: 'POST',

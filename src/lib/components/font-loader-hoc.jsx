@@ -25,7 +25,9 @@ const FontLoaderHOC = function (WrappedComponent) {
                 });
         }
         render () {
-            const {onSetFontsLoaded, ...componentProps} = this.props;
+            const componentProps = {...this.props};
+            delete componentProps.fontsLoaded;
+            delete componentProps.onSetFontsLoaded;
             return (
                 <WrappedComponent
                     {...componentProps}

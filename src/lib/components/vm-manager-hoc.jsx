@@ -60,12 +60,14 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();
             }
+            if (this.props.isLoadingWithId) {
+                this.loadProject();
+            }
         }
         componentDidUpdate (prevProps) {
-            // if project is in loading state, AND fonts are loaded,
-            // and they weren't both that way until now... load project!
-            if (this.props.isLoadingWithId && this.props.fontsLoaded &&
-                (!prevProps.isLoadingWithId || !prevProps.fontsLoaded)) {
+            // Built-in font data is available synchronously. Start parsing as
+            // soon as the fetched project enters the VM loading state.
+            if (this.props.isLoadingWithId && !prevProps.isLoadingWithId) {
                 this.loadProject();
             }
             // Start the VM if entering editor mode with an unstarted vm
@@ -97,16 +99,17 @@ const vmManagerHOC = function (WrappedComponent) {
             const prepareProjectHistory = vm._mwPrepareProjectHistory;
             vm._mwPrepareProjectHistory = null;
             return vm.loadProject(projectData, {skipGitImport: true})
-                .then(async () => {
+                .then(() => {
                     if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
                     if (prepareProjectHistory) {
-                        try {
-                            await prepareProjectHistory();
-                        } catch (error) {
-                            log.error('Could not preload MistWarp version history:', error);
-                        }
+                        // History has its own loading state and is not needed to
+                        // render or edit. Do not hold the whole editor behind it.
+                        Promise.resolve()
+                            .then(() => prepareProjectHistory())
+                            .catch(error => {
+                                log.error('Could not preload MistWarp version history:', error);
+                            });
                     }
-                    if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
                     handleLoadedProject(loadingState, canSave);
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.
@@ -146,7 +149,6 @@ const vmManagerHOC = function (WrappedComponent) {
         render () {
             const {
                 /* eslint-disable no-unused-vars */
-                fontsLoaded,
                 loadingState,
                 locale,
                 messages,
@@ -173,7 +175,6 @@ const vmManagerHOC = function (WrappedComponent) {
     VMManager.propTypes = {
         canSave: PropTypes.bool,
         cloudHost: PropTypes.string,
-        fontsLoaded: PropTypes.bool,
         isLoadingWithId: PropTypes.bool,
         isPlayerOnly: PropTypes.bool,
         isStarted: PropTypes.bool,
@@ -192,7 +193,6 @@ const vmManagerHOC = function (WrappedComponent) {
     const mapStateToProps = state => {
         const loadingState = state.scratchGui.projectState.loadingState;
         return {
-            fontsLoaded: state.scratchGui.fontsLoaded,
             isLoadingWithId: getIsLoadingWithId(loadingState),
             locale: state.locales.locale,
             messages: state.locales.messages,

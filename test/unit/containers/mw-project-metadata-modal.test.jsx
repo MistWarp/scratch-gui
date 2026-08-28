@@ -54,3 +54,27 @@ test('reads project sizes directly from the VM', () => {
     expect(LIMITS.storedJson).toBe(20 * 1024 * 1024);
     expect(formatSize(1024 * 1024 * 1024)).toBe('1.00 GB');
 });
+
+test('uses subscription project limits when building the size report', () => {
+    const largeCostume = asset('large', 'png', 12 * 1024 * 1024);
+    const vm = {
+        runtime: {
+            targets: [{
+                id: 'stage',
+                isOriginal: true,
+                isStage: true,
+                getName: () => 'Stage',
+                getCostumes: () => [{name: 'Backdrop', asset: largeCostume}],
+                getSounds: () => [],
+                blocks: {_blocks: {}},
+                variables: {}
+            }],
+            assetManager: {assets: []},
+            fontManager: {fonts: []}
+        },
+        extensionManager: {_loadedExtensions: new Map()}
+    };
+
+    expect(buildSizeReport(vm).overAssetLimit).toBe(true);
+    expect(buildSizeReport(vm, {...LIMITS, asset: 25 * 1024 * 1024}).overAssetLimit).toBe(false);
+});

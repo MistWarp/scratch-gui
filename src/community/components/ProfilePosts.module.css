@@ -1,0 +1,145 @@
+.posts {
+    max-width: 680px;
+}
+
+.composer,
+.post {
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.composer {
+    margin-bottom: 16px;
+    padding: 13px;
+}
+
+.composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    border: 0;
+    background: transparent;
+    color: var(--mw-text);
+    font: inherit;
+    line-height: 1.5;
+}
+
+.composer textarea:focus {
+    outline: none;
+}
+
+.composerFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.composerFooter > span {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+}
+
+.body {
+    min-width: 0;
+}
+
+.body header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.body header strong {
+    font-size: 14px;
+}
+
+.body time {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.pinned {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 10px;
+}
+
+.delete {
+    display: inline-flex;
+    margin-left: auto;
+    padding: 5px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-faint);
+}
+
+.delete:hover {
+    background: color-mix(in srgb, var(--mw-danger) 12%, transparent);
+    color: var(--mw-danger);
+}
+
+.content {
+    margin-top: 8px;
+    color: var(--mw-text);
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.body footer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 11px;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.body footer span,
+.body footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.body footer a {
+    margin-left: auto;
+    color: var(--accent-strong);
+}
+
+.empty,
+.error {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.error {
+    margin-bottom: 12px;
+    color: var(--mw-danger);
+}

@@ -35,15 +35,20 @@ const messages = defineMessages({
         description: 'Appears when loading project data, but not assets yet',
         id: 'tw.loader.projectData'
     },
-    downloadingAssets: {
-        defaultMessage: 'Downloading assets ({complete}/{total}) …',
-        description: 'Appears when loading project assets from a project on a remote website',
-        id: 'tw.loader.downloadingAssets'
+    downloadingFiles: {
+        defaultMessage: 'Downloading files ({complete}/{total}) …',
+        description: 'Appears while downloading the unique asset files used by a remote project',
+        id: 'mw.loader.downloadingFiles'
     },
-    loadingAssets: {
-        defaultMessage: 'Loading assets ({complete}/{total}) …',
-        description: 'Appears when loading project assets from a project file on the user\'s computer',
-        id: 'tw.loader.loadingAssets'
+    loadingFiles: {
+        defaultMessage: 'Reading asset files ({complete}/{total}) …',
+        description: 'Appears while reading the unique asset files in a local project',
+        id: 'mw.loader.loadingFiles'
+    },
+    preparingAssets: {
+        defaultMessage: 'Preparing assets ({complete}/{total}) …',
+        description: 'Appears while decoding and attaching each costume and sound reference',
+        id: 'mw.loader.preparingAssets'
     },
     preparingProject: {
         defaultMessage: 'Preparing project … (large projects may take a moment)',
@@ -248,7 +253,7 @@ class LoaderComponent extends React.Component {
             this.detailEl.textContent = '';
         }
     }
-    handleAssetProgress (finished, total) {
+    handleAssetProgress (finished, total, detail) {
         if (this.ignoreProgress || !this.barInnerEl || !this.messageEl) {
             return;
         }
@@ -272,10 +277,23 @@ class LoaderComponent extends React.Component {
             this.setStage('assets');
             const range = STAGE_PROGRESS.assets;
             this.setOverallProgress(range[0] + ((range[1] - range[0]) * (finished / total)));
-            const message = this.props.isRemote ? messages.downloadingAssets : messages.loadingAssets;
+            let message;
+            let complete = finished;
+            let phaseTotal = total;
+            if (detail && detail.phase === 'prepare') {
+                message = messages.preparingAssets;
+                complete = detail.completed;
+                phaseTotal = detail.total;
+            } else if (detail && detail.phase === 'download') {
+                message = this.props.isRemote ? messages.downloadingFiles : messages.loadingFiles;
+                complete = detail.completed;
+                phaseTotal = detail.total;
+            } else {
+                message = this.props.isRemote ? messages.downloadingFiles : messages.loadingFiles;
+            }
             this.messageEl.textContent = this.props.intl.formatMessage(message, {
-                complete: finished,
-                total
+                complete,
+                total: phaseTotal
             });
             if (this.detailEl) {
                 this.detailEl.textContent = '';
@@ -403,6 +421,8 @@ class LoaderComponent extends React.Component {
         );
     }
 }
+
+export {LoaderComponent};
 
 LoaderComponent.propTypes = {
     intl: intlShape,

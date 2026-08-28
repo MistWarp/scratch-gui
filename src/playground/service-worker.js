@@ -5,6 +5,7 @@ const RUNTIME_CACHE = 'mistwarp-runtime';
 // Assets to cache immediately
 const PRECACHE_URLS = [
     '/',
+    '/embed.html',
     '/static/blocks-media/default/backdrop1.svg',
     '/static/blocks-media/default/costume1.svg',
     '/static/assets/icon-96x96.png'

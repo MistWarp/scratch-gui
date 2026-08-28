@@ -79,8 +79,59 @@
     height: 100%;
 }
 
+.thumbnail {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+.thumbnail:disabled {
+    cursor: wait;
+}
+
 .thumbnail img {
     object-fit: cover;
+}
+
+.playPrompt {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 9px;
+    background: rgb(0 0 0 / 38%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 70%);
+}
+
+.playIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 68%);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 35%);
+}
+
+.thumbnail:not(:disabled):hover .playPrompt,
+.thumbnail:not(:disabled):focus-visible .playPrompt {
+    background: rgb(0 0 0 / 48%);
+}
+
+.thumbnail:focus-visible {
+    outline: 3px solid var(--accent-strong);
+    outline-offset: -3px;
 }
 
 .thumbnailFallback {

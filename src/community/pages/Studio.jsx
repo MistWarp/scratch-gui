@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import {ArrowLeft, Clock3, FolderOpen, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
@@ -22,7 +23,7 @@ const Studio = ({id, space, user, login, load}) => {
     const currentId = useRef(id);
     currentId.current = id;
     const commentSource = useMemo(() => ({
-        list: () => api.spaceComments(id),
+        list: options => api.spaceComments(id, options),
         add: (content, parent) => api.addSpaceComment(id, content, parent),
         remove: commentId => api.deleteSpaceComment(id, commentId),
         react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
@@ -98,8 +99,8 @@ const Studio = ({id, space, user, login, load}) => {
                     </div>
                     <dl className={styles.stats}>
                         <div><dt><Clock3 size={16} /> Total play time</dt><dd>{formatPlaytime(space.totalPlaytimeMs, false)}</dd></div>
-                        <div><dt><Users size={16} /> Followers</dt><dd>{space.followers.length}</dd></div>
-                        <div><dt>Created by</dt><dd><Link to={`/users/${space.owner}`}>{space.owner}</Link></dd></div>
+                        <div><dt><Users size={16} /> Followers</dt><dd>{space.followerCount || 0}</dd></div>
+                        <div><dt>Created by</dt><dd><Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></dd></div>
                     </dl>
                 </aside>
                 <section className={styles.content}>
@@ -107,7 +108,7 @@ const Studio = ({id, space, user, login, load}) => {
                     {error ? <p className={styles.error}>{error}</p> : null}
                     {tab === 'projects' ? <section className={styles.projects}><header><div><h2>Projects</h2><p>Projects collected and shared by this studio.</p></div>{space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}</header>{space.projects.length ? <div className={styles.projectGrid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.empty}><FolderOpen size={28} /><strong>No projects yet</strong><span>{space.openSubmissions ? 'Add the first project to this studio.' : 'The curators have not added anything yet.'}</span></div>}</section> : null}
                     {tab === 'comments' ? <section className={styles.comments}><header><MessageCircle size={19} /><div><h2>Comments</h2><p>Talk with the studio community.</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`studio ${space.title}`} /></section> : null}
-                    {tab === 'curators' ? <section className={styles.curators}><header><h2>Curators</h2><p>The people who organise this studio.</p></header><div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><small>{index === 0 ? 'Owner' : 'Curator'}</small></span></Link>)}</div></section> : null}
+                    {tab === 'curators' ? <section className={styles.curators}><header><h2>Curators</h2><p>The people who organise this studio.</p></header><div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{index === 0 ? 'Owner' : 'Curator'}</small></span></Link>)}</div></section> : null}
                 </section>
             </div>
         </main>

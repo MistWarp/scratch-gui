@@ -138,3 +138,32 @@
     text-align: center;
     padding: 40px 0;
 }
+
+@media (max-width: 620px) {
+    .page {
+        padding: 20px 14px 64px;
+    }
+
+    .page h1 {
+        margin-bottom: 16px;
+        font-size: 24px;
+    }
+
+    .item,
+    .itemUnread {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 4px 12px;
+        padding: 12px;
+    }
+
+    .avatarWrap,
+    .sysAvatar {
+        grid-row: 1 / span 2;
+    }
+
+    .time {
+        grid-column: 2;
+        margin-top: 0;
+    }
+}

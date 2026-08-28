@@ -151,14 +151,14 @@ describe('VMManagerHOC', () => {
             expect(mockedOnLoadedProject).toHaveBeenLastCalledWith(LoadingState.LOADING_VM_WITH_ID, true)
         ));
     });
-    test('if the fontsLoaded prop becomes true, it loads project data into the vm', () => {
+    test('font loading state does not gate project loading', () => {
         vm.loadProject = jest.fn(() => Promise.resolve());
         const mockedOnLoadedProject = jest.fn();
         const Component = () => <div />;
         const WrappedComponent = vmManagerHOC(Component);
         const mounted = mount(
             <WrappedComponent
-                isLoadingWithId
+                isLoadingWithId={false}
                 store={store}
                 vm={vm}
                 onLoadedProject={mockedOnLoadedProject}
@@ -166,35 +166,15 @@ describe('VMManagerHOC', () => {
         );
         mounted.setProps({
             canSave: false,
-            fontsLoaded: true,
+            fontsLoaded: false,
+            isLoadingWithId: true,
             loadingState: LoadingState.LOADING_VM_WITH_ID,
             projectData: '100'
         });
         expect(vm.loadProject).toHaveBeenLastCalledWith('100', {skipGitImport: true});
-        // nextTick needed since vm.loadProject is async, and we have to wait for it :/
         process.nextTick(() => (
             expect(mockedOnLoadedProject).toHaveBeenLastCalledWith(LoadingState.LOADING_VM_WITH_ID, false)
         ));
-    });
-    test('if the fontsLoaded prop is false, project data is never loaded', () => {
-        vm.loadProject = jest.fn(() => Promise.resolve());
-        const mockedOnLoadedProject = jest.fn();
-        const Component = () => <div />;
-        const WrappedComponent = vmManagerHOC(Component);
-        const mounted = mount(
-            <WrappedComponent
-                isLoadingWithId
-                store={store}
-                vm={vm}
-                onLoadedProject={mockedOnLoadedProject}
-            />
-        );
-        mounted.setProps({
-            loadingState: LoadingState.LOADING_VM_WITH_ID,
-            projectData: '100'
-        });
-        expect(vm.loadProject).toHaveBeenCalledTimes(0);
-        process.nextTick(() => expect(mockedOnLoadedProject).toHaveBeenCalledTimes(0));
     });
 
     test('an older load finishing late cannot complete the newer project state', async () => {
@@ -235,5 +215,40 @@ describe('VMManagerHOC', () => {
 
         expect(onLoadedProject).toHaveBeenCalledTimes(1);
         expect(onLoadedProject).toHaveBeenCalledWith(LoadingState.LOADING_VM_WITH_ID, true);
+    });
+
+    test('version history does not keep the editor on the loading screen', async () => {
+        let finishHistory;
+        vm.loadProject = jest.fn(() => Promise.resolve());
+        const prepareProjectHistory = jest.fn(() => new Promise(resolve => {
+            finishHistory = resolve;
+        }));
+        vm._mwPrepareProjectHistory = prepareProjectHistory;
+        const onLoadedProject = jest.fn();
+        const Component = () => <div />;
+        const WrappedComponent = vmManagerHOC(Component);
+        const mounted = mount(
+            <WrappedComponent
+                fontsLoaded
+                isLoadingWithId={false}
+                isStarted
+                onLoadedProject={onLoadedProject}
+                store={store}
+                vm={vm}
+            />
+        );
+
+        mounted.setProps({
+            canSave: true,
+            isLoadingWithId: true,
+            loadingState: LoadingState.LOADING_VM_WITH_ID,
+            projectData: 'project'
+        });
+        await Promise.resolve();
+
+        expect(onLoadedProject).toHaveBeenCalledWith(LoadingState.LOADING_VM_WITH_ID, true);
+        await Promise.resolve();
+        expect(prepareProjectHistory).toHaveBeenCalledTimes(1);
+        finishHistory();
     });
 });

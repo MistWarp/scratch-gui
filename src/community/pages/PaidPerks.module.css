@@ -1,0 +1,159 @@
+.page {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 38px 0 64px;
+}
+
+.status {
+    color: var(--text-dim);
+}
+
+.hero {
+    max-width: 760px;
+    margin-bottom: 28px;
+}
+
+.hero > span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.hero h1 {
+    margin: 12px 0 10px;
+    color: var(--mw-text);
+    font-size: clamp(30px, 5vw, 48px);
+    line-height: 1.05;
+}
+
+.hero p,
+.section > p,
+.plan p {
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.actions a {
+    text-decoration: none;
+}
+
+.plans {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 38px;
+}
+
+.plan {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.plan.current {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.plan > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.plan h2,
+.section h2 {
+    margin: 0;
+    color: var(--mw-text);
+}
+
+.plan > div span {
+    padding: 3px 7px;
+    border-radius: var(--radius-xs);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.plan > strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+.plan p {
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.section {
+    margin-top: 34px;
+}
+
+.section > p {
+    margin: 7px 0 15px;
+}
+
+.tableWrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.tableWrap table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+.tableWrap th,
+.tableWrap td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    text-align: center;
+    font-size: 13px;
+}
+
+.tableWrap th:first-child {
+    text-align: left;
+}
+
+.tableWrap thead th {
+    background: var(--bg-raised);
+    color: var(--mw-text);
+}
+
+.tableWrap tbody th {
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.tableWrap tbody tr:last-child th,
+.tableWrap tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+@media (max-width: 760px) {
+    .plans {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .plans {
+        grid-template-columns: 1fr;
+    }
+}

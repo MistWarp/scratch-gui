@@ -3,7 +3,7 @@ import soundThumbnail from '!base64-loader!./sound-thumbnail.png';
 
 const soundPayload = sound => {
     const assetDataFormat = sound.dataFormat;
-    if (!['wav', 'mp3'].includes(assetDataFormat)) {
+    if (!['wav', 'mp3', 'ogg'].includes(assetDataFormat)) {
         return Promise.reject(new Error(`Unsupported sound format: ${assetDataFormat || 'unknown'}`));
     }
 
@@ -17,19 +17,14 @@ const soundPayload = sound => {
         body: ''
     };
 
-    switch (assetDataFormat) {
-    case 'wav':
-        payload.mime = 'audio/x-wav';
-        payload.body = assetDataUrl.replace('data:audio/x-wav;base64,', '');
-        break;
-    case 'mp3':
-        payload.mime = 'audio/mp3';
-        // TODO scratch-storage should be fixed so that encodeDataURI does not
-        // always prepend the wave format header; Once that is fixed, the following
-        // line will have to change.
-        payload.body = assetDataUrl.replace('data:audio/x-wav;base64,', '');
-        break;
-    }
+    payload.mime = {
+        wav: 'audio/x-wav',
+        mp3: 'audio/mp3',
+        ogg: 'audio/ogg'
+    }[assetDataFormat];
+    // scratch-storage currently labels every sound data URI as WAV, so strip whatever
+    // header it supplied instead of assuming that it matches the actual sound format.
+    payload.body = assetDataUrl.substring(assetDataUrl.indexOf(',') + 1);
 
     // Return a promise to make it consistent with other payload constructors like costume-payload
     return new Promise(resolve => resolve(payload));

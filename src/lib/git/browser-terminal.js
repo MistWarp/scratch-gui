@@ -361,7 +361,7 @@ const createInfoCommand = () => defineCommand('info', async () => {
     }
 
     const fractch = files.filter(filepath => /\.fractch$/i.test(filepath)).length;
-    const assets = files.filter(filepath => /\.(svg|png|jpe?g|gif|wav|mp3)$/i.test(filepath)).length;
+    const assets = files.filter(filepath => /\.(svg|png|jpe?g|gif|wav|mp3|ogg)$/i.test(filepath)).length;
     const targets = new Set(
         files.filter(filepath => filepath.includes('/')).map(filepath => filepath.split('/')[0])
     );
