@@ -431,14 +431,78 @@
 
 @media (max-width: 520px) {
     .page {
-        padding: 16px 14px 64px;
+        padding: 12px 12px 56px;
+    }
+
+    .hero {
+        gap: 0;
+        padding: 22px 20px;
+        border-radius: 14px;
+    }
+
+    .heroText h1 {
+        margin-bottom: 8px;
+        font-size: 27px;
+        line-height: 1.06;
+    }
+
+    .heroText p {
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .heroActions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+        min-height: 44px;
+        padding: 9px 10px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .heroActions > :last-child {
+        grid-column: 1 / -1;
+    }
+
+    .dashboardGrid {
+        gap: 28px;
+        margin-top: 30px;
+    }
+
+    .feedBox {
+        height: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .feedScroll {
+        overflow: visible;
+    }
+
+    .newsList > :nth-child(n + 3) {
+        display: none;
+    }
+
+    .sectionHead {
+        margin-bottom: 12px;
+    }
+
+    .sectionHead h2 {
+        font-size: 20px;
+    }
+
+    .projectSection,
+    .homeCalendar {
+        margin-top: 32px;
     }
 
     .projectGrid {
         grid-template-columns: 1fr;
-    }
-
-    .heroText h1 {
-        font-size: 30px;
     }
 }

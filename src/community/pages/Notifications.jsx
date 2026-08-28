@@ -112,6 +112,8 @@ const mergeNotifications = (...lists) => {
     return merged;
 };
 
+const markItemsRead = items => (items || []).map(item => ({...item, read: true}));
+
 // Prefer a username-shaped title (real actor) over the app account that
 // posted the notification ("MistWarp"). Returns null when no actor is known.
 const actorFor = n => {
@@ -269,6 +271,7 @@ GenericNotification.propTypes = {
 
 const Notifications = ({hideHeading}) => {
     const {user, loading, login} = useUser();
+    const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
     const [preferences, setPreferences] = useState(getNotificationPreferences());
 
@@ -281,13 +284,13 @@ const Notifications = ({hideHeading}) => {
     const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
-        if (!user) {
+        if (!viewerName) {
             return () => {};
         }
         return subscribeNotifications(notification => {
             setItems(prev => mergeNotifications([notification], prev || []));
         });
-    }, [user]);
+    }, [viewerName]);
 
     useEffect(() => {
         const onRemoved = event => {
@@ -304,7 +307,7 @@ const Notifications = ({hideHeading}) => {
     useEffect(() => {
         setItems(null);
         setFailed(false);
-        if (!user) {
+        if (!viewerName) {
             return () => {};
         }
         let cancelled = false;
@@ -313,8 +316,10 @@ const Notifications = ({hideHeading}) => {
                 if (cancelled) return;
                 setItems(current => mergeNotifications(current || [], list));
                 markNotificationsRead()
-                    .then(() => {
-                        if (!cancelled) window.dispatchEvent(new Event('mw:notifications-read'));
+                    .then(marked => {
+                        if (!marked || cancelled) return;
+                        setItems(markItemsRead);
+                        window.dispatchEvent(new Event('mw:notifications-read'));
                     })
                     .catch(() => {});
             })
@@ -324,7 +329,7 @@ const Notifications = ({hideHeading}) => {
         return () => {
             cancelled = true;
         };
-    }, [user, attempt]);
+    }, [attempt, viewerName]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -448,5 +453,5 @@ Notifications.propTypes = {
     hideHeading: PropTypes.bool
 };
 
-export {mergeNotifications};
+export {markItemsRead, mergeNotifications};
 export default Notifications;

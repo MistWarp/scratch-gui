@@ -40,6 +40,10 @@ const reportDiagnostic = diagnostic => {
     }
 };
 
+if (window.parent !== window && urlParams.get('mw_bridge') === '1') {
+    window.parent.postMessage({type: 'mw:embed-ready'}, '*');
+}
+
 let vm;
 
 const getProjectMetadata = () => {

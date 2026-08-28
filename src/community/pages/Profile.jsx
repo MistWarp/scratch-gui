@@ -2,7 +2,8 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
-    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, Star, Ban, VolumeX
+    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, Star, Ban,
+    VolumeX, FolderKanban, Palette
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
@@ -18,14 +19,22 @@ import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import ActivityCard from '../components/ActivityCard.jsx';
 import FeaturedProject from '../components/FeaturedProject.jsx';
+import ProfileBadges from '../components/ProfileBadges.jsx';
+import ProfilePosts from '../components/ProfilePosts.jsx';
+import ThemeCard from '../components/ThemeCard.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';
-import safeIconSvg from '../safe-icon.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import {timeAgo} from '../format';
+import {formatPlaytime, timeAgo} from '../format';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
+export const mergeProjects = (current, incoming) => {
+    const byId = new Map((current || []).map(project => [project.id, project]));
+    for (const project of incoming || []) byId.set(project.id, project);
+    return Array.from(byId.values());
+};
 export const profileLoadMessage = error => (
     error && error.status === 404 ? 'This user does not exist on Rotur.' : 'Could not load this profile.'
 );
@@ -37,6 +46,11 @@ const joinYear = ms => {
     } catch (e) {
         return null;
     }
+};
+
+const lastPlayedLabel = value => {
+    const relative = timeAgo(value);
+    return relative === 'just now' ? 'last played just now' : `last played ${relative} ago`;
 };
 
 const scrollToCommentAnchor = id => scrollToAnchorWithRetry(id);
@@ -66,6 +80,13 @@ const Profile = () => {
     const [reviews, setReviews] = useState(null);
     const [safetyBusy, setSafetyBusy] = useState(false);
     const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('projects');
+    const [profileBadges, setProfileBadges] = useState([]);
+    const [profilePosts, setProfilePosts] = useState([]);
+    const [profileThemes, setProfileThemes] = useState(null);
+    const [profileThemesError, setProfileThemesError] = useState(false);
+    const [projectsBusy, setProjectsBusy] = useState(false);
+    const [projectsError, setProjectsError] = useState('');
     const actionContext = `${name}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -73,14 +94,33 @@ const Profile = () => {
 
     const beginLoad = useLatest();
 
+    const loadThemes = useCallback(() => {
+        const context = loadContext;
+        setProfileThemes(null);
+        setProfileThemesError(false);
+        api.themes({owner: name})
+            .then(data => {
+                if (actionContextRef.current !== context) return;
+                setProfileThemes(data && Array.isArray(data.themes) ? data.themes : []);
+            })
+            .catch(() => {
+                if (actionContextRef.current !== context) return;
+                setProfileThemes([]);
+                setProfileThemesError(true);
+            });
+    }, [loadContext, name]);
+
     const load = useCallback(() => {
         const fresh = beginLoad();
         setError(null);
         setErrorLoadContext('');
-        rotur.profile(name, {includePosts: false})
+        setProjectsError('');
+        rotur.profile(name, {includePosts: true})
             .then(fresh(data => {
                 if (!data || typeof data !== 'object') throw new Error('Profile response was incomplete.');
                 setProfile(data);
+                setProfileBadges(Array.isArray(data.badges) ? data.badges : []);
+                setProfilePosts(Array.isArray(data.posts) ? data.posts : []);
                 setProfileLoadContext(loadContext);
             }))
             .catch(fresh(requestError => {
@@ -96,10 +136,11 @@ const Profile = () => {
         api.userReviews(name)
             .then(fresh(data => setReviews(data && Array.isArray(data.reviews) ? data.reviews : [])))
             .catch(fresh(() => setReviews([])));
+        loadThemes();
         rotur.followers(name)
             .then(fresh(data => setFollowers(data && Array.isArray(data.followers) ? data.followers : [])))
             .catch(fresh(() => setFollowers([])));
-    }, [loadContext, name, beginLoad]);
+    }, [loadContext, name, beginLoad, loadThemes]);
 
     useEffect(() => {
         setProfile(null);
@@ -114,6 +155,13 @@ const Profile = () => {
         setBlockConfirmOpen(false);
         setReporting(false);
         setDonating(false);
+        setActiveTab(window.location.hash.startsWith('#comment-') ? 'comments' : 'projects');
+        setProfileBadges([]);
+        setProfilePosts([]);
+        setProfileThemes(null);
+        setProfileThemesError(false);
+        setProjectsBusy(false);
+        setProjectsError('');
         load();
     }, [name, viewerName, load]);
 
@@ -179,6 +227,28 @@ const Profile = () => {
         }
     };
 
+    const loadMoreProjects = async () => {
+        if (!mwUser || projectsBusy) return;
+        const context = actionContextRef.current;
+        const offset = Number.isFinite(mwUser.projectOffset) ? mwUser.projectOffset : mwUser.projects.length;
+        setProjectsBusy(true);
+        setProjectsError('');
+        try {
+            const data = await api.userProjects(name, {offset, limit: 24});
+            if (actionContextRef.current !== context) return;
+            setMwUser(current => (current ? {
+                ...current,
+                projects: mergeProjects(current.projects, data.projects),
+                projectTotal: Number.isFinite(data.total) ? data.total : current.projectTotal,
+                projectOffset: Number.isFinite(data.nextOffset) ? data.nextOffset : offset + 24
+            } : current));
+        } catch (e) {
+            if (actionContextRef.current === context) setProjectsError('Could not load more projects.');
+        } finally {
+            if (actionContextRef.current === context) setProjectsBusy(false);
+        }
+    };
+
     const isSelf = Boolean(user && user.username && user.username.toLowerCase() === name.toLowerCase());
     const commentsOff = Boolean(mwUser && mwUser.commentsOff);
 
@@ -240,7 +310,7 @@ const Profile = () => {
     };
 
     const commentSource = useMemo(() => ({
-        list: () => api.getProfileComments(name),
+        list: options => api.getProfileComments(name, options),
         add: (content, parent) => api.addProfileComment(name, content, parent),
         remove: commentId => api.deleteProfileComment(name, commentId),
         react: (commentId, type) => api.reactProfileComment(name, commentId, type)
@@ -261,6 +331,8 @@ const Profile = () => {
     }
 
     const projects = (mwUser && mwUser.projects) || [];
+    const projectTotal = mwUser && Number.isFinite(mwUser.projectTotal) ? mwUser.projectTotal : projects.length;
+    const projectOffset = mwUser && Number.isFinite(mwUser.projectOffset) ? mwUser.projectOffset : projects.length;
     const featuredProject = mwUser ? projects.find(project => project.id === mwUser.featuredProject) : null;
     const otherProjects = featuredProject ? projects.filter(project => project.id !== featuredProject.id) : projects;
     const unsharedProjects = adminProjects.filter(project => !project.shared);
@@ -277,7 +349,13 @@ const Profile = () => {
     const statusText = hasStatusText ? rawStatusText :
         `${presenceState.charAt(0).toUpperCase()}${presenceState.slice(1)}`;
     const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
-    const badges = Array.isArray(profile.badges) ? profile.badges.slice(0, 6) : [];
+    const showRecentActivity = Boolean(mwUser &&
+        (mwUser.recentActivityVisible !== false || isSelf) &&
+        (mwUser.recentActivity?.length || isSelf));
+    const selectTab = tab => {
+        setActiveTab(tab);
+        if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
+    };
 
     return (
         <main className={styles.page}>
@@ -334,118 +412,210 @@ const Profile = () => {
                         </div>
                     ) : null}
 
-                    {featuredProject ? (
-                        <section className={styles.section}>
-                            <FeaturedProject project={featuredProject} />
-                        </section>
-                    ) : null}
+                    <div className={styles.tabs} role="tablist" aria-label="Profile content">
+                        <button type="button" role="tab" aria-selected={activeTab === 'projects'} className={activeTab === 'projects' ? styles.tabActive : styles.tab} onClick={() => selectTab('projects')}>
+                            <FolderKanban size={15} /> Projects <span>{projectTotal}</span>
+                        </button>
+                        <button type="button" role="tab" aria-selected={activeTab === 'posts'} className={activeTab === 'posts' ? styles.tabActive : styles.tab} onClick={() => selectTab('posts')}>
+                            <MessageSquare size={15} /> Posts <span>{profilePosts.length}</span>
+                        </button>
+                        <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? styles.tabActive : styles.tab} onClick={() => selectTab('themes')}>
+                            <Palette size={15} /> Themes <span>{profileThemes?.length || 0}</span>
+                        </button>
+                        {onMistWarp ? (
+                            <button type="button" role="tab" aria-selected={activeTab === 'comments'} className={activeTab === 'comments' ? styles.tabActive : styles.tab} onClick={() => selectTab('comments')}>
+                                <MessageSquare size={15} /> Comments
+                            </button>
+                        ) : null}
+                    </div>
 
-                    {otherProjects.length ? (
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Projects</h2>
-                            <div className={styles.grid}>
-                                {otherProjects.map(project => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    ) : null}
+                    {activeTab === 'projects' ? (
+                        <React.Fragment>
 
-                    {user && user.isAdmin && unsharedProjects.length ? (
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
-                            <div className={styles.grid}>
-                                {unsharedProjects.map(project => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    ) : null}
+                            {featuredProject ? (
+                                <section className={styles.section}>
+                                    <FeaturedProject project={featuredProject} />
+                                </section>
+                            ) : null}
 
-                    {onMistWarp ? (
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Recent reviews</h2>
-                            {reviews === null ? <p className={styles.sectionEmpty}>Loading reviews…</p> : null}
-                            {reviews && !reviews.length ? <p className={styles.sectionEmpty}>No reviews yet.</p> : null}
-                            {reviews && reviews.length ? (
-                                <div className={styles.reviewGrid}>
-                                    {reviews.slice(0, 6).map(review => (
+                            {showRecentActivity ? (
+                                <section className={styles.section}>
+                                    <div className={styles.sectionHead}>
+                                        <h2 className={styles.sectionTitle}>Recent activity</h2>
+                                        {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>Only visible to you</span> : null}
+                                    </div>
+                                    {mwUser.recentActivity?.length ? (
+                                        <div className={styles.recentActivity}>
+                                            {mwUser.recentActivity.map(item => (
+                                                <Link className={styles.recentActivityItem} key={item.projectId} to={projectUrl(item.projectId)}>
+                                                    <img src={item.thumbUrl} alt="" loading="lazy" />
+                                                    <span className={styles.recentActivityCopy}>
+                                                        <strong>{item.title}</strong>
+                                                        <small>by {item.owner}</small>
+                                                    </span>
+                                                    <span className={styles.recentActivityStats}>
+                                                        <strong>{item.duration > 0 ? formatPlaytime(item.duration, false) : 'Just played'}</strong>
+                                                        <small>{lastPlayedLabel(item.lastPlayed)}</small>
+                                                    </span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className={styles.sectionEmpty}>Projects you open while signed in will appear here.</p>
+                                    )}
+                                </section>
+                            ) : null}
+
+                            {otherProjects.length ? (
+                                <section className={styles.section}>
+                                    <h2 className={styles.sectionTitle}>Projects</h2>
+                                    <div className={styles.grid}>
+                                        {otherProjects.map(project => (
+                                            <ProjectCard
+                                                key={project.id}
+                                                project={project}
+                                            />
+                                        ))}
+                                    </div>
+                                    {projectOffset < projectTotal ? (
+                                        <div className={styles.loadMore}>
+                                            <Button
+                                                variant="secondary"
+                                                busy={projectsBusy}
+                                                busyLabel="Loading…"
+                                                onClick={loadMoreProjects}
+                                            >Load more projects</Button>
+                                        </div>
+                                    ) : null}
+                                    {projectsError ? <p className={styles.sectionEmpty}>{projectsError}</p> : null}
+                                </section>
+                            ) : null}
+
+                            {user && user.isAdmin && unsharedProjects.length ? (
+                                <section className={styles.section}>
+                                    <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
+                                    <div className={styles.grid}>
+                                        {unsharedProjects.map(project => (
+                                            <ProjectCard
+                                                key={project.id}
+                                                project={project}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            ) : null}
+
+                            {onMistWarp ? (
+                                <section className={styles.section}>
+                                    <h2 className={styles.sectionTitle}>Recent reviews</h2>
+                                    {reviews === null ? <p className={styles.sectionEmpty}>Loading reviews…</p> : null}
+                                    {reviews && !reviews.length ? <p className={styles.sectionEmpty}>No reviews yet.</p> : null}
+                                    {reviews && reviews.length ? (
+                                        <div className={styles.reviewGrid}>
+                                            {reviews.slice(0, 6).map(review => (
+                                                <Link
+                                                    key={review._id}
+                                                    to={projectUrl(review.projectId)}
+                                                    className={styles.reviewCard}
+                                                >
+                                                    <div className={styles.reviewHead}>
+                                                        <strong>{review.projectTitle}</strong>
+                                                        <span>{timeAgo(review.edited || review.created)}</span>
+                                                    </div>
+                                                    <div
+                                                        className={styles.reviewStars}
+                                                        aria-label={`${review.rating} out of 5 stars`}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map(value => (
+                                                            <Star
+                                                                key={value}
+                                                                size={14}
+                                                                fill={value <= review.rating ? 'currentColor' : 'none'}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    {review.message ? (
+                                                        <p><RichText text={review.message} /></p>
+                                                    ) : (
+                                                        <p className={styles.reviewNoText}>No written review.</p>
+                                                    )}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </section>
+                            ) : null}
+
+                            <section className={styles.section}>
+                                <div className={styles.sectionHead}>
+                                    <h2 className={styles.sectionTitle}>
+                                        Followers - {profile.followers || followers.length}
+                                    </h2>
+                                    {followers.length ? (
                                         <Link
-                                            key={review._id}
-                                            to={projectUrl(review.projectId)}
-                                            className={styles.reviewCard}
+                                            to={`/users/${name}/followers`}
+                                            className={styles.seeAll}
                                         >
-                                            <div className={styles.reviewHead}>
-                                                <strong>{review.projectTitle}</strong>
-                                                <span>{timeAgo(review.edited || review.created)}</span>
-                                            </div>
-                                            <div
-                                                className={styles.reviewStars}
-                                                aria-label={`${review.rating} out of 5 stars`}
-                                            >
-                                                {[1, 2, 3, 4, 5].map(value => (
-                                                    <Star
-                                                        key={value}
-                                                        size={14}
-                                                        fill={value <= review.rating ? 'currentColor' : 'none'}
-                                                    />
-                                                ))}
-                                            </div>
-                                            {review.message ? (
-                                                <p><RichText text={review.message} /></p>
-                                            ) : (
-                                                <p className={styles.reviewNoText}>No written review.</p>
-                                            )}
+                                            See all
+                                            <ChevronRight size={14} />
                                         </Link>
-                                    ))}
+                                    ) : null}
                                 </div>
-                            ) : null}
+                                {followers.length ? (
+                                    <div className={styles.followersRow}>
+                                        {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
+                                            <Link
+                                                key={follower}
+                                                to={`/users/${follower}`}
+                                                className={styles.followerChip}
+                                            >
+                                                <Avatar
+                                                    username={follower}
+                                                    size={56}
+                                                />
+                                                <span>{follower}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className={styles.sectionEmpty}>No followers yet.</p>
+                                )}
+                            </section>
+
+                        </React.Fragment>
+                    ) : null}
+
+                    {activeTab === 'posts' ? (
+                        <section className={styles.section}>
+                            <ProfilePosts
+                                posts={profilePosts}
+                                username={profile.username || name}
+                                editable={isSelf}
+                                onChange={setProfilePosts}
+                                onLogin={login}
+                            />
                         </section>
                     ) : null}
 
-                    <section className={styles.section}>
-                        <div className={styles.sectionHead}>
-                            <h2 className={styles.sectionTitle}>
-                                Followers - {profile.followers || followers.length}
-                            </h2>
-                            {followers.length ? (
-                                <Link
-                                    to={`/users/${name}/followers`}
-                                    className={styles.seeAll}
-                                >
-                                    See all
-                                    <ChevronRight size={14} />
-                                </Link>
-                            ) : null}
-                        </div>
-                        {followers.length ? (
-                            <div className={styles.followersRow}>
-                                {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
-                                    <Link
-                                        key={follower}
-                                        to={`/users/${follower}`}
-                                        className={styles.followerChip}
-                                    >
-                                        <Avatar
-                                            username={follower}
-                                            size={56}
-                                        />
-                                        <span>{follower}</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className={styles.sectionEmpty}>No followers yet.</p>
-                        )}
-                    </section>
+                    {activeTab === 'themes' ? (
+                        <section className={styles.section}>
+                            <h2 className={styles.sectionTitle}>Published themes</h2>
+                            {profileThemes === null ? (
+                                <p className={styles.sectionEmpty}>Loading themes…</p>
+                            ) : profileThemesError ? (
+                                <div className={styles.sectionEmpty} role="alert">
+                                    <p>Could not load published themes.</p>
+                                    <Button variant="secondary" onClick={loadThemes}>Try again</Button>
+                                </div>
+                            ) : profileThemes.length ? (
+                                <div className={styles.themeGrid}>
+                                    {profileThemes.map(item => <ThemeCard key={item.id} theme={item} />)}
+                                </div>
+                            ) : <p className={styles.sectionEmpty}>No published themes yet.</p>}
+                        </section>
+                    ) : null}
 
-                    {onMistWarp ? (
+                    {onMistWarp && activeTab === 'comments' ? (
                         <section className={styles.section}>
                             <div className={styles.sectionHead}>
                                 <h2 className={styles.sectionTitle}>Comments</h2>
@@ -500,36 +670,23 @@ const Profile = () => {
                                 <h1>{profile.username || name}</h1>
                                 {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
                             </div>
+                            {profile.group_tag ? <GroupTag tag={profile.group_tag} /> : null}
                             {presence ? (
                                 <span className={styles.userStatus}>
                                     <span className={statusDotClass} />
                                     <RichText text={statusText} />
                                 </span>
                             ) : null}
-                            {badges.length ? (
-                                <div className={styles.badges}>
-                                    {badges.map((badge, index) => {
-                                        const badgeData = typeof badge === 'string' ? {name: badge} : badge;
-                                        if (!badgeData.icon) return null;
-                                        return (
-                                            <span
-                                                key={`${badgeData.name}-${index}`}
-                                                className={styles.badge}
-                                                title={badgeData.description || badgeData.name}
-                                                aria-label={badgeData.name}
-                                                // eslint-disable-next-line react/no-danger
-                                                dangerouslySetInnerHTML={{
-                                                    __html: safeIconSvg(badgeData.icon, {size: 2, viewSize: 20})
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </div>
+                            {profileBadges.length || isSelf ? (
+                                <ProfileBadges
+                                    badges={profileBadges}
+                                    editable={isSelf}
+                                    onChange={setProfileBadges}
+                                />
                             ) : null}
                             <div className={styles.profileStats}>
                                 <Link className={styles.profileStatLink} to={`/users/${name}/followers`}><strong>{profile.followers || 0}</strong><span>followers</span></Link>
                                 <Link className={styles.profileStatLink} to={`/users/${name}/following`}><strong>{profile.following || 0}</strong><span>following</span></Link>
-                                <div><strong>{profile.currency || 0}</strong><span>credits</span></div>
                             </div>
                             <div className={styles.actions}>
                                 {user && !isSelf ? (

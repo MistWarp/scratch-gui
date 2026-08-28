@@ -59,6 +59,17 @@ describe('git modal project loading', () => {
 });
 
 describe('git modal dismissal', () => {
+    test('uses the signed-in Rotur username as the author name', () => {
+        const modal = new TWGitModal({
+            onClose: jest.fn(),
+            roturUsername: 'Sophie',
+            vm: {}
+        });
+
+        expect(modal.state.authorName).toBe('Sophie');
+        expect(modal.state.authorEmail).toBe('user@example.com');
+    });
+
     test('cannot close while an operation is running', () => {
         const onClose = jest.fn();
         const modal = new TWGitModal({

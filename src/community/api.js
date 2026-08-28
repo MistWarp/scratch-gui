@@ -10,6 +10,7 @@ import {
     prepareSparseProjectUpload,
     stashProjectHandoff
 } from '../lib/community/api.js';
+import warpthemeApi from '../lib/warptheme-api.js';
 
 const editorUrl = ({clone, platformProject, projectJson, assets} = {}) => {
     if (platformProject) {
@@ -62,6 +63,18 @@ const storageForProject = projectId => {
         return null;
     }
     return Object.keys(seed).length ? seed : null;
+};
+
+const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false} = {}) => {
+    const params = new URLSearchParams();
+    if (all) {
+        params.set('all', '1');
+    } else {
+        params.set('offset', String(offset));
+        params.set('limit', String(limit));
+    }
+    if (anchor) params.set('anchor', anchor);
+    return params.toString();
 };
 
 let themeCustomCacheKey;
@@ -133,6 +146,9 @@ const api = {
     storeSession,
     logout,
     me: () => request('/me'),
+    perks: () => request('/perks'),
+    group: tag => request(`/groups/${encodeURIComponent(tag)}`),
+    resolveVanity: slug => request(`/vanity/${encodeURIComponent(slug)}`),
     quota: () => request('/me/quota'),
     stats: () => request('/me/stats'),
     settings: {
@@ -165,8 +181,13 @@ const api = {
         form.append('thumbnail', blob, 'thumb.png');
         return request(`/projects/${id}/thumbnail`, {method: 'POST', body: form});
     },
-    myProjects: name => request(`/users/${name}/projects?all=1`),
-    library: () => request('/me/library'),
+    myProjects: name => request(`/users/${encodeURIComponent(name)}/projects?all=1`),
+    myProjectPage: (name, {offset = 0, limit = 24} = {}) =>
+        request(`/users/${encodeURIComponent(name)}/projects?all=1&offset=${offset}&limit=${limit}`),
+    library: ({offset = 0, limit = 24} = {}) => request(`/me/library?offset=${offset}&limit=${limit}`),
+    trash: () => request('/me/trash'),
+    restoreProject: id => request(`/projects/${id}/restore`, {method: 'POST'}),
+    purgeProject: id => request(`/trash/${id}`, {method: 'DELETE'}),
     purchases: () => request('/me/purchases'),
     saveProject: id => request(`/projects/${id}/save`, {method: 'POST'}),
     unsaveProject: id => request(`/projects/${id}/save`, {method: 'DELETE'}),
@@ -175,24 +196,61 @@ const api = {
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
     setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
     purchaseIntent: id => request(`/projects/${id}/purchase/intent`, {method: 'POST'}),
-    purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
-    getUser: name => request(`/users/${name}`),
+    purchaseConfirm: (id, key, paymentId) => request(`/projects/${id}/purchase/confirm`, {
+        method: 'POST', body: {key, paymentId}
+    }),
+    gameProducts: id => request(`/projects/${id}/products`, {cache: false}),
+    ownsGameProduct: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/owns`, {
+        cache: false
+    }),
+    gameProductIntent: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/intent`, {
+        method: 'POST'
+    }),
+    gameProductConfirm: (id, product, key, paymentId) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/confirm`, {
+        method: 'POST', body: {key, paymentId}
+    }),
+    createGameDataCapability: (id, context) => request(`/projects/${id}/data-capability`, {
+        method: 'POST', body: {context}
+    }),
+    createMultiplayerTicket: (id, context, room) => request(`/projects/${id}/multiplayer-ticket`, {
+        method: 'POST', body: {context, room}
+    }),
+    getProjectSave: (id, capability) => request(`/projects/${id}/me/save`, {
+        headers: {'X-MistWarp-Game-Data': capability}, cache: false
+    }),
+    putProjectSave: (id, capability, save) => request(`/projects/${id}/me/save`, {
+        method: 'PUT', body: save, headers: {'X-MistWarp-Game-Data': capability}
+    }),
+    getProjectGlobalGameData: (id, capability) => request(`/projects/${id}/me/global-data`, {
+        headers: {'X-MistWarp-Game-Data': capability}, cache: false
+    }),
+    gameSaves: () => request('/me/game-saves', {cache: false}),
+    deleteGameSave: id => request(`/me/game-saves/${id}`, {method: 'DELETE'}),
+    globalGameData: () => request('/me/game-data/global', {cache: false}),
+    putGlobalGameData: data => request('/me/game-data/global', {method: 'PUT', body: data}),
+    gameInventory: () => request('/me/game-inventory', {cache: false}),
+    gameInventoryConfig: id => request(`/projects/${id}/game-inventory-config`, {cache: false}),
+    ...warpthemeApi,
+    getUser: name => request(`/users/${encodeURIComponent(name)}`),
+    userProjects: (name, {offset = 0, limit = 24} = {}) =>
+        request(`/users/${encodeURIComponent(name)}/projects?offset=${offset}&limit=${limit}`),
     searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),
     activity: users => request(`/activity?users=${encodeURIComponent(users.join(','))}`),
-    getComments: id => request(`/projects/${id}/comments`),
+    getComments: (id, options) => request(`/projects/${id}/comments?${commentQuery(options)}`),
     addComment: (id, content, parent, kind = 'comment') =>
         request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind}}),
     deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, {method: 'DELETE'}),
-    getProfileComments: name => request(`/users/${name}/comments`),
+    getProfileComments: (name, options) =>
+        request(`/users/${encodeURIComponent(name)}/comments?${commentQuery(options)}`),
     addProfileComment: (name, content, parent) =>
-        request(`/users/${name}/comments`, {method: 'POST', body: {content, parent}}),
-    deleteProfileComment: (name, commentId) => request(`/users/${name}/comments/${commentId}`, {method: 'DELETE'}),
+        request(`/users/${encodeURIComponent(name)}/comments`, {method: 'POST', body: {content, parent}}),
+    deleteProfileComment: (name, commentId) => request(`/users/${encodeURIComponent(name)}/comments/${commentId}`, {method: 'DELETE'}),
     updateProfile: patch => request('/me/profile', {method: 'PUT', body: patch}),
     reactProject: (id, type) => request(`/projects/${id}/react`, {method: 'POST', body: {type}}),
     reactComment: (id, commentId, type) =>
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     reactProfileComment: (name, commentId, type) =>
-        request(`/users/${name}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+        request(`/users/${encodeURIComponent(name)}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     agreement: () => request('/agreement'),
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
     quotaReset: () => request('/me/quota/reset', {method: 'POST'}),
@@ -218,7 +276,7 @@ const api = {
         updateUserProfile: (username, patch) =>
             request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
         searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
-        stats: () => request('/admin/stats'),
+        stats: (days = 30) => request(`/admin/stats?days=${encodeURIComponent(days)}`),
         users: () => request('/admin/users'),
         payouts: () => request('/admin/payouts'),
         retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'}),
@@ -254,10 +312,14 @@ const api = {
     sendFeedback: (id, feedback) => request(`/projects/${id}/feedback`, {method: 'POST', body: feedback}),
     updateFeedback: (id, feedback, status) => request(`/projects/${id}/feedback/${feedback}`, {method: 'PUT', body: {status}}),
     reviews: id => request(`/projects/${id}/reviews`),
-    userReviews: name => request(`/users/${encodeURIComponent(name)}/reviews`),
+    userReviews: (name, limit = 6) => request(`/users/${encodeURIComponent(name)}/reviews?limit=${limit}`),
     saveReview: (id, review) => request(`/projects/${id}/reviews/me`, {method: 'PUT', body: review}),
     deleteReview: id => request(`/projects/${id}/reviews/me`, {method: 'DELETE'}),
-    spaces: ({kind = '', q = ''} = {}) => request(`/spaces?kind=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}`),
+    spaces: ({kind = '', q = '', offset = 0, limit = 24, startsBefore = 0, endsAfter = 0} = {}) => {
+        const dateWindow = startsBefore > 0 && endsAfter > 0 ?
+            `&startsBefore=${startsBefore}&endsAfter=${endsAfter}` : '';
+        return request(`/spaces?kind=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}${dateWindow}`);
+    },
     getSpace: id => request(`/spaces/${id}`),
     getSpaceManagement: id => request(`/spaces/${id}/manage`),
     mySpaces: () => request('/me/spaces'),
@@ -286,7 +348,7 @@ const api = {
     voteChallengeEntry: (id, project, value) => request(`/spaces/${id}/entries/${project}/vote`, {method: 'PUT', body: {value}}),
     publishChallengeResults: id => request(`/spaces/${id}/results`, {method: 'POST'}),
     reactSpace: (id, type) => request(`/spaces/${id}/react`, {method: 'POST', body: {type}}),
-    spaceComments: id => request(`/spaces/${id}/comments`),
+    spaceComments: (id, options) => request(`/spaces/${id}/comments?${commentQuery(options)}`),
     addSpaceComment: (id, content, parent) => request(`/spaces/${id}/comments`, {method: 'POST', body: {content, parent}}),
     deleteSpaceComment: (id, commentId) => request(`/spaces/${id}/comments/${commentId}`, {method: 'DELETE'}),
     reactSpaceComment: (id, commentId, type) => request(`/spaces/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
@@ -294,7 +356,7 @@ const api = {
     createIdea: idea => request('/roadmap', {method: 'POST', body: idea}),
     voteIdea: (id, vote) => request(`/roadmap/${id}/vote`, {method: 'POST', body: {vote}}),
     updateIdea: (id, idea) => request(`/roadmap/${id}`, {method: 'PUT', body: idea}),
-    ideaComments: id => request(`/roadmap/${id}/comments`),
+    ideaComments: (id, options) => request(`/roadmap/${id}/comments?${commentQuery(options)}`),
     addIdeaComment: (id, content, parent = '') =>
         request(`/roadmap/${id}/comments`, {method: 'POST', body: {content, parent}}),
     deleteIdeaComment: (id, comment) => request(`/roadmap/${id}/comments/${comment}`, {method: 'DELETE'}),

@@ -5,13 +5,17 @@ import {
     ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck, Star, Library
+    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronDown
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff, themeCustomFor} from '../api';
+import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
 import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
-import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
+import {
+    isInsufficientFunds, openCreditCheckout, CREDIT_PACKS, sendCommercePayment, listCommerceBounties
+} from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
+import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
 import {getBalance} from '../../lib/rotur/client.js';
 import {
     hasFullGrant, commitGrant, callRotur,
@@ -24,18 +28,20 @@ import {Theme} from '../../lib/themes';
 import {CustomTheme} from '../../lib/themes/custom-themes.js';
 import {applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance';
 import Avatar from '../components/Avatar.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
-import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
+import {timeAgo, sameUser, formatDate, formatDateTime, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import DiffView from '../components/DiffView.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
 import Dropdown from '../components/ui/Dropdown.jsx';
+import SelectMenu from '../components/ui/SelectMenu.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
@@ -44,6 +50,13 @@ import useLatest from '../use-latest.js';
 import copyText from '../copy-text.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import {fetchWorkspace, hashExtensionUrl} from '../../lib/community/api.js';
+import {
+    loadProjectSave,
+    saveProjectData,
+    loadGlobalGameData,
+    loadProjectInventory,
+    grantProjectItem
+} from '../../lib/mistwarp-games/data-client.js';
 import {
     cancelMwpMerge,
     chooseMergeBinary,
@@ -56,47 +69,35 @@ import {
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
-const CATEGORY_NAMES = {
-    motion: 'Motion',
-    looks: 'Looks',
-    sound: 'Sound',
-    event: 'Events',
-    control: 'Control',
-    sensing: 'Sensing',
-    operator: 'Operators',
-    data: 'Variables',
-    procedures: 'My Blocks',
-    argument: 'My Blocks',
-    pen: 'Pen',
-    music: 'Music'
-};
-
-const CATEGORY_COLORS = {
-    motion: '#4C97FF',
-    looks: '#9966FF',
-    sound: '#CF63CF',
-    event: '#FFBF00',
-    control: '#FFAB19',
-    sensing: '#5CB1D6',
-    operator: '#59C059',
-    data: '#FF8C1A',
-    procedures: '#FF6680',
-    argument: '#FF6680',
-    pen: '#0FBD8C'
-};
-
-const catLabel = prefix => CATEGORY_NAMES[prefix] || (prefix.charAt(0).toUpperCase() + prefix.slice(1));
-const catColor = prefix => CATEGORY_COLORS[prefix] || 'var(--accent-strong)';
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
+const MAIN_ACTIVITY_TABS = ['Comments', 'Reviews', 'Releases'];
+const MORE_ACTIVITY_TABS = ['History', 'Pull requests', 'Contribute'];
 
 export const reviewPayload = (rating, message) => ({rating, message: message.trim()});
 export const releasePayload = form => ({...form, version: form.version.trim(), notes: form.notes.trim()});
-export const contributionPayload = (remixProjectId, title, body) => ({
-    remixProjectId: remixProjectId.trim(),
-    title: title.trim(),
-    body: body.trim()
+export const contributionPayload = (remixProjectId, title, body, bountyId = '') => {
+    const payload = {
+        remixProjectId: remixProjectId.trim(),
+        title: title.trim(),
+        body: body.trim()
+    };
+    if (bountyId) payload.bountyId = bountyId;
+    return payload;
+};
+export const applyReactionResult = (project, result) => ({
+    ...project,
+    loveCount: result.hearts,
+    brokenHeartCount: result.brokenHearts,
+    myReaction: result.myReaction || ''
 });
+export const updateReviewSummary = (summary, previousRating, nextRating) => {
+    const previous = Number(previousRating) || 0;
+    const next = Number(nextRating) || 0;
+    const count = Math.max(0, (Number(summary.count) || 0) + (previous ? 0 : 1) - (next ? 0 : 1));
+    const total = ((Number(summary.average) || 0) * (Number(summary.count) || 0)) - previous + next;
+    return {count, average: count ? total / count : 0};
+};
 
 const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
 const getProjectThemeMode = () => {
@@ -149,8 +150,6 @@ const restoreUserTheme = () => {
     }
 };
 
-const topFive = counts => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
 const getCustomExtensions = async (urls, trustedExtensions) => {
     const custom = (urls || []).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url));
     const trusted = new Set(trustedExtensions || []);
@@ -158,12 +157,7 @@ const getCustomExtensions = async (urls, trustedExtensions) => {
     return custom.filter((url, index) => !trusted.has(hashes[index]));
 };
 
-const analyzeBlocks = summary => {
-    const categories = (summary && summary.categories) || {};
-    const topCategories = topFive(categories)
-        .map(([prefix, count]) => ({id: prefix, label: catLabel(prefix), count, color: catColor(prefix)}));
-    return {total: Number(summary && summary.total) || 0, topCategories};
-};
+const analyzeBlocks = summary => ({total: Number(summary && summary.total) || 0});
 
 const Project = () => {
     const {id} = useParams();
@@ -198,6 +192,8 @@ const Project = () => {
     const thumbMenuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
+    const stageSource = useRef({key: null, url: null});
+    const [stageHeightRatio, setStageHeightRatio] = useState(3 / 4);
     const [blockStats, setBlockStats] = useState(null);
     const [customExtensions, setCustomExtensions] = useState([]);
     const [contentError, setContentError] = useState(false);
@@ -207,6 +203,10 @@ const Project = () => {
     const [checkoutBusy, setCheckoutBusy] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [confirmBalance, setConfirmBalance] = useState(null);
+    const [supportOpen, setSupportOpen] = useState(false);
+    const [supportAmount, setSupportAmount] = useState('5');
+    const [supporting, setSupporting] = useState(false);
+    const [supportSent, setSupportSent] = useState(false);
     const [savingLibrary, setSavingLibrary] = useState(false);
     const [savingFeatured, setSavingFeatured] = useState(false);
     const [savingComments, setSavingComments] = useState(false);
@@ -215,8 +215,9 @@ const Project = () => {
     const [featuredProject, setFeaturedProject] = useState('');
     const [projectThemeApplied, setProjectThemeApplied] = useState(false);
     const [revertTheme, setRevertTheme] = useState(false);
-    const [followsOwner, setFollowsOwner] = useState(false);
+    const [followedOwner, setFollowedOwner] = useState(null);
     const [roturModal, setRoturModal] = useState(null);
+    const [gameMarketplace, setGameMarketplace] = useState(null);
     const [forkSetup, setForkSetup] = useState(null);
     const [creatingFork, setCreatingFork] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -224,14 +225,12 @@ const Project = () => {
     const themeMode = getProjectThemeMode();
 
     const beginLoad = useLatest();
+    const beginHistoryLoad = useLatest();
 
     const load = useCallback(() => {
         const fresh = beginLoad();
         setError(null);
         setErrorLoadContext('');
-        api.commits(id)
-            .then(fresh(setVersionHistory))
-            .catch(fresh(() => setVersionHistory({commits: [], error: true})));
         return api.getProject(id)
             .then(fresh(data => {
                 if (!data || !data.project) throw new Error('Project response was incomplete.');
@@ -245,12 +244,22 @@ const Project = () => {
             }));
     }, [actionContext, id, beginLoad]);
 
+    const loadHistory = useCallback(() => {
+        const fresh = beginHistoryLoad();
+        return api.commits(id)
+            .then(fresh(setVersionHistory))
+            .catch(fresh(() => setVersionHistory({commits: [], error: true})));
+    }, [beginHistoryLoad, id]);
+
+    const refreshProjectAndHistory = useCallback(() => Promise.all([load(), loadHistory()]), [load, loadHistory]);
+
     useEffect(() => {
         setFeaturedProject((user && user.featuredProject) || '');
     }, [user]);
 
     useEffect(() => {
         if (userLoading) return;
+        beginHistoryLoad();
         setProject(null);
         setVersionHistory(null);
         setError(null);
@@ -278,10 +287,15 @@ const Project = () => {
         setCopied(false);
         setProjectThemeApplied(false);
         setRevertTheme(false);
-        setFollowsOwner(false);
+        setFollowedOwner(null);
+        setStageHeightRatio(3 / 4);
         restoreUserTheme();
         load();
-    }, [actionContext, id, load, userLoading]);
+    }, [actionContext, beginHistoryLoad, id, load, userLoading]);
+
+    useEffect(() => {
+        if (tab === 'History' && versionHistory === null) loadHistory();
+    }, [loadHistory, tab, versionHistory]);
 
     useEffect(() => {
         if (userLoading) return;
@@ -321,13 +335,22 @@ const Project = () => {
     useEffect(() => {
         if (themeMode !== 'followed' || !user || !owner) return;
         let active = true;
+        const viewerKey = String(user.username).toLowerCase();
+        const ownerKey = String(owner).toLowerCase();
+        setFollowedOwner(null);
         rotur.following(user.username)
             .then(data => {
                 if (!active) return;
                 const list = (data.following || []).map(name => String(name).toLowerCase());
-                setFollowsOwner(list.includes(String(owner).toLowerCase()));
+                setFollowedOwner({
+                    owner: ownerKey,
+                    value: list.includes(ownerKey),
+                    viewer: viewerKey
+                });
             })
-            .catch(() => {});
+            .catch(() => {
+                if (active) setFollowedOwner({owner: ownerKey, value: false, viewer: viewerKey});
+            });
         return () => {
             active = false;
         };
@@ -341,8 +364,18 @@ const Project = () => {
         const onMessage = event => {
             const frame = stageFrame.current;
             if (!frame || event.source !== frame.contentWindow) return;
-            if (!event.data || event.data.type !== 'mw:diagnostic') return;
-            api.recordDiagnostic(id, event.data.diagnostic).catch(() => {});
+            if (!event.data) return;
+            if (event.data.type === 'mw:stage-size') {
+                const width = Number(event.data.width);
+                const height = Number(event.data.height);
+                if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+                    setStageHeightRatio(height / width);
+                }
+                return;
+            }
+            if (event.data.type === 'mw:diagnostic') {
+                api.recordDiagnostic(id, event.data.diagnostic).catch(() => {});
+            }
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
@@ -446,6 +479,7 @@ const Project = () => {
 
     useEffect(() => {
         if (!project || !project.projectJsonUrl) return;
+        preloadContent(project.projectJsonUrl).catch(() => null);
         const assetsBase = project.assetsBase ? `${project.assetsBase.replace(/\/+$/, '')}/` : null;
         const allowed = url => typeof url === 'string' &&
             (url === project.projectJsonUrl || (assetsBase && url.startsWith(assetsBase)));
@@ -453,7 +487,25 @@ const Project = () => {
             const frame = stageFrame.current;
             if (!frame || event.source !== frame.contentWindow) return;
             const data = event.data;
-            if (!data || data.type !== 'mw:fetch' || !allowed(data.url)) return;
+            if (!data) return;
+            if (data.type === 'mw:embed-ready') {
+                cachedFetchBuffer(project.projectJsonUrl)
+                    .then(buffer => {
+                        try {
+                            const copy = buffer.slice(0);
+                            event.source.postMessage({
+                                type: 'mw:preload-resource',
+                                url: project.projectJsonUrl,
+                                buffer: copy
+                            }, '*', [copy]);
+                        } catch (e) {
+                            // ignore
+                        }
+                    })
+                    .catch(() => null);
+                return;
+            }
+            if (data.type !== 'mw:fetch' || !allowed(data.url)) return;
             const reply = (message, transfer) => {
                 try {
                     event.source.postMessage(message, '*', transfer);
@@ -481,6 +533,108 @@ const Project = () => {
         projectName: (project && (project.title || project.name)) || '',
         projectImage: (project && project.thumbUrl) || ''
     }), [user, project, id]);
+
+    const gamesUserMessage = useMemo(() => ({
+        type: 'mw:games-user',
+        user: userMessage.user
+    }), [userMessage.user.loggedIn, userMessage.user.username, userMessage.user.id]);
+
+    const gamesProjectId = String((project && project.id) || id || '');
+
+    // MistWarp Games bridge for the sandboxed project player. Authentication
+    // and short-lived save capabilities remain on this trusted project page;
+    // project code only receives the result of the narrow operation it asked
+    // for. Production saves are therefore separate from editor test saves.
+    useEffect(() => {
+        const projectId = gamesProjectId;
+        if (!projectId) return;
+        const reply = (source, payload) => {
+            try {
+                source.postMessage({type: 'mw:games-result', ...payload}, '*');
+            } catch (e) {
+                // ignore a player frame which navigated away during a request
+            }
+        };
+        const onMessage = async event => {
+            const frame = stageFrame.current;
+            if (!frame || event.source !== frame.contentWindow) return;
+            const data = event.data;
+            if (!data || data.type !== 'mw:games') return;
+            if (data.kind === 'hello') {
+                if (!userLoading) {
+                    try {
+                        event.source.postMessage(gamesUserMessage, '*');
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+                return;
+            }
+            if (data.kind !== 'call') return;
+            if (data.method === 'marketplace.open' || data.method === 'marketplace.purchase') {
+                setGameMarketplace({
+                    projectId,
+                    productId: data.method === 'marketplace.purchase' ? String((data.args && data.args[0]) || '') : '',
+                    onResult: result => reply(event.source, {id: data.id, ok: true, result})
+                });
+                return;
+            }
+            try {
+                let result;
+                if (data.method === 'data.load') {
+                    result = await loadProjectSave(projectId, 'play');
+                } else if (data.method === 'data.save') {
+                    result = await saveProjectData(projectId, 'play', data.args && data.args[0]);
+                } else if (data.method === 'data.global') {
+                    result = await loadGlobalGameData(projectId, 'play');
+                } else if (data.method === 'inventory.load') {
+                    result = await loadProjectInventory(projectId, 'play');
+                } else if (data.method === 'inventory.grant') {
+                    const request = (data.args && data.args[0]) || {};
+                    result = await grantProjectItem(projectId, 'play', request.item, request.requestId);
+                } else if (data.method === 'multiplayer.connect') {
+                    result = {
+                        connected: false,
+                        self: '',
+                        players: [],
+                        status: MULTIPLAYER_ENABLED ? 'multiplayer unavailable' : 'multiplayer disabled'
+                    };
+                } else if (data.method === 'multiplayer.disconnect') {
+                    result = {connected: false};
+                } else if (data.method === 'multiplayer.players') {
+                    result = [];
+                } else if (data.method === 'multiplayer.setState') {
+                    result = false;
+                } else if (data.method === 'multiplayer.sendEvent') {
+                    result = false;
+                } else if (data.method === 'marketplace.owns') {
+                    const owned = await api.ownsGameProduct(projectId, String((data.args && data.args[0]) || ''));
+                    result = owned.owned;
+                } else {
+                    throw new Error(`MistWarp Games method is not available: ${data.method}`);
+                }
+                reply(event.source, {id: data.id, ok: true, result});
+            } catch (e) {
+                reply(event.source, {
+                    id: data.id,
+                    ok: false,
+                    error: String((e && e.message) || e)
+                });
+            }
+        };
+        window.addEventListener('message', onMessage);
+        try {
+            const frame = stageFrame.current;
+            if (!userLoading && frame && frame.contentWindow) {
+                frame.contentWindow.postMessage(gamesUserMessage, '*');
+            }
+        } catch (e) {
+            // ignore
+        }
+        return () => {
+            window.removeEventListener('message', onMessage);
+        };
+    }, [gamesProjectId, userLoading, gamesUserMessage]);
 
     // Rotur bridge for the embedded player. The project iframe cannot hold the
     // token or render trusted UI, so its Rotur blocks post requests up here; this
@@ -698,8 +852,10 @@ const Project = () => {
         if (!actionKey) return;
         setReactionBusy(true);
         try {
-            await api.reactProject(id, type);
-            if (actionContextRef.current === context) load();
+            const result = await api.reactProject(id, type);
+            if (actionContextRef.current === context) {
+                setProject(current => (current ? applyReactionResult(current, result) : current));
+            }
         } catch (e) {
             if (actionContextRef.current === context) setActionError(e.message || 'Could not react.');
         } finally {
@@ -750,10 +906,11 @@ const Project = () => {
         if (!actionKey) return;
         setSavingVisibility(true);
         try {
-            await api.setVisibility(id, value);
+            const data = await api.setVisibility(id, value);
             if (actionContextRef.current !== context) return;
             setActionError(null);
-            load();
+            setProject(data.project);
+            setProjectLoadContext(context);
         } catch (e) {
             if (actionContextRef.current === context) {
                 setActionError(e.message || 'Could not update visibility.');
@@ -829,16 +986,55 @@ const Project = () => {
         }
     };
 
+    const supportProject = async () => {
+        const amount = Math.round(Number(supportAmount) * 100) / 100;
+        if (!Number.isFinite(amount) || amount < 0.01) {
+            setActionError('Enter an amount greater than 0.');
+            return;
+        }
+        const context = actionContextRef.current;
+        const actionKey = beginAction('support');
+        if (!actionKey) return;
+        setSupporting(true);
+        setActionError(null);
+        try {
+            await sendCommercePayment({
+                to: project.owner,
+                amount,
+                kind: 'project_tip',
+                resourceType: 'project',
+                resourceId: project.id,
+                note: `Support for ${project.title}`
+            });
+            if (actionContextRef.current !== context) return;
+            setSupportSent(true);
+        } catch (e) {
+            if (actionContextRef.current !== context) return;
+            if (isInsufficientFunds(e)) {
+                setSupportOpen(false);
+                openCheckout();
+            } else {
+                setActionError(e.needsReauth ?
+                    'Your current login cannot send credits. Log out and back in, then try again.' :
+                    (e.message || 'Could not support this project.'));
+            }
+        } finally {
+            releaseAction(actionKey);
+            if (actionContextRef.current === context) setSupporting(false);
+        }
+    };
+
     const toggleComments = async () => {
         const context = actionContextRef.current;
         const actionKey = beginAction('comments');
         if (!actionKey) return;
         setSavingComments(true);
         try {
-            await api.updateProject(id, {commentsOff: !project.commentsOff});
+            const data = await api.updateProject(id, {commentsOff: !project.commentsOff});
             if (actionContextRef.current !== context) return;
             setActionError(null);
-            load();
+            setProject(data.project);
+            setProjectLoadContext(context);
         } catch (e) {
             if (actionContextRef.current === context) {
                 setActionError(e.message || 'Could not update comments.');
@@ -1016,7 +1212,7 @@ const Project = () => {
     };
 
     const commentSource = useMemo(() => ({
-        list: () => api.getComments(id),
+        list: options => api.getComments(id, options),
         add: (content, parent, kind) => api.addComment(id, content, parent, kind),
         remove: commentId => api.deleteComment(id, commentId),
         react: (commentId, type) => api.reactComment(id, commentId, type)
@@ -1039,20 +1235,47 @@ const Project = () => {
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
 
-    const commentTabs = ['Comments', 'Reviews', 'Releases', 'History', 'Pull requests', 'Contribute'];
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
     const locked = Boolean(project.locked);
     const hasContent = project.hasContent !== false;
+    const followThemeDecision = themeMode === 'followed' && user && owner ?
+        followedOwner &&
+            followedOwner.viewer === String(user.username).toLowerCase() &&
+            followedOwner.owner === String(owner).toLowerCase() ?
+            followedOwner.value :
+            null :
+        false;
     const themeAllowed = !revertTheme && (
         themeMode === 'all' ||
         (themeMode === 'hearted' && project.myReaction === 'heart') ||
-        (themeMode === 'followed' && followsOwner)
+        (themeMode === 'followed' && followThemeDecision === true)
     );
+    const stageSourceKey = JSON.stringify([
+        project.id,
+        project.projectJsonUrl,
+        project.assetsBase,
+        project.trustedExtensions || [],
+        Boolean(unsandboxed),
+        Boolean(themeAllowed)
+    ]);
+    if (stageSource.current.key !== stageSourceKey) {
+        stageSource.current = {
+            key: stageSourceKey,
+            url: embedUrl(project, {
+                unsandboxed,
+                applyProjectTheme: themeAllowed,
+                persistStorage: !unsandboxed
+            })
+        };
+    }
 
     return (
-        <main className={styles.page}>
+        <main
+            className={`${styles.page} ${project.branding?.accentColor ? styles.branded : ''}`}
+            style={project.branding?.accentColor ? {'--project-accent': project.branding.accentColor} : null}
+        >
             <div className={styles.topBar}>
                 <div className={styles.titleBlock}>
                     <Link to={`/users/${project.owner}`}>
@@ -1076,13 +1299,31 @@ const Project = () => {
                                 />
                             ) : <h1>{project.title}</h1>}
                         </div>
-                        <Link
-                            to={`/users/${project.owner}`}
-                            className={styles.byline}
-                        >by {project.owner}</Link>
+                        <div className={styles.bylineRow}>
+                            <Link
+                                to={`/users/${project.owner}`}
+                                className={styles.byline}
+                            >by {project.owner}</Link>
+                            <GroupTag className={styles.projectGroupTag} username={project.owner} compact />
+                            {project.groupTag ? <Link className={styles.groupByline} to={`/groups/${project.groupTag}`}>for @{project.groupTag}</Link> : null}
+                        </div>
+                        {project.branding?.tagline ? <p className={styles.brandTagline}>{project.branding.tagline}</p> : null}
                     </div>
                 </div>
                 <div className={styles.topActions}>
+                    {user && !project.isOwner ? (
+                        <button
+                            type="button"
+                            className={styles.remixButton}
+                            onClick={() => {
+                                setSupportSent(false);
+                                setSupportOpen(true);
+                            }}
+                        >
+                            <Coins size={16} />
+                            Support
+                        </button>
+                    ) : null}
                     {project.isOwner ? (
                         <VisibilityMenu
                             value={visibility}
@@ -1241,6 +1482,59 @@ const Project = () => {
 
             {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
 
+            {supportOpen ? (
+                <Modal
+                    title={`Support ${project.owner}`}
+                    onClose={() => !supporting && setSupportOpen(false)}
+                    dismissDisabled={supporting}
+                    actions={supportSent ? (
+                        <Button variant="primary" onClick={() => setSupportOpen(false)}>Done</Button>
+                    ) : (
+                        <React.Fragment>
+                            <Button variant="secondary" disabled={supporting} onClick={() => setSupportOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                busy={supporting}
+                                busyLabel="Sending…"
+                                onClick={supportProject}
+                            >
+                                <Coins size={15} /> Send {supportAmount || 0} credits
+                            </Button>
+                        </React.Fragment>
+                    )}
+                >
+                    {supportSent ? (
+                        <p className={styles.confirmText}>
+                            {`${supportAmount} credits sent to ${project.owner}.`}
+                        </p>
+                    ) : (
+                        <React.Fragment>
+                            <p className={styles.confirmText}>This project stays free. Your credits go to its creator.</p>
+                            <div className={styles.supportPresets}>
+                                {[1, 5, 10, 25].map(amount => (
+                                    <button
+                                        type="button"
+                                        key={amount}
+                                        className={Number(supportAmount) === amount ? styles.supportPresetActive : styles.supportPreset}
+                                        onClick={() => setSupportAmount(String(amount))}
+                                    >{amount}</button>
+                                ))}
+                                <input
+                                    aria-label="Custom support amount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={supportAmount}
+                                    onChange={event => setSupportAmount(event.target.value)}
+                                />
+                            </div>
+                        </React.Fragment>
+                    )}
+                </Modal>
+            ) : null}
+
             {deleteConfirm ? (
                 <Modal
                     title="Delete project?"
@@ -1378,6 +1672,16 @@ const Project = () => {
                     onShareNo={() => roturModal.onShareNo && roturModal.onShareNo()}
                 />
             ) : null}
+            {gameMarketplace ? (
+                <GameMarketplaceModal
+                    projectId={gameMarketplace.projectId}
+                    productId={gameMarketplace.productId}
+                    onResult={result => {
+                        gameMarketplace.onResult(result);
+                        setGameMarketplace(null);
+                    }}
+                />
+            ) : null}
             {confirmBuy ? (
                 <Modal
                     title="Confirm purchase"
@@ -1478,7 +1782,10 @@ const Project = () => {
 
             <div className={styles.stageRow}>
                 <div className={styles.stageCol}>
-                    <div className={styles.stageWrap}>
+                    <div
+                        className={styles.stageWrap}
+                        style={{paddingBottom: `calc(${stageHeightRatio * 100}% + 48px)`}}
+                    >
                         <div className={styles.stageSizer}>
                             {!locked && !hasContent ? (
                                 <div className={styles.paywall}>
@@ -1528,12 +1835,14 @@ const Project = () => {
                                         The project file could not be loaded. The creator may need to save it again.
                                     </p>
                                 </div>
+                            ) : followThemeDecision === null ? (
+                                <div className={styles.paywall}>Loading project…</div>
                             ) : (
                                 <iframe
-                                    key={`${unsandboxed ? 'u' : 's'}-${themeAllowed ? 't' : 'n'}`}
+                                    key={stageSourceKey}
                                     ref={stageFrame}
                                     className={styles.stage}
-                                    src={embedUrl(project, {unsandboxed, applyProjectTheme: themeAllowed, persistStorage: !unsandboxed})}
+                                    src={stageSource.current.url}
                                     title={project.title}
                                     onLoad={sendThemeToStage}
                                     allow="autoplay; fullscreen"
@@ -1633,7 +1942,9 @@ const Project = () => {
                 <div className={styles.sideCol}>
                     <ProjectInfoPanel
                         project={project}
-                        onSaved={load}
+                        onSaved={updated => {
+                            if (updated) setProject(updated);
+                        }}
                     />
                 </div>
             </div>
@@ -1641,20 +1952,47 @@ const Project = () => {
             <div className={styles.bottomGrid}>
                 <section className={styles.commentsCol}>
                     <div className={styles.commentsHead}>
-                        {commentTabs.length > 1 ? (
-                            <nav className={styles.tabs}>
-                                {commentTabs.map(name => (
+                        <nav className={styles.tabs} aria-label="Project activity">
+                            {MAIN_ACTIVITY_TABS.map(name => (
+                                <button
+                                    type="button"
+                                    key={name}
+                                    className={name === tab ? styles.tabActive : styles.tab}
+                                    onClick={() => setTab(name)}
+                                >{name}</button>
+                            ))}
+                        </nav>
+                        <Dropdown
+                            align="right"
+                            className={styles.moreTabs}
+                            menuClassName={styles.activityMenu}
+                            renderTrigger={({open, toggle}) => {
+                                const selected = MORE_ACTIVITY_TABS.includes(tab);
+                                return (
                                     <button
                                         type="button"
-                                        key={name}
-                                        className={name === tab ? styles.tabActive : styles.tab}
-                                        onClick={() => setTab(name)}
-                                    >{name}</button>
-                                ))}
-                            </nav>
-                        ) : (
-                            <h2 className={styles.colTitle}>Comments</h2>
-                        )}
+                                        className={selected ? styles.moreTabActive : styles.moreTab}
+                                        aria-expanded={open}
+                                        aria-haspopup="menu"
+                                        onClick={toggle}
+                                    >
+                                        {selected ? tab : 'More'}
+                                        <ChevronDown size={14} />
+                                    </button>
+                                );
+                            }}
+                        >
+                            {({close}) => MORE_ACTIVITY_TABS.map(name => (
+                                <button
+                                    type="button"
+                                    key={name}
+                                    onClick={() => {
+                                        setTab(name);
+                                        close();
+                                    }}
+                                >{name}</button>
+                            ))}
+                        </Dropdown>
                     </div>
                     {tab === 'Comments' && (
                         <CommentThread
@@ -1685,7 +2023,7 @@ const Project = () => {
                             id={id}
                             history={versionHistory}
                             canRestore={project.isOwner}
-                            onChange={load}
+                            onChange={refreshProjectAndHistory}
                         />
                     )}
                     {tab === 'Reviews' && <ReviewPanel key={id} id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
@@ -1717,8 +2055,12 @@ const Project = () => {
                 </section>
 
                 <aside className={styles.remixCol}>
-                    <BlockStats stats={blockStats} />
-                    <h2 className={styles.colTitle}>Remixes</h2>
+                    <ProjectBounties
+                        project={project}
+                        userLoading={userLoading}
+                        onRemix={remix}
+                        onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
+                    />
                     <RemixTree id={id} />
                 </aside>
             </div>
@@ -1726,44 +2068,68 @@ const Project = () => {
     );
 };
 
-const BarChart = ({title, rows}) => {
-    const max = rows.length ? rows[0].count : 0;
-    return (
-        <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>{title}</h3>
-            <ul className={styles.chartRows}>
-                {rows.map(row => (
-                    <li
-                        key={row.id}
-                        className={styles.chartRow}
-                    >
-                        <span
-                            className={styles.chartLabel}
-                            title={row.label}
-                        >{row.label}</span>
-                        <span className={styles.chartTrack}>
-                            <span
-                                className={styles.chartBar}
-                                style={{width: `${max ? (row.count / max) * 100 : 0}%`, background: row.color}}
-                            />
-                        </span>
-                        <span className={styles.chartCount}>{row.count}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
+const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
+    const [items, setItems] = useState(null);
 
-const BlockStats = ({stats}) => {
-    if (!stats || stats.total < 500) return null;
+    useEffect(() => {
+        let active = true;
+        setItems(null);
+        listCommerceBounties({
+            source: 'mistwarp',
+            resource_type: 'project',
+            resource_id: project.id,
+            status: 'open'
+        })
+            .then(data => {
+                if (active) setItems(data.bounties || []);
+            })
+            .catch(() => {
+                if (active) setItems([]);
+            });
+        return () => {
+            active = false;
+        };
+    }, [project.id]);
+
+    if (items === null || (!items.length && !project.isOwner)) return null;
+
     return (
-        <div className={styles.chartStack}>
-            <BarChart
-                title="Top categories"
-                rows={stats.topCategories}
-            />
-        </div>
+        <section className={styles.bountyPanel} aria-labelledby="project-bounties-title">
+            <div className={styles.bountyHeader}>
+                <h2 id="project-bounties-title">
+                    <Trophy size={17} />
+                    Open bounties
+                    <span>{items.length}</span>
+                </h2>
+                {project.isOwner ? (
+                    <button type="button" className={styles.bountyAction} onClick={onCreate}>
+                        <Plus size={14} /> New bounty
+                    </button>
+                ) : project.canRemix ? (
+                    <button
+                        type="button"
+                        className={styles.bountyActionPrimary}
+                        disabled={userLoading}
+                        onClick={onRemix}
+                    >
+                        <GitFork size={14} /> Remix
+                    </button>
+                ) : null}
+            </div>
+            {items.length ? (
+                <ul className={styles.bountyList}>
+                    {items.map(item => (
+                        <li key={item.id}>
+                            <div>
+                                <strong>{item.title}</strong>
+                                {item.description ? <p>{item.description}</p> : null}
+                            </div>
+                            <span className={styles.bountyReward}>{item.amount} credits</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : <p className={styles.bountyEmpty}>No active bounties. Create one for work you want done.</p>}
+        </section>
     );
 };
 
@@ -1823,21 +2189,24 @@ const RemixTree = ({id}) => {
         }
         return map;
     }, [tree]);
-    if (!tree && !failed) return <p className={styles.status}>Loading…</p>;
+    if (!tree && !failed) return null;
     if (failed) return <p className={styles.sideEmpty}>Could not load remixes. <button type="button" onClick={() => setAttempt(value => value + 1)}>Try again</button></p>;
     const nodes = tree.nodes || [];
-    if (nodes.length < 2) return <p className={styles.sideEmpty}>No remixes yet.</p>;
+    if (nodes.length < 2) return null;
     const childrenOf = parentId => childMap.get(parentId) || [];
     const root = nodes.find(node => node.id === tree.root);
-    if (!root) return <p className={styles.sideEmpty}>No remixes yet.</p>;
+    if (!root) return null;
     return (
-        <ul className={styles.tree}>
-            <RemixTreeNode
-                node={root}
-                childrenOf={childrenOf}
-                currentId={id}
-            />
-        </ul>
+        <section className={styles.remixPanel}>
+            <h2 className={styles.colTitle}>Remixes</h2>
+            <ul className={styles.tree}>
+                <RemixTreeNode
+                    node={root}
+                    childrenOf={childrenOf}
+                    currentId={id}
+                />
+            </ul>
+        </section>
     );
 };
 
@@ -1845,6 +2214,11 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     const [restoring, setRestoring] = useState(null);
     const [restoreError, setRestoreError] = useState(null);
     const [restoreCandidate, setRestoreCandidate] = useState(null);
+    const [checkpointName, setCheckpointName] = useState('');
+    const [checkpoints, setCheckpoints] = useState([]);
+    const [checkpointPerk, setCheckpointPerk] = useState(false);
+    const [checkpointBusy, setCheckpointBusy] = useState(false);
+    const checkpointLocks = useRef(new Set());
     const restoreLocks = useRef(new Set());
     const idRef = useRef(id);
     idRef.current = id;
@@ -1853,7 +2227,52 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
         setRestoring(null);
         setRestoreError(null);
         setRestoreCandidate(null);
+        setCheckpointName('');
+        setCheckpoints([]);
+        setCheckpointPerk(false);
+        setCheckpointBusy(false);
     }, [id]);
+    useEffect(() => {
+        if (!canRestore) return () => {};
+        let active = true;
+        Promise.all([api.perks(), api.releases(id)]).then(([perkData, releaseData]) => {
+            if (!active) return;
+            setCheckpointPerk(Boolean(perkData.current?.mistwarp?.historyCheckpoints));
+            setCheckpoints((releaseData.releases || []).filter(release => release.channel === 'checkpoint'));
+        }).catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [canRestore, id]);
+    const createCheckpoint = async event => {
+        event.preventDefault();
+        const version = checkpointName.trim();
+        const actionId = id;
+        if (!version || checkpointLocks.current.has(actionId)) return;
+        checkpointLocks.current.add(actionId);
+        setCheckpointBusy(true);
+        setRestoreError(null);
+        try {
+            const data = await api.createRelease(actionId, {version, channel: 'checkpoint', notes: ''});
+            if (idRef.current !== actionId) return;
+            setCheckpoints(current => [data.release, ...current]);
+            setCheckpointName('');
+        } catch (error) {
+            if (idRef.current === actionId) {
+                setRestoreError(error.message || 'Could not create the checkpoint.');
+            }
+        } finally {
+            checkpointLocks.current.delete(actionId);
+            if (idRef.current === actionId) setCheckpointBusy(false);
+        }
+    };
+    const checkpointPanel = canRestore ? (
+        <section className={styles.checkpointPanel}>
+            <div><strong>Named checkpoints</strong><span>{checkpointPerk ? 'Included with your Rotur plan.' : 'Available with Rotur Lite, Plus, or Pro.'}</span></div>
+            {checkpointPerk ? <form onSubmit={createCheckpoint}><input maxLength={50} placeholder="Checkpoint name" value={checkpointName} onChange={event => setCheckpointName(event.target.value)} /><Button busy={checkpointBusy} busyLabel="Saving…" type="submit">Save checkpoint</Button></form> : null}
+            {checkpoints.length ? <div className={styles.checkpointList}>{checkpoints.map(checkpoint => <a href={embedUrl({id, projectJsonUrl: checkpoint.jsonUrl, assetsBase: checkpoint.assetsBase})} key={checkpoint._id}>{checkpoint.version}<small>{formatDateTime(checkpoint.created, 'Date unavailable')}</small></a>)}</div> : null}
+        </section>
+    ) : null;
     const requestRestore = commit => {
         if (restoring) return;
         setRestoreError(null);
@@ -1891,10 +2310,11 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     if (!history) return <p className={styles.status}>Loading…</p>;
     if (history.error) return <p className={styles.status}>Could not load version history. <button type="button" onClick={onChange}>Try again</button></p>;
     const commits = history.commits || [];
-    if (!commits.length) return <p className={styles.status}>No version history available.</p>;
+    if (!commits.length) return <React.Fragment>{checkpointPanel}<p className={styles.status}>No version history available.</p></React.Fragment>;
     if (history.graph?.nodes?.length) {
         return (
             <>
+                {checkpointPanel}
                 {restoreError ? <p className={styles.status}>{restoreError}</p> : null}
                 <GitGraph
                     graph={history.graph}
@@ -1936,15 +2356,18 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
         );
     }
     return (
-        <ul className={styles.commitList}>
-            {commits.map(commit => (
-                <li key={commit.sha}>
-                    <code>{commit.sha.slice(0, 7)}</code>
-                    <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
-                    <span className={styles.muted}>{commit.author}</span>
-                </li>
-            ))}
-        </ul>
+        <React.Fragment>
+            {checkpointPanel}
+            <ul className={styles.commitList}>
+                {commits.map(commit => (
+                    <li key={commit.sha}>
+                        <code>{commit.sha.slice(0, 7)}</code>
+                        <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
+                        <span className={styles.muted}>{commit.author}</span>
+                    </li>
+                ))}
+            </ul>
+        </React.Fragment>
     );
 };
 
@@ -2303,10 +2726,20 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
         setBusy('save');
         setStatus('');
         try {
-            await api.saveReview(id, reviewPayload(rating, message));
+            const data = await api.saveReview(id, reviewPayload(rating, message));
             if (reviewContextRef.current !== actionContext) return;
+            const previousRating = hasReview ? Number(
+                (reviews || []).find(review =>
+                    String(review.author).toLowerCase() === viewerName.toLowerCase())?.rating || rating
+            ) : 0;
+            setSummary(current => updateReviewSummary(current, previousRating, rating));
+            setReviews(current => {
+                const withoutMine = (current || []).filter(review =>
+                    String(review.author).toLowerCase() !== viewerName.toLowerCase());
+                return [data.review, ...withoutMine];
+            });
+            setHasReview(true);
             setStatus('Review saved.');
-            load();
         } catch (e) {
             if (reviewContextRef.current === actionContext) {
                 setStatus(e.message || 'Could not save your review.');
@@ -2326,11 +2759,18 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
         try {
             await api.deleteReview(id);
             if (reviewContextRef.current !== actionContext) return;
+            const previousRating = Number(
+                (reviews || []).find(review =>
+                    String(review.author).toLowerCase() === viewerName.toLowerCase())?.rating || rating
+            );
+            setSummary(current => updateReviewSummary(current, previousRating, 0));
+            setReviews(current => (current || []).filter(review =>
+                String(review.author).toLowerCase() !== viewerName.toLowerCase()));
             setRating(0);
             setMessage('');
+            setHasReview(false);
             setStatus('Review deleted.');
             setDeleteConfirm(false);
-            load();
         } catch (e) {
             if (reviewContextRef.current === actionContext) {
                 setStatus(e.message || 'Could not delete your review.');
@@ -2388,7 +2828,9 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
                     <div>
                         <header>
                             <Link to={`/users/${review.author}`}>{review.author}</Link>
-                            <span className={styles.reviewPlaytime}>{formatPlaytime(review.playtimeMs)}</span>
+                            {Number.isFinite(review.playtimeMs) && review.playtimeMs > 0 ? (
+                                <span className={styles.reviewPlaytime}>{formatPlaytime(review.playtimeMs)}</span>
+                            ) : null}
                             <span>{timeAgo(review.edited || review.created)}</span>
                         </header>
                         <ReviewStars rating={review.rating} />
@@ -2470,10 +2912,10 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
         setBusy(true);
         setError('');
         try {
-            await api.createRelease(id, payload);
+            const data = await api.createRelease(id, payload);
             if (actionContextRef.current !== context) return;
             setForm({version: '', channel: 'stable', notes: ''});
-            load();
+            setReleases(current => [data.release, ...(current || []).filter(item => item._id !== data.release._id)]);
         } catch (e) {
             if (actionContextRef.current === context) {
                 setError(e.message || 'Could not create the release.');
@@ -2491,11 +2933,17 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
                     <h3>Publish a release</h3>
                     <div className={styles.inlineFields}>
                         <input value={form.version} disabled={busy} required maxLength={50} placeholder="Version, such as 1.2.0" onChange={event => updateForm('version', event.target.value)} />
-                        <select value={form.channel} disabled={busy} onChange={event => updateForm('channel', event.target.value)}>
-                            <option value="stable">Stable</option>
-                            <option value="beta">Beta</option>
-                            <option value="development">Development</option>
-                        </select>
+                        <SelectMenu
+                            options={[
+                                {value: 'stable', label: 'Stable'},
+                                {value: 'beta', label: 'Beta'},
+                                {value: 'development', label: 'Development'}
+                            ]}
+                            value={form.channel}
+                            disabled={busy}
+                            onChange={value => updateForm('channel', value)}
+                            ariaLabel="Release channel"
+                        />
                     </div>
                     <textarea value={form.notes} disabled={busy} placeholder="What changed?" onChange={event => updateForm('notes', event.target.value)} />
                     <Button type="submit" disabled={busy}>{busy ? 'Publishing…' : 'Publish release'}</Button>
@@ -2526,6 +2974,8 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
     const [body, setBody] = useState('');
     const [status, setStatus] = useState('');
     const [busy, setBusy] = useState(false);
+    const [bounties, setBounties] = useState([]);
+    const [bountyId, setBountyId] = useState('');
     const actionLocks = useRef(new Set());
 
     useEffect(() => {
@@ -2535,6 +2985,14 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
         setBody('');
         setStatus('');
         setBusy(false);
+        setBountyId('');
+        if (user) {
+            listCommerceBounties({source: 'mistwarp', resource_type: 'project', resource_id: id})
+                .then(data => setBounties(data.bounties || []))
+                .catch(() => setBounties([]));
+        } else {
+            setBounties([]);
+        }
     }, [id, sourceProjectId, viewerName]);
 
     const submit = async event => {
@@ -2545,7 +3003,7 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
             login();
             return;
         }
-        const payload = contributionPayload(remixProjectId, title, body);
+        const payload = contributionPayload(remixProjectId, title, body, bountyId);
         if (!payload.remixProjectId || !payload.title) {
             setStatus('Add a fork project ID and title before sending.');
             return;
@@ -2588,6 +3046,22 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
             ) : null}
             <input value={title} disabled={busy} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
             <textarea value={body} disabled={busy} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
+            {bounties.length ? (
+                <SelectMenu
+                    options={[
+                        {value: '', label: 'No bounty'},
+                        ...bounties.map(bounty => ({
+                            value: bounty.id,
+                            label: `${bounty.amount} credits: ${bounty.title}`
+                        }))
+                    ]}
+                    value={bountyId}
+                    disabled={busy}
+                    onChange={setBountyId}
+                    ariaLabel="Link a bounty"
+                    width={320}
+                />
+            ) : null}
             <Button type="submit" disabled={busy}>{busy ? 'Sending…' : user ? 'Send contribution' : 'Sign in to contribute'}</Button>
             {status ? <p className={styles.muted}>{status}</p> : null}
         </form>

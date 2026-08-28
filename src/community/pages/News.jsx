@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import NewsItem from '../components/NewsItem.jsx';
@@ -30,6 +30,10 @@ const News = () => {
     const [error, setError] = useState(null);
     const [loadFailed, setLoadFailed] = useState(false);
     const beginLoad = useLatest();
+    const submitInFlight = useRef(false);
+    const releaseSubmit = () => {
+        submitInFlight.current = false;
+    };
 
     const load = useCallback((reset = true) => {
         const fresh = beginLoad();
@@ -45,7 +49,7 @@ const News = () => {
     const submit = async event => {
         event.preventDefault();
         const options = pollOptions.map(option => option.trim()).filter(Boolean);
-        if (!title.trim() || !body.trim() || busy) return;
+        if (!title.trim() || !body.trim() || submitInFlight.current) return;
         if (!newsPollReady(category, pollOptions)) {
             setError('Add at least two poll options.');
             return;
@@ -54,6 +58,7 @@ const News = () => {
             setError('Add both a button label and a valid https:// or internal / link.');
             return;
         }
+        submitInFlight.current = true;
         setBusy(true);
         setError(null);
         try {
@@ -75,6 +80,7 @@ const News = () => {
         } catch (e) {
             setError(e.message || 'Could not post update.');
         } finally {
+            releaseSubmit();
             setBusy(false);
         }
     };

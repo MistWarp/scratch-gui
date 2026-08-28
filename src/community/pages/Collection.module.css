@@ -167,11 +167,31 @@
 }
 
 @media (max-width: 650px) {
+    .page {
+        padding: 20px 14px 64px;
+    }
+
     .hero {
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: 1fr;
     }
 
     .actions {
-        grid-column: 2;
+        grid-column: 1;
+        width: 100%;
+    }
+
+    .tabs {
+        gap: 20px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tabs button {
+        min-height: 44px;
+        white-space: nowrap;
     }
 }

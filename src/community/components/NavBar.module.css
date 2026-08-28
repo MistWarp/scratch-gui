@@ -71,6 +71,10 @@
     display: none;
 }
 
+.mobileDock {
+    display: none;
+}
+
 .searchIcon {
     position: absolute;
     left: 13px;
@@ -305,24 +309,35 @@
 
 @media (max-width: 760px) {
     :global(body) {
-        padding-bottom: 74px;
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
     }
 
     .inner {
+        height: 56px;
         gap: 8px;
-        padding: 0 10px;
+        padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
     }
 
-    .linkLabel {
+    .links {
         display: none;
     }
 
-    .link {
-        padding: 0 10px;
+    .brand {
+        min-width: 0;
+    }
+
+    .wordmark {
+        display: none;
     }
 
     .iconLink {
         display: none;
+    }
+
+    .account .bellLink:last-of-type {
+        display: flex;
+        width: 44px;
+        padding: 0;
     }
 
     .desktopSearch {
@@ -330,25 +345,26 @@
     }
 
     .mobileSearch {
-        position: fixed;
-        right: 10px;
-        bottom: max(10px, env(safe-area-inset-bottom));
-        left: 10px;
-        z-index: 70;
+        position: absolute;
+        top: 8px;
+        right: max(108px, calc(env(safe-area-inset-right) + 98px));
+        left: max(58px, calc(env(safe-area-inset-left) + 48px));
+        z-index: 55;
         display: flex;
         box-sizing: border-box;
         width: auto;
         max-width: none;
-        height: 54px;
-        padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        background: var(--bg-card);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, .38);
+        height: 40px;
+        padding: 0;
+        background: transparent;
+    }
+
+    .mobileSearchLoggedIn {
+        right: max(132px, calc(env(safe-area-inset-right) + 122px));
     }
 
     .mobileSearch .searchIcon {
-        left: 18px;
+        left: 12px;
         color: var(--text-faint);
     }
 
@@ -365,16 +381,89 @@
     }
 
     .mobileSearch .suggestions {
-        top: auto;
-        right: 0;
-        bottom: calc(100% + 8px);
-        left: 0;
-        max-height: min(420px, calc(100vh - 90px));
+        position: fixed;
+        top: 61px;
+        right: max(10px, env(safe-area-inset-right));
+        left: max(10px, env(safe-area-inset-left));
+        max-height: min(420px, calc(100dvh - 140px));
         overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     .suggestionMeta {
         display: none;
+    }
+
+    .suggestion {
+        min-height: 48px;
+        padding: 9px 12px;
+    }
+
+    .mobileDock {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 80;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        height: calc(60px + env(safe-area-inset-bottom));
+        padding: 4px max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px, env(safe-area-inset-left));
+        border-top: 1px solid var(--border);
+        background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+        box-shadow: 0 -5px 18px rgba(0, 0, 0, .2);
+        backdrop-filter: blur(14px);
+    }
+
+    .mobileDockItem {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        min-height: 52px;
+        padding: 4px 2px 3px;
+        border: 0;
+        border-radius: 10px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 3px;
+        color: var(--text-faint);
+        background: transparent;
+        font: inherit;
+        font-size: 10.5px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .mobileDockItemActive {
+        color: var(--accent-strong);
+        background: transparent;
+    }
+
+    .mobileDockItemActive::before {
+        position: absolute;
+        top: -4px;
+        width: 28px;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+        background: var(--accent);
+        content: '';
+    }
+
+    .mobileCreate {
+        color: var(--mw-text);
+    }
+
+    .mobileCreateIcon {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        margin-top: -9px;
+        place-items: center;
+        border-radius: 12px;
+        color: var(--accent-contrast);
+        background: var(--accent);
+        box-shadow: 0 4px 12px var(--accent-shadow);
     }
 }
 
@@ -384,8 +473,14 @@
     }
 }
 
-@media (max-width: 480px) {
-    .wordmark {
-        display: none;
+@media (max-width: 360px) {
+    .mobileSearch {
+        right: max(98px, calc(env(safe-area-inset-right) + 88px));
+        left: max(52px, calc(env(safe-area-inset-left) + 42px));
+    }
+
+
+    .mobileSearchLoggedIn {
+        right: max(124px, calc(env(safe-area-inset-right) + 114px));
     }
 }

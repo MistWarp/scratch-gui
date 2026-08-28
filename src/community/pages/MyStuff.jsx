@@ -1,12 +1,13 @@
+/* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
     SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
-    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3
+    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
-import {formatBytes} from '../format';
+import {formatBytes, formatDate} from '../format';
 import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -16,6 +17,7 @@ import Modal from '../components/ui/Modal.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
+import MyStuffThemes from '../components/MyStuffThemes.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
@@ -44,6 +46,16 @@ const uploadProgressLabel = (loaded, total) => {
 
 const shouldRefreshProjectsAfterUploadError = error =>
     Boolean(error && error.code === 'upload_processing_timeout');
+
+const replaceProjectById = (projects, replacement) =>
+    (projects || []).map(project => (project.id === replacement.id ? replacement : project));
+const removeProjectById = (projects, id) =>
+    (projects || []).filter(project => project.id !== id);
+const trashPurgeConfirmation = project => ({
+    title: 'Delete forever?',
+    body: `Permanently delete "${project.title}"? This cannot be undone.`,
+    action: 'Delete forever'
+});
 
 const visibilityLabel = project => {
     const v = project.visibility || (project.shared ? 'public' : 'private');
@@ -152,7 +164,55 @@ const Overview = ({stats, account, quota}) => {
     );
 };
 
-const UploadUsage = ({quota, onRefresh}) => {
+const Inventory = ({items, error, onRetry}) => (
+    <section className={styles.inventory}>
+        <header className={styles.inventoryHeader}>
+            <div>
+                <h1>Inventory</h1>
+                <p>Items collected across MistWarp games.</p>
+            </div>
+            <span>{items ? `${items.length} item ${items.length === 1 ? 'type' : 'types'}` : ''}</span>
+        </header>
+        {error ? (
+            <div className={styles.inventoryEmpty}>
+                <strong>Could not load your inventory.</strong>
+                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+            </div>
+        ) : items === null ? (
+            <p className={styles.status}>Loading inventory…</p>
+        ) : items.length ? (
+            <div className={styles.inventoryGrid}>
+                {items.map(item => (
+                    <Link
+                        key={item.id}
+                        to={projectUrl(item.originProjectId)}
+                        className={styles.inventoryItem}
+                        aria-label={`${item.name}, from ${item.originProjectTitle}, quantity ${item.quantity}`}
+                    >
+                        {item.visual && item.visual.url ? (
+                            <img src={item.visual.url} alt="" loading="lazy" />
+                        ) : (
+                            <Image className={styles.inventoryFallback} aria-hidden="true" />
+                        )}
+                        <span className={styles.inventoryQuantity}>×{item.quantity}</span>
+                        <span className={styles.inventoryDetails}>
+                            <strong>{item.name}</strong>
+                            <small>From {item.originProjectTitle}</small>
+                        </span>
+                    </Link>
+                ))}
+            </div>
+        ) : (
+            <div className={styles.inventoryEmpty}>
+                <Package size={36} />
+                <strong>Your inventory is empty.</strong>
+                <span>Items you collect in MistWarp games will appear here.</span>
+            </div>
+        )}
+    </section>
+);
+
+const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [amount, setAmount] = useState(20);
     const [resetting, setResetting] = useState(false);
@@ -210,10 +270,16 @@ const UploadUsage = ({quota, onRefresh}) => {
         setResetError('');
     }, []);
 
-    const oldestDate = quota && quota.oldestEventMs ?
-        new Date(quota.oldestEventMs).toLocaleDateString() :
-        null;
+    const oldestDate = quota && quota.oldestEventMs ? formatDate(quota.oldestEventMs) : null;
 
+    if (error) {
+        return (
+            <div className={styles.inventoryEmpty} role="alert">
+                <strong>Could not load upload usage.</strong>
+                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+            </div>
+        );
+    }
     if (!quota) {
         return <p className={styles.status}>Loading upload info…</p>;
     }
@@ -227,6 +293,13 @@ const UploadUsage = ({quota, onRefresh}) => {
 
     return (
         <section className={styles.uploads}>
+            {perks ? (
+                <p className={styles.perkNote}>
+                    Your {perks.tier} Rotur plan gives you {formatBytes(perks.mistwarp.weeklyUploadBytes)} of weekly uploads,
+                    {' '}{formatBytes(perks.mistwarp.maxProjectAssetsBytes)} of assets per project, and
+                    {' '}{formatBytes(perks.mistwarp.maxProjectAssetBytes)} per asset.
+                </p>
+            ) : null}
             <div className={styles.uploadSummary}>
                 {summaryStats.map(s => (
                     <div key={s.label} className={styles.uploadStat}>
@@ -270,7 +343,7 @@ const UploadUsage = ({quota, onRefresh}) => {
                     <div className={styles.uploadResetDone}>
                         <p><CheckCircle size={16} /> Quota reset successfully! Your upload usage is now 0.</p>
                     </div>
-                ) : resetError ? (
+                ) : resetError && !showConfirm ? (
                     <div className={styles.uploadResetError}>
                         <p><AlertTriangle size={14} /> {resetError}</p>
                         <Button
@@ -323,6 +396,7 @@ const UploadUsage = ({quota, onRefresh}) => {
                         {payTo ? <> sent to <code>{payTo}</code></> : ''}.
                         Your upload usage will be reset to zero. Continue?
                     </p>
+                    {resetError ? <p className={styles.error} role="alert">{resetError}</p> : null}
                 </Modal>
             ) : null}
         </section>
@@ -404,7 +478,7 @@ const AgreementTab = () => {
                 {alreadyAccepted ? (
                     <p className={styles.agreementAccepted}>
                         <CheckCircle size={16} /> You have accepted version {agreement.version} (updated{' '}
-                        {new Date(agreement.updatedAt).toLocaleDateString()}).
+                        {formatDate(agreement.updatedAt, 'date unavailable')}).
                     </p>
                 ) : (
                     <>
@@ -431,6 +505,9 @@ const AgreementTab = () => {
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
     {key: 'projects', label: 'My Projects', icon: FolderOpen},
+    {key: 'themes', label: 'Themes', icon: Palette},
+    {key: 'inventory', label: 'Inventory', icon: Package},
+    {key: 'trash', label: 'Trash', icon: Trash2},
     {key: 'uploads', label: 'Uploads', icon: HardDrive},
     {key: 'agreement', label: 'Agreement', icon: HeartHandshake},
     {key: 'collections', label: 'Collections', icon: Library},
@@ -440,18 +517,27 @@ const getMyStuffSection = value => {
     if (SECTIONS.some(section => section.key === value)) return value;
     return 'overview';
 };
+const normalizeMyStuffParams = params => {
+    const next = new URLSearchParams(params);
+    const section = getMyStuffSection(next.get('section'));
+    if (section === 'overview') next.delete('section');
+    else next.set('section', section);
+    if (section !== 'themes' || next.get('themeView') !== 'published') next.delete('themeView');
+    if (section !== 'collections' || next.get('collectionView') !== 'library') next.delete('collectionView');
+    return next;
+};
 
 const MyStuff = () => {
     const {user, loading, login} = useUser();
     const [searchParams, setSearchParams] = useSearchParams();
     const tab = getMyStuffSection(searchParams.get('section'));
-    const setTab = nextTab => {
-        const next = new URLSearchParams(searchParams);
-        if (nextTab === 'overview') next.delete('section');
-        else next.set('section', nextTab);
-        setSearchParams(next);
-    };
+    const collectionView = tab === 'collections' && searchParams.get('collectionView') === 'library' ?
+        'library' : 'collections';
     const [projects, setProjects] = useState(null);
+    const [projectTotal, setProjectTotal] = useState(0);
+    const [projectOffset, setProjectOffset] = useState(0);
+    const [projectsMoreBusy, setProjectsMoreBusy] = useState(false);
+    const [projectsMoreFailed, setProjectsMoreFailed] = useState(false);
     const [featuredProject, setFeaturedProject] = useState(user ? user.featuredProject : '');
     const [uploading, setUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState('');
@@ -459,8 +545,14 @@ const MyStuff = () => {
     const [failed, setFailed] = useState(false);
     const [collectionProject, setCollectionProject] = useState(null);
     const [quota, setQuota] = useState(null);
+    const [quotaFailed, setQuotaFailed] = useState(false);
+    const [usageAttempt, setUsageAttempt] = useState(0);
+    const [perks, setPerks] = useState(null);
     const [stats, setStats] = useState(null);
+    const [statsFailed, setStatsFailed] = useState(false);
     const [account, setAccount] = useState(null);
+    const [inventoryItems, setInventoryItems] = useState(null);
+    const [inventoryFailed, setInventoryFailed] = useState(false);
     const [pendingUploadFile, setPendingUploadFile] = useState(null);
     const [showAgreeModal, setShowAgreeModal] = useState(false);
     const [agreeData, setAgreeData] = useState(null);
@@ -468,14 +560,26 @@ const MyStuff = () => {
     const [agreeError, setAgreeError] = useState('');
     const [mySpaces, setMySpaces] = useState(null);
     const [libraryProjects, setLibraryProjects] = useState(null);
+    const [libraryTotal, setLibraryTotal] = useState(0);
+    const [libraryOffset, setLibraryOffset] = useState(0);
+    const [libraryBusy, setLibraryBusy] = useState(false);
+    const [libraryMoreFailed, setLibraryMoreFailed] = useState(false);
     const [spacesFailed, setSpacesFailed] = useState(false);
     const [libraryFailed, setLibraryFailed] = useState(false);
     const [directoriesLoading, setDirectoriesLoading] = useState(false);
     const [projectAction, setProjectAction] = useState('');
     const [deleteConfirmProject, setDeleteConfirmProject] = useState(null);
+    const [deleteError, setDeleteError] = useState('');
+    const [trashedProjects, setTrashedProjects] = useState(null);
+    const [trashBusy, setTrashBusy] = useState('');
+    const [trashFailed, setTrashFailed] = useState(false);
+    const [purgeConfirmProject, setPurgeConfirmProject] = useState(null);
+    const [purgeError, setPurgeError] = useState('');
     const uploadInput = useRef(null);
     const beginProjectLoad = useLatest();
     const beginDirectoryLoad = useLatest();
+    const beginStatsLoad = useLatest();
+    const beginTrashLoad = useLatest();
     const username = user ? user.username : '';
     const accountContextRef = useRef(username);
     accountContextRef.current = username;
@@ -488,16 +592,48 @@ const MyStuff = () => {
         return key;
     };
     const releaseAccountAction = key => actionLocks.current.delete(key);
+    const setTab = (nextTab, {preserveError = false} = {}) => {
+        const next = new URLSearchParams(searchParams);
+        if (nextTab === 'overview') next.delete('section');
+        else next.set('section', nextTab);
+        if (nextTab !== 'themes') next.delete('themeView');
+        if (nextTab !== 'collections') next.delete('collectionView');
+        if (!preserveError) setActionError('');
+        setSearchParams(next);
+    };
+    const setCollectionView = nextView => {
+        const next = new URLSearchParams(searchParams);
+        if (nextView === 'library') next.set('collectionView', 'library');
+        else next.delete('collectionView');
+        setSearchParams(next);
+    };
+
+    useEffect(() => {
+        const normalized = normalizeMyStuffParams(searchParams);
+        if (normalized.toString() !== searchParams.toString()) {
+            setSearchParams(normalized, {replace: true});
+        }
+    }, [searchParams, setSearchParams]);
 
     useEffect(() => {
         beginDirectoryLoad();
         setMySpaces(null);
         setLibraryProjects(null);
+        setLibraryTotal(0);
+        setLibraryOffset(0);
+        setLibraryBusy(false);
+        setLibraryMoreFailed(false);
         setSpacesFailed(false);
         setLibraryFailed(false);
         setDirectoriesLoading(false);
         setProjectAction('');
         setDeleteConfirmProject(null);
+        setDeleteError('');
+        setTrashedProjects(null);
+        setTrashBusy('');
+        setTrashFailed(false);
+        setPurgeConfirmProject(null);
+        setPurgeError('');
         setUploading(false);
         setUploadStatus('');
         setPendingUploadFile(null);
@@ -507,42 +643,61 @@ const MyStuff = () => {
         setAgreeError('');
         setCollectionProject(null);
         setActionError('');
-    }, [beginDirectoryLoad, username]);
+        setInventoryItems(null);
+        setInventoryFailed(false);
+    }, [beginDirectoryLoad, beginStatsLoad, beginTrashLoad, username]);
 
     useEffect(() => {
         if (!user) {
             setQuota(null);
+            setQuotaFailed(false);
+            setPerks(null);
             return;
         }
         let stale = false;
-        api.quota()
-            .then(data => {
-                if (!stale) setQuota(data);
-            })
-            .catch(() => {});
+        setQuota(null);
+        setQuotaFailed(false);
+        setPerks(null);
+        Promise.allSettled([api.quota(), api.perks()]).then(([quotaResult, perksResult]) => {
+            if (stale) return;
+            if (quotaResult.status === 'fulfilled') setQuota(quotaResult.value);
+            else setQuotaFailed(true);
+            if (perksResult.status === 'fulfilled') setPerks(perksResult.value.current || null);
+        });
         return () => {
             stale = true;
         };
-    }, [user]);
+    }, [usageAttempt, user]);
 
     useEffect(() => {
         setFeaturedProject(user ? user.featuredProject : '');
     }, [user]);
 
-    useEffect(() => {
-        if (!user) {
+    const loadStats = useCallback(() => {
+        if (!username) {
             setStats(null);
+            setStatsFailed(false);
             setAccount(null);
-            return () => {};
+            return;
         }
-        let stale = false;
+        const context = accountContextRef.current;
+        const fresh = beginStatsLoad();
+        setStats(null);
+        setStatsFailed(false);
         api.stats()
-            .then(data => !stale && setStats(data.stats || null))
-            .catch(() => {});
-        return () => {
-            stale = true;
-        };
-    }, [user]);
+            .then(fresh(data => {
+                if (accountContextRef.current !== context) return;
+                if (data && data.stats) setStats(data.stats);
+                else setStatsFailed(true);
+            }))
+            .catch(fresh(() => {
+                if (accountContextRef.current === context) setStatsFailed(true);
+            }));
+    }, [beginStatsLoad, username]);
+
+    useEffect(() => {
+        loadStats();
+    }, [loadStats]);
 
     useEffect(() => {
         if (!user) return;
@@ -561,15 +716,124 @@ const MyStuff = () => {
             return;
         }
         setProjects(null);
+        setProjectTotal(0);
+        setProjectOffset(0);
+        setProjectsMoreBusy(false);
+        setProjectsMoreFailed(false);
         setFailed(false);
-        api.myProjects(user.username)
-            .then(fresh(data => setProjects(data.projects || [])))
+        api.myProjectPage(user.username)
+            .then(fresh(data => {
+                const page = data.projects || [];
+                setProjects(page);
+                setProjectTotal(Number.isFinite(data.total) ? data.total : page.length);
+                setProjectOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : page.length);
+            }))
             .catch(fresh(() => setFailed(true)));
     }, [beginProjectLoad, user, tab]);
 
     useEffect(() => {
         load();
     }, [load]);
+
+    const loadInventory = useCallback(() => {
+        if (!user || tab !== 'inventory') return;
+        const context = accountContextRef.current;
+        setInventoryItems(null);
+        setInventoryFailed(false);
+        api.gameInventory()
+            .then(result => {
+                if (accountContextRef.current === context) {
+                    setInventoryItems((result.inventory && result.inventory.items) || []);
+                }
+            })
+            .catch(() => {
+                if (accountContextRef.current === context) setInventoryFailed(true);
+            });
+    }, [tab, user]);
+
+    useEffect(() => {
+        loadInventory();
+    }, [loadInventory]);
+
+    const loadTrash = useCallback(() => {
+        if (!user || tab !== 'trash') return;
+        const fresh = beginTrashLoad();
+        setTrashedProjects(null);
+        setTrashFailed(false);
+        api.trash()
+            .then(fresh(data => setTrashedProjects(data.projects || [])))
+            .catch(fresh(() => setTrashFailed(true)));
+    }, [beginTrashLoad, tab, user]);
+
+    useEffect(() => {
+        if (tab === 'trash') loadTrash();
+        else beginTrashLoad();
+    }, [beginTrashLoad, loadTrash, tab]);
+
+    const restoreTrashedProject = async id => {
+        const context = accountContextRef.current;
+        const actionKey = beginAccountAction(`trash:restore:${id}`);
+        if (!actionKey) return;
+        setTrashBusy(`restore:${id}`);
+        setActionError('');
+        try {
+            await api.restoreProject(id);
+            if (accountContextRef.current === context) {
+                setTrashedProjects(current => removeProjectById(current, id));
+            }
+        } catch (e) {
+            if (accountContextRef.current === context) {
+                setActionError(e.message || 'Could not restore this project.');
+            }
+        } finally {
+            releaseAccountAction(actionKey);
+            if (accountContextRef.current === context) setTrashBusy('');
+        }
+    };
+
+    const purgeTrashedProject = async project => {
+        const context = accountContextRef.current;
+        const actionKey = beginAccountAction(`trash:purge:${project.id}`);
+        if (!actionKey) return;
+        setTrashBusy(`purge:${project.id}`);
+        setPurgeError('');
+        try {
+            await api.purgeProject(project.id);
+            if (accountContextRef.current === context) {
+                setTrashedProjects(current => removeProjectById(current, project.id));
+                setPurgeConfirmProject(null);
+            }
+        } catch (e) {
+            if (accountContextRef.current === context) {
+                setPurgeError(e.message || 'Could not permanently delete this project.');
+            }
+        } finally {
+            releaseAccountAction(actionKey);
+            if (accountContextRef.current === context) setTrashBusy('');
+        }
+    };
+
+    const loadMoreProjects = async () => {
+        if (!user || projectsMoreBusy || projectOffset >= projectTotal) return;
+        const context = accountContextRef.current;
+        setProjectsMoreBusy(true);
+        setProjectsMoreFailed(false);
+        try {
+            const data = await api.myProjectPage(user.username, {offset: projectOffset, limit: 24});
+            if (accountContextRef.current !== context) return;
+            setProjects(current => {
+                const byId = new Map((current || []).map(project => [project.id, project]));
+                for (const project of data.projects || []) byId.set(project.id, project);
+                return Array.from(byId.values());
+            });
+            setProjectTotal(Number.isFinite(data.total) ? data.total : projectTotal);
+            setProjectOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : projectOffset + 24);
+        } catch (e) {
+            if (accountContextRef.current === context) setProjectsMoreFailed(true);
+        } finally {
+            if (accountContextRef.current === context) setProjectsMoreBusy(false);
+        }
+    };
 
     const loadDirectories = useCallback(() => {
         const fresh = beginDirectoryLoad();
@@ -579,8 +843,13 @@ const MyStuff = () => {
         Promise.allSettled([api.mySpaces(), api.library()]).then(fresh(([spacesResult, libraryResult]) => {
             if (spacesResult.status === 'fulfilled') setMySpaces(spacesResult.value.spaces || []);
             else setSpacesFailed(true);
-            if (libraryResult.status === 'fulfilled') setLibraryProjects(libraryResult.value.projects || []);
-            else setLibraryFailed(true);
+            if (libraryResult.status === 'fulfilled') {
+                setLibraryProjects(libraryResult.value.projects || []);
+                setLibraryTotal(Number.isFinite(libraryResult.value.total) ?
+                    libraryResult.value.total : (libraryResult.value.projects || []).length);
+                setLibraryOffset(Number.isFinite(libraryResult.value.nextOffset) ?
+                    libraryResult.value.nextOffset : (libraryResult.value.projects || []).length);
+            } else setLibraryFailed(true);
             setDirectoriesLoading(false);
         }));
     }, [beginDirectoryLoad]);
@@ -595,7 +864,32 @@ const MyStuff = () => {
     const retryDirectories = () => {
         setMySpaces(null);
         setLibraryProjects(null);
+        setLibraryTotal(0);
+        setLibraryOffset(0);
+        setLibraryMoreFailed(false);
         loadDirectories();
+    };
+
+    const loadMoreLibrary = async () => {
+        if (libraryBusy || libraryOffset >= libraryTotal) return;
+        const context = accountContextRef.current;
+        setLibraryBusy(true);
+        setLibraryMoreFailed(false);
+        try {
+            const data = await api.library({offset: libraryOffset, limit: 24});
+            if (accountContextRef.current !== context) return;
+            setLibraryProjects(current => {
+                const byId = new Map((current || []).map(project => [project.id, project]));
+                for (const project of data.projects || []) byId.set(project.id, project);
+                return Array.from(byId.values());
+            });
+            setLibraryTotal(Number.isFinite(data.total) ? data.total : libraryTotal);
+            setLibraryOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : libraryOffset + 24);
+        } catch (e) {
+            if (accountContextRef.current === context) setLibraryMoreFailed(true);
+        } finally {
+            if (accountContextRef.current === context) setLibraryBusy(false);
+        }
     };
 
     const refreshUsage = useCallback(() => {
@@ -603,25 +897,20 @@ const MyStuff = () => {
         const context = accountContextRef.current;
         api.quota()
             .then(data => {
-                if (accountContextRef.current === context) setQuota(data);
+                if (accountContextRef.current === context) {
+                    setQuota(data);
+                    setQuotaFailed(false);
+                }
             })
-            .catch(() => {});
+            .catch(() => {
+                if (accountContextRef.current === context) setQuotaFailed(true);
+            });
         api.stats()
             .then(data => {
                 if (accountContextRef.current === context) setStats(data.stats || null);
             })
             .catch(() => {});
     }, [user]);
-
-    const clearFeaturedIf = async id => {
-        if (featuredProject !== id) return;
-        setFeaturedProject('');
-        try {
-            await api.updateProfile({featuredProject: ''});
-        } catch (e) {
-            // ignore
-        }
-    };
 
     const unpublish = async id => {
         const actionKey = beginAccountAction('project');
@@ -630,10 +919,10 @@ const MyStuff = () => {
         setProjectAction(`visibility:${id}`);
         try {
             setActionError('');
-            await api.unpublish(id);
+            const data = await api.unpublish(id);
             if (accountContextRef.current !== context) return;
-            await clearFeaturedIf(id);
-            load();
+            setProjects(current => replaceProjectById(current, data.project));
+            if (featuredProject === id) setFeaturedProject('');
             refreshUsage();
         } catch (e) {
             if (accountContextRef.current === context) {
@@ -652,9 +941,9 @@ const MyStuff = () => {
         setProjectAction(`visibility:${id}`);
         try {
             setActionError('');
-            await api.publish(id);
+            const data = await api.publish(id);
             if (accountContextRef.current !== context) return;
-            load();
+            setProjects(current => replaceProjectById(current, data.project));
             refreshUsage();
         } catch (e) {
             if (accountContextRef.current === context) {
@@ -671,23 +960,23 @@ const MyStuff = () => {
         if (!actionKey) return;
         const context = accountContextRef.current;
         setProjectAction(`delete:${id}`);
+        setDeleteError('');
         try {
-            setActionError('');
             await api.deleteProject(id);
             if (accountContextRef.current !== context) return;
-            await clearFeaturedIf(id);
-            load();
+            setProjects(current => removeProjectById(current, id));
+            setProjectTotal(total => Math.max(0, total - 1));
+            setProjectOffset(offset => Math.max(0, offset - 1));
+            if (featuredProject === id) setFeaturedProject('');
+            setDeleteConfirmProject(null);
             refreshUsage();
         } catch (e) {
             if (accountContextRef.current === context) {
-                setActionError(e.message || 'Could not delete this project.');
+                setDeleteError(e.message || 'Could not delete this project.');
             }
         } finally {
             releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) {
-                setProjectAction('');
-                setDeleteConfirmProject(null);
-            }
+            if (accountContextRef.current === context) setProjectAction('');
         }
     };
 
@@ -791,7 +1080,7 @@ const MyStuff = () => {
             if (accountContextRef.current === context) {
                 setActionError(e.message || 'Could not upload that project.');
                 if (shouldRefreshProjectsAfterUploadError(e)) {
-                    setTab('projects');
+                    setTab('projects', {preserveError: true});
                     load();
                 }
             }
@@ -839,7 +1128,7 @@ const MyStuff = () => {
                 if (target.actionError) setActionError(target.actionError);
                 if (target.agreementError) setAgreeError(target.agreementError);
                 if (agreementAccepted && shouldRefreshProjectsAfterUploadError(e)) {
-                    setTab('projects');
+                    setTab('projects', {preserveError: true});
                     load();
                 }
             }
@@ -861,8 +1150,19 @@ const MyStuff = () => {
     }, []);
     const deleteBusy = deleteConfirmProject && projectAction === `delete:${deleteConfirmProject.id}`;
     const dismissDeleteConfirm = useCallback(() => {
-        if (!projectAction) setDeleteConfirmProject(null);
+        if (!projectAction) {
+            setDeleteConfirmProject(null);
+            setDeleteError('');
+        }
     }, [projectAction]);
+    const purgeBusy = purgeConfirmProject && trashBusy === `purge:${purgeConfirmProject.id}`;
+    const purgeDetails = purgeConfirmProject ? trashPurgeConfirmation(purgeConfirmProject) : null;
+    const dismissPurgeConfirm = useCallback(() => {
+        if (!trashBusy) {
+            setPurgeConfirmProject(null);
+            setPurgeError('');
+        }
+    }, [trashBusy]);
 
     if (loading) {
         return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
@@ -980,9 +1280,30 @@ const MyStuff = () => {
                     )}
                 >
                     <p className={styles.confirmText}>
-                        <strong>{deleteConfirmProject.title}</strong> will be deleted permanently.
-                        {' '}This cannot be undone.
+                        <strong>{deleteConfirmProject.title}</strong> will move to Trash. You can restore it until its recovery period ends.
                     </p>
+                    {deleteError ? <p className={styles.error} role="alert">{deleteError}</p> : null}
+                </Modal>
+            ) : null}
+
+            {purgeConfirmProject ? (
+                <Modal
+                    icon={Trash2}
+                    title={purgeDetails.title}
+                    onClose={dismissPurgeConfirm}
+                    onDismiss={dismissPurgeConfirm}
+                    dismissDisabled={Boolean(purgeBusy)}
+                    actions={(
+                        <React.Fragment>
+                            <Button variant="secondary" disabled={Boolean(purgeBusy)} onClick={dismissPurgeConfirm}>Cancel</Button>
+                            <Button variant="danger" busy={Boolean(purgeBusy)} busyLabel="Deleting…" onClick={() => purgeTrashedProject(purgeConfirmProject)}>
+                                {purgeDetails.action}
+                            </Button>
+                        </React.Fragment>
+                    )}
+                >
+                    <p className={styles.confirmText}>{purgeDetails.body}</p>
+                    {purgeError ? <p className={styles.error} role="alert">{purgeError}</p> : null}
                 </Modal>
             ) : null}
 
@@ -1001,25 +1322,71 @@ const MyStuff = () => {
                                 account={account}
                                 quota={quota}
                             />
+                        ) : statsFailed ? (
+                            <div className={styles.inventoryEmpty} role="alert">
+                                <strong>Could not load your overview.</strong>
+                                <Button variant="secondary" onClick={loadStats}>Try again</Button>
+                            </div>
                         ) : (
                             <p className={styles.status}>Loading…</p>
                         )
                     ) : tab === 'uploads' ? (
                         <UploadUsage
+                            error={quotaFailed}
                             quota={quota}
+                            perks={perks}
+                            onRetry={() => setUsageAttempt(value => value + 1)}
                             onRefresh={refreshUsage}
                         />
                     ) : tab === 'agreement' ? (
                         <AgreementTab key={username} />
+                    ) : tab === 'themes' ? (
+                        <MyStuffThemes username={username} />
+                    ) : tab === 'inventory' ? (
+                        <Inventory items={inventoryItems} error={inventoryFailed} onRetry={loadInventory} />
+                    ) : tab === 'trash' ? (
+                        trashFailed ? (
+                            <div className={styles.inventoryEmpty} role="alert">
+                                <strong>Could not load Trash.</strong>
+                                <Button variant="secondary" onClick={loadTrash}>Try again</Button>
+                            </div>
+                        ) : trashedProjects === null ? <p className={styles.status}>Loading Trash…</p> :
+                            trashedProjects.length ? <div className={styles.list}>{trashedProjects.map(project => (
+                                <div className={styles.row} key={project.id}>
+                                    <div className={styles.thumb}><ProjectThumbnail project={project} lazy /></div>
+                                    <div className={styles.info}>
+                                        <strong className={styles.title}>{project.title}</strong>
+                                        <span className={styles.rowStats}>Deletes forever {formatDate(project.purgeAt, 'date unavailable')}</span>
+                                    </div>
+                                    <div className={styles.rowActions}>
+                                        <Button variant="primary" busy={trashBusy === `restore:${project.id}`} disabled={Boolean(trashBusy)} onClick={() => restoreTrashedProject(project.id)}><RotateCcw size={14} /> Restore</Button>
+                                        <Button
+                                            variant="danger"
+                                            disabled={Boolean(trashBusy)}
+                                            onClick={() => {
+                                                setPurgeError('');
+                                                setPurgeConfirmProject(project);
+                                            }}
+                                        ><Trash2 size={14} /> Delete forever</Button>
+                                    </div>
+                                </div>
+                            ))}</div> : <p className={styles.status}>Trash is empty.</p>
                     ) : tab === 'collections' || tab === 'spaces' ? (
                         <MyStuffSpaces
                             key={tab}
                             mode={tab}
                             spaces={mySpaces}
                             libraryProjects={libraryProjects}
+                            libraryTotal={libraryTotal}
+                            libraryHasMore={libraryOffset < libraryTotal}
+                            libraryBusy={libraryBusy}
+                            libraryMoreFailed={libraryMoreFailed}
+                            libraryOpen={collectionView === 'library'}
                             username={user.username}
                             error={spacesFailed || (tab === 'collections' && libraryFailed)}
                             onRetry={retryDirectories}
+                            onLibraryOpenChange={open => setCollectionView(open ? 'library' : 'collections')}
+                            onLoadMoreLibrary={loadMoreLibrary}
                         />
                     ) : failed ? (
                         <p className={styles.status}>
@@ -1184,6 +1551,7 @@ const MyStuff = () => {
                                                             disabled={Boolean(projectAction)}
                                                             onClick={() => {
                                                                 close();
+                                                                setDeleteError('');
                                                                 setDeleteConfirmProject(project);
                                                             }}
                                                         >
@@ -1197,6 +1565,19 @@ const MyStuff = () => {
                                     </div>
                                 );
                             })}
+                            {projectOffset < projectTotal ? (
+                                <div className={styles.loadMore}>
+                                    <Button
+                                        variant="secondary"
+                                        busy={projectsMoreBusy}
+                                        busyLabel="Loading…"
+                                        onClick={loadMoreProjects}
+                                    >Load more projects</Button>
+                                </div>
+                            ) : null}
+                            {projectsMoreFailed ? (
+                                <p className={styles.moreError}>Could not load more projects. Try again.</p>
+                            ) : null}
                         </div>
                     ) : (
                         <p className={styles.status}>You have not created any projects yet.</p>
@@ -1215,7 +1596,11 @@ const MyStuff = () => {
 
 export {
     getMyStuffSection,
+    normalizeMyStuffParams,
+    removeProjectById,
+    replaceProjectById,
     shouldRefreshProjectsAfterUploadError,
+    trashPurgeConfirmation,
     uploadErrorTarget,
     uploadProgressLabel
 };

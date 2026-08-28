@@ -45,6 +45,8 @@ body {
     background: var(--bg);
     color: var(--mw-text);
     font-family: var(--sans);
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
 }
 
 #app {
@@ -91,6 +93,21 @@ a {
 button {
     font-family: inherit;
     cursor: pointer;
+    touch-action: manipulation;
+}
+
+input,
+textarea,
+select {
+    max-width: 100%;
+}
+
+@media (max-width: 760px) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
 }
 
 :focus-visible {

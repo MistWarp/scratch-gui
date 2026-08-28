@@ -163,6 +163,7 @@
       "editor-msgs(\\.js)?$": "<rootDir>/test/__mocks__/editor-msgs-mock.js",
       "^scratch-render-fonts$": "<rootDir>/src/lib/tw-scratch-render-fonts",
       "^!arraybuffer-loader!.*$": "<rootDir>/test/__mocks__/arrayBufferMock.js",
+      "^!!base64-loader!.*$": "<rootDir>/test/__mocks__/fileMock.js",
       "^!raw-loader!.*$": "<rootDir>/test/__mocks__/fileMock.js",
       "^scratch-audio$": "<rootDir>/node_modules/scratch-audio/src/index.js",
       "^@turbowarp/scratch-svg-renderer$": "<rootDir>/node_modules/@turbowarp/scratch-svg-renderer"

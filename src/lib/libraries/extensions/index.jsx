@@ -50,6 +50,11 @@ import gdxforConnectionIconURL from './gdxfor/gdxfor-illustration.svg';
 import gdxforConnectionSmallIconURL from './gdxfor/gdxfor-small.svg';
 
 import twIcon from './tw/tw.svg';
+import mistwarpPlayersIcon from './mistwarp-games/players.svg';
+import mistwarpMultiplayerIcon from './mistwarp-games/multiplayer.svg';
+import mistwarpDataIcon from './mistwarp-games/data.svg';
+import mistwarpMarketplaceIcon from './mistwarp-games/marketplace.svg';
+import mistwarpInventoryIcon from './mistwarp-games/inventory.svg';
 import roturAccountIcon from './rotur/account.png';
 import roturEconomyIcon from './rotur/economy.png';
 import roturKeysIcon from './rotur/keys.png';
@@ -62,8 +67,54 @@ import patchingIcon from './patching/patching.png';
 import customExtensionIcon from './custom/custom.svg';
 import galleryIcon from './gallery/gallery.svg';
 import {APP_NAME} from '../../constants/brand';
+import {MULTIPLAYER_ENABLED} from '../../mistwarp-games/config.js';
 
 export default [
+    {
+        name: 'Players',
+        extensionId: 'mistwarpPlayers',
+        iconURL: mistwarpPlayersIcon,
+        description: 'Use the signed-in player\'s name, avatar, and profile.',
+        incompatibleWithScratch: true,
+        tags: ['mistwarp-games'],
+        featured: true
+    },
+    ...(MULTIPLAYER_ENABLED ? [{
+        name: 'Multiplayer',
+        extensionId: 'mistwarpMultiplayer',
+        iconURL: mistwarpMultiplayerIcon,
+        description: 'Put players in rooms and share their positions or game state.',
+        incompatibleWithScratch: true,
+        tags: ['mistwarp-games'],
+        featured: true
+    }] : []),
+    {
+        name: 'Game Data',
+        extensionId: 'mistwarpData',
+        iconURL: mistwarpDataIcon,
+        description: 'Load and save each player\'s progress.',
+        incompatibleWithScratch: true,
+        tags: ['mistwarp-games'],
+        featured: true
+    },
+    {
+        name: 'Game Shop',
+        extensionId: 'mistwarpMarketplace',
+        iconURL: mistwarpMarketplaceIcon,
+        description: 'Sell products and open your game\'s shop.',
+        incompatibleWithScratch: true,
+        tags: ['mistwarp-games'],
+        featured: true
+    },
+    {
+        name: 'Player Items',
+        extensionId: 'mistwarpInventory',
+        iconURL: mistwarpInventoryIcon,
+        description: 'Give players items and use items they already own.',
+        incompatibleWithScratch: true,
+        tags: ['mistwarp-games'],
+        featured: true
+    },
     {
         name: (
             <FormattedMessage

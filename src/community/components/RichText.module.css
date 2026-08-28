@@ -14,3 +14,34 @@
     background: var(--accent-softer);
     text-decoration: underline;
 }
+
+.internalLink {
+    display: inline;
+    padding: 1px 4px;
+    border-radius: 5px;
+    background: var(--bg-raised);
+    box-decoration-break: clone;
+    color: var(--accent-strong);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+    -webkit-box-decoration-break: clone;
+}
+
+.internalLink:hover {
+    background: var(--accent-soft);
+    text-decoration: underline;
+}
+
+.externalLink {
+    color: var(--accent-strong);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: var(--accent-border);
+    text-underline-offset: 2px;
+}
+
+.externalLink:hover {
+    text-decoration-color: currentColor;
+}

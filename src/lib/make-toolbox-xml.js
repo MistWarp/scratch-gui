@@ -1,6 +1,7 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
 import {defaultBlockColors} from './themes';
 import {getVanillaPalette} from './mw-vanilla-palette';
+import {MULTIPLAYER_ENABLED} from './mistwarp-games/config.js';
 
 const categorySeparator = '<sep gap="36"/>';
 
@@ -462,11 +463,7 @@ const control = function (isInitialSetup, isStage, targetId, colors, vanilla) {
         <block id="wait_until" type="control_wait_until"/>
         <block id="repeat_until" type="control_repeat_until"/>
         <block id="for_each" type="control_for_each">
-            <value name="VARIABLE">
-                <shadow type="variables_get">
-                    <field name="VAR">i</field>
-                </shadow>
-            </value>
+            <field name="VARIABLE">i</field>
             <value name="VALUE">
                 <shadow type="math_whole_number">
                     <field name="NUM">10</field>
@@ -962,7 +959,8 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     backdropName = xmlEscape(backdropName);
     soundName = xmlEscape(soundName);
 
-    categoriesXML = categoriesXML.slice();
+    categoriesXML = categoriesXML.filter(categoryInfo =>
+        MULTIPLAYER_ENABLED || categoryInfo.id !== 'mistwarpMultiplayer');
     const moveCategory = categoryId => {
         const index = categoriesXML.findIndex(categoryInfo => categoryInfo.id === categoryId);
         if (index >= 0) {

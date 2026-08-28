@@ -1,17 +1,16 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {Layers3, Trophy, Library, Plus, Search} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
+import ExploreNav from '../components/ExploreNav.jsx';
 import styles from './Spaces.module.css';
 
 const KINDS = [
-    {key: '', label: 'Everything'},
     {key: 'mine', label: 'Your spaces'},
     {key: 'studio', label: 'Studios'},
     {key: 'challenge', label: 'Challenges'},
@@ -25,11 +24,41 @@ const KIND_DESCRIPTIONS = {
     challenge: 'A timed event where people make projects around a prompt.',
     collection: 'A curated project list with submissions closed by default.'
 };
+const PAGE_SIZE = 24;
+const mergeSpaces = (current, incoming) => {
+    const byId = new Map(current.map(space => [space._id, space]));
+    incoming.forEach(space => byId.set(space._id, space));
+    return [...byId.values()];
+};
 const withSpaceQuery = (params, query) => {
     const next = new URLSearchParams(params);
     const normalized = query.trim();
     if (normalized) next.set('q', normalized);
     else next.delete('q');
+    return next;
+};
+
+const normalizeSpaceParams = currentParams => {
+    const next = new URLSearchParams(currentParams);
+    const kind = next.get('kind');
+    if (!KINDS.some(item => item.key === kind) || kind === 'studio') next.delete('kind');
+    const query = (next.get('q') || '').trim();
+    if (query) next.set('q', query);
+    else next.delete('q');
+    const group = (next.get('group') || '').trim();
+    if (group) next.set('group', group);
+    else next.delete('group');
+    if (next.get('create') !== '1') next.delete('create');
+    return next;
+};
+
+const withSpaceCreate = (currentParams, open) => {
+    const next = new URLSearchParams(currentParams);
+    if (open) next.set('create', '1');
+    else {
+        next.delete('create');
+        next.delete('group');
+    }
     return next;
 };
 
@@ -48,16 +77,21 @@ const Spaces = () => {
     const viewerName = (user && user.username) || '';
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const requestedKind = searchParams.get('kind') || '';
-    const kind = KINDS.some(item => item.key === requestedKind) ? requestedKind : '';
+    const requestedKind = searchParams.get('kind') || 'studio';
+    const kind = KINDS.some(item => item.key === requestedKind) ? requestedKind : 'studio';
     const requestedQuery = searchParams.get('q') || '';
+    const requestedGroup = searchParams.get('group') || '';
+    const createKind = ['studio', 'challenge', 'collection'].includes(searchParams.get('kind')) ? searchParams.get('kind') : 'studio';
     const [spaces, setSpaces] = useState([]);
     const [query, setQuery] = useState(requestedQuery);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
-    const [creating, setCreating] = useState(false);
+    const [total, setTotal] = useState(0);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [loadMoreError, setLoadMoreError] = useState('');
+    const creating = searchParams.get('create') === '1';
     const [createBusy, setCreateBusy] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: ''});
+    const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', groupTag: requestedGroup});
     const [error, setError] = useState('');
     const loadSequence = useRef(0);
     const createLocks = useRef(new Set());
@@ -65,40 +99,64 @@ const Spaces = () => {
     currentViewer.current = viewerName;
     const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
 
-    const load = useCallback((search = '') => {
+    useEffect(() => {
+        const normalized = normalizeSpaceParams(searchParams);
+        if (normalized.toString() !== searchParams.toString()) setSearchParams(normalized, {replace: true});
+    }, [searchParams, setSearchParams]);
+
+    const load = useCallback((search = '', offset = 0) => {
         const sequence = loadSequence.current + 1;
         loadSequence.current = sequence;
-        setLoading(true);
-        setFailed(false);
-        const request = kind === 'mine' ? (user ? api.mySpaces() : Promise.resolve({spaces: []})) : api.spaces({kind, q: search});
+        const initial = offset === 0;
+        if (initial) {
+            setLoading(true);
+            setLoadingMore(false);
+            setFailed(false);
+            setSpaces([]);
+            setLoadMoreError('');
+        } else {
+            setLoadingMore(true);
+            setLoadMoreError('');
+        }
+        const request = kind === 'mine' ?
+            (user ? api.mySpaces() : Promise.resolve({spaces: []})) :
+            api.spaces({kind, q: search, offset, limit: PAGE_SIZE});
         request
             .then(data => {
                 if (loadSequence.current !== sequence) return;
                 const result = data.spaces || [];
                 const normalizedSearch = search.trim().toLowerCase();
-                setSpaces(kind === 'mine' && normalizedSearch ? result.filter(space => `${space.title} ${space.description} ${space.owner}`.toLowerCase().includes(normalizedSearch)) : result);
+                const filtered = kind === 'mine' && normalizedSearch ?
+                    result.filter(space => `${space.title} ${space.description} ${space.owner}`.toLowerCase().includes(normalizedSearch)) :
+                    result;
+                setSpaces(current => (initial ? filtered : mergeSpaces(current, filtered)));
+                setTotal(kind === 'mine' ? filtered.length : Number(data.total) || 0);
             })
             .catch(() => {
-                if (loadSequence.current === sequence) setFailed(true);
+                if (loadSequence.current !== sequence) return;
+                if (initial) setFailed(true);
+                else setLoadMoreError('Could not load more spaces.');
             })
             .finally(() => {
-                if (loadSequence.current === sequence) setLoading(false);
+                if (loadSequence.current !== sequence) return;
+                if (initial) setLoading(false);
+                else setLoadingMore(false);
             });
     }, [kind, user]);
 
     useEffect(() => setQuery(requestedQuery), [requestedQuery]);
     useEffect(() => load(requestedQuery), [load, requestedQuery]);
     useEffect(() => {
+        if (!creating) return;
+        setForm(current => ({...current, kind: createKind, groupTag: requestedGroup}));
+    }, [createKind, creating, requestedGroup]);
+    useEffect(() => {
+        if (!creating) setError('');
+    }, [creating]);
+    useEffect(() => {
         setCreateBusy(false);
         setError('');
     }, [viewerName]);
-
-    const changeKind = nextKind => {
-        const next = new URLSearchParams(searchParams);
-        if (nextKind) next.set('kind', nextKind);
-        else next.delete('kind');
-        setSearchParams(next);
-    };
 
     const create = async event => {
         event.preventDefault();
@@ -123,8 +181,7 @@ const Spaces = () => {
         try {
             const data = await api.createSpace(payload);
             if (currentViewer.current === actionViewer) {
-                setCreating(false);
-                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: ''});
+                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: '', groupTag: ''});
                 navigate(`/spaces/${data.space._id}/manage`);
             }
         } catch (e) {
@@ -139,18 +196,22 @@ const Spaces = () => {
 
     return (
         <main className={styles.page}>
+            <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
             <header className={styles.hero}>
                 <div>
-                    <h1>Spaces</h1>
-                    <p>Collect projects, run a challenge, or build something with a group.</p>
+                    <h1>{kind === 'mine' ? 'Your spaces' : `${KIND_LABELS[kind]}s`}</h1>
+                    <p>{kind === 'mine' ? 'Spaces you own, curate, follow, or have been invited to.' : KIND_DESCRIPTIONS[kind]}</p>
                 </div>
-                <Button
-                    disabled={createBusy}
-                    onClick={() => (user ? setCreating(value => !value) : login())}
-                >
-                    <Plus size={16} />
-                    New space
-                </Button>
+                <div className={styles.heroActions}>
+                    {kind !== 'mine' ? <Link className={styles.mineLink} to="/spaces?kind=mine">Your spaces</Link> : null}
+                    <Button
+                        disabled={createBusy}
+                        onClick={() => (user ? setSearchParams(withSpaceCreate(searchParams, !creating)) : login())}
+                    >
+                        <Plus size={16} />
+                        New space
+                    </Button>
+                </div>
             </header>
 
             {creating ? (
@@ -187,6 +248,10 @@ const Spaces = () => {
                             <option value="private">Private</option>
                         </select>
                     </label>
+                    <label>
+                        <span>Group owner <small>optional Rotur group tag</small></span>
+                        <input maxLength="32" value={form.groupTag} disabled={createBusy} placeholder="for example, mistwarp" onChange={event => updateForm('groupTag', event.target.value)} />
+                    </label>
                     {form.kind === 'challenge' ? (
                         <div className={styles.formRow}>
                             <label><span>Submissions open</span><input type="datetime-local" disabled={createBusy} required value={form.startsAt} onChange={event => updateForm('startsAt', event.target.value)} /></label>
@@ -196,21 +261,12 @@ const Spaces = () => {
                     {error ? <p className={styles.error}>{error}</p> : null}
                     <div className={styles.actions}>
                         <Button type="submit" busy={createBusy} busyLabel="Creating…">Create</Button>
-                        <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setCreating(false)}>Cancel</Button>
+                        <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setSearchParams(withSpaceCreate(searchParams, false))}>Cancel</Button>
                     </div>
                 </form>
             ) : null}
 
             <div className={styles.browseTools}>
-                <SectionTabs
-                    items={KINDS}
-                    value={kind}
-                    onChange={changeKind}
-                    className={styles.tabs}
-                    itemClassName={styles.tab}
-                    activeClassName={styles.tabActive}
-                    ariaLabel="Space types"
-                />
                 <form
                     className={styles.spaceSearch}
                     onSubmit={event => {
@@ -221,7 +277,7 @@ const Spaces = () => {
                     }}
                 >
                     <Search size={16} />
-                    <input value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'mine' ? 'Search your spaces' : 'Search spaces'} />
+                    <input aria-label={kind === 'mine' ? 'Search your spaces' : 'Search spaces'} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'mine' ? 'Search your spaces' : 'Search spaces'} />
                     <button type="submit">Search</button>
                 </form>
             </div>
@@ -234,9 +290,19 @@ const Spaces = () => {
             <div className={styles.grid}>
                 {spaces.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
             </div>
+            {!loading && !failed && kind !== 'mine' && spaces.length < total ? (
+                <div className={styles.more}>
+                    <Button
+                        busy={loadingMore}
+                        busyLabel="Loading…"
+                        onClick={() => load(requestedQuery, spaces.length)}
+                    >{`Load more (${total - spaces.length} left)`}</Button>
+                    {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
+                </div>
+            ) : null}
         </main>
     );
 };
 
-export {withSpaceQuery, challengeDatesValid, spaceCreatePayload};
+export {withSpaceCreate, withSpaceQuery, challengeDatesValid, mergeSpaces, normalizeSpaceParams, spaceCreatePayload};
 export default Spaces;

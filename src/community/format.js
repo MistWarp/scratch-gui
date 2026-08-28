@@ -18,18 +18,32 @@ const formatBytes = bytes => {
     return `${value} B`;
 };
 
+const safeDate = value => {
+    if (!value) return null;
+    const normalized = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatDate = (value, fallback = '') => {
-    if (!value) return fallback;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return fallback;
+    const date = safeDate(value);
+    if (!date) return fallback;
     return date.toLocaleDateString([], {year: 'numeric', month: 'short', day: 'numeric'});
+};
+
+const formatDateTime = (value, fallback = '') => {
+    const date = safeDate(value);
+    if (!date) return fallback;
+    return date.toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'});
 };
 
 const formatPlaytime = (value, includeLabel = true) => {
     const milliseconds = Number(value);
-    const minutes = Number.isFinite(milliseconds) && milliseconds > 0 ? Math.floor(milliseconds / 60000) : 0;
+    const hasPlaytime = Number.isFinite(milliseconds) && milliseconds > 0;
+    const minutes = hasPlaytime ? Math.floor(milliseconds / 60000) : 0;
     let duration;
-    if (minutes < 60) duration = `${minutes}m`;
+    if (hasPlaytime && minutes === 0) duration = '<1m';
+    else if (minutes < 60) duration = `${minutes}m`;
     else {
         const hours = Math.floor(minutes / 60);
         const remainder = minutes % 60;
@@ -38,4 +52,4 @@ const formatPlaytime = (value, includeLabel = true) => {
     return includeLabel ? `${duration} played` : duration;
 };
 
-export {timeAgo, sameUser, formatBytes, formatDate, formatPlaytime};
+export {timeAgo, sameUser, formatBytes, formatDate, formatDateTime, formatPlaytime, safeDate};

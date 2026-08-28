@@ -2,6 +2,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api from '../api';
+import {formatDate} from '../format.js';
 import styles from './ChallengeCalendar.module.css';
 
 const DAY_MS = 86400000;
@@ -17,6 +18,17 @@ const calendarDay = value => {
 const calendarDate = day => {
     const utc = new Date(day * DAY_MS);
     return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
+};
+
+const challengeCalendarWindow = (now = Date.now()) => {
+    const date = new Date(now);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    return {
+        endsAfter: new Date(year, month, day - 14).getTime(),
+        startsBefore: new Date(year, month, day + 91).getTime() - 1
+    };
 };
 
 const buildChallengeCalendar = (source, now = Date.now()) => {
@@ -78,7 +90,7 @@ const ChallengeCalendar = ({spaces, className = ''}) => {
         let active = true;
         setLoadedSpaces(null);
         setLoadError(false);
-        api.spaces({kind: 'challenge'})
+        api.spaces({kind: 'challenge', limit: 100, ...challengeCalendarWindow()})
             .then(data => {
                 if (active) setLoadedSpaces(data.spaces || []);
             })
@@ -104,8 +116,9 @@ const ChallengeCalendar = ({spaces, className = ''}) => {
                     <div className={styles.months}>{calendar.months.map(month => <span key={month.key} style={{gridColumn: `span ${month.span}`}}>{month.label}</span>)}</div>
                     <div className={styles.days}>{calendar.days.map(({day, date}) => <span key={day} className={day === calendar.today ? styles.today : ''}><strong>{date.toLocaleDateString([], {weekday: 'short'})}</strong>{date.getDate()}</span>)}</div>
                     <div className={styles.plot} style={{gridTemplateRows: `repeat(${calendar.lanes}, 34px)`}}>{todayOffset >= 0 && todayOffset < calendar.days.length ? <i className={styles.todayBand} style={{'--mw-today-offset': todayOffset}} /> : null}{calendar.events.map(event => {
-                        const submissions = (event.projects || []).length;
-                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={`${event.title}, ${new Date(event.startsAt).toLocaleDateString()} to ${new Date(event.endsAt).toLocaleDateString()}`}><strong>{event.title}</strong><span>{event.participantCount || 0} joined, {submissions} {submissions === 1 ? 'submission' : 'submissions'}</span></Link>;
+                        const submissions = Number.isFinite(event.projectCount) ?
+                            event.projectCount : (event.projects || []).length;
+                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={`${event.title}, ${formatDate(event.startsAt)} to ${formatDate(event.endsAt)}`}><strong>{event.title}</strong><span>{event.participantCount || 0} joined, {submissions} {submissions === 1 ? 'submission' : 'submissions'}</span></Link>;
                     })}</div>
                 </div>
             </div>
@@ -113,5 +126,5 @@ const ChallengeCalendar = ({spaces, className = ''}) => {
     );
 };
 
-export {buildChallengeCalendar, calendarDay};
+export {buildChallengeCalendar, calendarDay, challengeCalendarWindow};
 export default ChallengeCalendar;

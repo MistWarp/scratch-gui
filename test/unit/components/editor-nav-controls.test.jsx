@@ -21,4 +21,18 @@ describe('editor navigation controls', () => {
         wrapper.simulate('click');
         expect(onClick).toHaveBeenCalledTimes(1);
     });
+
+    test('uses a native link for site pages', () => {
+        const wrapper = shallow(
+            <NavItem
+                href="/mystuff"
+                icon={FolderOpen}
+                title="My Stuff"
+            />
+        );
+
+        expect(wrapper.type()).toBe('a');
+        expect(wrapper.prop('href')).toBe('/mystuff');
+        expect(wrapper.prop('role')).toBeUndefined();
+    });
 });

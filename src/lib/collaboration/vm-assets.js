@@ -89,7 +89,7 @@ const createStorageAsset = (vm, md5ext) => {
     } else if (dataFormat === 'png' || dataFormat === 'jpg' || dataFormat === 'jpeg' ||
         dataFormat === 'bmp' || dataFormat === 'gif') {
         assetType = storage.AssetType.ImageBitmap;
-    } else if (dataFormat === 'wav' || dataFormat === 'mp3') {
+    } else if (dataFormat === 'wav' || dataFormat === 'mp3' || dataFormat === 'ogg') {
         assetType = storage.AssetType.Sound;
     } else {
         return null;

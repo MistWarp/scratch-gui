@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import {ArrowLeft, CalendarDays, Clock3, Gavel, Medal, MessageCircle, Settings, Star, Trophy, UserMinus, UserPlus} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
@@ -202,7 +203,7 @@ const Challenge = ({id, space, user, login, load}) => {
     const deadline = currentPhase === 'upcoming' ? space.startsAt : currentPhase === 'submissions' ? space.endsAt : space.judgingEndsAt;
     const liveSpace = {...space, phase: currentPhase};
     const commentSource = useMemo(() => ({
-        list: () => api.spaceComments(id),
+        list: options => api.spaceComments(id, options),
         add: (content, parent) => api.addSpaceComment(id, content, parent),
         remove: commentId => api.deleteSpaceComment(id, commentId),
         react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
@@ -289,7 +290,7 @@ const Challenge = ({id, space, user, login, load}) => {
                     <span className={styles.phase}>{phase.label}</span>
                     <h1>{space.title}</h1>
                     <p>{space.description || 'The host has not added a description yet.'}</p>
-                    <div className={styles.host}><Avatar username={space.owner} size={30} /><span>Hosted by <Link to={`/users/${space.owner}`}>{space.owner}</Link></span></div>
+                    <div className={styles.host}><Avatar username={space.owner} size={30} /><span>Hosted by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
                 </div>
                 <div className={styles.heroSide}>
                     {deadline && currentPhase !== 'results' && currentPhase !== 'awaiting-results' ? <div className={styles.countdown}><Clock3 size={18} /><span>{currentPhase === 'upcoming' ? 'Starts in' : currentPhase === 'submissions' ? 'Ends in' : 'Judging ends in'}</span><strong>{remaining(deadline, now)}</strong></div> : null}
@@ -313,7 +314,7 @@ const Challenge = ({id, space, user, login, load}) => {
                     </div>
                     <aside className={styles.sidebar}>
                         <section className={styles.panel}><h2>Judging criteria</h2><div className={styles.criteria}>{(space.criteria || []).map(criterion => <article key={criterion.id}><div><strong>{criterion.name}</strong><span>Weight {criterion.weight} of 5</span></div><p>{criterion.description}</p></article>)}</div></section>
-                        <section className={styles.panel}><h2>Judges</h2><div className={styles.people}>{(space.judges || []).map(name => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={30} /><span>{name}</span></Link>)}{!space.judges?.length ? <p>No judges announced yet.</p> : null}</div></section>
+                        <section className={styles.panel}><h2>Judges</h2><div className={styles.people}>{(space.judges || []).map(name => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={30} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>)}{!space.judges?.length ? <p>No judges announced yet.</p> : null}</div></section>
                         <section className={styles.facts}><div><strong>{space.participantCount || 0}</strong><span>joined</span></div><div><strong>{space.projects.length}</strong><span>submissions</span></div><div><strong>{space.judgeCount || 0}</strong><span>judges</span></div><div><strong>{space.communityVoting ? 'On' : 'Off'}</strong><span>audience voting</span></div></section>
                     </aside>
                 </div>

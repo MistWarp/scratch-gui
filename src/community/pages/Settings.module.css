@@ -183,6 +183,20 @@
     line-height: 1.5;
 }
 
+.gameDataJson {
+    overflow: auto;
+    max-height: 240px;
+    margin: 12px 0 0;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-raised);
+    color: var(--mw-text);
+    padding: 12px;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .field {
     display: grid;
     gap: 8px;

@@ -20,11 +20,26 @@ describe('backpack payloads', () => {
     test('rejects an unsupported sound before encoding it', async () => {
         const sound = {
             asset: {encodeDataURI: jest.fn()},
+            dataFormat: 'flac',
+            name: 'Music'
+        };
+
+        await expect(soundPayload(sound)).rejects.toThrow('Unsupported sound format: flac');
+        expect(sound.asset.encodeDataURI).not.toHaveBeenCalled();
+    });
+
+    test('keeps OGG sounds compressed in backpack payloads', async () => {
+        const sound = {
+            asset: {encodeDataURI: jest.fn(() => 'data:audio/x-wav;base64,T2dnUw==')},
             dataFormat: 'ogg',
             name: 'Music'
         };
 
-        await expect(soundPayload(sound)).rejects.toThrow('Unsupported sound format: ogg');
-        expect(sound.asset.encodeDataURI).not.toHaveBeenCalled();
+        await expect(soundPayload(sound)).resolves.toEqual(expect.objectContaining({
+            body: 'T2dnUw==',
+            mime: 'audio/ogg',
+            name: 'Music',
+            type: 'sound'
+        }));
     });
 });

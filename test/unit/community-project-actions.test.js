@@ -1,13 +1,16 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount, shallow} from 'enzyme';
+import {MemoryRouter} from 'react-router-dom';
 import {
+    applyReactionResult,
     contributionPayload,
     HistoryList,
     PullList,
     releasePayload,
     ReviewPanel,
-    reviewPayload
+    reviewPayload,
+    updateReviewSummary
 } from '../../src/community/pages/Project.jsx';
 import GitGraph from '../../src/community/components/GitGraph.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -19,6 +22,24 @@ jest.mock('../../src/lib/themes/custom-themes.js', () => ({
 }));
 
 describe('Project content action payloads', () => {
+    test('applies reaction responses without reloading the project and its history', () => {
+        expect(applyReactionResult(
+            {id: 'project-1', loveCount: 3, brokenHeartCount: 1, myReaction: 'heart'},
+            {hearts: 2, brokenHearts: 2, myReaction: 'brokenheart'}
+        )).toMatchObject({
+            id: 'project-1',
+            loveCount: 2,
+            brokenHeartCount: 2,
+            myReaction: 'brokenheart'
+        });
+    });
+
+    test('updates review aggregates without reloading the whole review list', () => {
+        expect(updateReviewSummary({count: 2, average: 3}, 0, 5)).toEqual({count: 3, average: 11 / 3});
+        expect(updateReviewSummary({count: 3, average: 4}, 5, 2)).toEqual({count: 3, average: 3});
+        expect(updateReviewSummary({count: 1, average: 4}, 4, 0)).toEqual({count: 0, average: 0});
+    });
+
     test('trims review, release, and contribution fields', () => {
         expect(reviewPayload(4, '  Helpful  ')).toEqual({rating: 4, message: 'Helpful'});
         expect(releasePayload({version: ' 1.2.0 ', channel: 'stable', notes: ' Fixes '})).toEqual({
@@ -56,6 +77,23 @@ describe('Project content action payloads', () => {
         expect(shallow(<div>{confirmation.prop('children')}</div>).text()).toContain('Added level two');
     });
 
+    test('renders commits with malformed dates', () => {
+        const wrapper = mount(
+            <GitGraph
+                currentBranch="main"
+                graph={{
+                    branches: ['main'],
+                    branchLogs: [{branch: 'main', oids: ['abcdef123456']}],
+                    nodes: [{sha: 'abcdef123456', message: 'Undated change', date: 'invalid', parents: []}]
+                }}
+            />
+        );
+
+        expect(wrapper.text()).toContain('Undated change');
+        expect(wrapper.find('time')).toHaveLength(0);
+        wrapper.unmount();
+    });
+
     test('reloads review ownership when the signed-in account changes', async () => {
         const reviews = jest.spyOn(api, 'reviews').mockResolvedValue({
             reviews: [],
@@ -83,6 +121,33 @@ describe('Project content action payloads', () => {
         });
 
         expect(reviews).toHaveBeenCalledTimes(2);
+        wrapper.unmount();
+        reviews.mockRestore();
+    });
+
+    test('hides zero playtime on reviews', async () => {
+        const reviews = jest.spyOn(api, 'reviews').mockResolvedValue({
+            reviews: [
+                {_id: 'zero', author: 'Zero', rating: 3, playtimeMs: 0},
+                {_id: 'played', author: 'Played', rating: 4, playtimeMs: 1000}
+            ],
+            average: 3.5,
+            count: 2,
+            myReview: null
+        });
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <ReviewPanel id="project-1" user={null} login={jest.fn()} ownsProject />
+            </MemoryRouter>
+        );
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).not.toContain('0m played');
+        expect(wrapper.text()).toContain('<1m played');
         wrapper.unmount();
         reviews.mockRestore();
     });

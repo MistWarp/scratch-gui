@@ -21,3 +21,18 @@ test('deriving a saved gradient theme deselects it without losing its colors', (
     expect(customThemeManager.getTheme(derived.uuid)).toBeNull();
     expect(derived.getGuiColors()).toEqual(imported.getGuiColors());
 });
+
+test('WarpTheme source identity survives local export and import', () => {
+    const imported = CustomTheme.import({
+        name: 'Marketplace theme',
+        gui: 'light',
+        blocks: 'three',
+        accent: gradient,
+        sourceId: 'warptheme-1'
+    });
+
+    const restored = CustomTheme.import(imported.export());
+
+    expect(restored.sourceId).toBe('warptheme-1');
+    expect(restored.export().sourceId).toBe('warptheme-1');
+});

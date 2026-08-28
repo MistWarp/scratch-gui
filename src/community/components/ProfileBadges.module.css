@@ -1,0 +1,224 @@
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+}
+
+.badge,
+.edit {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 2px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--mw-text);
+}
+
+.badge:hover,
+.badge:focus-visible,
+.edit:hover,
+.edit:focus-visible {
+    background: var(--bg-raised);
+    outline: none;
+}
+
+.badge > span:first-child,
+.badge svg {
+    width: 22px;
+    height: 22px;
+}
+
+.edit {
+    color: var(--text-faint);
+}
+
+.tooltip {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    box-sizing: border-box;
+    width: 250px;
+    max-width: calc(100vw - 24px);
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    color: var(--mw-text);
+    text-align: left;
+    cursor: default;
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+
+.tooltip::after {
+    position: absolute;
+    top: 100%;
+    left: calc(50% + var(--badge-tooltip-arrow-offset));
+    width: 9px;
+    height: 9px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    content: '';
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.tooltipHead,
+.progressLabel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tooltipHead > span {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.issuer,
+.description,
+.progressLabel {
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.issuer {
+    color: var(--text-faint);
+}
+
+.progress {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.progressTrack {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--bg-raised);
+}
+
+.progressTrack > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+}
+
+.editorIntro {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.editorIntro p,
+.editorState {
+    margin: 0;
+}
+
+.editorIntro > span {
+    color: var(--accent-strong);
+    white-space: nowrap;
+}
+
+.editorList {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: min(520px, 65vh);
+    overflow-y: auto;
+}
+
+.editorRow {
+    display: grid;
+    grid-template-columns: 32px 30px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: var(--bg-raised);
+}
+
+.editorRow[data-hidden] {
+    opacity: 0.58;
+}
+
+.grip,
+.lock,
+.visibility {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-faint);
+}
+
+.grip {
+    cursor: grab;
+}
+
+.grip:hover,
+.visibility:hover:not(:disabled) {
+    background: var(--bg-card);
+    color: var(--mw-text);
+}
+
+.editorIcon,
+.editorIcon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.editorDetails {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.editorDetails strong {
+    font-size: 13px;
+}
+
+.editorDetails > span {
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editorError {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--mw-danger);
+}

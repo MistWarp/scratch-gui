@@ -18,7 +18,7 @@ export const safeNewsLink = link => {
     return null;
 };
 
-const NewsItem = ({item, onChanged}) => {
+const NewsItem = ({compact, item, onChanged}) => {
     const {user, login} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
     const [error, setError] = useState('');
@@ -126,7 +126,7 @@ const NewsItem = ({item, onChanged}) => {
                 {error ? <p className={styles.error}>{error}</p> : null}
             </Modal>
         ) : null}
-        <article className={styles.item}>
+        <article className={`${styles.item} ${compact ? styles.compact : ''}`}>
             {category === 'update' ? null : (
                 <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''}`}>
                     {categoryLabel}

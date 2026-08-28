@@ -6,7 +6,7 @@ import {
 } from './settings.js';
 
 const TOKEN_KEY = 'mw:rotur-token';
-const REQUIRED_PERMISSIONS = [
+const REQUIRED_PERMISSIONS = [...new Set([
     ...resolvePermissions([
         'me.checkAuth',
         'following.follow',
@@ -16,10 +16,24 @@ const REQUIRED_PERMISSIONS = [
         'me.claimDaily',
         'notifications.list'
     ]),
-    'credits:view'
-];
+    'account:view',
+    'account:profile',
+    'account:settings',
+    'credits:view',
+    'credits:manage',
+    'credits:transfer',
+    'credits:daily',
+    'notifications:view',
+    'posts:create',
+    'posts:delete',
+    'groups:view',
+    'groups:members.view',
+    'groups:join',
+    'groups:leave',
+    'groups:manage'
+])];
 const PRESENCE_PERMISSION = 'account:profile';
-const LOGIN_PERMISSIONS = [...REQUIRED_PERMISSIONS, PRESENCE_PERMISSION];
+const LOGIN_PERMISSIONS = REQUIRED_PERMISSIONS;
 const LOGIN_SYSTEM = 'mistwarp';
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://warp.mistium.com';
@@ -30,6 +44,7 @@ let client = null;
 const notificationListeners = new Set();
 const notificationRemovalListeners = new Set();
 const visibleNotificationIds = new Set();
+const notificationFetches = new Map();
 let notificationSocketListener = null;
 let notificationRemovalSocketListener = null;
 
@@ -196,11 +211,17 @@ const restoreSession = async () => {
     const rotur = getClient();
     rotur.setToken(token);
     const cached = readRestoreCache(token);
+    const hasPermissions = await tokenHasRequiredPermissions();
+    if (!hasPermissions) {
+        rotur.logout();
+        storeToken(null);
+        return null;
+    }
     if (cached) {
         return cached;
     }
-    const [user, hasPermissions] = await Promise.all([fetchCurrentUser(), tokenHasRequiredPermissions()]);
-    if (!user || !hasPermissions) {
+    const user = await fetchCurrentUser();
+    if (!user) {
         rotur.logout();
         storeToken(null);
         return null;
@@ -263,6 +284,7 @@ const logout = () => {
     }
     notificationListeners.clear();
     visibleNotificationIds.clear();
+    notificationFetches.clear();
     rotur.logout();
     storeToken(null);
     writeRestoreCache(null, null);
@@ -520,12 +542,16 @@ const getRotur = () => getClient();
 
 // Notifications live on Rotur; the backend only posts them there. Fetch them
 // with the user's own token so each account sees its own notifications.
-const fetchNotifications = async afterDays => {
+const fetchNotifications = afterDays => {
     const rotur = getClient();
     if (!rotur.loggedIn) {
-        return [];
+        return Promise.resolve([]);
     }
-    try {
+    const key = String(afterDays);
+    if (notificationFetches.has(key)) {
+        return notificationFetches.get(key);
+    }
+    const request = Promise.resolve().then(async () => {
         const list = await rotur.notifications.list(afterDays);
         if (!Array.isArray(list)) {
             return [];
@@ -537,9 +563,13 @@ const fetchNotifications = async afterDays => {
             }
         }
         return visible;
-    } catch (_) {
-        return [];
-    }
+    });
+    notificationFetches.set(key, request);
+    request.then(
+        () => notificationFetches.delete(key),
+        () => notificationFetches.delete(key)
+    );
+    return request;
 };
 
 const markNotificationsRead = async () => {
@@ -589,7 +619,7 @@ const ensureScopes = async scopes => {
     await rotur.login({
         system: LOGIN_SYSTEM,
         timeout: 120000,
-        requires: [...new Set([...LOGIN_PERMISSIONS, ...wanted])]
+        requires: [...new Set([...LOGIN_PERMISSIONS, ...granted, ...wanted])]
     });
     storeToken(rotur.token);
     return true;
@@ -618,7 +648,30 @@ const getBalance = async () => {
     }
 };
 
-// Read balance plus donation totals from the account's transaction history.
+export const donationTransactions = transactions => {
+    if (!Array.isArray(transactions)) return [];
+    return transactions.reduce((donations, transaction, index) => {
+        const note = String((transaction && transaction.note) || '');
+        if (!note.toLowerCase().includes('donation')) return donations;
+        const direction = transaction.type === 'in' ? 'received' :
+            transaction.type === 'out' ? 'given' : null;
+        const amount = Math.round((Number(transaction.amount) || 0) * 100) / 100;
+        if (!direction || amount <= 0) return donations;
+        const rawTime = Number(transaction.time || transaction.timestamp || 0);
+        const time = rawTime > 0 && rawTime < 10000000000 ? rawTime * 1000 : rawTime;
+        donations.push({
+            id: String(transaction.id || `${direction}-${rawTime}-${index}`),
+            direction,
+            amount,
+            user: String(transaction.user || transaction.from || transaction.to || ''),
+            note,
+            time: Number.isFinite(time) ? time : 0
+        });
+        return donations;
+    }, []).sort((left, right) => right.time - left.time);
+};
+
+// Read balance plus donation totals and history from the account's transactions.
 // Returns null if the token can't see credits. Fields default to 0/null.
 const getAccountSummary = async () => {
     const rotur = getClient();
@@ -632,21 +685,19 @@ const getAccountSummary = async () => {
         }
         const balance = typeof me['sys.currency'] === 'number' ? me['sys.currency'] : null;
         const txns = me['sys.transactions'] || me.transactions || [];
+        const donations = donationTransactions(txns);
         let donationsReceived = 0;
         let donationsGiven = 0;
-        if (Array.isArray(txns)) {
-            for (const t of txns) {
-                const note = String(t.note || '').toLowerCase();
-                if (!note.includes('donation')) continue;
-                if (t.type === 'in') donationsReceived += Number(t.amount) || 0;
-                else if (t.type === 'out') donationsGiven += Number(t.amount) || 0;
-            }
+        for (const donation of donations) {
+            if (donation.direction === 'received') donationsReceived += donation.amount;
+            else donationsGiven += donation.amount;
         }
         const round = value => Math.round(value * 100) / 100;
         return {
             balance,
             donationsReceived: round(donationsReceived),
             donationsGiven: round(donationsGiven),
+            donations,
             hasTransactions: Array.isArray(txns)
         };
     } catch (_) {

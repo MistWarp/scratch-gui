@@ -8,6 +8,11 @@ const PREFERS_HIGH_CONTRAST_QUERY = matchMedia('(prefers-contrast: more)');
 const PREFERS_DARK_QUERY = matchMedia('(prefers-color-scheme: dark)');
 
 const STORAGE_KEY = 'tw:theme';
+const THEME_CHANGE_EVENT = 'mw:theme-change';
+
+const announceThemeChange = () => {
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+};
 
 /**
  * @returns {Theme} detected theme
@@ -240,11 +245,15 @@ const applyThemeVisuals = theme => {
 const applyTheme = theme => {
     applyThemeVisuals(theme);
     persistTheme(theme);
+    announceThemeChange();
 };
 
 if (typeof window !== 'undefined') {
     window.addEventListener('storage', event => {
-        if (event.key === STORAGE_KEY) applyThemeVisuals(detectTheme());
+        if (event.key === STORAGE_KEY) {
+            applyThemeVisuals(detectTheme());
+            announceThemeChange();
+        }
     });
 }
 
@@ -259,5 +268,6 @@ export {
     detectTheme,
     persistTheme,
     applyTheme,
-    applyThemeVisuals
+    applyThemeVisuals,
+    THEME_CHANGE_EVENT
 };

@@ -1,7 +1,7 @@
 .thread {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
 }
 
 .signedOut,
@@ -10,8 +10,30 @@
     padding: 14px 0;
 }
 
+.signedOut {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.signedOut button {
+    border: 0;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    padding: 7px 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.signedOut button:hover {
+    background: var(--accent-strong);
+}
+
 .commentGroup {
-    padding: 6px 0;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-soft);
 }
 
 .row,
@@ -22,16 +44,13 @@
 }
 
 .replyRow {
-    margin-top: 8px;
+    margin-top: 14px;
 }
 
 .bubble {
     flex: 1;
     min-width: 0;
-    background: var(--bg-card);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--card-shadow);
-    padding: 9px 13px;
+    padding: 1px 0 0;
 }
 
 .bubbleHead {
@@ -97,11 +116,13 @@
     color: var(--text-faint);
     padding: 3px;
     border-radius: 6px;
+    opacity: .6;
 }
 
 .iconAction:hover {
     color: var(--mw-text);
     background: var(--accent-softer);
+    opacity: 1;
 }
 
 .reactions {
@@ -119,6 +140,9 @@
 
 .replies {
     margin-left: 46px;
+    margin-top: 8px;
+    padding-left: 14px;
+    border-left: 1px solid var(--border-soft);
     display: flex;
     flex-direction: column;
 }
@@ -126,8 +150,21 @@
 @media (max-width: 620px) {
     .replies {
         margin-left: 18px;
+        padding-left: 10px;
     }
 
+    .bubbleHead {
+        flex-wrap: wrap;
+        gap: 5px 7px;
+    }
+
+    .iconAction {
+        width: 36px;
+        height: 36px;
+        margin: -8px -7px -8px 0;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 .inlineComposer,
@@ -135,11 +172,11 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
 }
 
 .inlineComposerSmall {
-    margin: 10px 0 4px;
+    margin: 12px 0 0;
 }
 
 .composerBody {
@@ -147,18 +184,17 @@
     min-width: 0;
 }
 
-.composerToolbar {
+.composerFooter {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 7px;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 8px;
 }
 
 .composerAction {
     display: flex;
     justify-content: flex-end;
-    margin-left: auto;
 }
 
 .disabledComposerAction {
@@ -167,43 +203,68 @@
     margin: 0 0 8px 46px;
 }
 
-.kindSelect {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
-    color: var(--mw-text);
-    font: inherit;
-    font-size: 13px;
-    padding: 7px 9px;
+.kindMenu {
+    width: 150px;
+    margin-left: auto;
+}
+
+.kindMenu button,
+.filterMenu button {
+    background: transparent;
 }
 
 .commentTools {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 150px;
+    grid-template-columns: minmax(0, 1fr) 160px;
     gap: 8px;
-    margin: 4px 0 10px 46px;
+    margin: 2px 0 4px;
 }
 
-.commentTools input,
-.commentTools select {
+.searchField {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
     border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--mw-text);
+    padding: 0 10px;
+}
+
+.searchField:focus-within {
+    border-color: var(--accent-border);
+}
+
+.searchField > svg {
+    flex: 0 0 auto;
+    color: var(--text-faint);
+}
+
+.searchField input {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    border: 0;
+    outline: 0;
+    background: transparent;
     color: var(--mw-text);
     font: inherit;
     font-size: 13px;
-    padding: 8px 10px;
+}
+
+.filterMenu {
+    width: 160px;
 }
 
 .input {
     box-sizing: border-box;
     width: 100%;
-    min-height: 64px;
+    min-height: 72px;
     resize: vertical;
-    background: var(--bg-card);
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     color: var(--mw-text);
     padding: 10px 12px;
     font-family: inherit;
@@ -213,12 +274,12 @@
 
 .input:focus {
     border-color: var(--accent-border);
+    outline: none;
 }
 
 .composerButtons {
     display: flex;
     gap: 8px;
-    margin-top: 8px;
 }
 
 .post {
@@ -310,9 +371,39 @@
     background: var(--accent-softer);
 }
 
+.rootMore {
+    align-self: center;
+    margin: 10px 0 4px;
+}
+
+.moreError {
+    margin: 10px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+    text-align: center;
+}
+
 @media (max-width: 620px) {
     .commentTools {
         grid-template-columns: 1fr;
         margin-left: 0;
+    }
+
+    .filterMenu {
+        width: 100%;
+    }
+
+    .composerFooter {
+        flex-wrap: wrap;
+    }
+
+    .kindMenu {
+        width: 140px;
+    }
+
+    .post,
+    .cancel,
+    .deleteConfirm {
+        min-height: 44px;
     }
 }

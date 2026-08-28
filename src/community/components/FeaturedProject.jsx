@@ -5,23 +5,30 @@ import api, {embedUrl, projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './FeaturedProject.module.css';
+import GroupTag from './GroupTag.jsx';
 
 const FeaturedProject = ({project}) => {
     const [details, setDetails] = useState(null);
+    const [requestedProjectId, setRequestedProjectId] = useState(null);
     const [stageRatio, setStageRatio] = useState(0.75);
     const stageFrame = useRef(null);
+    const playRequested = requestedProjectId === project.id;
 
     useEffect(() => {
-        let active = true;
         setDetails(null);
         setStageRatio(0.75);
+    }, [project.id]);
+
+    useEffect(() => {
+        if (!playRequested) return;
+        let active = true;
         api.getProject(project.id)
             .then(data => active && setDetails(data.project))
             .catch(() => active && setDetails(project));
         return () => {
             active = false;
         };
-    }, [project]);
+    }, [playRequested, project.id]);
 
     useEffect(() => {
         const onMessage = event => {
@@ -52,6 +59,7 @@ const FeaturedProject = ({project}) => {
                     <Link to={`/users/${displayProject.owner}`} className={styles.owner}>
                         by {displayProject.owner}
                     </Link>
+                    <GroupTag username={displayProject.owner} compact />
                 </div>
                 <Link to={projectUrl(displayProject.id)} className={styles.openProject}>
                     <ExternalLink size={14} />
@@ -73,6 +81,26 @@ const FeaturedProject = ({project}) => {
                         sandbox={'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads ' +
                             'allow-popups allow-popups-to-escape-sandbox'}
                     />
+                ) : !playRequested || !details ? (
+                    <button
+                        type="button"
+                        className={styles.thumbnail}
+                        aria-label={`Play ${displayProject.title}`}
+                        disabled={playRequested}
+                        onClick={() => setRequestedProjectId(project.id)}
+                    >
+                        <ProjectThumbnail
+                            project={displayProject}
+                            fallbackClassName={styles.thumbnailFallback}
+                            lazy
+                        />
+                        <span className={styles.playPrompt}>
+                            <span className={styles.playIcon}>
+                                <Play size={24} fill="currentColor" />
+                            </span>
+                            {playRequested ? 'Loading project…' : 'Play project'}
+                        </span>
+                    </button>
                 ) : (
                     <Link to={projectUrl(displayProject.id)} className={styles.thumbnail}>
                         <ProjectThumbnail

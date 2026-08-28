@@ -19,12 +19,19 @@ const extractFileName = function (nameExt) {
 const inferFileType = name => {
     const extension = name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : '';
     return {
+        aac: 'audio/aac',
         bmp: 'image/bmp',
+        flac: 'audio/flac',
         gif: 'image/gif',
         jpeg: 'image/jpeg',
         jpg: 'image/jpeg',
+        m4a: 'audio/mp4',
+        mp3: 'audio/mpeg',
+        oga: 'audio/ogg',
+        ogg: 'audio/ogg',
         png: 'image/png',
         svg: 'image/svg+xml',
+        wav: 'audio/wav',
         webp: 'image/webp'
     }[extension] || '';
 };
@@ -245,6 +252,13 @@ const soundUpload = function (fileData, fileType, storage, handleSound, handleEr
     case 'audio/mp3':
     case 'audio/mpeg': {
         soundFormat = storage.DataFormat.MP3;
+        break;
+    }
+    case 'application/ogg':
+    case 'audio/ogg': {
+        // OGG is already compressed and Web Audio can decode it directly. Converting it to
+        // uncompressed PCM WAV can make the asset more than ten times larger.
+        soundFormat = storage.DataFormat.OGG || 'ogg';
         break;
     }
     case 'audio/wav':

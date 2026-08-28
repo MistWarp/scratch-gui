@@ -22,6 +22,7 @@ const TABS = {
     CREATE: 'create',
     IMPORT: 'import'
 };
+const customThemesTab = value => (Object.values(TABS).includes(value) ? value : TABS.LIBRARY);
 
 const themePreviewStyle = theme => {
     try {
@@ -41,7 +42,7 @@ class CustomThemesPage extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            tab: TABS.LIBRARY,
+            tab: customThemesTab(props.initialTab),
             createMode: 'current', // 'current' | 'gradient'
             customThemes: customThemeManager.getAllThemes(),
             activeEditor: null,
@@ -63,6 +64,13 @@ class CustomThemesPage extends React.Component {
         });
     }
 
+    componentDidUpdate (previousProps) {
+        const nextTab = customThemesTab(this.props.initialTab);
+        if (previousProps.initialTab !== this.props.initialTab && nextTab !== this.state.tab) {
+            this.setTab(nextTab, {notify: false});
+        }
+    }
+
     componentWillUnmount () {
         if (this.unsubscribe) this.unsubscribe();
         if (this.state.originalThemeBeforePreview) {
@@ -70,7 +78,11 @@ class CustomThemesPage extends React.Component {
         }
     }
 
-    setTab = tab => {
+    notifyTabChange = tab => {
+        if (this.props.onTabChange) this.props.onTabChange(tab);
+    };
+
+    setTab = (tab, {notify = true} = {}) => {
         this.stopPreview();
         this.setState({
             tab,
@@ -80,6 +92,8 @@ class CustomThemesPage extends React.Component {
             pendingDelete: null,
             deleteError: '',
             statusMessage: ''
+        }, () => {
+            if (notify) this.notifyTabChange(tab);
         });
     };
 
@@ -117,7 +131,7 @@ class CustomThemesPage extends React.Component {
                 createDescription: '',
                 tab: TABS.LIBRARY,
                 statusMessage: `“${customTheme.name}” saved to your library.`
-            });
+            }, () => this.notifyTabChange(TABS.LIBRARY));
             this.props.onChangeTheme(customTheme);
         } catch (error) {
             await showAlert(`Failed to create theme: ${error.message}`);
@@ -168,7 +182,7 @@ class CustomThemesPage extends React.Component {
             this.setState({
                 tab: TABS.LIBRARY,
                 statusMessage: `“${customTheme.name}” saved to your library.`
-            });
+            }, () => this.notifyTabChange(TABS.LIBRARY));
             this.props.onChangeTheme(customTheme);
         } catch (error) {
             await showAlert(`Failed to create gradient theme: ${error.message}`);
@@ -196,7 +210,7 @@ class CustomThemesPage extends React.Component {
                     direction: gradientInfo.direction,
                     primaryColor: gradientInfo.primaryColor
                 }
-            });
+            }, () => this.notifyTabChange(TABS.CREATE));
         } catch (error) {
             await showAlert(`Failed to load gradient theme: ${error.message}`);
         }
@@ -228,7 +242,8 @@ class CustomThemesPage extends React.Component {
                     updatedTheme.wallpaper,
                     updatedTheme.fonts,
                     updatedTheme.author,
-                    updatedTheme.appearance
+                    updatedTheme.appearance,
+                    updatedTheme.sourceId
                 );
                 Object.defineProperty(newTheme, 'uuid', {value: editingThemeUuid, writable: false});
                 Object.defineProperty(newTheme, 'createdAt', {value: updatedTheme.createdAt, writable: false});
@@ -240,7 +255,7 @@ class CustomThemesPage extends React.Component {
             this.setState({
                 tab: TABS.LIBRARY,
                 statusMessage: 'Theme updated.'
-            });
+            }, () => this.notifyTabChange(TABS.LIBRARY));
 
             const {theme} = this.props;
             if (theme instanceof CustomTheme && theme.uuid === editingThemeUuid) {
@@ -328,7 +343,7 @@ class CustomThemesPage extends React.Component {
                 this.setState({
                     tab: TABS.LIBRARY,
                     statusMessage: `${message}.`
-                });
+                }, () => this.notifyTabChange(TABS.LIBRARY));
                 if (results.errors.length > 0) {
                     await showAlert(results.errors.join('\n'));
                 }
@@ -423,7 +438,7 @@ class CustomThemesPage extends React.Component {
                     </h3>
                     <p className={styles.detail}>
                         <FormattedMessage
-                            defaultMessage="Create one from your current look, build a gradient, or browse WarpTheme."
+                            defaultMessage="Create one from your current look, or browse the marketplace."
                             id="mw.customThemes.empty.hint"
                         />
                     </p>
@@ -442,7 +457,7 @@ class CustomThemesPage extends React.Component {
                         <button
                             type="button"
                             className={styles.ctButtonSecondary}
-                            onClick={this.props.onOpenWarpThemeMarketplace}
+                            onClick={this.props.onOpenThemeMarketplace}
                         >
                             <Store size={14} />
                             <FormattedMessage
@@ -800,8 +815,8 @@ class CustomThemesPage extends React.Component {
                     <div className={styles.ctActionBody}>
                         <h3>
                             <FormattedMessage
-                                defaultMessage="WarpTheme Marketplace"
-                                id="mw.menu.warptheme"
+                                defaultMessage="WarpTheme marketplace"
+                                id="mw.customThemes.marketplace.title"
                             />
                         </h3>
                         <p className={styles.detail}>
@@ -814,7 +829,7 @@ class CustomThemesPage extends React.Component {
                     <button
                         type="button"
                         className={styles.ctButtonSecondary}
-                        onClick={this.props.onOpenWarpThemeMarketplace}
+                        onClick={this.props.onOpenThemeMarketplace}
                     >
                         <Store size={14} />
                         <FormattedMessage
@@ -857,9 +872,12 @@ class CustomThemesPage extends React.Component {
 }
 
 CustomThemesPage.propTypes = {
+    initialTab: PropTypes.oneOf(Object.values(TABS)),
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func,
-    onOpenWarpThemeMarketplace: PropTypes.func
+    onOpenThemeMarketplace: PropTypes.func,
+    onTabChange: PropTypes.func
 };
 
+export {customThemesTab};
 export default CustomThemesPage;

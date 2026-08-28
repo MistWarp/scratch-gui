@@ -1,4 +1,5 @@
 const pending = new Map();
+const preloadedBuffers = new Map();
 let nextId = 0;
 let listening = false;
 
@@ -17,7 +18,12 @@ const ensureListener = () => {
     window.addEventListener('message', event => {
         if (event.source !== window.parent) return;
         const data = event.data;
-        if (!data || data.type !== 'mw:fetch-result' || !pending.has(data.id)) return;
+        if (!data) return;
+        if (data.type === 'mw:preload-resource' && data.url && data.buffer) {
+            preloadedBuffers.set(data.url, data.buffer);
+            return;
+        }
+        if (data.type !== 'mw:fetch-result' || !pending.has(data.id)) return;
         const entry = pending.get(data.id);
         pending.delete(data.id);
         clearTimeout(entry.timeout);
@@ -31,6 +37,12 @@ const ensureListener = () => {
 
 const bridgeFetch = url => new Promise((resolve, reject) => {
     ensureListener();
+    if (preloadedBuffers.has(url)) {
+        const buffer = preloadedBuffers.get(url);
+        preloadedBuffers.delete(url);
+        resolve(buffer);
+        return;
+    }
     const id = ++nextId;
     const timeout = setTimeout(() => {
         pending.delete(id);

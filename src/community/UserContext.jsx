@@ -4,6 +4,7 @@ import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js'
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
 import {subscribeNotifications, subscribeNotificationRemovals} from '../lib/rotur/client.js';
+import rotur from './rotur.js';
 import {
     subscribe as subscribeIdentity,
     restore as identityRestore,
@@ -19,6 +20,7 @@ const signInErrorMessage = error => (
         'Sign-in window was blocked. Allow popups for this site and try again.' :
         (error && error.message) || 'Sign-in did not complete. Please try again.'
 );
+const optionalRequest = request => Promise.resolve().then(request).catch(() => null);
 
 const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
@@ -52,11 +54,11 @@ const UserProvider = ({children}) => {
 
     const applyLoggedIn = useCallback(async (identityUser, version) => {
         let me = null;
-        try {
-            me = await api.me();
-        } catch (e) {
-            me = null;
-        }
+        let roturProfile = null;
+        [me, roturProfile] = await Promise.all([
+            optionalRequest(() => api.me()),
+            identityUser?.username ? optionalRequest(() => rotur.profile(identityUser.username)) : null
+        ]);
         if (version !== identityVersion.current) return;
         let applied = false;
         try {
@@ -76,8 +78,23 @@ const UserProvider = ({children}) => {
         applyThemeVisuals(detectTheme());
         // A transient /me failure while Rotur is logged in should not flip the
         // UI to signed-out; fall back to a minimal user so it stays logged in.
-        setUser(normalizeUser(me || (identityUser ? {username: identityUser.username} : null)));
+        const baseUser = me || (identityUser ? {username: identityUser.username} : null);
+        setUser(normalizeUser(baseUser ? {...baseUser, group_tag: roturProfile?.group_tag || ''} : null));
     }, []);
+
+    const refreshUser = useCallback(async () => {
+        if (!user?.username) return null;
+        const version = identityVersion.current;
+        const username = user.username;
+        const [me, roturProfile] = await Promise.all([
+            optionalRequest(() => api.me()),
+            optionalRequest(() => rotur.profile(username))
+        ]);
+        if (version !== identityVersion.current) return null;
+        const nextUser = normalizeUser({...user, ...(me || {}), group_tag: roturProfile?.group_tag || ''});
+        setUser(nextUser);
+        return nextUser;
+    }, [user]);
 
     const handleIdentity = useCallback(state => {
         const version = ++identityVersion.current;
@@ -140,6 +157,7 @@ const UserProvider = ({children}) => {
                 login,
                 loginOrThrow,
                 logout,
+                refreshUser,
                 banMessage,
                 dismissBan: () => setBanMessage(null),
                 signInError,

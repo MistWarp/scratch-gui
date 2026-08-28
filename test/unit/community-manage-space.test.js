@@ -1,5 +1,6 @@
 import {
     buildSpacePatch,
+    normalizeSpaceSectionParam,
     scheduleIsValid,
     spaceConfirmationDetails,
     spaceTimestamp
@@ -27,6 +28,16 @@ describe('ManageSpace schedule validation', () => {
     });
 });
 
+describe('ManageSpace navigation', () => {
+    test('keeps challenge-only and owner-only sections valid', () => {
+        expect(normalizeSpaceSectionParam('schedule', 'challenge', true)).toBe('schedule');
+        expect(normalizeSpaceSectionParam('schedule', 'studio', true)).toBe('general');
+        expect(normalizeSpaceSectionParam('danger', 'studio', true)).toBe('danger');
+        expect(normalizeSpaceSectionParam('danger', 'studio', false)).toBe('general');
+        expect(normalizeSpaceSectionParam('missing', 'challenge', true)).toBe('general');
+    });
+});
+
 describe('ManageSpace confirmations', () => {
     const space = {title: 'Animation Club'};
 
@@ -48,6 +59,14 @@ describe('ManageSpace confirmations', () => {
             title: 'Delete Animation Club?',
             body: 'This permanently deletes the space. Its projects will not be deleted.',
             action: 'Delete space'
+        });
+    });
+
+    test('explains the effects of transferring a space', () => {
+        expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'Alex'}, space)).toEqual({
+            title: 'Transfer space?',
+            body: 'Transfer "Animation Club" to @Alex? Its group assignment will be cleared and your access may change.',
+            action: 'Transfer to @Alex'
         });
     });
 });

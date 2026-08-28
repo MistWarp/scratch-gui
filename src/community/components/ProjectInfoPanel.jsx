@@ -11,8 +11,6 @@ import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
 import styles from './ProjectInfoPanel.module.css';
 
-const INFO_TABS = ['About', 'Team', 'Credits', 'Tags', 'Controls'];
-
 const parseTags = text => {
     const seen = [];
     text.split(/[\s,]+/).forEach(raw => {
@@ -29,6 +27,8 @@ const creditLink = credit => {
     if (url.startsWith('https://') || url.startsWith('http://')) return url;
     return null;
 };
+
+const INFO_TABS = ['About', 'Details'];
 
 const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     const [tab, setTab] = useState('About');
@@ -72,7 +72,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
         setSaving(true);
         setSaveError('');
         try {
-            await api.updateProject(project.id, {
+            const data = await api.updateProject(project.id, {
                 instructions,
                 notes,
                 credits: credits.filter(c => c.who && c.who.trim()),
@@ -81,7 +81,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
             });
             if (currentProjectId.current === projectId) {
                 setEditing(false);
-                onSaved();
+                onSaved(data.project);
             }
         } catch (e) {
             if (currentProjectId.current === projectId) {
@@ -147,169 +147,174 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                     </div>
                 )}
 
-                {tab === 'Team' && (
-                    <div className={styles.teamPanel}>
-                        <div className={styles.teamSummary}>
-                            <Users size={17} />
-                            <strong>{project.collaboration?.teamSize || 1}</strong>
-                            <span>{(project.collaboration?.teamSize || 1) === 1 ? 'person has worked on this project' : 'people have worked on this project'}</span>
-                        </div>
-                        <ul className={styles.teamList}>
-                            <li>
-                                <Link to={`/users/${project.owner}`}><Avatar username={project.owner} size={30} /><span><strong>{project.owner}</strong><small>Owner</small></span></Link>
-                            </li>
-                            {(project.collaboration?.contributors || []).map(username => (
-                                <li key={username}>
-                                    <Link to={`/users/${username}`}><Avatar username={username} size={30} /><span><strong>{username}</strong><small>Contributor</small></span></Link>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className={styles.acceptedChanges}>
-                            <GitPullRequest size={16} />
-                            <strong>{project.collaboration?.acceptedChanges || 0}</strong>
-                            <span>accepted {(project.collaboration?.acceptedChanges || 0) === 1 ? 'contribution' : 'contributions'}</span>
-                        </div>
-                    </div>
-                )}
-
-                {tab === 'Credits' && (
-                    editing ? (
-                        <div className={styles.creditEditor}>
-                            {credits.map((c, i) => (
-                                <div
-                                    key={i}
-                                    className={styles.creditEditRow}
-                                >
-                                    <div className={styles.creditFields}>
-                                        <input
-                                            className={styles.creditWho}
-                                            value={c.who}
-                                            disabled={saving}
-                                            maxLength={60}
-                                            placeholder="name or MistWarp username"
-                                            aria-label="Name or MistWarp username"
-                                            onChange={e => updateCredit(i, 'who', e.target.value)}
-                                        />
-                                        <input
-                                            className={styles.creditRole}
-                                            value={c.role}
-                                            disabled={saving}
-                                            maxLength={120}
-                                            placeholder="what they did"
-                                            aria-label="Contribution"
-                                            onChange={e => updateCredit(i, 'role', e.target.value)}
-                                        />
-                                        <input
-                                            className={styles.creditUrl}
-                                            type="url"
-                                            value={c.url || ''}
-                                            disabled={saving}
-                                            maxLength={500}
-                                            placeholder="external profile URL (optional)"
-                                            aria-label="External profile URL"
-                                            onChange={e => updateCredit(i, 'url', e.target.value)}
-                                        />
-                                    </div>
-                                    <IconButton
-                                        className={styles.creditRemove}
-                                        disabled={saving}
-                                        onClick={() => removeCredit(i)}
-                                        label={`Remove credit for ${c.who || 'unnamed contributor'}`}
-                                    >
-                                        <X size={14} />
-                                    </IconButton>
+                {tab === 'Details' && (
+                    <div className={styles.detailSections}>
+                        <section>
+                            <h3>Team</h3>
+                            <div className={styles.teamPanel}>
+                                <div className={styles.teamSummary}>
+                                    <Users size={17} />
+                                    <strong>{project.collaboration?.teamSize || 1}</strong>
+                                    <span>{(project.collaboration?.teamSize || 1) === 1 ? 'person' : 'people'}</span>
                                 </div>
-                            ))}
-                            <Button
-                                variant="secondary"
-                                className={styles.creditAdd}
-                                disabled={saving}
-                                onClick={addCredit}
-                            >
-                                <Plus size={14} />
-                                Add credit
-                            </Button>
-                        </div>
-                    ) : (project.credits && project.credits.length) ? (
-                        <ul className={styles.creditList}>
-                            {project.credits.map((c, i) => {
-                                const externalUrl = creditLink(c);
-                                return (
-                                    <li key={i}>
-                                        {externalUrl ? (
-                                            <a
-                                                href={externalUrl}
-                                                className={styles.creditName}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >{c.who}</a>
-                                        ) : (
-                                            <Link
-                                                to={`/users/${c.who}`}
-                                                className={styles.creditName}
-                                            >{c.who}</Link>
-                                        )}
-                                        {c.role ? (
-                                            <span className={styles.creditRoleText}>
-                                                {' '}
-                                                <RichText text={c.role} />
-                                            </span>
-                                        ) : null}
+                                <ul className={styles.teamList}>
+                                    <li>
+                                        <Link to={`/users/${project.owner}`}><Avatar username={project.owner} size={30} /><span><strong>{project.owner}</strong><small>Owner</small></span></Link>
                                     </li>
-                                );
-                            })}
-                        </ul>
-                    ) : <p className={styles.panelEmpty}>No credits listed.</p>
-                )}
+                                    {(project.collaboration?.contributors || []).map(username => (
+                                        <li key={username}>
+                                            <Link to={`/users/${username}`}><Avatar username={username} size={30} /><span><strong>{username}</strong><small>Contributor</small></span></Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                                {(project.collaboration?.acceptedChanges || 0) > 0 ? (
+                                    <div className={styles.acceptedChanges}>
+                                        <GitPullRequest size={16} />
+                                        <strong>{project.collaboration.acceptedChanges}</strong>
+                                        <span>accepted {project.collaboration.acceptedChanges === 1 ? 'contribution' : 'contributions'}</span>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </section>
 
-                {tab === 'Tags' && (
-                    editing ? (
-                        <div>
-                            <input
-                                className={styles.panelInput}
-                                value={tagsText}
-                                disabled={saving}
-                                placeholder="platformer game pixel-art"
-                                onChange={e => setTagsText(e.target.value)}
-                            />
-                            <p className={styles.panelEmpty}>Separate tags with spaces. Up to 10.</p>
-                        </div>
-                    ) : (project.tags && project.tags.length) ? (
-                        <div className={styles.tagRow}>
-                            {project.tags.map(tag => (
-                                <Link
-                                    key={tag}
-                                    to={`/explore?q=${encodeURIComponent(`#${tag}`)}`}
-                                    className={styles.tag}
-                                >{`#${tag}`}</Link>
-                            ))}
-                        </div>
-                    ) : <p className={styles.panelEmpty}>No tags yet.</p>
-                )}
-
-                {tab === 'Controls' && (
-                    editing ? (
-                        <div className={styles.controlEditor}>
-                            <p>Choose the controls you have tested with this project.</p>
-                            {CONTROL_TYPES.map(({key, label, detail, Icon}) => (
-                                <label key={key} className={compatibility[key] ? styles.controlOptionActive : styles.controlOption}>
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean(compatibility[key])}
+                        {(editing || (project.credits && project.credits.length)) ? <section>
+                            <h3>Credits</h3>
+                            {editing ? (
+                                <div className={styles.creditEditor}>
+                                    {credits.map((c, i) => (
+                                        <div
+                                            key={i}
+                                            className={styles.creditEditRow}
+                                        >
+                                            <div className={styles.creditFields}>
+                                                <input
+                                                    className={styles.creditWho}
+                                                    value={c.who}
+                                                    disabled={saving}
+                                                    maxLength={60}
+                                                    placeholder="name or MistWarp username"
+                                                    aria-label="Name or MistWarp username"
+                                                    onChange={e => updateCredit(i, 'who', e.target.value)}
+                                                />
+                                                <input
+                                                    className={styles.creditRole}
+                                                    value={c.role}
+                                                    disabled={saving}
+                                                    maxLength={120}
+                                                    placeholder="what they did"
+                                                    aria-label="Contribution"
+                                                    onChange={e => updateCredit(i, 'role', e.target.value)}
+                                                />
+                                                <input
+                                                    className={styles.creditUrl}
+                                                    type="url"
+                                                    value={c.url || ''}
+                                                    disabled={saving}
+                                                    maxLength={500}
+                                                    placeholder="external profile URL (optional)"
+                                                    aria-label="External profile URL"
+                                                    onChange={e => updateCredit(i, 'url', e.target.value)}
+                                                />
+                                            </div>
+                                            <IconButton
+                                                className={styles.creditRemove}
+                                                disabled={saving}
+                                                onClick={() => removeCredit(i)}
+                                                label={`Remove credit for ${c.who || 'unnamed contributor'}`}
+                                            >
+                                                <X size={14} />
+                                            </IconButton>
+                                        </div>
+                                    ))}
+                                    <Button
+                                        variant="secondary"
+                                        className={styles.creditAdd}
                                         disabled={saving}
-                                        onChange={event => {
-                                            const {checked} = event.target;
-                                            setCompatibility(current => ({...current, [key]: checked}));
-                                        }}
+                                        onClick={addCredit}
+                                    >
+                                        <Plus size={14} />
+                                        Add credit
+                                    </Button>
+                                </div>
+                            ) : <ul className={styles.creditList}>
+                                {project.credits.map((c, i) => {
+                                    const externalUrl = creditLink(c);
+                                    return (
+                                        <li key={i}>
+                                            {externalUrl ? (
+                                                <a
+                                                    href={externalUrl}
+                                                    className={styles.creditName}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >{c.who}</a>
+                                            ) : (
+                                                <Link
+                                                    to={`/users/${c.who}`}
+                                                    className={styles.creditName}
+                                                >{c.who}</Link>
+                                            )}
+                                            {c.role ? (
+                                                <span className={styles.creditRoleText}>
+                                                    {' '}
+                                                    <RichText text={c.role} />
+                                                </span>
+                                            ) : null}
+                                        </li>
+                                    );
+                                })}
+                            </ul>}
+                        </section> : null}
+
+                        {(editing || (project.tags && project.tags.length)) ? <section>
+                            <h3>Tags</h3>
+                            {editing ? (
+                                <div>
+                                    <input
+                                        className={styles.tagInput}
+                                        value={tagsText}
+                                        disabled={saving}
+                                        placeholder="platformer game pixel-art"
+                                        onChange={e => setTagsText(e.target.value)}
                                     />
-                                    <Icon size={19} />
-                                    <span><strong>{label}</strong><small>{detail}</small></span>
-                                </label>
-                            ))}
-                        </div>
-                    ) : Object.entries(project.compatibility || {}).some(([, supported]) => supported) ? (
-                        <ProjectCompatibility compatibility={project.compatibility} />
-                    ) : <p className={styles.panelEmpty}>The creator has not listed the controls for this project.</p>
+                                    <p className={styles.fieldHint}>Separate tags with spaces. Up to 10.</p>
+                                </div>
+                            ) : <div className={styles.tagRow}>
+                                {project.tags.map(tag => (
+                                    <Link
+                                        key={tag}
+                                        to={`/explore?q=${encodeURIComponent(`#${tag}`)}`}
+                                        className={styles.tag}
+                                    >{`#${tag}`}</Link>
+                                ))}
+                            </div>}
+                        </section> : null}
+
+                        <section>
+                            <h3>Controls</h3>
+                            {editing ? (
+                                <div className={styles.controlEditor}>
+                                    {CONTROL_TYPES.map(({key, label, detail, Icon}) => (
+                                        <label key={key} className={compatibility[key] ? styles.controlOptionActive : styles.controlOption}>
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(compatibility[key])}
+                                                disabled={saving}
+                                                onChange={event => {
+                                                    const {checked} = event.target;
+                                                    setCompatibility(current => ({...current, [key]: checked}));
+                                                }}
+                                            />
+                                            <Icon size={19} />
+                                            <span><strong>{label}</strong><small>{detail}</small></span>
+                                        </label>
+                                    ))}
+                                </div>
+                            ) : Object.entries(project.compatibility || {}).some(([, supported]) => supported) ? (
+                                <ProjectCompatibility compatibility={project.compatibility} />
+                            ) : <p className={styles.panelEmpty}>No controls listed.</p>}
+                        </section>
+                    </div>
                 )}
 
                 {!editing && project.remixParent ? (

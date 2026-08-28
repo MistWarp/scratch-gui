@@ -227,7 +227,9 @@ const clearWorkdirExceptGit = async pfs => {
     }
 };
 
-const initRepo = async ({defaultBranch = 'main', vm = null, initialMessage = 'Initial version', onProgress} = {}) => {
+const initRepo = async ({
+    defaultBranch = 'main', vm = null, sb3Files = null, initialMessage = 'Initial version', onProgress
+} = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
     }
@@ -247,16 +249,16 @@ const initRepo = async ({defaultBranch = 'main', vm = null, initialMessage = 'In
             await pfs.writeFile(pathJoin(REPO_DIR, '.gitignore'), '');
             await git.add({fs, dir: REPO_DIR, filepath: '.gitignore'});
 
-            if (vm) {
+            if (vm || sb3Files) {
                 if (typeof onProgress === 'function') {
                     onProgress({phase: 'snapshot', message: 'Saving project snapshot…', completed: 0, total: 1});
                 }
 
-                if (typeof vm.saveProjectSb3 !== 'function') {
+                if (!sb3Files && (!vm || typeof vm.saveProjectSb3 !== 'function')) {
                     throw new Error('VM does not support saveProjectSb3');
                 }
 
-                await writeProjectToFractchTree({vm, fs: pfs, dir: REPO_DIR, onProgress});
+                await writeProjectToFractchTree({vm, sb3Files, fs: pfs, dir: REPO_DIR, onProgress});
                 await stageAll(fs, REPO_DIR, {onProgress});
             }
 
@@ -695,12 +697,12 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
     return 'ok';
 };
 
-const commitProject = async ({vm, message, author, onProgress} = {}) => {
+const commitProject = async ({vm, sb3Files, message, author, onProgress} = {}) => {
     if (!message || typeof message !== 'string' || !message.trim()) {
         throw new Error('Commit message is required');
     }
 
-    if (!vm) {
+    if (!vm && !sb3Files) {
         throw new Error('VM is required');
     }
 
@@ -708,19 +710,21 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
     const pfs = fs.promises;
 
     if (!(await repoExists())) {
-        await initRepo({defaultBranch: 'main', vm: vm});
+        await initRepo({defaultBranch: 'main', vm, sb3Files});
     }
 
-    if (typeof vm.saveProjectSb3 !== 'function' || typeof vm.loadProject !== 'function') {
+    if (!sb3Files && (!vm || typeof vm.saveProjectSb3 !== 'function')) {
         throw new Error('VM does not support save/load project');
     }
 
     let sb3ArrayBuffer;
 
     try {
-        sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
-        if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
-            throw new Error('Failed to save project');
+        if (!sb3Files) {
+            sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
+            if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
+                throw new Error('Failed to save project');
+            }
         }
     } catch (e) {
         throw new Error(`Failed to save project: ${e.message}`);
@@ -731,7 +735,7 @@ const commitProject = async ({vm, message, author, onProgress} = {}) => {
     }
 
     try {
-        await writeProjectToFractchTree({vm, sb3ArrayBuffer, fs: pfs, dir: REPO_DIR, onProgress});
+        await writeProjectToFractchTree({vm, sb3ArrayBuffer, sb3Files, fs: pfs, dir: REPO_DIR, onProgress});
 
         // Ensure any new files are discoverable by isomorphic-git (it uses callback fs,
         // but LightningFS mirrors state).
@@ -1104,7 +1108,38 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-const exportRepoToZip = async ({includeGitDir = true} = {}) => {
+const reachableObjectCache = new Map();
+
+const collectReachableObjectOids = async (head, known = new Set()) => {
+    const cached = reachableObjectCache.get(head);
+    if (cached) return new Set([...cached].filter(oid => !known.has(oid)));
+    const fs = getFs();
+    const found = new Set();
+    const visitTree = async oid => {
+        if (known.has(oid) || found.has(oid)) return;
+        found.add(oid);
+        const {tree} = await git.readTree({fs, dir: REPO_DIR, oid});
+        for (const entry of tree) {
+            if (entry.type === 'tree') await visitTree(entry.oid);
+            else if (!known.has(entry.oid)) found.add(entry.oid);
+        }
+    };
+    const pending = [head];
+    while (pending.length) {
+        const oid = pending.pop();
+        if (!oid || known.has(oid) || found.has(oid)) continue;
+        found.add(oid);
+        const {commit} = await git.readCommit({fs, dir: REPO_DIR, oid});
+        await visitTree(commit.tree);
+        pending.push(...(commit.parent || []));
+    }
+    reachableObjectCache.set(head, new Set([...known, ...found]));
+    return found;
+};
+
+const exportRepoToZip = async ({
+    includeGitDir = true, includeWorktree = true, includeObjectOids = null
+} = {}) => {
     const fs = getFs();
     const pfs = fs.promises;
 
@@ -1117,21 +1152,39 @@ const exportRepoToZip = async ({includeGitDir = true} = {}) => {
 
     const files = await listFilesRecursive(pfs, root);
 
-    for (const absPath of files) {
+    const selected = files.filter(absPath => {
         if (!includeGitDir && absPath.startsWith(`${REPO_DIR}/.git/`)) {
-            continue;
+            return false;
         }
-
+        if (!includeWorktree && !absPath.startsWith(`${REPO_DIR}/.git/`)) return false;
         const relPath = absPath.replace(`${REPO_DIR}/`, '');
-
-        try {
-            const data = await pfs.readFile(absPath);
-            const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-
-            zip.file(relPath, bytes);
-        } catch (e) {
-            console.warn('Skipping file during zip export:', relPath, e);
+        if (relPath.startsWith('.git/logs/')) return false;
+        if (includeObjectOids && relPath.startsWith('.git/objects/')) {
+            const parts = relPath.split('/');
+            if (parts.length !== 4) return false;
+            return includeObjectOids.has(`${parts[2]}${parts[3]}`);
         }
+        return true;
+    });
+
+    const batchSize = 32;
+    for (let i = 0; i < selected.length; i += batchSize) {
+        const batch = selected.slice(i, i + batchSize);
+        await Promise.all(batch.map(async absPath => {
+            const relPath = absPath.replace(`${REPO_DIR}/`, '');
+            try {
+                const data = await pfs.readFile(absPath);
+                const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+                zip.file(relPath, bytes, {
+                    // Loose Git objects are already zlib-compressed. Deflating them again
+                    // burns CPU without making the upload meaningfully smaller.
+                    compression: relPath.startsWith('.git/objects/') ? 'STORE' : 'DEFLATE'
+                });
+            } catch (e) {
+                console.warn('Skipping file during zip export:', relPath, e);
+            }
+        }));
+        if (i + batchSize < selected.length) await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     return zip.generateAsync({
@@ -1532,6 +1585,7 @@ export {
     deleteRepo,
     deleteBranch,
     commitProject,
+    collectReachableObjectOids,
     mergeBranchesPreview,
     mergeBranchesApply,
     addRemote,

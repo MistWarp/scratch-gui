@@ -6,18 +6,7 @@ import {Bell} from 'lucide-react';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './mw-notifications.css';
-import openMistWarpCommunityWindow from '../../lib/mw/open-mw-community-window.jsx';
-import NotificationsPage from '../../community/pages/Notifications.jsx';
 import {fetchNotifications} from '../../lib/rotur/client.js';
-
-const openNotifications = () => openMistWarpCommunityWindow({
-    id: 'mw-notifications-window',
-    title: 'Notifications',
-    initialPath: '/notifications',
-    element: <NotificationsPage hideHeading />,
-    width: 460,
-    height: 640
-});
 
 const MwNotifications = ({username}) => {
     const [unread, setUnread] = React.useState(0);
@@ -58,22 +47,12 @@ const MwNotifications = ({username}) => {
         return null;
     }
 
-    const handleKeyDown = e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openNotifications();
-        }
-    };
-
     return (
-        <div
-            className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
+        <a
+            className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable, styles.bellLink)}
+            href="/notifications"
             title="Notifications"
             aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
-            role="button"
-            tabIndex={0}
-            onClick={openNotifications}
-            onKeyDown={handleKeyDown}
         >
             <span className={styles.bellWrap}>
                 <Bell size={18} />
@@ -81,7 +60,7 @@ const MwNotifications = ({username}) => {
                     <span className={styles.badge}>{unread > 9 ? '9+' : unread}</span>
                 ) : null}
             </span>
-        </div>
+        </a>
     );
 };
 

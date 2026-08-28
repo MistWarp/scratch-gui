@@ -4,6 +4,10 @@
     align-items: center;
 }
 
+.bell-link {
+    color: inherit;
+}
+
 .badge {
     position: absolute;
     top: -7px;

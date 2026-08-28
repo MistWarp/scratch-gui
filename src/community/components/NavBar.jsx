@@ -1,12 +1,14 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet, Layers3} from 'lucide-react';
+import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet, Layers3, House, Crown} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
+import rotur from '../rotur.js';
 import {fetchNotifications} from '../../lib/rotur/client.js';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
+import GroupTag from './GroupTag.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
 import searchFocusIndex from '../search-keyboard.js';
@@ -18,7 +20,7 @@ import styles from './NavBar.module.css';
 
 const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 
-const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, searchLabel, suggestionId}) => (
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, placeholderLabel, searchLabel, suggestionId}) => (
     <form
         className={`${styles.search} ${className}`}
         onSubmit={onSubmit}
@@ -29,7 +31,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
         <input
             ref={inputRef}
             className={styles.searchInput}
-            placeholder={searchLabel}
+            placeholder={placeholderLabel || searchLabel}
             aria-label={searchLabel}
             role="combobox"
             aria-expanded={Boolean(open)}
@@ -56,6 +58,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                     <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
                         <Avatar username={person.username} size={26} />
                         <span>{person.username}</span>
+                        {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                         <span className={styles.suggestionMeta}>{person.followers ?? 0} followers · {person.projects} projects</span>
                     </button>
                 ))}
@@ -92,6 +95,10 @@ const NavBar = () => {
     const mobileSearchRef = useRef(null);
     const desktopSearchInputRef = useRef(null);
     const mobileSearchInputRef = useRef(null);
+    const loginInFlight = useRef(false);
+    const releaseLogin = () => {
+        loginInFlight.current = false;
+    };
 
     useEffect(() => {
         setQuery('');
@@ -196,17 +203,27 @@ const NavBar = () => {
             Promise.allSettled([
                 api.searchUsers(q),
                 api.explore({q, limit: 5}),
-                api.spaces({q})
-            ]).then(results => {
+                api.spaces({q, limit: 5})
+            ]).then(async results => {
                 if (stale) return;
                 const [userResult, projectResult, spaceResult] = results;
                 const u = userResult.status === 'fulfilled' ? userResult.value : {users: []};
                 const p = projectResult.status === 'fulfilled' ? projectResult.value : {projects: []};
                 const s = spaceResult.status === 'fulfilled' ? spaceResult.value : {spaces: []};
-                setSuggestions(u.users || []);
+                const representedUsers = await rotur.withGroupTags(u.users || []);
+                if (stale) return;
+                setSuggestions(representedUsers);
                 setProjectSuggestions(p.projects || []);
                 setSpaceSuggestions((s.spaces || []).slice(0, 5));
                 setSuggestionsFailed(results.every(result => result.status === 'rejected'));
+                setSuggestionsSearching(false);
+                setSuggestionsReady(true);
+            }).catch(() => {
+                if (stale) return;
+                setSuggestions([]);
+                setProjectSuggestions([]);
+                setSpaceSuggestions([]);
+                setSuggestionsFailed(true);
                 setSuggestionsSearching(false);
                 setSuggestionsReady(true);
             });
@@ -258,13 +275,15 @@ const NavBar = () => {
     };
 
     const doLogin = async () => {
-        if (signingIn) return;
+        if (loginInFlight.current) return;
+        loginInFlight.current = true;
         setSigningIn(true);
         try {
             await loginOrThrow();
         } catch (e) {
             // The standing banner reports sign-in and ban errors.
         } finally {
+            releaseLogin();
             setSigningIn(false);
         }
     };
@@ -286,6 +305,10 @@ const NavBar = () => {
         setQuery('');
         navigate(`/spaces/${id}`);
     };
+
+    const mobileItemClass = path => `${styles.mobileDockItem} ${
+        location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`)) ? styles.mobileDockItemActive : ''
+    }`;
 
     return (
         <header className={styles.bar}>
@@ -316,13 +339,9 @@ const NavBar = () => {
                         <Compass size={17} />
                         <span className={styles.linkLabel}>{t('nav.explore')}</span>
                     </Link>
-                    <Link
-                        to="/spaces"
-                        className={styles.link}
-                        aria-label={t('nav.spaces')}
-                    >
-                        <Layers3 size={17} />
-                        <span className={styles.linkLabel}>{t('nav.spaces')}</span>
+                    <Link to="/perks" className={styles.link} aria-label="Membership perks">
+                        <Crown size={17} />
+                        <span className={styles.linkLabel}>Perks</span>
                     </Link>
                 </nav>
 
@@ -421,7 +440,7 @@ const NavBar = () => {
                 </div>
             </div>
             <SearchBox
-                className={styles.mobileSearch}
+                className={`${styles.mobileSearch} ${user ? styles.mobileSearchLoggedIn : ''}`}
                 containerRef={mobileSearchRef}
                 inputRef={mobileSearchInputRef}
                 query={query}
@@ -442,9 +461,35 @@ const NavBar = () => {
                 onProject={goToProject}
                 onProfile={goToProfile}
                 onSpace={goToSpace}
+                placeholderLabel="Search"
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
             />
+            <nav className={styles.mobileDock} aria-label="Mobile navigation">
+                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null}>
+                    <House size={20} />
+                    <span>Home</span>
+                </Link>
+                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null}>
+                    <Compass size={20} />
+                    <span>Explore</span>
+                </Link>
+                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`}>
+                    <span className={styles.mobileCreateIcon}><Plus size={22} /></span>
+                    <span>Create</span>
+                </a>
+                {user ? (
+                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null}>
+                        <FolderOpen size={20} />
+                        <span>My stuff</span>
+                    </Link>
+                ) : (
+                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn}>
+                        <LogIn size={20} />
+                        <span>{signingIn ? 'Signing in' : 'Sign in'}</span>
+                    </button>
+                )}
+            </nav>
         </header>
     );
 };

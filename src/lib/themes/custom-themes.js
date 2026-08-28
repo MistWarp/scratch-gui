@@ -325,7 +325,7 @@ class GradientUtils {
 class CustomTheme extends Theme {
     constructor (
         name, description, accent, gui, blocks, menuBarAlign, wallpaper, fonts, author = 'User',
-        appearance = {}
+        appearance = {}, sourceId = ''
     ) {
         // If accent is an object (custom gradient),
         // pass a default string to parent and store the custom accent separately
@@ -338,6 +338,8 @@ class CustomTheme extends Theme {
         this.description = description;
         /** @readonly */
         this.author = author;
+        /** @readonly */
+        this.sourceId = sourceId;
         /** @readonly */
         this.createdAt = new Date().toISOString();
         /** @readonly */
@@ -419,7 +421,8 @@ class CustomTheme extends Theme {
             options.wallpaper,
             options.fonts,
             this.author,
-            options.appearance
+            options.appearance,
+            this.sourceId
         );
         theme.createdAt = this.createdAt;
         return theme;
@@ -492,6 +495,7 @@ class CustomTheme extends Theme {
             name: this.name,
             description: this.description,
             author: this.author,
+            sourceId: this.sourceId || null,
             accent: accentExport || (typeof this.originalAccent === 'string' ? this.originalAccent : null),
             menuBarForeground: menuBarForeground || null,
             gui: this.gui,
@@ -707,7 +711,8 @@ class CustomTheme extends Theme {
             data.appearance || {
                 menuBarLayout: data.menuBarLayout || null,
                 styles: data.styleSettings || null
-            }
+            },
+            data.sourceId || ''
         );
 
         // Preserve original UUID and creation date if available
@@ -765,7 +770,6 @@ class CustomThemeManager {
         try {
             const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
             if (!stored) {
-                console.log('No custom themes found in storage');
                 return;
             }
 
@@ -775,20 +779,14 @@ class CustomThemeManager {
                 return;
             }
 
-            console.log(`Loading ${themesData.length} custom themes from storage`);
-
-            let loadedCount = 0;
             for (const themeData of themesData) {
                 try {
                     const theme = CustomTheme.import(themeData);
                     this.themes.set(theme.uuid, theme);
-                    loadedCount++;
                 } catch (e) {
                     console.warn(`Failed to load custom theme "${themeData?.name || 'unknown'}":`, e);
                 }
             }
-
-            console.log(`Successfully loaded ${loadedCount}/${themesData.length} custom themes`);
         } catch (e) {
             console.error('Failed to load custom themes from storage:', e);
         }
@@ -803,7 +801,6 @@ class CustomThemeManager {
 
             if (themesData.length === 0) {
                 localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
-                console.log('Cleared custom themes storage (no themes)');
                 try {
                     require('../rotur/cloud-sync.js').notifyLocalChange();
                 } catch (_) {
@@ -820,8 +817,6 @@ class CustomThemeManager {
             }
 
             localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, jsonString);
-
-            console.log(`Saved ${themesData.length} custom themes to storage (${jsonString.length} bytes)`);
 
             try {
                 require('../rotur/cloud-sync.js').notifyLocalChange();
@@ -924,7 +919,8 @@ class CustomThemeManager {
             updates.wallpaper || existingTheme.wallpaper,
             updates.fonts || existingTheme.fonts,
             existingTheme.author,
-            updates.appearance || existingTheme.appearance
+            updates.appearance || existingTheme.appearance,
+            existingTheme.sourceId
         );
 
         // Preserve original UUID and creation date
@@ -965,7 +961,8 @@ class CustomThemeManager {
             existingTheme.wallpaper,
             existingTheme.fonts,
             existingTheme.author,
-            existingTheme.appearance
+            existingTheme.appearance,
+            existingTheme.sourceId
         );
 
         // Preserve original UUID and creation date
@@ -1356,10 +1353,10 @@ class CustomThemeManager {
     }
 
     /**
-     * Add a theme from WarpTheme / MistWarp export JSON into the local library.
+     * Add a MistWarp export JSON theme into the local library.
      * Always assigns a fresh UUID so marketplace ids never collide with local ones.
      * @param {object} data export payload ({themes:[…]}) or a single theme object
-     * @param {object} [meta] optional overrides {name, description, author}
+     * @param {object} [meta] optional overrides {name, description, author, sourceId}
      * @returns {CustomTheme} the saved theme
      */
     addFromExportData (data, meta = {}) {
@@ -1385,7 +1382,8 @@ class CustomThemeManager {
             ...rest,
             name,
             description,
-            author
+            author,
+            sourceId: meta.sourceId || config.sourceId || ''
         });
 
         this.addTheme(theme);

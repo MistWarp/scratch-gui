@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 import {GitFork, GitPullRequest, Heart, Play, Coins, TrendingUp, Users} from 'lucide-react';
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
+import GroupTag from './GroupTag.jsx';
 import styles from './ProjectCard.module.css';
 
 const ProjectCard = ({project, showTrend = false}) => {
@@ -38,7 +39,9 @@ const ProjectCard = ({project, showTrend = false}) => {
                     className={styles.title}
                     title={project.title}
                 >{project.title}</div>
-                <div className={styles.owner}>by {project.owner}</div>
+                <div className={styles.owner}>
+                    by {project.owner}<GroupTag username={project.owner} compact linked={false} />
+                </div>
                 {project.description ? (
                     <p className={styles.desc}>{project.description}</p>
                 ) : null}
@@ -58,7 +61,11 @@ const ProjectCard = ({project, showTrend = false}) => {
                         </span>
                     ) : null}
                     {acceptedChanges > 0 ? (
-                        <span className={styles.stat} title={`${acceptedChanges} accepted ${acceptedChanges === 1 ? 'contribution' : 'contributions'}`}>
+                        <span
+                            className={styles.stat}
+                            title={`${acceptedChanges} accepted ${acceptedChanges === 1 ?
+                                'contribution' : 'contributions'}`}
+                        >
                             <GitPullRequest size={13} />
                             {acceptedChanges}
                         </span>

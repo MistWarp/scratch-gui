@@ -2,6 +2,7 @@ import JSZip from '@turbowarp/jszip';
 import {
     abortEditorMerge,
     commitProject,
+    collectReachableObjectOids,
     completeEditorMerge,
     computeCommitGraph,
     deleteRepo,
@@ -52,6 +53,23 @@ const loadMwp = async input => {
     return {zip, manifest, paths};
 };
 
+const clearImportedWorktree = async () => {
+    const pfs = getFs().promises;
+    const entries = await pfs.readdir(REPO_DIR);
+    const remove = async path => {
+        const stat = await pfs.stat(path);
+        if (stat.isDirectory()) {
+            for (const entry of await pfs.readdir(path)) await remove(`${path}/${entry}`);
+            await pfs.rmdir(path);
+        } else {
+            await pfs.unlink(path);
+        }
+    };
+    for (const entry of entries) {
+        if (entry !== '.git') await remove(`${REPO_DIR}/${entry}`);
+    }
+};
+
 const importMwp = async input => {
     const {zip, manifest, paths} = await loadMwp(input);
     const fs = getFs();
@@ -71,6 +89,12 @@ const importMwp = async input => {
         await pfs.writeFile(destination, data);
     }
     if (!(await repoExists())) throw new Error('MistWarp project has no Git history');
+    if (manifest.worktree === false) {
+        // Compact MWP files carry Git as the source of truth and omit the
+        // duplicate worktree, so materialize it after import.
+        await clearImportedWorktree();
+        await git.checkout({fs, dir: REPO_DIR, ref: manifest.branch || 'main', force: true});
+    }
     return manifest;
 };
 
@@ -138,10 +162,26 @@ const currentRepoMeta = async () => {
     };
 };
 
-const exportCurrentMwp = async metadata => {
-    const repoBlob = await exportRepoToZip({includeGitDir: true});
-    const zip = await JSZip.loadAsync(repoBlob);
+const exportCurrentMwp = async (metadata, {baseHead = '', includeWorktree = false} = {}) => {
     const repo = await currentRepoMeta();
+    let includeObjectOids = null;
+    let delta = false;
+    if (!includeWorktree && baseHead) {
+        try {
+            const known = await collectReachableObjectOids(baseHead);
+            includeObjectOids = await collectReachableObjectOids(repo.head, known);
+            delta = true;
+        } catch (e) {
+            // The server's base is not in this clone. A full archive is the safe fallback.
+            includeObjectOids = null;
+        }
+    }
+    const repoBlob = await exportRepoToZip({
+        includeGitDir: true,
+        includeWorktree,
+        includeObjectOids
+    });
+    const zip = await JSZip.loadAsync(repoBlob);
     const manifest = {
         format: MWP_FORMAT,
         version: MWP_VERSION,
@@ -151,6 +191,9 @@ const exportCurrentMwp = async metadata => {
         baseCommit: metadata.baseCommit || null,
         branch: repo.branch,
         head: repo.head,
+        worktree: includeWorktree,
+        baseHead: delta ? baseHead : null,
+        delta,
         commits: repo.commits,
         graph: repo.graph
     };
@@ -165,18 +208,22 @@ const exportCurrentMwp = async metadata => {
 };
 
 const createMwp = async ({
-    vm, projectId, remixParent, baseCommit, message = 'Save project', commitChanges = true
+    vm, sb3Files, projectId, remixParent, baseCommit, remoteHead,
+    message = 'Save project', commitChanges = true
 } = {}) => {
     if (!(await repoExists())) {
-        await initRepo({defaultBranch: 'main', vm, initialMessage: message});
-    } else if (vm && commitChanges) {
+        await initRepo({defaultBranch: 'main', vm, sb3Files, initialMessage: message});
+    } else if ((vm || sb3Files) && commitChanges) {
         try {
-            await commitProject({vm, message, author: getDefaultAuthor()});
+            await commitProject({vm, sb3Files, message, author: getDefaultAuthor()});
         } catch (error) {
             if (!/No changes to commit/.test(error.message || '')) throw error;
         }
     }
-    return exportCurrentMwp({projectId, remixParent, baseCommit});
+    return exportCurrentMwp(
+        {projectId, remixParent, baseCommit},
+        {baseHead: remoteHead, includeWorktree: !commitChanges}
+    );
 };
 
 const buildSb3FromCurrentRepo = async () => {

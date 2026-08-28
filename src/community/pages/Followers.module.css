@@ -55,3 +55,14 @@
 .cell:hover span {
     color: var(--accent-strong);
 }
+
+@media (max-width: 620px) {
+    .page {
+        padding: 18px 14px 64px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+        gap: 18px 10px;
+    }
+}

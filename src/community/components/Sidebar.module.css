@@ -53,6 +53,27 @@
     .sidebar {
         position: static;
         grid-auto-flow: column;
+        grid-auto-columns: max-content;
+        margin-right: -14px;
+        margin-left: -14px;
+        padding-right: 14px;
+        padding-left: 14px;
         overflow-x: auto;
+        border-right: 0;
+        border-left: 0;
+        border-radius: 0;
+        box-shadow: none;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .item,
+    .active {
+        min-height: 44px;
+        scroll-snap-align: start;
     }
 }

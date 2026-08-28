@@ -5,6 +5,7 @@ import {ArrowLeft, CalendarDays, Layers3, Library, MessageCircle, Settings, Trop
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
+import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
@@ -14,6 +15,7 @@ import Challenge from './Challenge.jsx';
 import Collection from './Collection.jsx';
 import Studio from './Studio.jsx';
 import useLatest from '../use-latest.js';
+import {formatDate, safeDate} from '../format.js';
 import styles from './Spaces.module.css';
 
 const KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library};
@@ -32,7 +34,9 @@ const normalizeSpace = space => ({
     criteria: Array.isArray(space.criteria) ? space.criteria : [],
     judges: Array.isArray(space.judges) ? space.judges : [],
     judgeInvites: Array.isArray(space.judgeInvites) ? space.judgeInvites : [],
-    curatorInvites: Array.isArray(space.curatorInvites) ? space.curatorInvites : []
+    curatorInvites: Array.isArray(space.curatorInvites) ? space.curatorInvites : [],
+    followerCount: Number.isFinite(space.followerCount) ? space.followerCount :
+        (Array.isArray(space.followers) ? space.followers.length : 0)
 });
 
 const loadMissingProjects = async space => {
@@ -62,7 +66,7 @@ const Space = () => {
     const beginLoad = useLatest();
 
     const commentSource = useMemo(() => ({
-        list: () => api.spaceComments(id),
+        list: options => api.spaceComments(id, options),
         add: (content, parent) => api.addSpaceComment(id, content, parent),
         remove: commentId => api.deleteSpaceComment(id, commentId),
         react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
@@ -165,6 +169,7 @@ const Space = () => {
     const Icon = KIND_ICONS[space.kind] || Layers3;
     const curators = space.managers || [];
     const canAdd = space.openSubmissions || space.canManage;
+    const deadline = safeDate(space.endsAt);
 
     return (
         <main className={`${styles.page} ${styles.spacePage}`}>
@@ -185,7 +190,7 @@ const Space = () => {
                     <p>{space.description || 'No description yet.'}</p>
                     <div className={styles.spaceOwner}>
                         <Avatar username={space.owner} size={30} />
-                        <span>Created by <Link to={`/users/${space.owner}`}>{space.owner}</Link></span>
+                        <span>Created by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
                     </div>
                 </div>
                 <div className={styles.spaceHeroActions}>
@@ -210,10 +215,10 @@ const Space = () => {
 
             <section className={styles.spaceOverview}>
                 <div><strong>{space.projects.length}</strong><span>{space.projects.length === 1 ? 'project' : 'projects'}</span></div>
-                <div><strong>{space.followers.length}</strong><span>{space.followers.length === 1 ? 'follower' : 'followers'}</span></div>
+                <div><strong>{space.followerCount}</strong><span>{space.followerCount === 1 ? 'follower' : 'followers'}</span></div>
                 <div><strong>{curators.length + 1}</strong><span>{curators.length ? 'team members' : 'team member'}</span></div>
-                {space.kind === 'challenge' && space.endsAt ? (
-                    <div><CalendarDays size={18} /><span>Ends {new Date(space.endsAt).toLocaleDateString()}</span></div>
+                {space.kind === 'challenge' && deadline ? (
+                    <div><CalendarDays size={18} /><span>Ends {formatDate(deadline)}</span></div>
                 ) : null}
             </section>
 
@@ -224,7 +229,7 @@ const Space = () => {
                 </div>
                 <div className={styles.curatorFaces}>
                     {[space.owner, ...curators].map(name => (
-                        <Link key={name} to={`/users/${name}`} title={name}><Avatar username={name} size={34} /><span>{name}</span></Link>
+                        <Link key={name} to={`/users/${name}`} title={name}><Avatar username={name} size={34} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>
                     ))}
                 </div>
             </section>

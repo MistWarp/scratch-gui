@@ -15,6 +15,7 @@
  */
 
 import './import-first';
+import './editor-dependencies';
 
 import React from 'react';
 

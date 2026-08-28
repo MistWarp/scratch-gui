@@ -1,4 +1,4 @@
-import {handleFileUpload} from '../../../src/lib/file-uploader.js';
+import {handleFileUpload, soundUpload} from '../../../src/lib/file-uploader.js';
 
 describe('file upload workflow', () => {
     let OriginalFileReader;
@@ -51,6 +51,18 @@ describe('file upload workflow', () => {
         expect(onload).toHaveBeenCalledWith(expect.any(ArrayBuffer), 'image/png', 'cat.v2', 0, 1);
     });
 
+    test('infers OGG audio when the browser omits its type', () => {
+        const onload = jest.fn();
+        const input = {
+            files: [{contents: new ArrayBuffer(1), name: 'music.OGG', type: ''}],
+            value: 'selected file'
+        };
+
+        handleFileUpload(input, onload, jest.fn());
+
+        expect(onload).toHaveBeenCalledWith(expect.any(ArrayBuffer), 'audio/ogg', 'music', 0, 1);
+    });
+
     test('continues and resets the input when an import callback fails', () => {
         const onload = jest.fn(() => {
             throw new Error('invalid asset');
@@ -83,5 +95,32 @@ describe('file upload workflow', () => {
 
         expect(onerror).toHaveBeenCalledWith(expect.any(Error), 0, 1);
         expect(input.value).toBeNull();
+    });
+
+    test('keeps compressed OGG bytes instead of converting them to WAV', () => {
+        const fileData = new Uint8Array([0x4f, 0x67, 0x67, 0x53]).buffer;
+        const asset = {assetId: 'ogg-asset'};
+        const storage = {
+            AssetType: {Sound: 'sound'},
+            DataFormat: {MP3: 'mp3', WAV: 'wav'},
+            createAsset: jest.fn(() => asset)
+        };
+        const handleSound = jest.fn();
+
+        soundUpload(fileData, 'audio/ogg', storage, handleSound, jest.fn());
+
+        expect(storage.createAsset).toHaveBeenCalledWith(
+            'sound',
+            'ogg',
+            new Uint8Array(fileData),
+            null,
+            true
+        );
+        expect(handleSound).toHaveBeenCalledWith(expect.objectContaining({
+            asset,
+            assetId: 'ogg-asset',
+            dataFormat: 'ogg',
+            md5: 'ogg-asset.ogg'
+        }));
     });
 });

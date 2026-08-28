@@ -170,7 +170,7 @@ const getMistSession = () => loadSession();
 const getRoturToken = () => getRotur().token || readRoturToken();
 
 onAuthInvalid(() => invalidateFailedValidator({code: 'VALIDATOR_GENERATION_FAILED'}));
-onBanned(message => {
+onBanned((message, redirectUrl) => {
     roturLogout();
     storeSession(null);
     try {
@@ -183,7 +183,12 @@ onBanned(message => {
     } catch (_) {
         // ignore
     }
-    setState({status: 'idle', user: null, banMessage: message || 'This account is banned from MistWarp.'});
+    setState({
+        status: 'idle',
+        user: null,
+        banMessage: message || 'This account is restricted from using Rotur and MistWarp.',
+        redirectUrl: redirectUrl || 'https://rotur.dev/me'
+    });
 });
 
 if (typeof window !== 'undefined') {

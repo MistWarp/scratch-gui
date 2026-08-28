@@ -19,6 +19,21 @@ describe('community api GET cache', () => {
         expect(second).toEqual(first);
     });
 
+    test('concurrent GETs share one request', async () => {
+        let resolveFetch;
+        global.fetch.mockImplementationOnce(() => new Promise(resolve => {
+            resolveFetch = resolve;
+        }));
+        const first = request('/projects/abc');
+        const second = request('/projects/abc');
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+        resolveFetch(jsonResponse({ok: true, value: 2}));
+        await expect(Promise.all([first, second])).resolves.toEqual([
+            {ok: true, value: 2},
+            {ok: true, value: 2}
+        ]);
+    });
+
     test('different paths are cached separately', async () => {
         await request('/projects/abc');
         await request('/projects/def');
@@ -30,6 +45,24 @@ describe('community api GET cache', () => {
         await request('/projects/abc/react', {method: 'POST', body: {type: 'heart'}});
         await request('/projects/abc');
         expect(global.fetch.mock.calls.filter(call => call[0].endsWith('/projects/abc')).length).toBe(2);
+    });
+
+    test('a GET started before a mutation cannot restore stale cache data', async () => {
+        let resolveGet;
+        global.fetch
+            .mockImplementationOnce(() => new Promise(resolve => {
+                resolveGet = resolve;
+            }))
+            .mockResolvedValueOnce(jsonResponse({ok: true}))
+            .mockResolvedValueOnce(jsonResponse({ok: true, value: 'fresh'}));
+
+        const stale = request('/projects/abc');
+        await request('/projects/abc/react', {method: 'POST', body: {type: 'heart'}});
+        resolveGet(jsonResponse({ok: true, value: 'stale'}));
+        await stale;
+
+        await expect(request('/projects/abc')).resolves.toMatchObject({value: 'fresh'});
+        expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
     test('view pings do not invalidate the cache', async () => {

@@ -167,7 +167,7 @@ export class TWGitModal extends React.Component {
             graphBranchLogs: preloaded.graphBranchLogs || [],
             branchColors: preloaded.branchColors || {},
             commitMessage: '',
-            authorName: author.name,
+            authorName: props.roturUsername || author.name,
             authorEmail: author.email,
             newBranchName: '',
             mergeSourceBranch: '',

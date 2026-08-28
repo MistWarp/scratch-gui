@@ -61,3 +61,21 @@
 .item-danger:focus-visible {
     background: color-mix(in srgb, #e25555 10%, transparent);
 }
+
+@media (max-width: 620px) {
+    .menu,
+    .menu-left {
+        position: fixed;
+        right: 10px;
+        bottom: calc(76px + env(safe-area-inset-bottom));
+        left: 10px;
+        top: auto;
+        max-height: calc(100dvh - 170px);
+        overflow-y: auto;
+    }
+
+    .item {
+        min-height: 44px;
+        padding: 10px 12px;
+    }
+}

@@ -84,6 +84,63 @@ const openBillingPortal = async () => {
     window.location.assign(data.url);
 };
 
+const randomIdempotencyKey = prefix => {
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() :
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    return `${prefix}:${id}`;
+};
+
+const commerceRequest = async (path, init = {}) => {
+    await ensureScopes(init.scope || ['credits:view']);
+    const next = {...init};
+    delete next.scope;
+    return billingRequest(`/commerce${path}`, next);
+};
+
+const sendCommercePayment = ({to, amount, source = 'mistwarp', kind, resourceType, resourceId, note, splits}) =>
+    commerceRequest('/payments', {
+        method: 'POST',
+        scope: ['credits:transfer'],
+        body: JSON.stringify({
+            to,
+            amount,
+            source,
+            kind,
+            resource_type: resourceType,
+            resource_id: resourceId,
+            note,
+            splits,
+            idempotency_key: randomIdempotencyKey(`${source}:${kind}:${resourceId || 'general'}`)
+        })
+    });
+
+const getCommerceEarnings = async () => {
+    await ensureScopes(['credits:view']);
+    return billingRequest('/me/earnings');
+};
+
+const listCommerceBounties = (filters = {}) => {
+    const query = new URLSearchParams(filters);
+    return commerceRequest(`/bounties?${query.toString()}`);
+};
+
+const createCommerceBounty = bounty => commerceRequest('/bounties', {
+    method: 'POST',
+    scope: ['credits:transfer'],
+    body: JSON.stringify({
+        ...bounty,
+        idempotency_key: bounty.idempotency_key || randomIdempotencyKey(
+            `${bounty.source}:${bounty.resource_type}:${bounty.resource_id}`
+        )
+    })
+});
+
+const cancelCommerceBounty = id => commerceRequest(`/bounties/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST',
+    scope: ['credits:manage'],
+    body: '{}'
+});
+
 // Consume a ?billing=success|cancelled query param left by the Stripe checkout
 // redirect, returning the result. No param means no billing result.
 const consumeBillingResult = () => {
@@ -103,5 +160,11 @@ export {
     getBillingStatus,
     openCreditCheckout,
     openBillingPortal,
-    consumeBillingResult
+    consumeBillingResult,
+    randomIdempotencyKey,
+    sendCommercePayment,
+    getCommerceEarnings,
+    listCommerceBounties,
+    createCommerceBounty,
+    cancelCommerceBounty
 };
