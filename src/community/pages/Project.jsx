@@ -1215,6 +1215,7 @@ const Project = () => {
         list: options => api.getComments(id, options),
         add: (content, parent, kind) => api.addComment(id, content, parent, kind),
         remove: commentId => api.deleteComment(id, commentId),
+        edit: (commentId, content) => api.editComment(id, commentId, content),
         react: (commentId, type) => api.reactComment(id, commentId, type)
     }), [id]);
 
