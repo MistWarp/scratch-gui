@@ -1,6 +1,7 @@
 import {webcrypto} from 'crypto';
 import {TextEncoder} from 'util';
 import {
+    TWSecurityManagerComponent,
     canTrustLoadedProject,
     isLocalProjectUrl,
     isOwnedPlatformProject,
@@ -56,6 +57,32 @@ test('platform projects trust only hashes approved by the server', async () => {
     expect(isTrustedExtension('https://example.com/trusted.js')).toBe(false);
     expect(isTrustedExtension('https://extensions.turbowarp.org/unreviewed.js')).toBe(true);
     expect(isTrustedExtension('https://extensions.mistium.com/featured/example.js')).toBe(true);
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+});
+
+test('only extensions discovered in a platform project use its saved source URL', async () => {
+    window.history.replaceState(null, '', '/editor?platform_project=project-1');
+    rememberPlatformProject({
+        id: 'project-1',
+        projectJsonUrl: 'https://storage.example/project.json?k=secret'
+    });
+    const component = new TWSecurityManagerComponent({
+        vm: {runtime: {_mwProjectTrusted: true}},
+        securityManager: {}
+    });
+    component.handleProjectLoading({stage: 'building'});
+    component.props.vm.runtime._mwProjectTrusted = true;
+
+    const pastedText = 'data:application/javascript,extension%20source';
+    expect(await component.rewriteExtensionURL(pastedText)).toBe(pastedText);
+
+    const storedExtension = 'https://example.com/stored.js';
+    await component.canLoadExtensionFromProject(storedExtension);
+    expect(await component.rewriteExtensionURL(storedExtension)).toMatch(
+        /^https:\/\/mwapi\.mistium\.com\/api\/projects\/project-1\/extensions\/[a-f0-9]{64}\/source\?k=secret$/
+    );
+
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
 });
