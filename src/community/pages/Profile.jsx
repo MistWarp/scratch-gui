@@ -313,6 +313,7 @@ const Profile = () => {
         list: options => api.getProfileComments(name, options),
         add: (content, parent) => api.addProfileComment(name, content, parent),
         remove: commentId => api.deleteProfileComment(name, commentId),
+        edit: (commentId, content) => api.editProfileComment(name, commentId, content),
         react: (commentId, type) => api.reactProfileComment(name, commentId, type)
     }), [name]);
 

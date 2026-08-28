@@ -240,11 +240,13 @@ const api = {
     addComment: (id, content, parent, kind = 'comment') =>
         request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind}}),
     deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, {method: 'DELETE'}),
+    editComment: (id, commentId, content) => request(`/projects/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     getProfileComments: (name, options) =>
         request(`/users/${encodeURIComponent(name)}/comments?${commentQuery(options)}`),
     addProfileComment: (name, content, parent) =>
         request(`/users/${encodeURIComponent(name)}/comments`, {method: 'POST', body: {content, parent}}),
     deleteProfileComment: (name, commentId) => request(`/users/${encodeURIComponent(name)}/comments/${commentId}`, {method: 'DELETE'}),
+    editProfileComment: (name, commentId, content) => request(`/users/${encodeURIComponent(name)}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     updateProfile: patch => request('/me/profile', {method: 'PUT', body: patch}),
     reactProject: (id, type) => request(`/projects/${id}/react`, {method: 'POST', body: {type}}),
     reactComment: (id, commentId, type) =>
@@ -351,6 +353,7 @@ const api = {
     spaceComments: (id, options) => request(`/spaces/${id}/comments?${commentQuery(options)}`),
     addSpaceComment: (id, content, parent) => request(`/spaces/${id}/comments`, {method: 'POST', body: {content, parent}}),
     deleteSpaceComment: (id, commentId) => request(`/spaces/${id}/comments/${commentId}`, {method: 'DELETE'}),
+    editSpaceComment: (id, commentId, content) => request(`/spaces/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     reactSpaceComment: (id, commentId, type) => request(`/spaces/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     roadmap: () => request('/roadmap'),
     createIdea: idea => request('/roadmap', {method: 'POST', body: idea}),
@@ -360,6 +363,7 @@ const api = {
     addIdeaComment: (id, content, parent = '') =>
         request(`/roadmap/${id}/comments`, {method: 'POST', body: {content, parent}}),
     deleteIdeaComment: (id, comment) => request(`/roadmap/${id}/comments/${comment}`, {method: 'DELETE'}),
+    editIdeaComment: (id, commentId, content) => request(`/roadmap/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     commits: id => request(`/projects/${id}/commits`),
     pulls: id => request(`/projects/${id}/pulls`),
     getPull: (id, index) => request(`/projects/${id}/pulls/${index}`),

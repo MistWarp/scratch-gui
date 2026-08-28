@@ -78,6 +78,11 @@
     font-size: 12px;
 }
 
+.edited {
+    color: var(--text-faint);
+    font-size: 13px;
+}
+
 .playtime {
     padding: 2px 6px;
     border-radius: 5px;
@@ -275,6 +280,15 @@
 .input:focus {
     border-color: var(--accent-border);
     outline: none;
+}
+
+.editComposer {
+    margin-top: 6px;
+}
+
+.editComposer .composerButtons {
+    justify-content: flex-end;
+    margin-top: 8px;
 }
 
 .composerButtons {

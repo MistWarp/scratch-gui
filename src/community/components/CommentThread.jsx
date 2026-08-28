@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Trash2, Reply, Flag, Search} from 'lucide-react';
+import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
@@ -9,6 +9,7 @@ import Modal from './ui/Modal.jsx';
 import SelectMenu from './ui/SelectMenu.jsx';
 import RichText from './RichText.jsx';
 import GroupTag from './GroupTag.jsx';
+import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
@@ -34,83 +35,125 @@ export const mergeCommentPages = (current, incoming) => {
 const kindLabel = kind => COMMENT_KINDS.find(item => item.value === kind)?.label || 'Comment';
 
 const CommentRow = ({
-    comment, onReply, onDelete, onReact, onReport, canReply, canDelete, canReport,
-    deleting, reacting, isReply, id
-}) => (
-    <div id={id} className={isReply ? styles.replyRow : styles.row}>
-        <Link to={`/users/${comment.author}`}>
-            <Avatar
-                username={comment.author}
-                size={isReply ? 28 : 36}
-            />
-        </Link>
-        <div className={styles.bubble}>
-            <div className={styles.bubbleHead}>
-                <Link
-                    to={`/users/${comment.author}`}
-                    className={styles.author}
-                >{comment.author}</Link>
-                <GroupTag username={comment.author} compact />
-                {!isReply && comment.kind && comment.kind !== 'comment' ? (
-                    <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
-                        {kindLabel(comment.kind)}
-                    </span>
-                ) : null}
-                {Number.isFinite(comment.playtimeMs) && comment.playtimeMs > 0 ? (
-                    <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
-                ) : null}
-                {comment.created ? (
-                    <span className={styles.time}>{timeAgo(comment.created)}</span>
-                ) : null}
-                <span className={styles.headSpacer} />
-                {canReply ? (
-                    <button
-                        type="button"
-                        className={styles.iconAction}
-                        aria-label="Reply"
-                        title="Reply"
-                        onClick={onReply}
-                    >
-                        <Reply size={14} />
-                    </button>
-                ) : null}
-                {canReport ? (
-                    <button
-                        type="button"
-                        className={styles.iconAction}
-                        aria-label="Report comment"
-                        title="Report comment"
-                        onClick={onReport}
-                    >
-                        <Flag size={13} />
-                    </button>
-                ) : null}
-                {canDelete ? (
-                    <button
-                        type="button"
-                        className={styles.iconAction}
-                        aria-label="Delete comment"
-                        title="Delete comment"
-                        disabled={deleting}
-                        onClick={onDelete}
-                    >
-                        <Trash2 size={13} />
-                    </button>
-                ) : null}
-            </div>
-            <p className={styles.text}><RichText text={comment.content} /></p>
-            <div className={styles.reactions}>
-                <ReactionButtons
-                    small
-                    reactions={comment.reactions}
-                    onReact={onReact}
-                    disabled={reacting}
-                    disabledTitle="Saving…"
+    comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onReport, canReply, canDelete,
+    canEdit, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, isReply, id
+}) => {
+    const hasMenu = canEdit || canReport || canDelete;
+    return (
+        <div id={id} className={isReply ? styles.replyRow : styles.row}>
+            <Link to={`/users/${comment.author}`}>
+                <Avatar
+                    username={comment.author}
+                    size={isReply ? 28 : 36}
                 />
+            </Link>
+            <div className={styles.bubble}>
+                <div className={styles.bubbleHead}>
+                    <Link
+                        to={`/users/${comment.author}`}
+                        className={styles.author}
+                    >{comment.author}</Link>
+                    <GroupTag username={comment.author} compact />
+                    {!isReply && comment.kind && comment.kind !== 'comment' ? (
+                        <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
+                            {kindLabel(comment.kind)}
+                        </span>
+                    ) : null}
+                    {Number.isFinite(comment.playtimeMs) && comment.playtimeMs > 0 ? (
+                        <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
+                    ) : null}
+                    {comment.created ? (
+                        <span className={styles.time}>{timeAgo(comment.created)}</span>
+                    ) : null}
+                    {comment.edited ? (
+                        <span className={styles.edited} title="Edited" aria-label="Edited">✎</span>
+                    ) : null}
+                    <span className={styles.headSpacer} />
+                    {canReply ? (
+                        <button
+                            type="button"
+                            className={styles.iconAction}
+                            aria-label="Reply"
+                            title="Reply"
+                            onClick={onReply}
+                        >
+                            <Reply size={14} />
+                        </button>
+                    ) : null}
+                    {hasMenu ? (
+                        <Dropdown
+                            renderTrigger={({toggle}) => (
+                                <button
+                                    type="button"
+                                    className={styles.iconAction}
+                                    aria-label="Comment actions"
+                                    title="Comment actions"
+                                    onClick={toggle}
+                                >
+                                    <MoreHorizontal size={15} />
+                                </button>
+                            )}
+                        >
+                            {({close}) => (
+                                <>
+                                    {canEdit ? <DropdownItem
+                                        onClick={() => {
+                                            close(); onEdit();
+                                        }}
+                                    ><Pencil size={14} /> Edit comment</DropdownItem> : null}
+                                    {canReport ? <DropdownItem
+                                        onClick={() => {
+                                            close(); onReport();
+                                        }}
+                                    ><Flag size={14} /> Report comment</DropdownItem> : null}
+                                    {canDelete ? <DropdownItem
+                                        danger disabled={deleting} onClick={() => {
+                                            close(); onDelete();
+                                        }}
+                                    ><Trash2 size={14} /> Delete comment</DropdownItem> : null}
+                                </>
+                            )}
+                        </Dropdown>
+                    ) : null}
+                </div>
+                {editing ? (
+                    <div className={styles.editComposer}>
+                        <textarea
+                            className={styles.input}
+                            value={editText}
+                            maxLength={500}
+                            disabled={editBusy}
+                            onChange={event => onEditTextChange(event.target.value)}
+                        />
+                        <div className={styles.composerButtons}>
+                            <button
+                                type="button"
+                                className={styles.cancel}
+                                disabled={editBusy}
+                                onClick={onCancelEdit}
+                            >Cancel</button>
+                            <button
+                                type="button"
+                                className={styles.post}
+                                disabled={editBusy || !editText.trim()}
+                                onClick={onSaveEdit}
+                            >{editBusy ? 'Saving…' : 'Save'}</button>
+                        </div>
+                    </div>
+                ) : <p className={styles.text}><RichText text={comment.content} /></p>}
+                <div className={styles.reactions}>
+                    <ReactionButtons
+                        small
+                        reactions={comment.reactions}
+                        onReact={onReact}
+                        disabled={reacting}
+                        disabledTitle="Saving…"
+                    />
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const InlineComposer = ({
     user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small, kind, onKindChange,
@@ -187,6 +230,9 @@ const CommentThread = ({
     const [replyLimits, setReplyLimits] = useState({});
     const [removingId, setRemovingId] = useState(null);
     const [deleteId, setDeleteId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editText, setEditText] = useState('');
+    const [editBusy, setEditBusy] = useState(false);
     const [reactingId, setReactingId] = useState(null);
     const [rootLimit, setRootLimit] = useState(ROOT_PAGE);
     const [totalRoots, setTotalRoots] = useState(0);
@@ -279,6 +325,9 @@ const CommentThread = ({
         setReplyLimits({});
         setRemovingId(null);
         setDeleteId(null);
+        setEditingId(null);
+        setEditText('');
+        setEditBusy(false);
         setReactingId(null);
         setRootLimit(ROOT_PAGE);
         setTotalRoots(0);
@@ -432,6 +481,34 @@ const CommentThread = ({
         return next;
     };
 
+    const saveEdit = async commentId => {
+        if (!source.edit || !editText.trim()) return;
+        const actionSource = source;
+        const actionViewer = viewerName;
+        const releaseAction = beginAction(actionSource, actionViewer, 'edit');
+        if (!releaseAction) return;
+        setEditBusy(true);
+        setError(null);
+        try {
+            const data = await actionSource.edit(commentId, editText.trim());
+            if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            if (data && data.comment) {
+                setComments(cs => cs.map(comment => (
+                    comment.id === commentId ? {...comment, ...data.comment} : comment
+                )));
+            }
+            setEditingId(null);
+            setEditText('');
+        } catch (e) {
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                setError(e.message || 'Could not edit comment.');
+            }
+        } finally {
+            releaseAction();
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setEditBusy(false);
+        }
+    };
+
     const react = async (commentId, type) => {
         if (!source.react || !user) return;
         const actionSource = source;
@@ -463,6 +540,7 @@ const CommentThread = ({
 
     const canDelete = comment => Boolean(user) &&
         (canModerate || user.isAdmin || sameUser(comment.author, user.username));
+    const canEdit = comment => Boolean(source.edit && user) && sameUser(comment.author, user.username);
     const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
     const canReply = Boolean(user) && !disabled;
 
@@ -566,10 +644,22 @@ const CommentThread = ({
                                     setError(null);
                                     setDeleteId(comment.id);
                                 }}
+                                onEdit={() => {
+                                    setError(null);
+                                    setEditingId(comment.id);
+                                    setEditText(comment.content || '');
+                                }}
+                                onSaveEdit={() => saveEdit(comment.id)}
+                                onCancelEdit={() => setEditingId(null)}
+                                editText={editText}
+                                onEditTextChange={setEditText}
                                 onReact={type => react(comment.id, type)}
                                 onReport={() => setReportId(comment.id)}
                                 canReply={canReply}
                                 canDelete={canDelete(comment)}
+                                canEdit={canEdit(comment)}
+                                editing={editingId === comment.id}
+                                editBusy={editBusy}
                                 canReport={canReport(comment)}
                                 deleting={removingId !== null}
                                 reacting={reactingId !== null}
@@ -590,6 +680,9 @@ const CommentThread = ({
                                                     isReply
                                                     canReply={canReply}
                                                     canDelete={canDelete(reply)}
+                                                    canEdit={canEdit(reply)}
+                                                    editing={editingId === reply.id}
+                                                    editBusy={editBusy}
                                                     canReport={canReport(reply)}
                                                     deleting={removingId !== null}
                                                     reacting={reactingId !== null}
@@ -598,6 +691,15 @@ const CommentThread = ({
                                                         setError(null);
                                                         setDeleteId(reply.id);
                                                     }}
+                                                    onEdit={() => {
+                                                        setError(null);
+                                                        setEditingId(reply.id);
+                                                        setEditText(reply.content || '');
+                                                    }}
+                                                    onSaveEdit={() => saveEdit(reply.id)}
+                                                    onCancelEdit={() => setEditingId(null)}
+                                                    editText={editText}
+                                                    onEditTextChange={setEditText}
                                                     onReact={type => react(reply.id, type)}
                                                     onReport={() => setReportId(reply.id)}
                                                 />
