@@ -101,7 +101,9 @@ const joinYear = ms => {
 };
 
 const lastPlayedLabel = value => {
-    const relative = timeAgo(value);
+    const timestamp = Number(value);
+    if (!(timestamp > 0)) return '';
+    const relative = timeAgo(timestamp);
     return relative === 'just now' ? 'last played just now' : `last played ${relative} ago`;
 };
 
@@ -517,7 +519,8 @@ const Profile = () => {
                                                         </span>
                                                         <span className={styles.recentActivityStats}>
                                                             <strong>{item.duration > 0 ? formatPlaytime(item.duration, false) : 'Just played'}</strong>
-                                                            <small>{lastPlayedLabel(item.lastPlayed)}</small>
+                                                            {Number(item.lastPlayed) > 0 ?
+                                                                <small>{lastPlayedLabel(item.lastPlayed)}</small> : null}
                                                         </span>
                                                     </Link>
                                                 );
