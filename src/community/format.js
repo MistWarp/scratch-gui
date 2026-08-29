@@ -1,5 +1,7 @@
 const timeAgo = ms => {
-    const mins = Math.floor((Date.now() - ms) / 60000);
+    const timestamp = Number(ms);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
+    const mins = Math.floor((Date.now() - timestamp) / 60000);
     if (mins < 1) return 'just now';
     if (mins < 60) return `${mins}m`;
     const hours = Math.floor(mins / 60);
@@ -21,6 +23,7 @@ const formatBytes = bytes => {
 const safeDate = value => {
     if (!value) return null;
     const normalized = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+    if (typeof normalized === 'number' && (!Number.isFinite(normalized) || normalized <= 0)) return null;
     const date = new Date(normalized);
     return Number.isNaN(date.getTime()) ? null : date;
 };

@@ -3,15 +3,13 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import Button from '../components/ui/Button.jsx';
 import {useCommunityIntl} from '../i18n.jsx';
+import {safeDate} from '../format.js';
 import useLatest from '../use-latest.js';
 import styles from './InfoPage.module.css';
 
 const STATUS_BASE = process.env.MW_STATUS_URL || '';
 
-export const statusDate = value => {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date;
-};
+export const statusDate = value => safeDate(value);
 
 const Status = () => {
     const {t} = useCommunityIntl();

@@ -1,4 +1,4 @@
-import {formatDateTime, formatPlaytime, safeDate} from '../../src/community/format';
+import {formatDate, formatDateTime, formatPlaytime, safeDate, timeAgo} from '../../src/community/format';
 
 describe('community format helpers', () => {
     describe('safeDate', () => {
@@ -6,6 +6,18 @@ describe('community format helpers', () => {
             expect(safeDate('1767225600000').getTime()).toBe(1767225600000);
             expect(safeDate('2026-01-01T00:00:00Z').toISOString()).toBe('2026-01-01T00:00:00.000Z');
             expect(safeDate('not-a-date')).toBeNull();
+            expect(safeDate(0)).toBeNull();
+            expect(safeDate('0')).toBeNull();
+            expect(safeDate(-1)).toBeNull();
+        });
+    });
+
+    describe('missing timestamps', () => {
+        test('never formats zero as a date in 1970', () => {
+            expect(formatDate(0)).toBe('');
+            expect(formatDate('0', 'Date unavailable')).toBe('Date unavailable');
+            expect(formatDateTime(0)).toBe('');
+            expect(timeAgo(0)).toBe('');
         });
     });
 

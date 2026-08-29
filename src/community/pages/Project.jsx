@@ -2183,7 +2183,8 @@ const RemixTreeNode = ({node, childrenOf, currentId}) => (
             />
             <span className={styles.treeTitle}>{node.title}</span>
             <span className={styles.treeMeta}>
-                {node.owner} · {timeAgo(node.sharedAt || node.created || node.edited)}
+                {node.owner}{timeAgo(node.sharedAt || node.created || node.edited) ?
+                    ` · ${timeAgo(node.sharedAt || node.created || node.edited)}` : ''}
             </span>
         </Link>
         {childrenOf(node.id).length ? (

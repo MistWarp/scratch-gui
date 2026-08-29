@@ -1714,7 +1714,7 @@ const Admin = () => {
                                                     )}
                                                 </span>
                                                 <span className={styles.rowMeta}>
-                                                    {`Reported by @${report.reporter} · ${timeAgo(report.created)} ago`}
+                                                    {`Reported by @${report.reporter}${timeAgo(report.created) ? ` · ${timeAgo(report.created)} ago` : ''}`}
                                                     {report.type !== 'support' && report.context ? ` · in ${report.context}` : ''}
                                                 </span>
                                                 <span className={styles.reason}>{report.reason}</span>
@@ -1792,7 +1792,7 @@ const Admin = () => {
                                             <div className={styles.rowInfo}>
                                                 <span className={styles.rowTitle}>{`@${ban.username}`}</span>
                                                 <span className={styles.rowMeta}>
-                                                    {`Banned by @${ban.by} · ${timeAgo(ban.created)} ago`}
+                                                    {`Banned by @${ban.by}${timeAgo(ban.created) ? ` · ${timeAgo(ban.created)} ago` : ''}`}
                                                     {ban.reason ? ` · ${ban.reason}` : ''}
                                                 </span>
                                             </div>

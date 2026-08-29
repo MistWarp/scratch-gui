@@ -16,8 +16,8 @@ import styles from './Wallet.module.css';
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const donationDate = value => {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString([], {
+    const date = safeDate(value);
+    return !date ? '' : date.toLocaleString([], {
         dateStyle: 'medium',
         timeStyle: 'short'
     });
