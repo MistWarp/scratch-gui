@@ -801,7 +801,7 @@ const Settings = () => {
                                         <div className={styles.dataAction}>
                                             <div>
                                                 <h3>Global account game data</h3>
-                                                <p>Projects can read this only while you are playing or an owner or collaborator is editing. Projects cannot change it.</p>
+                                                <p>Games can read this while you play. You can change your own account game data while editing a project you own or collaborate on.</p>
                                                 <pre className={styles.gameDataJson}>{JSON.stringify((globalGameData && globalGameData.value) || {}, null, 2)}</pre>
                                             </div>
                                         </div>

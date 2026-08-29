@@ -19,6 +19,8 @@ describe('MistWarp game host', () => {
             value: {level: 3}
         });
         await expect(host.call('data.load', [])).resolves.toEqual({revision: 1, value: {level: 3}});
+        await expect(host.call('data.global.save', [{revision: 0, value: {theme: 'dark'}}]))
+            .rejects.toThrow('Save this project to MistWarp before changing account game data');
         await expect(host.call('marketplace.open', [])).resolves.toEqual({status: 'save project first'});
         await expect(host.call('multiplayer.connect', ['main'])).resolves.toMatchObject({connected: false});
     });

@@ -54,6 +54,14 @@ const loadGlobalGameData = (projectId, context) => withCapability(projectId, con
     }).then(result => result.data)
 );
 
+const saveGlobalGameData = (projectId, context, data) => withCapability(projectId, context, capability =>
+    request(`/projects/${encodeURIComponent(projectId)}/me/global-data`, {
+        method: 'PUT',
+        body: data,
+        headers: {'X-MistWarp-Game-Data': capability}
+    }).then(result => result.data)
+);
+
 const loadProjectInventory = (projectId, context) => withCapability(projectId, context, capability =>
     request(`/projects/${encodeURIComponent(projectId)}/me/inventory`, {
         headers: {'X-MistWarp-Game-Data': capability},
@@ -76,6 +84,7 @@ export {
     loadProjectSave,
     saveProjectData,
     loadGlobalGameData,
+    saveGlobalGameData,
     loadProjectInventory,
     grantProjectItem,
     clearCapabilities
