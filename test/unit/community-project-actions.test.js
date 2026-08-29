@@ -4,6 +4,7 @@ import {mount, shallow} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 import {
     applyReactionResult,
+    bountyProjectId,
     contributionPayload,
     HistoryList,
     PullList,
@@ -52,6 +53,11 @@ describe('Project content action payloads', () => {
             title: 'Change',
             body: 'Details'
         });
+    });
+
+    test('finds bounties on the original project when viewing a fork', () => {
+        expect(bountyProjectId({id: 'original'})).toBe('original');
+        expect(bountyProjectId({id: 'fork', remixParent: 'original'})).toBe('original');
     });
 
     test('opens an in-app confirmation before restoring a version', () => {

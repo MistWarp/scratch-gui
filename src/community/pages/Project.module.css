@@ -861,6 +861,46 @@
     line-height: 1.45;
 }
 
+.bountySteps,
+.contributionSteps {
+    display: grid;
+    gap: 8px;
+    padding: 12px 0;
+    margin: 0;
+    border-top: 1px solid var(--border-soft);
+    list-style: none;
+}
+
+.bountySteps li,
+.contributionSteps li {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.bountySteps li span,
+.contributionSteps li span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg-raised);
+    color: var(--accent-strong);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.bountySteps li strong {
+    color: var(--mw-text);
+    font-size: 12px;
+}
+
 .bountyList {
     display: flex;
     flex-direction: column;
@@ -881,6 +921,14 @@
 
 .bountyList li > div {
     min-width: 0;
+}
+
+.bountyItemAction {
+    display: flex;
+    align-items: flex-end;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 7px;
 }
 
 .bountyList strong {
@@ -907,6 +955,96 @@
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+}
+
+.bountyClaim {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-strong);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.bountyClaim:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.bountyClaim:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.contributionSteps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 4px 0 8px;
+    border-top: 0;
+}
+
+.contributionSteps li {
+    align-items: flex-start;
+}
+
+.contributionStepDone span {
+    background: var(--accent-soft) !important;
+}
+
+.bountySelect {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bountySelect > span {
+    color: var(--mw-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.bountySelect small {
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.forkBounty {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    margin: 14px 0;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.forkBounty > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.forkBounty span,
+.forkBounty small {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.forkBounty strong {
+    color: var(--mw-text);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 620px) {
+    .contributionSteps {
+        grid-template-columns: 1fr;
+    }
 }
 
 .sideEmpty {

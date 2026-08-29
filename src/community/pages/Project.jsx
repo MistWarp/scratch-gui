@@ -85,6 +85,23 @@ export const contributionPayload = (remixProjectId, title, body, bountyId = '') 
     if (bountyId) payload.bountyId = bountyId;
     return payload;
 };
+export const bountyProjectId = project => project.remixParent || project.id;
+const BOUNTY_CLAIM_KEY = 'mw:bounty-claim:';
+const rememberBountyClaim = (projectId, bountyId) => {
+    try {
+        if (bountyId) localStorage.setItem(`${BOUNTY_CLAIM_KEY}${projectId}`, bountyId);
+        else localStorage.removeItem(`${BOUNTY_CLAIM_KEY}${projectId}`);
+    } catch (e) {
+        // Bounty selection is a convenience. The contribution form still works without storage.
+    }
+};
+const recalledBountyClaim = projectId => {
+    try {
+        return localStorage.getItem(`${BOUNTY_CLAIM_KEY}${projectId}`) || '';
+    } catch (e) {
+        return '';
+    }
+};
 export const applyReactionResult = (project, result) => ({
     ...project,
     loveCount: result.hearts,
@@ -220,6 +237,8 @@ const Project = () => {
     const [roturModal, setRoturModal] = useState(null);
     const [gameMarketplace, setGameMarketplace] = useState(null);
     const [forkSetup, setForkSetup] = useState(null);
+    const [forkBounty, setForkBounty] = useState(null);
+    const [preferredBountyId, setPreferredBountyId] = useState('');
     const [creatingFork, setCreatingFork] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
     const [deletingProject, setDeletingProject] = useState(false);
@@ -281,6 +300,8 @@ const Project = () => {
         setConfirmBuy(false);
         setConfirmBalance(null);
         setForkSetup(null);
+        setForkBounty(null);
+        setPreferredBountyId('');
         setCreatingFork(false);
         setDeleteConfirm(false);
         setDeletingProject(false);
@@ -886,6 +907,11 @@ const Project = () => {
         });
     };
 
+    const remixForBounty = bounty => {
+        setForkBounty(bounty);
+        remix();
+    };
+
     const createFork = async event => {
         event.preventDefault();
         if (!forkSetup) return;
@@ -899,6 +925,7 @@ const Project = () => {
                 branch: forkSetup.branch.trim()
             });
             if (actionContextRef.current === context) {
+                rememberBountyClaim(result.id, forkBounty && forkBounty.id);
                 window.location.href = editorUrl({platformProject: result.id});
             }
         } catch (e) {
@@ -1619,13 +1646,26 @@ const Project = () => {
                 <Modal
                     className={styles.forkModal}
                     title="Set up your fork"
-                    onClose={() => setForkSetup(null)}
+                    onClose={() => {
+                        setForkSetup(null);
+                        setForkBounty(null);
+                    }}
                     dismissDisabled={creatingFork}
                 >
                     <form onSubmit={createFork}>
                         <p className={styles.forkIntro}>
-                            This creates a private working copy with the full MistWarp history. You can send its changes back as a pull request.
+                            MistWarp will create a private working copy. Edit and save it, then open its project page and send your changes back.
                         </p>
+                        {forkBounty ? (
+                            <div className={styles.forkBounty}>
+                                <Trophy size={17} />
+                                <div>
+                                    <span>Working on a bounty</span>
+                                    <strong>{forkBounty.title}</strong>
+                                    <small>{forkBounty.amount} credits, paid if the project owner merges your pull request</small>
+                                </div>
+                            </div>
+                        ) : null}
                         <label className={styles.forkField}>
                             <span>Project name</span>
                             <input
@@ -1654,7 +1694,14 @@ const Project = () => {
                             <div><dt>Visibility</dt><dd>Private draft</dd></div>
                         </dl>
                         <div className={styles.confirmActions}>
-                            <Button className={styles.confirmCancel} onClick={() => setForkSetup(null)} disabled={creatingFork}>
+                            <Button
+                                className={styles.confirmCancel}
+                                onClick={() => {
+                                    setForkSetup(null);
+                                    setForkBounty(null);
+                                }}
+                                disabled={creatingFork}
+                            >
                                 Cancel
                             </Button>
                             <Button
@@ -2085,6 +2132,7 @@ const Project = () => {
                             key={`${id}:${project.remixParent || ''}`}
                             id={project.remixParent || id}
                             sourceProjectId={project.remixParent ? id : ''}
+                            preferredBountyId={preferredBountyId}
                             user={user}
                             viewerName={viewerName}
                             login={login}
@@ -2097,6 +2145,15 @@ const Project = () => {
                         project={project}
                         userLoading={userLoading}
                         onRemix={remix}
+                        onClaim={bounty => {
+                            if (project.remixParent && project.isOwner) {
+                                rememberBountyClaim(project.id, bounty.id);
+                                setPreferredBountyId(bounty.id);
+                                setTab('Contribute');
+                            } else {
+                                remixForBounty(bounty);
+                            }
+                        }}
                         onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
                     />
                     <RemixTree id={id} />
@@ -2106,8 +2163,10 @@ const Project = () => {
     );
 };
 
-const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
+const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => {
     const [items, setItems] = useState(null);
+    const targetId = bountyProjectId(project);
+    const isFork = Boolean(project.remixParent);
 
     useEffect(() => {
         let active = true;
@@ -2115,7 +2174,7 @@ const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
         listCommerceBounties({
             source: 'mistwarp',
             resource_type: 'project',
-            resource_id: project.id,
+            resource_id: targetId,
             status: 'open'
         })
             .then(data => {
@@ -2127,23 +2186,23 @@ const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
         return () => {
             active = false;
         };
-    }, [project.id]);
+    }, [targetId]);
 
-    if (items === null || (!items.length && !project.isOwner)) return null;
+    if (items === null) return null;
 
     return (
         <section className={styles.bountyPanel} aria-labelledby="project-bounties-title">
             <div className={styles.bountyHeader}>
                 <h2 id="project-bounties-title">
                     <Trophy size={17} />
-                    Open bounties
+                    {isFork ? 'Bounties on the parent project' : 'Contribute'}
                     <span>{items.length}</span>
                 </h2>
-                {project.isOwner ? (
+                {project.isOwner && !isFork ? (
                     <button type="button" className={styles.bountyAction} onClick={onCreate}>
                         <Plus size={14} /> New bounty
                     </button>
-                ) : project.canRemix ? (
+                ) : !isFork && project.canRemix ? (
                     <button
                         type="button"
                         className={styles.bountyActionPrimary}
@@ -2154,6 +2213,11 @@ const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
                     </button>
                 ) : null}
             </div>
+            <ol className={styles.bountySteps}>
+                <li><span>1</span><strong>{items.length ? 'Pick a bounty' : 'Choose what to improve'}</strong></li>
+                <li><span>2</span><strong>Create a fork and make your changes</strong></li>
+                <li><span>3</span><strong>Save it and send a pull request</strong></li>
+            </ol>
             {items.length ? (
                 <ul className={styles.bountyList}>
                     {items.map(item => (
@@ -2162,11 +2226,31 @@ const ProjectBounties = ({project, userLoading, onRemix, onCreate}) => {
                                 <strong>{item.title}</strong>
                                 {item.description ? <p>{item.description}</p> : null}
                             </div>
-                            <span className={styles.bountyReward}>{item.amount} credits</span>
+                            <div className={styles.bountyItemAction}>
+                                <span className={styles.bountyReward}>{item.amount} credits</span>
+                                {!project.isOwner || isFork ? (
+                                    isFork && !project.isOwner ? (
+                                        <Link className={styles.bountyClaim} to={projectUrl(targetId)}>Open parent</Link>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className={styles.bountyClaim}
+                                            disabled={userLoading}
+                                            onClick={() => onClaim(item)}
+                                        >{isFork ? 'Use this bounty' : 'Work on this'}</button>
+                                    )
+                                ) : null}
+                            </div>
                         </li>
                     ))}
                 </ul>
-            ) : <p className={styles.bountyEmpty}>No active bounties. Create one for work you want done.</p>}
+            ) : (
+                <p className={styles.bountyEmpty}>
+                    {project.isOwner && !isFork ?
+                        'No open bounties. Fund a specific change when you want contributors to pick it up.' :
+                        'There are no funded tasks right now. You can still fork the project and send an improvement.'}
+                </p>
+            )}
         </section>
     );
 };
@@ -3004,7 +3088,7 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
     );
 };
 
-const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
+const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewerName, login}) => {
     const actionContext = `${id}\u0000${sourceProjectId}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -3024,15 +3108,23 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
         setBody('');
         setStatus('');
         setBusy(false);
-        setBountyId('');
+        const rememberedBounty = preferredBountyId || (sourceProjectId ? recalledBountyClaim(sourceProjectId) : '');
+        setBountyId(rememberedBounty);
         if (user) {
-            listCommerceBounties({source: 'mistwarp', resource_type: 'project', resource_id: id})
-                .then(data => setBounties(data.bounties || []))
+            listCommerceBounties({source: 'mistwarp', resource_type: 'project', resource_id: id, status: 'open'})
+                .then(data => {
+                    const openBounties = data.bounties || [];
+                    setBounties(openBounties);
+                    if (rememberedBounty && !openBounties.some(item => item.id === rememberedBounty)) {
+                        setBountyId('');
+                        if (sourceProjectId) rememberBountyClaim(sourceProjectId, '');
+                    }
+                })
                 .catch(() => setBounties([]));
         } else {
             setBounties([]);
         }
-    }, [id, sourceProjectId, viewerName]);
+    }, [id, sourceProjectId, viewerName, preferredBountyId]);
 
     const submit = async event => {
         event.preventDefault();
@@ -3056,6 +3148,8 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
             setStatus(`Contribution #${data.pull.index} sent.`);
             setTitle('');
             setBody('');
+            setBountyId('');
+            if (sourceProjectId) rememberBountyClaim(sourceProjectId, '');
         } catch (e) {
             if (actionContextRef.current === context) {
                 setStatus(e.message || 'Could not send the contribution.');
@@ -3071,9 +3165,14 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
             <h3>Send changes back</h3>
             <p className={styles.muted}>
                 {sourceProjectId ?
-                    'Describe the changes on this fork and send them to its parent project.' :
-                    'Fork this project, make your changes, save them, then enter the fork project ID here.'}
+                    'This creates a pull request for the parent project. The owner can review your changes before merging them.' :
+                    'Start with a fork, make and save your changes there, then enter that fork\'s project ID below.'}
             </p>
+            <ol className={styles.contributionSteps}>
+                <li className={sourceProjectId ? styles.contributionStepDone : ''}><span>1</span>Fork the project</li>
+                <li><span>2</span>Edit and save your fork</li>
+                <li><span>3</span>Describe your work and send it</li>
+            </ol>
             {!sourceProjectId ? (
                 <input
                     value={remixProjectId}
@@ -3086,22 +3185,26 @@ const ContributionPanel = ({id, sourceProjectId, user, viewerName, login}) => {
             <input value={title} disabled={busy} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
             <textarea value={body} disabled={busy} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
             {bounties.length ? (
-                <SelectMenu
-                    options={[
-                        {value: '', label: 'No bounty'},
-                        ...bounties.map(bounty => ({
-                            value: bounty.id,
-                            label: `${bounty.amount} credits: ${bounty.title}`
-                        }))
-                    ]}
-                    value={bountyId}
-                    disabled={busy}
-                    onChange={setBountyId}
-                    ariaLabel="Link a bounty"
-                    width={320}
-                />
+                <label className={styles.bountySelect}>
+                    <span>Bounty to claim <small>Optional</small></span>
+                    <SelectMenu
+                        options={[
+                            {value: '', label: 'No bounty'},
+                            ...bounties.map(bounty => ({
+                                value: bounty.id,
+                                label: `${bounty.amount} credits: ${bounty.title}`
+                            }))
+                        ]}
+                        value={bountyId}
+                        disabled={busy}
+                        onChange={setBountyId}
+                        ariaLabel="Bounty to claim"
+                        width={320}
+                    />
+                    <small>The reward is paid when the project owner merges this pull request.</small>
+                </label>
             ) : null}
-            <Button type="submit" disabled={busy}>{busy ? 'Sending…' : user ? 'Send contribution' : 'Sign in to contribute'}</Button>
+            <Button type="submit" disabled={busy}>{busy ? 'Sending…' : user ? 'Create pull request' : 'Sign in to contribute'}</Button>
             {status ? <p className={styles.muted}>{status}</p> : null}
         </form>
     );
