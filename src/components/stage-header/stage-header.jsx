@@ -19,6 +19,7 @@ import hideStageIcon from '!../../lib/tw-recolor/build!./icon--hide-stage.svg';
 import settingsIcon from './icon--settings.svg';
 
 import {
+    Database,
     Minimize,
     Maximize
 } from 'lucide-react';
@@ -67,6 +68,11 @@ const messages = defineMessages({
         defaultMessage: 'Open settings',
         description: 'Button to open settings in embeds',
         id: 'tw.openAdvanced'
+    },
+    variableManagerMessage: {
+        defaultMessage: 'Open Variable Manager',
+        description: 'Button to open the Variable Manager',
+        id: 'mw.stageHeader.variableManager'
     }
 });
 
@@ -75,6 +81,7 @@ const enableSettingsButton = new URLSearchParams(location.search).has('settings-
 const StageHeaderComponent = function (props) {
     const {
         customStageSize,
+        hideFullscreenButton,
         showFixedLargeSize,
         isFullScreen,
         isPlayerOnly,
@@ -85,6 +92,7 @@ const StageHeaderComponent = function (props) {
         onSetStageSmall,
         onSetStageFull,
         onSetStageHidden,
+        onOpenVariableManager,
         onOpenSettings,
         isEmbedded,
         stageContainerWidth,
@@ -105,6 +113,7 @@ const StageHeaderComponent = function (props) {
         const settingsButton = isEmbedded && enableSettingsButton ? (
             <div className={classNames(styles.settingsButton, styles.unselectWrapper)}>
                 <Button
+                    aria-label={props.intl.formatMessage(messages.openSettingsMessage)}
                     className={styles.stageButton}
                     onClick={onOpenSettings}
                 >
@@ -121,6 +130,7 @@ const StageHeaderComponent = function (props) {
         const fullscreenButton = isFullScreen ? (
             <div className={styles.unselectWrapper}>
                 <Button
+                    aria-label={props.intl.formatMessage(messages.unFullScreenMessage)}
                     className={styles.stageButton}
                     onClick={onSetStageUnFullScreen}
                     onKeyPress={onKeyPress}
@@ -135,6 +145,7 @@ const StageHeaderComponent = function (props) {
         ) : FullscreenAPI.available() ? (
             <div className={styles.unselectWrapper}>
                 <Button
+                    aria-label={props.intl.formatMessage(messages.fullScreenMessage)}
                     className={styles.stageButton}
                     onClick={onSetStageFullScreen}
                 >
@@ -229,8 +240,21 @@ const StageHeaderComponent = function (props) {
                         key="editor" // addons require the HTML element to be not be re-used by in-editor buttons
                     >
                         {stageControls}
-                        <div>
+                        <div className={styles.variableManagerButton}>
                             <Button
+                                aria-label={props.intl.formatMessage(messages.variableManagerMessage)}
+                                className={styles.stageButton}
+                                onClick={onOpenVariableManager}
+                            >
+                                <Database
+                                    className={styles.icon}
+                                    title={props.intl.formatMessage(messages.variableManagerMessage)}
+                                />
+                            </Button>
+                        </div>
+                        {hideFullscreenButton ? null : <div>
+                            <Button
+                                aria-label={props.intl.formatMessage(messages.fullScreenMessage)}
                                 className={styles.stageButton}
                                 onClick={onSetStageFullScreen}
                             >
@@ -240,7 +264,7 @@ const StageHeaderComponent = function (props) {
                                     title={props.intl.formatMessage(messages.fullscreenControl)}
                                 />
                             </Button>
-                        </div>
+                        </div>}
                     </div>
                 </Box>
             </Box>
@@ -256,6 +280,7 @@ const mapStateToProps = state => ({
 });
 
 StageHeaderComponent.propTypes = {
+    hideFullscreenButton: PropTypes.bool,
     intl: intlShape,
     customStageSize: PropTypes.shape({
         width: PropTypes.number,
@@ -271,6 +296,7 @@ StageHeaderComponent.propTypes = {
     onSetStageSmall: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
     onSetStageHidden: PropTypes.func,
+    onOpenVariableManager: PropTypes.func,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,
     stageContainerWidth: PropTypes.number,
@@ -286,3 +312,5 @@ StageHeaderComponent.defaultProps = {
 export default injectIntl(connect(
     mapStateToProps
 )(StageHeaderComponent));
+
+export {StageHeaderComponent};

@@ -3,7 +3,7 @@ import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useParams, Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {
     ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark,
-    Link2, UserCog, Plus, Trash2, MessageCircle
+    Link2, UserCog, Plus, Trash2, MessageCircle, Clock3
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -19,7 +19,7 @@ import IconButton from '../components/ui/IconButton.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import useLatest from '../use-latest.js';
-import {formatDate, formatDateTime} from '../format.js';
+import {formatDate, formatDateTime, formatPlaytime} from '../format.js';
 import {createCommerceBounty, listCommerceBounties, cancelCommerceBounty} from '../credits';
 import styles from './ManageProject.module.css';
 
@@ -545,6 +545,11 @@ const ManageProject = () => {
                                     <span className={styles.statIcon}><Bookmark size={20} /></span>
                                     <span className={styles.statNumber}>{(analytics.saves || 0).toLocaleString()}</span>
                                     <span className={styles.statLabel}>Library saves</span>
+                                </div>
+                                <div className={styles.stat}>
+                                    <span className={styles.statIcon}><Clock3 size={20} /></span>
+                                    <span className={styles.statNumber}>{formatPlaytime(analytics.totalPlaytimeMs || 0, false)}</span>
+                                    <span className={styles.statLabel}>Total playtime</span>
                                 </div>
                                 {paywalled ? (
                                     <div className={`${styles.stat} ${styles.statRevenue}`}>

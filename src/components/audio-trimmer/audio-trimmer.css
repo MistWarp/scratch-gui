@@ -19,7 +19,7 @@ $hover-scale: 1.25;
 }
 
 .selector {
-    cursor: pointer;
+    cursor: crosshair;
 }
 
 .trim-background {
@@ -42,7 +42,10 @@ $hover-scale: 1.25;
 
 .selection-background {
     background: $looks-secondary;
-    opacity: 0.5;
+    border-top: 2px solid $looks-secondary;
+    border-bottom: 2px solid $looks-secondary;
+    box-shadow: inset 0 0 0 1px $looks-secondary;
+    opacity: 0.28;
 }
 
 .start-trim-background .trim-background-mask {
@@ -83,10 +86,35 @@ $hover-scale: 1.25;
     */
     width: 100%;
     height: 100%;
-    border-left: 1px solid $looks-secondary;
+    border-left: 2px solid $looks-secondary;
     border-top: none;
     border-bottom: none;
     border-right: none;
+}
+
+.playhead::before {
+    position: absolute;
+    top: .25rem;
+    left: -.35rem;
+    width: .65rem;
+    height: .65rem;
+    border: 2px solid $ui-white;
+    border-radius: 50%;
+    background: $looks-secondary;
+    box-shadow: 0 1px 3px $ui-black-transparent;
+    content: "";
+}
+
+@media only screen and (max-width: 600px) {
+    .trim-handle {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .selector .left-handle,
+    .selector .right-handle {
+        border-width: 2px;
+    }
 }
 
 .right-handle {

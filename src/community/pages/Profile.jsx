@@ -3,7 +3,7 @@ import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link} from 'react-router-dom';
 import {
     UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, Star, Ban,
-    VolumeX, FolderKanban, Palette
+    VolumeX, FolderKanban, Palette, Gamepad2
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
@@ -350,9 +350,7 @@ const Profile = () => {
     const statusText = hasStatusText ? rawStatusText :
         `${presenceState.charAt(0).toUpperCase()}${presenceState.slice(1)}`;
     const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
-    const showRecentActivity = Boolean(mwUser &&
-        (mwUser.recentActivityVisible !== false || isSelf) &&
-        (mwUser.recentActivity?.length || isSelf));
+    const showRecentActivity = Boolean(mwUser && onMistWarp);
     const selectTab = tab => {
         setActiveTab(tab);
         if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
@@ -443,7 +441,12 @@ const Profile = () => {
                                 <section className={styles.section}>
                                     <div className={styles.sectionHead}>
                                         <h2 className={styles.sectionTitle}>Recent activity</h2>
-                                        {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>Only visible to you</span> : null}
+                                        <div className={styles.activityActions}>
+                                            {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>Only visible to you</span> : null}
+                                            <Link className={styles.libraryLink} to={`/users/${name}/library`}>
+                                                <Gamepad2 size={14} /> View game library
+                                            </Link>
+                                        </div>
                                     </div>
                                     {mwUser.recentActivity?.length ? (
                                         <div className={styles.recentActivity}>
@@ -462,7 +465,11 @@ const Profile = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className={styles.sectionEmpty}>Projects you open while signed in will appear here.</p>
+                                        <p className={styles.sectionEmpty}>
+                                            {mwUser.recentActivityVisible === false && !isSelf ?
+                                                'This user has chosen not to share what they play.' :
+                                                'Projects opened while signed in will appear here.'}
+                                        </p>
                                     )}
                                 </section>
                             ) : null}

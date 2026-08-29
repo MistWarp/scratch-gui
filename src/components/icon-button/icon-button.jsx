@@ -12,6 +12,7 @@ const IconButton = ({
     onClick
 }) => (
     <button
+        aria-label={typeof title === 'string' ? title : null}
         className={classNames(
             styles.container,
             className,
@@ -19,6 +20,7 @@ const IconButton = ({
         )}
         type="button"
         disabled={disabled}
+        title={typeof title === 'string' ? title : null}
         onClick={onClick}
     >
         <TWRenderRecoloredImage

@@ -2,6 +2,8 @@ name: Build and Deploy
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [develop]
   push:
     branches: [develop]
 
@@ -26,6 +28,7 @@ jobs:
         node-version: 20
         cache: pnpm
     - run: pnpm install --frozen-lockfile
+    - run: pnpm run test:unit:ci
     - run: pnpm run build
       env:
         NODE_ENV: production

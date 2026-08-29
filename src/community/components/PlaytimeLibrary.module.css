@@ -1,0 +1,142 @@
+.status {
+    color: var(--text-dim);
+    padding: 42px 0;
+    text-align: center;
+}
+
+.summary {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 14px;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.summary strong {
+    color: var(--mw-text);
+    font-size: 18px;
+}
+
+.summary span {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    color: inherit;
+}
+
+.row:hover {
+    border-color: var(--accent-border);
+}
+
+.rank {
+    width: 24px;
+    color: var(--text-faint);
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.thumb {
+    width: 96px;
+    height: 72px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
+.details,
+.playtime {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.details {
+    flex: 1;
+}
+
+.details strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.details small,
+.playtime small {
+    color: var(--text-dim);
+}
+
+.playtime {
+    align-items: flex-end;
+    flex: 0 0 auto;
+}
+
+.playtime strong {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.more {
+    display: flex;
+    justify-content: center;
+    padding-top: 18px;
+}
+
+.empty {
+    display: flex;
+    min-height: 220px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 9px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    text-align: center;
+}
+
+.empty strong {
+    color: var(--mw-text);
+}
+
+@media (max-width: 620px) {
+    .row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .rank {
+        display: none;
+    }
+
+    .thumb {
+        width: 80px;
+        height: 60px;
+    }
+
+    .playtime {
+        width: 100%;
+        align-items: flex-start;
+        padding-left: 94px;
+    }
+}

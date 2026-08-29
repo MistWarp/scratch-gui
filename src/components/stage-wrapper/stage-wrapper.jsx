@@ -15,6 +15,7 @@ const StageWrapperComponent = function (props) {
     const {
         isEmbedded,
         isFullScreen,
+        hideFullscreenButton,
         isRtl,
         isRendererSupported,
         isStageHidden,
@@ -39,6 +40,7 @@ const StageWrapperComponent = function (props) {
         >
             <Box className={styles.stageMenuWrapper}>
                 <StageHeader
+                    hideFullscreenButton={hideFullscreenButton}
                     stageContainerWidth={stageContainerWidth}
                     stageSize={stageSize}
                     vm={vm}
@@ -65,6 +67,7 @@ const StageWrapperComponent = function (props) {
 };
 
 StageWrapperComponent.propTypes = {
+    hideFullscreenButton: PropTypes.bool,
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isRendererSupported: PropTypes.bool.isRequired,

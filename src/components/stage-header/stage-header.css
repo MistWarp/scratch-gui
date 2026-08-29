@@ -52,12 +52,14 @@
 }
 
 [dir="ltr"] .stage-size-toggle-group,
-[dir="ltr"] .settings-button {
+[dir="ltr"] .settings-button,
+[dir="ltr"] .variable-manager-button {
     margin-right: .2rem;
 }
 
 [dir="rtl"] .stage-size-toggle-group,
-[dir="rtl"] .settings-button {
+[dir="rtl"] .settings-button,
+[dir="rtl"] .variable-manager-button {
     margin-left: .2rem;
 }
 
@@ -99,7 +101,8 @@
 }
 
 @media only screen and (max-width: 900px) {
-    .stage-size-toggle-group {
+    .stage-size-toggle-group,
+    .variable-manager-button {
         display: none;
     }
 }

@@ -130,3 +130,22 @@
         box-shadow: var(--card-shadow);
     }
 }
+
+@media (max-width: 520px) {
+    .body {
+        padding: 10px;
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    .owner {
+        font-size: 12px;
+    }
+
+    .stats {
+        gap: 10px;
+        padding-top: 8px;
+    }
+}

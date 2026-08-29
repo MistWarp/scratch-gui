@@ -315,6 +315,7 @@ class WindowedModal extends React.Component {
             React.createElement(
                 'div',
                 {
+                    className: 'windowed-modal-body',
                     style: {
                         flex: 1,
                         overflow: 'hidden',

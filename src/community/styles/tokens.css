@@ -103,6 +103,15 @@ select {
 }
 
 @media (max-width: 760px) {
+    .mw-app-content > main {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding-right: 14px !important;
+        padding-bottom: 24px !important;
+        padding-left: 14px !important;
+    }
+
     input,
     textarea,
     select {

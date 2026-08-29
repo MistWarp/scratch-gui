@@ -137,6 +137,16 @@ const messages = defineMessages({
         id: 'gui.soundEditor.mute',
         description: 'Title of the button to apply the mute effect',
         defaultMessage: 'Mute'
+    },
+    stereo: {
+        id: 'tw.stereo',
+        description: "Refers to a 'Stereo Sound' (2 channels)",
+        defaultMessage: 'Stereo'
+    },
+    mono: {
+        id: 'tw.mono',
+        description: "Refers to a 'Mono Sound' (1 channel)",
+        defaultMessage: 'Mono'
     }
 });
 
@@ -176,6 +186,8 @@ const formatSoundSize = bytes => {
     return `${(bytes / 1000).toFixed(2)}KB`;
 };
 
+const formatSampleRate = sampleRate => `${Number((sampleRate / 1000).toFixed(2))} kHz`;
+
 const SoundEditor = props => (
     <div
         className={styles.editorContainer}
@@ -195,6 +207,7 @@ const SoundEditor = props => (
                 </Label>
                 <div className={styles.buttonGroup}>
                     <button
+                        aria-label={props.intl.formatMessage(messages.undo)}
                         type="button"
                         className={styles.button}
                         disabled={!props.canUndo}
@@ -208,6 +221,7 @@ const SoundEditor = props => (
                         />
                     </button>
                     <button
+                        aria-label={props.intl.formatMessage(messages.redo)}
                         type="button"
                         className={styles.button}
                         disabled={!props.canRedo}
@@ -244,14 +258,14 @@ const SoundEditor = props => (
                 />
             </div>
             <IconButton
-                className={styles.toolButton}
+                className={classNames(styles.toolButton, styles.deleteToolButton)}
                 disabled={props.trimStart === null}
                 img={deleteIcon}
                 title={props.intl.formatMessage(messages.delete)}
                 onClick={props.onDelete}
             />
         </div>
-        <div className={styles.row}>
+        <div className={classNames(styles.row, styles.waveformRow)}>
             <div className={styles.waveformContainer}>
                 <Waveform
                     data={props.chunkLevels}
@@ -296,66 +310,70 @@ const SoundEditor = props => (
                     </button>
                 )}
             </div>
-            <div className={styles.effects}>
+            <div
+                aria-label="Sound effects"
+                className={styles.effects}
+                role="group"
+            >
                 <IconButton
                     className={styles.effectButton}
                     img={fasterIcon}
-                    title={<FormattedMessage {...messages.faster} />}
+                    title={props.intl.formatMessage(messages.faster)}
                     onClick={props.onFaster}
                 />
                 <IconButton
                     className={styles.effectButton}
                     img={slowerIcon}
-                    title={<FormattedMessage {...messages.slower} />}
+                    title={props.intl.formatMessage(messages.slower)}
                     onClick={props.onSlower}
                 />
                 <IconButton
                     disabled={props.tooLoud}
                     className={classNames(styles.effectButton, styles.flipInRtl)}
                     img={louderIcon}
-                    title={<FormattedMessage {...messages.louder} />}
+                    title={props.intl.formatMessage(messages.louder)}
                     onClick={props.onLouder}
                 />
                 <IconButton
                     className={classNames(styles.effectButton, styles.flipInRtl)}
                     img={softerIcon}
-                    title={<FormattedMessage {...messages.softer} />}
+                    title={props.intl.formatMessage(messages.softer)}
                     onClick={props.onSofter}
                 />
                 <IconButton
-                    className={classNames(styles.effectButton, styles.flipInRtl)}
+                    className={classNames(styles.effectButton, styles.substantialEffect, styles.flipInRtl)}
                     img={muteIcon}
-                    title={<FormattedMessage {...messages.mute} />}
+                    title={props.intl.formatMessage(messages.mute)}
                     onClick={props.onMute}
                 />
                 <IconButton
                     className={styles.effectButton}
                     img={fadeInIcon}
-                    title={<FormattedMessage {...messages.fadeIn} />}
+                    title={props.intl.formatMessage(messages.fadeIn)}
                     onClick={props.onFadeIn}
                 />
                 <IconButton
                     className={styles.effectButton}
                     img={fadeOutIcon}
-                    title={<FormattedMessage {...messages.fadeOut} />}
+                    title={props.intl.formatMessage(messages.fadeOut)}
                     onClick={props.onFadeOut}
                 />
                 <IconButton
-                    className={styles.effectButton}
+                    className={classNames(styles.effectButton, styles.substantialEffect)}
                     img={reverseIcon}
-                    title={<FormattedMessage {...messages.reverse} />}
+                    title={props.intl.formatMessage(messages.reverse)}
                     onClick={props.onReverse}
                 />
                 <IconButton
-                    className={styles.effectButton}
+                    className={classNames(styles.effectButton, styles.substantialEffect)}
                     img={robotIcon}
-                    title={<FormattedMessage {...messages.robot} />}
+                    title={props.intl.formatMessage(messages.robot)}
                     onClick={props.onRobot}
                 />
                 <IconButton
-                    className={styles.effectButton}
+                    className={classNames(styles.effectButton, styles.substantialEffect)}
                     img={echoIcon}
-                    title={<FormattedMessage {...messages.echo} />}
+                    title={props.intl.formatMessage(messages.echo)}
                     onClick={props.onEcho}
                 />
             </div>
@@ -365,22 +383,9 @@ const SoundEditor = props => (
                 {formatDuration(props.playhead, props.trimStart, props.trimEnd, props.duration)}
             </div>
             <div className={styles.advancedInfo}>
-                {props.sampleRate}
-                {'Hz '}
-                {props.isStereo ? (
-                    <FormattedMessage
-                        defaultMessage="Stereo"
-                        description="Refers to a 'Stereo Sound' (2 channels)"
-                        id="tw.stereo"
-                    />
-                ) : (
-                    <FormattedMessage
-                        defaultMessage="Mono"
-                        description="Refers to a 'Mono Sound' (1 channel)"
-                        id="tw.mono"
-                    />
-                )}
-                {` (${formatSoundSize(props.size)})`}
+                {`${formatSampleRate(props.sampleRate)} · ${props.intl.formatMessage(
+                    props.isStereo ? messages.stereo : messages.mono
+                )} · ${formatSoundSize(props.size)}`}
             </div>
         </div>
         {/* TODO: don't know whether this should be > or >=. Using >= for now to be safe */}

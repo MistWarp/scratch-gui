@@ -312,6 +312,20 @@
     height: 100%;
 }
 
+.editor-nav-slot {
+    gap: 0.25rem;
+    padding: 0 0.25rem;
+}
+
+.account-info-group .editor-nav-slot > .menu-bar-item {
+    box-sizing: border-box;
+    width: 40px;
+    height: calc($menu-bar-height - 0.5rem);
+    justify-content: center;
+    padding: 0;
+    border-radius: 8px;
+}
+
 .rotur-account-slot {
     display: flex;
     align-items: center;
@@ -425,5 +439,28 @@
 
     [data-mw-item="block-count"] {
         display: none !important;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .home-link {
+        display: none;
+    }
+
+    .file-group-expanded {
+        position: fixed;
+        top: calc($menu-bar-height + 0.5rem);
+        left: 0.5rem;
+        width: min(18rem, calc(100vw - 1rem));
+        min-width: 0;
+        max-height: calc(100dvh - $menu-bar-height - 1rem);
+        overflow-y: auto;
+        border: 1px solid $ui-black-transparent;
+        border-radius: 12px;
+    }
+
+    .file-group.file-group-expanded > * {
+        min-height: 48px;
+        height: auto;
     }
 }

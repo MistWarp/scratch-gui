@@ -360,7 +360,7 @@
     }
 
     .mobileSearchLoggedIn {
-        right: max(132px, calc(env(safe-area-inset-right) + 122px));
+        right: max(92px, calc(env(safe-area-inset-right) + 82px));
     }
 
     .mobileSearch .searchIcon {
@@ -406,7 +406,7 @@
         left: 0;
         z-index: 80;
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         height: calc(60px + env(safe-area-inset-bottom));
         padding: 4px max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px, env(safe-area-inset-left));
         border-top: 1px solid var(--border);
@@ -456,14 +456,34 @@
 
     .mobileCreateIcon {
         display: grid;
-        width: 32px;
-        height: 32px;
-        margin-top: -9px;
+        width: 38px;
+        height: 38px;
+        margin-top: 0;
         place-items: center;
         border-radius: 12px;
         color: var(--accent-contrast);
         background: var(--accent);
         box-shadow: 0 4px 12px var(--accent-shadow);
+    }
+
+    .mobileNotification {
+        position: relative;
+    }
+
+    .mobileNotificationBadge {
+        position: absolute;
+        top: 2px;
+        left: calc(50% + 5px);
+        min-width: 15px;
+        height: 15px;
+        padding: 0 3px;
+        border: 2px solid var(--bg-card);
+        border-radius: 8px;
+        color: #fff;
+        background: #e25555;
+        font-size: 9px;
+        line-height: 11px;
+        text-align: center;
     }
 }
 
@@ -481,6 +501,6 @@
 
 
     .mobileSearchLoggedIn {
-        right: max(124px, calc(env(safe-area-inset-right) + 114px));
+        right: max(88px, calc(env(safe-area-inset-right) + 78px));
     }
 }

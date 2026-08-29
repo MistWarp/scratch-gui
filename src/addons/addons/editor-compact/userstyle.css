@@ -369,6 +369,26 @@ body:not(.sa-columns-enabled) [class*="gui_tab-panel"] [class*="gui_extension-bu
   width: min-content;
 }
 
+@media (max-width: 600px) {
+  [class*="paint-editor_mode-selector"] {
+    width: 100%;
+    min-width: 100%;
+    max-width: none;
+  }
+
+  [class*="paint-editor_tool-strip-panel"] [class*="paint-editor_mode-selector"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  [class*="asset-panel_detail-area"] > div {
+    padding: 0.25rem;
+  }
+}
+
 [class*="sound-editor_row_"] + [class*="sound-editor_row_"] {
   margin-top: 0.5rem;
 }

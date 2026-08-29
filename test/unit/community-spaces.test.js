@@ -72,6 +72,14 @@ describe('Spaces browsing and creation', () => {
         expect(spaceFollowerCount(space)).toBe(1);
     });
 
+    test('space cards show aggregate playtime for studios and collections', () => {
+        const studio = shallow(<SpaceCard space={{_id: 's', kind: 'studio', title: 'Studio', totalPlaytimeMs: 3600000}} />);
+        const collection = shallow(<SpaceCard space={{_id: 'c', kind: 'collection', title: 'Collection', totalPlaytimeMs: 1800000}} />);
+
+        expect(studio.text()).toContain('1h played');
+        expect(collection.text()).toContain('30m played');
+    });
+
     test('space cards show ISO deadlines and omit malformed deadlines', () => {
         const base = {
             _id: 'challenge',

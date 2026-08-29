@@ -22,6 +22,7 @@ describe('My Stuff upload feedback', () => {
     test('normalizes URL-backed sections', () => {
         expect(getMyStuffSection('projects')).toBe('projects');
         expect(getMyStuffSection('themes')).toBe('themes');
+        expect(getMyStuffSection('playtime')).toBe('playtime');
         expect(getMyStuffSection('trash')).toBe('trash');
         expect(getMyStuffSection('unknown')).toBe('overview');
         expect(getMyStuffSection(null)).toBe('overview');

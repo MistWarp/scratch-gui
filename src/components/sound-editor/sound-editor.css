@@ -3,6 +3,9 @@
 
 .editor-container {
     display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
     flex-direction: column;
     flex-grow: 1;
     padding: calc(2 * $space);
@@ -70,6 +73,10 @@
 
     margin-top: 20px;
     margin-bottom: 20px;
+}
+
+.waveform-row {
+    min-height: 0;
 }
 
 $border-radius: 0.25rem;
@@ -246,7 +253,7 @@ $border-radius: 0.25rem;
 }
 
 .button:disabled > img {
-    opacity: 0.25;
+    opacity: 0.55;
 }
 
 .info-row {
@@ -258,7 +265,7 @@ $border-radius: 0.25rem;
     font-weight: bold;
 }
 .advanced-info {
-
+    text-align: end;
 }
 
 .alert {
@@ -279,4 +286,221 @@ $border-radius: 0.25rem;
 .too-large {
     background-color: rgba(255, 119, 0, 0.3);
     border-color: rgb(255, 119, 0);
+}
+
+@media only screen and (max-width: 600px) {
+    .editor-container {
+        height: 100%;
+        padding: $space;
+        overflow: hidden;
+    }
+
+    .row {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .editor-container > .row:first-child {
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: $space;
+    }
+
+    .row + .row {
+        margin-top: $space;
+    }
+
+    .input-group,
+    [dir="ltr"] .input-group,
+    [dir="rtl"] .input-group {
+        min-width: 0;
+        gap: calc($space / 2);
+        padding: 0;
+        border: 0;
+    }
+
+    [dir="ltr"] .input-group + .input-group,
+    [dir="rtl"] .input-group + .input-group {
+        margin: 0;
+    }
+
+    .editor-container > .row:first-child > .input-group:first-child {
+        width: 100%;
+    }
+
+    .editor-container > .row:first-child > .input-group:first-child > label {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .name-input {
+        width: auto;
+        height: 2.75rem;
+        min-width: 0;
+        flex: 1 1 auto;
+        border-radius: 6px;
+        font-size: .75rem;
+    }
+
+    .button-group {
+        flex: 0 0 auto;
+        margin: 0 !important;
+    }
+
+    .editor-container > .row:first-child > .input-group:nth-child(2) {
+        flex: 1 1 auto;
+    }
+
+    .button {
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: .65rem;
+    }
+
+    .button:disabled {
+        color: $text-primary;
+        opacity: .62;
+    }
+
+    .tool-button {
+        min-width: 4rem;
+        min-height: 3.25rem;
+        flex-basis: 4rem;
+        justify-content: center;
+        padding: .25rem;
+        border: 1px solid transparent;
+        border-radius: 6px;
+    }
+
+    .tool-button img {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0;
+    }
+
+    .tool-button :global([class*="icon-button_title_"]) {
+        margin-top: .2rem;
+        line-height: 1.1;
+    }
+
+    .delete-tool-button {
+        margin-inline-start: auto;
+        border-color: rgba(255, 93, 93, .45);
+        color: $red-primary;
+    }
+
+    .waveform-row {
+        min-height: 10rem;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    .waveform-container {
+        height: 100%;
+        min-height: 10rem;
+        margin: 0;
+        border-color: $ui-black-transparent;
+        border-radius: 8px;
+        background: $ui-white;
+        overflow: hidden;
+    }
+
+    .waveform-container > svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .row-reverse {
+        display: grid;
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        gap: $space;
+        align-items: stretch;
+    }
+
+    [dir="rtl"] .row-reverse {
+        direction: rtl;
+    }
+
+    .round-button-outer,
+    [dir="rtl"] .row-reverse > .input-group {
+        width: 3.25rem;
+        padding: 0;
+        border: 0;
+    }
+
+    .round-button {
+        width: 3.25rem;
+        height: 3.25rem;
+        padding: .85rem;
+        box-shadow: 0 0 0 3px $looks-transparent;
+    }
+
+    .effects {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex-wrap: nowrap;
+        gap: calc($space / 2);
+        padding: 0 0 .4rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scrollbar-color: $ui-black-transparent transparent;
+        scrollbar-width: thin;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .effect-button {
+        min-width: 3.75rem;
+        min-height: 3.25rem;
+        flex: 0 0 3.75rem;
+        justify-content: center;
+        padding: .25rem;
+        border-radius: 6px;
+    }
+
+    .effect-button img {
+        width: 1.35rem;
+        height: 1.35rem;
+        margin: 0;
+    }
+
+    .effect-button :global([class*="icon-button_title_"]) {
+        margin-top: .2rem;
+        line-height: 1.1;
+    }
+
+    .substantial-effect {
+        border: 1px solid $ui-black-transparent;
+        background: $ui-tertiary;
+    }
+
+    .info-row {
+        min-width: 0;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .2rem $space;
+        margin-top: calc($space / 2);
+        padding: .35rem .5rem;
+        border-radius: 6px;
+        background: $ui-tertiary;
+        font-size: .7rem;
+    }
+
+    .duration,
+    .advanced-info {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .advanced-info {
+        margin-inline-start: auto;
+    }
+
+    .alert {
+        margin-top: calc($space / 2);
+        padding: .4rem .5rem;
+        font-size: .7rem;
+    }
 }

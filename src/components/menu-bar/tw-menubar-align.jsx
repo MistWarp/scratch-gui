@@ -9,7 +9,12 @@ import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {MENUBAR_ALIGN, Theme} from '../../lib/themes/index.js';
-import {closeSettingsMenu, menubarAlignMenuOpen, openMenubarAlignMenu} from '../../reducers/menus.js';
+import {
+    closeMenubarAlignMenu,
+    closeSettingsMenu,
+    menubarAlignMenuOpen,
+    openMenubarAlignMenu
+} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
@@ -63,6 +68,7 @@ AlignMenuItem.propTypes = {
 const MenubarAlignMenu = ({
     isOpen,
     isRtl,
+    onBack,
     onChangeMenuBarAlign,
     onOpen: handleOpen,
     theme
@@ -90,6 +96,14 @@ const MenubarAlignMenu = ({
         <Submenu
             place={isRtl ? 'left' : 'right'}
             className={styles.submenu}
+            backLabel={(
+                <FormattedMessage
+                    defaultMessage="Back"
+                    description="Back button in a mobile submenu"
+                    id="gui.menu.back"
+                />
+            )}
+            onBack={onBack}
         >
             {MENUBAR_ALIGN_MENUS.map(menu => (
                 <AlignMenuItem
@@ -106,6 +120,7 @@ const MenubarAlignMenu = ({
 MenubarAlignMenu.propTypes = {
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
+    onBack: PropTypes.func,
     onChangeMenuBarAlign: PropTypes.func,
     onOpen: PropTypes.func,
     theme: PropTypes.instanceOf(Theme)
@@ -118,6 +133,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+    onBack: () => dispatch(closeMenubarAlignMenu()),
     onChangeMenuBarAlign: theme => {
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());

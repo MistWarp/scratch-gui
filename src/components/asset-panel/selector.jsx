@@ -13,6 +13,7 @@ import styles from './selector.css';
 const Selector = props => {
     const {
         buttons,
+        className,
         containerRef,
         dragType,
         isRtl,
@@ -45,13 +46,16 @@ const Selector = props => {
                     tooltipPlace={isRtl ? 'left' : 'right'}
                     onClick={onClick}
                 />
+                <span className={styles.newButtonLabel}>{title}</span>
             </Box>
         );
     }
 
     return (
         <Box
-            className={styles.wrapper}
+            className={classNames(styles.wrapper, className, {
+                [styles.soundWrapper]: dragType === DragConstants.SOUND
+            })}
             componentRef={containerRef}
         >
             <Box className={styles.listArea}>
@@ -96,6 +100,7 @@ Selector.propTypes = {
         img: PropTypes.string.isRequired,
         onClick: PropTypes.func
     })),
+    className: PropTypes.string,
     containerRef: PropTypes.func,
     dragType: PropTypes.oneOf(Object.keys(DragConstants)),
     draggingIndex: PropTypes.number,

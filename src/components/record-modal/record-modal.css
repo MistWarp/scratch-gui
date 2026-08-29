@@ -125,3 +125,24 @@ svg.record-button {
 [dir="rtl"] .rerecord-button img {
     transform: scaleX(-1);
 }
+
+@media only screen and (max-width: 480px) {
+    .body {
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .visualization-container {
+        min-height: 160px;
+    }
+
+    .meter-container,
+    .waveform-container {
+        height: 160px;
+    }
+
+    .main-button-row button,
+    .button-row button {
+        min-height: 44px;
+    }
+}

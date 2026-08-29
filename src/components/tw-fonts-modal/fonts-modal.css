@@ -266,3 +266,43 @@
     height: 100%;
     filter: $filter-icon-black;
 }
+
+@media only screen and (max-width: 480px) {
+    .body {
+        max-height: none;
+        padding: 1rem;
+    }
+
+    .open-buttons,
+    .manage-font,
+    .manage-font-confirm {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .font-input,
+    .font-playground {
+        font-size: 16px;
+    }
+
+    .fallback-list {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .fallback-button,
+    .button,
+    .manage-font-cancel,
+    .manage-font-delete,
+    .manage-font-button {
+        min-height: 44px;
+    }
+
+    .manage-font-buttons {
+        margin-left: 0;
+    }
+
+    .manage-font-button {
+        width: 44px;
+        height: 44px;
+    }
+}

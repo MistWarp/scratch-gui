@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Sound Editor Component matches snapshot 1`] = `
-<div>
+<div
+  onMouseDown={[MockFunction]}
+>
   <div>
     <div>
       <label>
@@ -21,6 +23,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       </label>
       <div>
         <button
+          aria-label="Undo"
           disabled={false}
           onClick={[MockFunction]}
           title="Undo"
@@ -55,6 +58,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           />
         </button>
         <button
+          aria-label="Redo"
           disabled={true}
           onClick={[MockFunction]}
           title="Redo"
@@ -92,7 +96,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
     </div>
     <div>
       <button
+        aria-label="Copy"
         className=""
+        onClick={[MockFunction]}
+        title="Copy"
         type="button"
       >
         <img
@@ -127,8 +134,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         </div>
       </button>
       <button
+        aria-label="Paste"
         className=""
-        disabled={false}
+        disabled={true}
+        onClick={[MockFunction]}
+        title="Paste"
         type="button"
       >
         <img
@@ -163,7 +173,10 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         </div>
       </button>
       <button
+        aria-label="Copy to New"
         className=""
+        onClick={[MockFunction]}
+        title="Copy to New"
         type="button"
       >
         <img
@@ -199,9 +212,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       </button>
     </div>
     <button
+      aria-label="Delete"
       className=""
       disabled={false}
       onClick={[MockFunction]}
+      title="Delete"
       type="button"
     >
       <img
@@ -236,7 +251,9 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       </div>
     </button>
   </div>
-  <div>
+  <div
+    className=""
+  >
     <div>
       <svg
         viewBox="0 0 600 160"
@@ -252,9 +269,11 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         </g>
       </svg>
       <div
+        aria-label="Waveform selection"
         className=""
         onMouseDown={[Function]}
         onTouchStart={[Function]}
+        role="group"
       >
         <div
           className=""
@@ -551,10 +570,15 @@ exports[`Sound Editor Component matches snapshot 1`] = `
         />
       </button>
     </div>
-    <div>
+    <div
+      aria-label="Sound effects"
+      role="group"
+    >
       <button
+        aria-label="Faster"
         className=""
         onClick={[MockFunction]}
+        title="Faster"
         type="button"
       >
         <img
@@ -585,14 +609,14 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Faster
-          </span>
+          Faster
         </div>
       </button>
       <button
+        aria-label="Slower"
         className=""
         onClick={[MockFunction]}
+        title="Slower"
         type="button"
       >
         <img
@@ -623,14 +647,53 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Slower
-          </span>
+          Slower
         </div>
       </button>
       <button
+        aria-label="Louder"
+        className=""
+        disabled={false}
+        onClick={[MockFunction]}
+        title="Louder"
+        type="button"
+      >
+        <img
+          draggable={false}
+          src="test-file-stub"
+          theme={
+            Theme {
+              "accent": "red",
+              "appearance": {},
+              "blocks": "three",
+              "fonts": {
+                "google": [],
+                "history": [],
+                "system": [],
+              },
+              "gui": "light",
+              "id": 4,
+              "menuBarAlign": "center",
+              "name": undefined,
+              "wallpaper": {
+                "darkness": 0,
+                "gridVisible": true,
+                "history": [],
+                "opacity": 0.3,
+                "url": "",
+              },
+            }
+          }
+        />
+        <div>
+          Louder
+        </div>
+      </button>
+      <button
+        aria-label="Softer"
         className=""
         onClick={[MockFunction]}
+        title="Softer"
         type="button"
       >
         <img
@@ -661,14 +724,14 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Louder
-          </span>
+          Softer
         </div>
       </button>
       <button
+        aria-label="Mute"
         className=""
         onClick={[MockFunction]}
+        title="Mute"
         type="button"
       >
         <img
@@ -699,125 +762,14 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Softer
-          </span>
+          Mute
         </div>
       </button>
       <button
-        className=""
-        type="button"
-      >
-        <img
-          draggable={false}
-          src="test-file-stub"
-          theme={
-            Theme {
-              "accent": "red",
-              "appearance": {},
-              "blocks": "three",
-              "fonts": {
-                "google": [],
-                "history": [],
-                "system": [],
-              },
-              "gui": "light",
-              "id": 4,
-              "menuBarAlign": "center",
-              "name": undefined,
-              "wallpaper": {
-                "darkness": 0,
-                "gridVisible": true,
-                "history": [],
-                "opacity": 0.3,
-                "url": "",
-              },
-            }
-          }
-        />
-        <div>
-          <span>
-            Mute
-          </span>
-        </div>
-      </button>
-      <button
-        className=""
-        type="button"
-      >
-        <img
-          draggable={false}
-          src="test-file-stub"
-          theme={
-            Theme {
-              "accent": "red",
-              "appearance": {},
-              "blocks": "three",
-              "fonts": {
-                "google": [],
-                "history": [],
-                "system": [],
-              },
-              "gui": "light",
-              "id": 4,
-              "menuBarAlign": "center",
-              "name": undefined,
-              "wallpaper": {
-                "darkness": 0,
-                "gridVisible": true,
-                "history": [],
-                "opacity": 0.3,
-                "url": "",
-              },
-            }
-          }
-        />
-        <div>
-          <span>
-            Fade in
-          </span>
-        </div>
-      </button>
-      <button
-        className=""
-        type="button"
-      >
-        <img
-          draggable={false}
-          src="test-file-stub"
-          theme={
-            Theme {
-              "accent": "red",
-              "appearance": {},
-              "blocks": "three",
-              "fonts": {
-                "google": [],
-                "history": [],
-                "system": [],
-              },
-              "gui": "light",
-              "id": 4,
-              "menuBarAlign": "center",
-              "name": undefined,
-              "wallpaper": {
-                "darkness": 0,
-                "gridVisible": true,
-                "history": [],
-                "opacity": 0.3,
-                "url": "",
-              },
-            }
-          }
-        />
-        <div>
-          <span>
-            Fade out
-          </span>
-        </div>
-      </button>
-      <button
+        aria-label="Fade in"
         className=""
         onClick={[MockFunction]}
+        title="Fade in"
         type="button"
       >
         <img
@@ -848,14 +800,14 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Reverse
-          </span>
+          Fade in
         </div>
       </button>
       <button
+        aria-label="Fade out"
         className=""
         onClick={[MockFunction]}
+        title="Fade out"
         type="button"
       >
         <img
@@ -886,14 +838,14 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Robot
-          </span>
+          Fade out
         </div>
       </button>
       <button
+        aria-label="Reverse"
         className=""
         onClick={[MockFunction]}
+        title="Reverse"
         type="button"
       >
         <img
@@ -924,9 +876,83 @@ exports[`Sound Editor Component matches snapshot 1`] = `
           }
         />
         <div>
-          <span>
-            Echo
-          </span>
+          Reverse
+        </div>
+      </button>
+      <button
+        aria-label="Robot"
+        className=""
+        onClick={[MockFunction]}
+        title="Robot"
+        type="button"
+      >
+        <img
+          draggable={false}
+          src="test-file-stub"
+          theme={
+            Theme {
+              "accent": "red",
+              "appearance": {},
+              "blocks": "three",
+              "fonts": {
+                "google": [],
+                "history": [],
+                "system": [],
+              },
+              "gui": "light",
+              "id": 4,
+              "menuBarAlign": "center",
+              "name": undefined,
+              "wallpaper": {
+                "darkness": 0,
+                "gridVisible": true,
+                "history": [],
+                "opacity": 0.3,
+                "url": "",
+              },
+            }
+          }
+        />
+        <div>
+          Robot
+        </div>
+      </button>
+      <button
+        aria-label="Echo"
+        className=""
+        onClick={[MockFunction]}
+        title="Echo"
+        type="button"
+      >
+        <img
+          draggable={false}
+          src="test-file-stub"
+          theme={
+            Theme {
+              "accent": "red",
+              "appearance": {},
+              "blocks": "three",
+              "fonts": {
+                "google": [],
+                "history": [],
+                "system": [],
+              },
+              "gui": "light",
+              "id": 4,
+              "menuBarAlign": "center",
+              "name": undefined,
+              "wallpaper": {
+                "darkness": 0,
+                "gridVisible": true,
+                "history": [],
+                "opacity": 0.3,
+                "url": "",
+              },
+            }
+          }
+        />
+        <div>
+          Echo
         </div>
       </button>
     </div>
@@ -936,11 +962,7 @@ exports[`Sound Editor Component matches snapshot 1`] = `
       00:00.30 / 00:00.60
     </div>
     <div>
-      Hz 
-      <span>
-        Mono
-      </span>
-       (10.51KB)
+      44.1 kHz · Mono · 10.51KB
     </div>
   </div>
 </div>

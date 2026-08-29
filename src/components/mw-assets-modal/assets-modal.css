@@ -419,3 +419,49 @@
 .preview-button:hover {
     background: $ui-black-transparent;
 }
+
+@media only screen and (max-width: 600px) {
+    .body {
+        padding: 0.75rem;
+    }
+
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+    .add-button,
+    .folder-button,
+    .dialog-cancel,
+    .dialog-confirm,
+    .dialog-delete,
+    .preview-button {
+        min-height: 44px;
+    }
+
+    .destination {
+        flex-basis: 100%;
+        order: 2;
+    }
+
+    .columns {
+        overflow-y: auto;
+        flex-direction: column;
+    }
+
+    .tree-column,
+    .preview {
+        flex: none;
+        min-height: 12rem;
+        overflow: visible;
+    }
+
+    .folder-row,
+    .file {
+        min-height: 40px;
+    }
+
+    .folder-toggle {
+        width: 40px;
+        min-height: 40px;
+    }
+}

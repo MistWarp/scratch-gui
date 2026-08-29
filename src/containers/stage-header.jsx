@@ -5,7 +5,7 @@ import VM from 'scratch-vm';
 import {STAGE_DISPLAY_SCALE_METADATA, STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
 import {setFullScreen} from '../reducers/mode';
-import {openSettingsModal} from '../reducers/modals';
+import {openSettingsModal, openVariableManagerModal} from '../reducers/modals';
 
 import {connect} from 'react-redux';
 
@@ -64,6 +64,7 @@ class StageHeader extends React.Component {
 }
 
 StageHeader.propTypes = {
+    hideFullscreenButton: PropTypes.bool,
     isFullScreen: PropTypes.bool.isRequired,
     // tw: update when dimensions or isWindowFullScreen changes
     isWindowFullScreen: PropTypes.bool.isRequired,
@@ -77,6 +78,7 @@ StageHeader.propTypes = {
     onSetStageFull: PropTypes.func.isRequired,
     onSetStageHidden: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
+    onOpenVariableManager: PropTypes.func.isRequired,
     // tw: replace showBranding
     isEmbedded: PropTypes.bool.isRequired,
     stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)).isRequired,
@@ -102,7 +104,8 @@ const mapDispatchToProps = dispatch => ({
     onSetStageHidden: () => dispatch(setStageSize(STAGE_SIZE_MODES.hidden)),
     onSetStageFullScreen: () => dispatch(setFullScreen(true)),
     onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
-    onOpenSettings: () => dispatch(openSettingsModal())
+    onOpenSettings: () => dispatch(openSettingsModal()),
+    onOpenVariableManager: () => dispatch(openVariableManagerModal())
 });
 
 export {

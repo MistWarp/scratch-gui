@@ -125,3 +125,40 @@
     opacity: 0.6;
     cursor: default;
 }
+
+@media only screen and (max-width: 480px) {
+    .body {
+        max-height: none;
+        padding: 1rem;
+    }
+
+    .extension-card {
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .drag-handle {
+        display: none;
+    }
+
+    .extension-actions {
+        gap: 0;
+    }
+
+    .reorder-button {
+        width: 44px;
+        height: 44px;
+    }
+
+    .multi-select-row {
+        position: sticky;
+        bottom: 0;
+        padding-top: 0.5rem;
+        background: $ui-white;
+    }
+
+    .multi-select-normal,
+    .multi-select-delete {
+        min-height: 44px;
+    }
+}

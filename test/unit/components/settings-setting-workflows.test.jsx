@@ -1,8 +1,10 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
+jest.mock('editor-msgs', () => ({'es-419': {}}));
+
 import {BooleanSetting, UnwrappedSetting} from '../../../src/components/tw-settings-modal/setting';
-import {CustomFPS} from '../../../src/components/tw-settings-modal/settings-content.jsx';
+import {CustomFPS} from '../../../src/components/tw-settings-modal/settings-modal.jsx';
 import {shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 
 describe('settings controls', () => {
@@ -48,7 +50,7 @@ describe('settings controls', () => {
         expect(label.props.children[1]).toBe('Show title');
     });
 
-    test('custom framerate help uses an operable button', () => {
+    test('custom framerate input exposes its purpose and numeric type', () => {
         const setting = shallow(
             <CustomFPS
                 framerate={30}
@@ -56,10 +58,10 @@ describe('settings controls', () => {
                 onCustomizeFramerate={jest.fn()}
             />
         );
-        const help = setting.prop('help');
-        const customButton = help.props.values.customFramerate;
+        const primary = shallow(setting.prop('primary'));
+        const customInput = primary.find('[aria-label="Custom framerate"]');
 
-        expect(customButton.type).toBe('button');
-        expect(customButton.props.type).toBe('button');
+        expect(customInput).toHaveLength(1);
+        expect(customInput.prop('type')).toBe('number');
     });
 });

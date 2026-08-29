@@ -60,9 +60,9 @@ const messages = defineMessages({
         id: 'gui.soundTab.recordSound'
     },
     addSound: {
-        defaultMessage: 'Choose a Sound',
-        description: 'Button to add a sound in the editor tab',
-        id: 'gui.soundTab.addSoundFromLibrary'
+        defaultMessage: 'Add sound',
+        description: 'Button to add a sound from the library in the editor tab',
+        id: 'gui.soundTab.addSound'
     }
 });
 
@@ -295,7 +295,7 @@ class SoundTab extends React.Component {
             {
                 url: isRtl ? soundIconRtl : soundIcon,
                 name: sound.name,
-                details: (sound.sampleCount / sound.rate).toFixed(2),
+                details: `${(sound.sampleCount / sound.rate).toFixed(2)}s`,
                 dragPayload: sound
             }
         )) : [];
