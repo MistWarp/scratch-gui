@@ -1,8 +1,13 @@
 import React from 'react';
 import {shallow} from 'enzyme';
-import PlaytimeLibrary from '../../src/community/components/PlaytimeLibrary.jsx';
+import PlaytimeLibrary, {lastPlayed} from '../../src/community/components/PlaytimeLibrary.jsx';
 
 describe('Playtime library', () => {
+    test('does not format missing or zero last-played dates', () => {
+        expect(lastPlayed(0)).toBe('');
+        expect(lastPlayed(undefined)).toBe('');
+    });
+
     test('shows games in ranked order with their playtime', () => {
         const wrapper = shallow(<PlaytimeLibrary
             projects={[

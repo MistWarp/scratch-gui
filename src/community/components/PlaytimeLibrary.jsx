@@ -9,7 +9,9 @@ import Button from './ui/Button.jsx';
 import styles from './PlaytimeLibrary.module.css';
 
 const lastPlayed = value => {
-    const relative = timeAgo(value);
+    const timestamp = Number(value);
+    if (!(timestamp > 0)) return '';
+    const relative = timeAgo(timestamp);
     return relative === 'just now' ? 'Played just now' : `Played ${relative} ago`;
 };
 
@@ -66,7 +68,7 @@ const PlaytimeLibrary = ({
                         </span>
                         <span className={styles.playtime}>
                             <strong><Clock3 size={15} /> {formatPlaytime(project.duration, false)}</strong>
-                            <small>{lastPlayed(project.lastPlayed)}</small>
+                            {lastPlayed(project.lastPlayed) ? <small>{lastPlayed(project.lastPlayed)}</small> : null}
                         </span>
                     </Link>
                 ))}
