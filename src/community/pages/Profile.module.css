@@ -4,6 +4,19 @@
     padding: 28px 22px 88px;
 }
 
+.profileCardThemed {
+    background: var(--profile-card-background, var(--bg-card));
+    border: 1px solid var(--border-soft);
+}
+
+.profileCardThemed .profileBody {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--profile-card-background, var(--bg-card)) 82%, transparent) 72px
+    );
+}
+
 .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 310px;
