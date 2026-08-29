@@ -137,7 +137,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice', 'private');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE);
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, 3);
         expect(collaborationState().roomId).toBe('test-room');
         expect(collaborationState().roomPrivacy).toBe('private');
         // the host is connected straight away
@@ -150,7 +150,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE);
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE, 3);
         expect(collaborationState().roomPrivacy).toBe('public');
     });
 

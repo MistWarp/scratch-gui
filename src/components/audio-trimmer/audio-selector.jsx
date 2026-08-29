@@ -8,8 +8,10 @@ import Playhead from './playhead.jsx';
 
 const AudioSelector = props => (
     <div
+        aria-label="Waveform selection"
         className={classNames(styles.absolute, styles.selector)}
         ref={props.containerRef}
+        role="group"
         onMouseDown={props.onNewSelectionMouseDown}
         onTouchStart={props.onNewSelectionMouseDown}
     >

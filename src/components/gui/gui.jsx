@@ -24,6 +24,7 @@ import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
+import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -34,6 +35,7 @@ import {Theme} from '../../lib/themes';
 
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
+import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
 import {setStageSize} from '../../reducers/stage-size';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
@@ -51,6 +53,16 @@ const messages = defineMessages({
         id: 'gui.gui.findBlocks',
         description: 'Button in the block palette that opens block search',
         defaultMessage: 'Find Blocks'
+    },
+    sprites: {
+        id: 'gui.gui.sprites',
+        description: 'Sprite workspace tab in a narrow editor layout',
+        defaultMessage: 'Sprites'
+    },
+    stage: {
+        id: 'gui.gui.stage',
+        description: 'Stage workspace tab in a narrow editor layout',
+        defaultMessage: 'Stage'
     }
 });
 
@@ -59,7 +71,9 @@ import {
     PaintbrushVertical as CostumesIcon,
     Volume2 as SoundsIcon,
     PackagePlus as ExtensionIcon,
-    Search
+    Search,
+    Images as SpritesIcon,
+    Monitor as StageIcon
 } from 'lucide-react';
 
 const getFullscreenBackgroundColor = () => {
@@ -131,6 +145,7 @@ const GUIComponent = props => {
         MWAssetsModal,
         MWProjectMetadataModal,
         TWDebugger,
+        TWVariableManager,
         TWUnknownPlatformModal,
         TWGitModal,
         MWExtensionManagerModal,
@@ -188,6 +203,7 @@ const GUIComponent = props => {
     }, []);
 
     const editorWrapperRef = useRef(null);
+    const mobileStagePaneRef = useRef(null);
     const stageAndTargetWrapperRef = useRef(null);
     const stageResizeRafRef = useRef(null);
     const measureRafRef = useRef(null);
@@ -198,6 +214,8 @@ const GUIComponent = props => {
     const [stagePanelWidth, setStagePanelWidth] = useState(null);
     const [stageContainerWidth, setStageContainerWidth] = useState(null);
     const [isNarrowLayout, setIsNarrowLayout] = useState(false);
+    const [mobileEditorView, setMobileEditorView] = useState('editor');
+    const [mobileStageContainerWidth, setMobileStageContainerWidth] = useState(null);
     const [playerStageWidth, setPlayerStageWidth] = useState(null);
 
     const isStageHidden = props.stageSizeMode === STAGE_SIZE_MODES.hidden && !props.isFullScreen;
@@ -209,6 +227,59 @@ const GUIComponent = props => {
         const findBar = getFindBarApi();
         if (findBar) findBar.expand();
     }, []);
+
+    const handleMobileCodeTab = useCallback(() => {
+        props.onActivateTab(BLOCKS_TAB_INDEX);
+        setMobileEditorView('editor');
+    }, [props.onActivateTab]);
+
+    const handleMobileCostumesTab = useCallback(() => {
+        props.onActivateTab(COSTUMES_TAB_INDEX);
+        setMobileEditorView('editor');
+    }, [props.onActivateTab]);
+
+    const handleMobileSoundsTab = useCallback(() => {
+        props.onActivateTab(SOUNDS_TAB_INDEX);
+        setMobileEditorView('editor');
+    }, [props.onActivateTab]);
+
+    const handleMobileSpritesTab = useCallback(() => {
+        setMobileEditorView('sprites');
+    }, []);
+
+    const handleMobileStageTab = useCallback(() => {
+        setMobileEditorView('stage');
+    }, []);
+
+    useEffect(() => {
+        if (!isNarrowLayout || !isStageHidden) {
+            setMobileEditorView('editor');
+        }
+    }, [isNarrowLayout, isStageHidden]);
+
+    useEffect(() => {
+        if (mobileEditorView !== 'stage') {
+            setMobileStageContainerWidth(null);
+            return;
+        }
+        const element = mobileStagePaneRef.current;
+        if (!element) return;
+        const fitStage = () => {
+            const style = window.getComputedStyle(element);
+            const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) +
+                (Number.parseFloat(style.paddingRight) || 0);
+            const availableWidth = Math.max(0, element.clientWidth - horizontalPadding);
+            setMobileStageContainerWidth(Math.min(FIXED_WIDTH + 2, availableWidth));
+        };
+        fitStage();
+        if (typeof ResizeObserver === 'undefined') {
+            window.addEventListener('resize', fitStage);
+            return () => window.removeEventListener('resize', fitStage);
+        }
+        const observer = new ResizeObserver(fitStage);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [mobileEditorView]);
 
     const handleStagePanelResizeDoubleClick = useCallback(() => {
         preferredPanelWidthRef.current = null;
@@ -715,6 +786,7 @@ const GUIComponent = props => {
         dispatch,
         ...componentProps
     } = props;
+    const editorTabLabels = useMemo(() => getEditorTabLabels(intl, targetIsStage), [intl, targetIsStage]);
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
@@ -758,6 +830,7 @@ const GUIComponent = props => {
             <React.Suspense fallback={null}>
                 {!isPlayerOnly && <TWRestorePointManager />}
                 {!isPlayerOnly && <MWExtensionManagerModal />}
+                {!isPlayerOnly && <TWVariableManager />}
                 {!isPlayerOnly && <MWHelpModal />}
                 {!isPlayerOnly && <MWProjectThemeModal />}
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
@@ -999,48 +1072,153 @@ const GUIComponent = props => {
                                     locale={locale}
                                     vm={vm}
                                 />
+                                {isNarrowLayout && isStageHidden ? (
+                                    <Box
+                                        className={styles.mobileEditorNav}
+                                        role="tablist"
+                                        aria-label="Editor views"
+                                    >
+                                        <button
+                                            type="button"
+                                            className={classNames(styles.mobileEditorNavButton, {
+                                                [styles.mobileEditorNavButtonSelected]:
+                                                    mobileEditorView === 'editor' &&
+                                                    activeTabIndex === BLOCKS_TAB_INDEX
+                                            })}
+                                            role="tab"
+                                            aria-label={editorTabLabels.code}
+                                            title={editorTabLabels.code}
+                                            aria-selected={
+                                                mobileEditorView === 'editor' &&
+                                                activeTabIndex === BLOCKS_TAB_INDEX
+                                            }
+                                            onClick={handleMobileCodeTab}
+                                        >
+                                            <BlocksIcon size={19} />
+                                            <span className={styles.mobileEditorNavLabel}>
+                                                <FormattedMessage {...editorTabMessages.code} />
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={classNames(styles.mobileEditorNavButton, {
+                                                [styles.mobileEditorNavButtonSelected]:
+                                                    mobileEditorView === 'editor' &&
+                                                    activeTabIndex === COSTUMES_TAB_INDEX
+                                            })}
+                                            role="tab"
+                                            aria-label={editorTabLabels.costumes}
+                                            title={editorTabLabels.costumes}
+                                            aria-selected={
+                                                mobileEditorView === 'editor' &&
+                                                activeTabIndex === COSTUMES_TAB_INDEX
+                                            }
+                                            onClick={handleMobileCostumesTab}
+                                        >
+                                            <CostumesIcon size={19} />
+                                            <span className={styles.mobileEditorNavLabel}>
+                                                <FormattedMessage
+                                                    {...(targetIsStage ?
+                                                        editorTabMessages.backdrops : editorTabMessages.costumes)}
+                                                />
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={classNames(styles.mobileEditorNavButton, {
+                                                [styles.mobileEditorNavButtonSelected]:
+                                                    mobileEditorView === 'editor' &&
+                                                    activeTabIndex === SOUNDS_TAB_INDEX
+                                            })}
+                                            role="tab"
+                                            aria-label={editorTabLabels.sounds}
+                                            title={editorTabLabels.sounds}
+                                            aria-selected={
+                                                mobileEditorView === 'editor' &&
+                                                activeTabIndex === SOUNDS_TAB_INDEX
+                                            }
+                                            onClick={handleMobileSoundsTab}
+                                        >
+                                            <SoundsIcon size={19} />
+                                            <span className={styles.mobileEditorNavLabel}>
+                                                <FormattedMessage {...editorTabMessages.sounds} />
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={classNames(styles.mobileEditorNavButton, {
+                                                [styles.mobileEditorNavButtonSelected]: mobileEditorView === 'sprites'
+                                            })}
+                                            role="tab"
+                                            aria-label={intl.formatMessage(messages.sprites)}
+                                            title={intl.formatMessage(messages.sprites)}
+                                            aria-selected={mobileEditorView === 'sprites'}
+                                            onClick={handleMobileSpritesTab}
+                                        >
+                                            <SpritesIcon size={19} />
+                                            <span className={styles.mobileEditorNavLabel}>
+                                                <FormattedMessage {...messages.sprites} />
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={classNames(styles.mobileEditorNavButton, {
+                                                [styles.mobileEditorNavButtonSelected]: mobileEditorView === 'stage'
+                                            })}
+                                            role="tab"
+                                            aria-label={intl.formatMessage(messages.stage)}
+                                            title={intl.formatMessage(messages.stage)}
+                                            aria-selected={mobileEditorView === 'stage'}
+                                            onClick={handleMobileStageTab}
+                                        >
+                                            <StageIcon size={19} />
+                                            <span className={styles.mobileEditorNavLabel}>
+                                                <FormattedMessage {...messages.stage} />
+                                            </span>
+                                        </button>
+                                    </Box>
+                                ) : null}
                                 <Tabs
                                     forceRenderTabPanel
-                                    className={tabClassNames.tabs}
+                                    className={classNames(tabClassNames.tabs, {
+                                        [styles.mobileEditorContentHidden]:
+                                            isNarrowLayout && isStageHidden && mobileEditorView !== 'editor'
+                                    })}
                                     selectedIndex={activeTabIndex}
                                     selectedTabClassName={tabClassNames.tabSelected}
                                     selectedTabPanelClassName={tabClassNames.tabPanelSelected}
                                     onSelect={onActivateTab}
                                 >
-                                    <TabList className={tabClassNames.tabList}>
-                                        <Tab className={tabClassNames.tab}>
+                                    <TabList
+                                        className={classNames(tabClassNames.tabList, {
+                                            [styles.mobileEditorDesktopTabsHidden]: isNarrowLayout && isStageHidden
+                                        })}
+                                    >
+                                        <Tab
+                                            aria-label={editorTabLabels.code}
+                                            className={tabClassNames.tab}
+                                        >
                                             <BlocksIcon size={20} />
-                                            <FormattedMessage
-                                                defaultMessage="Code"
-                                                description="Button to get to the code panel"
-                                                id="gui.gui.codeTab"
-                                            />
+                                            <FormattedMessage {...editorTabMessages.code} />
                                             <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
                                         </Tab>
-                                        <Tab className={tabClassNames.tab}>
+                                        <Tab
+                                            aria-label={editorTabLabels.costumes}
+                                            className={tabClassNames.tab}
+                                        >
                                             <CostumesIcon size={20} />
-                                            {targetIsStage ? (
-                                                <FormattedMessage
-                                                    defaultMessage="Backdrops"
-                                                    description="Button to get to the backdrops panel"
-                                                    id="gui.gui.backdropsTab"
-                                                />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Costumes"
-                                                    description="Button to get to the costumes panel"
-                                                    id="gui.gui.costumesTab"
-                                                />
-                                            )}
+                                            <FormattedMessage
+                                                {...(targetIsStage ?
+                                                    editorTabMessages.backdrops : editorTabMessages.costumes)}
+                                            />
                                             <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
                                         </Tab>
-                                        <Tab className={tabClassNames.tab}>
+                                        <Tab
+                                            aria-label={editorTabLabels.sounds}
+                                            className={tabClassNames.tab}
+                                        >
                                             <SoundsIcon size={20} />
-                                            <FormattedMessage
-                                                defaultMessage="Sounds"
-                                                description="Button to get to the sounds panel"
-                                                id="gui.gui.soundsTab"
-                                            />
+                                            <FormattedMessage {...editorTabMessages.sounds} />
                                             <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
                                         </Tab>
                                     </TabList>
@@ -1113,47 +1291,81 @@ const GUIComponent = props => {
                                         {soundsTabVisible ? <SoundTab vm={vm} /> : null}
                                     </TabPanel>
                                 </Tabs>
-                                {backpackVisible && !fractchMode ? (
-                                    <Backpack host={backpackHost} />
-                                ) : null}
-                            </Box>
-
-                            <Box
-                                className={styles.stagePaneResizer}
-                                onPointerDown={handleStagePanelResizePointerDown}
-                                onDoubleClick={handleStagePanelResizeDoubleClick}
-                                role="separator"
-                                aria-orientation="vertical"
-                                tabIndex={-1}
-                            />
-
-                            <Box
-                                className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
-                                    [styles.stageHidden]: isStageHidden
-                                })}
-                                ref={stageAndTargetWrapperRef}
-                                style={stagePanelStyle}
-                            >
-                                <StageWrapper
-                                    isFullScreen={isFullScreen}
-                                    isRendererSupported={isRendererSupported()}
-                                    isRtl={isRtl}
-                                    isStageHidden={isStageHidden}
-                                    stageSize={stageSize}
-                                    stageContainerWidth={
-                                        typeof stageContainerWidth === 'number' ? stageContainerWidth : null
-                                    }
-                                    vm={vm}
-                                />
-                                {isStageHidden ? null : (
-                                    <Box className={styles.targetWrapper}>
+                                {isNarrowLayout && isStageHidden && mobileEditorView === 'sprites' ? (
+                                    <Box className={styles.mobileEditorPane}>
                                         <TargetPane
                                             stageSize={stageSize}
                                             vm={vm}
                                         />
                                     </Box>
+                                ) : null}
+                                {isNarrowLayout && isStageHidden && mobileEditorView === 'stage' ? (
+                                    <Box
+                                        className={classNames(styles.mobileEditorPane, styles.mobileStagePane)}
+                                        ref={mobileStagePaneRef}
+                                    >
+                                        <Box className={styles.mobileStageDisplay}>
+                                            <StageWrapper
+                                                hideFullscreenButton
+                                                isFullScreen={isFullScreen}
+                                                isRendererSupported={isRendererSupported()}
+                                                isRtl={isRtl}
+                                                isStageHidden={false}
+                                                stageSize={STAGE_SIZE_MODES.full}
+                                                stageContainerWidth={mobileStageContainerWidth}
+                                                vm={vm}
+                                            />
+                                        </Box>
+                                        <MobileStageControls vm={vm} />
+                                    </Box>
+                                ) : null}
+                                {backpackVisible && !fractchMode && (
+                                    !isNarrowLayout || !isStageHidden || mobileEditorView === 'editor'
+                                ) && !(isNarrowLayout && isStageHidden &&
+                                    activeTabIndex === COSTUMES_TAB_INDEX) && (
+                                    <Backpack host={backpackHost} />
                                 )}
                             </Box>
+
+                            {isNarrowLayout && isStageHidden ? null : (
+                                <React.Fragment>
+                                    <Box
+                                        className={styles.stagePaneResizer}
+                                        onPointerDown={handleStagePanelResizePointerDown}
+                                        onDoubleClick={handleStagePanelResizeDoubleClick}
+                                        role="separator"
+                                        aria-orientation="vertical"
+                                        tabIndex={-1}
+                                    />
+                                    <Box
+                                        className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
+                                            [styles.stageHidden]: isStageHidden
+                                        })}
+                                        ref={stageAndTargetWrapperRef}
+                                        style={stagePanelStyle}
+                                    >
+                                        <StageWrapper
+                                            isFullScreen={isFullScreen}
+                                            isRendererSupported={isRendererSupported()}
+                                            isRtl={isRtl}
+                                            isStageHidden={isStageHidden}
+                                            stageSize={stageSize}
+                                            stageContainerWidth={
+                                                typeof stageContainerWidth === 'number' ? stageContainerWidth : null
+                                            }
+                                            vm={vm}
+                                        />
+                                        {isStageHidden ? null : (
+                                            <Box className={styles.targetWrapper}>
+                                                <TargetPane
+                                                    stageSize={stageSize}
+                                                    vm={vm}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </React.Fragment>
+                            )}
                         </Box>
                     </Box>
                     <React.Suspense fallback={null}>

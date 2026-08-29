@@ -47,7 +47,7 @@ const SpaceCard = ({space, to, onClick}) => {
                 {space.kind !== 'library' ? (
                     <span>{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</span>
                 ) : null}
-                {space.kind === 'studio' && Number.isFinite(space.totalPlaytimeMs) ? (
+                {space.kind !== 'challenge' && Number.isFinite(space.totalPlaytimeMs) ? (
                     <span className={styles.playtime}>
                         <Clock3 size={12} /> {formatPlaytime(space.totalPlaytimeMs)}
                     </span>

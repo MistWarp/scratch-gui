@@ -62,7 +62,8 @@ const css = `
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
     max-width: none !important;
     max-height: none !important;
     min-width: 0 !important;
@@ -80,6 +81,15 @@ const css = `
   .addon-window-header {
     cursor: default !important;
     touch-action: auto !important;
+    min-height: calc(48px + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
+    padding-right: max(8px, env(safe-area-inset-right)) !important;
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+  }
+
+  .addon-window-btn {
+    width: 44px !important;
+    height: 44px !important;
   }
 
   .addon-window-btn-maximize,
@@ -88,7 +98,11 @@ const css = `
   }
 
   .addon-window-content {
+    min-width: 0;
+    width: 100%;
+    border-radius: 0 !important;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
 }
 `;
@@ -211,6 +225,7 @@ class AddonWindow {
         this.resizePointerId = null;
         this.resizeHandle = null;
         this.savedState = null; // For maximize/restore
+        this.viewportResizeHandler = () => this.fitToViewport();
         
         this.createWindow();
         activeWindows.set(this.id, this);
@@ -339,6 +354,8 @@ class AddonWindow {
         
         // Add to DOM
         document.body.appendChild(this.element);
+        this.fitToViewport();
+        window.addEventListener('resize', this.viewportResizeHandler);
 
         this.escapeHandler = e => {
             if (e.key !== 'Escape' || !this.closable || !this.isVisible) return;
@@ -743,9 +760,38 @@ class AddonWindow {
         this.zIndex = isOnTopTier ? ++nextOnTopZIndex : ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
     }
+
+    fitToViewport () {
+        if (!this.element || this.isMaximized || window.innerWidth <= 900) return this;
+
+        const margin = 16;
+        const availableWidth = Math.max(0, window.innerWidth - (margin * 2));
+        const availableHeight = Math.max(0, window.innerHeight - (margin * 2));
+        const nextWidth = Math.min(this.width, availableWidth);
+        const nextHeight = Math.min(this.height, availableHeight);
+        const nextX = Math.max(margin, Math.min(this.x, window.innerWidth - nextWidth - margin));
+        const nextY = Math.max(margin, Math.min(this.y, window.innerHeight - nextHeight - margin));
+        const sizeChanged = nextWidth !== this.width || nextHeight !== this.height;
+
+        this.width = nextWidth;
+        this.height = nextHeight;
+        this.x = nextX;
+        this.y = nextY;
+        this.minWidth = Math.min(this.minWidth, availableWidth);
+        this.minHeight = Math.min(this.minHeight, availableHeight);
+
+        this.element.style.width = `${this.width}px`;
+        this.element.style.height = `${this.height}px`;
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+
+        if (sizeChanged) this.onResize(this.width, this.height);
+        return this;
+    }
     
     show () {
         activeWindows.set(this.id, this);
+        this.fitToViewport();
         // Callers re-show on every render, so only raise when actually becoming visible.
         // Explicit focus still goes through pointerdown, focus() and the drag/resize handlers.
         const wasVisible = this.isVisible;
@@ -765,6 +811,7 @@ class AddonWindow {
     
     destroy (callOnClose = true) {
         this.hide();
+        window.removeEventListener('resize', this.viewportResizeHandler);
         if (this.escapeHandler) {
             document.removeEventListener('keydown', this.escapeHandler);
             this.escapeHandler = null;

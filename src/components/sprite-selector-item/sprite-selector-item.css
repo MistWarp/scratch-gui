@@ -144,6 +144,30 @@
     z-index: 2;
 }
 
+@media only screen and (max-width: 600px) {
+    .sprite-image {
+        max-width: 38px;
+        max-height: 32px;
+    }
+
+    .sprite-info {
+        padding: 0.2rem 0.25rem;
+        font-size: 0.7rem;
+        line-height: 1.15;
+    }
+
+    .sprite-details {
+        margin-top: 0.1rem;
+        font-size: 0.625rem;
+    }
+
+    .number {
+        top: .25rem;
+        left: .3rem;
+        font-size: .7rem;
+    }
+}
+
 [dir="ltr"] .number {
     left: 0.15rem;
 }

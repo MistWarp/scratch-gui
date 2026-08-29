@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
-import {FormattedMessage} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import classNames from 'classnames';
-import {AlignLeft, AlignCenter, AlignRight, GripVertical} from 'lucide-react';
+import {AlignLeft, AlignCenter, AlignRight, ChevronDown, ChevronUp, GripVertical} from 'lucide-react';
 
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings-modal.css';
@@ -14,31 +14,23 @@ import {
     getZoneDisplayOrder,
     getZoneExtras,
     setZoneOrder,
+    moveMenuItem,
     getHidden,
     setHidden,
     getPresentOrderedIds,
     getMenuBarLayout
 } from '../../lib/mw-menu-bar-layout';
+import {getMenuBarItemLabel} from './menu-bar-layout-labels.js';
 import {Theme} from '../../lib/themes/index.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {onSettingsChanged} from '../../lib/menu-bar/settings.js';
 
-const LABELS = {
-    'file': 'File',
-    'view': 'Settings',
-    'bookmarks': 'Bookmarks',
-    'edit': 'Edit',
-    'tools': 'Tools',
-    'mode': 'Mode',
-    'block-count': 'Block Count',
-    'media-recorder': 'Video Recorder',
-    'save-status': 'Save Status',
-    'about': 'About',
-    'project-title': 'Project Title',
-    'community': 'View Project Page',
-    'rotur-account': 'Rotur Profile'
-};
+const messages = defineMessages({
+    moveUp: {defaultMessage: 'Move {item} up', id: 'mw.settings.menuBar.moveUp'},
+    moveDown: {defaultMessage: 'Move {item} down', id: 'mw.settings.menuBar.moveDown'},
+    showItem: {defaultMessage: 'Show {item}', id: 'mw.settings.menuBar.showItem'}
+});
 
 const SECTIONS = [
     {label: 'Menus', zones: ['left']},
@@ -162,9 +154,19 @@ class MenuBarLayoutSetting extends React.Component {
             this.props.onChangeTheme(this.props.theme.set('menuBarAlign', id));
         };
     }
+    handleMove (zoneId, id, direction) {
+        return () => {
+            const order = moveMenuItem(this.state.orders[zoneId], id, direction);
+            setZoneOrder(zoneId, order);
+            this.setState(prev => ({orders: {...prev.orders, [zoneId]: order}}), this.persistAppearance);
+        };
+    }
     renderRow (zoneId, id, draggable) {
         const visible = !this.state.hidden.includes(id);
         const canHide = !ALWAYS_SHOW.includes(id);
+        const label = getMenuBarItemLabel(this.props.intl, id);
+        const order = draggable ? this.state.orders[zoneId] : [];
+        const index = order.indexOf(id);
         return (
             <div
                 key={id}
@@ -181,8 +183,31 @@ class MenuBarLayoutSetting extends React.Component {
                         size={16}
                     />
                 )}
-                <span className={styles.menuBarRowLabel}>{LABELS[id] || id}</span>
+                <span className={styles.menuBarRowLabel}>{label}</span>
+                {draggable && (
+                    <span className={styles.menuBarMoveButtons}>
+                        <button
+                            aria-label={this.props.intl.formatMessage(messages.moveUp, {item: label})}
+                            className={styles.menuBarMoveButton}
+                            disabled={index <= 0}
+                            type="button"
+                            onClick={this.handleMove(zoneId, id, -1)}
+                        >
+                            <ChevronUp size={16} />
+                        </button>
+                        <button
+                            aria-label={this.props.intl.formatMessage(messages.moveDown, {item: label})}
+                            className={styles.menuBarMoveButton}
+                            disabled={index < 0 || index >= order.length - 1}
+                            type="button"
+                            onClick={this.handleMove(zoneId, id, 1)}
+                        >
+                            <ChevronDown size={16} />
+                        </button>
+                    </span>
+                )}
                 <FancyCheckbox
+                    aria-label={this.props.intl.formatMessage(messages.showItem, {item: label})}
                     className={styles.checkbox}
                     checked={canHide ? visible : true}
                     disabled={!canHide}
@@ -266,6 +291,7 @@ class MenuBarLayoutSetting extends React.Component {
 }
 
 MenuBarLayoutSetting.propTypes = {
+    intl: intlShape,
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func
 };
@@ -281,7 +307,7 @@ const mapDispatchToProps = dispatch => ({
     }
 });
 
-export default connect(
+export default injectIntl(connect(
     mapStateToProps,
     mapDispatchToProps
-)(MenuBarLayoutSetting);
+)(MenuBarLayoutSetting));

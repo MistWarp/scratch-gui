@@ -13,6 +13,7 @@ import {useCommunityIntl} from './i18n.jsx';
 const Explore = lazy(() => import('./pages/Explore.jsx'));
 const Project = lazy(() => import('./pages/Project.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
+const UserLibrary = lazy(() => import('./pages/UserLibrary.jsx'));
 const Followers = lazy(() => import('./pages/Followers.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const MyStuff = lazy(() => import('./pages/MyStuff.jsx'));
@@ -90,6 +91,7 @@ const App = () => {
                     <Route path="/p/:slug" element={<VanityProject />} />
                     <Route path="/project/:id" element={<Project />} />
                     <Route path="/users/:name" element={<Profile />} />
+                    <Route path="/users/:name/library" element={<UserLibrary />} />
                     <Route path="/users/:name/followers" element={<Followers />} />
                     <Route path="/users/:name/following" element={<Followers mode="following" />} />
                     <Route path="/settings" element={<Settings />} />

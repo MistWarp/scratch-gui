@@ -65,7 +65,12 @@ const SpriteSelectorItem = props => {
                     </div>
                 ) : null}
                 <div className={styles.spriteInfo}>
-                    <div className={styles.spriteName}>{props.name}</div>
+                    <div
+                        className={styles.spriteName}
+                        title={typeof props.name === 'string' ? props.name : null}
+                    >
+                        {props.name}
+                    </div>
                     {props.details ? (
                         <div className={styles.spriteDetails}>{props.details}</div>
                     ) : null}

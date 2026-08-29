@@ -22,6 +22,58 @@
     }
 }
 
+.theme-settings-page {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.6rem 0.75rem;
+    overflow-x: auto;
+    border-bottom: 1px solid $ui-black-transparent;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+
+.settings-tab {
+    min-height: 38px;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.settings-tab:hover {
+    background: $ui-tertiary;
+}
+
+.settings-tab:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.settings-tab-selected {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+    background: $looks-transparent;
+    color: $looks-secondary;
+}
+
+.theme-settings-panel {
+    min-height: 0;
+    overflow: auto;
+    flex: 1;
+}
+
 .modalContent {
     height: 100%;
 }
@@ -221,6 +273,38 @@
     font-size: 0.8125rem;
     font-weight: bold;
     margin: 0.75rem 0 0.25rem;
+}
+
+.menu-bar-move-buttons {
+    display: inline-flex;
+    gap: 0.15rem;
+}
+
+.menu-bar-move-button {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+    place-items: center;
+}
+
+.menu-bar-move-button:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.menu-bar-move-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.menu-bar-move-button:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .align-selector {
@@ -1141,7 +1225,7 @@
     display: none;
 }
 
-@media only screen and (max-width: 900px) {
+@media only screen and (max-width: 720px) {
     .mobile-back-button {
         display: flex;
         align-items: center;
@@ -1157,5 +1241,37 @@
         font-weight: bold;
         text-align: left;
         cursor: pointer;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .body,
+    .page-content {
+        padding: 1rem;
+    }
+
+    .settings-tabs {
+        padding-inline: 0.5rem;
+        scroll-snap-type: x proximity;
+    }
+
+    .settings-tab {
+        scroll-snap-align: start;
+    }
+
+    .text-input,
+    .number-input,
+    .select,
+    .custom-stage-size-input {
+        font-size: 16px;
+    }
+
+    .custom-stage-size {
+        height: auto;
+        flex-wrap: wrap;
+    }
+
+    .menu-bar-row {
+        min-height: 48px;
     }
 }

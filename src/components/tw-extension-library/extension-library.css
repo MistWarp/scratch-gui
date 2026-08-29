@@ -39,6 +39,7 @@
 
 .search {
     flex-grow: 1;
+    min-width: 0;
     border: none;
     outline: none;
     background: transparent;
@@ -184,4 +185,40 @@
 .card-info a {
     color: inherit;
     text-decoration: underline;
+}
+
+@media only screen and (max-width: 720px) {
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+    }
+
+    .search-row {
+        margin: 0.75rem;
+        padding: 0.7rem 0.75rem;
+    }
+
+    .search {
+        font-size: 16px;
+    }
+
+    .scroll {
+        padding: 0 0.75rem 0.75rem;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+        gap: 0.75rem;
+    }
+
+    .section + .section {
+        margin-top: 1.25rem;
+    }
+
+    .card:hover {
+        box-shadow: none;
+        transform: none;
+    }
 }

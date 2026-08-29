@@ -29,7 +29,9 @@ exports[`SpriteSelectorItemComponent matches snapshot when given a number and de
       </div>
     </div>
     <div>
-      <div>
+      <div
+        title="Pony sprite"
+      >
         Pony sprite
       </div>
       <div>
@@ -112,7 +114,9 @@ exports[`SpriteSelectorItemComponent matches snapshot when selected 1`] = `
       </div>
     </div>
     <div>
-      <div>
+      <div
+        title="Pony sprite"
+      >
         Pony sprite
       </div>
     </div>

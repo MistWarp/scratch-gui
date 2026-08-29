@@ -1,10 +1,45 @@
-scratch-gui modified for use in [MistWarp](https://warp.mistium.com/)
+# MistWarp editor
 
-## Setup
+This repository contains the browser editor used by [MistWarp](https://warp.mistium.com/). It is based on Scratch GUI and TurboWarp, with MistWarp's community, collaboration, project settings, and developer tools built in.
 
-See https://docs.turbowarp.org/development/getting-started to setup the complete TurboWarp environment.
+## Requirements
 
-If you just want to play with the GUI then it's the same process as upstream scratch-gui.
+- Node.js 20
+- pnpm 10.28.2, pinned in `package.json`
+- The sibling `scratch-vm`, `scratch-blocks`, `scratch-render`, and `scratch-paint` repositories when changing linked editor packages
+
+## Run the editor
+
+```sh
+pnpm install --frozen-lockfile
+pnpm start
+```
+
+Open <http://localhost:8601/editor.html>. The development server rebuilds changed files automatically.
+
+Run `pnpm run link` after installing when you need the sibling MistWarp packages. `pnpm run reinstall` refreshes dependencies without deleting the lockfile.
+
+## Checks
+
+```sh
+pnpm run test:unit:ci
+pnpm run test:smoke
+pnpm run build
+```
+
+Use `pnpm run test:unit:watch` while working on unit-tested behavior. Use `pnpm run test:unit:addons` for the smaller addon settings suite.
+
+The unit command covers every file under `test/unit`. Pull requests run the full unit suite and a production build.
+
+## Where editor code lives
+
+- `src/components/gui` owns the main editor layout and responsive behavior.
+- `src/components/tw-settings-modal` owns Settings pages and their navigation.
+- `src/components/menu-bar` and `src/lib/mw-menu-bar-layout.js` own menu-bar rendering and saved layout.
+- `src/containers` connects presentational components to the VM and Redux.
+- `test/unit` tests component and library behavior. `test/integration` contains browser workflows against a built editor.
+
+Keep settings destinations broad. Put related controls in tabs inside a page instead of adding another sidebar item.
 
 ## License
 

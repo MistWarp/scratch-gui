@@ -67,6 +67,10 @@ class MediaRecorderButton extends React.Component {
         this.unmounted = false;
     }
 
+    componentDidUpdate (previousProps) {
+        if (this.props.openRequest !== previousProps.openRequest) this.handleOpen();
+    }
+
     componentWillUnmount () {
         this.unmounted = true;
         this.startRequest++;
@@ -491,18 +495,6 @@ class MediaRecorderButton extends React.Component {
         const active = this.state.phase !== 'options';
         return (
             <React.Fragment>
-                <button
-                    className={classNames(styles.menuButton, this.props.className, {
-                        [styles.menuButtonActive]: active
-                    })}
-                    data-mw-item="media-recorder"
-                    title={active ? 'Recording status' : 'Record project video'}
-                    type="button"
-                    onClick={this.handleOpen}
-                >
-                    {active ? <Square size={20} /> : <Video size={20} />}
-                    <span className={this.props.labelClassName}>{active ? 'Recording' : 'Record'}</span>
-                </button>
                 {this.state.open && (
                     <AddonWindow
                         className={styles.window}
@@ -531,9 +523,8 @@ class MediaRecorderButton extends React.Component {
 }
 
 MediaRecorderButton.propTypes = {
-    className: PropTypes.string,
     intl: intlShape.isRequired,
-    labelClassName: PropTypes.string,
+    openRequest: PropTypes.number.isRequired,
     projectTitle: PropTypes.string,
     vm: PropTypes.object.isRequired
 };

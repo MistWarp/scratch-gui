@@ -66,18 +66,6 @@ const migrateSettings = settings => {
         }
     }
 
-    // Migrate 3 -> 4
-    // editor-devtools was broken up into middle-click-popup (find-bar is native here).
-    // If someone disabled editor-devtools, we want to keep these disabled.
-    if (oldVersion < 4) {
-        const editorDevtools = settings['editor-devtools'];
-        if (editorDevtools && editorDevtools.enabled === false) {
-            settings['middle-click-popup'] = {
-                enabled: false
-            };
-        }
-    }
-
     // Migrate 4 -> 5
     // fullscreen's hideToolbar and hoverToolbar settings were merged into one toolbar setting
     if (oldVersion < 5) {

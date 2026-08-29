@@ -41,6 +41,10 @@ $fade-out-distance: 100px;
     margin-top: 0.75rem;
 }
 
+.new-button-label {
+    display: none;
+}
+
 .list-area {
     /* Must have some height (recalculated by flex-grow) in order to scroll */
     height: 0;
@@ -74,6 +78,146 @@ $fade-out-distance: 100px;
 
     .list-item {
         width: 4rem;
+    }
+}
+
+@media only screen and (max-width: 900px) {
+    .wrapper {
+        width: 100%;
+        height: 5rem;
+        flex-direction: row;
+    }
+
+    .list-area {
+        width: 0;
+        height: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .list-area:after {
+        width: 4.5rem;
+        height: 100%;
+    }
+
+    .list-item {
+        flex: 0 0 4rem;
+        width: 4rem;
+        height: 4rem;
+        margin: 0.35rem 0.25rem;
+    }
+
+    .new-buttons {
+        right: 0;
+        bottom: 0;
+        width: 4.5rem;
+        height: 100%;
+        padding: 0.25rem;
+        background: $ui-tertiary;
+        border-left: 1px solid $ui-black-transparent;
+    }
+
+    [dir="rtl"] .new-buttons {
+        right: auto;
+        left: 0;
+        border-right: 1px solid $ui-black-transparent;
+        border-left: 0;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    .wrapper {
+        height: 4.5rem;
+        justify-content: flex-start;
+    }
+
+    .list-area {
+        width: auto;
+        max-width: calc(100% - 6rem);
+        flex: 0 1 auto;
+    }
+
+    .list-area:after {
+        display: none;
+    }
+
+    .list-item {
+        width: 5.75rem;
+        height: 4rem;
+        margin: 0.25rem;
+        flex-basis: 5.75rem;
+    }
+
+    .new-buttons {
+        position: static;
+        width: 6rem;
+        height: 100%;
+        flex: 0 0 6rem;
+        gap: .15rem;
+        padding: .1rem .2rem;
+        border-left: 0;
+    }
+
+    .new-button-label {
+        display: block;
+        max-width: 5.5rem;
+        color: $text-primary;
+        font-size: .58rem;
+        font-weight: 600;
+        line-height: 1.1;
+    }
+
+    .sound-wrapper .list-area {
+        max-width: calc(100% - 6rem);
+        scrollbar-color: $ui-black-transparent transparent;
+        scrollbar-width: thin;
+    }
+
+    .sound-wrapper .list-item {
+        width: 10.5rem;
+        flex-basis: 10.5rem;
+    }
+
+    .sound-wrapper :global([class*="sprite-selector-item_selection-button_"]) {
+        display: grid;
+        box-sizing: border-box;
+        grid-template-columns: 3rem minmax(0, 1fr);
+        align-items: center;
+        padding-right: 3rem;
+    }
+
+    .sound-wrapper :global([class*="sprite-selector-item_sprite-image-outer_"]) {
+        height: 100%;
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .sound-wrapper :global([class*="sprite-selector-item_sprite-info_"]) {
+        min-width: 0;
+        grid-column: 2;
+        grid-row: 1;
+        padding: .25rem;
+        text-align: left;
+    }
+
+    .sound-wrapper :global([class*="sprite-selector-item_delete-button_"]) {
+        width: 2.75rem;
+        height: 2.75rem;
+        top: 50%;
+        right: .25rem;
+        bottom: auto;
+        transform: translateY(-50%);
+    }
+
+    [dir="rtl"] .sound-wrapper :global([class*="sprite-selector-item_selection-button_"]) {
+        padding-right: 0;
+        padding-left: 3rem;
+    }
+
+    [dir="rtl"] .sound-wrapper :global([class*="sprite-selector-item_delete-button_"]) {
+        right: auto;
+        left: .25rem;
     }
 }
 

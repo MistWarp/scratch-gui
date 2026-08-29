@@ -116,3 +116,25 @@
 .load-button:disabled {
     opacity: 0.8;
 }
+
+@media only screen and (max-width: 480px) {
+    .body {
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .type-selector-button {
+        min-height: 44px;
+        margin: 0 0.25rem;
+    }
+
+    .url-input,
+    .text-code-input {
+        font-size: 16px;
+    }
+
+    .load-button {
+        width: 100%;
+        min-height: 44px;
+    }
+}

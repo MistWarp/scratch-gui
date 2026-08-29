@@ -4,7 +4,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
     SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
-    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette
+    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette, Gamepad2
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes, formatDate} from '../format';
@@ -18,6 +18,7 @@ import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
 import MyStuffThemes from '../components/MyStuffThemes.jsx';
+import PlaytimeLibrary from '../components/PlaytimeLibrary.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
@@ -504,6 +505,7 @@ const AgreementTab = () => {
 
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
+    {key: 'playtime', label: 'Playtime', icon: Gamepad2},
     {key: 'projects', label: 'My Projects', icon: FolderOpen},
     {key: 'themes', label: 'Themes', icon: Palette},
     {key: 'inventory', label: 'Inventory', icon: Package},
@@ -553,6 +555,13 @@ const MyStuff = () => {
     const [account, setAccount] = useState(null);
     const [inventoryItems, setInventoryItems] = useState(null);
     const [inventoryFailed, setInventoryFailed] = useState(false);
+    const [playedProjects, setPlayedProjects] = useState([]);
+    const [playedTotal, setPlayedTotal] = useState(0);
+    const [playedOffset, setPlayedOffset] = useState(0);
+    const [playedVisible, setPlayedVisible] = useState(true);
+    const [playedLoading, setPlayedLoading] = useState(false);
+    const [playedFailed, setPlayedFailed] = useState(false);
+    const [playedMoreBusy, setPlayedMoreBusy] = useState(false);
     const [pendingUploadFile, setPendingUploadFile] = useState(null);
     const [showAgreeModal, setShowAgreeModal] = useState(false);
     const [agreeData, setAgreeData] = useState(null);
@@ -645,6 +654,13 @@ const MyStuff = () => {
         setActionError('');
         setInventoryItems(null);
         setInventoryFailed(false);
+        setPlayedProjects([]);
+        setPlayedTotal(0);
+        setPlayedOffset(0);
+        setPlayedVisible(true);
+        setPlayedLoading(false);
+        setPlayedFailed(false);
+        setPlayedMoreBusy(false);
     }, [beginDirectoryLoad, beginStatsLoad, beginTrashLoad, username]);
 
     useEffect(() => {
@@ -754,6 +770,49 @@ const MyStuff = () => {
     useEffect(() => {
         loadInventory();
     }, [loadInventory]);
+
+    const loadPlaytime = useCallback(() => {
+        if (!user || tab !== 'playtime') return;
+        const context = accountContextRef.current;
+        setPlayedLoading(true);
+        setPlayedFailed(false);
+        api.userPlaytimeLibrary(user.username)
+            .then(data => {
+                if (accountContextRef.current !== context) return;
+                const items = data.projects || [];
+                setPlayedProjects(items);
+                setPlayedTotal(Number.isFinite(data.total) ? data.total : items.length);
+                setPlayedOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : items.length);
+                setPlayedVisible(data.visible !== false);
+            })
+            .catch(() => {
+                if (accountContextRef.current === context) setPlayedFailed(true);
+            })
+            .finally(() => {
+                if (accountContextRef.current === context) setPlayedLoading(false);
+            });
+    }, [tab, user]);
+
+    useEffect(() => {
+        loadPlaytime();
+    }, [loadPlaytime]);
+
+    const loadMorePlaytime = async () => {
+        if (!user || playedMoreBusy || playedOffset >= playedTotal) return;
+        const context = accountContextRef.current;
+        setPlayedMoreBusy(true);
+        try {
+            const data = await api.userPlaytimeLibrary(user.username, {offset: playedOffset});
+            if (accountContextRef.current !== context) return;
+            setPlayedProjects(current => [...current, ...(data.projects || [])]);
+            setPlayedTotal(Number.isFinite(data.total) ? data.total : playedTotal);
+            setPlayedOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : playedOffset + (data.projects || []).length);
+        } catch (e) {
+            if (accountContextRef.current === context) setPlayedFailed(true);
+        } finally {
+            if (accountContextRef.current === context) setPlayedMoreBusy(false);
+        }
+    };
 
     const loadTrash = useCallback(() => {
         if (!user || tab !== 'trash') return;
@@ -1330,6 +1389,25 @@ const MyStuff = () => {
                         ) : (
                             <p className={styles.status}>Loading…</p>
                         )
+                    ) : tab === 'playtime' ? (
+                        <section className={styles.playtimeSection}>
+                            <header className={styles.playtimeHead}>
+                                <h1>Your playtime</h1>
+                                <p>See which games you spend the most time playing.</p>
+                            </header>
+                            <PlaytimeLibrary
+                                projects={playedProjects}
+                                total={playedTotal}
+                                visible={playedVisible}
+                                self
+                                loading={playedLoading}
+                                error={playedFailed}
+                                hasMore={playedOffset < playedTotal}
+                                moreBusy={playedMoreBusy}
+                                onRetry={loadPlaytime}
+                                onLoadMore={loadMorePlaytime}
+                            />
+                        </section>
                     ) : tab === 'uploads' ? (
                         <UploadUsage
                             error={quotaFailed}

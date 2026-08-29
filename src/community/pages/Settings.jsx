@@ -389,7 +389,9 @@ const Settings = () => {
             await api.updateProfile({showRecentActivity: enabled});
             if (dataContext.current === context) {
                 setShowRecentActivity(enabled);
-                setPrivacyStatus(enabled ? 'Recent activity is visible on your profile.' : 'Recent activity is hidden from other users.');
+                setPrivacyStatus(enabled ?
+                    'Your game activity and library are visible on your profile.' :
+                    'Your game activity and library are hidden from other users.');
             }
         } catch (e) {
             if (dataContext.current === context) setPrivacyStatus(e.message || 'Could not update your privacy setting.');
@@ -624,8 +626,8 @@ const Settings = () => {
                                     <SwitchRow
                                         checked={showRecentActivity}
                                         disabled={privacyBusy}
-                                        label="Show recent project activity"
-                                        description="Display recently played public projects, total play time, and when you last played them."
+                                        label="Show game activity and library"
+                                        description="Display your most-played public games, total playtime, and when you last played them."
                                         onChange={changeRecentActivityPrivacy}
                                     />
                                 </div>

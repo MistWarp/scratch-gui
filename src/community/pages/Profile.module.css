@@ -359,9 +359,26 @@
 }
 
 .privateActivity {
-    margin-bottom: 14px;
     color: var(--text-dim);
     font-size: 12px;
+}
+
+.activityActions,
+.libraryLink {
+    display: flex;
+    align-items: center;
+}
+
+.activityActions {
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.libraryLink {
+    gap: 5px;
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .seeAll {

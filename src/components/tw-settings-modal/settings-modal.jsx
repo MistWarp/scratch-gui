@@ -27,9 +27,7 @@ import LoadingScreenPage from './loading-screen-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
-import {Settings, Zap, Blocks, Palette, PanelTop, Bug, GitBranch, Variable,
-    Globe, SunMoon, Wallpaper, Type, Monitor, Keyboard, ChevronLeft,
-    Hourglass} from 'lucide-react';
+import {ChevronLeft} from 'lucide-react';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
@@ -39,6 +37,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 import {BooleanSetting, LearnMore, Setting} from './setting.jsx';
+import {getSettingsSidebarGroups} from './settings-navigation.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -49,19 +48,19 @@ const messages = defineMessages({
         id: 'tw.settingsModal.title'
     },
     headerFeatured: {
-        defaultMessage: 'Featured',
+        defaultMessage: 'Playback',
         description: 'Settings modal section',
-        id: 'tw.settingsModal.featured'
+        id: 'mw.settingsModal.playback'
     },
     headerRemoveLimits: {
-        defaultMessage: 'Remove Limits',
+        defaultMessage: 'Project compatibility',
         description: 'Settings modal section',
-        id: 'tw.settingsModal.removeLimits'
+        id: 'mw.settingsModal.projectCompatibility'
     },
     headerDangerZone: {
-        defaultMessage: 'Danger Zone',
+        defaultMessage: 'Saved project settings',
         description: 'Settings modal section',
-        id: 'tw.settingsModal.dangerZone'
+        id: 'mw.settingsModal.savedProjectSettings'
     },
     headerExperimental: {
         defaultMessage: 'Experimental',
@@ -590,6 +589,7 @@ const CustomStageSize = ({
                     id="tw.settingsModal.customStageSize"
                 />
                 <BufferedInput
+                    aria-label="Stage width"
                     value={stageWidth}
                     onSubmit={onStageWidthChange}
                     className={styles.customStageSizeInput}
@@ -600,6 +600,7 @@ const CustomStageSize = ({
                 />
                 <span>{'×'}</span>
                 <BufferedInput
+                    aria-label="Stage height"
                     value={stageHeight}
                     onSubmit={onStageHeightChange}
                     className={styles.customStageSizeInput}
@@ -663,7 +664,7 @@ const StoreProjectOptions = ({
             <p>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage="Stores the selected settings in the project so they will be automatically applied when {APP_NAME} loads this project. Warp timer and disable compiler will not be saved."
+                    defaultMessage="Saves the runtime options and custom stage size above inside this project. {APP_NAME} applies them whenever the project opens. Warp timer and compiler settings stay local to this device."
                     description="Help text for the store settings in project button"
                     id="tw.settingsModal.storeProjectOptionsHelp"
                     values={{
@@ -687,7 +688,7 @@ const StoreProjectOptions = ({
             <p>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage='When enabled, clicking "Store settings in project" will also store the current MistWarp theme so it can be applied when this project is loaded.'
+                    defaultMessage='Also save the current theme when you click "Store settings in project." Anyone who opens the project in MistWarp will see that theme.'
                     description="Help text for the store theme in project checkbox"
                     id="mw.settingsModal.storeThemeInProjectHelp"
                 />
@@ -917,8 +918,7 @@ const pageConfigurations = {
                                 'show_block_count',
                                 'show_costume_count',
                                 'show_sound_count',
-                                'show_complexity_score',
-                                'show_media_recorder'
+                                'show_complexity_score'
                             ]
                         })
                     }
@@ -1019,6 +1019,75 @@ const MenuBarPage = props => (<PageRenderer
     config={pageConfigurations.menuBar}
     {...props}
 />);
+
+const THEME_TABS = [
+    {id: 'appearance', label: 'Appearance'},
+    {id: 'blocks', label: 'Blocks'},
+    {id: 'wallpaper', label: 'Wallpaper'},
+    {id: 'fonts', label: 'Fonts'},
+    {id: 'editor', label: 'Editor'},
+    {id: 'menuBar', label: 'Menu bar'},
+    {id: 'loadingScreen', label: 'Loading screen'}
+];
+
+class ThemeSettingsPage extends React.Component {
+    constructor (props) {
+        super(props);
+        this.state = {activeTab: props.initialTab || 'appearance'};
+    }
+
+    renderPage () {
+        switch (this.state.activeTab) {
+        case 'blocks': return <ThemePage />;
+        case 'wallpaper': return <WallpaperPage />;
+        case 'fonts': return <FontsPage />;
+        case 'editor': return <EditorPage {...this.props} />;
+        case 'menuBar': return <MenuBarPage {...this.props} />;
+        case 'loadingScreen': return <LoadingScreenPage />;
+        case 'appearance':
+        default: return <StylesPage {...this.props} />;
+        }
+    }
+
+    render () {
+        return (
+            <div className={styles.themeSettingsPage}>
+                <div
+                    aria-label="Theme sections"
+                    className={styles.settingsTabs}
+                    role="tablist"
+                >
+                    {THEME_TABS.map(tab => (
+                        <button
+                            aria-controls="theme-settings-panel"
+                            aria-selected={this.state.activeTab === tab.id}
+                            className={classNames(styles.settingsTab, {
+                                [styles.settingsTabSelected]: this.state.activeTab === tab.id
+                            })}
+                            key={tab.id}
+                            role="tab"
+                            type="button"
+                            onClick={() => this.setState({activeTab: tab.id})}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+                <div
+                    className={styles.themeSettingsPanel}
+                    id="theme-settings-panel"
+                    role="tabpanel"
+                >
+                    {this.renderPage()}
+                </div>
+            </div>
+        );
+    }
+}
+
+ThemeSettingsPage.propTypes = {
+    initialTab: PropTypes.oneOf(THEME_TABS.map(tab => tab.id))
+};
 
 const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
 
@@ -1501,25 +1570,13 @@ const SettingsRouter = ({view, ...handlers}) => {
     case 'shortcuts':
         return <ShortcutManager />;
     case 'theme':
-        return <ThemePage />;
-    case 'wallpaper':
-        return <WallpaperPage />;
-    case 'fonts':
-        return <FontsPage />;
-    case 'loadingScreen':
-        return <LoadingScreenPage />;
+        return <ThemeSettingsPage {...handlers} />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
         return <VersionControlPage {...handlers} />;
     case 'variableManager':
         return <VariableManagerPage {...handlers} />;
-    case 'editor':
-        return <EditorPage {...handlers} />;
-    case 'styles':
-        return <StylesPage {...handlers} />;
-    case 'menuBar':
-        return <MenuBarPage {...handlers} />;
     case 'desktop':
         return <DesktopPage {...handlers} />;
     case 'experimental':
@@ -1544,8 +1601,10 @@ class SettingsModalComponent extends React.Component {
             'handleMobileBack'
         ]);
 
+        const requestedView = takeSettingsModalInitialView() || 'general';
+        const themeViews = THEME_TABS.map(tab => tab.id).concat('theme');
         this.state = {
-            currentView: takeSettingsModalInitialView() || 'general',
+            currentView: themeViews.includes(requestedView) ? 'theme' : requestedView,
             collapsedGroups: {},
             mobileView: 'list'
         };
@@ -1576,128 +1635,7 @@ class SettingsModalComponent extends React.Component {
         const {intl} = this.props;
         const {currentView} = this.state;
 
-        const sidebarGroups = [
-            {
-                id: 'general',
-                label: intl.formatMessage({id: 'mw.settings.groupGeneral', defaultMessage: 'General'}),
-                items: [
-                    {
-                        id: 'general',
-                        label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
-                        icon: Settings
-                    },
-                    {
-                        id: 'language',
-                        label: intl.formatMessage({id: 'gui.menuBar.language', defaultMessage: 'Language'}),
-                        icon: Globe
-                    },
-                    {
-                        id: 'shortcuts',
-                        label: intl.formatMessage({
-                            id: 'tw.menuBar.keyboardShortcuts',
-                            defaultMessage: 'Keyboard Shortcuts'
-                        }),
-                        icon: Keyboard
-                    }
-                ]
-            },
-            {
-                id: 'appearance',
-                label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: 'Appearance'}),
-                items: [
-                    {
-                        id: 'theme',
-                        label: intl.formatMessage({id: 'tw.menuBar.blockColors', defaultMessage: 'Block Colors'}),
-                        icon: SunMoon
-                    },
-                    {
-                        id: 'wallpaper',
-                        label: intl.formatMessage({id: 'tw.menuBar.wallpaper', defaultMessage: 'Wallpaper'}),
-                        icon: Wallpaper
-                    },
-                    {
-                        id: 'fonts',
-                        label: intl.formatMessage({id: 'tw.menuBar.fonts', defaultMessage: 'Fonts'}),
-                        icon: Type
-                    },
-                    {
-                        id: 'editor',
-                        label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),
-                        icon: Blocks
-                    },
-                    {
-                        id: 'styles',
-                        label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
-                        icon: Palette
-                    },
-                    {
-                        id: 'menuBar',
-                        label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
-                        icon: PanelTop
-                    },
-                    {
-                        id: 'loadingScreen',
-                        label: intl.formatMessage({
-                            id: 'mw.settings.loadingScreen',
-                            defaultMessage: 'Loading Screen'
-                        }),
-                        icon: Hourglass
-                    }
-                ]
-            },
-            {
-                id: 'tools',
-                label: intl.formatMessage({id: 'mw.settings.groupTools', defaultMessage: 'Tools'}),
-                items: [
-                    {
-                        id: 'versionControl',
-                        label: intl.formatMessage({
-                            id: 'mw.settings.versionControl',
-                            defaultMessage: 'Version Control'
-                        }),
-                        icon: GitBranch
-                    },
-                    {
-                        id: 'variableManager',
-                        label: intl.formatMessage({
-                            id: 'mw.settings.variableManager',
-                            defaultMessage: 'Variable Manager'
-                        }),
-                        icon: Variable
-                    },
-                    {
-                        id: 'debugger',
-                        label: intl.formatMessage({id: 'mw.settings.debugger', defaultMessage: 'Debugger'}),
-                        icon: Bug
-                    }
-                ]
-            },
-            {
-                id: 'advanced',
-                label: intl.formatMessage({id: 'mw.settings.groupAdvanced', defaultMessage: 'Advanced'}),
-                items: [
-                    {
-                        id: 'experimental',
-                        label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
-                        icon: Zap
-                    }
-                ]
-            }
-        ];
-
-        if (typeof window.EditorPreload !== 'undefined') {
-            sidebarGroups.splice(sidebarGroups.length - 1, 0, {
-                id: 'desktop',
-                label: intl.formatMessage({id: 'mw.settings.groupDesktop', defaultMessage: 'Desktop'}),
-                items: [
-                    {
-                        id: 'desktop',
-                        label: intl.formatMessage({id: 'mw.settings.desktop', defaultMessage: 'Desktop'}),
-                        icon: Monitor
-                    }
-                ]
-            });
-        }
+        const sidebarGroups = getSettingsSidebarGroups(intl, typeof window.EditorPreload !== 'undefined');
 
         return (
             <Modal
@@ -1821,3 +1759,5 @@ SettingsModalComponent.propTypes = {
 };
 
 export default injectIntl(SettingsModalComponent);
+
+export {CustomFPS, SettingsModalComponent, ThemeSettingsPage};

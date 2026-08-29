@@ -514,7 +514,6 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(true);
-    expect(store.getAddonEnabled('middle-click-popup')).toBe(true);
 
     global.localStorage.getItem = () => JSON.stringify({
         '_': 3,
@@ -524,7 +523,6 @@ test('Settings migration 3 -> 4', () => {
     });
     store.readLocalStorage();
     expect(store.getAddonEnabled('editor-devtools')).toBe(false);
-    expect(store.getAddonEnabled('middle-click-popup')).toBe(false);
 });
 
 test('if', () => {

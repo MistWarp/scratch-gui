@@ -403,17 +403,6 @@ const NavBar = () => {
                             >
                                 <Wallet size={19} />
                             </Link>
-                            <Link
-                                to="/notifications"
-                                className={`${styles.iconLink} ${styles.bellLink}`}
-                                title="Notifications"
-                                aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
-                            >
-                                <Bell size={19} />
-                                {unread > 0 ? (
-                                    <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
-                                ) : null}
-                            </Link>
                             <RoturAccount
                                 username={user.username}
                                 menuOpen={accountOpen}
@@ -466,27 +455,34 @@ const NavBar = () => {
                 suggestionId="mw-search-suggestions-mobile"
             />
             <nav className={styles.mobileDock} aria-label="Mobile navigation">
-                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null}>
-                    <House size={20} />
-                    <span>Home</span>
+                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label="Home" title="Home">
+                    <House size={25} />
                 </Link>
-                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null}>
-                    <Compass size={20} />
-                    <span>Explore</span>
+                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label="Explore" title="Explore">
+                    <Compass size={25} />
                 </Link>
-                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`}>
-                    <span className={styles.mobileCreateIcon}><Plus size={22} /></span>
-                    <span>Create</span>
+                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label="Create" title="Create">
+                    <span className={styles.mobileCreateIcon}><Plus size={28} /></span>
                 </a>
+                <Link
+                    to="/notifications"
+                    className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
+                    aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
+                    aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+                    title="Notifications"
+                >
+                    <Bell size={25} />
+                    {unread > 0 ? (
+                        <span className={styles.mobileNotificationBadge}>{unread > 9 ? '9+' : unread}</span>
+                    ) : null}
+                </Link>
                 {user ? (
-                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null}>
-                        <FolderOpen size={20} />
-                        <span>My stuff</span>
+                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label="My stuff" title="My stuff">
+                        <FolderOpen size={25} />
                     </Link>
                 ) : (
-                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn}>
-                        <LogIn size={20} />
-                        <span>{signingIn ? 'Signing in' : 'Sign in'}</span>
+                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-label={signingIn ? 'Signing in' : 'Sign in'} title={signingIn ? 'Signing in' : 'Sign in'}>
+                        <LogIn size={25} />
                     </button>
                 )}
             </nav>

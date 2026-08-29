@@ -93,6 +93,12 @@
   transform: translateY(100%);
   right: calc(50% - 7px);
 }
+
+@media (max-width: 600px) {
+  .sa-onion-group {
+    display: none !important;
+  }
+}
 .sa-onion-settings-polygon {
   fill: var(--ui-modal-background);
   stroke: var(--ui-black-transparent);

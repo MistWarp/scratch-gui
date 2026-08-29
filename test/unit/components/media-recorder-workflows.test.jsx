@@ -4,7 +4,7 @@ const makeRecorder = overrides => {
     const recorder = new MediaRecorderButton({
         className: '',
         intl: {formatMessage: jest.fn(message => message.defaultMessage)},
-        labelClassName: '',
+        openRequest: 0,
         projectTitle: 'Project',
         vm: {
             runtime: {
@@ -34,6 +34,17 @@ describe('media recorder startup', () => {
         await recorder.handleStart();
 
         expect(recorder.state.error).toBe('This browser cannot encode a supported video format.');
+    });
+
+    test('opens when the Tools menu requests it', () => {
+        const recorder = makeRecorder();
+
+        recorder.componentDidUpdate({openRequest: 0});
+        expect(recorder.state.open).toBe(false);
+
+        recorder.props.openRequest = 1;
+        recorder.componentDidUpdate({openRequest: 0});
+        expect(recorder.state.open).toBe(true);
     });
 
     test('ignores duplicate start clicks while microphone access is pending', async () => {

@@ -1,4 +1,4 @@
-import {scoreText} from '../../../src/addons/addons/middle-click-popup/searchUtils.js';
+import {scoreText} from '../../../src/lib/spotlight/searchUtils.js';
 import {filterBackpackContents} from '../../../src/containers/backpack.jsx';
 import {getDefaultShortcuts} from '../../../src/lib/shortcuts/registry.js';
 

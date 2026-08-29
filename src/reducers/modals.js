@@ -29,6 +29,7 @@ const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
 const MODAL_PROJECT_METADATA = 'projectMetadataModal';
 const MODAL_HELP = 'helpModal';
+const MODAL_VARIABLE_MANAGER = 'variableManagerModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -58,6 +59,7 @@ const initialState = {
     [MODAL_ROTUR_LOGIN]: false,
     [MODAL_PROJECT_METADATA]: false,
     [MODAL_HELP]: false,
+    [MODAL_VARIABLE_MANAGER]: false,
     projectMetadataView: 'project',
     helpEntry: null
 };
@@ -200,6 +202,12 @@ const openHelp = function (entryId) {
 const closeHelpModal = function () {
     return closeModal(MODAL_HELP);
 };
+const openVariableManagerModal = function () {
+    return openModal(MODAL_VARIABLE_MANAGER);
+};
+const closeVariableManagerModal = function () {
+    return closeModal(MODAL_VARIABLE_MANAGER);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -308,6 +316,8 @@ export {
     closeProjectMetadataModal,
     openHelp,
     closeHelpModal,
+    openVariableManagerModal,
+    closeVariableManagerModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,

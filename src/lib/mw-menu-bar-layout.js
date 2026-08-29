@@ -3,7 +3,7 @@ const ZONES = [
         id: 'left',
         items: [
             '__errors', 'file', 'edit', 'mode', 'tools', 'bookmarks', 'view',
-            '__divider', 'project-title', '__view-counter', 'community', 'media-recorder', 'block-count',
+            '__divider', 'project-title', '__view-counter', 'community', 'block-count',
             'share', 'remix', 'feedback'
         ],
         extras: []
@@ -20,7 +20,7 @@ const ALWAYS_SHOW = ['save-status', 'rotur-account', 'collab-presence', 'view'];
 const ALL_ITEMS = ZONES.reduce((acc, zone) => acc.concat(zone.items, zone.extras), []);
 
 // Bump when default zone membership/order changes so old custom orders reset
-const ORDER_KEY = 'mw:menu-bar-order-v6';
+const ORDER_KEY = 'mw:menu-bar-order-v7';
 const HIDDEN_KEY = 'mw:menu-bar-hidden';
 const CHANGE_EVENT = 'mw-menu-bar-layout-changed';
 const STYLE_ID = 'mw-menu-bar-layout';
@@ -179,6 +179,16 @@ const setZoneOrder = (zoneId, order) => {
     window.dispatchEvent(new Event(CHANGE_EVENT));
 };
 
+const moveMenuItem = (order, id, direction) => {
+    const currentIndex = order.indexOf(id);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= order.length) return order.slice();
+    const nextOrder = order.slice();
+    nextOrder.splice(currentIndex, 1);
+    nextOrder.splice(nextIndex, 0, id);
+    return nextOrder;
+};
+
 const setHidden = (id, hidden) => {
     const current = new Set(getHidden());
     if (hidden) {
@@ -204,6 +214,7 @@ export {
     HIDDEN_KEY,
     getStoredOrder,
     setZoneOrder,
+    moveMenuItem,
     getZoneDisplayOrder,
     getZoneExtras,
     getHidden,

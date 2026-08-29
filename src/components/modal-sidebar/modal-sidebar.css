@@ -243,7 +243,7 @@
     background: $ui-modal-background;
 }
 
-@media (max-width: 720px) {
+@media (min-width: 721px) and (max-width: 900px) {
     .sidebar,
     .sidebarWide,
     .sidebarNarrow {
@@ -284,7 +284,7 @@
     }
 }
 
-@media only screen and (max-width: 900px) {
+@media only screen and (max-width: 720px) {
     .layout {
         flex-direction: column;
     }
@@ -304,5 +304,58 @@
 
     .layout.mobile-list > .content {
         display: none;
+    }
+
+    .item {
+        min-height: 48px;
+    }
+
+    /*
+     * Sidebars without a two-step mobile view become a horizontal section
+     * picker. This keeps their content visible instead of letting a 100%-tall
+     * sidebar push it below the viewport.
+     */
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid $ui-black-transparent;
+        flex: none;
+        flex-direction: row;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar > .items {
+        display: flex;
+        padding: 0.4rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .group {
+        display: flex;
+        margin: 0;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .group-header {
+        display: none;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .item {
+        width: auto;
+        margin: 0 0.125rem;
+        padding: 0.65rem 0.8rem;
+        white-space: nowrap;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .label {
+        overflow: visible;
+    }
+
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar > .footer {
+        display: flex;
+        align-items: center;
+        padding: 0.4rem;
+        border-top: 0;
+        border-left: 1px solid $ui-black-transparent;
     }
 }

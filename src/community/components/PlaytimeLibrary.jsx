@@ -1,0 +1,111 @@
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Clock3, Gamepad2} from 'lucide-react';
+import {Link} from 'react-router-dom';
+import {projectUrl} from '../api';
+import {formatPlaytime, timeAgo} from '../format';
+import ProjectThumbnail from './ProjectThumbnail.jsx';
+import Button from './ui/Button.jsx';
+import styles from './PlaytimeLibrary.module.css';
+
+const lastPlayed = value => {
+    const relative = timeAgo(value);
+    return relative === 'just now' ? 'Played just now' : `Played ${relative} ago`;
+};
+
+const PlaytimeLibrary = ({
+    projects, total, visible, self, loading, error, moreBusy, hasMore, onRetry, onLoadMore
+}) => {
+    if (loading) return <p className={styles.status}>Loading game library…</p>;
+    if (error) {
+        return (
+            <div className={styles.empty} role="alert">
+                <strong>Could not load this game library.</strong>
+                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+            </div>
+        );
+    }
+    if (!visible && !self) {
+        return (
+            <div className={styles.empty}>
+                <Gamepad2 size={36} />
+                <strong>This game library is private.</strong>
+                <span>This user has chosen not to share what they play.</span>
+            </div>
+        );
+    }
+    if (!projects.length) {
+        return (
+            <div className={styles.empty}>
+                <Gamepad2 size={36} />
+                <strong>{self ? 'You have not played any games yet.' : 'No games played yet.'}</strong>
+                <span>Playtime from signed-in sessions will appear here.</span>
+            </div>
+        );
+    }
+    return (
+        <React.Fragment>
+            <div className={styles.summary}>
+                <strong>{total.toLocaleString()}</strong> {total === 1 ? 'game' : 'games'} played
+                {!visible && self ? <span>Only visible to you</span> : null}
+            </div>
+            <div className={styles.list}>
+                {projects.map((project, index) => (
+                    <Link className={styles.row} key={project.id} to={projectUrl(project.id)}>
+                        <span className={styles.rank}>{index + 1}</span>
+                        <ProjectThumbnail
+                            project={project}
+                            className={styles.thumb}
+                            fallbackClassName={styles.thumb}
+                            lazy
+                        />
+                        <span className={styles.details}>
+                            <strong>{project.title}</strong>
+                            <small>by {project.owner}</small>
+                        </span>
+                        <span className={styles.playtime}>
+                            <strong><Clock3 size={15} /> {formatPlaytime(project.duration, false)}</strong>
+                            <small>{lastPlayed(project.lastPlayed)}</small>
+                        </span>
+                    </Link>
+                ))}
+            </div>
+            {hasMore ? (
+                <div className={styles.more}>
+                    <Button variant="secondary" busy={moreBusy} busyLabel="Loading…" onClick={onLoadMore}>
+                        Load more games
+                    </Button>
+                </div>
+            ) : null}
+        </React.Fragment>
+    );
+};
+
+PlaytimeLibrary.propTypes = {
+    projects: PropTypes.arrayOf(PropTypes.object),
+    total: PropTypes.number,
+    visible: PropTypes.bool,
+    self: PropTypes.bool,
+    loading: PropTypes.bool,
+    error: PropTypes.bool,
+    moreBusy: PropTypes.bool,
+    hasMore: PropTypes.bool,
+    onRetry: PropTypes.func,
+    onLoadMore: PropTypes.func
+};
+
+PlaytimeLibrary.defaultProps = {
+    projects: [],
+    total: 0,
+    visible: true,
+    self: false,
+    loading: false,
+    error: false,
+    moreBusy: false,
+    hasMore: false,
+    onRetry: () => {},
+    onLoadMore: () => {}
+};
+
+export {lastPlayed};
+export default PlaytimeLibrary;

@@ -31,6 +31,7 @@ let components = {
     MWAssetsModal: React.lazy(() => import('../../containers/mw-assets-modal.jsx')),
     MWProjectMetadataModal: React.lazy(() => import('../../containers/mw-project-metadata-modal.jsx')),
     TWDebugger: React.lazy(() => import('../../containers/tw-debugger.jsx')),
+    TWVariableManager: React.lazy(() => import('../../containers/tw-variable-manager.jsx')),
     TWUnknownPlatformModal: React.lazy(() => import('../../containers/tw-unknown-platform-modal.jsx')),
     TWGitModal: React.lazy(() => import('../../containers/mw-git-modal.jsx')),
     MWExtensionManagerModal: React.lazy(() => import('../../containers/mw-extension-manager-modal.jsx')),

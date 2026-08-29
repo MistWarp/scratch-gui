@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {ArrowLeft} from 'lucide-react';
 
 import styles from './menu.css';
 
@@ -57,7 +58,9 @@ MenuComponent.propTypes = {
 };
 
 
-const Submenu = ({children, className, place, ...props}) => (
+const stopPropagation = event => event.stopPropagation();
+
+const Submenu = ({backLabel, children, className, onBack, place, ...props}) => (
     <div
         className={classNames(
             styles.submenu,
@@ -67,19 +70,31 @@ const Submenu = ({children, className, place, ...props}) => (
                 [styles.right]: place === 'right'
             }
         )}
+        onClick={stopPropagation}
     >
         <MenuComponent
             place={place}
             {...props}
         >
+            {onBack ? (
+                <MenuItem
+                    className={styles.submenuBack}
+                    onClick={onBack}
+                >
+                    <ArrowLeft />
+                    {backLabel}
+                </MenuItem>
+            ) : null}
             {children}
         </MenuComponent>
     </div>
 );
 
 Submenu.propTypes = {
+    backLabel: PropTypes.node,
     children: PropTypes.node,
     className: PropTypes.string,
+    onBack: PropTypes.func,
     place: PropTypes.oneOf(['left', 'right'])
 };
 

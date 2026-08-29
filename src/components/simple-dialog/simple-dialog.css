@@ -80,3 +80,19 @@
     outline: 2px solid var(--ui-primary, #4d97ff);
     outline-offset: 2px;
 }
+
+@media only screen and (max-width: 480px) {
+    .modalContent .body {
+        min-width: 0;
+        padding: 1rem;
+    }
+
+    .input {
+        font-size: 16px;
+    }
+
+    .okButton,
+    .cancelButton {
+        min-height: 44px;
+    }
+}

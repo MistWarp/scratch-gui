@@ -649,7 +649,7 @@ const mapStateToProps = state => ({
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     userActivity: state.scratchGui.collaboration.activity,
-    activeTabIndex: state.scratchGui.editorTab.activeTabIndex,
+    activeTabIndex: state.scratchGui.editorTab ? state.scratchGui.editorTab.activeTabIndex : 0,
     connectionError: state.scratchGui.collaboration.connectionError,
     // Online identity is the Rotur handle when signed in; the custom name is only a fallback.
     currentUsername: state.scratchGui.rotur.username ?

@@ -9,13 +9,18 @@ import api from '../../src/community/api.js';
 import rotur from '../../src/community/rotur.js';
 import {loginOrThrow} from '../../src/community/UserContext.jsx';
 
+let mockUser = null;
+
 jest.mock('../../src/community/UserContext.jsx', () => {
     const login = jest.fn();
     return {
         loginOrThrow: login,
-        useUser: () => ({user: null, loading: false, loginOrThrow: login, logout: jest.fn()})
+        useUser: () => ({user: mockUser, loading: false, loginOrThrow: login, logout: jest.fn()})
     };
 });
+jest.mock('../../src/components/menu-bar/mw-rotur-account.jsx', () => ({
+    RoturAccount: () => <div>Account</div>
+}));
 jest.mock('../../src/community/api.js', () => ({
     __esModule: true,
     default: {
@@ -44,11 +49,32 @@ const renderNav = () => mount(
 
 describe('community navigation actions', () => {
     beforeEach(() => {
+        mockUser = null;
         jest.clearAllMocks();
         api.explore.mockResolvedValue({projects: []});
         api.searchUsers.mockResolvedValue({users: [{username: 'Alex'}]});
         api.spaces.mockResolvedValue({spaces: []});
         rotur.withGroupTags.mockImplementation(users => Promise.resolve(users));
+    });
+
+    test('shows notifications in the signed-in mobile dock', () => {
+        mockUser = {username: 'Sophie', isAdmin: false};
+        const wrapper = renderNav();
+        const notificationLinks = wrapper.find('a[aria-label="Notifications"]');
+
+        expect(notificationLinks).toHaveLength(1);
+        expect(notificationLinks.prop('href')).toBe('/notifications');
+        wrapper.unmount();
+    });
+
+    test('keeps two actions to the right of create when signed out', () => {
+        const wrapper = renderNav();
+        const dockItems = wrapper.find('nav[aria-label="Mobile navigation"]').children();
+
+        expect(dockItems).toHaveLength(5);
+        expect(dockItems.at(3).prop('aria-label')).toBe('Notifications');
+        expect(dockItems.at(4).prop('aria-label')).toBe('Sign in');
+        wrapper.unmount();
     });
 
     test('locks rapid sign-in attempts across navigation controls', async () => {

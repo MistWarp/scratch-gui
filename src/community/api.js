@@ -232,6 +232,8 @@ const api = {
     gameInventoryConfig: id => request(`/projects/${id}/game-inventory-config`, {cache: false}),
     ...warpthemeApi,
     getUser: name => request(`/users/${encodeURIComponent(name)}`),
+    userPlaytimeLibrary: (name, {offset = 0, limit = 24} = {}) =>
+        request(`/users/${encodeURIComponent(name)}/library?offset=${offset}&limit=${limit}`),
     userProjects: (name, {offset = 0, limit = 24} = {}) =>
         request(`/users/${encodeURIComponent(name)}/projects?offset=${offset}&limit=${limit}`),
     searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),

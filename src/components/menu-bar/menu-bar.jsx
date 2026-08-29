@@ -80,6 +80,7 @@ import {
     openProjectMetadataModal,
     openGitModal,
     openExtensionManagerModal,
+    openVariableManagerModal,
     openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
@@ -180,7 +181,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -364,6 +365,8 @@ class MenuBar extends React.Component {
             mwpFileHandle: null,
             menuCollapsed: false,
             moreMenuOpen: false,
+            exportMenuOpen: false,
+            mediaRecorderOpenRequest: 0,
             menuBarSettings: getMenuBarSettings(),
             mistwarpProject: getRememberedPlatformProjectState()
         };
@@ -390,6 +393,8 @@ class MenuBar extends React.Component {
             'handleClickSaveAsCopy',
             'handleClickLoadFromComputer',
             'handleClickPackager',
+            'handleToggleExportMenu',
+            'handleCloseExportMenu',
             'handleClickRestorePoints',
             'handleClickProjectMetadata',
             'handleClickShare',
@@ -405,6 +410,7 @@ class MenuBar extends React.Component {
             'handleClickFractchTerminal',
             'handleClickDebugger',
             'handleClickVariableManager',
+            'handleClickMediaRecorder',
             'handleOpenExtensionLibrary',
             'handleOpenExtensionManager',
             'handleClickFile',
@@ -687,7 +693,11 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseTools();
     }
     handleClickVariableManager () {
-        window.__mistwarpVariableManagerToggle();
+        this.props.onClickVariableManager();
+        this.props.onRequestCloseTools();
+    }
+    handleClickMediaRecorder () {
+        this.setState(state => ({mediaRecorderOpenRequest: state.mediaRecorderOpenRequest + 1}));
         this.props.onRequestCloseTools();
     }
     handleOpenExtensionLibrary () {
@@ -741,9 +751,20 @@ class MenuBar extends React.Component {
     }
 
     handleClickFile () {
+        this.setState({exportMenuOpen: false});
         this.props.onClickFile();
         this.refreshMistWarpShared();
         this.refreshGitMenuState();
+    }
+
+    handleToggleExportMenu (event) {
+        event.stopPropagation();
+        this.setState(state => ({exportMenuOpen: !state.exportMenuOpen}));
+    }
+
+    handleCloseExportMenu (event) {
+        event.stopPropagation();
+        this.setState({exportMenuOpen: false});
     }
 
     async refreshGitMenuState () {
@@ -1561,6 +1582,8 @@ class MenuBar extends React.Component {
                 />
                 <MenuBarMenu
                     className={classNames(styles.menuBarMenu)}
+                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.about)}
+                    onMobileClose={this.props.onRequestCloseAbout}
                     open={this.props.aboutMenuOpen}
                     place={this.props.isRtl ? 'right' : 'left'}
                 >
@@ -1708,6 +1731,9 @@ class MenuBar extends React.Component {
                                 <ChevronDown size={8} />
                                 <MenuBarMenu
                                     className={classNames(styles.menuBarMenu)}
+                                    mobileBack
+                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.errors)}
+                                    onMobileClose={this.props.onRequestCloseErrors}
                                     open={this.props.errorsMenuOpen}
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
@@ -1763,6 +1789,9 @@ class MenuBar extends React.Component {
                                 <ChevronDown size={8} />
                                 <MenuBarMenu
                                     className={classNames(styles.menuBarMenu)}
+                                    mobileBack
+                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.file)}
+                                    onMobileClose={this.props.onRequestCloseFile}
                                     open={this.props.fileMenuOpen}
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
@@ -1885,7 +1914,10 @@ class MenuBar extends React.Component {
                                             showSaveFilePicker={this.props.showSaveFilePicker}
                                         >
                                             {(_className, downloadProject) => (
-                                                <MenuItem>
+                                                <MenuItem
+                                                    expanded={this.state.exportMenuOpen}
+                                                    onClick={this.handleToggleExportMenu}
+                                                >
                                                     <div className={styles.submenuRow}>
                                                         <Download />
                                                         <span className={styles.submenuRowLabel}>
@@ -1901,6 +1933,14 @@ class MenuBar extends React.Component {
                                                     </div>
                                                     <Submenu
                                                         place={this.props.isRtl ? 'left' : 'right'}
+                                                        backLabel={(
+                                                            <FormattedMessage
+                                                                defaultMessage="Back"
+                                                                description="Back button in a mobile submenu"
+                                                                id="gui.menu.back"
+                                                            />
+                                                        )}
+                                                        onBack={this.handleCloseExportMenu}
                                                     >
                                                         <MenuItem
                                                             onClick={this.getSaveToComputerHandler(downloadProject)}
@@ -2008,6 +2048,9 @@ class MenuBar extends React.Component {
                             <ChevronDown size={8} />
                             <MenuBarMenu
                                 className={classNames(styles.menuBarMenu)}
+                                mobileBack
+                                mobileTitle={this.props.intl.formatMessage(menuLabelMessages.edit)}
+                                onMobileClose={this.props.onRequestCloseEdit}
                                 open={this.props.editMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
@@ -2137,6 +2180,9 @@ class MenuBar extends React.Component {
                                 />
                                 <MenuBarMenu
                                     className={classNames(styles.menuBarMenu)}
+                                    mobileBack
+                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.mode)}
+                                    onMobileClose={this.props.onRequestCloseMode}
                                     open={this.props.modeMenuOpen}
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
@@ -2185,6 +2231,9 @@ class MenuBar extends React.Component {
                             <ChevronDown size={8} />
                             <MenuBarMenu
                                 className={classNames(styles.menuBarMenu)}
+                                mobileBack
+                                mobileTitle={this.props.intl.formatMessage(menuLabelMessages.tools)}
+                                onMobileClose={this.props.onRequestCloseTools}
                                 open={this.props.toolsMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
@@ -2228,8 +2277,18 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.projectMetadata"
                                         />
                                     </MenuItem>
+                                    {!this.props.isPlayerOnly && mediaRecorderSupported && (
+                                        <MenuItem onClick={this.handleClickMediaRecorder}>
+                                            <Video />
+                                            <FormattedMessage
+                                                defaultMessage="Record project video"
+                                                description="Menu bar item to open the project video recorder"
+                                                id="mw.menuBar.recordProjectVideo"
+                                            />
+                                        </MenuItem>
+                                    )}
                                 </MenuSection>
-                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
+                                {window.__mistwarpDebuggerToggle || this.props.onClickVariableManager ? (
                                     <MenuSection>
                                         {window.__mistwarpDebuggerToggle && (
                                             <MenuItem
@@ -2243,7 +2302,7 @@ class MenuBar extends React.Component {
                                                 />
                                             </MenuItem>
                                         )}
-                                        {window.__mistwarpVariableManagerToggle && (
+                                        {this.props.onClickVariableManager && (
                                             <MenuItem
                                                 onClick={this.handleClickVariableManager}
                                             >
@@ -2302,6 +2361,9 @@ class MenuBar extends React.Component {
                                 <ChevronDown size={8} />
                                 <MenuBarMenu
                                     className={classNames(styles.menuBarMenu)}
+                                    mobileBack
+                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.bookmarks)}
+                                    onMobileClose={this.props.onRequestCloseWorkspaceBookmarks}
                                     open={this.props.workspaceBookmarksMenuOpen}
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
@@ -2327,15 +2389,6 @@ class MenuBar extends React.Component {
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
                     </div>
 
-                    {!this.props.isPlayerOnly && mediaRecorderSupported &&
-                        this.state.menuBarSettings.show_media_recorder && (
-                        <MediaRecorderButton
-                            className={classNames(styles.menuBarItem, styles.hoverable)}
-                            labelClassName={styles.collapsibleLabel}
-                            projectTitle={this.props.projectTitle}
-                            vm={this.props.vm}
-                        />
-                    )}
                     {!this.props.isPlayerOnly && (
                         <button
                             type="button"
@@ -2501,7 +2554,7 @@ class MenuBar extends React.Component {
                     </div>
                     <div
                         data-mw-item="mw-editor-nav"
-                        className={styles.menuBarLayoutItem}
+                        className={classNames(styles.menuBarLayoutItem, styles.editorNavSlot)}
                     >
                         <MwEditorNav />
                     </div>
@@ -2518,6 +2571,13 @@ class MenuBar extends React.Component {
         return (
             <React.Fragment>
                 {menuBar}
+                {!this.props.isPlayerOnly && mediaRecorderSupported && (
+                    <MediaRecorderButton
+                        openRequest={this.state.mediaRecorderOpenRequest}
+                        projectTitle={this.props.projectTitle}
+                        vm={this.props.vm}
+                    />
+                )}
                 <TWNews />
             </React.Fragment>
         );
@@ -2594,6 +2654,7 @@ MenuBar.propTypes = {
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
     onClickProjectMetadata: PropTypes.func,
+    onClickVariableManager: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
     openSimpleDialog: PropTypes.func.isRequired,
@@ -2733,6 +2794,7 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
+    onClickVariableManager: () => dispatch(openVariableManagerModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickGitModal: () => {
         dispatch(closeEditMenu());

@@ -38,12 +38,6 @@ const DEFINITIONS = [
         label: 'Show complexity score'
     },
     {
-        id: 'show_media_recorder',
-        type: 'boolean',
-        default: false,
-        label: 'Show project video recorder'
-    },
-    {
         id: 'autosave_enabled',
         type: 'boolean',
         default: false,
@@ -95,8 +89,6 @@ const legacyValue = id => {
     case 'show_sound_count':
     case 'show_complexity_score':
         return blockCount?.[id];
-    case 'show_media_recorder':
-        return typeof addons.mediarecorder?.enabled === 'boolean' ? addons.mediarecorder.enabled : null;
     case 'autosave_enabled':
         return autosave ? autosave.enabled === true && autosave.autosaveEnabled !== false : null;
     case 'autosave_interval':
