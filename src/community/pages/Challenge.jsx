@@ -24,7 +24,7 @@ const PHASES = {
 const timestamp = value => {
     const parsed = typeof value === 'number' ? value :
         typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : new Date(value).getTime();
-    return Number.isFinite(parsed) ? parsed : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
 const dateTime = value => {

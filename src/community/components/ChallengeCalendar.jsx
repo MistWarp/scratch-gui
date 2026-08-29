@@ -10,6 +10,7 @@ const CALENDAR_COLORS = ['#b83f88', '#328da1', '#526bb8', '#aa762d', '#35866b', 
 
 const calendarDay = value => {
     const normalized = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+    if (typeof normalized === 'number' && normalized <= 0) return null;
     const date = new Date(normalized);
     if (Number.isNaN(date.getTime())) return null;
     return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS);

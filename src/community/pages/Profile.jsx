@@ -26,7 +26,7 @@ import GroupTag from '../components/GroupTag.jsx';
 import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import {formatPlaytime, timeAgo} from '../format';
+import {formatPlaytime, safeDate, timeAgo} from '../format';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -92,12 +92,8 @@ export const profileThemeStyle = theme => {
 };
 
 const joinYear = ms => {
-    if (!ms) return null;
-    try {
-        return new Date(ms).getFullYear();
-    } catch (e) {
-        return null;
-    }
+    const date = safeDate(ms);
+    return date ? date.getFullYear() : null;
 };
 
 const lastPlayedLabel = value => {

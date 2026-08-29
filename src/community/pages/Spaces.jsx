@@ -62,7 +62,11 @@ const withSpaceCreate = (currentParams, open) => {
     return next;
 };
 
-const challengeDatesValid = (startsAt, endsAt) => new Date(endsAt).getTime() > new Date(startsAt).getTime();
+const challengeDatesValid = (startsAt, endsAt) => {
+    const start = new Date(startsAt).getTime();
+    const end = new Date(endsAt).getTime();
+    return start > 0 && end > start;
+};
 const spaceCreatePayload = form => ({
     ...form,
     title: form.title.trim(),
