@@ -227,7 +227,6 @@ const api = {
     gameSaves: () => request('/me/game-saves', {cache: false}),
     deleteGameSave: id => request(`/me/game-saves/${id}`, {method: 'DELETE'}),
     globalGameData: () => request('/me/game-data/global', {cache: false}),
-    putGlobalGameData: data => request('/me/game-data/global', {method: 'PUT', body: data}),
     gameInventory: () => request('/me/game-inventory', {cache: false}),
     gameInventoryConfig: id => request(`/projects/${id}/game-inventory-config`, {cache: false}),
     ...warpthemeApi,
