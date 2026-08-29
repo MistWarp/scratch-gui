@@ -39,6 +39,58 @@ export const profileLoadMessage = error => (
     error && error.status === 404 ? 'This user does not exist on Rotur.' : 'Could not load this profile.'
 );
 
+const normalizeThemeColor = value => {
+    const color = typeof value === 'string' ? value.trim() : '';
+    if (/^#[0-9a-f]{6}$/i.test(color)) return color.toLowerCase();
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+        return `#${color.slice(1).split('').map(part => part + part).join('')}`.toLowerCase();
+    }
+    return null;
+};
+
+const accentContrast = color => {
+    const channels = [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16) / 255);
+    const luminance = channels.reduce((total, channel, index) => (
+        total + ((channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)) *
+            [0.2126, 0.7152, 0.0722][index])
+    ), 0);
+    return luminance > 0.48 ? '#090a0b' : '#ffffff';
+};
+
+export const profileThemeStyle = theme => {
+    if (!theme || typeof theme !== 'object') return {};
+    const accent = normalizeThemeColor(theme.accent);
+    const background = normalizeThemeColor(theme.background);
+    const primary = normalizeThemeColor(theme.primary);
+    const secondary = normalizeThemeColor(theme.secondary);
+    const tertiary = normalizeThemeColor(theme.tertiary);
+    const text = normalizeThemeColor(theme.text);
+    return {
+        ...(accent ? {
+            '--accent': accent,
+            '--accent-strong': accent,
+            '--accent-border': accent,
+            '--accent-soft': `color-mix(in srgb, ${accent} 18%, transparent)`,
+            '--accent-softer': `color-mix(in srgb, ${accent} 10%, transparent)`,
+            '--accent-contrast': accentContrast(accent)
+        } : {}),
+        ...(background ? {'--profile-card-background': background} : {}),
+        ...(primary ? {'--bg-card': primary, '--mw-panel': primary} : {}),
+        ...(secondary ? {'--bg-raised': secondary} : {}),
+        ...(tertiary ? {
+            '--border': tertiary,
+            '--border-soft': `color-mix(in srgb, ${tertiary} 68%, transparent)`,
+            '--mw-border': tertiary
+        } : {}),
+        ...(text ? {
+            '--mw-text': text,
+            '--text-dim': `color-mix(in srgb, ${text} 72%, transparent)`,
+            '--text-faint': `color-mix(in srgb, ${text} 52%, transparent)`,
+            '--mw-text-muted': `color-mix(in srgb, ${text} 66%, transparent)`
+        } : {})
+    };
+};
+
 const joinYear = ms => {
     if (!ms) return null;
     try {
@@ -353,6 +405,8 @@ const Profile = () => {
     const showRecentActivity = Boolean(mwUser && onMistWarp);
     const recentActivity = mwUser && Array.isArray(mwUser.recentActivity) ?
         mwUser.recentActivity.filter(item => typeof item.libraryPublic === 'boolean') : [];
+    const profileTheme = profileThemeStyle(profile.theme);
+    const hasProfileTheme = Object.keys(profileTheme).length > 0;
     const selectTab = tab => {
         setActiveTab(tab);
         if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
@@ -657,7 +711,10 @@ const Profile = () => {
                     ) : null}
                 </div>
                 <aside className={styles.profileRail}>
-                    <section className={styles.profileCard}>
+                    <section
+                        className={`${styles.profileCard} ${hasProfileTheme ? styles.profileCardThemed : ''}`}
+                        style={profileTheme}
+                    >
                         {profile.profile_video ? (
                             <video
                                 className={styles.profileVideo}

@@ -4,6 +4,7 @@ import {
     DonateModal,
     mergeProjects,
     parseDonationAmount,
+    profileThemeStyle,
     profileLoadMessage,
     scrollToCommentAnchor
 } from '../../src/community/pages/Profile.jsx';
@@ -40,6 +41,25 @@ describe('Profile loading', () => {
     test('distinguishes a missing account from an outage', () => {
         expect(profileLoadMessage({status: 404})).toBe('This user does not exist on Rotur.');
         expect(profileLoadMessage({status: 503})).toBe('Could not load this profile.');
+    });
+
+    test('maps valid Rotur profile theme colors into scoped page variables', () => {
+        expect(profileThemeStyle({
+            accent: '#7cc2f8',
+            background: '#090a0b',
+            primary: '#1a1d28',
+            secondary: '#313f4e',
+            tertiary: '#4f617d',
+            text: '#bae3ee'
+        })).toMatchObject({
+            '--accent': '#7cc2f8',
+            '--profile-card-background': '#090a0b',
+            '--bg-card': '#1a1d28',
+            '--bg-raised': '#313f4e',
+            '--border': '#4f617d',
+            '--mw-text': '#bae3ee'
+        });
+        expect(profileThemeStyle({accent: 'red', background: 'url(javascript:bad)'})).toEqual({});
     });
 
     test('cancels pending comment-anchor retries when leaving the profile', () => {
