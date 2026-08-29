@@ -1029,7 +1029,7 @@ const BountiesPanel = ({project}) => {
                 resource_id: project.id
             });
             setForm({title: '', description: '', amount: '10'});
-            setStatus('Bounty funded. A merged contribution can claim it.');
+            setStatus('Bounty published. MistWarp will pay it when you merge a pull request linked to it.');
             load();
         } catch (error) {
             setStatus(error.message || 'Could not create the bounty.');
@@ -1055,14 +1055,14 @@ const BountiesPanel = ({project}) => {
     return (
         <div className={styles.stack}>
             <div className={styles.card}>
-                <h2 className={styles.cardTitle}>Fund some work</h2>
-                <p className={styles.empty}>A contributor can attach this bounty when sending changes. Merging those changes pays them automatically.</p>
+                <h2 className={styles.cardTitle}>Create a bounty</h2>
+                <p className={styles.empty}>Offer credits for one clear change. Contributors can choose the bounty before they fork, then link it to their pull request.</p>
                 <form className={styles.form} onSubmit={create}>
                     <input
                         disabled={busy}
                         maxLength={120}
                         value={form.title}
-                        placeholder="What needs doing?"
+                        placeholder="Short task, such as Add keyboard controls"
                         onChange={event => {
                             const {value} = event.currentTarget;
                             setForm(current => ({...current, title: value}));
@@ -1072,7 +1072,7 @@ const BountiesPanel = ({project}) => {
                         disabled={busy}
                         maxLength={2000}
                         value={form.description}
-                        placeholder="Describe what counts as done"
+                        placeholder="What should change? Include anything you will check before merging."
                         onChange={event => {
                             const {value} = event.currentTarget;
                             setForm(current => ({...current, description: value}));
