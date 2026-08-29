@@ -22,7 +22,8 @@ describe('My Stuff upload feedback', () => {
     test('normalizes URL-backed sections', () => {
         expect(getMyStuffSection('projects')).toBe('projects');
         expect(getMyStuffSection('themes')).toBe('themes');
-        expect(getMyStuffSection('playtime')).toBe('playtime');
+        expect(getMyStuffSection('library')).toBe('library');
+        expect(getMyStuffSection('playtime')).toBe('library');
         expect(getMyStuffSection('trash')).toBe('trash');
         expect(getMyStuffSection('unknown')).toBe('overview');
         expect(getMyStuffSection(null)).toBe('overview');
@@ -33,7 +34,7 @@ describe('My Stuff upload feedback', () => {
         expect(normalizeMyStuffParams(new URLSearchParams('section=themes&themeView=published')).toString())
             .toBe('section=themes&themeView=published');
         expect(normalizeMyStuffParams(new URLSearchParams('section=collections&collectionView=library')).toString())
-            .toBe('section=collections&collectionView=library');
+            .toBe('section=library');
         expect(normalizeMyStuffParams(new URLSearchParams('section=spaces&collectionView=library')).toString())
             .toBe('section=spaces');
     });

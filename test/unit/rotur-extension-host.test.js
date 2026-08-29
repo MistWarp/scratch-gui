@@ -71,3 +71,30 @@ test('authenticated reads expand scopes without prompting', async () => {
     }, ['credits:view']);
     expect(host.acquireModalLock).not.toHaveBeenCalled();
 });
+
+test('clears project activities when the editor host unmounts', async () => {
+    const host = new RoturExtensionHost({
+        vm: {runtime: {}},
+        projectTitle: 'Project'
+    });
+
+    await host.activityScope.call('socket.addActivity', [{id: 'project-123'}]);
+    host.componentWillUnmount();
+
+    expect(callRotur).toHaveBeenLastCalledWith('socket.removeActivity', ['project-123']);
+});
+
+test('clears project activities when the editor loads another project', async () => {
+    sessionStorage.removeItem('mw:mistwarp-current-project');
+    const host = new RoturExtensionHost({
+        vm: {runtime: {}},
+        projectTitle: 'First project'
+    });
+    host.componentDidMount();
+    await host.activityScope.call('socket.addActivity', [{id: 'first-project'}]);
+
+    host.props = {...host.props, projectTitle: 'Second project'};
+    host.componentDidUpdate();
+
+    expect(callRotur).toHaveBeenLastCalledWith('socket.removeActivity', ['first-project']);
+});

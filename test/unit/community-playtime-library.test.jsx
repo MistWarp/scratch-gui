@@ -6,8 +6,10 @@ describe('Playtime library', () => {
     test('shows games in ranked order with their playtime', () => {
         const wrapper = shallow(<PlaytimeLibrary
             projects={[
-                {id: 'one', title: 'Long game', owner: 'Alex', duration: 7200000, lastPlayed: Date.now()},
-                {id: 'two', title: 'Short game', owner: 'Sam', duration: 1800000, lastPlayed: Date.now()}
+                {id: 'one', title: 'Long game', owner: 'Alex', duration: 7200000,
+                    lastPlayed: Date.now(), libraryPublic: true},
+                {id: 'two', title: 'Short game', owner: 'Sam', duration: 1800000,
+                    lastPlayed: Date.now(), libraryPublic: true}
             ]}
             total={2}
         />);
@@ -27,7 +29,8 @@ describe('Playtime library', () => {
 
     test('marks a private library as visible to its owner', () => {
         const wrapper = shallow(<PlaytimeLibrary
-            projects={[{id: 'one', title: 'Game', owner: 'Alex', duration: 60000, lastPlayed: Date.now()}]}
+            projects={[{id: 'one', title: 'Game', owner: 'Alex', duration: 60000,
+                lastPlayed: Date.now(), libraryPublic: false}]}
             total={1}
             visible={false}
             self
@@ -35,5 +38,15 @@ describe('Playtime library', () => {
 
         expect(wrapper.text()).toContain('Only visible to you');
         expect(wrapper.text()).toContain('1m');
+    });
+
+    test('does not trust playtime records that are missing library visibility', () => {
+        const wrapper = shallow(<PlaytimeLibrary
+            projects={[{id: 'one', title: 'Played but not saved', duration: 60000}]}
+            total={1}
+        />);
+
+        expect(wrapper.text()).not.toContain('Played but not saved');
+        expect(wrapper.text()).toContain('No library games with playtime yet.');
     });
 });

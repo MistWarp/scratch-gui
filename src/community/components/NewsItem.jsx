@@ -182,13 +182,20 @@ const NewsItem = ({compact, item, onChanged}) => {
             ) : null}
             <div className={styles.footer}>
                 <ReactionButtons
-                    reactions={item.reactions}
+                    counts={item.reactionCounts}
+                    activeReaction={item.myReaction || ''}
                     onReact={react}
                     disabled={Boolean(actionBusy)}
                     disabledTitle={!user ? 'Sign in to react' : 'Saving…'}
                 />
                 {item.author ? <span className={styles.author}>posted by {item.author}</span> : null}
             </div>
+            {canDelete && item.reactionUsers ? (
+                <div className={styles.reactionUsers}>
+                    <span>Liked by {(item.reactionUsers.heart || []).join(', ') || 'nobody'}</span>
+                    <span>Disliked by {(item.reactionUsers.brokenheart || []).join(', ') || 'nobody'}</span>
+                </div>
+            ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}
         </article>
     </>);

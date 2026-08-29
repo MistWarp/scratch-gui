@@ -49,6 +49,19 @@
     color: var(--accent-strong);
 }
 
+.groupLabel {
+    margin: 10px 10px 1px;
+    color: var(--text-faint);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.groupLabel:first-child {
+    margin-top: 2px;
+}
+
 @media (max-width: 720px) {
     .sidebar {
         position: static;
@@ -65,6 +78,10 @@
         box-shadow: none;
         scroll-snap-type: x proximity;
         scrollbar-width: none;
+    }
+
+    .groupLabel {
+        display: none;
     }
 
     .sidebar::-webkit-scrollbar {

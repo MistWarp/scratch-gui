@@ -240,6 +240,8 @@
 
 .topActions {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 10px;
     flex-shrink: 0;
 }
@@ -370,6 +372,12 @@
 .statButton:hover:enabled {
     border-color: var(--mw-accent);
     color: var(--mw-text);
+}
+
+.statButtonActive {
+    border-color: var(--mw-accent);
+    color: var(--mw-accent);
+    background: color-mix(in srgb, var(--mw-accent) 10%, var(--mw-panel));
 }
 
 .statButton:disabled {

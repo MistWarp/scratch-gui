@@ -5,8 +5,6 @@ import {connect} from 'react-redux';
 import {
     loadProjectSave,
     saveProjectData,
-    loadGlobalGameData,
-    saveGlobalGameData,
     loadProjectInventory,
     grantProjectItem
 } from '../lib/mistwarp-games/data-client.js';
@@ -103,10 +101,6 @@ class MistWarpGameHost extends React.Component {
             this.draftSaveRevision += 1;
             return Promise.resolve({revision: this.draftSaveRevision, value: this.draftSave});
         }
-        if (method === 'data.global') return Promise.resolve({revision: 0, value: {}});
-        if (method === 'data.global.save') {
-            return Promise.reject(new Error('Save this project to MistWarp before changing account game data'));
-        }
         if (method === 'inventory.load' || method === 'inventory.grant') {
             return Promise.resolve({revision: 0, items: []});
         }
@@ -140,8 +134,6 @@ class MistWarpGameHost extends React.Component {
         const projectId = this.requireProject();
         if (method === 'data.load') return loadProjectSave(projectId, 'editor');
         if (method === 'data.save') return saveProjectData(projectId, 'editor', args[0]);
-        if (method === 'data.global') return loadGlobalGameData(projectId, 'editor');
-        if (method === 'data.global.save') return saveGlobalGameData(projectId, 'editor', args[0]);
         if (method === 'inventory.load') return loadProjectInventory(projectId, 'editor');
         if (method === 'inventory.grant') {
             const request = args[0] || {};

@@ -144,7 +144,8 @@ const CommentRow = ({
                 <div className={styles.reactions}>
                     <ReactionButtons
                         small
-                        reactions={comment.reactions}
+                        counts={comment.reactionCounts}
+                        activeReaction={comment.myReaction || ''}
                         onReact={onReact}
                         disabled={reacting}
                         disabledTitle="Saving…"
@@ -471,16 +472,6 @@ const CommentThread = ({
         }
     };
 
-    const toggleReaction = (reactions, type, username) => {
-        const had = (reactions[type] || []).some(name => sameUser(name, username));
-        const next = {};
-        for (const key of Object.keys(reactions)) {
-            next[key] = (reactions[key] || []).filter(name => !sameUser(name, username));
-        }
-        if (!had) next[type] = [...(next[type] || []), username];
-        return next;
-    };
-
     const saveEdit = async commentId => {
         if (!source.edit || !editText.trim()) return;
         const actionSource = source;
@@ -517,10 +508,10 @@ const CommentThread = ({
         if (!releaseAction) return;
         setReactingId(commentId);
         try {
-            await actionSource.react(commentId, type);
+            const result = await actionSource.react(commentId, type);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
             setComments(cs => cs.map(c => (c.id === commentId ?
-                {...c, reactions: toggleReaction(c.reactions || {}, type, actionViewer)} :
+                {...c, reactionCounts: result.reactionCounts, myReaction: result.myReaction || ''} :
                 c)));
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {

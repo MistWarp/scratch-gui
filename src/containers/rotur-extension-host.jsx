@@ -10,6 +10,7 @@ import {
 import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
+import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 
 // Attaches a Rotur "host" onto vm.runtime so builtin Rotur extensions can act as
 // the logged-in user without ever seeing the token. The token stays inside the
@@ -24,10 +25,13 @@ class RoturExtensionHost extends React.Component {
         ]);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
+        this.activityScope = new ProjectActivityScope(callRotur);
+        this.projectKey = null;
         this.state = {type: null, data: null, callback: null, modalCount: 0};
     }
 
     componentDidMount () {
+        this.projectKey = this.activityKey();
         this.props.vm.runtime.roturHost = {
             getUser: this.getUser,
             ensureConsent: this.ensureConsent,
@@ -42,7 +46,17 @@ class RoturExtensionHost extends React.Component {
         };
     }
 
+    componentDidUpdate () {
+        const nextProjectKey = this.activityKey();
+        if (nextProjectKey !== this.projectKey) {
+            this.activityScope.clear();
+            this.activityScope = new ProjectActivityScope(callRotur);
+            this.projectKey = nextProjectKey;
+        }
+    }
+
     componentWillUnmount () {
+        this.activityScope.clear();
         if (this.props.vm.runtime.roturHost) {
             delete this.props.vm.runtime.roturHost;
             delete this.props.vm.runtime._roturHostResolved;
@@ -197,7 +211,7 @@ class RoturExtensionHost extends React.Component {
                 throw new Error('You cancelled this Rotur action');
             }
         }
-        return callRotur(method, args);
+        return this.activityScope.call(method, args);
     }
 
     render () {

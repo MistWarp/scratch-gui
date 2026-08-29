@@ -158,7 +158,6 @@ const Settings = () => {
     const [dataStatus, setDataStatus] = useState('');
     const [dataBusy, setDataBusy] = useState('');
     const [gameSaves, setGameSaves] = useState([]);
-    const [globalGameData, setGlobalGameData] = useState(null);
     const [portableItems, setPortableItems] = useState([]);
     const [gameDataError, setGameDataError] = useState('');
     const [gameDataAttempt, setGameDataAttempt] = useState(0);
@@ -191,7 +190,6 @@ const Settings = () => {
         setDeleteConfirmation('');
         setDeleteModalOpen(false);
         setGameSaves([]);
-        setGlobalGameData(null);
         setPortableItems([]);
         setGameDataError('');
         setSaveToDelete(null);
@@ -227,13 +225,11 @@ const Settings = () => {
         setGameDataError('');
         setDataBusy('game-load');
         setGameSaves([]);
-        setGlobalGameData(null);
         setPortableItems([]);
-        Promise.all([api.gameSaves(), api.globalGameData(), api.gameInventory()])
-            .then(([savesResult, globalResult, inventoryResult]) => {
+        Promise.all([api.gameSaves(), api.gameInventory()])
+            .then(([savesResult, inventoryResult]) => {
                 if (cancelled) return;
                 setGameSaves(savesResult.saves || []);
-                setGlobalGameData(globalResult.data || {revision: 0, value: {}, updatedAt: 0});
                 setPortableItems((inventoryResult.inventory && inventoryResult.inventory.items) || []);
             })
             .catch(e => {
@@ -627,7 +623,7 @@ const Settings = () => {
                                         checked={showRecentActivity}
                                         disabled={privacyBusy}
                                         label="Show game activity and library"
-                                        description="Display your most-played public games, total playtime, and when you last played them."
+                                        description="Display playtime for games you have added to your public library."
                                         onChange={changeRecentActivityPrivacy}
                                     />
                                 </div>
@@ -798,13 +794,6 @@ const Settings = () => {
                                     </p>
                                 ) : (
                                     <React.Fragment>
-                                        <div className={styles.dataAction}>
-                                            <div>
-                                                <h3>Global account game data</h3>
-                                                <p>Games can read this while you play. You can change your own account game data while editing a project you own or collaborate on.</p>
-                                                <pre className={styles.gameDataJson}>{JSON.stringify((globalGameData && globalGameData.value) || {}, null, 2)}</pre>
-                                            </div>
-                                        </div>
                                         <h3>Project saves</h3>
                                         {gameSaves.length ? gameSaves.map(save => (
                                             <div className={styles.dataAction} key={save.projectId}>

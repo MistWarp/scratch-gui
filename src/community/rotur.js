@@ -34,6 +34,7 @@ const get = async (path, params = {}) => {
 const CACHE_TTL = 30000;
 const CACHE_MAX_ENTRIES = 200;
 const cache = new Map();
+const cacheKey = (path, params) => `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
 
 const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = {}) => {
     if (scopes.length) await ensureScopes(scopes);
@@ -72,7 +73,7 @@ const pruneCache = () => {
 };
 
 const cachedGet = (path, params = {}) => {
-    const key = `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
+    const key = cacheKey(path, params);
     const hit = cache.get(key);
     if (hit) {
         cache.delete(key);
@@ -91,6 +92,19 @@ const cachedGet = (path, params = {}) => {
     });
     cache.set(key, {promise});
     return promise;
+};
+
+const getProfile = (username, {includePosts = false} = {}) => {
+    const canonicalUsername = String(username || '').trim().toLowerCase();
+    const path = `/profile/${encodeURIComponent(canonicalUsername)}`;
+    const params = {include_posts: includePosts ? '1' : '0'};
+    return cachedGet(path, params).then(data => {
+        if (includePosts) {
+            cache.set(cacheKey(path, {include_posts: '0'}), {time: Date.now(), data});
+            pruneCache();
+        }
+        return data;
+    });
 };
 
 const avatar = (username, size = 128, radius = 0) => {
@@ -159,8 +173,7 @@ const withGroupTags = users => Promise.all((users || []).map(async user => {
 const rotur = {
     avatar,
     banner,
-    profile: (username, {includePosts = false} = {}) =>
-        cachedGet(`/profile/${encodeURIComponent(username)}`, {include_posts: includePosts ? '1' : '0'}),
+    profile: getProfile,
     follow: username => get('/follow', {username}).then(data => {
         cache.clear();
         return data;

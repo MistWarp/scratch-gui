@@ -34,23 +34,24 @@ const PlaytimeLibrary = ({
             </div>
         );
     }
-    if (!projects.length) {
+    const libraryProjects = projects.filter(project => typeof project.libraryPublic === 'boolean');
+    if (!libraryProjects.length) {
         return (
             <div className={styles.empty}>
                 <Gamepad2 size={36} />
-                <strong>{self ? 'You have not played any games yet.' : 'No games played yet.'}</strong>
-                <span>Playtime from signed-in sessions will appear here.</span>
+                <strong>No library games with playtime yet.</strong>
+                <span>Games must be added to the library before their playtime appears here.</span>
             </div>
         );
     }
     return (
         <React.Fragment>
             <div className={styles.summary}>
-                <strong>{total.toLocaleString()}</strong> {total === 1 ? 'game' : 'games'} played
+                <strong>{total.toLocaleString()}</strong> {total === 1 ? 'library game' : 'library games'} played
                 {!visible && self ? <span>Only visible to you</span> : null}
             </div>
             <div className={styles.list}>
-                {projects.map((project, index) => (
+                {libraryProjects.map((project, index) => (
                     <Link className={styles.row} key={project.id} to={projectUrl(project.id)}>
                         <span className={styles.rank}>{index + 1}</span>
                         <ProjectThumbnail
