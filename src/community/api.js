@@ -185,6 +185,10 @@ const api = {
     myProjectPage: (name, {offset = 0, limit = 24} = {}) =>
         request(`/users/${encodeURIComponent(name)}/projects?all=1&offset=${offset}&limit=${limit}`),
     library: ({offset = 0, limit = 24} = {}) => request(`/me/library?offset=${offset}&limit=${limit}`),
+    setLibraryProjectVisibility: (id, libraryPublic) => request(
+        `/me/library/${encodeURIComponent(id)}/visibility`,
+        {method: 'PUT', body: {public: libraryPublic}}
+    ),
     trash: () => request('/me/trash'),
     restoreProject: id => request(`/projects/${id}/restore`, {method: 'POST'}),
     purgeProject: id => request(`/trash/${id}`, {method: 'DELETE'}),
@@ -221,12 +225,8 @@ const api = {
     putProjectSave: (id, capability, save) => request(`/projects/${id}/me/save`, {
         method: 'PUT', body: save, headers: {'X-MistWarp-Game-Data': capability}
     }),
-    getProjectGlobalGameData: (id, capability) => request(`/projects/${id}/me/global-data`, {
-        headers: {'X-MistWarp-Game-Data': capability}, cache: false
-    }),
     gameSaves: () => request('/me/game-saves', {cache: false}),
     deleteGameSave: id => request(`/me/game-saves/${id}`, {method: 'DELETE'}),
-    globalGameData: () => request('/me/game-data/global', {cache: false}),
     gameInventory: () => request('/me/game-inventory', {cache: false}),
     gameInventoryConfig: id => request(`/projects/${id}/game-inventory-config`, {cache: false}),
     ...warpthemeApi,

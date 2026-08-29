@@ -225,28 +225,6 @@
     padding: 40px 0;
 }
 
-.playtimeSection {
-    min-width: 0;
-}
-
-.playtimeHead {
-    margin-bottom: 20px;
-}
-
-.playtimeHead h1,
-.playtimeHead p {
-    margin: 0;
-}
-
-.playtimeHead h1 {
-    font-size: 24px;
-}
-
-.playtimeHead p {
-    margin-top: 5px;
-    color: var(--text-dim);
-}
-
 .loadMore {
     display: flex;
     justify-content: center;

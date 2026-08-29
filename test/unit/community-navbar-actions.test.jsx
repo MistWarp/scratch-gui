@@ -60,10 +60,22 @@ describe('community navigation actions', () => {
     test('shows notifications in the signed-in mobile dock', () => {
         mockUser = {username: 'Sophie', isAdmin: false};
         const wrapper = renderNav();
-        const notificationLinks = wrapper.find('a[aria-label="Notifications"]');
+        const notificationLinks = wrapper
+            .find('nav[aria-label="Mobile navigation"]')
+            .find('a[aria-label="Notifications"]');
 
         expect(notificationLinks).toHaveLength(1);
         expect(notificationLinks.prop('href')).toBe('/notifications');
+        wrapper.unmount();
+    });
+
+    test('shows notifications in the signed-in desktop menu bar', () => {
+        mockUser = {username: 'Sophie', isAdmin: false};
+        const wrapper = renderNav();
+        const notificationLinks = wrapper.find('a[aria-label="Notifications"]');
+
+        expect(notificationLinks).toHaveLength(2);
+        expect(notificationLinks.everyWhere(link => link.prop('href') === '/notifications')).toBe(true);
         wrapper.unmount();
     });
 

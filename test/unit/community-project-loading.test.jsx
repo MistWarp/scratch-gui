@@ -153,4 +153,46 @@ describe('community project loading', () => {
         wrapper.unmount();
         localStorage.removeItem('mw:embed-storage:project-1:score');
     });
+
+    test('shows save to library as a primary project action', async () => {
+        rotur.following.mockResolvedValue({following: []});
+        jest.spyOn(api, 'getProject').mockResolvedValue({
+            project: {
+                id: 'project-1',
+                title: 'Project',
+                owner: 'Creator',
+                hasContent: true,
+                visibility: 'public',
+                saved: false,
+                myPlaytimeMs: 5400000,
+                canSeeInside: false,
+                canRemix: false
+            }
+        });
+        jest.spyOn(api, 'commits').mockResolvedValue({commits: []});
+        jest.spyOn(api, 'view').mockResolvedValue({});
+        const saveProject = jest.spyOn(api, 'saveProject').mockResolvedValue({saved: true});
+        setMockUserContext({user: {username: 'Viewer'}, loading: false, login: jest.fn()});
+
+        const wrapper = mount(<Harness renderVersion={0} />);
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        const saveButton = wrapper.find('button')
+            .filterWhere(button => button.text() === 'Save to library');
+        expect(saveButton).toHaveLength(1);
+        expect(wrapper.text()).toContain('1h 30m played');
+        await act(async () => {
+            saveButton.simulate('click');
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(saveProject).toHaveBeenCalledWith('project-1');
+        expect(wrapper.find('button').filterWhere(button => button.text() === 'Remove from library')).toHaveLength(1);
+        wrapper.unmount();
+    });
 });

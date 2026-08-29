@@ -351,6 +351,8 @@ const Profile = () => {
         `${presenceState.charAt(0).toUpperCase()}${presenceState.slice(1)}`;
     const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
     const showRecentActivity = Boolean(mwUser && onMistWarp);
+    const recentActivity = mwUser && Array.isArray(mwUser.recentActivity) ?
+        mwUser.recentActivity.filter(item => typeof item.libraryPublic === 'boolean') : [];
     const selectTab = tab => {
         setActiveTab(tab);
         if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
@@ -448,27 +450,30 @@ const Profile = () => {
                                             </Link>
                                         </div>
                                     </div>
-                                    {mwUser.recentActivity?.length ? (
+                                    {recentActivity.length ? (
                                         <div className={styles.recentActivity}>
-                                            {mwUser.recentActivity.map(item => (
-                                                <Link className={styles.recentActivityItem} key={item.projectId} to={projectUrl(item.projectId)}>
-                                                    <img src={item.thumbUrl} alt="" loading="lazy" />
-                                                    <span className={styles.recentActivityCopy}>
-                                                        <strong>{item.title}</strong>
-                                                        <small>by {item.owner}</small>
-                                                    </span>
-                                                    <span className={styles.recentActivityStats}>
-                                                        <strong>{item.duration > 0 ? formatPlaytime(item.duration, false) : 'Just played'}</strong>
-                                                        <small>{lastPlayedLabel(item.lastPlayed)}</small>
-                                                    </span>
-                                                </Link>
-                                            ))}
+                                            {recentActivity.map(item => {
+                                                const projectId = item.projectId || item.id || item._id;
+                                                return (
+                                                    <Link className={styles.recentActivityItem} key={projectId} to={projectUrl(projectId)}>
+                                                        <img src={item.thumbUrl} alt="" loading="lazy" />
+                                                        <span className={styles.recentActivityCopy}>
+                                                            <strong>{item.title}</strong>
+                                                            <small>by {item.owner}</small>
+                                                        </span>
+                                                        <span className={styles.recentActivityStats}>
+                                                            <strong>{item.duration > 0 ? formatPlaytime(item.duration, false) : 'Just played'}</strong>
+                                                            <small>{lastPlayedLabel(item.lastPlayed)}</small>
+                                                        </span>
+                                                    </Link>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <p className={styles.sectionEmpty}>
                                             {mwUser.recentActivityVisible === false && !isSelf ?
                                                 'This user has chosen not to share what they play.' :
-                                                'Projects opened while signed in will appear here.'}
+                                                'Games added to the library will appear here after they are played.'}
                                         </p>
                                     )}
                                 </section>

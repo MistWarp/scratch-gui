@@ -275,3 +275,18 @@ test('Rotur profile caching evicts old entries instead of growing without bound'
 
     expect(window.fetch).toHaveBeenCalledTimes(requestsBeforeRevisit + 1);
 });
+
+test('a full Rotur profile response also satisfies group tag profile reads', async () => {
+    window.fetch = jest.fn(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({username: 'ProfileCacheCase', posts: [], group_tag: 'warp'})
+    }));
+
+    await rotur.profile('ProfileCacheCase', {includePosts: true});
+    await rotur.profile('profilecachecase');
+
+    expect(window.fetch).toHaveBeenCalledTimes(1);
+    expect(window.fetch.mock.calls[0][0]).toBe(
+        'https://api.rotur.dev/profile/profilecachecase?include_posts=1'
+    );
+});

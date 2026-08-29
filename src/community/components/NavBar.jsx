@@ -388,6 +388,17 @@ const NavBar = () => {
                                 </Link>
                             ) : null}
                             <Link
+                                to="/notifications"
+                                className={`${styles.iconLink} ${styles.bellLink}`}
+                                title="Notifications"
+                                aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+                            >
+                                <Bell size={19} />
+                                {unread > 0 ? (
+                                    <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
+                                ) : null}
+                            </Link>
+                            <Link
                                 to="/mystuff"
                                 className={styles.iconLink}
                                 title="My stuff"

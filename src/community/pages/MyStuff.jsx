@@ -4,7 +4,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
     SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
-    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette, Gamepad2
+    RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes, formatDate} from '../format';
@@ -18,7 +18,7 @@ import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
 import MyStuffThemes from '../components/MyStuffThemes.jsx';
-import PlaytimeLibrary from '../components/PlaytimeLibrary.jsx';
+import MyStuffLibrary from '../components/MyStuffLibrary.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
@@ -505,27 +505,29 @@ const AgreementTab = () => {
 
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
-    {key: 'playtime', label: 'Playtime', icon: Gamepad2},
-    {key: 'projects', label: 'My Projects', icon: FolderOpen},
-    {key: 'themes', label: 'Themes', icon: Palette},
-    {key: 'inventory', label: 'Inventory', icon: Package},
-    {key: 'trash', label: 'Trash', icon: Trash2},
-    {key: 'uploads', label: 'Uploads', icon: HardDrive},
-    {key: 'agreement', label: 'Agreement', icon: HeartHandshake},
-    {key: 'collections', label: 'Collections', icon: Library},
-    {key: 'spaces', label: 'Spaces', icon: Layers3}
+    {key: 'projects', label: 'My Projects', icon: FolderOpen, group: 'Projects'},
+    {key: 'library', label: 'Library', icon: Bookmark, group: 'Projects'},
+    {key: 'collections', label: 'Collections', icon: Library, group: 'Projects'},
+    {key: 'spaces', label: 'Spaces', icon: Layers3, group: 'Projects'},
+    {key: 'themes', label: 'Themes', icon: Palette, group: 'Assets'},
+    {key: 'inventory', label: 'Inventory', icon: Package, group: 'Assets'},
+    {key: 'uploads', label: 'Uploads', icon: HardDrive, group: 'Account'},
+    {key: 'trash', label: 'Trash', icon: Trash2, group: 'Account'},
+    {key: 'agreement', label: 'Agreement', icon: HeartHandshake, group: 'Account'}
 ];
 const getMyStuffSection = value => {
+    if (value === 'playtime') return 'library';
     if (SECTIONS.some(section => section.key === value)) return value;
     return 'overview';
 };
 const normalizeMyStuffParams = params => {
     const next = new URLSearchParams(params);
-    const section = getMyStuffSection(next.get('section'));
+    let section = getMyStuffSection(next.get('section'));
+    if (section === 'collections' && next.get('collectionView') === 'library') section = 'library';
     if (section === 'overview') next.delete('section');
     else next.set('section', section);
     if (section !== 'themes' || next.get('themeView') !== 'published') next.delete('themeView');
-    if (section !== 'collections' || next.get('collectionView') !== 'library') next.delete('collectionView');
+    next.delete('collectionView');
     return next;
 };
 
@@ -533,8 +535,6 @@ const MyStuff = () => {
     const {user, loading, login} = useUser();
     const [searchParams, setSearchParams] = useSearchParams();
     const tab = getMyStuffSection(searchParams.get('section'));
-    const collectionView = tab === 'collections' && searchParams.get('collectionView') === 'library' ?
-        'library' : 'collections';
     const [projects, setProjects] = useState(null);
     const [projectTotal, setProjectTotal] = useState(0);
     const [projectOffset, setProjectOffset] = useState(0);
@@ -555,13 +555,6 @@ const MyStuff = () => {
     const [account, setAccount] = useState(null);
     const [inventoryItems, setInventoryItems] = useState(null);
     const [inventoryFailed, setInventoryFailed] = useState(false);
-    const [playedProjects, setPlayedProjects] = useState([]);
-    const [playedTotal, setPlayedTotal] = useState(0);
-    const [playedOffset, setPlayedOffset] = useState(0);
-    const [playedVisible, setPlayedVisible] = useState(true);
-    const [playedLoading, setPlayedLoading] = useState(false);
-    const [playedFailed, setPlayedFailed] = useState(false);
-    const [playedMoreBusy, setPlayedMoreBusy] = useState(false);
     const [pendingUploadFile, setPendingUploadFile] = useState(null);
     const [showAgreeModal, setShowAgreeModal] = useState(false);
     const [agreeData, setAgreeData] = useState(null);
@@ -572,7 +565,8 @@ const MyStuff = () => {
     const [libraryTotal, setLibraryTotal] = useState(0);
     const [libraryOffset, setLibraryOffset] = useState(0);
     const [libraryBusy, setLibraryBusy] = useState(false);
-    const [libraryMoreFailed, setLibraryMoreFailed] = useState(false);
+    const [libraryVisibilityBusy, setLibraryVisibilityBusy] = useState('');
+    const [libraryVisibilityError, setLibraryVisibilityError] = useState('');
     const [spacesFailed, setSpacesFailed] = useState(false);
     const [libraryFailed, setLibraryFailed] = useState(false);
     const [directoriesLoading, setDirectoriesLoading] = useState(false);
@@ -606,17 +600,10 @@ const MyStuff = () => {
         if (nextTab === 'overview') next.delete('section');
         else next.set('section', nextTab);
         if (nextTab !== 'themes') next.delete('themeView');
-        if (nextTab !== 'collections') next.delete('collectionView');
+        next.delete('collectionView');
         if (!preserveError) setActionError('');
         setSearchParams(next);
     };
-    const setCollectionView = nextView => {
-        const next = new URLSearchParams(searchParams);
-        if (nextView === 'library') next.set('collectionView', 'library');
-        else next.delete('collectionView');
-        setSearchParams(next);
-    };
-
     useEffect(() => {
         const normalized = normalizeMyStuffParams(searchParams);
         if (normalized.toString() !== searchParams.toString()) {
@@ -631,7 +618,8 @@ const MyStuff = () => {
         setLibraryTotal(0);
         setLibraryOffset(0);
         setLibraryBusy(false);
-        setLibraryMoreFailed(false);
+        setLibraryVisibilityBusy('');
+        setLibraryVisibilityError('');
         setSpacesFailed(false);
         setLibraryFailed(false);
         setDirectoriesLoading(false);
@@ -654,13 +642,6 @@ const MyStuff = () => {
         setActionError('');
         setInventoryItems(null);
         setInventoryFailed(false);
-        setPlayedProjects([]);
-        setPlayedTotal(0);
-        setPlayedOffset(0);
-        setPlayedVisible(true);
-        setPlayedLoading(false);
-        setPlayedFailed(false);
-        setPlayedMoreBusy(false);
     }, [beginDirectoryLoad, beginStatsLoad, beginTrashLoad, username]);
 
     useEffect(() => {
@@ -771,49 +752,6 @@ const MyStuff = () => {
         loadInventory();
     }, [loadInventory]);
 
-    const loadPlaytime = useCallback(() => {
-        if (!user || tab !== 'playtime') return;
-        const context = accountContextRef.current;
-        setPlayedLoading(true);
-        setPlayedFailed(false);
-        api.userPlaytimeLibrary(user.username)
-            .then(data => {
-                if (accountContextRef.current !== context) return;
-                const items = data.projects || [];
-                setPlayedProjects(items);
-                setPlayedTotal(Number.isFinite(data.total) ? data.total : items.length);
-                setPlayedOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : items.length);
-                setPlayedVisible(data.visible !== false);
-            })
-            .catch(() => {
-                if (accountContextRef.current === context) setPlayedFailed(true);
-            })
-            .finally(() => {
-                if (accountContextRef.current === context) setPlayedLoading(false);
-            });
-    }, [tab, user]);
-
-    useEffect(() => {
-        loadPlaytime();
-    }, [loadPlaytime]);
-
-    const loadMorePlaytime = async () => {
-        if (!user || playedMoreBusy || playedOffset >= playedTotal) return;
-        const context = accountContextRef.current;
-        setPlayedMoreBusy(true);
-        try {
-            const data = await api.userPlaytimeLibrary(user.username, {offset: playedOffset});
-            if (accountContextRef.current !== context) return;
-            setPlayedProjects(current => [...current, ...(data.projects || [])]);
-            setPlayedTotal(Number.isFinite(data.total) ? data.total : playedTotal);
-            setPlayedOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : playedOffset + (data.projects || []).length);
-        } catch (e) {
-            if (accountContextRef.current === context) setPlayedFailed(true);
-        } finally {
-            if (accountContextRef.current === context) setPlayedMoreBusy(false);
-        }
-    };
-
     const loadTrash = useCallback(() => {
         if (!user || tab !== 'trash') return;
         const fresh = beginTrashLoad();
@@ -898,42 +836,58 @@ const MyStuff = () => {
         const fresh = beginDirectoryLoad();
         setDirectoriesLoading(true);
         setSpacesFailed(false);
-        setLibraryFailed(false);
-        Promise.allSettled([api.mySpaces(), api.library()]).then(fresh(([spacesResult, libraryResult]) => {
-            if (spacesResult.status === 'fulfilled') setMySpaces(spacesResult.value.spaces || []);
-            else setSpacesFailed(true);
-            if (libraryResult.status === 'fulfilled') {
-                setLibraryProjects(libraryResult.value.projects || []);
-                setLibraryTotal(Number.isFinite(libraryResult.value.total) ?
-                    libraryResult.value.total : (libraryResult.value.projects || []).length);
-                setLibraryOffset(Number.isFinite(libraryResult.value.nextOffset) ?
-                    libraryResult.value.nextOffset : (libraryResult.value.projects || []).length);
-            } else setLibraryFailed(true);
+        api.mySpaces().then(fresh(spacesResult => {
+            setMySpaces(spacesResult.spaces || []);
+            setDirectoriesLoading(false);
+        })).catch(fresh(() => {
+            setSpacesFailed(true);
             setDirectoriesLoading(false);
         }));
     }, [beginDirectoryLoad]);
 
+    const loadLibrary = useCallback(() => {
+        if (!user || tab !== 'library') return;
+        const context = accountContextRef.current;
+        setLibraryProjects(null);
+        setLibraryFailed(false);
+        api.library().then(data => {
+            if (accountContextRef.current !== context) return;
+            const items = data.projects || [];
+            setLibraryProjects(items);
+            setLibraryTotal(Number.isFinite(data.total) ? data.total : items.length);
+            setLibraryOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : items.length);
+        }).catch(() => {
+            if (accountContextRef.current === context) setLibraryFailed(true);
+        });
+    }, [tab, user]);
+
+    useEffect(() => {
+        loadLibrary();
+    }, [loadLibrary]);
+
     useEffect(() => {
         if (!user || !['collections', 'spaces'].includes(tab)) return;
-        if (directoriesLoading || spacesFailed || (tab === 'collections' && libraryFailed)) return;
-        if (mySpaces !== null && (tab === 'spaces' || libraryProjects !== null)) return;
+        if (directoriesLoading || spacesFailed || mySpaces !== null) return;
         loadDirectories();
-    }, [directoriesLoading, libraryFailed, libraryProjects, loadDirectories, mySpaces, spacesFailed, tab, user]);
+    }, [directoriesLoading, loadDirectories, mySpaces, spacesFailed, tab, user]);
 
     const retryDirectories = () => {
         setMySpaces(null);
+        loadDirectories();
+    };
+
+    const retryLibrary = () => {
         setLibraryProjects(null);
         setLibraryTotal(0);
         setLibraryOffset(0);
-        setLibraryMoreFailed(false);
-        loadDirectories();
+        loadLibrary();
     };
 
     const loadMoreLibrary = async () => {
         if (libraryBusy || libraryOffset >= libraryTotal) return;
         const context = accountContextRef.current;
         setLibraryBusy(true);
-        setLibraryMoreFailed(false);
+        setLibraryVisibilityError('');
         try {
             const data = await api.library({offset: libraryOffset, limit: 24});
             if (accountContextRef.current !== context) return;
@@ -945,9 +899,58 @@ const MyStuff = () => {
             setLibraryTotal(Number.isFinite(data.total) ? data.total : libraryTotal);
             setLibraryOffset(Number.isFinite(data.nextOffset) ? data.nextOffset : libraryOffset + 24);
         } catch (e) {
-            if (accountContextRef.current === context) setLibraryMoreFailed(true);
+            if (accountContextRef.current === context) {
+                setLibraryVisibilityError(e.message || 'Could not load more library games.');
+            }
         } finally {
             if (accountContextRef.current === context) setLibraryBusy(false);
+        }
+    };
+
+    const changeLibraryProjectVisibility = async project => {
+        const actionKey = beginAccountAction(`library-visibility:${project.id}`);
+        if (!actionKey) return;
+        const context = accountContextRef.current;
+        const nextPublic = project.libraryPublic === false;
+        setLibraryVisibilityBusy(project.id);
+        setLibraryVisibilityError('');
+        try {
+            const result = await api.setLibraryProjectVisibility(project.id, nextPublic);
+            if (accountContextRef.current !== context) return;
+            const updateVisibility = item => {
+                if (item.id !== project.id) return item;
+                return {...item, libraryPublic: result.public !== false};
+            };
+            setLibraryProjects(current => (current || []).map(updateVisibility));
+        } catch (e) {
+            if (accountContextRef.current === context) {
+                setLibraryVisibilityError(e.message || 'Could not update this library item.');
+            }
+        } finally {
+            if (accountContextRef.current === context) setLibraryVisibilityBusy('');
+            releaseAccountAction(actionKey);
+        }
+    };
+
+    const removeLibraryProject = async project => {
+        const actionKey = beginAccountAction(`library-remove:${project.id}`);
+        if (!actionKey) return;
+        const context = accountContextRef.current;
+        setLibraryVisibilityBusy(project.id);
+        setLibraryVisibilityError('');
+        try {
+            await api.unsaveProject(project.id);
+            if (accountContextRef.current !== context) return;
+            setLibraryProjects(current => (current || []).filter(item => item.id !== project.id));
+            setLibraryTotal(total => Math.max(0, total - 1));
+            setLibraryOffset(offset => Math.max(0, offset - 1));
+        } catch (e) {
+            if (accountContextRef.current === context) {
+                setLibraryVisibilityError(e.message || 'Could not remove this game from your library.');
+            }
+        } finally {
+            if (accountContextRef.current === context) setLibraryVisibilityBusy('');
+            releaseAccountAction(actionKey);
         }
     };
 
@@ -1389,25 +1392,21 @@ const MyStuff = () => {
                         ) : (
                             <p className={styles.status}>Loading…</p>
                         )
-                    ) : tab === 'playtime' ? (
-                        <section className={styles.playtimeSection}>
-                            <header className={styles.playtimeHead}>
-                                <h1>Your playtime</h1>
-                                <p>See which games you spend the most time playing.</p>
-                            </header>
-                            <PlaytimeLibrary
-                                projects={playedProjects}
-                                total={playedTotal}
-                                visible={playedVisible}
-                                self
-                                loading={playedLoading}
-                                error={playedFailed}
-                                hasMore={playedOffset < playedTotal}
-                                moreBusy={playedMoreBusy}
-                                onRetry={loadPlaytime}
-                                onLoadMore={loadMorePlaytime}
-                            />
-                        </section>
+                    ) : tab === 'library' ? (
+                        <MyStuffLibrary
+                            projects={libraryProjects || []}
+                            total={libraryTotal}
+                            loading={libraryProjects === null && !libraryFailed}
+                            error={libraryFailed}
+                            hasMore={libraryOffset < libraryTotal}
+                            moreBusy={libraryBusy}
+                            actionBusy={libraryVisibilityBusy}
+                            actionError={libraryVisibilityError}
+                            onRetry={retryLibrary}
+                            onLoadMore={loadMoreLibrary}
+                            onChangeVisibility={changeLibraryProjectVisibility}
+                            onRemove={removeLibraryProject}
+                        />
                     ) : tab === 'uploads' ? (
                         <UploadUsage
                             error={quotaFailed}
@@ -1454,17 +1453,8 @@ const MyStuff = () => {
                             key={tab}
                             mode={tab}
                             spaces={mySpaces}
-                            libraryProjects={libraryProjects}
-                            libraryTotal={libraryTotal}
-                            libraryHasMore={libraryOffset < libraryTotal}
-                            libraryBusy={libraryBusy}
-                            libraryMoreFailed={libraryMoreFailed}
-                            libraryOpen={collectionView === 'library'}
-                            username={user.username}
-                            error={spacesFailed || (tab === 'collections' && libraryFailed)}
+                            error={spacesFailed}
                             onRetry={retryDirectories}
-                            onLibraryOpenChange={open => setCollectionView(open ? 'library' : 'collections')}
-                            onLoadMoreLibrary={loadMoreLibrary}
                         />
                     ) : failed ? (
                         <p className={styles.status}>

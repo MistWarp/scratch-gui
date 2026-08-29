@@ -334,12 +334,6 @@
         display: none;
     }
 
-    .account .bellLink:last-of-type {
-        display: flex;
-        width: 44px;
-        padding: 0;
-    }
-
     .desktopSearch {
         display: none;
     }

@@ -4,6 +4,7 @@ import {mount} from 'enzyme';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import api from '../../src/community/api.js';
+import MyStuffLibrary from '../../src/community/components/MyStuffLibrary.jsx';
 import MyStuffSpaces from '../../src/community/components/MyStuffSpaces.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -26,7 +27,8 @@ jest.mock('../../src/community/api.js', () => ({
         quotaReset: jest.fn(),
         quotaResetConfirm: jest.fn(),
         mySpaces: jest.fn(),
-        library: jest.fn()
+        library: jest.fn(),
+        setLibraryProjectVisibility: jest.fn()
     },
     editorUrl: jest.fn(() => '/editor'),
     projectUrl: jest.fn(id => `/projects/${id}`)
@@ -60,6 +62,7 @@ describe('My Stuff load failures', () => {
         api.quotaResetConfirm.mockResolvedValue({ok: true});
         api.mySpaces.mockResolvedValue({spaces: []});
         api.library.mockResolvedValue({projects: [], total: 0, nextOffset: 0});
+        api.setLibraryProjectVisibility.mockResolvedValue({ok: true, projectId: 'game-1', public: false});
     });
 
     test('retries the Overview after stats fail', async () => {
@@ -226,12 +229,12 @@ describe('My Stuff load failures', () => {
         wrapper.unmount();
     });
 
-    test('keeps the Collections library drill-in in the URL', async () => {
+    test('moves old Collections library links to the Library section', async () => {
         let wrapper;
         await act(async () => {
             wrapper = mount(
                 <MemoryRouter
-                    initialEntries={['/mystuff?section=collections']}
+                    initialEntries={['/mystuff?section=collections&collectionView=library']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
                     <MyStuff />
@@ -242,19 +245,47 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        wrapper.find(MyStuffSpaces).find('button')
-            .filterWhere(button => button.text().includes('Library'))
-            .simulate('click');
-        wrapper.update();
         expect(wrapper.find(LocationProbe).find('span').prop('data-location'))
-            .toBe('?section=collections&collectionView=library');
-        expect(wrapper.text()).toContain('Projects you bought or saved for later.');
+            .toBe('?section=library');
+        expect(wrapper.find(MyStuffLibrary)).toHaveLength(1);
 
-        wrapper.find(MyStuffSpaces).find('button')
-            .filterWhere(button => button.text().includes('Collections'))
+        wrapper.find('button').filterWhere(button => button.text() === 'Collections')
             .simulate('click');
         wrapper.update();
         expect(wrapper.find(LocationProbe).find('span').prop('data-location')).toBe('?section=collections');
+        wrapper.unmount();
+    });
+
+    test('hides an individual game from the public library menu', async () => {
+        api.library.mockResolvedValue({
+            projects: [{id: 'game-1', title: 'Library game', owner: 'Maker', libraryPublic: true}],
+            total: 1,
+            nextOffset: 1
+        });
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <MemoryRouter
+                    initialEntries={['/mystuff?section=library']}
+                    future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+                >
+                    <MyStuff />
+                </MemoryRouter>
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        wrapper.find('button[aria-label="Library options for Library game"]').simulate('click');
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text() === 'Hide from public library')
+                .prop('onClick')();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(api.setLibraryProjectVisibility).toHaveBeenCalledWith('game-1', false);
+        expect(wrapper.text()).toContain('Hidden');
         wrapper.unmount();
     });
 });

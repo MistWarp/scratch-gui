@@ -2,7 +2,7 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
-    ArrowLeft, Play, GitFork, ExternalLink, EyeOff,
+    ArrowLeft, Play, GitFork, ExternalLink, EyeOff, Clock3,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
     Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronDown
@@ -22,6 +22,7 @@ import {
     activityAllowed, rememberActivityDecision, isActivityMethod
 } from '../../lib/rotur/extension-bridge.js';
 import {getRoturSettings, setRoturSetting} from '../../lib/rotur/settings.js';
+import ProjectActivityScope from '../../lib/rotur/project-activity-scope.js';
 import {getUsernameOverride} from '../../lib/rotur/cloud-sync.js';
 import rotur from '../rotur';
 import {Theme} from '../../lib/themes';
@@ -53,7 +54,6 @@ import {fetchWorkspace, hashExtensionUrl} from '../../lib/community/api.js';
 import {
     loadProjectSave,
     saveProjectData,
-    loadGlobalGameData,
     loadProjectInventory,
     grantProjectItem
 } from '../../lib/mistwarp-games/data-client.js';
@@ -192,6 +192,7 @@ const Project = () => {
     const thumbMenuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
+    const roturActivityScope = useRef(null);
     const stageSource = useRef({key: null, url: null});
     const [stageHeightRatio, setStageHeightRatio] = useState(3 / 4);
     const [blockStats, setBlockStats] = useState(null);
@@ -226,6 +227,15 @@ const Project = () => {
 
     const beginLoad = useLatest();
     const beginHistoryLoad = useLatest();
+
+    useEffect(() => {
+        const scope = new ProjectActivityScope(callRotur);
+        roturActivityScope.current = scope;
+        return () => {
+            if (roturActivityScope.current === scope) roturActivityScope.current = null;
+            scope.clear();
+        };
+    }, [id]);
 
     const load = useCallback(() => {
         const fresh = beginLoad();
@@ -585,8 +595,6 @@ const Project = () => {
                     result = await loadProjectSave(projectId, 'play');
                 } else if (data.method === 'data.save') {
                     result = await saveProjectData(projectId, 'play', data.args && data.args[0]);
-                } else if (data.method === 'data.global') {
-                    result = await loadGlobalGameData(projectId, 'play');
                 } else if (data.method === 'inventory.load') {
                     result = await loadProjectInventory(projectId, 'play');
                 } else if (data.method === 'inventory.grant') {
@@ -713,7 +721,8 @@ const Project = () => {
                 const {method, args, opts} = data;
                 const perform = async () => {
                     try {
-                        const result = await callRotur(method, args);
+                        const scope = roturActivityScope.current;
+                        const result = scope ? await scope.call(method, args) : await callRotur(method, args);
                         reply({id: data.id, ok: true, result});
                     } catch (e) {
                         reply({id: data.id, ok: false, error: String((e && e.message) || e)});
@@ -1068,13 +1077,22 @@ const Project = () => {
         if (!actionKey) return;
         setSavingLibrary(true);
         try {
+            let result;
             if (project.saved) {
-                await api.unsaveProject(id);
+                result = await api.unsaveProject(id);
             } else {
-                await api.saveProject(id);
+                result = await api.saveProject(id);
             }
             if (actionContextRef.current !== context) return;
-            setProject(current => ({...current, saved: !current.saved}));
+            setProject(current => {
+                const wasSaved = Boolean(current.saved);
+                const fallbackCount = Math.max(0, (Number(current.saveCount) || 0) + (wasSaved ? -1 : 1));
+                return {
+                    ...current,
+                    saved: !wasSaved,
+                    saveCount: Number.isFinite(result.saves) ? result.saves : fallbackCount
+                };
+            });
             setActionError(null);
         } catch (e) {
             if (actionContextRef.current === context) {
@@ -1343,6 +1361,18 @@ const Project = () => {
                             Remix
                         </button>
                     ) : null}
+                    {user ? (
+                        <button
+                            type="button"
+                            className={styles.remixButton}
+                            onClick={toggleLibrary}
+                            disabled={savingLibrary}
+                            aria-pressed={Boolean(project.saved)}
+                        >
+                            {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                            {project.saved ? 'Remove from library' : 'Save to library'}
+                        </button>
+                    ) : null}
                     {!locked && project.canSeeInside !== false ? (
                         <a
                             className={styles.primary}
@@ -1382,19 +1412,6 @@ const Project = () => {
                                     <Link2 size={15} />
                                     Copy link
                                 </button>
-                                {user ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            toggleLibrary();
-                                        }}
-                                        disabled={savingLibrary}
-                                    >
-                                        {project.saved ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
-                                        {project.saved ? 'Remove from library' : 'Save to library'}
-                                    </button>
-                                ) : null}
                                 {user ? (
                                     <button
                                         type="button"
@@ -1888,10 +1905,30 @@ const Project = () => {
                             disabled={locked || reactionBusy}
                             disabledTitle={locked ? 'Buy this project to react' : 'Saving…'}
                         />
+                        <button
+                            type="button"
+                            className={`${styles.statButton} ${project.saved ? styles.statButtonActive : ''}`}
+                            disabled={savingLibrary}
+                            title={user ? (project.saved ? 'Remove from your library' : 'Save to your library') :
+                                'Sign in to save to your library'}
+                            aria-label={`${project.saved ? 'Remove from' : 'Save to'} library, ${project.saveCount || 0} saves`}
+                            aria-pressed={Boolean(project.saved)}
+                            onClick={user ? toggleLibrary : login}
+                        >
+                            {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                            {(project.saveCount || 0).toLocaleString()}
+                        </button>
                         <span className={styles.statMuted}>
                             <Play size={15} />
                             {project.views || 0}
                         </span>
+                        {user && Number.isFinite(project.myPlaytimeMs) ? (
+                            <span className={styles.statMuted} title="Your playtime on this project">
+                                <Clock3 size={15} />
+                                {project.myPlaytimeMs > 0 ?
+                                    `${formatPlaytime(project.myPlaytimeMs, false)} played` : 'Not played yet'}
+                            </span>
+                        ) : null}
                         {blockStats ? (
                             <span className={styles.statMuted}>
                                 <Blocks size={15} />
