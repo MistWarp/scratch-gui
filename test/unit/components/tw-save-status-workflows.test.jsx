@@ -1,52 +1,42 @@
 import React from 'react';
 import {mount} from 'enzyme';
-import {act} from 'react-dom/test-utils';
 
 import {TWSaveStatus} from '../../../src/components/menu-bar/tw-save-status.jsx';
-import smartSave from '../../../src/lib/mw/smart-save.js';
+import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getMistWarpAction: jest.fn(() => 'update'),
     getRememberedPlatformProjectState: jest.fn(() => ({id: 'project', isOwner: true}))
 }));
-jest.mock('../../../src/lib/mw/smart-save.js', () => jest.fn());
+jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
 
 describe('MistWarp save status', () => {
-    test('ignores another click while saving', async () => {
-        let finishSave;
-        smartSave.mockImplementation(() => new Promise(resolve => {
-            finishSave = resolve;
-        }));
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('opens the update window for an existing MistWarp project', () => {
+        const onProjectUnchanged = jest.fn();
+        const vm = {};
         const wrapper = mount(
             <TWSaveStatus
                 alertsList={[]}
                 projectChanged
                 projectTitle="Project"
                 roturReady
-                onProjectUnchanged={jest.fn()}
-                vm={{}}
+                onProjectUnchanged={onProjectUnchanged}
+                vm={vm}
             />
         );
 
-        let firstSave;
-        act(() => {
-            firstSave = wrapper.find('[title="Save to MistWarp"]').prop('onClick')();
-        });
-        wrapper.update();
-        const savingButton = wrapper.find('[title="Saving…"]');
-        expect(savingButton.prop('disabled')).toBe(true);
-        expect(savingButton.prop('aria-busy')).toBe(true);
-        await act(async () => {
-            await savingButton.prop('onClick')();
-        });
-        expect(smartSave).toHaveBeenCalledTimes(1);
+        wrapper.find('[title="Save to MistWarp"]').simulate('click');
 
-        await act(async () => {
-            finishSave(true);
-            await firstSave;
+        expect(openMistWarpShareWindow).toHaveBeenCalledWith({
+            vm,
+            initialTitle: 'Project',
+            action: 'update',
+            onPublished: onProjectUnchanged
         });
-        wrapper.update();
-        expect(wrapper.find('[title="Save to MistWarp"]').exists()).toBe(true);
     });
 });

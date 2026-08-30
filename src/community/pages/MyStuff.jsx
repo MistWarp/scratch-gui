@@ -20,6 +20,7 @@ import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
 import MyStuffThemes from '../components/MyStuffThemes.jsx';
 import MyStuffLibrary from '../components/MyStuffLibrary.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
+import Markdown from '../components/Markdown.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
 import useLatest from '../use-latest.js';
@@ -59,6 +60,7 @@ const trashPurgeConfirmation = project => ({
 });
 
 const visibilityLabel = project => {
+    if (project.contributionOnly) return 'Contribution only';
     const v = project.visibility || (project.shared ? 'public' : 'private');
     if (v === 'public') return 'Shared';
     if (v === 'unlisted') return 'Unlisted';
@@ -473,7 +475,7 @@ const AgreementTab = () => {
     return (
         <section className={styles.agreementSection}>
             <div className={styles.agreementContent}>
-                <pre className={styles.agreementText}>{agreement.text}</pre>
+                <Markdown className={styles.agreementText}>{agreement.text}</Markdown>
             </div>
             <div className={styles.agreementFooter}>
                 {alreadyAccepted ? (
@@ -1259,13 +1261,10 @@ const MyStuff = () => {
                         <Upload size={16} />
                         Upload .sb3
                     </Button>
-                    <a
-                        className={styles.newButton}
-                        href={editorUrl()}
-                    >
+                    <Button as="a" variant="primary" href={editorUrl()}>
                         <Plus size={16} />
                         New project
-                    </a>
+                    </Button>
                 </div>
             </div>
 
@@ -1309,7 +1308,7 @@ const MyStuff = () => {
                     )}
                 >
                     <div className={styles.agreeModalBody}>
-                        <pre className={styles.agreementText}>{agreeData.text}</pre>
+                        <Markdown className={styles.agreementText}>{agreeData.text}</Markdown>
                     </div>
                     {agreeError ? <p className={styles.error}>{agreeError}</p> : null}
                     <p className={styles.agreementPrompt}>
@@ -1527,7 +1526,16 @@ const MyStuff = () => {
                                             </span>
                                         </div>
                                         <div className={styles.rowActions}>
-                                            {project.shared ? (
+                                            {project.contributionOnly ? (
+                                                <Button
+                                                    variant="secondary"
+                                                    className={styles.secondary}
+                                                    disabled
+                                                    title="Paid project remixes stay private and can only be contributed back"
+                                                >
+                                                    Contribution only
+                                                </Button>
+                                            ) : project.shared ? (
                                                 <Button
                                                     variant="secondary"
                                                     className={styles.secondary}

@@ -136,20 +136,6 @@
     text-align: right;
 }
 
-.createAction {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 11px;
-    border-radius: 9px;
-    background: var(--accent);
-    color: var(--accent-contrast);
-    font-size: .84rem;
-    font-weight: 750;
-    text-decoration: none;
-}
-
 .projectGrid,
 .spaceGrid {
     display: grid;
@@ -320,10 +306,6 @@
     margin: 4px 0 10px;
     color: var(--text-dim);
     font-size: .89rem;
-}
-
-.emptyState .createAction {
-    width: max-content;
 }
 
 .memberGrid {

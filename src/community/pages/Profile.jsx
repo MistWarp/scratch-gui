@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
-import {useParams, Link} from 'react-router-dom';
+import {useLocation, useNavigate, useParams, Link} from 'react-router-dom';
 import {
     UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, Star, Ban,
     VolumeX, FolderKanban, Palette, Gamepad2
@@ -23,6 +23,8 @@ import ProfileBadges from '../components/ProfileBadges.jsx';
 import ProfilePosts from '../components/ProfilePosts.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
 import GroupTag from '../components/GroupTag.jsx';
+import UserLink from '../components/UserLink.jsx';
+import UserStatus from '../components/UserStatus.jsx';
 import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
@@ -30,6 +32,11 @@ import {formatPlaytime, safeDate, timeAgo} from '../format';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
+const PROFILE_TABS = ['projects', 'posts', 'themes'];
+export const profileTabFromHash = hash => {
+    const requested = String(hash || '').replace(/^#/, '').toLowerCase();
+    return PROFILE_TABS.includes(requested) ? requested : 'projects';
+};
 export const mergeProjects = (current, incoming) => {
     const byId = new Map((current || []).map(project => [project.id, project]));
     for (const project of incoming || []) byId.set(project.id, project);
@@ -112,6 +119,8 @@ const parseDonationAmount = value => {
 
 const Profile = () => {
     const {name} = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
     const {user, loading: userLoading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const loadContext = `${name}\u0000${viewerName}`;
@@ -143,6 +152,10 @@ const Profile = () => {
     const actionLocks = useRef(new Set());
 
     const beginLoad = useLatest();
+
+    useEffect(() => {
+        setActiveTab(profileTabFromHash(location.hash));
+    }, [location.hash, name]);
 
     const loadThemes = useCallback(() => {
         const context = loadContext;
@@ -205,7 +218,7 @@ const Profile = () => {
         setBlockConfirmOpen(false);
         setReporting(false);
         setDonating(false);
-        setActiveTab(window.location.hash.startsWith('#comment-') ? 'comments' : 'projects');
+        setActiveTab(profileTabFromHash(window.location.hash));
         setProfileBadges([]);
         setProfilePosts([]);
         setProfileThemes(null);
@@ -390,15 +403,6 @@ const Profile = () => {
     const onMistWarp = !mwUser || mwUser.exists !== false;
     const year = joinYear(profile.created);
     const presence = profile.status || null;
-    const presenceState = presence && typeof presence.presence === 'string' ?
-        presence.presence.toLowerCase() : 'offline';
-    const statusDotClass = presenceState === 'online' ? styles.onlineDot :
-        presenceState === 'idle' ? styles.idleDot :
-            presenceState === 'dnd' ? styles.dndDot : styles.offlineDot;
-    const rawStatusText = presence && typeof presence.status === 'string' ? presence.status : '';
-    const hasStatusText = rawStatusText.replace(/[\s\u2800\u3164\uFFA0]/g, '').length > 0;
-    const statusText = hasStatusText ? rawStatusText :
-        `${presenceState.charAt(0).toUpperCase()}${presenceState.slice(1)}`;
     const activities = presence && Array.isArray(presence.activities) ? presence.activities : [];
     const showRecentActivity = Boolean(mwUser && onMistWarp);
     const recentActivity = mwUser && Array.isArray(mwUser.recentActivity) ?
@@ -407,7 +411,7 @@ const Profile = () => {
     const hasProfileTheme = Object.keys(profileTheme).length > 0;
     const selectTab = tab => {
         setActiveTab(tab);
-        if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
+        navigate({pathname: location.pathname, search: location.search, hash: `#${tab}`});
     };
 
     return (
@@ -461,7 +465,7 @@ const Profile = () => {
 
                     {!onMistWarp ? (
                         <div className={styles.notOnMistwarp}>
-                            Not on MistWarp yet. This is {profile.username || name}&apos;s Rotur profile.
+                            Not on MistWarp yet. This is <UserLink username={profile.username || name}>{profile.username || name}</UserLink>&apos;s Rotur profile.
                         </div>
                     ) : null}
 
@@ -475,11 +479,6 @@ const Profile = () => {
                         <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? styles.tabActive : styles.tab} onClick={() => selectTab('themes')}>
                             <Palette size={15} /> Themes <span>{profileThemes?.length || 0}</span>
                         </button>
-                        {onMistWarp ? (
-                            <button type="button" role="tab" aria-selected={activeTab === 'comments'} className={activeTab === 'comments' ? styles.tabActive : styles.tab} onClick={() => selectTab('comments')}>
-                                <MessageSquare size={15} /> Comments
-                            </button>
-                        ) : null}
                     </div>
 
                     {activeTab === 'projects' ? (
@@ -507,18 +506,20 @@ const Profile = () => {
                                             {recentActivity.map(item => {
                                                 const projectId = item.projectId || item.id || item._id;
                                                 return (
-                                                    <Link className={styles.recentActivityItem} key={projectId} to={projectUrl(projectId)}>
+                                                    <article className={styles.recentActivityItem} key={projectId}>
+                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={`Open ${item.title}`} />
                                                         <img src={item.thumbUrl} alt="" loading="lazy" />
                                                         <span className={styles.recentActivityCopy}>
                                                             <strong>{item.title}</strong>
-                                                            <small>by {item.owner}</small>
+                                                            <small className={styles.recentActivityOwner}>by <UserLink username={item.owner}>{item.owner}</UserLink></small>
                                                         </span>
                                                         <span className={styles.recentActivityStats}>
-                                                            <strong>{item.duration > 0 ? formatPlaytime(item.duration, false) : 'Just played'}</strong>
+                                                            {item.duration > 0 ?
+                                                                <strong>{formatPlaytime(item.duration, false)}</strong> : null}
                                                             {Number(item.lastPlayed) > 0 ?
                                                                 <small>{lastPlayedLabel(item.lastPlayed)}</small> : null}
                                                         </span>
-                                                    </Link>
+                                                    </article>
                                                 );
                                             })}
                                         </div>
@@ -648,6 +649,34 @@ const Profile = () => {
                                 )}
                             </section>
 
+                            {onMistWarp ? (
+                                <section className={styles.section} id="comments">
+                                    <div className={styles.sectionHead}>
+                                        <h2 className={styles.sectionTitle}>Comments</h2>
+                                        {isSelf ? (
+                                            <Button
+                                                variant="secondary"
+                                                className={styles.commentsToggle}
+                                                onClick={toggleComments}
+                                                busy={commentsBusy}
+                                                busyLabel={commentsOff ? 'Turning on…' : 'Turning off…'}
+                                            >
+                                                {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
+                                                {commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                    <div className={styles.feed}>
+                                        <CommentThread
+                                            source={commentSource}
+                                            canModerate={isSelf}
+                                            disabled={commentsOff}
+                                            reportContext={`profile ${name}`}
+                                        />
+                                    </div>
+                                </section>
+                            ) : null}
+
                         </React.Fragment>
                     ) : null}
 
@@ -656,6 +685,7 @@ const Profile = () => {
                             <ProfilePosts
                                 posts={profilePosts}
                                 username={profile.username || name}
+                                viewer={user}
                                 editable={isSelf}
                                 onChange={setProfilePosts}
                                 onLogin={login}
@@ -681,33 +711,6 @@ const Profile = () => {
                         </section>
                     ) : null}
 
-                    {onMistWarp && activeTab === 'comments' ? (
-                        <section className={styles.section}>
-                            <div className={styles.sectionHead}>
-                                <h2 className={styles.sectionTitle}>Comments</h2>
-                                {isSelf ? (
-                                    <Button
-                                        variant="secondary"
-                                        className={styles.commentsToggle}
-                                        onClick={toggleComments}
-                                        busy={commentsBusy}
-                                        busyLabel={commentsOff ? 'Turning on…' : 'Turning off…'}
-                                    >
-                                        {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
-                                        {commentsOff ? 'Turn on comments' : 'Turn off comments'}
-                                    </Button>
-                                ) : null}
-                            </div>
-                            <div className={styles.feed}>
-                                <CommentThread
-                                    source={commentSource}
-                                    canModerate={isSelf}
-                                    disabled={commentsOff}
-                                    reportContext={`profile ${name}`}
-                                />
-                            </div>
-                        </section>
-                    ) : null}
                 </div>
                 <aside className={styles.profileRail}>
                     <section
@@ -736,16 +739,15 @@ const Profile = () => {
                                 className={styles.avatar}
                             />
                             <div className={styles.nameRow}>
-                                <h1>{profile.username || name}</h1>
-                                {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
+                                <h1><UserLink username={profile.username || name}>{profile.username || name}</UserLink></h1>
+                                {profile.group_tag ? (
+                                    <GroupTag tag={profile.group_tag} className={styles.profileGroupTag} />
+                                ) : null}
                             </div>
-                            {profile.group_tag ? <GroupTag tag={profile.group_tag} /> : null}
-                            {presence ? (
-                                <span className={styles.userStatus}>
-                                    <span className={statusDotClass} />
-                                    <RichText text={statusText} />
-                                </span>
-                            ) : null}
+                            <div className={styles.profileMeta}>
+                                {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}
+                                <UserStatus status={presence} className={styles.userStatus} />
+                            </div>
                             {profileBadges.length || isSelf ? (
                                 <ProfileBadges
                                     badges={profileBadges}

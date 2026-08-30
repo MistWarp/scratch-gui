@@ -7,6 +7,7 @@ import {
 } from './menu-bar-accent.js';
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
+import {ensureColorContrast, parseColor} from './color-contrast';
 import './global-styles.css';
 
 const BLOCK_COLOR_NAMES = [
@@ -25,57 +26,6 @@ const BLOCK_COLOR_NAMES = [
     'more',
     'addons'
 ];
-
-const hslToRgb = (h, s, l) => {
-    const chroma = (1 - Math.abs((2 * l) - 1)) * s;
-    const huePrime = ((h % 360) + 360) % 360 / 60;
-    const x = chroma * (1 - Math.abs((huePrime % 2) - 1));
-    const [r, g, b] = huePrime < 1 ? [chroma, x, 0] :
-        huePrime < 2 ? [x, chroma, 0] :
-            huePrime < 3 ? [0, chroma, x] :
-                huePrime < 4 ? [0, x, chroma] :
-                    huePrime < 5 ? [x, 0, chroma] : [chroma, 0, x];
-    const m = l - (chroma / 2);
-    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
-};
-
-/**
- * @param {string} color A CSS color (hex, rgb(a) or hsl(a)).
- * @returns {?Array.<number>} [r, g, b] in 0-255, or null when unparseable.
- */
-const parseColor = color => {
-    if (typeof color !== 'string') return null;
-    const value = color.trim();
-
-    const hex = value.match(/^#([0-9a-f]{3,8})$/i);
-    if (hex) {
-        let digits = hex[1];
-        if (digits.length === 3 || digits.length === 4) {
-            digits = digits.split('').map(c => c + c)
-                .join('');
-        }
-        if (digits.length < 6) return null;
-        return [0, 2, 4].map(i => parseInt(digits.substr(i, 2), 16));
-    }
-
-    const rgb = value.match(/^rgba?\(([^)]+)\)$/i);
-    if (rgb) {
-        const parts = rgb[1].split(/[\s,/]+/).filter(Boolean);
-        if (parts.length < 3) return null;
-        return parts.slice(0, 3).map(part => (
-            part.endsWith('%') ? (parseFloat(part) / 100) * 255 : parseFloat(part)
-        ));
-    }
-
-    const hsl = value.match(/^hsla?\(([^)]+)\)$/i);
-    if (hsl) {
-        const parts = hsl[1].split(/[\s,/]+/).filter(Boolean);
-        if (parts.length < 3) return null;
-        return hslToRgb(parseFloat(parts[0]), parseFloat(parts[1]) / 100, parseFloat(parts[2]) / 100);
-    }
-
-    return null;
-};
 
 /**
  * @param {string} color A CSS color.
@@ -350,7 +300,17 @@ const applyGuiColors = theme => {
         doc.style.setProperty(`--${name}-default`, value);
     }
 
-    const guiColors = theme.getGuiColors();
+    const rawGuiColors = theme.getGuiColors();
+    const accentSurface = evaluateCSS(rawGuiColors['ui-white'] || rawGuiColors['ui-primary']);
+    const accessibleAccent = ensureColorContrast(
+        evaluateCSS(rawGuiColors['looks-secondary']),
+        accentSurface,
+        3
+    );
+    const guiColors = {
+        ...rawGuiColors,
+        'looks-secondary': accessibleAccent
+    };
     for (const [name, defaultValue] of Object.entries(defaultGuiColors)) {
         const value = Object.prototype.hasOwnProperty.call(guiColors, name) ? guiColors[name] : defaultValue;
         doc.style.setProperty(`--${name}`, value);

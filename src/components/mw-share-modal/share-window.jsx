@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
+import Markdown from '../../community/components/Markdown.jsx';
 import styles from './share-window.css';
 
 class ShareWindow extends React.Component {
@@ -44,7 +45,10 @@ class ShareWindow extends React.Component {
         };
     }
     componentDidMount () {
-        this.agreementPromise = request('/agreement').catch(() => null);
+        this.agreementPromise = request('/agreement').then(
+            data => ({data}),
+            error => ({error})
+        );
         if (this.props.action === 'update') {
             return;
         }
@@ -122,7 +126,12 @@ class ShareWindow extends React.Component {
             agreement: null
         });
         try {
-            const agreementData = await (this.agreementPromise || request('/agreement'));
+            const agreementResult = await (this.agreementPromise || request('/agreement').then(
+                data => ({data}),
+                error => ({error})
+            ));
+            if (agreementResult.error) throw agreementResult.error;
+            const agreementData = agreementResult.data;
             const ag = agreementData && agreementData.agreement;
             if (ag && ag.version > 0 && !ag.accepted) {
                 this.setState({status: null, phase: null, agreement: ag, agreeError: ''});
@@ -130,7 +139,13 @@ class ShareWindow extends React.Component {
                 return;
             }
         } catch (e) {
-            // proceed with upload if agreement check fails
+            this.releasePublish();
+            this.setState({
+                status: null,
+                phase: null,
+                error: 'Could not load the community guidelines. Check your connection and try again.'
+            });
+            return;
         }
 
         this.setState({status: 'Preparing your project', phase: 'package'});
@@ -174,6 +189,20 @@ class ShareWindow extends React.Component {
             this.props.onPublished(result);
         } catch (e) {
             this.releasePublish();
+            if (e.code === 'agreement_required' && e.data && e.data.agreement) {
+                this.agreementPromise = Promise.resolve({data: {agreement: e.data.agreement}});
+                this.setState({
+                    status: null,
+                    phase: null,
+                    loaded: 0,
+                    total: 0,
+                    agreement: e.data.agreement,
+                    agreeError: '',
+                    error: null,
+                    errorCode: null
+                });
+                return;
+            }
             this.setState({
                 status: null,
                 phase: null,
@@ -191,7 +220,7 @@ class ShareWindow extends React.Component {
         this.setState({agreeBusy: true, agreeError: ''});
         try {
             await request('/agreement/accept', {method: 'POST'});
-            this.agreementPromise = Promise.resolve({agreement: {version: 0, accepted: true}});
+            this.agreementPromise = Promise.resolve({data: {agreement: {version: 0, accepted: true}}});
             this.releaseAgreement();
             this.setState({agreeBusy: false, agreement: null}, this.handlePublish);
         } catch (e) {
@@ -273,7 +302,7 @@ class ShareWindow extends React.Component {
                             Upload agreement v{this.state.agreement.version}
                         </h3>
                         <div className={styles.agreeBody}>
-                            <pre className={styles.agreeText}>{this.state.agreement.text}</pre>
+                            <Markdown className={styles.agreeText}>{this.state.agreement.text}</Markdown>
                         </div>
                         {this.state.agreeError ? (
                             <div className={styles.error}>{this.state.agreeError}</div>

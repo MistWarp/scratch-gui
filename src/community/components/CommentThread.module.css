@@ -43,6 +43,29 @@
     align-items: flex-start;
 }
 
+.row[data-donation-tier],
+.replyRow[data-donation-tier] {
+    padding: 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--donation-color) 11%, transparent);
+}
+
+[data-donation-tier="green"] {
+    --donation-color: #2faa72;
+}
+
+[data-donation-tier="blue"] {
+    --donation-color: #3b82f6;
+}
+
+[data-donation-tier="purple"] {
+    --donation-color: #a855f7;
+}
+
+[data-donation-tier="gold"] {
+    --donation-color: #f2b84b;
+}
+
 .replyRow {
     margin-top: 14px;
 }
@@ -88,6 +111,19 @@
     border-radius: 5px;
     color: var(--accent-strong);
     background: var(--accent-softer);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.donation {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--donation-color, #f2b84b) 72%, var(--mw-text));
+    background: color-mix(in srgb, var(--donation-color, #f2b84b) 24%, transparent);
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
@@ -202,6 +238,32 @@
     justify-content: flex-end;
 }
 
+.donationField {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-faint);
+}
+
+.donationField:focus-within {
+    border-color: var(--accent-border);
+    color: var(--accent-strong);
+}
+
+.donationField input {
+    width: 82px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--mw-text);
+    font: inherit;
+    font-size: 12px;
+}
+
 .disabledComposerAction {
     display: flex;
     justify-content: flex-end;
@@ -214,13 +276,14 @@
 }
 
 .kindMenu button,
-.filterMenu button {
+.filterMenu button,
+.sortMenu button {
     background: transparent;
 }
 
 .commentTools {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 160px;
+    grid-template-columns: minmax(0, 1fr) 160px 170px;
     gap: 8px;
     margin: 2px 0 4px;
 }
@@ -262,6 +325,10 @@
     width: 160px;
 }
 
+.sortMenu {
+    width: 170px;
+}
+
 .input {
     box-sizing: border-box;
     width: 100%;
@@ -280,6 +347,15 @@
 .input:focus {
     border-color: var(--accent-border);
     outline: none;
+}
+
+.input[data-donation-tier] {
+    border-color: color-mix(in srgb, var(--donation-color) 72%, var(--border));
+    background: color-mix(in srgb, var(--donation-color) 11%, transparent);
+}
+
+.input[data-donation-tier]:focus {
+    border-color: var(--donation-color);
 }
 
 .editComposer {
@@ -404,6 +480,10 @@
     }
 
     .filterMenu {
+        width: 100%;
+    }
+
+    .sortMenu {
         width: 100%;
     }
 

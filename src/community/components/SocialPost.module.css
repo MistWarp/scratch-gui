@@ -1,0 +1,291 @@
+.card,
+.detail {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.card {
+    padding: 13px 14px;
+}
+
+.body {
+    min-width: 0;
+}
+
+.body > header,
+.reply header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.body > header time,
+.reply time,
+.edited,
+.via {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.edited::before {
+    content: "· ";
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    font-size: 10px;
+}
+
+.content {
+    margin-top: 8px;
+    color: var(--mw-text);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.content p {
+    margin: 0;
+}
+
+.media {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 12px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+}
+
+.media[data-count="1"] {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.media img,
+.media video {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    background: var(--bg-inset);
+}
+
+.poll {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.poll > button,
+.pollResult {
+    position: relative;
+    min-height: 38px;
+    overflow: hidden;
+    padding: 9px 12px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--mw-text);
+    text-align: left;
+}
+
+.poll > button:hover {
+    background: var(--accent-soft);
+}
+
+.pollResult {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pollResult > span:not(.pollBar),
+.pollResult strong {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pollBar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--accent-soft);
+}
+
+.poll small {
+    color: var(--text-faint);
+}
+
+.quoted {
+    margin-top: 12px;
+}
+
+.quoted article {
+    box-shadow: none;
+}
+
+.via {
+    margin-top: 8px;
+}
+
+.actions,
+.manage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.actions button,
+.manage button {
+    min-height: 32px;
+    padding: 5px 9px;
+    font-size: 12px;
+}
+
+.card .actions {
+    gap: 18px;
+    margin-top: 9px;
+}
+
+.card .actions button {
+    min-width: 0;
+    min-height: 26px;
+    padding: 3px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-faint);
+}
+
+.card .actions button:first-child:hover,
+.card .actions button:first-child:focus-visible {
+    color: var(--mw-danger);
+}
+
+.card .manage,
+.card .via {
+    display: none;
+}
+
+.manage {
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.editForm {
+    margin-top: 8px;
+}
+
+.editForm textarea,
+.reportInput {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-inset);
+    color: var(--mw-text);
+    font: inherit;
+}
+
+.editForm > div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.error,
+.notice,
+.empty {
+    margin: 10px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.error {
+    color: var(--mw-danger);
+}
+
+.notice {
+    color: var(--accent-strong);
+}
+
+.replies {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.replies > form {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.replies input {
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-inset);
+    color: var(--mw-text);
+}
+
+.reply {
+    position: relative;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.reply p {
+    margin: 4px 0 0;
+}
+
+.reply > button {
+    align-self: start;
+    padding: 5px;
+    border: 0;
+    background: transparent;
+    color: var(--text-faint);
+}
+
+@media (max-width: 620px) {
+    .card,
+    .detail {
+        grid-template-columns: 36px minmax(0, 1fr);
+        padding: 12px;
+    }
+
+    .actions button,
+    .manage button {
+        flex: 1 1 auto;
+    }
+
+    .replies > form {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .replies > form > :first-child {
+        display: none;
+    }
+}

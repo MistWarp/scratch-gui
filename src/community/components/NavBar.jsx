@@ -1,7 +1,10 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
-import {Search, Compass, Plus, FolderOpen, Bell, LogIn, ShieldCheck, Wallet, Layers3, House, Crown} from 'lucide-react';
+import {
+    Search, Compass, Plus, FolderOpen, Bell, LogIn,
+    Layers3, House, Crown
+} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl} from '../api';
 import rotur from '../rotur.js';
@@ -9,6 +12,7 @@ import {fetchNotifications} from '../../lib/rotur/client.js';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
 import GroupTag from './GroupTag.jsx';
+import UserLink from './UserLink.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
 import searchFocusIndex from '../search-keyboard.js';
@@ -48,11 +52,12 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                 {!searching && searchFailed ? <p className={styles.suggestionStatus}>Could not load quick results. Press Enter to search.</p> : null}
                 {!searching && !searchFailed && searchReady && !people.length && !projects.length && !spaces.length ? <p className={styles.suggestionStatus}>No quick matches. Press Enter to search all projects.</p> : null}
                 {projects.map(project => (
-                    <button key={project.id} type="button" className={styles.suggestion} onClick={() => onProject(project.id)}>
+                    <div key={project.id} className={styles.suggestion}>
+                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${project.title}`} onClick={() => onProject(project.id)} />
                         <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                         <span>{project.title}</span>
-                        <span className={styles.suggestionMeta}>by {project.owner}</span>
-                    </button>
+                        <UserLink className={styles.suggestionMeta} username={project.owner}>by {project.owner}</UserLink>
+                    </div>
                 ))}
                 {people.map(person => (
                     <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
@@ -63,11 +68,12 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                     </button>
                 ))}
                 {spaces.map(space => (
-                    <button key={space._id} type="button" className={styles.suggestion} onClick={() => onSpace(space._id)}>
+                    <div key={space._id} className={styles.suggestion}>
+                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${space.title}`} onClick={() => onSpace(space._id)} />
                         <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
                         <span>{space.title}</span>
-                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || 'Space'} · by {space.owner}</span>
-                    </button>
+                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || 'Space'} · by <UserLink username={space.owner}>{space.owner}</UserLink></span>
+                    </div>
                 ))}
             </div>
         ) : null}
@@ -339,10 +345,6 @@ const NavBar = () => {
                         <Compass size={17} />
                         <span className={styles.linkLabel}>{t('nav.explore')}</span>
                     </Link>
-                    <Link to="/perks" className={styles.link} aria-label="Membership perks">
-                        <Crown size={17} />
-                        <span className={styles.linkLabel}>Perks</span>
-                    </Link>
                 </nav>
 
                 <SearchBox
@@ -372,21 +374,16 @@ const NavBar = () => {
                 />
 
                 <div className={styles.account}>
+                    <Link
+                        to="/perks"
+                        className={styles.iconLink}
+                        title="Perks"
+                        aria-label="Membership perks"
+                    >
+                        <Crown size={19} />
+                    </Link>
                     {user ? (
                         <>
-                            {user.isAdmin ? (
-                                <Link
-                                    to="/admin"
-                                    className={`${styles.iconLink} ${styles.bellLink}`}
-                                    title="Admin"
-                                    aria-label={openReports > 0 ? `Admin (${openReports} open reports)` : 'Admin'}
-                                >
-                                    <ShieldCheck size={19} />
-                                    {openReports > 0 ? (
-                                        <span className={styles.bellBadge}>{openReports > 9 ? '9+' : openReports}</span>
-                                    ) : null}
-                                </Link>
-                            ) : null}
                             <Link
                                 to="/notifications"
                                 className={`${styles.iconLink} ${styles.bellLink}`}
@@ -406,16 +403,10 @@ const NavBar = () => {
                             >
                                 <FolderOpen size={19} />
                             </Link>
-                            <Link
-                                to="/wallet"
-                                className={styles.iconLink}
-                                title="Wallet"
-                                aria-label="Wallet"
-                            >
-                                <Wallet size={19} />
-                            </Link>
                             <RoturAccount
                                 username={user.username}
+                                isAdmin={user.isAdmin}
+                                openReports={openReports}
                                 menuOpen={accountOpen}
                                 showEditorItems={false}
                                 onOpenMenu={() => setAccountOpen(true)}

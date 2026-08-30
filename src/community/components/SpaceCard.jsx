@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {formatDate, formatPlaytime, safeDate} from '../format';
 import styles from './SpaceCard.module.css';
 import GroupTag from './GroupTag.jsx';
+import UserLink from './UserLink.jsx';
 
 const KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library, library: Bookmark};
 const KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection', library: 'Library'};
@@ -28,7 +29,8 @@ const SpaceCard = ({space, to, onClick}) => {
     const Component = to ? Link : 'button';
     const componentProps = to ? {to} : {type: 'button', onClick};
     return (
-        <Component className={styles.card} {...componentProps}>
+        <article className={styles.card}>
+            <Component className={styles.cardLink} aria-label={`Open ${space.title}`} {...componentProps} />
             {thumbnailUrl ? <img className={styles.thumbnail} src={thumbnailUrl} alt="" loading="lazy" /> : null}
             <div className={styles.heading}>
                 <span className={styles.icon}><Icon size={17} /></span>
@@ -38,7 +40,7 @@ const SpaceCard = ({space, to, onClick}) => {
             <p>{space.description || 'No description yet.'}</p>
             {space.owner ? (
                 <span className={styles.owner}>
-                    by {space.owner}<GroupTag username={space.owner} compact linked={false} />
+                    by <UserLink username={space.owner}>{space.owner}</UserLink><GroupTag username={space.owner} compact linked={false} />
                 </span>
             ) : null}
             <div className={styles.meta}>
@@ -56,7 +58,7 @@ const SpaceCard = ({space, to, onClick}) => {
                     <span>Ends {formatDate(deadline)}</span>
                 ) : null}
             </div>
-        </Component>
+        </article>
     );
 };
 

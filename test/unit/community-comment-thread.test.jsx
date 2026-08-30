@@ -3,10 +3,20 @@ import {act} from 'react-dom/test-utils';
 import {MemoryRouter} from 'react-router-dom';
 import {mount, shallow} from 'enzyme';
 
-import CommentThread, {addCreatedComment} from '../../src/community/components/CommentThread.jsx';
+import CommentThread, {
+    addCreatedComment,
+    commentDonationTier,
+    parseCommentDonation,
+    postCommentDonation
+} from '../../src/community/components/CommentThread.jsx';
 import {useUser} from '../../src/community/UserContext.jsx';
+import {sendCommercePayment} from '../../src/community/credits';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
+jest.mock('../../src/community/credits', () => ({
+    sendCommercePayment: jest.fn(),
+    isInsufficientFunds: jest.fn(() => false)
+}));
 
 describe('CommentThread signed-out flow', () => {
     test('adds a returned comment locally and preserves known author playtime', () => {
@@ -17,6 +27,55 @@ describe('CommentThread signed-out flow', () => {
             {id: 'new', author: 'sophie', content: 'Hello', playtimeMs: 1200},
             {id: 'old', author: 'Sophie', playtimeMs: 1200}
         ]);
+    });
+
+    test('validates and rounds attached donation amounts', () => {
+        expect(parseCommentDonation('')).toBe(0);
+        expect(parseCommentDonation('1.239')).toBe(1.24);
+        expect(parseCommentDonation('0')).toBeNull();
+        expect(parseCommentDonation('100000.01')).toBeNull();
+        expect(parseCommentDonation('not a number')).toBeNull();
+    });
+
+    test('assigns donation highlight tiers at each credit threshold', () => {
+        expect(commentDonationTier(0)).toBe('');
+        expect(commentDonationTier(0.01)).toBe('green');
+        expect(commentDonationTier(10)).toBe('blue');
+        expect(commentDonationTier(100)).toBe('purple');
+        expect(commentDonationTier(1000)).toBe('gold');
+    });
+
+    test('pays the project owner before attaching the donation to a comment', async () => {
+        const source = {
+            donationIntent: jest.fn(() => Promise.resolve({
+                key: 'intent-key',
+                amount: 12.5,
+                projectId: 'project-1',
+                title: 'A project',
+                splits: [{username: 'owner', basis_points: 10000}]
+            })),
+            add: jest.fn(() => Promise.resolve({comment: {id: 'comment-1'}}))
+        };
+        sendCommercePayment.mockResolvedValueOnce({payment: {id: 'payment-1'}});
+
+        await expect(postCommentDonation({
+            source,
+            text: 'Nice work',
+            kind: 'comment',
+            amount: 12.5
+        })).resolves.toEqual({comment: {id: 'comment-1'}});
+
+        expect(sendCommercePayment).toHaveBeenCalledWith(expect.objectContaining({
+            amount: 12.5,
+            kind: 'comment_donation',
+            resourceType: 'project',
+            resourceId: 'project-1',
+            splits: [{username: 'owner', basis_points: 10000}]
+        }));
+        expect(source.add).toHaveBeenCalledWith('Nice work', null, 'comment', {
+            key: 'intent-key',
+            paymentId: 'payment-1'
+        });
     });
 
     test('offers a working sign-in action', () => {
@@ -122,7 +181,7 @@ describe('CommentThread signed-out flow', () => {
         });
         wrapper.update();
 
-        expect(source.list).toHaveBeenCalledWith({offset: 0, limit: 20, anchor: ''});
+        expect(source.list).toHaveBeenCalledWith({offset: 0, limit: 20, anchor: '', sort: 'newest'});
         expect(wrapper.find('[id^="comment-group-"]')).toHaveLength(20);
         const more = wrapper.find('button').filterWhere(button => button.text() === 'Show 5 more comments');
         await act(async () => {
@@ -131,7 +190,7 @@ describe('CommentThread signed-out flow', () => {
         });
         wrapper.update();
 
-        expect(source.list).toHaveBeenLastCalledWith({offset: 20, limit: 20});
+        expect(source.list).toHaveBeenLastCalledWith({offset: 20, limit: 20, sort: 'newest'});
         expect(wrapper.find('[id^="comment-group-"]')).toHaveLength(25);
         wrapper.unmount();
     });

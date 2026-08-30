@@ -6,8 +6,7 @@ import {mountWithIntl, shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 import ProjectFetcherHOC from '../../../src/lib/components/project-fetcher-hoc.jsx';
 import storage from '../../../src/lib/persistence/storage';
 import {LoadingState} from '../../../src/reducers/project-state';
-import {importMwp} from '../../../src/lib/git/mwp.js';
-import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
+import {getEditorProject, fetchWorkspace, takeProjectHandoff} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
@@ -20,7 +19,8 @@ jest.mock('../../../src/lib/git/mwp.js', () => ({
 }));
 jest.mock('../../../src/lib/community/api.js', () => ({
     fetchWorkspace: jest.fn(),
-    getEditorProject: jest.fn()
+    getEditorProject: jest.fn(),
+    takeProjectHandoff: jest.fn()
 }));
 jest.mock('../../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn()
@@ -119,23 +119,9 @@ describe('ProjectFetcherHOC', () => {
         storage.load = originalLoad;
     });
 
-    test('applies a newer project workspace after an older import finishes', async () => {
+    test('loads a MistWarp project without downloading or importing its workspace', async () => {
         const Component = () => <div />;
         const WrappedComponent = ProjectFetcherHOC(Component);
-        let finishOldImport;
-        let signalOldImportStarted;
-        const oldImportStarted = new Promise(resolve => {
-            signalOldImportStarted = resolve;
-        });
-        importMwp.mockImplementation(workspace => {
-            if (workspace.name === 'old') {
-                return new Promise(resolve => {
-                    finishOldImport = resolve;
-                    signalOldImportStarted();
-                });
-            }
-            return Promise.resolve();
-        });
         getEditorProject.mockImplementation(id => Promise.resolve({
             project: {
                 id,
@@ -143,9 +129,6 @@ describe('ProjectFetcherHOC', () => {
                 projectJsonUrl: `https://projects.example/${id}.json`,
                 workspaceUrl: `https://projects.example/${id}.mwp`
             }
-        }));
-        fetchWorkspace.mockImplementation(url => Promise.resolve({
-            name: url.includes('/old.') ? 'old' : 'new'
         }));
         cachedFetchBuffer.mockImplementation(url => Promise.resolve(url));
         const onFetchedProjectData = jest.fn();
@@ -160,18 +143,42 @@ describe('ProjectFetcherHOC', () => {
         );
         const instance = wrapper.dive().dive().instance();
 
-        window.history.replaceState({}, '', '/?platform_project=old');
-        const oldFetch = instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
-        await oldImportStarted;
         window.history.replaceState({}, '', '/?platform_project=new');
-        const newFetch = instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+        await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
 
-        finishOldImport();
-        await Promise.all([oldFetch, newFetch]);
-
-        expect(importMwp.mock.calls.map(call => call[0].name)).toEqual(['old', 'new']);
+        expect(fetchWorkspace).not.toHaveBeenCalled();
         expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
         expect(onFetchedProjectData.mock.calls[0][0]).toContain('/new.json');
+    });
+
+    test('uses the project page handoff without refetching editor metadata', async () => {
+        const project = {
+            id: 'handoff',
+            title: 'Handoff',
+            projectJsonUrl: 'https://projects.example/handoff.json',
+            workspaceUrl: 'https://projects.example/handoff.mwp'
+        };
+        takeProjectHandoff.mockReturnValue(project);
+        cachedFetchBuffer.mockResolvedValue('handoff data');
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const onFetchedProjectData = jest.fn();
+        const vmForFetch = {loadProject: jest.fn(), quit: jest.fn()};
+        const wrapper = shallowWithIntl(
+            <WrappedComponent
+                onFetchedProjectData={onFetchedProjectData}
+                store={store}
+                vm={vmForFetch}
+            />,
+            {context: {store}}
+        );
+
+        window.history.replaceState({}, '', '/?platform_project=handoff');
+        await wrapper.dive().dive().instance().fetchProject('0', LoadingState.FETCHING_WITH_ID);
+
+        expect(getEditorProject).not.toHaveBeenCalled();
+        expect(fetchWorkspace).not.toHaveBeenCalled();
+        expect(onFetchedProjectData).toHaveBeenCalledWith('handoff data', LoadingState.FETCHING_WITH_ID);
     });
 
     test.skip('when there is an id, it tries to update the store with that id', () => {

@@ -3,6 +3,7 @@ import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.js
 import {createMwp} from '../../../src/lib/git/mwp.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src/lib/community/publish.js';
 import downloadBlob from '../../../src/lib/utils/download-blob';
+import {request} from '../../../src/lib/community/api.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
@@ -38,6 +39,17 @@ describe('MistWarp smart save results', () => {
 
         await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(false);
         expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({action: 'remix'}));
+    });
+
+    test('opens the agreement UI when the agreement check fails', async () => {
+        getRememberedPlatformProjectState.mockReturnValue({isOwner: true});
+        request.mockRejectedValueOnce(new Error('offline'));
+
+        await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(false);
+        expect(publishToMistWarp).not.toHaveBeenCalled();
+        expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({
+            action: 'update'
+        }));
     });
 
     test('returns true after a silent platform update', async () => {

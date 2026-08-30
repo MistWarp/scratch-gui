@@ -1,0 +1,35 @@
+.page {
+    width: min(720px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 26px 0 88px;
+}
+
+.heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.heading h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.heading button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    place-items: center;
+    border: 1px solid var(--border-soft);
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--mw-text);
+}
+
+.status {
+    padding: 48px 12px;
+    color: var(--text-dim);
+    text-align: center;
+}

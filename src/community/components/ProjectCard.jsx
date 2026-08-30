@@ -4,6 +4,7 @@ import {GitFork, GitPullRequest, Heart, Play, Coins, TrendingUp, Users} from 'lu
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import GroupTag from './GroupTag.jsx';
+import UserLink from './UserLink.jsx';
 import styles from './ProjectCard.module.css';
 
 const ProjectCard = ({project, showTrend = false}) => {
@@ -11,10 +12,8 @@ const ProjectCard = ({project, showTrend = false}) => {
     const teamSize = Math.max(1, Number(project.teamSize) || 1);
     const acceptedChanges = Number(project.acceptedChanges) || 0;
     return (
-        <Link
-            to={projectUrl(project.id)}
-            className={styles.card}
-        >
+        <article className={styles.card}>
+            <Link className={styles.cardLink} to={projectUrl(project.id)} aria-label={`Open ${project.title}`} />
             <div className={styles.thumb}>
                 {price > 0 ? (
                     <span className={styles.priceBadge}>
@@ -40,7 +39,7 @@ const ProjectCard = ({project, showTrend = false}) => {
                     title={project.title}
                 >{project.title}</div>
                 <div className={styles.owner}>
-                    by {project.owner}<GroupTag username={project.owner} compact linked={false} />
+                    by <UserLink username={project.owner}>{project.owner}</UserLink><GroupTag username={project.owner} compact linked={false} />
                 </div>
                 {project.description ? (
                     <p className={styles.desc}>{project.description}</p>
@@ -78,7 +77,7 @@ const ProjectCard = ({project, showTrend = false}) => {
                     ) : null}
                 </div>
             </div>
-        </Link>
+        </article>
     );
 };
 

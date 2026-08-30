@@ -7,6 +7,7 @@ const PRELOAD_TTL = 30 * 1000;
 const inflight = new Map();
 const preloaded = new Map();
 const cacheWrites = new Map();
+let cacheGeneration = 0;
 
 const openCache = async () => {
     try {
@@ -24,6 +25,7 @@ const getHeader = (headers, name) => {
 };
 
 const fetchAndStore = async url => {
+    const generation = cacheGeneration;
     const cache = await openCache();
     let cachedHit = null;
     let storedEtag = null;
@@ -60,7 +62,7 @@ const fetchAndStore = async url => {
 
     if (response.status === 304 && cachedHit) {
         const buffer = await cachedHit.arrayBuffer();
-        if (cache) {
+        if (cache && generation === cacheGeneration) {
             const headers = {
                 [CACHED_AT_HEADER]: String(Date.now()),
                 ...(storedEtag ? {[ETAG_HEADER]: storedEtag} : {})
@@ -82,7 +84,7 @@ const fetchAndStore = async url => {
 
     const etag = getHeader(response.headers, 'etag');
     const buffer = await response.arrayBuffer();
-    if (cache) {
+    if (cache && generation === cacheGeneration) {
         try {
             const headers = {
                 [CACHED_AT_HEADER]: String(Date.now()),
@@ -106,9 +108,12 @@ const fetchAndStore = async url => {
 const sharedFetch = url => {
     let promise = inflight.get(url);
     if (!promise) {
-        promise = fetchAndStore(url)
-            .finally(() => inflight.delete(url));
+        promise = fetchAndStore(url);
         inflight.set(url, promise);
+        const remove = () => {
+            if (inflight.get(url) === promise) inflight.delete(url);
+        };
+        promise.then(remove, remove);
     }
     return promise;
 };
@@ -143,7 +148,10 @@ const preloadContent = url => sharedFetch(url).then(async buffer => {
 });
 
 const clearContentCache = () => {
+    cacheGeneration += 1;
+    inflight.clear();
     preloaded.clear();
+    cacheWrites.clear();
     try {
         if (typeof caches !== 'undefined') {
             caches.delete(CACHE_NAME).catch(() => null);

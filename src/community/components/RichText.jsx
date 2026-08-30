@@ -17,7 +17,8 @@ const PUBLIC_ROUTES = [
     /^\/users\/[A-Za-z0-9][A-Za-z0-9_-]{0,19}(?:\/(?:followers|following))?\/?$/,
     /^\/spaces\/?$/,
     /^\/spaces\/[A-Za-z0-9_-]+\/?$/,
-    /^\/(?:news|leaderboard|roadmap|trust|support|status)\/?$/
+    /^\/news(?:\/[A-Za-z0-9_-]+)?\/?$/,
+    /^\/(?:leaderboard|roadmap|trust|support|status|stats)\/?$/
 ];
 
 export const splitParts = text => {

@@ -73,7 +73,10 @@ const readApiCache = key => {
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
         const {data, at} = JSON.parse(raw);
-        if (!at || Date.now() - at > GET_CACHE_TTL) return null;
+        if (!at || Date.now() - at > GET_CACHE_TTL) {
+            sessionStorage.removeItem(key);
+            return null;
+        }
         return data;
     } catch (e) {
         return null;
@@ -425,6 +428,18 @@ const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
+const getProjectCommits = (id, projectJsonUrl = '') => {
+    const params = new URLSearchParams();
+    try {
+        const key = new URL(projectJsonUrl).searchParams.get('k');
+        if (key) params.set('k', key);
+    } catch (e) {
+        // Public projects and relative URLs do not need an access key.
+    }
+    const query = params.toString();
+    return request(`/projects/${id}/commits${query ? `?${query}` : ''}`);
+};
+
 const remixProject = (id, setup) => request(`/projects/${id}/remix`, {method: 'POST', body: setup});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
@@ -473,6 +488,7 @@ export {
     getProject,
     getPerks,
     getEditorProject,
+    getProjectCommits,
     remixProject,
     deleteProject,
     request,

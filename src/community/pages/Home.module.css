@@ -234,10 +234,17 @@
 }
 
 .roadmapItem {
+    position: relative;
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr);
     gap: 14px;
     padding: 14px;
+}
+
+.roadmapLink {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
 }
 
 .roadmapVotes {
@@ -347,6 +354,23 @@
 
 .roadmapMeta .roadmapComments {
     margin-left: auto;
+}
+
+.roadmapAuthor {
+    position: relative;
+    z-index: 2;
+}
+
+.roadmapAuthor a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: inherit;
+}
+
+.roadmapAuthor a:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
 }
 
 .notificationUnread {

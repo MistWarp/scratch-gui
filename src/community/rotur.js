@@ -193,6 +193,53 @@ const rotur = {
         ['posts:create'],
         client => client.posts.create(content, {profileOnly: true, os: 'MistWarp'})
     ),
+    createPost: (content, options = {}) => authenticatedAction(
+        ['posts:create'],
+        client => client.posts.create(content, {...options, os: 'MistWarp'})
+    ),
+    post: id => getRotur().posts.get(id),
+    viewPost: id => authenticatedAction([], client => client.posts.view(id)),
+    likePost: id => mutate(`/v2/posts/${encodeURIComponent(id)}/like`, {
+        method: 'PUT',
+        params: {rating: 1},
+        scopes: ['posts:like']
+    }),
+    unlikePost: id => mutate(`/v2/posts/${encodeURIComponent(id)}/like`, {
+        method: 'DELETE',
+        params: {rating: 0},
+        scopes: ['posts:like']
+    }),
+    replyToPost: (id, content) => authenticatedAction(
+        ['posts:reply'],
+        client => client.posts.reply(id, content)
+    ),
+    repost: id => authenticatedAction(['posts:repost'], client => client.posts.repost(id)),
+    editPost: (id, content) => authenticatedAction(
+        ['posts:manage'],
+        client => client.posts.edit(id, content)
+    ),
+    pinPost: id => authenticatedAction(['posts:manage'], client => client.posts.pin(id)),
+    unpinPost: id => authenticatedAction(['posts:manage'], client => client.posts.unpin(id)),
+    bookmarkPost: id => authenticatedAction([], client => client.posts.bookmark(id)),
+    unbookmarkPost: id => authenticatedAction([], client => client.posts.unbookmark(id)),
+    bookmarks: () => authenticatedAction([], client => client.posts.bookmarks()),
+    scheduledPosts: () => authenticatedAction([], client => client.posts.scheduled()),
+    topPosts: (limit = 50, hours = 24) => getRotur().posts.top(limit, hours),
+    searchPosts: (query, limit = 20) => getRotur().posts.search(query, limit),
+    votePost: (id, option) => authenticatedAction([], client => client.posts.vote(id, option)),
+    reportPost: (type, id, reason) => authenticatedAction(
+        [],
+        client => client.reports.submit(type, id, reason)
+    ),
+    blockedUsers: () => authenticatedAction(['blocked:view'], client => client.me.blocked()),
+    blockUser: username => authenticatedAction(
+        ['blocked:manage'],
+        client => client.me.block(username)
+    ),
+    unblockUser: username => authenticatedAction(
+        ['blocked:manage'],
+        client => client.me.unblock(username)
+    ),
     deletePost: id => authenticatedAction(['posts:delete'], client => client.posts.delete(id)),
     status: getStatus,
     followerLeaderboard,

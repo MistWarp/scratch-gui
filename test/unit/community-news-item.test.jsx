@@ -16,7 +16,7 @@ describe('NewsItem links', () => {
             <NewsItem item={{...item, link: {url: '/roadmap', label: 'Roadmap'}}} onChanged={jest.fn()} />
         );
 
-        expect(wrapper.find(Link).prop('to')).toBe('/roadmap');
+        expect(wrapper.find(Link).map(link => link.prop('to'))).toContain('/roadmap');
     });
 
     test('does not crash when optional link data has no URL', () => {
@@ -28,5 +28,11 @@ describe('NewsItem links', () => {
     test('drops unsafe or protocol-relative links', () => {
         expect(safeNewsLink({url: 'javascript:alert(1)'})).toBeNull();
         expect(safeNewsLink({url: '//example.com'})).toBeNull();
+    });
+
+    test('links the post title to its blog page', () => {
+        const wrapper = shallow(<NewsItem item={item} onChanged={jest.fn()} />);
+
+        expect(wrapper.find(Link).map(link => link.prop('to'))).toContain('/news/news-1');
     });
 });

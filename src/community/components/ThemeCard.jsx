@@ -4,6 +4,7 @@ import {Download, Heart} from 'lucide-react';
 import {Link, useLocation} from 'react-router-dom';
 import ThemePreview from './ThemePreview.jsx';
 import styles from './ThemeCard.module.css';
+import UserLink from './UserLink.jsx';
 
 const ThemeCard = ({returnLabel = 'Back', theme}) => {
     const location = useLocation();
@@ -14,13 +15,14 @@ const ThemeCard = ({returnLabel = 'Back', theme}) => {
                 className={styles.mainLink}
                 state={{themeReturnLabel: returnLabel, themeReturnTo: returnTo}}
                 to={`/themes/${encodeURIComponent(theme.id)}`}
-            >
-                <span className={styles.thumb}><ThemePreview className={styles.preview} theme={theme} /></span>
-                <span className={styles.body}>
+                aria-label={`Open ${theme.name}`}
+            />
+            <span className={styles.thumb}><ThemePreview className={styles.preview} theme={theme} /></span>
+            <span className={styles.body}>
                     <span className={styles.titleRow}>
                         <strong>{theme.name}</strong>
                     </span>
-                    <span className={styles.author}>by {theme.owner}</span>
+                    <span className={styles.author}>by <UserLink username={theme.owner}>{theme.owner}</UserLink></span>
                     <span className={styles.stats}>
                         <span aria-label={`${theme.likes || 0} likes`}>
                             <Heart aria-hidden="true" size={13} /> {theme.likes || 0}
@@ -29,8 +31,7 @@ const ThemeCard = ({returnLabel = 'Back', theme}) => {
                             <Download aria-hidden="true" size={13} /> {theme.downloads || 0}
                         </span>
                     </span>
-                </span>
-            </Link>
+            </span>
         </article>
     );
 };

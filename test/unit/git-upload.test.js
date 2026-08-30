@@ -33,4 +33,28 @@ describe('incremental project history uploads', () => {
         expect([...known].sort()).toEqual([baseCommit, baseTree, baseBlob].sort());
         expect([...pushed].sort()).toEqual([headCommit, headTree, headBlob].sort());
     });
+
+    test('does not reuse a traversal that stopped at a known object as a full traversal', async () => {
+        const baseCommit = '1'.repeat(40);
+        const baseTree = '2'.repeat(40);
+        const baseBlob = '3'.repeat(40);
+        const headCommit = '4'.repeat(40);
+        const headTree = '5'.repeat(40);
+        const headBlob = '6'.repeat(40);
+
+        jest.spyOn(git, 'readCommit').mockImplementation(({oid}) => Promise.resolve({
+            commit: oid === headCommit ? {tree: headTree, parent: [baseCommit]} : {tree: baseTree, parent: []}
+        }));
+        jest.spyOn(git, 'readTree').mockImplementation(({oid}) => Promise.resolve({
+            tree: [{type: 'blob', oid: oid === headTree ? headBlob : baseBlob}]
+        }));
+
+        const partial = await collectReachableObjectOids(headCommit, new Set([baseCommit]));
+        const complete = await collectReachableObjectOids(headCommit);
+
+        expect([...partial].sort()).toEqual([headCommit, headTree, headBlob].sort());
+        expect([...complete].sort()).toEqual([
+            headCommit, headTree, headBlob, baseCommit, baseTree, baseBlob
+        ].sort());
+    });
 });

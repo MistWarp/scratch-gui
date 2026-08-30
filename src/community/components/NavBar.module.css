@@ -7,8 +7,9 @@
 }
 
 .inner {
-    max-width: var(--maxw);
-    margin: 0 auto;
+    position: relative;
+    width: 100%;
+    margin: 0;
     height: 48px;
     display: flex;
     align-items: stretch;
@@ -60,9 +61,12 @@
 }
 
 .search {
-    position: relative;
-    flex: 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(440px, 36vw);
     max-width: 440px;
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
 }
@@ -127,6 +131,7 @@
 }
 
 .suggestion {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -138,6 +143,15 @@
     font-weight: 600;
     padding: 8px 12px;
     text-align: left;
+}
+
+.suggestionTarget {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
 }
 
 .suggestionStatus {
@@ -153,11 +167,24 @@
 }
 
 .suggestionMeta {
+    position: relative;
+    z-index: 2;
     margin-left: auto;
     color: var(--text-faint);
     font-size: 12px;
     font-weight: 500;
     white-space: nowrap;
+}
+
+.suggestionMeta a,
+a.suggestionMeta {
+    color: inherit;
+}
+
+.suggestionMeta a:hover,
+a.suggestionMeta:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
 }
 
 .suggestionThumb {
@@ -348,6 +375,7 @@
         box-sizing: border-box;
         width: auto;
         max-width: none;
+        transform: none;
         height: 40px;
         padding: 0;
         background: transparent;
@@ -478,6 +506,12 @@
         font-size: 9px;
         line-height: 11px;
         text-align: center;
+    }
+}
+
+@media (min-width: 761px) and (max-width: 1200px) {
+    .linkLabel {
+        display: none;
     }
 }
 

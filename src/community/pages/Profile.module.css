@@ -79,15 +79,35 @@
 }
 
 .nameRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 9px;
     margin-top: 10px;
 }
 
 .nameRow h1 {
+    min-width: 0;
     margin: 0;
     color: var(--mw-text);
     font-size: 22px;
     line-height: 1.15;
     letter-spacing: -0.02em;
+}
+
+.profileGroupTag {
+    border: 0;
+}
+
+.profileGroupTag img {
+    box-shadow: none;
+}
+
+.profileMeta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px 9px;
 }
 
 .pronouns {
@@ -107,35 +127,7 @@
 }
 
 .userStatus {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 9px;
-    color: var(--text-dim);
-    font-size: 13px;
-}
-
-.onlineDot,
-.idleDot,
-.dndDot,
-.offlineDot {
-    flex: 0 0 auto;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #45c46b;
-}
-
-.idleDot {
-    background: #f0ad3d;
-}
-
-.dndDot {
-    background: #ef5b5b;
-}
-
-.offlineDot {
-    background: var(--text-faint);
+    margin-top: 0;
 }
 
 .profileStats {
@@ -324,6 +316,7 @@
 }
 
 .recentActivityItem {
+    position: relative;
     display: grid;
     grid-template-columns: 176px minmax(0, 1fr) auto;
     align-items: center;
@@ -334,6 +327,26 @@
     border-radius: var(--radius-xs);
     background: var(--bg-raised);
     color: var(--mw-text);
+}
+
+.recentActivityLink {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+}
+
+.recentActivityOwner {
+    position: relative;
+    z-index: 2;
+}
+
+.recentActivityOwner a {
+    color: inherit;
+}
+
+.recentActivityOwner a:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
 }
 
 .recentActivityItem:hover {

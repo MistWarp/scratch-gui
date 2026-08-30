@@ -111,6 +111,11 @@
     font-size: 12px;
 }
 
+.identity .userStatus {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
 .stat {
     display: inline-flex;
     align-items: center;

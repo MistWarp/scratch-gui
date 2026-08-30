@@ -11,6 +11,8 @@
     border: 1px solid var(--border);
     cursor: pointer;
     min-height: 38px;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .button:disabled {

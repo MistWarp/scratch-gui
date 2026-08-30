@@ -1,0 +1,112 @@
+.picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    margin: 8px 0;
+    padding: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-inset);
+}
+
+.head,
+.search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search {
+    flex: 1;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--text-faint);
+}
+
+.search input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--mw-text);
+}
+
+.head > button,
+.grid button {
+    border: 0;
+    background: transparent;
+    color: var(--text-dim);
+}
+
+.head > button {
+    display: grid;
+    padding: 7px;
+    place-items: center;
+    border-radius: var(--radius-xs);
+}
+
+.head > button:hover {
+    background: var(--bg-hover);
+}
+
+.label,
+.credit {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.grid {
+    overflow-y: auto;
+    columns: 3;
+    column-gap: 6px;
+}
+
+.grid button {
+    display: block;
+    width: 100%;
+    margin: 0 0 6px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: var(--radius-xs);
+    break-inside: avoid;
+}
+
+.grid button:hover {
+    border-color: var(--accent-strong);
+}
+
+.grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.status,
+.error {
+    display: grid;
+    min-height: 100px;
+    place-items: center;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.error {
+    color: var(--mw-danger);
+}
+
+.credit {
+    align-self: flex-end;
+}
+
+@media (max-width: 520px) {
+    .grid {
+        columns: 2;
+    }
+}

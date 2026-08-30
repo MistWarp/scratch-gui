@@ -1,15 +1,17 @@
 import React, {useRef, useState} from 'react';
-import {Trash2, ExternalLink} from 'lucide-react';
+import {Archive, ArchiveRestore, Trash2, ExternalLink, Eye, Heart, Pencil} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
-import {timeAgo} from '../format';
+import {formatDate, timeAgo} from '../format';
 import ReactionButtons from './ReactionButtons.jsx';
-import RichText from './RichText.jsx';
+import Markdown from './Markdown.jsx';
+import Avatar from './Avatar.jsx';
 import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
 import Modal from './ui/Modal.jsx';
 import styles from './NewsItem.module.css';
+import UserLink from './UserLink.jsx';
 
 export const safeNewsLink = link => {
     const url = link && typeof link.url === 'string' ? link.url.trim() : '';
@@ -18,9 +20,10 @@ export const safeNewsLink = link => {
     return null;
 };
 
-const NewsItem = ({compact, item, onChanged}) => {
+const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, showAnalytics = false}) => {
     const {user, login} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
+    const canManage = canDelete && !compact && Boolean(onEdit);
     const [error, setError] = useState('');
     const [actionBusy, setActionBusy] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -31,6 +34,10 @@ const NewsItem = ({compact, item, onChanged}) => {
 
     const react = async type => {
         if (actionInFlight.current) return;
+        if (!user) {
+            login();
+            return;
+        }
         actionInFlight.current = true;
         setActionBusy('reaction');
         setError('');
@@ -95,6 +102,7 @@ const NewsItem = ({compact, item, onChanged}) => {
     const linkUrl = newsLink ? newsLink.url : '';
     const linkLabel = item.link && item.link.label ? item.link.label : 'Open link';
     const externalLink = Boolean(newsLink && newsLink.external);
+    const Title = full ? 'h1' : 'h3';
 
     return (<>
         {confirmingDelete ? (
@@ -126,16 +134,43 @@ const NewsItem = ({compact, item, onChanged}) => {
                 {error ? <p className={styles.error}>{error}</p> : null}
             </Modal>
         ) : null}
-        <article className={`${styles.item} ${compact ? styles.compact : ''}`}>
+        <article className={`${styles.item} ${compact ? styles.compact : ''} ${full ? styles.full : ''}`}>
+            {item.archived ? <span className={styles.category}>Archived</span> : null}
             {category === 'update' ? null : (
                 <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''}`}>
                     {categoryLabel}
                 </span>
             )}
             <div className={styles.head}>
-                <h3>{item.title}</h3>
-                <span className={styles.date}>{timeAgo(item.created)}</span>
-                {canDelete ? (
+                <Title>{full ? item.title : <Link to={`/news/${item.id}`}>{item.title}</Link>}</Title>
+                {!full ? (
+                    <span className={styles.date}>
+                        {item.updated ? `edited ${timeAgo(item.updated)}` : timeAgo(item.created)}
+                    </span>
+                ) : null}
+                {canManage && onEdit ? (
+                    <IconButton
+                        variant="secondary"
+                        className={styles.edit}
+                        label={`Edit ${item.title}`}
+                        disabled={Boolean(actionBusy)}
+                        onClick={() => onEdit(item)}
+                    >
+                        <Pencil size={14} />
+                    </IconButton>
+                ) : null}
+                {canManage && onArchive ? (
+                    <IconButton
+                        variant="secondary"
+                        className={styles.edit}
+                        label={`${item.archived ? 'Restore' : 'Archive'} ${item.title}`}
+                        disabled={Boolean(actionBusy)}
+                        onClick={() => onArchive(item)}
+                    >
+                        {item.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                    </IconButton>
+                ) : null}
+                {canManage ? (
                     <IconButton
                         variant="secondary"
                         className={styles.delete}
@@ -147,8 +182,33 @@ const NewsItem = ({compact, item, onChanged}) => {
                     </IconButton>
                 ) : null}
             </div>
-            <p className={styles.body}><RichText text={item.body} /></p>
-            {item.poll && item.poll.options ? (
+            {!full && item.author ? (
+                <UserLink className={styles.postAuthor} username={item.author}>
+                    <Avatar username={item.author} size={22} />
+                    <span>{item.author}</span>
+                </UserLink>
+            ) : null}
+            {full ? (
+                <p className={styles.byline}>
+                    {item.author ? (
+                        <>By <UserLink username={item.author}>{item.author}</UserLink>{' '}</>
+                    ) : null}
+                    on {formatDate(item.created)}
+                    {item.updated ? ` · Updated ${formatDate(item.updated)}` : ''}
+                </p>
+            ) : null}
+            <Markdown className={styles.body}>{item.body}</Markdown>
+            {showAnalytics ? (
+                <div className={styles.analytics} aria-label="Post analytics">
+                    <span><Eye size={14} /> {(item.views || 0).toLocaleString()} views</span>
+                    <span><Heart size={14} /> {(item.reactionCounts?.heart || 0).toLocaleString()} likes</span>
+                    <span>{(item.reactionCounts?.brokenheart || 0).toLocaleString()} dislikes</span>
+                    {item.viewHistory ? (
+                        <span>{Object.keys(item.viewHistory).length} active days</span>
+                    ) : null}
+                </div>
+            ) : null}
+            {!compact && item.poll && item.poll.options ? (
                 <div className={styles.poll}>
                     {item.poll.options.map(option => {
                         const percent = pollTotal ? Math.round((option.votes / pollTotal) * 100) : 0;
@@ -169,7 +229,7 @@ const NewsItem = ({compact, item, onChanged}) => {
                     <span className={styles.pollTotal}>{pollTotal} total {pollTotal === 1 ? 'vote' : 'votes'}</span>
                 </div>
             ) : null}
-            {linkUrl ? externalLink ? (
+            {!compact && linkUrl ? externalLink ? (
                 <a className={styles.postLink} href={linkUrl} target="_blank" rel="noreferrer">
                     {linkLabel}
                     <ExternalLink size={13} />
@@ -180,7 +240,7 @@ const NewsItem = ({compact, item, onChanged}) => {
                     <ExternalLink size={13} />
                 </Link>
             ) : null}
-            <div className={styles.footer}>
+            <div className={`${styles.footer} ${compact ? styles.compactFooter : ''}`}>
                 <ReactionButtons
                     counts={item.reactionCounts}
                     activeReaction={item.myReaction || ''}
@@ -188,9 +248,8 @@ const NewsItem = ({compact, item, onChanged}) => {
                     disabled={Boolean(actionBusy)}
                     disabledTitle={!user ? 'Sign in to react' : 'Saving…'}
                 />
-                {item.author ? <span className={styles.author}>posted by {item.author}</span> : null}
             </div>
-            {canDelete && item.reactionUsers ? (
+            {canManage && item.reactionUsers ? (
                 <div className={styles.reactionUsers}>
                     <span>Liked by {(item.reactionUsers.heart || []).join(', ') || 'nobody'}</span>
                     <span>Disliked by {(item.reactionUsers.brokenheart || []).join(', ') || 'nobody'}</span>

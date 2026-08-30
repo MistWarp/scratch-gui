@@ -18,10 +18,11 @@ const REASONS = [
 const NOUNS = {
     project: 'project',
     user: 'user',
-    comment: 'comment'
+    comment: 'comment',
+    bounty: 'bounty'
 };
 
-const ReportModal = ({type, target, context, onClose}) => {
+const ReportModal = ({type, target, context, targetUser, onClose}) => {
     const [category, setCategory] = useState(REASONS[0]);
     const [details, setDetails] = useState('');
     const [busy, setBusy] = useState(false);
@@ -49,7 +50,7 @@ const ReportModal = ({type, target, context, onClose}) => {
         setError('');
         const reason = details.trim() ? `${category}: ${details.trim()}` : category;
         try {
-            await api.report(type, target, reason, context);
+            await api.report(type, target, reason, context, targetUser);
             if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
             if (currentRequestKey.current === requestKey) {

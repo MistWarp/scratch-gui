@@ -79,4 +79,33 @@ describe('MistWarp share window workflows', () => {
         await second;
         wrapper.unmount();
     });
+
+    test('does not publish when the guidelines cannot be loaded', async () => {
+        request.mockRejectedValueOnce(new Error('offline'));
+        const wrapper = makeWindow();
+        wrapper.setState({changeMessage: 'Fixed controls'});
+
+        await wrapper.instance().handlePublish();
+
+        expect(publishToMistWarp).not.toHaveBeenCalled();
+        expect(wrapper.state('error')).toMatch(/Could not load the community guidelines/);
+        wrapper.unmount();
+    });
+
+    test('shows new guidelines when the server rejects an upload', async () => {
+        const agreement = {version: 2, accepted: false, text: '# Updated rules'};
+        const error = Object.assign(new Error('Accept the guidelines'), {
+            code: 'agreement_required',
+            data: {agreement}
+        });
+        publishToMistWarp.mockRejectedValue(error);
+        const wrapper = makeWindow();
+        wrapper.setState({changeMessage: 'Fixed controls'});
+
+        await wrapper.instance().handlePublish();
+
+        expect(wrapper.state('agreement')).toEqual(agreement);
+        expect(wrapper.state('error')).toBeNull();
+        wrapper.unmount();
+    });
 });

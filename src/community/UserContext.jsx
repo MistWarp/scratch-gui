@@ -79,7 +79,11 @@ const UserProvider = ({children}) => {
         // A transient /me failure while Rotur is logged in should not flip the
         // UI to signed-out; fall back to a minimal user so it stays logged in.
         const baseUser = me || (identityUser ? {username: identityUser.username} : null);
-        setUser(normalizeUser(baseUser ? {...baseUser, group_tag: roturProfile?.group_tag || ''} : null));
+        setUser(normalizeUser(baseUser ? {
+            ...baseUser,
+            group_tag: roturProfile?.group_tag || '',
+            subscription: roturProfile?.subscription || baseUser.subscription || ''
+        } : null));
     }, []);
 
     const refreshUser = useCallback(async () => {
@@ -91,7 +95,12 @@ const UserProvider = ({children}) => {
             optionalRequest(() => rotur.profile(username))
         ]);
         if (version !== identityVersion.current) return null;
-        const nextUser = normalizeUser({...user, ...(me || {}), group_tag: roturProfile?.group_tag || ''});
+        const nextUser = normalizeUser({
+            ...user,
+            ...(me || {}),
+            group_tag: roturProfile?.group_tag || '',
+            subscription: roturProfile?.subscription || (me && me.subscription) || user.subscription || ''
+        });
         setUser(nextUser);
         return nextUser;
     }, [user]);

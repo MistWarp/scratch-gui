@@ -71,8 +71,10 @@ const Groups = () => {
     const cards = query.trim() ? groups : [...mine, ...groups.filter(group => !mineTags.has(group.tag))];
     return (<main className={styles.page}>
         <ExploreNav active="groups" />
-        <header className={styles.hero}>
-            <div><span className={styles.eyebrow}><Building2 size={17} /> MistWarp groups</span><h1>Build as an organisation</h1><p>Groups share Rotur membership and funding while owning MistWarp studios, projects, challenges, and collections.</p></div>
+        <header className={styles.header}>
+            <div className={styles.title}>
+                <h1>Groups</h1><p>Organisations that share projects, spaces, members, and funding.</p>
+            </div>
             <Button variant="primary" onClick={() => window.location.assign(ROTUR_GROUP_CREATION_URL)}><Plus size={16} /> New group</Button>
         </header>
 
@@ -86,7 +88,10 @@ const Groups = () => {
                 }
                 load(normalized);
             }}
-        ><Search size={18} /><input aria-label="Search groups" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search groups" /><button>Search</button></form>
+        >
+            <label><Search size={16} /><input aria-label="Search groups" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search groups" /></label>
+            <Button type="submit">Search</Button>
+        </form>
         {error ? <p className={styles.error}>{error} <Button onClick={() => load(requestedQuery)}>Try again</Button></p> : null}
         {loading ? <p className={styles.status}>Loading groups…</p> : null}
         {!loading && !error && !cards.length ? <p className={styles.status}>No groups found.</p> : null}

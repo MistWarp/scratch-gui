@@ -65,7 +65,7 @@ const storageForProject = projectId => {
     return Object.keys(seed).length ? seed : null;
 };
 
-const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false} = {}) => {
+const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false, sort = 'newest'} = {}) => {
     const params = new URLSearchParams();
     if (all) {
         params.set('all', '1');
@@ -74,6 +74,7 @@ const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false} = {}) =
         params.set('limit', String(limit));
     }
     if (anchor) params.set('anchor', anchor);
+    if (sort === 'donations') params.set('sort', 'donations');
     return params.toString();
 };
 
@@ -140,6 +141,10 @@ const embedUrl = (project, {
 };
 
 const projectUrl = id => `/project/${id}`;
+const projectAccessQuery = () => {
+    const key = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('k');
+    return key ? `?k=${encodeURIComponent(key)}` : '';
+};
 
 const api = {
     loadSession,
@@ -168,10 +173,7 @@ const api = {
     explore: ({sort = 'recent', q = '', tag = '', offset = 0, limit = 24} = {}) =>
         request(`/explore?sort=${sort}&q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&offset=${offset}&limit=${limit}`),
     leaderboard: by => request(`/leaderboard?by=${by}`),
-    getProject: id => {
-        const key = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('k');
-        return request(`/projects/${id}${key ? `?k=${encodeURIComponent(key)}` : ''}`);
-    },
+    getProject: id => request(`/projects/${id}${projectAccessQuery()}`),
     createProject,
     uploadProject,
     prepareSparseProjectUpload,
@@ -238,8 +240,11 @@ const api = {
     searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),
     activity: users => request(`/activity?users=${encodeURIComponent(users.join(','))}`),
     getComments: (id, options) => request(`/projects/${id}/comments?${commentQuery(options)}`),
-    addComment: (id, content, parent, kind = 'comment') =>
-        request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind}}),
+    addComment: (id, content, parent, kind = 'comment', donation = null) =>
+        request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind, donation}}),
+    commentDonationIntent: (id, amount) => request(`/projects/${id}/comments/donation/intent`, {
+        method: 'POST', body: {amount}
+    }),
     deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, {method: 'DELETE'}),
     editComment: (id, commentId, content) => request(`/projects/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     getProfileComments: (name, options) =>
@@ -258,8 +263,8 @@ const api = {
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
     quotaReset: () => request('/me/quota/reset', {method: 'POST'}),
     quotaResetConfirm: key => request('/me/quota/reset/confirm', {method: 'POST', body: {key}}),
-    report: (type, target, reason, context) =>
-        request('/reports', {method: 'POST', body: {type, target, reason, context}}),
+    report: (type, target, reason, context, targetUser) =>
+        request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser}}),
     admin: {
         reports: () => request('/admin/reports'),
         reportAction: (id, action, reason) =>
@@ -297,7 +302,11 @@ const api = {
             request(`/admin/projects/${id}/extensions/index`, {method: 'POST', body: {sources}})
     },
     news: () => request('/news'),
+    newsItem: id => request(`/news/${encodeURIComponent(id)}`),
+    viewNews: id => request(`/news/${encodeURIComponent(id)}/view`, {method: 'POST'}),
+    publicStats: (days = 30) => request(`/stats?days=${encodeURIComponent(days)}`),
     postNews: post => request('/news', {method: 'POST', body: post}),
+    updateNews: (id, post) => request(`/news/${encodeURIComponent(id)}`, {method: 'PUT', body: post}),
     deleteNews: id => request(`/news/${id}`, {method: 'DELETE'}),
     reactNews: (id, type) => request(`/news/${id}/react`, {method: 'POST', body: {type}}),
     voteNewsPoll: (id, option) => request(`/news/${id}/poll`, {method: 'POST', body: {option}}),
@@ -366,10 +375,45 @@ const api = {
     deleteIdeaComment: (id, comment) => request(`/roadmap/${id}/comments/${comment}`, {method: 'DELETE'}),
     editIdeaComment: (id, commentId, content) => request(`/roadmap/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     commits: id => request(`/projects/${id}/commits`),
+    commitInspection: (id, sha) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}${projectAccessQuery()}`
+    ),
+    commitTree: (id, sha) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
+        {cache: false}
+    ),
+    commitFile: (id, sha, path, pull = '', pullTarget = '') => {
+        const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
+        params.set('path', path);
+        if (pull !== '') params.set('pull', String(pull));
+        if (pullTarget) params.set('pullTarget', pullTarget);
+        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}/file?${params.toString()}`, {cache: false});
+    },
+    commitCoAuthors: (id, sha) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}/co-authors${projectAccessQuery()}`
+    ),
+    updateCommit: (id, sha, patch) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}`,
+        {method: 'PATCH', body: patch}
+    ),
+    setCommitCoAuthors: (id, sha, coAuthors) => api.updateCommit(id, sha, {coAuthors}),
     pulls: id => request(`/projects/${id}/pulls`),
     getPull: (id, index) => request(`/projects/${id}/pulls/${index}`),
-    pullDiff: (id, index) =>
-        request(`/projects/${id}/pulls/${index}/diff`, {cache: false}),
+    pullTimeline: (id, index) => request(`/projects/${id}/pulls/${index}/timeline`),
+    addPullComment: (id, index, content) =>
+        request(`/projects/${id}/pulls/${index}/comments`, {method: 'POST', body: {content}}),
+    editPullComment: (id, index, comment, content) =>
+        request(`/projects/${id}/pulls/${index}/comments/${comment}`, {method: 'PUT', body: {content}}),
+    deletePullComment: (id, index, comment) =>
+        request(`/projects/${id}/pulls/${index}/comments/${comment}`, {method: 'DELETE'}),
+    bountyActivity: id => request(`/bounties/${encodeURIComponent(id)}/activity`, {cache: false}),
+    addBountyComment: (id, content) =>
+        request(`/bounties/${encodeURIComponent(id)}/comments`, {method: 'POST', body: {content}}),
+    deleteBountyComment: (id, comment) =>
+        request(`/bounties/${encodeURIComponent(id)}/comments/${comment}`, {method: 'DELETE'}),
+    joinBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'POST'}),
+    leaveBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'DELETE'}),
+    pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff`, {cache: false}),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
     uploadPullMerge: (id, {sb3, mwp, git, expectedHead, pullId}) =>
         uploadProject(id, sb3, null, null, {workspace: mwp, git, expectedHead, pullId}),

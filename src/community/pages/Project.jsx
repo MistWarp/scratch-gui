@@ -2,10 +2,10 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
-    ArrowLeft, Play, GitFork, ExternalLink, EyeOff, Clock3,
+    Play, GitFork, ExternalLink, EyeOff, Clock3,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronDown
+    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronDown, ChevronRight, GitPullRequest, Search
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff, themeCustomFor} from '../api';
 import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
@@ -35,16 +35,17 @@ import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
-import {timeAgo, sameUser, formatDate, formatDateTime, formatPlaytime} from '../format';
+import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
+import ProjectFiles from '../components/ProjectFiles.jsx';
 import ReportModal from '../components/ReportModal.jsx';
-import DiffView from '../components/DiffView.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
 import Dropdown from '../components/ui/Dropdown.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import RichText from '../components/RichText.jsx';
+import UserLink from '../components/UserLink.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -57,22 +58,22 @@ import {
     loadProjectInventory,
     grantProjectItem
 } from '../../lib/mistwarp-games/data-client.js';
-import {
-    cancelMwpMerge,
-    chooseMergeBinary,
-    finishMwpMerge,
-    inspectMwpPull,
-    restoreMwpVersion,
-    startMwpMerge,
-    updateMergeConflict
-} from '../../lib/git/mwp.js';
+import {restoreMwpVersion} from '../../lib/git/mwp.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
-const MAIN_ACTIVITY_TABS = ['Comments', 'Reviews', 'Releases'];
-const MORE_ACTIVITY_TABS = ['History', 'Pull requests', 'Contribute'];
+const MAIN_ACTIVITY_TABS = ['Comments', 'Files', 'Reviews', 'Releases'];
+const MORE_ACTIVITY_TABS = ['History', 'Pull requests', 'Bounties', 'Contribute'];
+const ACTIVITY_TABS = [...MAIN_ACTIVITY_TABS, ...MORE_ACTIVITY_TABS];
+const initialActivityTab = () => ({
+    '#pull-requests': 'Pull requests',
+    '#bounties': 'Bounties',
+    '#contribute': 'Contribute',
+    '#history': 'History',
+    '#files': 'Files'
+}[window.location.hash] || 'Comments');
 
 export const reviewPayload = (rating, message) => ({rating, message: message.trim()});
 export const releasePayload = form => ({...form, version: form.version.trim(), notes: form.notes.trim()});
@@ -86,6 +87,12 @@ export const contributionPayload = (remixProjectId, title, body, bountyId = '') 
     return payload;
 };
 export const bountyProjectId = project => project.remixParent || project.id;
+export const contributionRemixes = (projects, targetId, username) => (projects || []).filter(project => (
+    project.remixParent === targetId && (!username || sameUser(project.owner, username))
+));
+export const openPullForRemix = (pulls, targetId, remixProjectId) => (pulls || []).find(pull => (
+    pull.state === 'open' && pull.targetProjectId === targetId && pull.sourceProjectId === remixProjectId
+));
 const BOUNTY_CLAIM_KEY = 'mw:bounty-claim:';
 const rememberBountyClaim = (projectId, bountyId) => {
     try {
@@ -198,7 +205,10 @@ const Project = () => {
     const [error, setError] = useState(null);
     const [errorLoadContext, setErrorLoadContext] = useState('');
     const [actionError, setActionError] = useState(null);
-    const [tab, setTab] = useState('Comments');
+    const [tab, setTab] = useState(initialActivityTab);
+    const [openPullCount, setOpenPullCount] = useState(null);
+    const [openBountyCount, setOpenBountyCount] = useState(null);
+    const [projectFileCount, setProjectFileCount] = useState(null);
     const [title, setTitle] = useState('');
     const [savingTitle, setSavingTitle] = useState(false);
     const [thumbnailMenu, setThumbnailMenu] = useState(false);
@@ -243,6 +253,7 @@ const Project = () => {
     const [deleteConfirm, setDeleteConfirm] = useState(false);
     const [deletingProject, setDeletingProject] = useState(false);
     const themeMode = getProjectThemeMode();
+    const projectBountyId = project ? bountyProjectId(project) : '';
 
     const beginLoad = useLatest();
     const beginHistoryLoad = useLatest();
@@ -287,14 +298,45 @@ const Project = () => {
     }, [user]);
 
     useEffect(() => {
+        let current = true;
+        setOpenPullCount(null);
+        api.pulls(id).then(data => {
+            if (current) setOpenPullCount((data.pulls || []).filter(pull => pull.state === 'open').length);
+        }).catch(() => {});
+        return () => {
+            current = false;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        if (!projectBountyId) return () => {};
+        let current = true;
+        setOpenBountyCount(null);
+        listCommerceBounties({
+            source: 'mistwarp',
+            resource_type: 'project',
+            resource_id: projectBountyId,
+            status: 'open'
+        }).then(data => {
+            if (current) setOpenBountyCount((data.bounties || []).length);
+        }).catch(() => {
+            if (current) setOpenBountyCount(0);
+        });
+        return () => {
+            current = false;
+        };
+    }, [projectBountyId]);
+
+    useEffect(() => {
         if (userLoading) return;
         beginHistoryLoad();
         setProject(null);
         setVersionHistory(null);
+        setProjectFileCount(null);
         setError(null);
         setActionError(null);
         setReporting(false);
-        setTab('Comments');
+        setTab(initialActivityTab());
         setThumbnailMenu(false);
         setCollectionOpen(false);
         setConfirmBuy(false);
@@ -1258,7 +1300,8 @@ const Project = () => {
 
     const commentSource = useMemo(() => ({
         list: options => api.getComments(id, options),
-        add: (content, parent, kind) => api.addComment(id, content, parent, kind),
+        add: (content, parent, kind, donation) => api.addComment(id, content, parent, kind, donation),
+        donationIntent: amount => api.commentDonationIntent(id, amount),
         remove: commentId => api.deleteComment(id, commentId),
         edit: (commentId, content) => api.editComment(id, commentId, content),
         react: (commentId, type) => api.reactComment(id, commentId, type)
@@ -1689,7 +1732,7 @@ const Project = () => {
                             />
                         </label>
                         <dl className={styles.forkSummary}>
-                            <div><dt>Forked from</dt><dd>{project.owner}/{project.title}</dd></div>
+                            <div><dt>Forked from</dt><dd><UserLink username={project.owner}>{project.owner}</UserLink>/{project.title}</dd></div>
                             <div><dt>Base commit</dt><dd><code>{project.gitHead ? project.gitHead.slice(0, 7) : 'Current version'}</code></dd></div>
                             <div><dt>Visibility</dt><dd>Private draft</dd></div>
                         </dl>
@@ -1811,7 +1854,9 @@ const Project = () => {
             {visibility === 'private' ? (
                 <div className={styles.visibilityNotice}>
                     <EyeOff size={16} />
-                    <span>Unshared. Only you can see this project.</span>
+                    <span>{project.contributionOnly ?
+                        'Private paid-project remix. It can only be contributed back to the original project.' :
+                        'Unshared. Only you can see this project.'}</span>
                 </div>
             ) : null}
             {price > 0 ? (
@@ -2034,17 +2079,35 @@ const Project = () => {
                 </div>
             </div>
 
-            <div className={styles.bottomGrid}>
+            <div className={`${styles.bottomGrid} ${tab === 'Files' ? styles.filesGrid : ''}`}>
                 <section className={styles.commentsCol}>
                     <div className={styles.commentsHead}>
                         <nav className={styles.tabs} aria-label="Project activity">
-                            {MAIN_ACTIVITY_TABS.map(name => (
+                            {ACTIVITY_TABS.map(name => (
                                 <button
                                     type="button"
                                     key={name}
-                                    className={name === tab ? styles.tabActive : styles.tab}
+                                    className={`${name === tab ? styles.tabActive : styles.tab} ${
+                                        MORE_ACTIVITY_TABS.includes(name) ? styles.wideActivityTab : ''
+                                    }`}
                                     onClick={() => setTab(name)}
-                                >{name}</button>
+                                >
+                                    {name}
+                                    {name === 'Pull requests' && openPullCount !== null ? (
+                                        <span className={styles.tabCount}>{openPullCount}</span>
+                                    ) : null}
+                                    {name === 'History' && project ? (
+                                        <span className={styles.tabCount}>
+                                            {versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount ?? 0}
+                                        </span>
+                                    ) : null}
+                                    {name === 'Bounties' && openBountyCount !== null ? (
+                                        <span className={styles.tabCount}>{openBountyCount}</span>
+                                    ) : null}
+                                    {name === 'Files' && projectFileCount !== null ? (
+                                        <span className={styles.tabCount}>{projectFileCount}</span>
+                                    ) : null}
+                                </button>
                             ))}
                         </nav>
                         <Dropdown
@@ -2075,7 +2138,13 @@ const Project = () => {
                                         setTab(name);
                                         close();
                                     }}
-                                >{name}</button>
+                                >
+                                    {name}
+                                    {name === 'Pull requests' && openPullCount !== null ? ` (${openPullCount})` : ''}
+                                    {name === 'History' && project ? ` (${versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount ?? 0})` : ''}
+                                    {name === 'Bounties' && openBountyCount !== null ? ` (${openBountyCount})` : ''}
+                                    {name === 'Files' && projectFileCount !== null ? ` (${projectFileCount})` : ''}
+                                </button>
                             ))}
                         </Dropdown>
                     </div>
@@ -2083,6 +2152,7 @@ const Project = () => {
                         <CommentThread
                             projectComments
                             source={commentSource}
+                            donationRecipient={project.owner}
                             canModerate={project.isOwner}
                             disabled={Boolean(project.commentsOff) || locked}
                             disabledReason={locked && !project.commentsOff ?
@@ -2111,6 +2181,9 @@ const Project = () => {
                             onChange={refreshProjectAndHistory}
                         />
                     )}
+                    {tab === 'Files' && (
+                        <ProjectFiles project={project} onCount={setProjectFileCount} />
+                    )}
                     {tab === 'Reviews' && <ReviewPanel key={id} id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
                     {tab === 'Releases' && (
                         <ReleaseList
@@ -2121,41 +2194,43 @@ const Project = () => {
                         />
                     )}
                     {tab === 'Pull requests' && (
-                        <PullList
-                            id={id}
-                            canMerge={project.isOwner}
-                            onChange={load}
+                        <PullList id={id} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
+                    )}
+                    {tab === 'Bounties' && (
+                        <ProjectBounties
+                            project={project}
+                            userLoading={userLoading}
+                            onRemix={remix}
+                            onClaim={bounty => {
+                                if (project.remixParent && project.isOwner) {
+                                    rememberBountyClaim(project.id, bounty.id);
+                                    setPreferredBountyId(bounty.id);
+                                    setTab('Contribute');
+                                } else {
+                                    remixForBounty(bounty);
+                                }
+                            }}
+                            onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
                         />
                     )}
                     {tab === 'Contribute' && (
-                        <ContributionPanel
-                            key={`${id}:${project.remixParent || ''}`}
-                            id={project.remixParent || id}
-                            sourceProjectId={project.remixParent ? id : ''}
-                            preferredBountyId={preferredBountyId}
-                            user={user}
-                            viewerName={viewerName}
-                            login={login}
-                        />
+                        <div className={styles.contributionStack}>
+                            <OutgoingPullNotice id={id} targetId={project.remixParent || ''} />
+                            <ContributionPanel
+                                key={`${id}:${project.remixParent || ''}`}
+                                id={project.remixParent || id}
+                                sourceProjectId={project.remixParent ? id : ''}
+                                preferredBountyId={preferredBountyId}
+                                onRemix={remix}
+                                user={user}
+                                viewerName={viewerName}
+                                login={login}
+                            />
+                        </div>
                     )}
                 </section>
 
                 <aside className={styles.remixCol}>
-                    <ProjectBounties
-                        project={project}
-                        userLoading={userLoading}
-                        onRemix={remix}
-                        onClaim={bounty => {
-                            if (project.remixParent && project.isOwner) {
-                                rememberBountyClaim(project.id, bounty.id);
-                                setPreferredBountyId(bounty.id);
-                                setTab('Contribute');
-                            } else {
-                                remixForBounty(bounty);
-                            }
-                        }}
-                        onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
-                    />
                     <RemixTree id={id} />
                 </aside>
             </div>
@@ -2195,13 +2270,13 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
             <div className={styles.bountyHeader}>
                 <h2 id="project-bounties-title">
                     <Trophy size={17} />
-                    {isFork ? 'Bounties on the parent project' : 'Contribute'}
+                    {isFork ? 'Bounties on the parent project' : 'Bounties'}
                     <span>{items.length}</span>
                 </h2>
                 {project.isOwner && !isFork ? (
-                    <button type="button" className={styles.bountyAction} onClick={onCreate}>
-                        <Plus size={14} /> New bounty
-                    </button>
+                    <Button variant="primary" onClick={onCreate}>
+                        <Plus size={16} /> New bounty
+                    </Button>
                 ) : !isFork && project.canRemix ? (
                     <button
                         type="button"
@@ -2213,17 +2288,12 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
                     </button>
                 ) : null}
             </div>
-            <ol className={styles.bountySteps}>
-                <li><span>1</span><strong>{items.length ? 'Pick a bounty' : 'Choose what to improve'}</strong></li>
-                <li><span>2</span><strong>Create a fork and make your changes</strong></li>
-                <li><span>3</span><strong>Save it and send a pull request</strong></li>
-            </ol>
             {items.length ? (
                 <ul className={styles.bountyList}>
                     {items.map(item => (
                         <li key={item.id}>
                             <div>
-                                <strong>{item.title}</strong>
+                                <Link className={styles.bountyTitle} to={`/bounties/${encodeURIComponent(item.id)}`}>{item.title}</Link>
                                 {item.description ? <p>{item.description}</p> : null}
                             </div>
                             <div className={styles.bountyItemAction}>
@@ -2257,20 +2327,16 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
 
 const RemixTreeNode = ({node, childrenOf, currentId}) => (
     <li>
-        <Link
+        <div
             className={node.id === currentId ? styles.treeNodeCurrent : styles.treeNode}
-            to={projectUrl(node.id)}
         >
-            <Avatar
-                username={node.owner}
-                size={22}
-            />
-            <span className={styles.treeTitle}>{node.title}</span>
+            <Avatar username={node.owner} size={22} />
+            <Link className={styles.treeTitle} to={projectUrl(node.id)}>{node.title}</Link>
             <span className={styles.treeMeta}>
-                {node.owner}{timeAgo(node.sharedAt || node.created || node.edited) ?
+                <UserLink username={node.owner}>{node.owner}</UserLink>{timeAgo(node.sharedAt || node.created || node.edited) ?
                     ` · ${timeAgo(node.sharedAt || node.created || node.edited)}` : ''}
             </span>
-        </Link>
+        </div>
         {childrenOf(node.id).length ? (
             <ul className={styles.treeChildren}>
                 {childrenOf(node.id).map(child => (
@@ -2337,11 +2403,6 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     const [restoring, setRestoring] = useState(null);
     const [restoreError, setRestoreError] = useState(null);
     const [restoreCandidate, setRestoreCandidate] = useState(null);
-    const [checkpointName, setCheckpointName] = useState('');
-    const [checkpoints, setCheckpoints] = useState([]);
-    const [checkpointPerk, setCheckpointPerk] = useState(false);
-    const [checkpointBusy, setCheckpointBusy] = useState(false);
-    const checkpointLocks = useRef(new Set());
     const restoreLocks = useRef(new Set());
     const idRef = useRef(id);
     idRef.current = id;
@@ -2350,52 +2411,7 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
         setRestoring(null);
         setRestoreError(null);
         setRestoreCandidate(null);
-        setCheckpointName('');
-        setCheckpoints([]);
-        setCheckpointPerk(false);
-        setCheckpointBusy(false);
     }, [id]);
-    useEffect(() => {
-        if (!canRestore) return () => {};
-        let active = true;
-        Promise.all([api.perks(), api.releases(id)]).then(([perkData, releaseData]) => {
-            if (!active) return;
-            setCheckpointPerk(Boolean(perkData.current?.mistwarp?.historyCheckpoints));
-            setCheckpoints((releaseData.releases || []).filter(release => release.channel === 'checkpoint'));
-        }).catch(() => {});
-        return () => {
-            active = false;
-        };
-    }, [canRestore, id]);
-    const createCheckpoint = async event => {
-        event.preventDefault();
-        const version = checkpointName.trim();
-        const actionId = id;
-        if (!version || checkpointLocks.current.has(actionId)) return;
-        checkpointLocks.current.add(actionId);
-        setCheckpointBusy(true);
-        setRestoreError(null);
-        try {
-            const data = await api.createRelease(actionId, {version, channel: 'checkpoint', notes: ''});
-            if (idRef.current !== actionId) return;
-            setCheckpoints(current => [data.release, ...current]);
-            setCheckpointName('');
-        } catch (error) {
-            if (idRef.current === actionId) {
-                setRestoreError(error.message || 'Could not create the checkpoint.');
-            }
-        } finally {
-            checkpointLocks.current.delete(actionId);
-            if (idRef.current === actionId) setCheckpointBusy(false);
-        }
-    };
-    const checkpointPanel = canRestore ? (
-        <section className={styles.checkpointPanel}>
-            <div><strong>Named checkpoints</strong><span>{checkpointPerk ? 'Included with your Rotur plan.' : 'Available with Rotur Lite, Plus, or Pro.'}</span></div>
-            {checkpointPerk ? <form onSubmit={createCheckpoint}><input maxLength={50} placeholder="Checkpoint name" value={checkpointName} onChange={event => setCheckpointName(event.target.value)} /><Button busy={checkpointBusy} busyLabel="Saving…" type="submit">Save checkpoint</Button></form> : null}
-            {checkpoints.length ? <div className={styles.checkpointList}>{checkpoints.map(checkpoint => <a href={embedUrl({id, projectJsonUrl: checkpoint.jsonUrl, assetsBase: checkpoint.assetsBase})} key={checkpoint._id}>{checkpoint.version}<small>{formatDateTime(checkpoint.created, 'Date unavailable')}</small></a>)}</div> : null}
-        </section>
-    ) : null;
     const requestRestore = commit => {
         if (restoring) return;
         setRestoreError(null);
@@ -2433,13 +2449,13 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     if (!history) return <p className={styles.status}>Loading…</p>;
     if (history.error) return <p className={styles.status}>Could not load version history. <button type="button" onClick={onChange}>Try again</button></p>;
     const commits = history.commits || [];
-    if (!commits.length) return <React.Fragment>{checkpointPanel}<p className={styles.status}>No version history available.</p></React.Fragment>;
+    if (!commits.length) return <p className={styles.status}>No version history available.</p>;
     if (history.graph?.nodes?.length) {
         return (
             <>
-                {checkpointPanel}
                 {restoreError ? <p className={styles.status}>{restoreError}</p> : null}
                 <GitGraph
+                    projectId={id}
                     graph={history.graph}
                     currentBranch={history.branch}
                     onRestore={canRestore ? requestRestore : null}
@@ -2480,13 +2496,14 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     }
     return (
         <React.Fragment>
-            {checkpointPanel}
             <ul className={styles.commitList}>
                 {commits.map(commit => (
                     <li key={commit.sha}>
-                        <code>{commit.sha.slice(0, 7)}</code>
-                        <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
-                        <span className={styles.muted}>{commit.author}</span>
+                        <Link className={styles.commitLink} to={`${projectUrl(id)}/commits/${commit.sha}`}>
+                            <code>{commit.sha.slice(0, 7)}</code>
+                            <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
+                        </Link>
+                        <UserLink className={styles.muted} username={commit.author}>{commit.author}</UserLink>
                     </li>
                 ))}
             </ul>
@@ -2494,286 +2511,97 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     );
 };
 
-const PullList = ({id, canMerge, onChange}) => {
+const PullList = ({id, onCount, onNew}) => {
     const [pulls, setPulls] = useState(null);
     const [loadError, setLoadError] = useState(false);
-    const [openPull, setOpenPull] = useState(null);
-    const [diff, setDiff] = useState(null);
-    const [merging, setMerging] = useState(false);
-    const [mergeError, setMergeError] = useState(null);
-    const [mergeSession, setMergeSession] = useState(null);
-    const actionLocks = useRef(new Set());
-    const idRef = useRef(id);
-    idRef.current = id;
+    const [state, setState] = useState('open');
+    const [query, setQuery] = useState('');
     const beginLoad = useLatest();
-    const beginView = useLatest();
-
-    const loadPullFiles = async data => {
-        const [target, source] = await Promise.all([
-            fetchWorkspace(data.targetWorkspaceUrl),
-            fetchWorkspace(data.sourceWorkspaceUrl)
-        ]);
-        return {target, source};
-    };
 
     const reload = useCallback(() => {
         const fresh = beginLoad();
         setPulls(null);
         setLoadError(false);
         api.pulls(id)
-            .then(fresh(d => setPulls(d.pulls || [])))
+            .then(fresh(d => {
+                const loaded = d.pulls || [];
+                setPulls(loaded);
+                if (onCount) onCount(loaded.filter(pull => pull.state === 'open').length);
+            }))
             .catch(fresh(() => setLoadError(true)));
-    }, [beginLoad, id]);
+    }, [beginLoad, id, onCount]);
 
     useEffect(() => {
-        actionLocks.current.clear();
-        beginView();
-        setOpenPull(null);
-        setDiff(null);
-        setMerging(false);
-        setMergeError(null);
-        setMergeSession(null);
-        cancelMwpMerge().catch(() => {});
         reload();
-        return () => {
-            beginView();
-            cancelMwpMerge().catch(() => {});
-        };
-    }, [beginView, id, reload]);
+    }, [reload]);
 
-    const view = async pull => {
-        const viewLock = `view:${id}:${pull.index}`;
-        if (actionLocks.current.has(viewLock)) return;
-        actionLocks.current.add(viewLock);
-        const fresh = beginView();
-        setOpenPull(pull);
-        setDiff(null);
-        setMergeError(null);
-        try {
-            const data = await api.pullDiff(id, pull.index);
-            const files = await loadPullFiles(data);
-            const inspected = await inspectMwpPull({
-                ...files,
-                pullId: pull.index,
-                baseCommit: data.pull.baseCommit,
-                headCommit: data.pull.headCommit
-            });
-            fresh(setDiff)(inspected.diff || 'No textual changes.');
-        } catch (e) {
-            fresh(setDiff)('Could not load diff.');
-        } finally {
-            actionLocks.current.delete(viewLock);
-        }
-    };
-
-    const uploadMerge = async (pull, data, actionId) => {
-        const result = await finishMwpMerge();
-        if (idRef.current !== actionId) return;
-        await api.uploadPullMerge(actionId, {
-            sb3: result.sb3,
-            mwp: result.mwp,
-            git: result.manifest,
-            expectedHead: data.expectedHead,
-            pullId: pull.index
-        });
-        if (idRef.current !== actionId) return;
-        setMergeSession(null);
-        setOpenPull(null);
-        reload();
-        onChange();
-    };
-
-    const merge = async pull => {
-        const actionId = id;
-        const mergeLock = `merge:${actionId}`;
-        if (actionLocks.current.has(mergeLock)) return;
-        actionLocks.current.add(mergeLock);
-        setMerging(true);
-        setMergeError(null);
-        try {
-            const data = await api.mergePull(actionId, pull.index);
-            if (idRef.current !== actionId) return;
-            const files = await loadPullFiles(data);
-            if (idRef.current !== actionId) return;
-            const result = await startMwpMerge({
-                ...files,
-                pullId: pull.index,
-                baseCommit: data.pull.baseCommit,
-                headCommit: data.pull.headCommit
-            });
-            if (idRef.current !== actionId) {
-                await cancelMwpMerge();
-                return;
-            }
-            if (result.conflicts.length || result.binaryConflicts.length) {
-                setMergeSession({
-                    pull,
-                    data,
-                    conflicts: result.conflicts,
-                    binaryConflicts: result.binaryConflicts.map(path => ({path, choice: ''}))
-                });
-            } else {
-                await uploadMerge(pull, data, actionId);
-            }
-        } catch (e) {
-            await cancelMwpMerge();
-            if (idRef.current === actionId) setMergeError(e.message || 'Merge failed.');
-        } finally {
-            actionLocks.current.delete(mergeLock);
-            if (idRef.current === actionId) setMerging(false);
-        }
-    };
-
-    const updateConflict = (path, content) => {
-        setMergeSession(session => ({
-            ...session,
-            conflicts: session.conflicts.map(file => (file.path === path ? {...file, content} : file))
-        }));
-    };
-
-    const resolveConflicts = async () => {
-        if (!mergeSession) return;
-        const actionId = id;
-        const mergeLock = `merge:${actionId}`;
-        if (actionLocks.current.has(mergeLock)) return;
-        actionLocks.current.add(mergeLock);
-        const session = mergeSession;
-        setMerging(true);
-        setMergeError(null);
-        try {
-            for (const file of session.conflicts) {
-                await updateMergeConflict(file.path, file.content);
-            }
-            for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(`Choose a version for ${file.path}`);
-                await chooseMergeBinary(file.path, file.choice);
-            }
-            if (idRef.current !== actionId) return;
-            await uploadMerge(session.pull, session.data, actionId);
-        } catch (e) {
-            if (idRef.current === actionId) {
-                setMergeError(e.message || 'The conflicts could not be resolved.');
-            }
-        } finally {
-            actionLocks.current.delete(mergeLock);
-            if (idRef.current === actionId) setMerging(false);
-        }
-    };
-
-    const closePull = async () => {
-        const closeLock = `close:${id}`;
-        if (actionLocks.current.has(`merge:${id}`) || actionLocks.current.has(closeLock)) return;
-        actionLocks.current.add(closeLock);
-        try {
-            await cancelMwpMerge();
-            if (idRef.current !== id) return;
-            setMergeSession(null);
-            setOpenPull(null);
-        } finally {
-            actionLocks.current.delete(closeLock);
-        }
-    };
-
-    if (!pulls && !loadError) return <p className={styles.status}>Loading…</p>;
+    if (!pulls && !loadError) return <p className={styles.status}>Loading pull requests…</p>;
     if (loadError) return <p className={styles.status}>Could not load pull requests. <button type="button" onClick={reload}>Try again</button></p>;
-    if (openPull) {
-        return (
-            <div>
-                <button
-                    type="button"
-                    className={styles.backLink}
-                    onClick={closePull}
-                    disabled={merging}
-                >
-                    <ArrowLeft size={14} />
-                    Back to pull requests
-                </button>
-                <h3>{openPull.title}</h3>
-                <p className={styles.muted}>
-                    #{openPull.index} by {openPull.user} into {openPull.baseBranch}
-                </p>
-                {mergeError ? <div className={styles.actionError}>{mergeError}</div> : null}
-                {mergeSession ? (
-                    <div className={styles.conflictEditor}>
-                        <h4>Resolve merge conflicts</h4>
-                        <p>Remove the conflict markers and leave the exact text this file should contain.</p>
-                        {mergeSession.conflicts.map(file => (
-                            <label key={file.path} className={styles.conflictFile}>
-                                <span>{file.path}</span>
-                                <textarea
-                                    value={file.content}
-                                    disabled={merging}
-                                    onChange={event => updateConflict(file.path, event.target.value)}
-                                    spellCheck={false}
-                                />
-                            </label>
-                        ))}
-                        {mergeSession.binaryConflicts.map(file => (
-                            <div key={file.path} className={styles.binaryConflict}>
-                                <span>{file.path}</span>
-                                <div>
-                                    <button
-                                        type="button"
-                                        className={file.choice === 'ours' ? styles.binaryChoiceActive : ''}
-                                        disabled={merging}
-                                        onClick={() => setMergeSession(session => ({
-                                            ...session,
-                                            binaryConflicts: session.binaryConflicts.map(item =>
-                                                (item.path === file.path ? {...item, choice: 'ours'} : item))
-                                        }))}
-                                    >Keep current project</button>
-                                    <button
-                                        type="button"
-                                        className={file.choice === 'theirs' ? styles.binaryChoiceActive : ''}
-                                        disabled={merging}
-                                        onClick={() => setMergeSession(session => ({
-                                            ...session,
-                                            binaryConflicts: session.binaryConflicts.map(item =>
-                                                (item.path === file.path ? {...item, choice: 'theirs'} : item))
-                                        }))}
-                                    >Use fork version</button>
-                                </div>
-                            </div>
-                        ))}
-                        <Button
-                            variant="primary"
-                            className={styles.primary}
-                            onClick={resolveConflicts}
-                            busy={merging}
-                            busyLabel="Finishing merge…"
-                        >Save resolutions and merge</Button>
-                    </div>
-                ) : null}
-                {canMerge && openPull.state === 'open' ? (
-                    <Button
-                        variant="primary"
-                        className={styles.primary}
-                        onClick={() => merge(openPull)}
-                        disabled={merging || Boolean(mergeSession)}
-                        busy={merging}
-                        busyLabel="Merging…"
-                    >Merge</Button>
-                ) : null}
-                <DiffView diff={diff} />
-            </div>
-        );
-    }
-    if (!pulls.length) return <p className={styles.status}>No pull requests.</p>;
+    const openCount = pulls.filter(pull => pull.state === 'open').length;
+    const closedCount = pulls.length - openCount;
+    const needle = query.trim().toLowerCase();
+    const filtered = pulls.filter(pull => {
+        const stateMatches = state === 'open' ? pull.state === 'open' : pull.state !== 'open';
+        return stateMatches && (!needle || `${pull.title} ${pull.user} ${pull.index}`.toLowerCase().includes(needle));
+    });
     return (
-        <ul className={styles.plainList}>
+        <section className={styles.pullBrowser}>
+            <div className={styles.pullTools}>
+                <label><Search size={16} /><input value={query} placeholder="Search pull requests" onChange={event => setQuery(event.target.value)} /></label>
+                <Button variant="primary" onClick={onNew}><Plus size={16} /> New pull request</Button>
+            </div>
+            <div className={styles.pullList}>
+                <header>
+                    <button className={state === 'open' ? styles.pullStateActive : ''} onClick={() => setState('open')}><GitPullRequest size={16} /> {openCount} Open</button>
+                    <button className={state === 'closed' ? styles.pullStateActive : ''} onClick={() => setState('closed')}>{closedCount} Closed</button>
+                </header>
+                {filtered.length ? filtered.map(pull => (
+                    <article key={pull.index} id={`pull-${pull.index}`}>
+                        <GitPullRequest className={pull.state === 'open' ? styles.pullOpen : styles.pullClosed} size={18} />
+                        <div>
+                            <Link to={`${projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
+                            <span>#{pull.index} opened {timeAgo(pull.created)} by <UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
+                        </div>
+                        <span className={styles.pullComments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>
+                    </article>
+                )) : <p className={styles.pullEmpty}>No {state} pull requests match.</p>}
+            </div>
+        </section>
+    );
+};
+
+const OutgoingPullNotice = ({id, targetId}) => {
+    const [pulls, setPulls] = useState(null);
+    const [targetTitle, setTargetTitle] = useState('');
+    useEffect(() => {
+        if (!targetId) {
+            setPulls([]);
+            return () => {};
+        }
+        let active = true;
+        Promise.all([api.pulls(targetId), api.getProject(targetId)]).then(([data, projectData]) => {
+            if (!active) return;
+            const target = projectData.project || projectData;
+            setTargetTitle(target.title || targetId);
+            setPulls((data.pulls || []).filter(pull => pull.state === 'open' && pull.sourceProjectId === id));
+        }).catch(() => {
+            if (active) setPulls([]);
+        });
+        return () => {
+            active = false;
+        };
+    }, [id, targetId]);
+    if (!pulls?.length) return null;
+    return (
+        <section className={styles.outgoingPulls}>
+            <header><GitPullRequest size={16} /><strong>Open pull requests from this project</strong><span>{pulls.length}</span></header>
             {pulls.map(pull => (
-                <li key={pull.index}>
-                    <button
-                        type="button"
-                        className={styles.linkButton}
-                        onClick={() => view(pull)}
-                    >
-                        #{pull.index} {pull.title}
-                    </button>
-                    <span className={styles.muted}> by {pull.user} · {pull.state}</span>
-                </li>
+                <Link key={`${pull.targetProjectId}:${pull.index}`} to={`${projectUrl(pull.targetProjectId)}/pulls/${pull.index}`}>
+                    <span><strong>{pull.title}</strong><small>into {targetTitle || pull.targetProjectId}</small></span>
+                    <span>#{pull.index} <ChevronRight size={14} /></span>
+                </Link>
             ))}
-        </ul>
+        </section>
     );
 };
 
@@ -3088,7 +2916,7 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
     );
 };
 
-const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewerName, login}) => {
+const ContributionPanel = ({id, sourceProjectId, preferredBountyId, onRemix, user, viewerName, login}) => {
     const actionContext = `${id}\u0000${sourceProjectId}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -3099,7 +2927,12 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewer
     const [busy, setBusy] = useState(false);
     const [bounties, setBounties] = useState([]);
     const [bountyId, setBountyId] = useState('');
+    const [remixes, setRemixes] = useState(sourceProjectId ? [] : null);
+    const [targetPulls, setTargetPulls] = useState([]);
+    const [remixLoadError, setRemixLoadError] = useState(false);
+    const [remixLoadAttempt, setRemixLoadAttempt] = useState(0);
     const actionLocks = useRef(new Set());
+    const openPull = openPullForRemix(targetPulls, id, remixProjectId);
 
     useEffect(() => {
         actionLocks.current.clear();
@@ -3126,6 +2959,45 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewer
         }
     }, [id, sourceProjectId, viewerName, preferredBountyId]);
 
+    useEffect(() => {
+        if (sourceProjectId) {
+            setRemixes([]);
+            setTargetPulls([]);
+            setRemixLoadError(false);
+            return () => {};
+        }
+        if (!user?.username) {
+            setRemixes([]);
+            setTargetPulls([]);
+            setRemixProjectId('');
+            setRemixLoadError(false);
+            return () => {};
+        }
+        let active = true;
+        setRemixes(null);
+        setRemixLoadError(false);
+        Promise.all([
+            api.myProjects(user.username),
+            api.pulls(id)
+        ]).then(([projectData, pullData]) => {
+            if (!active) return;
+            const ownedRemixes = contributionRemixes(projectData.projects, id, user.username);
+            setRemixes(ownedRemixes);
+            setTargetPulls(pullData.pulls || []);
+            setRemixProjectId(current => (
+                ownedRemixes.some(project => project.id === current) ? current : (ownedRemixes[0]?.id || '')
+            ));
+        }).catch(() => {
+            if (!active) return;
+            setRemixes([]);
+            setTargetPulls([]);
+            setRemixLoadError(true);
+        });
+        return () => {
+            active = false;
+        };
+    }, [id, remixLoadAttempt, sourceProjectId, user?.username]);
+
     const submit = async event => {
         event.preventDefault();
         const context = actionContextRef.current;
@@ -3145,7 +3017,8 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewer
         try {
             const data = await api.contribute(id, payload);
             if (actionContextRef.current !== context) return;
-            setStatus(`Contribution #${data.pull.index} sent.`);
+            setTargetPulls(current => [data.pull, ...current]);
+            setStatus('');
             setTitle('');
             setBody('');
             setBountyId('');
@@ -3166,45 +3039,77 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, user, viewer
             <p className={styles.muted}>
                 {sourceProjectId ?
                     'This creates a pull request for the parent project. The owner can review your changes before merging them.' :
-                    'Start with a fork, make and save your changes there, then enter that fork\'s project ID below.'}
+                    'Choose one of your remixes, then describe the changes you want the project owner to review.'}
             </p>
-            <ol className={styles.contributionSteps}>
-                <li className={sourceProjectId ? styles.contributionStepDone : ''}><span>1</span>Fork the project</li>
-                <li><span>2</span>Edit and save your fork</li>
-                <li><span>3</span>Describe your work and send it</li>
-            </ol>
             {!sourceProjectId ? (
-                <input
-                    value={remixProjectId}
-                    disabled={busy}
-                    required
-                    placeholder="Your fork project ID"
-                    onChange={event => setRemixProjectId(event.target.value)}
-                />
+                <div className={styles.contributionRemixPicker}>
+                    {remixes === null ? <p className={styles.muted}>Loading your remixes…</p> : null}
+                    {remixLoadError ? (
+                        <p className={styles.muted}>Could not load your remixes. <button type="button" onClick={() => setRemixLoadAttempt(value => value + 1)}>Try again</button></p>
+                    ) : null}
+                    {remixes?.length ? (
+                        <label className={styles.bountySelect}>
+                            <span>Remix to contribute</span>
+                            <SelectMenu
+                                options={remixes.map(project => ({
+                                    value: project.id,
+                                    label: project.title || project.id
+                                }))}
+                                value={remixProjectId}
+                                disabled={busy}
+                                onChange={setRemixProjectId}
+                                ariaLabel="Remix to contribute"
+                                width={320}
+                            />
+                        </label>
+                    ) : null}
+                    {user && remixes && !remixes.length && !remixLoadError ? (
+                        <div className={styles.noContributionRemix}>
+                            <span>You do not have a remix of this project yet.</span>
+                            {onRemix ? <Button type="button" variant="secondary" onClick={onRemix}>Create a remix</Button> : null}
+                        </div>
+                    ) : null}
+                    {!user ? <p className={styles.muted}>Sign in to choose one of your remixes.</p> : null}
+                </div>
             ) : null}
-            <input value={title} disabled={busy} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
-            <textarea value={body} disabled={busy} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
-            {bounties.length ? (
-                <label className={styles.bountySelect}>
-                    <span>Bounty to claim <small>Optional</small></span>
-                    <SelectMenu
-                        options={[
-                            {value: '', label: 'No bounty'},
-                            ...bounties.map(bounty => ({
-                                value: bounty.id,
-                                label: `${bounty.amount} credits: ${bounty.title}`
-                            }))
-                        ]}
-                        value={bountyId}
-                        disabled={busy}
-                        onChange={setBountyId}
-                        ariaLabel="Bounty to claim"
-                        width={320}
-                    />
-                    <small>The reward is paid when the project owner merges this pull request.</small>
-                </label>
-            ) : null}
-            <Button type="submit" disabled={busy}>{busy ? 'Sending…' : user ? 'Create pull request' : 'Sign in to contribute'}</Button>
+            {openPull ? (
+                <Link className={styles.openContribution} to={`${projectUrl(id)}/pulls/${openPull.index}`}>
+                    <GitPullRequest size={17} />
+                    <span><strong>{openPull.title}</strong><small>Pull request #{openPull.index} is open for this remix</small></span>
+                    <ChevronRight size={16} />
+                </Link>
+            ) : (sourceProjectId || remixProjectId) ? (
+                <React.Fragment>
+                    <ol className={styles.contributionSteps}>
+                        <li className={sourceProjectId || remixProjectId ? styles.contributionStepDone : ''}><span>1</span>Remix the project</li>
+                        <li><span>2</span>Edit and save your remix</li>
+                        <li><span>3</span>Describe your work and send it</li>
+                    </ol>
+                    <input value={title} disabled={busy} required maxLength={200} placeholder="What did you change?" onChange={event => setTitle(event.target.value)} />
+                    <textarea value={body} disabled={busy} placeholder="Anything the creator should know" onChange={event => setBody(event.target.value)} />
+                    {bounties.length ? (
+                        <label className={styles.bountySelect}>
+                            <span>Bounty to claim <small>Optional</small></span>
+                            <SelectMenu
+                                options={[
+                                    {value: '', label: 'No bounty'},
+                                    ...bounties.map(bounty => ({
+                                        value: bounty.id,
+                                        label: `${bounty.amount} credits: ${bounty.title}`
+                                    }))
+                                ]}
+                                value={bountyId}
+                                disabled={busy}
+                                onChange={setBountyId}
+                                ariaLabel="Bounty to claim"
+                                width={320}
+                            />
+                            <small>The reward is paid when the project owner merges this pull request.</small>
+                        </label>
+                    ) : null}
+                    <Button type="submit" disabled={busy}>{busy ? 'Sending…' : user ? 'Create pull request' : 'Sign in to contribute'}</Button>
+                </React.Fragment>
+            ) : !user ? <Button type="submit">Sign in to contribute</Button> : null}
             {status ? <p className={styles.muted}>{status}</p> : null}
         </form>
     );

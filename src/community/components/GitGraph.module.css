@@ -2,9 +2,7 @@
     display: flex;
     min-width: 0;
     overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
+    background: transparent;
 }
 
 .canvas {
@@ -13,6 +11,20 @@
 
 .canvas svg {
     display: block;
+}
+
+.canvas path {
+    opacity: 0.75;
+}
+
+.node {
+    stroke: var(--bg);
+    stroke-width: 2px;
+}
+
+.headNode {
+    stroke: var(--bg);
+    stroke-width: 3px;
 }
 
 .commits {
@@ -24,13 +36,31 @@
 }
 
 .commit {
+    position: relative;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 4px;
-    padding: 0 14px 0 4px;
-    border-bottom: 1px solid var(--border);
+    gap: 3px;
+    padding: 0 14px 0 2px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.commitHitArea {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.commit:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.subject,
+.meta {
+    pointer-events: none;
 }
 
 .commit:last-child {
@@ -49,6 +79,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.commit:hover .subject > span:last-child {
+    color: var(--accent-strong);
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .branch {
@@ -71,6 +107,9 @@
 }
 
 .restore {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
     margin-left: auto;
     padding: 2px 8px;
     border: 1px solid var(--border);
@@ -79,6 +118,18 @@
     color: var(--text);
     font: inherit;
     cursor: pointer;
+}
+
+.author {
+    position: relative;
+    z-index: 2;
+    color: inherit;
+    pointer-events: auto;
+}
+
+.author:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
 }
 
 .restore:hover:not(:disabled) {

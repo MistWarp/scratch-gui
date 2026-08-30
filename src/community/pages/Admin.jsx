@@ -1,7 +1,10 @@
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
-import {Flag, User, FolderOpen, Ban, ShieldCheck, BarChart3, AlertTriangle, Puzzle} from 'lucide-react';
+import {
+    Activity, AlertTriangle, Ban, BarChart3, Eye, Flag, FolderOpen, HardDrive,
+    Heart, Newspaper, Puzzle, ShieldCheck, User
+} from 'lucide-react';
 import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -44,30 +47,56 @@ const buildSeries = (byDay, days, samplesByDay) => {
     });
 };
 
-const StatTile = ({label, value}) => (
-    <div className={styles.statTile}>
+const StatTile = ({label, value, detail, icon: Icon, prominent = false}) => (
+    <div className={`${styles.statTile} ${prominent ? styles.statTileProminent : ''}`}>
+        <div className={styles.statTileTop}>
+            {Icon ? <span className={styles.statIcon}><Icon size={18} /></span> : null}
+            <span className={styles.statLabel}>{label}</span>
+        </div>
         <span className={styles.statValue}>{value}</span>
-        <span className={styles.statLabel}>{label}</span>
+        {detail ? <span className={styles.statDetail}>{detail}</span> : null}
     </div>
 );
 
 const num = v => Number(v || 0).toLocaleString();
+const percent = (part, total, digits = 1) => (total ? `${((part / total) * 100).toFixed(digits)}%` : '0%');
 const formatCompact = value => new Intl.NumberFormat([], {notation: 'compact', maximumFractionDigits: 1}).format(value);
 const formatLoadTime = value => (value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`);
 
-const AnalyticsChart = ({title, description, series, yLabel, formatValue = num, accent = 'var(--accent)'}) => {
+const AnalyticsChart = ({
+    title, description, series, yLabel, formatValue = num, accent = 'var(--accent)', estimateToday = false
+}) => {
     const width = 640;
     const height = 220;
     const plot = {left: 58, right: 16, top: 14, bottom: 42};
     const plotWidth = width - plot.left - plot.right;
     const plotHeight = height - plot.top - plot.bottom;
     const max = series.reduce((highest, point) => Math.max(highest, Number(point.value) || 0), 0);
-    const scaleMax = max || 1;
+    const latestSeriesPoint = series[series.length - 1];
+    const recentValues = series.slice(-8, -1)
+        .filter(point => Number.isFinite(point.value))
+        .map(point => point.value);
+    const recentAverage = recentValues.length ?
+        recentValues.reduce((total, value) => total + value, 0) / recentValues.length : 0;
+    const now = new Date();
+    const elapsedToday = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
+    const dayFraction = Math.max(1 / 24, elapsedToday / 86400);
+    const paceWeight = Math.min(.9, Math.max(.35, dayFraction));
+    const estimatedValue = estimateToday && latestSeriesPoint && Number.isFinite(latestSeriesPoint.value) ?
+        Math.max(latestSeriesPoint.value, Math.round(
+            ((latestSeriesPoint.value / dayFraction) * paceWeight) + (recentAverage * (1 - paceWeight))
+        )) : null;
+    const scaleMax = Math.max(max, estimatedValue || 0) || 1;
     const coordinates = series.map((point, index) => ({
         ...point,
         x: plot.left + ((index / Math.max(1, series.length - 1)) * plotWidth),
         y: Number.isFinite(point.value) ? plot.top + plotHeight - ((point.value / scaleMax) * plotHeight) : null
     }));
+    const availablePoints = coordinates.filter(point => Number.isFinite(point.y));
+    const latestPoint = availablePoints[availablePoints.length - 1];
+    const previousPoint = availablePoints[availablePoints.length - 2];
+    const estimatedY = Number.isFinite(estimatedValue) ?
+        plot.top + plotHeight - ((estimatedValue / scaleMax) * plotHeight) : null;
     let segmentOpen = false;
     const linePath = coordinates.map(point => {
         if (!Number.isFinite(point.y)) {
@@ -82,8 +111,15 @@ const AnalyticsChart = ({title, description, series, yLabel, formatValue = num, 
     return (
         <div className={styles.chart} role="group" aria-label={`${title}. ${description}`}>
             <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>{title}</h3>
-                <p>{description}</p>
+                <div>
+                    <h3 className={styles.chartTitle}>{title}</h3>
+                    <p>{description}</p>
+                </div>
+                <div className={styles.chartSummary}>
+                    <span>{estimateToday ? 'Today' : 'Latest'} <strong>{latestPoint ? formatValue(latestPoint.value) : 'No data'}</strong></span>
+                    {Number.isFinite(estimatedValue) ?
+                        <span className={styles.chartEstimate}>Est. close <strong>{formatValue(estimatedValue)}</strong></span> : null}
+                </div>
             </div>
             <svg className={styles.chartPlot} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${title} by date`}>
                 {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
@@ -98,11 +134,42 @@ const AnalyticsChart = ({title, description, series, yLabel, formatValue = num, 
                     );
                 })}
                 <path d={linePath} fill="none" stroke={accent} className={styles.chartLine} />
+                {previousPoint && Number.isFinite(estimatedY) ? (
+                    <path
+                        d={`M ${previousPoint.x} ${previousPoint.y} L ${latestPoint.x} ${estimatedY}`}
+                        fill="none"
+                        stroke={accent}
+                        className={styles.chartProjection}
+                    >
+                        <title>{`Estimated end of today: ${formatValue(estimatedValue)}`}</title>
+                    </path>
+                ) : null}
                 {coordinates.filter(point => Number.isFinite(point.y)).map(point => (
                     <circle key={point.key} cx={point.x} cy={point.y} r="5" fill="transparent" stroke="transparent">
                         <title>{`${point.fullLabel}: ${formatValue(point.value)}${point.samples ? ` from ${num(point.samples)} samples` : ''}`}</title>
                     </circle>
                 ))}
+                {latestPoint ? (
+                    <circle
+                        className={styles.chartEndpoint}
+                        cx={latestPoint.x}
+                        cy={latestPoint.y}
+                        r="4"
+                        fill={accent}
+                    />
+                ) : null}
+                {latestPoint && Number.isFinite(estimatedY) ? (
+                    <circle
+                        className={styles.chartEstimatePoint}
+                        cx={latestPoint.x}
+                        cy={estimatedY}
+                        r="4"
+                        fill="var(--bg-card)"
+                        stroke={accent}
+                    >
+                        <title>{`Estimated end of today: ${formatValue(estimatedValue)}`}</title>
+                    </circle>
+                ) : null}
                 {tickIndexes.map(index => (coordinates[index] ? (
                     <text
                         key={coordinates[index].key}
@@ -135,8 +202,12 @@ const QuotaTile = ({quota}) => {
     const pct = (quota.used / quota.limit) * 100;
     return (
         <div className={styles.statTile}>
+            <div className={styles.statTileTop}>
+                <span className={styles.statIcon}><HardDrive size={18} /></span>
+                <span className={styles.statLabel}>Upload quota</span>
+            </div>
             <span className={styles.statValue}>{formatBytes(quota.used)}</span>
-            <span className={styles.statLabel}>of {formatBytes(quota.limit)} used</span>
+            <span className={styles.statDetail}>of {formatBytes(quota.limit)} used</span>
             <div className={styles.quotaBarBg}>
                 <div
                     className={styles.quotaBarFill}
@@ -289,6 +360,8 @@ const StatsOverview = () => {
         starts: startSeries[index].value,
         crashes: crashSeries[index].value
     }));
+    const deviceLoads = Object.values(stats.loadsByDevice || {})
+        .reduce((total, value) => total + Number(value || 0), 0);
     const exportDailyData = () => {
         const headings = ['Date', 'Projects uploaded', 'Projects updated', 'Users joined', 'Current sessions created', 'Player loads', 'Average load ms', 'Load samples', 'Player starts', 'Crashes'];
         const lines = dailyRows.map(row => [row.date, row.projects, row.updates, row.users, row.sessions, row.loads, row.loadSamples ? Math.round(row.averageLoadMs) : '', row.loadSamples, row.starts, row.crashes].join(','));
@@ -302,10 +375,11 @@ const StatsOverview = () => {
 
     return (
         <div>
-            <div className={styles.overviewHeader}>
+            <header className={styles.overviewHeader}>
                 <div>
-                    <h2>Overview</h2>
-                    <p>Platform totals and project-player diagnostics.</p>
+                    <span className={styles.eyebrow}>Admin dashboard</span>
+                    <h2>System overview</h2>
+                    <p>Account, project, and player health in one place.</p>
                 </div>
                 <div className={styles.rangePicker} aria-label="Analytics date range">
                     {[7, 30, 90, 365].map(option => (
@@ -320,145 +394,217 @@ const StatsOverview = () => {
                         </button>
                     ))}
                 </div>
-            </div>
+            </header>
             {statsBusy ? <p className={styles.refreshStatus}>Updating charts…</p> : null}
             {error ? <p className={styles.error}>{error}</p> : null}
 
-            {stats.pendingPayouts > 0 ? (
-                <div className={styles.quotaWarning}>
-                    <AlertTriangle size={14} /> {stats.pendingPayouts} creator payout
-                    {stats.pendingPayouts === 1 ? '' : 's'} failed and{' '}
-                    {stats.pendingPayouts === 1 ? 'is' : 'are'} owed
-                    ({Math.round((stats.pendingPayoutAmount || 0) * 100) / 100} credits total).{' '}
-                    <button
-                        className={styles.secondary}
-                        onClick={retryPayouts}
-                        disabled={payoutBusy}
-                    >{payoutBusy ? 'Retrying…' : 'Retry now'}</button>
-                    {payoutNote ? <span>{` ${payoutNote}`}</span> : null}
+            {(stats.pendingPayouts > 0 || (quota && (quota.used / quota.limit) * 100 >= 80)) ? (
+                <div className={styles.alerts} aria-label="Items needing attention">
+                    {stats.pendingPayouts > 0 ? (
+                        <div className={styles.quotaWarning}>
+                            <AlertTriangle size={16} />
+                            <span>
+                                {stats.pendingPayouts} creator payout{stats.pendingPayouts === 1 ? '' : 's'} failed.
+                                {' '}{Math.round((stats.pendingPayoutAmount || 0) * 100) / 100} credits are still owed.
+                            </span>
+                            <button
+                                className={styles.secondary}
+                                onClick={retryPayouts}
+                                disabled={payoutBusy}
+                            >{payoutBusy ? 'Retrying…' : 'Retry now'}</button>
+                            {payoutNote ? <span className={styles.alertNote}>{payoutNote}</span> : null}
+                        </div>
+                    ) : null}
+                    {quota && (quota.used / quota.limit) * 100 >= 80 ? (
+                        <div className={styles.quotaWarning}>
+                            <AlertTriangle size={16} />
+                            <span>
+                                Upload storage is {Math.round((quota.used / quota.limit) * 100)}% full.
+                                {' '}{quota.used >= quota.limit ?
+                                    'New project uploads are blocked until usage drops.' :
+                                    'Manage projects soon to free up space.'}
+                            </span>
+                        </div>
+                    ) : null}
                 </div>
             ) : null}
 
-            {quota && (quota.used / quota.limit) * 100 >= 80 ? (
-                <p className={styles.quotaWarning}>
-                    <AlertTriangle size={14} /> You&apos;ve used {formatBytes(quota.used)} of
-                    your {formatBytes(quota.limit)} upload quota
-                    ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
-                    {quota.used >= quota.limit ?
-                        'You cannot upload new projects until usage drops.' :
-                        'Consider managing your projects to free up space.'}
-                </p>
-            ) : null}
+            <section className={styles.overviewSection} aria-labelledby="admin-summary-heading">
+                <div className={styles.sectionHeading}>
+                    <div>
+                        <h3 id="admin-summary-heading">At a glance</h3>
+                        <p>Current platform totals.</p>
+                    </div>
+                </div>
+                <div className={styles.primaryStatGrid}>
+                    <StatTile
+                        prominent icon={FolderOpen} label="Projects" value={num(stats.totalProjects)}
+                        detail={`${num(stats.sharedProjects)} shared`}
+                    />
+                    <StatTile
+                        prominent icon={User} label="Users" value={num(stats.totalUsers)}
+                        detail={`${num(stats.bannedUsers)} banned`}
+                    />
+                    <StatTile
+                        prominent icon={Activity} label="Active sessions" value={num(stats.activeSessions)}
+                        detail="Signed in now"
+                    />
+                    <StatTile
+                        prominent icon={Flag} label="Open reports" value={num(stats.openReports)}
+                        detail={stats.openReports ? 'Needs review' : 'Queue is clear'}
+                    />
+                </div>
+            </section>
 
-            <div className={styles.statGrid}>
-                <StatTile
-                    label="Projects"
-                    value={num(stats.totalProjects)}
-                />
-                <StatTile
-                    label="Shared"
-                    value={num(stats.sharedProjects)}
-                />
-                <StatTile
-                    label="Unshared"
-                    value={num(stats.unsharedProjects)}
-                />
-                <StatTile
-                    label="Users"
-                    value={num(stats.totalUsers)}
-                />
-                <StatTile
-                    label="Storage used"
-                    value={formatBytes(stats.totalBytes)}
-                />
-                <StatTile
-                    label="Total views"
-                    value={num(stats.totalViews)}
-                />
-                <StatTile
-                    label="Total loves"
-                    value={num(stats.totalLoves)}
-                />
-                <StatTile
-                    label="Active sessions"
-                    value={num(stats.activeSessions)}
-                />
-                <StatTile
-                    label="Open reports"
-                    value={num(stats.openReports)}
-                />
-                <StatTile
-                    label="Banned users"
-                    value={num(stats.bannedUsers)}
-                />
-                <StatTile
-                    label="News posts"
-                    value={num(stats.newsPosts)}
-                />
-                {quota ? <QuotaTile quota={quota} /> : null}
-            </div>
-            <div className={styles.charts}>
-                <AnalyticsChart
-                    title="Average project load time"
-                    description={`${num(stats.loadTimeSamples)} completed player loads in this period. Days without a sample appear as gaps.`}
-                    series={loadTimeSeries}
-                    yLabel="Milliseconds"
-                    formatValue={formatLoadTime}
-                />
-                <AnalyticsChart
-                    title="Project uploads"
-                    description="Projects created each day, including shared and unshared projects."
-                    series={projectSeries}
-                    yLabel="Projects"
-                />
-                <AnalyticsChart
-                    title="Project updates"
-                    description="Projects grouped by their latest edit date. Each project appears once."
-                    series={updateSeries}
-                    yLabel="Projects"
-                    accent="#8b7cf6"
-                />
-                <AnalyticsChart
-                    title="Player loads"
-                    description="Completed loads from embedded MistWarp project players."
-                    series={loadSeries}
-                    yLabel="Loads"
-                    accent="#36b37e"
-                />
-                <AnalyticsChart
-                    title="New users"
-                    description="Accounts grouped by the date their MistWarp profile was created."
-                    series={userSeries}
-                    yLabel="Users"
-                    accent="#e5a84b"
-                />
-                <AnalyticsChart
-                    title="Current sessions by sign-in date"
-                    description="Unexpired sign-in sessions only. MistWarp removes sessions after seven days."
-                    series={loginSeries}
-                    yLabel="Sessions"
-                    accent="#dc6d9a"
-                />
+            <div className={styles.summaryColumns}>
+                <section className={styles.summaryPanel} aria-labelledby="admin-content-heading">
+                    <div className={styles.sectionHeading}>
+                        <div>
+                            <h3 id="admin-content-heading">Projects and storage</h3>
+                            <p>Publishing state and disk use.</p>
+                        </div>
+                    </div>
+                    <div className={styles.compactStatGrid}>
+                        <StatTile label="Shared" value={num(stats.sharedProjects)} />
+                        <StatTile label="Unshared" value={num(stats.unsharedProjects)} />
+                        <StatTile label="Storage used" value={formatBytes(stats.totalBytes)} />
+                        {quota ? <QuotaTile quota={quota} /> : null}
+                    </div>
+                </section>
+                <section className={styles.summaryPanel} aria-labelledby="admin-community-heading">
+                    <div className={styles.sectionHeading}>
+                        <div>
+                            <h3 id="admin-community-heading">Community activity</h3>
+                            <p>Engagement, publishing, and moderation totals.</p>
+                        </div>
+                    </div>
+                    <div className={styles.compactStatGrid}>
+                        <StatTile icon={Eye} label="Views" value={num(stats.totalViews)} />
+                        <StatTile icon={Heart} label="Loves" value={num(stats.totalLoves)} />
+                        <StatTile icon={Ban} label="Banned users" value={num(stats.bannedUsers)} />
+                        <StatTile icon={Newspaper} label="News posts" value={num(stats.newsPosts)} />
+                    </div>
+                </section>
             </div>
 
-            <h2>Player detail</h2>
-            <div className={styles.statGrid}>
-                <StatTile label={`Average load, ${days} days`} value={formatLoadTime(stats.averageLoadMs || 0)} />
-                <StatTile label="Completed load samples" value={num(stats.loadTimeSamples)} />
-                <StatTile label="Player starts" value={num(stats.totalStarts)} />
-                <StatTile
-                    label="Crashes per 100 loads"
-                    value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
-                />
-                <StatTile label="Recorded playtime, all time" value={formatPlaytime(stats.totalPlaytimeMs || 0, false)} />
-                <StatTile label="Average project size, all time" value={formatBytes(stats.averageProjectBytes || 0)} />
-                <StatTile label="Average views per project" value={Number(stats.averageViews || 0).toFixed(1)} />
-                <StatTile label="Average loves per project" value={Number(stats.averageLoves || 0).toFixed(1)} />
-                <StatTile label="Desktop loads" value={num((stats.loadsByDevice || {}).desktop)} />
-                <StatTile label="Touch loads" value={num((stats.loadsByDevice || {}).touch)} />
-                <StatTile label="Other device loads" value={num((stats.loadsByDevice || {}).other)} />
-                <StatTile label="Remix projects, all time" value={num(stats.totalRemixes)} />
-            </div>
+            <section className={styles.overviewSection} aria-labelledby="admin-insights-heading">
+                <div className={styles.sectionHeading}>
+                    <div>
+                        <h3 id="admin-insights-heading">Operational insights</h3>
+                        <p>Rates and averages that make the raw totals easier to judge.</p>
+                    </div>
+                </div>
+                <div className={styles.insightGrid}>
+                    <StatTile
+                        label="Projects published"
+                        value={percent(stats.sharedProjects, stats.totalProjects)}
+                        detail={`${num(stats.sharedProjects)} of ${num(stats.totalProjects)} projects`}
+                    />
+                    <StatTile
+                        label={`Average load, ${days} days`}
+                        value={formatLoadTime(stats.averageLoadMs || 0)}
+                        detail={`${num(stats.loadTimeSamples)} completed samples`}
+                    />
+                    <StatTile
+                        label="Loads reaching start"
+                        value={percent(stats.totalStarts, stats.totalLoads)}
+                        detail={`${num(stats.totalStarts)} starts from ${num(stats.totalLoads)} loads`}
+                    />
+                    <StatTile
+                        label="Crashes per 100 loads"
+                        value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
+                        detail={`${num(stats.totalCrashes)} crashes recorded`}
+                    />
+                    <StatTile
+                        label="Touch traffic"
+                        value={percent((stats.loadsByDevice || {}).touch, deviceLoads)}
+                        detail={`${num((stats.loadsByDevice || {}).touch)} of ${num(deviceLoads)} device-tagged loads`}
+                    />
+                    <StatTile
+                        label="Average project size"
+                        value={formatBytes(stats.averageProjectBytes || 0)}
+                        detail="Across all projects"
+                    />
+                    <StatTile
+                        label="Views per project"
+                        value={Number(stats.averageViews || 0).toFixed(1)}
+                        detail={`${num(stats.totalViews)} views total`}
+                    />
+                    <StatTile
+                        label="Loves per project"
+                        value={Number(stats.averageLoves || 0).toFixed(1)}
+                        detail={`${num(stats.totalLoves)} loves total`}
+                    />
+                    <StatTile
+                        label="Projects remixed"
+                        value={percent(stats.totalRemixes, stats.totalProjects)}
+                        detail={`${num(stats.totalRemixes)} remix projects`}
+                    />
+                    <StatTile
+                        label="Recorded playtime"
+                        value={formatPlaytime(stats.totalPlaytimeMs || 0, false)}
+                        detail="All time"
+                    />
+                </div>
+            </section>
+
+            <section className={styles.overviewSection} aria-labelledby="admin-trends-heading">
+                <div className={styles.sectionHeading}>
+                    <div>
+                        <h3 id="admin-trends-heading">Trends</h3>
+                        <p>Dashed lines estimate today&apos;s UTC close from its current pace and the prior seven days.</p>
+                    </div>
+                </div>
+                <div className={styles.charts}>
+                    <AnalyticsChart
+                        title="Average project load time"
+                        description={`${num(stats.loadTimeSamples)} completed player loads in this period. Days without a sample appear as gaps.`}
+                        series={loadTimeSeries}
+                        yLabel="Milliseconds"
+                        formatValue={formatLoadTime}
+                        estimateToday={false}
+                    />
+                    <AnalyticsChart
+                        title="Project uploads"
+                        description="Projects created each day, including shared and unshared projects."
+                        series={projectSeries}
+                        yLabel="Projects"
+                        estimateToday
+                    />
+                    <AnalyticsChart
+                        title="Project updates"
+                        description="Projects grouped by their latest edit date. Each project appears once."
+                        series={updateSeries}
+                        yLabel="Projects"
+                        accent="#8b7cf6"
+                        estimateToday
+                    />
+                    <AnalyticsChart
+                        title="Player loads"
+                        description="Completed loads from embedded MistWarp project players."
+                        series={loadSeries}
+                        yLabel="Loads"
+                        accent="#36b37e"
+                        estimateToday
+                    />
+                    <AnalyticsChart
+                        title="New users"
+                        description="Accounts grouped by the date their MistWarp profile was created."
+                        series={userSeries}
+                        yLabel="Users"
+                        accent="#e5a84b"
+                        estimateToday
+                    />
+                    <AnalyticsChart
+                        title="Current sessions by sign-in date"
+                        description="Unexpired sign-in sessions only. MistWarp removes sessions after seven days."
+                        series={loginSeries}
+                        yLabel="Sessions"
+                        accent="#dc6d9a"
+                        estimateToday
+                    />
+                </div>
+            </section>
 
             <div className={styles.dataHeader}>
                 <div>
@@ -1495,7 +1641,8 @@ const Admin = () => {
     };
 
     const banFromReport = report => {
-        const who = report.type === 'project' ? 'the owner of this project' : `@${report.target}`;
+        const who = report.type === 'project' ? 'the owner of this project' :
+            `@${report.targetUser || report.target}`;
         setDialogError('');
         setDialog({
             kind: 'ban-report',
@@ -1687,6 +1834,8 @@ const Admin = () => {
                                                         <Link
                                                             to={`/users/${report.target}`}
                                                         >{`@${report.target}`}</Link>
+                                                    ) : report.type === 'bounty' ? (
+                                                        <Link to={`/bounties/${report.target}`}>{`Bounty ${report.target}`}</Link>
                                                     ) : report.type === 'comment' && report.context ? (
                                                         (() => {
                                                             const ctx = report.context;

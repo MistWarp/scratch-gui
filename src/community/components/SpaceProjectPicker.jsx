@@ -7,6 +7,7 @@ import {useUser} from '../UserContext.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
+import UserLink from './UserLink.jsx';
 import useLatest from '../use-latest.js';
 import styles from '../pages/Spaces.module.css';
 
@@ -199,7 +200,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                             <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
                             <div>
                                 <strong>{project.title}</strong>
-                                <span>by {project.owner}</span>
+                                <span>by <UserLink username={project.owner}>{project.owner}</UserLink></span>
                                 {project.visibility === 'unlisted' ? <small>Unlisted</small> : null}
                             </div>
                             <Button

@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2} from 'lucide-react';
+import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
@@ -11,6 +11,7 @@ import RichText from './RichText.jsx';
 import GroupTag from './GroupTag.jsx';
 import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
+import {sendCommercePayment, isInsufficientFunds} from '../credits';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
@@ -21,6 +22,46 @@ const COMMENT_KINDS = [
     {value: 'question', label: 'Question'}
 ];
 const ROOT_PAGE = 20;
+const donationAmount = comment => {
+    const amount = Number(comment && comment.donationAmount);
+    return Number.isFinite(amount) && amount > 0 ? amount : 0;
+};
+export const commentDonationTier = value => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+    if (amount >= 1000) return 'gold';
+    if (amount >= 100) return 'purple';
+    if (amount >= 10) return 'blue';
+    return 'green';
+};
+export const parseCommentDonation = value => {
+    if (String(value || '').trim() === '') return 0;
+    const amount = Math.round(Number(value) * 100) / 100;
+    return Number.isFinite(amount) && amount >= 0.01 && amount <= 100000 ? amount : null;
+};
+export const postCommentDonation = async ({source, text, kind, amount}) => {
+    const intent = await source.donationIntent(amount);
+    const paid = await sendCommercePayment({
+        amount: intent.amount,
+        source: 'mistwarp',
+        kind: 'comment_donation',
+        resourceType: 'project',
+        resourceId: intent.projectId,
+        note: `MistWarp comment donation: ${intent.title || intent.projectId}`,
+        splits: intent.splits
+    });
+    let lastError = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            return await source.add(text, null, kind, {key: intent.key, paymentId: paid.payment.id});
+        } catch (e) {
+            if (e.status !== 402 || !e.data || !e.data.pending) throw e;
+            lastError = e;
+            await new Promise(resolve => window.setTimeout(resolve, 1500));
+        }
+    }
+    throw lastError || new Error('Donation could not be confirmed.');
+};
 export const addCreatedComment = (comments, comment) => {
     const previous = (comments || []).find(item => sameUser(item.author, comment.author));
     const created = previous && Number.isFinite(previous.playtimeMs) ?
@@ -39,8 +80,13 @@ const CommentRow = ({
     canEdit, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, isReply, id
 }) => {
     const hasMenu = canEdit || canReport || canDelete;
+    const donationTier = commentDonationTier(donationAmount(comment));
     return (
-        <div id={id} className={isReply ? styles.replyRow : styles.row}>
+        <div
+            id={id}
+            className={isReply ? styles.replyRow : styles.row}
+            data-donation-tier={donationTier || null}
+        >
             <Link to={`/users/${comment.author}`}>
                 <Avatar
                     username={comment.author}
@@ -61,6 +107,11 @@ const CommentRow = ({
                     ) : null}
                     {Number.isFinite(comment.playtimeMs) && comment.playtimeMs > 0 ? (
                         <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
+                    ) : null}
+                    {donationAmount(comment) > 0 ? (
+                        <span className={styles.donation} title="Donation attached to this comment">
+                            <Coins size={11} /> {donationAmount(comment).toLocaleString()} credits
+                        </span>
                     ) : null}
                     {comment.created ? (
                         <span className={styles.time}>{timeAgo(comment.created)}</span>
@@ -158,61 +209,81 @@ const CommentRow = ({
 
 const InlineComposer = ({
     user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small, kind, onKindChange,
-    composerAction
-}) => (
-    <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
-        <Avatar
-            username={user.username}
-            size={small ? 28 : 36}
-        />
-        <div className={styles.composerBody}>
-            <textarea
-                className={styles.input}
-                placeholder={placeholder}
-                value={value}
-                maxLength={500}
-                disabled={busy}
-                onChange={e => onChange(e.target.value)}
+    composerAction, donation, onDonationChange, donationRecipient
+}) => {
+    const previewTier = !small ? commentDonationTier(parseCommentDonation(donation)) : '';
+    return (
+        <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
+            <Avatar
+                username={user.username}
+                size={small ? 28 : 36}
             />
-            {error ? <div className={styles.error}>{error}</div> : null}
-            <div className={styles.composerFooter}>
-                {!small && onKindChange ? (
-                    <SelectMenu
-                        compact
-                        className={styles.kindMenu}
-                        options={COMMENT_KINDS}
-                        value={kind}
-                        disabled={busy}
-                        onChange={onKindChange}
-                        ariaLabel="Comment type"
-                        width={180}
-                    />
-                ) : null}
-                {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
-                <div className={styles.composerButtons}>
-                    {onCancel ? (
+            <div className={styles.composerBody}>
+                <textarea
+                    className={styles.input}
+                    data-donation-tier={previewTier || null}
+                    placeholder={placeholder}
+                    value={value}
+                    maxLength={500}
+                    disabled={busy}
+                    onChange={e => onChange(e.target.value)}
+                />
+                {error ? <div className={styles.error}>{error}</div> : null}
+                <div className={styles.composerFooter}>
+                    {!small && onKindChange ? (
+                        <SelectMenu
+                            compact
+                            className={styles.kindMenu}
+                            options={COMMENT_KINDS}
+                            value={kind}
+                            disabled={busy}
+                            onChange={onKindChange}
+                            ariaLabel="Comment type"
+                            width={180}
+                        />
+                    ) : null}
+                    {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
+                    {!small && onDonationChange ? (
+                        <label className={styles.donationField} title={`Donate credits to ${donationRecipient}`}>
+                            <Coins size={14} />
+                            <input
+                                type="number"
+                                min="0.01"
+                                max="100000"
+                                step="0.01"
+                                value={donation}
+                                disabled={busy}
+                                placeholder="Donation"
+                                aria-label={`Donation to ${donationRecipient} in credits`}
+                                onChange={event => onDonationChange(event.target.value)}
+                            />
+                        </label>
+                    ) : null}
+                    <div className={styles.composerButtons}>
+                        {onCancel ? (
+                            <button
+                                type="button"
+                                className={styles.cancel}
+                                disabled={busy}
+                                onClick={onCancel}
+                            >Cancel</button>
+                        ) : null}
                         <button
                             type="button"
-                            className={styles.cancel}
-                            disabled={busy}
-                            onClick={onCancel}
-                        >Cancel</button>
-                    ) : null}
-                    <button
-                        type="button"
-                        className={styles.post}
-                        disabled={busy || !value.trim()}
-                        onClick={onSubmit}
-                    >{small ? 'Reply' : 'Post'}</button>
+                            className={styles.post}
+                            disabled={busy || !value.trim()}
+                            onClick={onSubmit}
+                        >{small ? 'Reply' : 'Post'}</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const CommentThread = ({
     source, canModerate, disabled, disabledReason, reportContext, projectComments = false, composerAction,
-    onCountChange = null
+    onCountChange = null, donationRecipient = ''
 }) => {
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
@@ -221,6 +292,8 @@ const CommentThread = ({
     const [kind, setKind] = useState('comment');
     const [kindFilter, setKindFilter] = useState('all');
     const [search, setSearch] = useState('');
+    const [sortOrder, setSortOrder] = useState('newest');
+    const [donation, setDonation] = useState('');
     const [replyTo, setReplyTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [busy, setBusy] = useState(false);
@@ -293,7 +366,8 @@ const CommentThread = ({
                 return source.list({
                     offset: 0,
                     limit: ROOT_PAGE,
-                    anchor: anchorMatch ? anchorMatch[1] : ''
+                    anchor: anchorMatch ? anchorMatch[1] : '',
+                    sort: sortOrder
                 });
             })
             .then(fresh(d => {
@@ -310,7 +384,7 @@ const CommentThread = ({
                 setLoadFailed(true);
                 setLoadingComments(false);
             }));
-    }, [source, beginLoad, viewerName]);
+    }, [source, beginLoad, viewerName, sortOrder]);
 
     useEffect(() => {
         setComments([]);
@@ -318,6 +392,7 @@ const CommentThread = ({
         setKind('comment');
         setKindFilter('all');
         setSearch('');
+        setDonation('');
         setReplyTo(null);
         setReplyText('');
         setBusy(false);
@@ -349,7 +424,7 @@ const CommentThread = ({
         setLoadingMore(true);
         setMoreFailed(false);
         try {
-            const data = await actionSource.list({offset: nextOffset, limit: ROOT_PAGE});
+            const data = await actionSource.list({offset: nextOffset, limit: ROOT_PAGE, sort: sortOrder});
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
             setComments(current => mergeCommentPages(current, data.comments));
             const next = Number.isFinite(data.nextOffset) ? data.nextOffset : nextOffset + ROOT_PAGE;
@@ -374,7 +449,7 @@ const CommentThread = ({
         const timer = window.setTimeout(() => {
             setLoadingMore(true);
             setMoreFailed(false);
-            actionSource.list({all: true})
+            actionSource.list({all: true, sort: sortOrder})
                 .then(fresh(data => {
                     if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
                     const loaded = (data.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0));
@@ -393,7 +468,7 @@ const CommentThread = ({
         }, 250);
         return () => window.clearTimeout(timer);
     }, [allCommentsLoaded, beginExtraLoad, kindFilter, loadingComments, loadingMore, projectComments,
-        search, source, viewerName]);
+        search, sortOrder, source, viewerName]);
 
     // If the page was opened deep-linking to a reply (e.g. from a notification),
     // expand that reply's thread so the anchor can be found and scrolled to.
@@ -413,6 +488,11 @@ const CommentThread = ({
 
     const submit = async (text, parent, commentKind = 'comment') => {
         if (!text.trim()) return;
+        const attachedDonation = parent ? 0 : parseCommentDonation(donation);
+        if (attachedDonation === null) {
+            setError('Enter a donation between 0.01 and 100000 credits.');
+            return;
+        }
         const actionSource = source;
         const actionViewer = viewerName;
         const releaseAction = beginAction(actionSource, actionViewer, 'submit');
@@ -420,7 +500,12 @@ const CommentThread = ({
         setBusy(true);
         setError(null);
         try {
-            const data = await actionSource.add(text.trim(), parent, commentKind);
+            const data = attachedDonation > 0 ? await postCommentDonation({
+                source: actionSource,
+                text: text.trim(),
+                kind: commentKind,
+                amount: attachedDonation
+            }) : await actionSource.add(text.trim(), parent, commentKind);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
             if (data && data.comment) {
                 setComments(current => addCreatedComment(current, data.comment));
@@ -432,11 +517,14 @@ const CommentThread = ({
             }
             setContent('');
             setKind('comment');
+            setDonation('');
             setReplyText('');
             setReplyTo(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || 'Could not post comment.');
+                setError(isInsufficientFunds(e) ?
+                    'You do not have enough credits for this donation.' :
+                    (e.message || 'Could not post comment.'));
             }
         } finally {
             releaseAction();
@@ -551,14 +639,20 @@ const CommentThread = ({
     const deleteComment = comments.find(comment => comment.id === deleteId);
     const filteredRoots = useMemo(() => {
         const query = search.trim().toLowerCase();
-        return roots.filter(comment => {
+        const filtered = roots.filter(comment => {
             const commentKind = comment.kind || 'comment';
             if (projectComments && kindFilter !== 'all' && commentKind !== kindFilter) return false;
             if (!projectComments || !query) return true;
             const matches = item => `${item.author || ''}\n${item.content || ''}`.toLowerCase().includes(query);
             return matches(comment) || (replyMap.get(comment.id) || []).some(matches);
         });
-    }, [roots, replyMap, kindFilter, search, projectComments]);
+        if (sortOrder === 'donations') {
+            filtered.sort((a, b) => donationAmount(b) - donationAmount(a) || (b.created || 0) - (a.created || 0));
+        } else {
+            filtered.sort((a, b) => (b.created || 0) - (a.created || 0));
+        }
+        return filtered;
+    }, [roots, replyMap, kindFilter, search, projectComments, sortOrder]);
     const visibleRoots = filteredRoots.slice(0, rootLimit);
 
     return (
@@ -582,6 +676,10 @@ const CommentThread = ({
                     kind={projectComments ? kind : null}
                     onKindChange={projectComments ? setKind : null}
                     composerAction={composerAction}
+                    donation={donation}
+                    onDonationChange={source.donationIntent && donationRecipient &&
+                        !sameUser(donationRecipient, user.username) ? setDonation : null}
+                    donationRecipient={donationRecipient}
                 />
             ) : (
                 <p className={styles.signedOut}>
@@ -616,6 +714,21 @@ const CommentThread = ({
                         }}
                         width={180}
                     />
+                    <SelectMenu
+                        compact
+                        options={[
+                            {value: 'newest', label: 'Newest'},
+                            {value: 'donations', label: 'Highest donations'}
+                        ]}
+                        value={sortOrder}
+                        className={styles.sortMenu}
+                        ariaLabel="Sort comments"
+                        onChange={nextSort => {
+                            setSortOrder(nextSort);
+                            setRootLimit(ROOT_PAGE);
+                        }}
+                        width={180}
+                    />
                 </div>
             ) : null}
 
@@ -645,7 +758,7 @@ const CommentThread = ({
                                 editText={editText}
                                 onEditTextChange={setEditText}
                                 onReact={type => react(comment.id, type)}
-                                onReport={() => setReportId(comment.id)}
+                                onReport={() => setReportId({id: comment.id, author: comment.author})}
                                 canReply={canReply}
                                 canDelete={canDelete(comment)}
                                 canEdit={canEdit(comment)}
@@ -692,7 +805,7 @@ const CommentThread = ({
                                                     editText={editText}
                                                     onEditTextChange={setEditText}
                                                     onReact={type => react(reply.id, type)}
-                                                    onReport={() => setReportId(reply.id)}
+                                                    onReport={() => setReportId({id: reply.id, author: reply.author})}
                                                 />
                                             ))}
                                             {hidden > 0 ? (
@@ -765,8 +878,9 @@ const CommentThread = ({
             {reportId ? (
                 <ReportModal
                     type="comment"
-                    target={reportId}
+                    target={reportId.id}
                     context={reportContext}
+                    targetUser={reportId.author}
                     onClose={() => setReportId(null)}
                 />
             ) : null}

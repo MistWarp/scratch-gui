@@ -169,6 +169,19 @@ const logout = () => {
 const getMistSession = () => loadSession();
 const getRoturToken = () => getRotur().token || readRoturToken();
 
+const getMistWarpAuthor = async () => {
+    const user = state.user || await restore();
+    const username = user && typeof user.username === 'string' ? user.username.trim() : '';
+    if (!username) throw new Error('Sign in to Rotur before saving a MistWarp project');
+    const emailName = username.toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'user';
+    return {
+        name: username,
+        email: `${emailName}@users.mistwarp.local`
+    };
+};
+
 onAuthInvalid(() => invalidateFailedValidator({code: 'VALIDATOR_GENERATION_FAILED'}));
 onBanned((message, redirectUrl) => {
     roturLogout();
@@ -219,5 +232,6 @@ export {
     logout,
     ensureMistSession,
     getMistSession,
-    getRoturToken
+    getRoturToken,
+    getMistWarpAuthor
 };

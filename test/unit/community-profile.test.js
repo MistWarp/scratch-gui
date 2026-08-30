@@ -6,7 +6,8 @@ import {
     parseDonationAmount,
     profileThemeStyle,
     profileLoadMessage,
-    scrollToCommentAnchor
+    scrollToCommentAnchor,
+    profileTabFromHash
 } from '../../src/community/pages/Profile.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
 import {payUser} from '../../src/lib/rotur/client.js';
@@ -27,6 +28,11 @@ jest.mock('../../src/lib/themes/custom-themes.js', () => ({
 }));
 
 describe('Profile loading', () => {
+    test('uses URL hashes for profile tabs', () => {
+        expect(profileTabFromHash('#posts')).toBe('posts');
+        expect(profileTabFromHash('#themes')).toBe('themes');
+        expect(profileTabFromHash('#comments')).toBe('projects');
+    });
     test('merges later project pages without duplicating a featured project', () => {
         expect(mergeProjects(
             [{id: 'featured', title: 'Old'}, {id: 'one'}],
@@ -141,8 +147,6 @@ describe('Profile badges and posts', () => {
         expect(postTimestamp(1724000000000)).toBe(1724000000000);
         expect(postTimestamp('not-a-date')).toBeNull();
         expect(postTimestamp()).toBeNull();
-        expect(pouncePostUrl('post/id with spaces')).toBe(
-            'https://pounce.rotur.dev/#/p/post%2Fid%20with%20spaces'
-        );
+        expect(pouncePostUrl('post/id with spaces')).toBe('/posts/post%2Fid%20with%20spaces');
     });
 });

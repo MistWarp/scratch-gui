@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    AppWindow, AtSign, Coins, Flag, Gavel, GitFork, Heart, Megaphone,
+    AppWindow, AtSign, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
     MessageCircle, Reply, ShieldAlert, UserPlus, GitPullRequest, Layers3, Lightbulb, Star, Users
 } from 'lucide-react';
 import {projectUrl} from '../api';
@@ -10,8 +10,14 @@ import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import RichText from '../components/RichText.jsx';
 import {useUser} from '../UserContext.jsx';
-import {fetchNotifications, markNotificationsRead, subscribeNotifications} from '../../lib/rotur/client.js';
+import {
+    fetchFollowingFeed,
+    fetchNotifications,
+    markNotificationsRead,
+    subscribeNotifications
+} from '../../lib/rotur/client.js';
 import {timeAgo} from '../format';
+import {interleaveTimeline, postUrl} from '../following-feed.js';
 import styles from './Notifications.module.css';
 import {getNotificationPreferences, categoryForNotification} from '../notification-preferences';
 
@@ -269,10 +275,41 @@ GenericNotification.propTypes = {
     n: PropTypes.object.isRequired
 };
 
+const FollowingPost = ({post}) => {
+    const likes = Array.isArray(post.likes) ? post.likes.length : Number(post.likes) || 0;
+    const replies = Array.isArray(post.replies) ? post.replies.length : Number(post.replies) || 0;
+    return (
+        <div className={styles.followingPost}>
+            <span className={styles.avatarWrap}>
+                <Link to={`/users/${post.user}`}><Avatar username={post.user} size={40} /></Link>
+                <span className={styles.iconBadge}><MessageCircle size={12} /></span>
+            </span>
+            <div className={styles.text}>
+                <div className={styles.postHead}>
+                    <Link to={`/users/${post.user}`} className={styles.actor}>{post.user}</Link>
+                    <span>posted</span>
+                    <time>{timeAgo(post.timestamp)}</time>
+                </div>
+                <div className={styles.postContent}><RichText text={post.content} /></div>
+                <div className={styles.postMeta}>
+                    <span><Heart size={13} /> {likes}</span>
+                    <span><MessageCircle size={13} /> {replies}</span>
+                    <Link to={postUrl(post.id)}>Open post <ExternalLink size={12} /></Link>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+FollowingPost.propTypes = {
+    post: PropTypes.object.isRequired
+};
+
 const Notifications = ({hideHeading}) => {
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
+    const [followingPosts, setFollowingPosts] = useState(null);
     const [preferences, setPreferences] = useState(getNotificationPreferences());
 
     useEffect(() => {
@@ -306,15 +343,17 @@ const Notifications = ({hideHeading}) => {
 
     useEffect(() => {
         setItems(null);
+        setFollowingPosts(null);
         setFailed(false);
         if (!viewerName) {
             return () => {};
         }
         let cancelled = false;
-        fetchNotifications()
-            .then(list => {
-                if (cancelled) return;
-                setItems(current => mergeNotifications(current || [], list));
+        Promise.allSettled([fetchNotifications(), fetchFollowingFeed()]).then(results => {
+            if (cancelled) return;
+            const [notificationResult, feedResult] = results;
+            if (notificationResult.status === 'fulfilled') {
+                setItems(current => mergeNotifications(current || [], notificationResult.value));
                 markNotificationsRead()
                     .then(marked => {
                         if (!marked || cancelled) return;
@@ -322,10 +361,17 @@ const Notifications = ({hideHeading}) => {
                         window.dispatchEvent(new Event('mw:notifications-read'));
                     })
                     .catch(() => {});
-            })
-            .catch(() => {
-                if (!cancelled) setFailed(true);
-            });
+            } else {
+                setItems(current => current || []);
+                setFailed(true);
+            }
+            if (feedResult.status === 'fulfilled') {
+                setFollowingPosts(feedResult.value);
+            } else {
+                setFollowingPosts([]);
+                setFailed(true);
+            }
+        });
         return () => {
             cancelled = true;
         };
@@ -345,21 +391,26 @@ const Notifications = ({hideHeading}) => {
     }
     const visibleItems = (items || [])
         .filter(item => preferences[categoryForNotification(item.type)] !== false);
+    const timeline = interleaveTimeline(visibleItems, followingPosts || []);
+    const timelineLoaded = items !== null && followingPosts !== null;
 
     return (
         <main className={styles.page}>
             {hideHeading ? null : <h1>Notifications</h1>}
             {failed ? (
                 <p className={styles.status}>
-                    {items === null ? 'Couldn\'t load notifications.' : 'Some notifications may be missing.'}{' '}
+                    {!timelineLoaded ? 'Couldn\'t load activity.' : 'Some activity may be missing.'}{' '}
                     <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
                 </p>
             ) : null}
-            {items === null ? (!failed ? (
+            {!timelineLoaded ? (!failed ? (
                 <p className={styles.status}>Loading…</p>
-            ) : null) : visibleItems.length ? (
+            ) : null) : timeline.length ? (
                 <div className={styles.list}>
-                    {visibleItems.map(n => {
+                    {timeline.map(n => {
+                        if (n.timelineType === 'following-post') {
+                            return <FollowingPost key={`post:${n.id}`} post={n} />;
+                        }
                         const Icon = ICONS[n.type] || Heart;
                         const ts = n.created || n.timestamp;
                         const time = timeAgo(ts);
@@ -443,7 +494,9 @@ const Notifications = ({hideHeading}) => {
                     <Link to="/settings?section=notifications">Change preferences</Link>
                 </p>
             ) : (
-                <p className={styles.status}>Nothing yet. Activity on your projects shows up here.</p>
+                <p className={styles.status}>
+                    Nothing yet. Notifications and posts from people you follow show up here.
+                </p>
             )}
         </main>
     );

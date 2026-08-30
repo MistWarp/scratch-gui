@@ -228,7 +228,8 @@ const clearWorkdirExceptGit = async pfs => {
 };
 
 const initRepo = async ({
-    defaultBranch = 'main', vm = null, sb3Files = null, initialMessage = 'Initial version', onProgress
+    defaultBranch = 'main', vm = null, sb3Files = null, initialMessage = 'Initial version', initialParent = '',
+    author, onProgress
 } = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -262,12 +263,14 @@ const initRepo = async ({
                 await stageAll(fs, REPO_DIR, {onProgress});
             }
 
-            await git.commit({
+            const commitOptions = {
                 fs,
                 dir: REPO_DIR,
                 message: initialMessage,
-                author: getDefaultAuthor()
-            });
+                author: author || getDefaultAuthor()
+            };
+            if (initialParent) commitOptions.parent = [initialParent];
+            await git.commit(commitOptions);
         } catch (e) {
             // Clean up partial initialization on error
             try {
@@ -697,7 +700,7 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
     return 'ok';
 };
 
-const commitProject = async ({vm, sb3Files, message, author, onProgress} = {}) => {
+const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = true, onProgress} = {}) => {
     if (!message || typeof message !== 'string' || !message.trim()) {
         throw new Error('Commit message is required');
     }
@@ -708,9 +711,19 @@ const commitProject = async ({vm, sb3Files, message, author, onProgress} = {}) =
 
     const fs = getFs();
     const pfs = fs.promises;
+    const effectiveAuthor = author || getDefaultAuthor();
 
     if (!(await repoExists())) {
-        await initRepo({defaultBranch: 'main', vm, sb3Files});
+        if (author && rememberAuthor) setDefaultAuthor(author);
+        await initRepo({
+            defaultBranch: 'main',
+            vm,
+            sb3Files,
+            initialMessage: message.trim(),
+            author: effectiveAuthor,
+            onProgress
+        });
+        return git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
     }
 
     if (!sb3Files && (!vm || typeof vm.saveProjectSb3 !== 'function')) {
@@ -760,8 +773,7 @@ const commitProject = async ({vm, sb3Files, message, author, onProgress} = {}) =
             throw new Error('No changes to commit');
         }
 
-        const effectiveAuthor = author || getDefaultAuthor();
-        if (author) setDefaultAuthor(author);
+        if (author && rememberAuthor) setDefaultAuthor(author);
 
         if (typeof onProgress === 'function') {
             onProgress({phase: 'commit', message: 'Creating commit…', completed: 1, total: 1});
@@ -780,9 +792,12 @@ const commitProject = async ({vm, sb3Files, message, author, onProgress} = {}) =
     }
 };
 
+const reachableObjectCache = new Map();
+
 const deleteRepo = async () => {
     const fs = getFs();
     const pfs = fs.promises;
+    reachableObjectCache.clear();
     if (!(await exists(pfs, REPO_DIR))) return;
     await removeRecursive(pfs, REPO_DIR);
 };
@@ -1108,11 +1123,12 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-const reachableObjectCache = new Map();
-
 const collectReachableObjectOids = async (head, known = new Set()) => {
-    const cached = reachableObjectCache.get(head);
-    if (cached) return new Set([...cached].filter(oid => !known.has(oid)));
+    // Traversals stopped at a known object are partial. Caching them as the
+    // complete reachable set can make a later full export omit ancestors.
+    const cacheable = known.size === 0;
+    const cached = cacheable ? reachableObjectCache.get(head) : null;
+    if (cached) return new Set(cached);
     const fs = getFs();
     const found = new Set();
     const visitTree = async oid => {
@@ -1133,7 +1149,7 @@ const collectReachableObjectOids = async (head, known = new Set()) => {
         await visitTree(commit.tree);
         pending.push(...(commit.parent || []));
     }
-    reachableObjectCache.set(head, new Set([...known, ...found]));
+    if (cacheable) reachableObjectCache.set(head, new Set(found));
     return found;
 };
 
@@ -1489,19 +1505,23 @@ const embedRepoIntoSb3Blob = async blob => {
 };
 
 // Restore a repo previously embedded by embedRepoIntoSb3Blob back into LightningFS.
-// If the sb3 has no embedded repo, any stale repo is cleared so the git panel
-// matches the freshly loaded project. Returns true when a repo was imported.
-const importRepoFromSb3 = async input => {
+// If the sb3 has no embedded repo, the existing repo is normally cleared. Keep
+// it when replacing the contents of an active MistWarp project so the imported
+// project becomes a new version of that project instead of a new baseline.
+const importRepoFromSb3 = async (input, {preserveExisting = false} = {}) => {
     if (!input) return false;
+    if (preserveExisting && await repoExists()) return false;
 
     let zip;
     try {
         zip = await JSZip.loadAsync(input);
     } catch (e) {
-        try {
-            await deleteRepo();
-        } catch (cleanupError) {
-            // ignore
+        if (!preserveExisting) {
+            try {
+                await deleteRepo();
+            } catch (cleanupError) {
+                // ignore
+            }
         }
         return false;
     }
@@ -1513,10 +1533,12 @@ const importRepoFromSb3 = async input => {
     const pfs = fs.promises;
 
     if (entryPaths.length === 0) {
-        try {
-            await deleteRepo();
-        } catch (e) {
-            // ignore
+        if (!preserveExisting) {
+            try {
+                await deleteRepo();
+            } catch (e) {
+                // ignore
+            }
         }
         return false;
     }

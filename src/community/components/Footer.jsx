@@ -34,6 +34,7 @@ const Footer = () => (
                     <Link to="/themes">Themes</Link>
                     <Link to="/leaderboard">Leaderboard</Link>
                     <Link to="/news">News</Link>
+                    <Link to="/stats">Stats</Link>
                     <Link to="/roadmap">Roadmap</Link>
                     <Link to="/roadmap?new=bug">Report a bug</Link>
                 </div>

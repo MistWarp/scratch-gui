@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {LogOut, Settings, Trophy, User, Users} from 'lucide-react';
+import {LogOut, Settings, ShieldCheck, Trophy, User, Users, Wallet} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -99,14 +99,30 @@ const RoturAccount = props => {
                     />
                 </MenuItemContainer>
                 {props.showEditorItems ? null : (
-                    <MenuItemContainer onClick={go('/leaderboard')}>
-                        <Trophy />
-                        <FormattedMessage
-                            defaultMessage="Leaderboard"
-                            description="Text to link to the leaderboard, in the Rotur account navigation menu"
-                            id="mw.rotur.accountMenu.leaderboard"
-                        />
-                    </MenuItemContainer>
+                    <React.Fragment>
+                        <MenuItemContainer onClick={go('/leaderboard')}>
+                            <Trophy />
+                            <FormattedMessage
+                                defaultMessage="Leaderboard"
+                                description="Text to link to the leaderboard, in the Rotur account navigation menu"
+                                id="mw.rotur.accountMenu.leaderboard"
+                            />
+                        </MenuItemContainer>
+                        <MenuItemContainer onClick={go('/wallet')}>
+                            <Wallet />
+                            <FormattedMessage
+                                defaultMessage="Wallet"
+                                description="Text to link to the wallet, in the Rotur account navigation menu"
+                                id="mw.rotur.accountMenu.wallet"
+                            />
+                        </MenuItemContainer>
+                        {props.isAdmin ? (
+                            <MenuItemContainer onClick={go('/admin')}>
+                                <ShieldCheck />
+                                <span>{props.openReports > 0 ? `Admin (${props.openReports})` : 'Admin'}</span>
+                            </MenuItemContainer>
+                        ) : null}
+                    </React.Fragment>
                 )}
                 <MenuItemContainer onClick={go('/settings')}>
                     <Settings />
@@ -144,17 +160,21 @@ const RoturAccount = props => {
 };
 
 RoturAccount.propTypes = {
+    isAdmin: PropTypes.bool,
     isRtl: PropTypes.bool,
     menuOpen: PropTypes.bool,
     onCloseMenu: PropTypes.func.isRequired,
     onLogout: PropTypes.func,
     onOpenLogin: PropTypes.func.isRequired,
     onOpenMenu: PropTypes.func.isRequired,
+    openReports: PropTypes.number,
     showEditorItems: PropTypes.bool,
     username: PropTypes.string
 };
 
 RoturAccount.defaultProps = {
+    isAdmin: false,
+    openReports: 0,
     showEditorItems: true
 };
 
