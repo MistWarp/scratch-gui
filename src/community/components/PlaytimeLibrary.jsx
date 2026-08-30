@@ -54,23 +54,18 @@ const PlaytimeLibrary = ({
             </div>
             <div className={styles.list}>
                 {libraryProjects.map((project, index) => (
-                    <Link className={styles.row} key={project.id} to={projectUrl(project.id)}>
+                    <article className={styles.row} key={project.id}>
                         <span className={styles.rank}>{index + 1}</span>
-                        <ProjectThumbnail
-                            project={project}
-                            className={styles.thumb}
-                            fallbackClassName={styles.thumb}
-                            lazy
-                        />
+                        <Link to={projectUrl(project.id)}><ProjectThumbnail project={project} className={styles.thumb} fallbackClassName={styles.thumb} lazy /></Link>
                         <span className={styles.details}>
-                            <strong>{project.title}</strong>
-                            <small>by {project.owner}</small>
+                            <Link to={projectUrl(project.id)}><strong>{project.title}</strong></Link>
+                            <small>by <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a></small>
                         </span>
                         <span className={styles.playtime}>
                             <strong><Clock3 size={15} /> {formatPlaytime(project.duration, false)}</strong>
                             {lastPlayed(project.lastPlayed) ? <small>{lastPlayed(project.lastPlayed)}</small> : null}
                         </span>
-                    </Link>
+                    </article>
                 ))}
             </div>
             {hasMore ? (

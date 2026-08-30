@@ -55,6 +55,15 @@
     text-decoration: none;
 }
 
+.project a {
+    color: inherit;
+}
+
+.project a:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
 .thumb {
     width: 82px;
     aspect-ratio: 4 / 3;

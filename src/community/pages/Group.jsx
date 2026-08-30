@@ -180,7 +180,7 @@ const Group = () => {
     ];
 
     const createLink = (kind, label) => (manager ? (
-        <Link className={styles.createAction} to={`/spaces?create=1&group=${encodeURIComponent(tag)}&kind=${kind}`}><Plus size={15} /> New {label}</Link>
+        <Button as={Link} variant="primary" to={`/spaces?create=1&group=${encodeURIComponent(tag)}&kind=${kind}`}><Plus size={16} /> New {label}</Button>
     ) : null);
 
     const spacePanel = (items, kind, title, Icon) => (

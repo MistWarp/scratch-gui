@@ -7,7 +7,10 @@ import {fetchNotifications} from '../../src/lib/rotur/client.js';
 import api from '../../src/community/api';
 import {NotificationsSection, ProjectFeedRow} from '../../src/community/pages/Home.jsx';
 
-jest.mock('../../src/lib/rotur/client.js', () => ({fetchNotifications: jest.fn()}));
+jest.mock('../../src/lib/rotur/client.js', () => ({
+    fetchFollowingFeed: jest.fn(),
+    fetchNotifications: jest.fn()
+}));
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {explore: jest.fn()},

@@ -11,12 +11,14 @@ import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
+import ProjectDonationAnalytics from '../components/ProjectDonationAnalytics.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import UserLink from '../components/UserLink.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import useLatest from '../use-latest.js';
 import {formatDate, formatDateTime, formatPlaytime} from '../format.js';
@@ -59,7 +61,7 @@ const projectTransferConfirmation = (project, nextOwner) => ({
 });
 
 const SECTIONS = [
-    {key: 'overview', label: 'Overview', icon: BarChart3},
+    {key: 'overview', label: 'Analytics', icon: BarChart3},
     {key: 'page', label: 'Project page', icon: SlidersHorizontal},
     {key: 'publishing', label: 'Publishing', icon: Eye},
     {key: 'sales', label: 'Sales', icon: Coins},
@@ -453,6 +455,7 @@ const ManageProject = () => {
     const analytics = project.analytics || {};
     const buyers = analytics.buyers || [];
     const revenue = roundCredits(analytics.revenue || 0);
+    const donations = analytics.donations || {};
     const paywalled = project.price > 0 || revenue > 0;
     const views = (project.views || 0).toLocaleString();
     const hearts = (project.loveCount || 0).toLocaleString();
@@ -551,6 +554,16 @@ const ManageProject = () => {
                                     <span className={styles.statNumber}>{formatPlaytime(analytics.totalPlaytimeMs || 0, false)}</span>
                                     <span className={styles.statLabel}>Total playtime</span>
                                 </div>
+                                <div className={`${styles.stat} ${styles.statDonations}`}>
+                                    <span className={styles.statIcon}><Coins size={20} /></span>
+                                    <span className={styles.statNumber}>{roundCredits(donations.total).toLocaleString()}</span>
+                                    <span className={styles.statLabel}>Donated credits</span>
+                                </div>
+                                <div className={`${styles.stat} ${styles.statDonors}`}>
+                                    <span className={styles.statIcon}><Users size={20} /></span>
+                                    <span className={styles.statNumber}>{(donations.uniqueDonors || 0).toLocaleString()}</span>
+                                    <span className={styles.statLabel}>Donors</span>
+                                </div>
                                 {paywalled ? (
                                     <div className={`${styles.stat} ${styles.statRevenue}`}>
                                         <span className={styles.statIcon}><Coins size={20} /></span>
@@ -569,6 +582,7 @@ const ManageProject = () => {
                                 {perks?.mistwarp?.advancedAnalytics && buyers.length ? <div className={styles.stat}><span className={styles.statIcon}><Coins size={20} /></span><span className={styles.statNumber}>{roundCredits(revenue / buyers.length)}</span><span className={styles.statLabel}>Credits per buyer</span></div> : null}
                             </div>
                             {perks?.mistwarp?.analyticsExport ? <div className={styles.analyticsTools}><span>Advanced analytics are included with your {perks.tier} Rotur plan.</span><Button variant="secondary" onClick={() => exportAnalyticsCsv(project, analytics)}>Export CSV</Button></div> : <p className={styles.empty}>Rotur Plus adds conversion insights and downloadable analytics. Your current plan keeps {analytics.historyDays === 0 ? 'all-time' : `${analytics.historyDays}-day`} history.</p>}
+                            <ProjectDonationAnalytics projectId={project.id} donations={donations} />
                             <StatChart
                                 title="Views over the last 2 weeks"
                                 rows={historyRows(analytics.viewHistory)}
@@ -672,10 +686,16 @@ const ManageProject = () => {
                                     <div className={styles.field}>
                                         <span>Visibility</span>
                                         <VisibilityMenu
-                                            disabled={saving}
+                                            disabled={saving || project.contributionOnly}
                                             value={form.visibility}
                                             onChange={value => set('visibility', value)}
                                         />
+                                        {project.contributionOnly ? (
+                                            <p className={styles.cardHint}>
+                                                This remix contains a paid project, so it stays private. Send your changes
+                                                back to the original project from the Contribute tab.
+                                            </p>
+                                        ) : null}
                                     </div>
                                     <div className={styles.switches}>
                                         <SwitchRow checked={form.remixable} disabled={saving} label="Allow remixes" onChange={value => set('remixable', value)} />
@@ -690,7 +710,7 @@ const ManageProject = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className={styles.card}>
+                            {!project.contributionOnly ? <div className={styles.card}>
                                 <h2 className={styles.cardTitle}>Private preview</h2>
                                 <p className={styles.empty}>Create a private play link that expires after 24 hours.</p>
                                 <div className={styles.inlineAction}>
@@ -699,7 +719,7 @@ const ManageProject = () => {
                                     </Button>
                                 </div>
                                 {preview ? <div className={styles.previewResult}><input value={preview} readOnly onFocus={event => event.target.select()} /><span>Expires in 24 hours.</span></div> : null}
-                            </div>
+                            </div> : null}
                         </div>
                     ) : null}
 
@@ -847,7 +867,7 @@ const ManageProject = () => {
                                             <li key={item._id} className={styles.buyerRow}>
                                                 <div><strong>{item.type}</strong><p>{item.message}</p></div>
                                                 <span className={styles.buyerMeta}>
-                                                    {item.author}
+                                                    <UserLink username={item.author}>{item.author}</UserLink>
                                                     <span className={styles.buyerDate}>{formatDate(item.created, 'Date unavailable')}</span>
                                                     <select value={item.status || 'open'} disabled={Boolean(feedbackBusy)} onChange={event => updateFeedbackStatus(item, event.target.value)}>
                                                         <option value="open">Open</option>

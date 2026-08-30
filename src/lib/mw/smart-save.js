@@ -36,7 +36,7 @@ const agreementAccepted = async () => {
         const {agreement} = await request('/agreement');
         return !(agreement.version > 0 && !agreement.accepted);
     } catch (e) {
-        return true;
+        return false;
     }
 };
 

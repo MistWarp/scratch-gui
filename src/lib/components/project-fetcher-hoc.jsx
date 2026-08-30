@@ -28,14 +28,17 @@ import storage from '../persistence/storage.js';
 import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
 import {cloneRepo, deleteRepo} from '../git/browser-git.js';
-import {checkoutMwpBranch, importMwp} from '../git/mwp.js';
-import {markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
+import {
+    markProjectHistoryLoading,
+    preloadProjectHistory,
+    setRemoteProjectHistory
+} from '../git/project-history.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
 import {
-    fetchWorkspace,
-    getEditorProject as getMistWarpEditorProject
+    getEditorProject as getMistWarpEditorProject,
+    takeProjectHandoff
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
@@ -96,12 +99,9 @@ const clearProjectSourceOnForeignLoads = vm => {
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
-    const project = source || (await getMistWarpEditorProject(id)).project;
-    const [data, workspace] = await Promise.all([
-        hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl),
-        project.workspaceUrl ? fetchWorkspace(project.workspaceUrl) : Promise.resolve(null)
-    ]);
-    return {data, title: project.title, platformProject: project, workspace};
+    const project = source || takeProjectHandoff(id) || (await getMistWarpEditorProject(id)).project;
+    const data = await (hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl));
+    return {data, title: project.title, platformProject: project};
 };
 
 // TW: Temporary hack for project tokens
@@ -237,6 +237,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 assetPromise = queueProjectHistoryLoad(async () => {
                     if (fetchGeneration !== this.fetchGeneration) return null;
                     rememberPlatformProject(null);
+                    setRemoteProjectHistory(null);
                     const projectAsset = await cloneProjectFromRepo(cloneUrl);
                     return fetchGeneration === this.fetchGeneration ?
                         {...projectAsset, historyPrepared: true} :
@@ -275,14 +276,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                                         storage.addMistWarpAssetStore(project.assetsBase);
                                     }
                                     rememberPlatformProject(project);
-                                    if (projectAsset.workspace) {
-                                        await importMwp(projectAsset.workspace);
-                                        if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
-                                    } else {
-                                        await deleteRepo();
-                                    }
+                                    await deleteRepo();
+                                    this.props.vm._mwHistoryHydration = null;
+                                    setRemoteProjectHistory(project);
                                 } else if (!sourceProvidesHistory) {
                                     rememberPlatformProject(null);
+                                    setRemoteProjectHistory(null);
                                     await deleteRepo();
                                 }
                                 return fetchGeneration === this.fetchGeneration;

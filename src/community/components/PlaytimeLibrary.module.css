@@ -46,6 +46,15 @@
     border-color: var(--accent-border);
 }
 
+.row a {
+    color: inherit;
+}
+
+.row a:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
 .rank {
     width: 24px;
     color: var(--text-faint);

@@ -1,0 +1,21 @@
+.page {
+    width: min(920px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 42px 0 110px;
+}
+
+.back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 36px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.state {
+    padding: 48px 0;
+    color: var(--text-dim);
+    text-align: center;
+}

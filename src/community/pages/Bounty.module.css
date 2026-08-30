@@ -1,0 +1,270 @@
+.page {
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding: 28px 28px 80px;
+}
+
+.back,
+.hero,
+.heroMain,
+.reward,
+.conversation > h2,
+.message header,
+.message header a,
+.composer,
+.composer footer,
+.workers h2,
+.workers > a {
+    display: flex;
+    align-items: center;
+}
+
+.back {
+    gap: 6px;
+    margin-bottom: 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hero {
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+}
+
+.heroActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.heroMain {
+    align-items: flex-start;
+    gap: 13px;
+}
+
+.icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: color-mix(in srgb, #d99b23 16%, transparent);
+    color: #d99b23;
+}
+
+.reward {
+    gap: 5px;
+    color: #d99b23;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.hero h1 {
+    margin: 5px 0;
+    color: var(--mw-text);
+    font-size: clamp(25px, 3vw, 36px);
+}
+
+.hero p {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.hero p a {
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 24px;
+    margin-top: 24px;
+    align-items: start;
+}
+
+.main {
+    display: grid;
+    gap: 20px;
+}
+
+.details,
+.message,
+.composer,
+.workers {
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.details {
+    padding: 18px;
+}
+
+.details h2,
+.conversation h2,
+.workers h2 {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: 15px;
+}
+
+.details p {
+    margin: 9px 0 0;
+    color: var(--text-dim);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.conversation {
+    display: grid;
+    gap: 12px;
+}
+
+.conversation > h2,
+.workers h2 {
+    gap: 7px;
+}
+
+.conversation h2 span,
+.workers h2 span {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.message header {
+    gap: 7px;
+    padding: 12px 14px 0;
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.message header a {
+    gap: 7px;
+    color: var(--mw-text);
+}
+
+.message header button {
+    display: grid;
+    margin-left: auto;
+    padding: 5px;
+    border: 0;
+    background: none;
+    color: var(--text-faint);
+}
+
+.message > div {
+    padding: 7px 14px 15px 49px;
+    color: var(--mw-text);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.composer {
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px;
+}
+
+.composer > div {
+    flex: 1;
+}
+
+.composer textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 105px;
+    padding: 11px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: 0;
+    background: transparent;
+    color: var(--mw-text);
+    font: inherit;
+}
+
+.composer footer {
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.composer footer span:first-child {
+    margin-right: auto;
+}
+
+.workers {
+    overflow: hidden;
+}
+
+.workers h2 {
+    padding: 14px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.workers > a:not(.projectLink) {
+    gap: 9px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--mw-text);
+}
+
+.workers > a > span {
+    display: grid;
+    gap: 2px;
+}
+
+.workers small,
+.workers > p {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.workers > p {
+    margin: 0;
+    padding: 20px 14px;
+}
+
+.projectLink {
+    justify-content: center;
+    margin: 12px;
+    padding: 9px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.empty,
+.state {
+    padding: 28px;
+    color: var(--text-dim);
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .page {
+        padding: 20px 12px 60px;
+    }
+
+    .hero {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

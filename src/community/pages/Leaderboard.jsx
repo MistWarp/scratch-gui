@@ -7,6 +7,7 @@ import useLatest from '../use-latest.js';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import UserStatus from '../components/UserStatus.jsx';
 import styles from './Leaderboard.module.css';
 
 const PODIUM_CLASSES = [styles.podium1, styles.podium2, styles.podium3];
@@ -152,7 +153,7 @@ const Leaderboard = () => {
                                         </span>
                                     )}
                                     {board === 'followers' && person.status ? (
-                                        <span>{person.status.status || person.status.presence}</span>
+                                        <UserStatus status={person.status} className={styles.userStatus} />
                                     ) : null}
                                 </span>
                                 <Stat

@@ -5,6 +5,37 @@
     padding: 16px 20px;
 }
 
+.full {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.full .head h1 {
+    max-width: 900px;
+    margin: 0;
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -.035em;
+}
+
+.full .body {
+    margin-top: 30px;
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+.byline {
+    margin: 18px 0 0;
+    color: var(--text-faint);
+    font-size: 14px;
+}
+
+.byline a {
+    color: var(--text-dim);
+    font-weight: 700;
+}
+
 .category {
     display: inline-block;
     margin-bottom: 8px;
@@ -46,13 +77,74 @@
     min-width: 0;
 }
 
+.compact {
+    padding: 14px 2px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-soft);
+    background: transparent;
+    box-shadow: none;
+}
+
+.compact:first-child {
+    padding-top: 2px;
+}
+
+.compact:last-child {
+    border-bottom: 0;
+}
+
+.compact .head h3 {
+    font-size: 16px;
+}
+
+.compact .body {
+    display: block;
+    max-height: 1.7em;
+    margin-top: 8px;
+    color: var(--text-faint);
+    overflow: hidden;
+}
+
+.compact .body > :not(:first-child) {
+    display: none;
+}
+
+.compact .body > :first-child {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.compact .postAuthor {
+    margin-top: 6px;
+}
+
+.head h3 a {
+    color: inherit;
+}
+
 .date {
     color: var(--text-faint);
     font-size: 13px;
     flex-shrink: 0;
 }
 
-.delete {
+.postAuthor {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.postAuthor img {
+    border-radius: 50%;
+}
+
+.delete,
+.edit {
     display: inline-flex;
     align-items: center;
     border: none;
@@ -66,7 +158,12 @@
     color: #e0245e;
 }
 
-.delete:disabled {
+.edit:hover {
+    color: var(--accent-strong);
+}
+
+.delete:disabled,
+.edit:disabled {
     color: var(--text-faint);
     opacity: .55;
     cursor: not-allowed;
@@ -74,15 +171,30 @@
 
 .body {
     margin: 8px 0 0;
-    color: var(--text-dim);
-    font-size: 14px;
-    line-height: 1.55;
-    white-space: pre-wrap;
 }
 
 .body a {
     color: var(--accent-strong);
     font-weight: 600;
+}
+
+.analytics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xs);
+    color: var(--text-faint);
+    background: var(--bg-raised);
+    font-size: 12px;
+}
+
+.analytics span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .poll {
@@ -178,6 +290,10 @@
     margin-left: -8px;
 }
 
+.compactFooter {
+    margin-top: 4px;
+}
+
 .author {
     color: var(--text-faint);
     font-size: 12px;
@@ -199,12 +315,7 @@
 }
 
 @media (max-width: 520px) {
-    .compact .body {
-        display: -webkit-box;
-        max-height: 7.75em;
-        white-space: normal;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 5;
-        overflow: hidden;
+    .full .head h1 {
+        font-size: 34px;
     }
 }

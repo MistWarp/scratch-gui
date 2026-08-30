@@ -5,6 +5,7 @@ import {ArrowLeft, CalendarDays, Clock3, Gavel, Medal, MessageCircle, Settings, 
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
+import UserLink from '../components/UserLink.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
@@ -285,7 +286,7 @@ const Challenge = ({id, space, user, login, load}) => {
     return (
         <main className={styles.page}>
             <Link to="/spaces?kind=challenge" className={styles.back}><ArrowLeft size={15} /> All challenges</Link>
-            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong>{space.owner} invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
+            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong><UserLink username={space.owner}>{space.owner}</UserLink> invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
             <header className={styles.hero}>
                 <div className={styles.heroMain}>
                     <span className={styles.phase}>{phase.label}</span>
@@ -329,7 +330,7 @@ const Challenge = ({id, space, user, login, load}) => {
             {tab === 'results' ? (
                 <section className={styles.results}>
                     <header><Medal size={24} /><div><h2>Final results</h2><p>Ranked by the judges using the criteria shown on the overview.</p></div></header>
-                    {space.projects.length ? <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '—'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>by {project.owner}</span></div><strong>{challengeScore(project.judgeScore)}<small>/ 10</small></strong></article>)}</div> : <div className={styles.empty}><Medal size={28} /><strong>No results</strong><span>This challenge did not receive any submissions.</span></div>}
+                    {space.projects.length ? <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '—'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span></div><strong>{challengeScore(project.judgeScore)}<small>/ 10</small></strong></article>)}</div> : <div className={styles.empty}><Medal size={28} /><strong>No results</strong><span>This challenge did not receive any submissions.</span></div>}
                 </section>
             ) : null}
             {tab === 'judging' ? (

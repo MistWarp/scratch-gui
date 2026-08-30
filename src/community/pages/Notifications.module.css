@@ -16,7 +16,8 @@
 }
 
 .item,
-.itemUnread {
+.itemUnread,
+.followingPost {
     position: relative;
     display: flex;
     align-items: flex-start;
@@ -30,7 +31,8 @@
 }
 
 .item:hover,
-.itemUnread:hover {
+.itemUnread:hover,
+.followingPost:hover {
     border-color: var(--accent-border);
     transform: translateY(-1px);
 }
@@ -38,6 +40,54 @@
 .itemUnread {
     background: var(--accent-softer);
     border-color: var(--accent-border);
+}
+
+.followingPost {
+    position: relative;
+}
+
+.postHead {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--text-dim);
+}
+
+.postHead time {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.postContent {
+    margin-top: 4px;
+    color: var(--mw-text);
+    overflow-wrap: anywhere;
+}
+
+.postContent p {
+    margin: 0;
+}
+
+.postMeta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 8px;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.postMeta span,
+.postMeta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.postMeta a {
+    margin-left: auto;
+    color: var(--accent-strong);
 }
 
 .avatarWrap {
@@ -150,7 +200,8 @@
     }
 
     .item,
-    .itemUnread {
+    .itemUnread,
+    .followingPost {
         display: grid;
         grid-template-columns: 40px minmax(0, 1fr);
         gap: 4px 12px;

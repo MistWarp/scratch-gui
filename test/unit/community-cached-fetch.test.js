@@ -70,6 +70,39 @@ describe('community project content cache', () => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
+    test('clearing the cache does not let an older request replace a newer one', async () => {
+        const stale = new ArrayBuffer(1);
+        const fresh = new ArrayBuffer(2);
+        let resolveStale;
+        let resolveFresh;
+        global.fetch
+            .mockImplementationOnce(() => new Promise(resolve => {
+                resolveStale = resolve;
+            }))
+            .mockImplementationOnce(() => new Promise(resolve => {
+                resolveFresh = resolve;
+            }));
+
+        const first = cachedFetchBuffer(url);
+        for (let i = 0; i < 5 && !resolveStale; i++) await Promise.resolve();
+        clearContentCache();
+        const second = cachedFetchBuffer(url);
+        for (let i = 0; i < 5 && !resolveFresh; i++) await Promise.resolve();
+        resolveStale({
+            ok: true,
+            arrayBuffer: () => Promise.resolve(stale)
+        });
+        await expect(first).resolves.toBe(stale);
+
+        const third = cachedFetchBuffer(url);
+        resolveFresh({
+            ok: true,
+            arrayBuffer: () => Promise.resolve(fresh)
+        });
+        await expect(Promise.all([second, third])).resolves.toEqual([fresh, fresh]);
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
     test('preloading waits until another page can read the persistent cache', async () => {
         const persistentUrl = `${url}?persistent=1`;
         const buffer = new ArrayBuffer(1);

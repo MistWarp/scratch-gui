@@ -1,0 +1,37 @@
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-faint);
+}
+
+.online {
+    background: #45c46b;
+}
+
+.idle {
+    background: #f0ad3d;
+}
+
+.dnd {
+    background: #ef5b5b;
+}
+
+.offline {
+    background: var(--text-faint);
+}
+
+.text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

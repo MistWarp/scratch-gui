@@ -240,7 +240,7 @@
 
 .agree-text {
     margin: 0;
-    white-space: pre-wrap;
+    white-space: normal;
     word-wrap: break-word;
     font-family: inherit;
     font-size: 13px;

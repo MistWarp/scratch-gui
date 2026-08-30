@@ -1,0 +1,139 @@
+.card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.heading h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.heading p,
+.empty {
+    margin: 5px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.total {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    color: color-mix(in srgb, #f2b84b 72%, var(--mw-text));
+    background: color-mix(in srgb, #f2b84b 18%, transparent);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    gap: 24px;
+}
+
+.columns h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    color: var(--text-dim);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.donorList,
+.recentList {
+    max-height: 360px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.donorRow {
+    display: grid;
+    grid-template-columns: 20px 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-soft);
+}
+
+.rank,
+.count,
+.recentRow time {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.rank {
+    text-align: center;
+    font-weight: 700;
+}
+
+.donorRow > a,
+.recentRow > a:first-child {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--mw-text);
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.amount,
+.recentAmount {
+    color: color-mix(in srgb, #f2b84b 72%, var(--mw-text));
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.count {
+    grid-column: 3 / -1;
+    margin-top: -6px;
+}
+
+.recentRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--border-soft);
+}
+
+.recentRow time {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 780px) {
+    .columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .total {
+        align-self: flex-start;
+    }
+}

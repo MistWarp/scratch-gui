@@ -56,7 +56,7 @@
 }
 
 .agreement {
-    white-space: pre-wrap;
+    color: var(--mw-text-muted);
 }
 
 .form {

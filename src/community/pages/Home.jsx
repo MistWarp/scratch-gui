@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import {Bell, Bug, Clock, GitFork, Github, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
-import {fetchNotifications} from '../../lib/rotur/client.js';
+import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import Avatar from '../components/Avatar.jsx';
@@ -13,11 +13,13 @@ import NewsItem from '../components/NewsItem.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
+import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import logo from '../assets/mistwarp-logo.png';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
+import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
 import styles from './Home.module.css';
 
 const ACTIVITY_ICONS = {love: Heart, favorite: Star, share: Globe, remix: GitFork, review: Star};
@@ -53,7 +55,7 @@ const NewsSection = () => {
         setItems(null);
         setFailed(false);
         api.news()
-            .then(data => active && setItems(data.news || []))
+            .then(data => active && setItems((data.news || []).filter(item => !item.archived)))
             .catch(() => active && setFailed(true));
         return () => {
             active = false;
@@ -83,10 +85,19 @@ const FriendsSection = ({user, login}) => {
             return () => {};
         }
         setItems(null);
-        rotur.following(viewerName).then(data => {
+        const projectActivity = rotur.following(viewerName).then(data => {
             const following = data.following || [];
             return following.length ? api.activity(following) : {activity: []};
-        }).then(data => active && setItems(data.activity || [])).catch(() => active && setFailed(true));
+        }).then(data => (data.activity || []).map(item => ({...item, timelineType: 'project-activity'})));
+        Promise.allSettled([projectActivity, fetchFollowingFeed(40)]).then(results => {
+            if (!active) return;
+            const activity = results[0].status === 'fulfilled' ? results[0].value : [];
+            const posts = results[1].status === 'fulfilled' ? normalizeFollowingPosts(results[1].value) : [];
+            setFailed(results.some(result => result.status === 'rejected'));
+            setItems([...activity, ...posts].sort((left, right) => (
+                timestampMs(right.created || right.timestamp) - timestampMs(left.created || left.timestamp)
+            )));
+        });
         return () => {
             active = false;
         };
@@ -101,16 +112,27 @@ const FriendsSection = ({user, login}) => {
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
                     {items.slice(0, 4).map((item, index) => {
-                        const Icon = ACTIVITY_ICONS[item.type] || Heart;
+                        const isPost = item.timelineType === 'following-post';
+                        const Icon = isPost ? MessageCircle : (ACTIVITY_ICONS[item.type] || Heart);
                         return (
-                            <div key={`${item.actor}-${item.created}-${index}`} className={styles.activityItem}>
-                                <Link to={`/users/${item.actor}`}><Avatar username={item.actor} size={34} /></Link>
+                            <div key={isPost ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`} className={styles.activityItem}>
+                                <Link to={`/users/${isPost ? item.user : item.actor}`}>
+                                    <Avatar username={isPost ? item.user : item.actor} size={34} />
+                                </Link>
                                 <span className={styles.activityIcon}><Icon size={14} /></span>
                                 <span className={styles.activityText}>
-                                    <Link to={`/users/${item.actor}`} className={styles.activityActor}>{item.actor}</Link>{' '}
-                                    {item.projectId ? <Link to={projectUrl(item.projectId)}>{describeActivity(item)}</Link> : describeActivity(item)}
+                                    <Link to={`/users/${isPost ? item.user : item.actor}`} className={styles.activityActor}>
+                                        {isPost ? item.user : item.actor}
+                                    </Link>{' '}
+                                    {isPost ? (
+                                        <Link to={postUrl(item.id)}>
+                                            posted: {item.content || 'View post'}
+                                        </Link>
+                                    ) : item.projectId ? (
+                                        <Link to={projectUrl(item.projectId)}>{describeActivity(item)}</Link>
+                                    ) : describeActivity(item)}
                                 </span>
-                                <span className={styles.activityTime}>{timeAgo(item.created)}</span>
+                                <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
                             </div>
                         );
                     })}
@@ -146,7 +168,8 @@ const RoadmapSection = ({viewerName}) => {
             {activeIdeas && activeIdeas.length ? (
                 <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
                     {activeIdeas.slice(0, 4).map(idea => (
-                        <Link key={idea._id} to={`/roadmap#idea-${idea._id}`} className={styles.roadmapItem}>
+                        <article key={idea._id} className={styles.roadmapItem}>
+                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={`Open ${idea.title}`} />
                             <ReactionButtons
                                 variant="vertical"
                                 heartKey="like"
@@ -167,12 +190,12 @@ const RoadmapSection = ({viewerName}) => {
                                 <h3>{idea.title}</h3>
                                 <p>{idea.description}</p>
                                 <div className={styles.roadmapMeta}>
-                                    <span><Avatar username={idea.author} size={22} />{idea.author}</span>
+                                    <span className={styles.roadmapAuthor}><UserLink username={idea.author}><Avatar username={idea.author} size={22} />{idea.author}</UserLink></span>
                                     <span>{timeAgo(idea.created)}</span>
                                     <span className={styles.roadmapComments}><MessageCircle size={13} />{idea.commentCount || 0}</span>
                                 </div>
                             </div>
-                        </Link>
+                        </article>
                     ))}
                 </div>
             ) : null}

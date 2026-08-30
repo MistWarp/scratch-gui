@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api from '../api';
 import Button from '../components/ui/Button.jsx';
+import Markdown from '../components/Markdown.jsx';
 import styles from './InfoPage.module.css';
 
 const Trust = () => {
@@ -28,6 +29,7 @@ const Trust = () => {
                 <section className={styles.section}>
                     <h2>Your account</h2>
                     <p>Rotur provides MistWarp accounts and sign-in. MistWarp receives your Rotur username and account ID when you sign in. Rotur account security, credentials, and account recovery stay with Rotur.</p>
+                    <p>MistWarp is made by Sophie, who uses the names Mist and Mistium online. Official moderation messages come through MistWarp itself, not lookalike accounts or projects.</p>
                     <p><a href="https://rotur.dev/me" target="_blank" rel="noreferrer">Manage your Rotur account</a></p>
                 </section>
                 <section className={styles.section}>
@@ -47,7 +49,7 @@ const Trust = () => {
                 <h2>Community terms</h2>
                 {agreement === null ? <p>Loading the current community agreement…</p> : null}
                 {agreement === false ? <p>Could not load the current agreement. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></p> : null}
-                {agreement ? <div className={styles.agreement}>{agreement.text}</div> : null}
+                {agreement ? <Markdown className={styles.agreement}>{agreement.text}</Markdown> : null}
             </section>
             <section className={styles.section}>
                 <h2>Moderation and appeals</h2>

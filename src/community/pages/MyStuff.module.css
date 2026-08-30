@@ -28,13 +28,10 @@
     display: none;
 }
 
-.newButton,
 .uploadButton {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: var(--accent);
-    color: var(--accent-contrast);
     font-weight: 700;
     font-size: 14px;
     padding: 9px 16px;
@@ -1093,7 +1090,7 @@
 
 .agreementText {
     margin: 0;
-    white-space: pre-wrap;
+    white-space: normal;
     word-wrap: break-word;
     font-family: inherit;
     font-size: 14px;

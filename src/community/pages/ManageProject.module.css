@@ -207,6 +207,16 @@
     color: #9966FF;
 }
 
+.statDonations .statIcon {
+    background: color-mix(in srgb, #F2B84B 18%, transparent);
+    color: #B77B08;
+}
+
+.statDonors .statIcon {
+    background: color-mix(in srgb, #2FAA72 18%, transparent);
+    color: #2FAA72;
+}
+
 .statHearts .statIcon {
     background: color-mix(in srgb, #E0245E 18%, transparent);
     color: #E0245E;

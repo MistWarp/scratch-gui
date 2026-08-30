@@ -14,7 +14,8 @@ const REQUIRED_PERMISSIONS = [...new Set([
         'validators.generate',
         'me.transfer',
         'me.claimDaily',
-        'notifications.list'
+        'notifications.list',
+        'posts.followingFeed'
     ]),
     'account:view',
     'account:profile',
@@ -26,6 +27,12 @@ const REQUIRED_PERMISSIONS = [...new Set([
     'notifications:view',
     'posts:create',
     'posts:delete',
+    'posts:like',
+    'posts:manage',
+    'posts:reply',
+    'posts:repost',
+    'blocked:view',
+    'blocked:manage',
     'groups:view',
     'groups:members.view',
     'groups:join',
@@ -45,6 +52,7 @@ const notificationListeners = new Set();
 const notificationRemovalListeners = new Set();
 const visibleNotificationIds = new Set();
 const notificationFetches = new Map();
+const followingFeedFetches = new Map();
 let notificationSocketListener = null;
 let notificationRemovalSocketListener = null;
 
@@ -572,6 +580,28 @@ const fetchNotifications = afterDays => {
     return request;
 };
 
+// Rotur's following feed is already assembled server-side. Keep concurrent
+// consumers on the home and notifications pages on one request.
+const fetchFollowingFeed = (limit = 100) => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return Promise.resolve([]);
+    }
+    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 100));
+    const key = String(safeLimit);
+    if (followingFeedFetches.has(key)) {
+        return followingFeedFetches.get(key);
+    }
+    const request = Promise.resolve(rotur.posts.followingFeed(safeLimit))
+        .then(list => (Array.isArray(list) ? list : []));
+    followingFeedFetches.set(key, request);
+    request.then(
+        () => followingFeedFetches.delete(key),
+        () => followingFeedFetches.delete(key)
+    );
+    return request;
+};
+
 const markNotificationsRead = async () => {
     const rotur = getClient();
     if (!rotur.loggedIn) {
@@ -773,5 +803,6 @@ export {
     ensureScopes,
     isVisibleNotification,
     fetchNotifications,
+    fetchFollowingFeed,
     markNotificationsRead
 };

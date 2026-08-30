@@ -5,6 +5,7 @@ import styles from './ExploreNav.module.css';
 
 const ITEMS = [
     {key: 'projects', label: 'Projects', to: '/explore'},
+    {key: 'bounties', label: 'Bounties', to: '/bounties'},
     {key: 'groups', label: 'Groups', to: '/groups'},
     {key: 'studios', label: 'Studios', to: '/spaces?kind=studio'},
     {key: 'challenges', label: 'Challenges', to: '/spaces?kind=challenge'},

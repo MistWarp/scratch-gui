@@ -5,8 +5,10 @@ import {MemoryRouter} from 'react-router-dom';
 import {
     applyReactionResult,
     bountyProjectId,
+    contributionRemixes,
     contributionPayload,
     HistoryList,
+    openPullForRemix,
     PullList,
     releasePayload,
     ReviewPanel,
@@ -58,6 +60,25 @@ describe('Project content action payloads', () => {
     test('finds bounties on the original project when viewing a fork', () => {
         expect(bountyProjectId({id: 'original'})).toBe('original');
         expect(bountyProjectId({id: 'fork', remixParent: 'original'})).toBe('original');
+    });
+
+    test('finds the signed-in user\'s direct remixes for contribution', () => {
+        expect(contributionRemixes([
+            {id: 'mine', owner: 'Sophie', remixParent: 'original'},
+            {id: 'theirs', owner: 'Alex', remixParent: 'original'},
+            {id: 'nested', owner: 'Sophie', remixParent: 'mine'}
+        ], 'original', 'sophie')).toEqual([
+            {id: 'mine', owner: 'Sophie', remixParent: 'original'}
+        ]);
+    });
+
+    test('finds an existing open pull request for the selected remix', () => {
+        const open = {index: 2, state: 'open', targetProjectId: 'original', sourceProjectId: 'mine'};
+        expect(openPullForRemix([
+            {index: 1, state: 'closed', targetProjectId: 'original', sourceProjectId: 'mine'},
+            open,
+            {index: 3, state: 'open', targetProjectId: 'other', sourceProjectId: 'mine'}
+        ], 'original', 'mine')).toBe(open);
     });
 
     test('opens an in-app confirmation before restoring a version', () => {
@@ -158,28 +179,24 @@ describe('Project content action payloads', () => {
         reviews.mockRestore();
     });
 
-    test('closes an open pull request when navigating to another project', async () => {
+    test('reloads pull requests when navigating to another project', async () => {
         const pulls = jest.spyOn(api, 'pulls').mockResolvedValue({
             pulls: [{index: 1, title: 'Old project pull', user: 'Alex', state: 'open'}]
         });
-        const pullDiff = jest.spyOn(api, 'pullDiff').mockImplementation(() => new Promise(() => {}));
         const wrapper = mount(
-            <PullList
-                id="project-1"
-                canMerge
-                onChange={jest.fn()}
-            />
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <PullList id="project-1" />
+            </MemoryRouter>
         );
         await act(async () => {
             await Promise.resolve();
             await Promise.resolve();
         });
         wrapper.update();
-        wrapper.find('button').filterWhere(button => button.text().includes('Old project pull')).simulate('click');
-        wrapper.update();
         expect(wrapper.text()).toContain('Old project pull');
+        expect(wrapper.find('a[href="/project/project-1/pulls/1"]')).toHaveLength(1);
 
-        wrapper.setProps({id: 'project-2'});
+        wrapper.setProps({children: <PullList id="project-2" />});
         await act(async () => {
             await Promise.resolve();
             await Promise.resolve();
@@ -187,9 +204,7 @@ describe('Project content action payloads', () => {
         wrapper.update();
 
         expect(pulls).toHaveBeenCalledWith('project-2');
-        expect(wrapper.find('.backLink')).toHaveLength(0);
         wrapper.unmount();
         pulls.mockRestore();
-        pullDiff.mockRestore();
     });
 });

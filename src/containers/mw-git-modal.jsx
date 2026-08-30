@@ -56,7 +56,9 @@ import {
 } from '../lib/git/git-diff.js';
 import {TOKEN_KEY, authForRemoteUrl} from '../lib/git/sync-remotes.js';
 import {
+    ensureProjectHistoryHydrated,
     getProjectHistoryState,
+    isProjectHistoryHydrated,
     preloadProjectHistory,
     subscribeProjectHistory
 } from '../lib/git/project-history.js';
@@ -217,6 +219,7 @@ export class TWGitModal extends React.Component {
 
         bindAll(this, [
             'refresh',
+            'ensureLocalHistory',
             'handleHistoryState',
             'pollChanges',
             'computeWorkingDiff',
@@ -331,7 +334,8 @@ export class TWGitModal extends React.Component {
     pollChanges () {
         // Skip while another operation is running, before init, or if a poll is
         // still in flight (computing status re-serializes the project).
-        if (this._pollPromise || this.state.busy || !this.state.initialized) return;
+        if (this._pollPromise || this.state.busy || !this.state.initialized ||
+            !isProjectHistoryHydrated(this.props.vm)) return;
         this._pollPromise = this.runPoll().finally(() => {
             this._pollPromise = null;
         });
@@ -345,6 +349,10 @@ export class TWGitModal extends React.Component {
                 break;
             }
         }
+    }
+
+    ensureLocalHistory () {
+        return ensureProjectHistoryHydrated(this.props.vm);
     }
 
     async runPoll () {
@@ -494,6 +502,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Committing…', busyProgress: 0, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             await commitProject({
                 vm: this.props.vm,
                 message,
@@ -530,6 +539,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Undoing commit…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             const snapshot = await readSnapshotAtCommit(previous.oid);
             this.props.vm.quit();
             await this.props.vm.loadProject(snapshot, {skipGitImport: true});
@@ -565,6 +575,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Creating branch…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             await createBranch({ref, vm: this.props.vm});
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             this.setState({newBranchName: ''});
@@ -583,6 +594,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Checking out branch…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             await this.refresh();
         } catch (err) {
@@ -599,6 +611,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Restoring commit…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             await checkoutCommitAndRestore({vm: this.props.vm, oid});
             await this.refresh();
         } catch (err) {
@@ -614,6 +627,7 @@ export class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Preparing download…', busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             const sb3ArrayBuffer = await readSnapshotAtCommit(oid);
             if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
                 throw new Error('No project data found at this commit');
@@ -653,6 +667,7 @@ export class TWGitModal extends React.Component {
 
         this.setState({busy: true, busyMessage: 'Deleting branch…', busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             await deleteBranch(ref);
             await this.refresh();
         } catch (err) {
@@ -699,6 +714,7 @@ export class TWGitModal extends React.Component {
         }
         this.setState({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'working'});
         try {
+            await this.ensureLocalHistory();
             const diff = await this.computeWorkingDiff(filepath);
             this._openDiffSig = diffSignature(diff);
             this.setState({diffData: diff, diffLoading: false});
@@ -711,6 +727,7 @@ export class TWGitModal extends React.Component {
         if (!oid) return;
         this.setState({selectedCommitOid: oid, diffData: null, diffFilepath: null, diffContext: 'commit'});
         try {
+            await this.ensureLocalHistory();
             const fs = getFs();
             const parents = await getCommitParents({fs, dir: REPO_DIR, oid});
             const parent = parents[0] || null;
@@ -733,6 +750,7 @@ export class TWGitModal extends React.Component {
         }
         this.setState({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'commit'});
         try {
+            await this.ensureLocalHistory();
             const fs = getFs();
             const parents = await getCommitParents({fs, dir: REPO_DIR, oid});
             const parent = parents[0] || null;
@@ -788,6 +806,7 @@ export class TWGitModal extends React.Component {
         }
         this.setState({busy: true, busyMessage: 'Adding remote…', busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             await addRemote({vm: this.props.vm, name, url});
             this.setState({newRemoteUrl: ''});
             await this.refresh();
@@ -808,6 +827,7 @@ export class TWGitModal extends React.Component {
         if (!name) return;
         this.setState({busy: true, busyMessage: 'Removing remote…', busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             await removeRemote({vm: this.props.vm, name});
             await this.refresh();
         } catch (err) {
@@ -831,6 +851,7 @@ export class TWGitModal extends React.Component {
         }
         this.setState({busy: true, busyMessage: `Pushing ${branch} to ${remote}…`, busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             await push({
                 vm: this.props.vm,
                 remote,
@@ -854,6 +875,7 @@ export class TWGitModal extends React.Component {
     async handleSaveReadme () {
         this.setState({busy: true, busyMessage: 'Saving README…', busyProgress: null, error: null});
         try {
+            await this.ensureLocalHistory();
             await writeReadme(this.state.readmeContent);
             this.setState({readmeDirty: false});
             await this.refresh();
@@ -918,6 +940,7 @@ export class TWGitModal extends React.Component {
             mergeResolutions: {}
         });
         try {
+            await this.ensureLocalHistory();
             const preview = await mergeBranchesPreview({ours, theirs});
             const conflicts = Array.isArray(preview.conflicts) ? preview.conflicts : [];
             this.setState({mergeConflicts: conflicts});
@@ -941,6 +964,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Preparing merge…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             const {conflicts, merged} = await startEditorMerge({
                 ours,
                 theirs,
@@ -975,6 +999,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: 'Merging…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             await mergeBranchesApply({
                 ours,
                 theirs,
@@ -1064,6 +1089,7 @@ export class TWGitModal extends React.Component {
         this.setState({busy: true, busyMessage: `Pushing to ${repo.fullName}…`, busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
+            await this.ensureLocalHistory();
             let branch = this.state.currentBranch;
             if (!this.state.initialized) {
                 branch = this.state.defaultBranch || 'main';

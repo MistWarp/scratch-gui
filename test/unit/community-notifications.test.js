@@ -6,6 +6,7 @@ import {mount} from 'enzyme';
 import Notifications, {markItemsRead, mergeNotifications} from '../../src/community/pages/Notifications.jsx';
 import {useUser} from '../../src/community/UserContext.jsx';
 import {
+    fetchFollowingFeed,
     fetchNotifications,
     markNotificationsRead,
     subscribeNotifications
@@ -13,6 +14,7 @@ import {
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
 jest.mock('../../src/lib/rotur/client.js', () => ({
+    fetchFollowingFeed: jest.fn(),
     fetchNotifications: jest.fn(),
     markNotificationsRead: jest.fn(),
     subscribeNotifications: jest.fn(() => () => {})
@@ -48,6 +50,7 @@ describe('notification read state', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         useUser.mockReturnValue({user: {username: 'viewer'}, loading: false, login: jest.fn()});
+        fetchFollowingFeed.mockResolvedValue([]);
         fetchNotifications.mockResolvedValue([{
             id: 'one',
             type: 'follow',
@@ -96,6 +99,29 @@ describe('notification read state', () => {
         window.removeEventListener('mw:notifications-read', onRead);
     });
 
+    test('shows followed posts in the notification timeline', async () => {
+        markNotificationsRead.mockResolvedValue(false);
+        fetchFollowingFeed.mockResolvedValue([{
+            id: 'post-one',
+            user: 'alice',
+            content: 'A profile update',
+            timestamp: Date.now(),
+            likes: ['viewer'],
+            replies: []
+        }]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).toContain('A profile update');
+        expect(wrapper.find('a[href="/posts/post-one"]')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
     test('does not refetch or reconnect for a refreshed object from the same account', async () => {
         markNotificationsRead.mockResolvedValue(false);
         const wrapper = render();
@@ -115,6 +141,7 @@ describe('notification read state', () => {
         });
 
         expect(fetchNotifications).toHaveBeenCalledTimes(1);
+        expect(fetchFollowingFeed).toHaveBeenCalledTimes(1);
         expect(subscribeNotifications).toHaveBeenCalledTimes(1);
         wrapper.unmount();
     });

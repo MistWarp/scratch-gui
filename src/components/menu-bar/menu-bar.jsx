@@ -16,7 +16,6 @@ import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
 import ShareButton from './share-button.jsx';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
-import requestVersionMessage from '../../lib/mw/request-version-message.jsx';
 import {
     getRememberedPlatformProjectState,
     getMistWarpAction,
@@ -58,6 +57,7 @@ import {
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
 import {createMwp} from '../../lib/git/mwp.js';
 import {
+    ensureProjectHistoryHydrated,
     getProjectHistoryState,
     preloadProjectHistory,
     subscribeProjectHistory
@@ -809,6 +809,7 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
         this.props.onShowGitStatus('gitPushing');
         try {
+            await ensureProjectHistoryHydrated(this.props.vm);
             await gitPush({
                 vm: this.props.vm,
                 remote,
@@ -844,6 +845,7 @@ class MenuBar extends React.Component {
                 if (!ok) return false;
             }
             this.props.onShowGitStatus('gitPulling');
+            await ensureProjectHistoryHydrated(this.props.vm);
             await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
             await gitPull({
                 vm: this.props.vm,
@@ -887,6 +889,7 @@ class MenuBar extends React.Component {
                 return false;
             }
             this.props.onShowGitStatus('gitCommitting');
+            await ensureProjectHistoryHydrated(this.props.vm);
             await commitProject({
                 vm: this.props.vm,
                 message: message.trim(),
@@ -910,14 +913,6 @@ class MenuBar extends React.Component {
         if (this.mwpSaving) return false;
         this.mwpSaving = true;
         try {
-            let message = 'Initial version';
-            let commitChanges = true;
-            if (await repoExists()) {
-                const choice = await requestVersionMessage();
-                if (choice === null) return;
-                commitChanges = choice !== false;
-                if (commitChanges) message = choice;
-            }
             const filename = projectFilename(this.props.projectTitle, 'MistWarp Project', 'mwp');
             let handle = saveAs ? null : this.state.mwpFileHandle;
             if (!handle && this.props.showSaveFilePicker) {
@@ -931,13 +926,14 @@ class MenuBar extends React.Component {
                 });
             }
             const platformProject = getRememberedPlatformProjectState();
+            await ensureProjectHistoryHydrated(this.props.vm);
             const exported = await createMwp({
                 vm: this.props.vm,
                 projectId: platformProject && platformProject.id,
                 remixParent: platformProject && platformProject.remixParent,
                 baseCommit: platformProject && platformProject.remixBaseCommit,
-                message,
-                commitChanges
+                message: 'Initial version',
+                commitChanges: false
             });
             await preloadProjectHistory(this.props.vm, {force: true});
             if (handle) {

@@ -1,6 +1,7 @@
 import {MenuBar} from '../../../src/components/menu-bar/menu-bar.jsx';
 import {commitProject, pull, push, repoExists} from '../../../src/lib/git/browser-git';
 import {createMwp} from '../../../src/lib/git/mwp.js';
+import requestVersionMessage from '../../../src/lib/mw/request-version-message.jsx';
 
 jest.mock('../../../src/lib/mw/open-fractch-terminal-window.js', () => jest.fn());
 jest.mock('../../../src/lib/git/browser-git', () => ({
@@ -15,6 +16,7 @@ jest.mock('../../../src/lib/git/mwp.js', () => ({
     createMwp: jest.fn(() => Promise.resolve({blob: new Blob()}))
 }));
 jest.mock('../../../src/lib/git/project-history.js', () => ({
+    ensureProjectHistoryHydrated: jest.fn(() => Promise.resolve()),
     getProjectHistoryState: jest.fn(() => ({phase: 'idle'})),
     preloadProjectHistory: jest.fn(() => Promise.resolve()),
     subscribeProjectHistory: jest.fn()
@@ -35,6 +37,7 @@ describe('menu bar file workflows', () => {
         push.mockClear();
         pull.mockClear();
         commitProject.mockClear();
+        requestVersionMessage.mockClear();
     });
 
     test('flushes a focused project title before saving with the keyboard', () => {
@@ -276,7 +279,7 @@ describe('menu bar file workflows', () => {
         expect(menuBar.showAutosaveNotification).not.toHaveBeenCalled();
     });
 
-    test('chooses an MWP destination before exporting or committing history', async () => {
+    test('chooses an MWP destination before exporting uncommitted history', async () => {
         const writable = {
             close: jest.fn(() => Promise.resolve()),
             write: jest.fn(() => Promise.resolve())
@@ -300,6 +303,10 @@ describe('menu bar file workflows', () => {
 
         expect(showSaveFilePicker.mock.invocationCallOrder[0])
             .toBeLessThan(createMwp.mock.invocationCallOrder[0]);
+        expect(createMwp).toHaveBeenCalledWith(expect.objectContaining({
+            commitChanges: false
+        }));
+        expect(requestVersionMessage).not.toHaveBeenCalled();
         expect(menuBar.props.showToast).toHaveBeenCalledWith('MistWarp project saved.', 'success');
     });
 

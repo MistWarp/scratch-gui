@@ -10,6 +10,7 @@ import unpackage from '../unpackager';
 import {importRepoFromSb3} from '../git/browser-git';
 import {buildSb3FromCurrentRepo, importMwp} from '../git/mwp.js';
 import {markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
+import {getRememberedPlatformProjectState} from '../community/publish.js';
 import RestorePointAPI from '../api/restore-points';
 
 import {
@@ -301,9 +302,15 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                             log.error('Failed to draw loaded project:', drawError);
                         }
                         // Restore any git history embedded in the .sb3 (fractch tree + .git),
-                        // or clear a stale repo if the loaded project has none.
+                        // or keep the current MistWarp history when this file is replacing
+                        // the contents of an online project.
                         try {
-                            if (!isMwp) await importRepoFromSb3(loadedBytes);
+                            if (!isMwp) {
+                                const platformProject = getRememberedPlatformProjectState();
+                                await importRepoFromSb3(loadedBytes, {
+                                    preserveExisting: Boolean(platformProject && platformProject.id)
+                                });
+                            }
                             await preloadProjectHistory(this.props.vm, {force: true});
                         } catch (gitError) {
                             log.error('Failed to restore embedded git history:', gitError);

@@ -1,11 +1,13 @@
 import React, {useMemo} from 'react';
+import {Link} from 'react-router-dom';
 import {safeDate} from '../format.js';
+import UserLink from './UserLink.jsx';
 import styles from './GitGraph.module.css';
 
 const COLORS = ['#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec4899', '#eab308', '#3b82f6'];
-const ROW_HEIGHT = 58;
-const LANE_WIDTH = 26;
-const PADDING = 14;
+const ROW_HEIGHT = 52;
+const LANE_WIDTH = 24;
+const PADDING = 16;
 
 const layoutGraph = (graph, currentBranch) => {
     const inputBranches = Array.isArray(graph?.branches) ? graph.branches : [];
@@ -38,7 +40,7 @@ const point = node => ({
     y: (node.row * ROW_HEIGHT) + (ROW_HEIGHT / 2)
 });
 
-const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
+const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectId = ''}) => {
     const layout = useMemo(() => layoutGraph(graph, currentBranch), [graph, currentBranch]);
     if (!layout.rows.length) return null;
     const height = layout.rows.length * ROW_HEIGHT;
@@ -66,9 +68,10 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                         return (
                             <circle
                                 key={node.sha}
+                                className={node.sha === currentHead ? styles.headNode : styles.node}
                                 cx={p.x}
                                 cy={p.y}
-                                r="5"
+                                r={node.sha === currentHead ? 5 : 4}
                                 fill={COLORS[node.lane % COLORS.length]}
                             />
                         );
@@ -80,8 +83,17 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                     const tipBranches = layout.branches.filter(branch =>
                         graph.branchLogs?.find(entry => entry.branch === branch)?.oids?.[0] === node.sha);
                     const nodeDate = safeDate(node.date);
+                    const commitUrl = projectId ? `/project/${projectId}/commits/${node.sha}` : '';
                     return (
                         <li key={node.sha} className={styles.commit} style={{height: ROW_HEIGHT}}>
+                            {commitUrl ? (
+                                <Link
+                                    className={styles.commitHitArea}
+                                    to={commitUrl}
+                                    aria-current={node.sha === currentHead ? 'page' : null}
+                                    aria-label={`View commit ${(node.message || node.sha).split('\n')[0]}`}
+                                />
+                            ) : null}
                             <div className={styles.subject}>
                                 {tipBranches.map(branch => (
                                     <span key={branch} className={styles.branch}>{branch}</span>
@@ -90,7 +102,11 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring}) => {
                             </div>
                             <div className={styles.meta}>
                                 <code>{node.sha.slice(0, 7)}</code>
-                                {node.author ? <span>{node.author}</span> : null}
+                                {node.author ? (
+                                    <UserLink className={styles.author} username={node.author}>
+                                        {node.author}
+                                    </UserLink>
+                                ) : null}
                                 {nodeDate ? (
                                     <time dateTime={nodeDate.toISOString()}>
                                         {nodeDate.toLocaleString()}

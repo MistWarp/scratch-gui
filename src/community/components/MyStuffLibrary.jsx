@@ -7,6 +7,7 @@ import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
+import UserLink from './UserLink.jsx';
 import styles from './MyStuffLibrary.module.css';
 
 const playtimeLabel = project => {
@@ -42,13 +43,13 @@ const MyStuffLibrary = ({
                 <div className={styles.list}>
                     {projects.map(project => (
                         <article className={styles.row} key={project.id}>
-                            <Link className={styles.project} to={projectUrl(project.id)}>
-                                <ProjectThumbnail project={project} className={styles.thumb} lazy />
+                            <div className={styles.project}>
+                                <Link to={projectUrl(project.id)}><ProjectThumbnail project={project} className={styles.thumb} lazy /></Link>
                                 <span className={styles.details}>
-                                    <strong>{project.title}</strong>
-                                    <small>by {project.owner}</small>
+                                    <Link to={projectUrl(project.id)}><strong>{project.title}</strong></Link>
+                                    <small>by <UserLink username={project.owner}>{project.owner}</UserLink></small>
                                 </span>
-                            </Link>
+                            </div>
                             <span className={styles.playtime}>
                                 <strong><Clock3 size={15} /> {playtimeLabel(project)}</strong>
                                 {lastPlayedLabel(project) ? <small>{lastPlayedLabel(project)}</small> : null}

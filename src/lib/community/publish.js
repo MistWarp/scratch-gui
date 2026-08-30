@@ -1,11 +1,15 @@
 import JSZip from '@turbowarp/jszip';
 import {
-    createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, remixProject,
-    deleteProject, collectExtensionSources
+    createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, getProjectCommits,
+    remixProject, deleteProject, collectExtensionSources
 } from './api';
 import {createMwp} from '../git/mwp.js';
 import {syncConfiguredRemotes} from '../git/sync-remotes.js';
-import {preloadProjectHistory} from '../git/project-history.js';
+import {
+    ensureProjectHistoryHydrated,
+    preloadProjectHistory,
+    setRemoteProjectHistory
+} from '../git/project-history.js';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
@@ -188,6 +192,7 @@ const publishToMistWarp = async ({
     const projectTitle = (title && title.trim()) || 'Untitled';
 
     let createdNow = false;
+    let baseHistory = null;
     let platformProject = getRememberedPlatformProjectState();
     let platformId = platformProject && platformProject.id;
     if (platformId) {
@@ -195,9 +200,11 @@ const publishToMistWarp = async ({
             const existing = (await getProject(platformId)).project;
             platformProject = existing;
             rememberPlatformProject(existing);
+            setRemoteProjectHistory(existing);
         } catch (e) {
             if (e.status === 404) {
                 platformId = null;
+                setRemoteProjectHistory(null);
             } else {
                 throw e;
             }
@@ -206,13 +213,19 @@ const publishToMistWarp = async ({
             onProgress({phase: 'register', message: 'Creating remix'});
             const remix = await remixProject(platformId);
             platformId = remix.id;
-            platformProject = {id: platformId, isOwner: true, shared: false};
+            // The remix inherits the parent's history at its recorded base commit.
+            // Keep the complete server state so createMwp can export only objects
+            // created after that base instead of uploading the inherited DAG again.
+            platformProject = (await getProject(platformId)).project;
+            baseHistory = await getProjectCommits(platformId, platformProject.projectJsonUrl);
             rememberPlatformProject(platformProject);
+            setRemoteProjectHistory(platformProject);
             createdNow = true;
         }
     }
 
     if (!platformId) {
+        setRemoteProjectHistory(null);
         onProgress({phase: 'register', message: 'Creating project'});
         const scratchOrigin = getScratchOrigin();
         const payload = {title: projectTitle};
@@ -245,6 +258,10 @@ const publishToMistWarp = async ({
             sb3Blob = await zipProjectFiles(sb3Files, () => true);
         }
         onProgress({phase: 'package', message: 'Preparing version history and extensions'});
+        if (!createdNow && platformProject && platformProject.workspaceUrl) {
+            onProgress({phase: 'history', message: 'Loading version history'});
+            await ensureProjectHistoryHydrated(vm);
+        }
         const mwpPromise = createMwp({
             vm,
             sb3Files,
@@ -253,7 +270,8 @@ const publishToMistWarp = async ({
             baseCommit: platformProject && platformProject.remixBaseCommit,
             remoteHead: platformProject && platformProject.workspaceUrl ? platformProject.gitHead : '',
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
-            commitChanges
+            commitChanges,
+            baseHistory
         });
         const extensionSourcesPromise = collectExtensionSources(sb3Blob);
         const [thumbnail, mwp, extensions] = await Promise.all([

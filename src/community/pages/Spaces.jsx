@@ -209,6 +209,7 @@ const Spaces = () => {
                 <div className={styles.heroActions}>
                     {kind !== 'mine' ? <Link className={styles.mineLink} to="/spaces?kind=mine">Your spaces</Link> : null}
                     <Button
+                        variant="primary"
                         disabled={createBusy}
                         onClick={() => (user ? setSearchParams(withSpaceCreate(searchParams, !creating)) : login())}
                     >

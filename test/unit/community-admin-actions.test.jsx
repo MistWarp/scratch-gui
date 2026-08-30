@@ -86,6 +86,25 @@ describe('admin analytics charts', () => {
         expect(rows[1].value).toBe(725);
         expect(rows[1].samples).toBe(4);
     });
+
+    test('marks the projected close separately from the observed value', () => {
+        const wrapper = shallow(
+            <AnalyticsChart
+                title="Project uploads"
+                description="Projects created each day."
+                yLabel="Projects"
+                estimateToday
+                series={[
+                    {key: '1', label: 'Aug 29', fullLabel: 'Aug 29, 2026', value: 12, samples: 0},
+                    {key: '2', label: 'Aug 30', fullLabel: 'Aug 30, 2026', value: 4, samples: 0}
+                ]}
+            />
+        );
+
+        expect(wrapper.text()).toContain('Today 4');
+        expect(wrapper.text()).toContain('Est. close');
+        expect(wrapper.find('title').someWhere(node => node.text().startsWith('Estimated end of today:'))).toBe(true);
+    });
 });
 
 describe('admin user directory', () => {
