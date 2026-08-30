@@ -10,6 +10,7 @@ import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import FileBrowserTree from '../components/FileBrowserTree.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import Modal from '../components/ui/Modal.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -115,6 +116,13 @@ export const canMergePullRequest = project => Boolean(
     project?.isOwner || project?.myRole === 'owner' || project?.myRole === 'maintainer'
 );
 
+export const canClosePullRequest = (project, pull, user) => {
+    if (typeof pull?.canClose === 'boolean') return pull.canClose;
+    if (canMergePullRequest(project)) return true;
+    return Boolean(user?.username && pull?.sourceOwner &&
+        user.username.toLowerCase() === pull.sourceOwner.toLowerCase());
+};
+
 const PullRequest = () => {
     const {id, index} = useParams();
     const {user, login} = useUser();
@@ -129,6 +137,9 @@ const PullRequest = () => {
     const [mergeError, setMergeError] = useState('');
     const [merging, setMerging] = useState(false);
     const [mergeSession, setMergeSession] = useState(null);
+    const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+    const [closing, setClosing] = useState(false);
+    const [closeError, setCloseError] = useState('');
     const [commentText, setCommentText] = useState('');
     const [commentBusy, setCommentBusy] = useState(false);
     const [commentError, setCommentError] = useState('');
@@ -193,6 +204,9 @@ const PullRequest = () => {
         setSelectedPath('');
         setMergeSession(null);
         setMergeError('');
+        setCloseConfirmOpen(false);
+        setClosing(false);
+        setCloseError('');
         setDiffError('');
         setCommentText('');
         setCommentError('');
@@ -268,6 +282,21 @@ const PullRequest = () => {
             setMergeError(error.message || 'The conflicts could not be resolved.');
         } finally {
             setMerging(false);
+        }
+    };
+
+    const closePull = async () => {
+        if (!pull || closing) return;
+        setClosing(true);
+        setCloseError('');
+        try {
+            const data = await api.closePull(id, pull.index);
+            setPull(data.pull);
+            setCloseConfirmOpen(false);
+        } catch (error) {
+            setCloseError(error.message || 'Could not close this pull request.');
+        } finally {
+            setClosing(false);
         }
     };
 
@@ -347,7 +376,8 @@ const PullRequest = () => {
     if (!pull || !project) return <main className={styles.page}><p className={styles.loadState}>Loading pull request…</p></main>;
 
     const open = pull.state === 'open';
-    const canMerge = canMergePullRequest(project);
+    const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
+    const canClose = canClosePullRequest(project, pull, user);
     const changedFileCount = diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
     return (
         <main className={styles.page}>
@@ -362,10 +392,14 @@ const PullRequest = () => {
                         {open ? 'Open' : pull.merged ? 'Merged' : 'Closed'}
                     </span>
                     <Link to={`/users/${pull.user}`}><Avatar username={pull.user} size={24} />{pull.user}</Link>
-                    <span>wants to merge into</span>
-                    <code>{pull.baseBranch}</code>
+                    <span>wants to merge from</span>
+                    <Link to={projectUrl(pull.sourceProjectId)}>
+                        <code>{pull.sourceTitle || 'Fork'}/{pull.headBranch}</code>
+                    </Link>
                     <ChevronRight size={13} />
-                    <code>{pull.headBranch}</code>
+                    <Link to={projectUrl(pull.targetProjectId)}>
+                        <code>{project.title || 'Project'}/{pull.baseBranch}</code>
+                    </Link>
                 </div>
             </header>
 
@@ -441,7 +475,17 @@ const PullRequest = () => {
                         {mergeError ? <p className={styles.error}>{mergeError}</p> : null}
                         {open && canMerge ? (
                             <Button variant="primary" onClick={merge} busy={merging} busyLabel="Merging…">Merge pull request</Button>
-                        ) : open ? <p className={styles.note}>Only the project owner can merge this pull request.</p> : null}
+                        ) : open ? <p className={styles.note}>Only project owners and maintainers can merge this pull request.</p> : null}
+                        {open && canClose ? (
+                            <Button
+                                variant="secondary"
+                                disabled={merging}
+                                onClick={() => {
+                                    setCloseError('');
+                                    setCloseConfirmOpen(true);
+                                }}
+                            >Close pull request</Button>
+                        ) : null}
                     </aside>
                 </div>
             ) : tab === 'commits' ? (
@@ -489,6 +533,23 @@ const PullRequest = () => {
                     ))}
                     <Button variant="primary" onClick={resolveConflicts} busy={merging} busyLabel="Merging…">Save resolutions and merge</Button>
                 </section>
+            ) : null}
+            {closeConfirmOpen ? (
+                <Modal
+                    icon={GitPullRequest}
+                    title="Close pull request?"
+                    onClose={() => setCloseConfirmOpen(false)}
+                    dismissDisabled={closing}
+                    actions={(
+                        <React.Fragment>
+                            <Button variant="danger" busy={closing} busyLabel="Closing…" onClick={closePull}>Close pull request</Button>
+                            <Button variant="secondary" disabled={closing} onClick={() => setCloseConfirmOpen(false)}>Cancel</Button>
+                        </React.Fragment>
+                    )}
+                >
+                    <p>This closes the pull request without merging its changes.</p>
+                    {closeError ? <p className={styles.error}>{closeError}</p> : null}
+                </Modal>
             ) : null}
         </main>
     );

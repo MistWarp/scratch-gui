@@ -415,6 +415,7 @@ const api = {
     leaveBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'DELETE'}),
     pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff`, {cache: false}),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
+    closePull: (id, index) => request(`/projects/${id}/pulls/${index}/close`, {method: 'POST'}),
     uploadPullMerge: (id, {sb3, mwp, git, expectedHead, pullId}) =>
         uploadProject(id, sb3, null, null, {workspace: mwp, git, expectedHead, pullId}),
     request
