@@ -1,5 +1,6 @@
 import {
     buildPullRequestDiff,
+    canClosePullRequest,
     canMergePullRequest,
     readPullDiffCache,
     writePullDiffCache,
@@ -23,6 +24,12 @@ describe('pull request loading', () => {
     test('lets project maintainers merge pull requests', () => {
         expect(canMergePullRequest({myRole: 'maintainer'})).toBe(true);
         expect(canMergePullRequest({myRole: 'viewer'})).toBe(false);
+    });
+
+    test('lets the fork owner and target maintainers close pull requests', () => {
+        expect(canClosePullRequest({}, {sourceOwner: 'Mist'}, {username: 'mist'})).toBe(true);
+        expect(canClosePullRequest({myRole: 'maintainer'}, {}, {username: 'someone'})).toBe(true);
+        expect(canClosePullRequest({}, {canClose: false, sourceOwner: 'Mist'}, {username: 'mist'})).toBe(false);
     });
 
     test('builds the files view from server inspection without workspace downloads', async () => {
