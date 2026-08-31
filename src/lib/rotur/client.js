@@ -43,7 +43,7 @@ const PRESENCE_PERMISSION = 'account:profile';
 const LOGIN_PERMISSIONS = REQUIRED_PERMISSIONS;
 const LOGIN_SYSTEM = 'mistwarp';
 const ACTIVITY_ID = 'MistWarp';
-const APP_URL = 'https://warp.mistium.com';
+const APP_URL = 'https://mistwarp.org';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
 
 /** @type {Rotur|null} */

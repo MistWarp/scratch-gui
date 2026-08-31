@@ -3,7 +3,7 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 
-const API_BASE = 'https://mwapi.mistium.com/api';
+const API_BASE = 'https://api.mistwarp.org/v1';
 
 const SESSION_KEY = 'mw:mistwarp-session';
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
@@ -418,8 +418,8 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
 
 const fetchWorkspace = async url => {
     const path = String(url)
-        .replace(/^https?:\/\/[^/]+\/api/, '')
-        .replace(/^\/api/, '');
+        .replace(/^https?:\/\/[^/]+\/(?:v1|api)/, '')
+        .replace(/^\/(?:v1|api)/, '');
     const response = await request(path, {raw: true, cache: false});
     if (!response.ok) throw new Error(`Could not load MistWarp history (${response.status})`);
     return response.blob();

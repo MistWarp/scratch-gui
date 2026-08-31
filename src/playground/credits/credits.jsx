@@ -59,7 +59,7 @@ const projects = {
 
 const links = {
     TurboWarp: 'https://turbowarp.org/',
-    MistWarp: 'https://warp.mistium.org/'
+    MistWarp: 'https://mistwarp.org/'
 };
 
 const getBaseChain = name => {

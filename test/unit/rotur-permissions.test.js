@@ -1,7 +1,7 @@
 import {buildAuthUrl} from '../../src/lib/rotur/client.js';
 
 test('MistWarp requests its complete stable Rotur permission set at login', () => {
-    const url = new URL(buildAuthUrl('https://warp.mistium.com/explore'));
+    const url = new URL(buildAuthUrl('https://mistwarp.org/explore'));
     const permissions = url.searchParams.get('requires').split(',');
     const required = [
         'account:view',
@@ -21,7 +21,7 @@ test('MistWarp requests its complete stable Rotur permission set at login', () =
         'groups:manage'
     ];
 
-    expect(url.searchParams.get('return_to')).toBe('https://warp.mistium.com/explore');
+    expect(url.searchParams.get('return_to')).toBe('https://mistwarp.org/explore');
     expect(new Set(permissions).size).toBe(permissions.length);
     required.forEach(permission => expect(permissions).toContain(permission));
 });

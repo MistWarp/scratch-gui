@@ -1,6 +1,6 @@
 # MistWarp editor
 
-This repository contains the browser editor used by [MistWarp](https://warp.mistium.com/). It is based on Scratch GUI and TurboWarp, with MistWarp's community, collaboration, project settings, and developer tools built in.
+This repository contains the browser editor used by [MistWarp](https://mistwarp.org/). It is based on Scratch GUI and TurboWarp, with MistWarp's community, collaboration, project settings, and developer tools built in.
 
 ## Requirements
 

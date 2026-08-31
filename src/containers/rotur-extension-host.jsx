@@ -44,7 +44,7 @@ class RoturExtensionHost extends React.Component {
             projectName: () => this.props.projectTitle || '',
             projectImage: () => {
                 const id = this.getProjectId();
-                return id ? `https://mwapi.mistium.com/thumbnails/${encodeURIComponent(id)}.png` : '';
+                return id ? `https://api.mistwarp.org/thumbnails/${encodeURIComponent(id)}.png` : '';
             },
             grantedScopes: () => grantedScopesFor({name: this.props.vm.runtime.projectName || ''})
         };

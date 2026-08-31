@@ -92,9 +92,9 @@ const SpaceLink = ({id}) => {
 export const internalMistWarpRoute = destination => {
     try {
         if (destination.startsWith('//')) return null;
-        const base = typeof window === 'undefined' ? 'https://warp.mistium.com' : window.location.origin;
+        const base = typeof window === 'undefined' ? 'https://mistwarp.org' : window.location.origin;
         const parsed = new URL(destination, base);
-        const localHosts = ['warp.mistium.com'];
+        const localHosts = ['mistwarp.org', 'warp.mistium.com'];
         if (typeof window !== 'undefined') localHosts.push(window.location.host);
         if (!localHosts.includes(parsed.host)) return null;
         if (!PUBLIC_ROUTES.some(pattern => pattern.test(parsed.pathname))) return null;

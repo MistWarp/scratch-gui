@@ -57,7 +57,7 @@ test('editor project loads use the permission checked endpoint', async () => {
     }));
 
     await expect(getEditorProject('project-1')).resolves.toMatchObject({project: {id: 'project-1'}});
-    expect(window.fetch.mock.calls[0][0]).toBe('https://mwapi.mistium.com/api/projects/project-1/editor');
+    expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/projects/project-1/editor');
 });
 
 test('the editor reads paid limits from the MistWarp perks endpoint', async () => {
@@ -68,7 +68,7 @@ test('the editor reads paid limits from the MistWarp perks endpoint', async () =
     }));
 
     await expect(getPerks()).resolves.toMatchObject({current: {tier: 'Plus'}});
-    expect(window.fetch.mock.calls[0][0]).toBe('https://mwapi.mistium.com/api/perks');
+    expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/perks');
 });
 
 test('theme marketplace uses WarpTheme while trash stays on the MistWarp API', async () => {
@@ -96,10 +96,10 @@ test('theme marketplace uses WarpTheme while trash stays on the MistWarp API', a
         ['https://warptheme.mistium.com/api/theme?uuid=theme%20one', 'GET'],
         ['https://warptheme.mistium.com/api/theme/download?uuid=theme%20one&platform=mistwarp', 'GET'],
         ['https://warptheme.mistium.com/api/themes?platform=mistwarp&sort=likes', 'GET'],
-        ['https://mwapi.mistium.com/api/me/trash', 'GET'],
-        ['https://mwapi.mistium.com/api/projects/project one/restore', 'POST']
+        ['https://api.mistwarp.org/v1/me/trash', 'GET'],
+        ['https://api.mistwarp.org/v1/projects/project one/restore', 'POST']
     ]);
-    expect(window.fetch.mock.calls.some(call => call[0].includes('mwapi.mistium.com/api/themes'))).toBe(false);
+    expect(window.fetch.mock.calls.some(call => call[0].includes('api.mistwarp.org/v1/themes'))).toBe(false);
 });
 
 test('direct project uploads omit assets already stored by the server', async () => {
@@ -146,7 +146,7 @@ test('space browsing sends pagination and encoded search parameters', async () =
 
     await api.spaces({kind: 'challenge', q: 'game jam', offset: 24, limit: 12});
     expect(window.fetch.mock.calls[0][0]).toBe(
-        'https://mwapi.mistium.com/api/spaces?kind=challenge&q=game%20jam&offset=24&limit=12'
+        'https://api.mistwarp.org/v1/spaces?kind=challenge&q=game%20jam&offset=24&limit=12'
     );
 });
 
@@ -164,7 +164,7 @@ test('challenge calendar requests send their bounded date window', async () => {
         endsAfter: 1789772400000
     });
     expect(window.fetch.mock.calls[0][0]).toBe(
-        'https://mwapi.mistium.com/api/spaces?kind=challenge&q=&offset=0&limit=100&startsBefore=1798761599999&endsAfter=1789772400000'
+        'https://api.mistwarp.org/v1/spaces?kind=challenge&q=&offset=0&limit=100&startsBefore=1798761599999&endsAfter=1789772400000'
     );
 });
 
@@ -181,10 +181,10 @@ test('profile projects and libraries send bounded pagination parameters', async 
     await api.userReviews('A name');
 
     expect(window.fetch.mock.calls.map(call => call[0])).toEqual([
-        'https://mwapi.mistium.com/api/users/A%20name/projects?offset=24&limit=12',
-        'https://mwapi.mistium.com/api/me/library?offset=48&limit=24',
-        'https://mwapi.mistium.com/api/users/A%20name/projects?all=1&offset=12&limit=6',
-        'https://mwapi.mistium.com/api/users/A%20name/reviews?limit=6'
+        'https://api.mistwarp.org/v1/users/A%20name/projects?offset=24&limit=12',
+        'https://api.mistwarp.org/v1/me/library?offset=48&limit=24',
+        'https://api.mistwarp.org/v1/users/A%20name/projects?all=1&offset=12&limit=6',
+        'https://api.mistwarp.org/v1/users/A%20name/reviews?limit=6'
     ]);
 });
 
@@ -199,8 +199,8 @@ test('comment feeds send pagination, anchors, and full-list requests', async () 
     await api.spaceComments('space-1', {all: true});
 
     expect(window.fetch.mock.calls.map(call => call[0])).toEqual([
-        'https://mwapi.mistium.com/api/projects/project-1/comments?offset=20&limit=20&anchor=reply+1',
-        'https://mwapi.mistium.com/api/spaces/space-1/comments?all=1'
+        'https://api.mistwarp.org/v1/projects/project-1/comments?offset=20&limit=20&anchor=reply+1',
+        'https://api.mistwarp.org/v1/spaces/space-1/comments?all=1'
     ]);
 });
 
@@ -217,10 +217,10 @@ test('profile comment mutations and legacy project lists encode usernames', asyn
     await api.reactProfileComment('A name', 'comment-1', 'heart');
 
     expect(window.fetch.mock.calls.map(call => call[0])).toEqual([
-        'https://mwapi.mistium.com/api/users/A%20name/projects?all=1',
-        'https://mwapi.mistium.com/api/users/A%20name/comments',
-        'https://mwapi.mistium.com/api/users/A%20name/comments/comment-1',
-        'https://mwapi.mistium.com/api/users/A%20name/comments/comment-1/react'
+        'https://api.mistwarp.org/v1/users/A%20name/projects?all=1',
+        'https://api.mistwarp.org/v1/users/A%20name/comments',
+        'https://api.mistwarp.org/v1/users/A%20name/comments/comment-1',
+        'https://api.mistwarp.org/v1/users/A%20name/comments/comment-1/react'
     ]);
 });
 
