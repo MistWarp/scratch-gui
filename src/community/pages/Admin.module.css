@@ -6,62 +6,9 @@
 
 .layout {
     display: grid;
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 230px minmax(0, 1fr);
     gap: 24px;
     align-items: start;
-}
-
-.sidebar {
-    display: grid;
-    gap: 6px;
-    padding: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.sidebarItem,
-.sidebarActive {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-dim);
-    font: inherit;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-}
-
-.sidebarActive {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
-.sidebarItem:hover {
-    background: var(--bg-raised);
-    color: var(--mw-text);
-}
-
-.sidebarLabel {
-    flex: 1;
-}
-
-.sidebarCount {
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 6px;
-    background: #e25555;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
 }
 
 .content {
@@ -72,6 +19,7 @@
     .layout {
         grid-template-columns: 1fr;
     }
+
 }
 
 .page h1 {
@@ -189,6 +137,24 @@
     display: flex;
     gap: 8px;
     margin-bottom: 4px;
+}
+
+.userToolbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    color: var(--text-dim);
+    font-size: 13px;
 }
 
 .input {
@@ -600,6 +566,13 @@
     font-size: 12px;
 }
 
+.section-heading .secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
 .primary-stat-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -881,4 +854,89 @@
     color: var(--mw-text);
     font-size: 12px;
     white-space: pre;
+}
+
+.storageGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.storagePanel {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.storageHeader {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.storageHeader h4 {margin: 0; color: var(--text-dim); font-size: 12px;}
+.storageHeader strong {display: block; margin-top: 2px; font-size: 20px;}
+.storageHeader > span:last-child {color: var(--text-faint); font-size: 12px; text-align: right;}
+
+.storageIcon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.storageBar {
+    display: flex;
+    width: 100%;
+    height: 7px;
+    margin: 15px 0 12px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--bg-raised);
+}
+
+.storageBar > span {min-width: 2px;}
+.storageTypeAssets {background: #2d9cdb;}
+.storageTypeHistory {background: #8b7cf6;}
+.storageTypeProjectData {background: #36b37e;}
+.storageTypeDatabase {background: #e5a84b;}
+.storageTypeCache {background: #dc6d9a;}
+.storageTypeThumbnails {background: #5db4ad;}
+.storageTypeOther {background: #75808f;}
+
+.storageTypes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+}
+
+.storageTypes > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    font-size: 12px;
+}
+
+.storageTypes small {grid-column: 1 / -1; color: var(--text-faint);}
+.storageTypeName {color: var(--text-dim);}
+
+.memoryStats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 18px 0 0;
+}
+
+.memoryStats div {display: flex; justify-content: space-between; gap: 10px; color: var(--text-dim); font-size: 13px;}
+.memoryStats dd {margin: 0; color: var(--mw-text); font-weight: 600;}
+
+@media (max-width: 720px) {
+    .storageGrid {grid-template-columns: 1fr;}
+    .userToolbar {grid-template-columns: 1fr;}
 }

@@ -372,6 +372,13 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     git,
     expectedHead,
     pullId,
+    mergeSourceBranch,
+    mergeTargetBranch,
+    mergeSourceHead,
+    mergeTargetHead,
+    restoreCommit,
+    restoreMessage,
+    mergeTree,
     extensions
 } = {}) => {
     const form = new FormData();
@@ -383,6 +390,13 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     if (git) form.append('git', JSON.stringify(git));
     if (expectedHead) form.append('expectedHead', expectedHead);
     if (pullId) form.append('pullId', String(pullId));
+    if (mergeSourceBranch) form.append('mergeSourceBranch', mergeSourceBranch);
+    if (mergeTargetBranch) form.append('mergeTargetBranch', mergeTargetBranch);
+    if (mergeSourceHead) form.append('mergeSourceHead', mergeSourceHead);
+    if (mergeTargetHead) form.append('mergeTargetHead', mergeTargetHead);
+    if (restoreCommit) form.append('restoreCommit', restoreCommit);
+    if (restoreMessage) form.append('restoreMessage', restoreMessage);
+    if (mergeTree) form.append('mergeTree', mergeTree, 'merged-tree.zip');
     if (thumbnailBlob) {
         form.append('thumbnail', thumbnailBlob, 'thumb.png');
     }

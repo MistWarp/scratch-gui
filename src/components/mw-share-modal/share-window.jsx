@@ -2,6 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
+import {getRepoChanges} from '../../lib/git/browser-git.js';
+import {ensureProjectHistoryHydrated} from '../../lib/git/project-history.js';
+import {getFractchGitDiff} from '../../lib/git/fractch-diff.js';
+import {generateCommitName} from '../../lib/sable/smart-features.js';
 import Markdown from '../../community/components/Markdown.jsx';
 import styles from './share-window.css';
 
@@ -28,7 +32,6 @@ class ShareWindow extends React.Component {
         this.state = {
             title: props.initialTitle || 'Untitled',
             changeMessage: '',
-            skipVersion: false,
             thumbnail: null,
             thumbnailBlob: null,
             status: null,
@@ -62,10 +65,32 @@ class ShareWindow extends React.Component {
         this.setState({title: event.target.value});
     }
     handleChangeMessage (event) {
-        this.setState({changeMessage: event.target.value, skipVersion: false});
+        this.setState({changeMessage: event.target.value});
     }
-    handleSkipVersion () {
-        this.setState({skipVersion: true}, this.handlePublish);
+    async handleSkipVersion () {
+        if (this.state.status) return;
+        this.setState({status: 'Writing a commit name', phase: 'name', error: null});
+        try {
+            await ensureProjectHistoryHydrated(this.props.vm);
+            const changes = await getRepoChanges(this.props.vm);
+            const diff = await getFractchGitDiff(changes);
+            const result = await generateCommitName(diff);
+            const notice = typeof result.balance === 'number' && result.balance >= 0 ?
+                `Sable named this version. ${result.balance} SC left.` :
+                'Sable named this version.';
+            this.setState({
+                changeMessage: result.name,
+                status: null,
+                phase: null,
+                notice
+            }, this.handlePublish);
+        } catch (error) {
+            this.setState({
+                status: null,
+                phase: null,
+                error: error.message || 'Sable could not name this version.'
+            });
+        }
     }
     prepareThumbnail (thumbnail) {
         this.thumbnailPreparationSource = thumbnail;
@@ -109,7 +134,7 @@ class ShareWindow extends React.Component {
             return;
         }
         const isUpdate = this.props.action === 'update';
-        if (isUpdate && !this.state.skipVersion && !this.state.changeMessage.trim()) {
+        if (isUpdate && !this.state.changeMessage.trim()) {
             this.setState({error: 'Add a short note about what changed.'});
             return;
         }
@@ -169,7 +194,7 @@ class ShareWindow extends React.Component {
                 vm: this.props.vm,
                 title: isUpdate ? null : this.state.title,
                 changeMessage: this.state.changeMessage,
-                commitChanges: !this.state.skipVersion,
+                commitChanges: true,
                 thumbnailBlob,
                 updateOnly: isUpdate,
                 onProgress: this.handleProgress
@@ -251,7 +276,9 @@ class ShareWindow extends React.Component {
         const hasUploadTotal = uploading && this.state.total > 0;
         const uploadComplete = hasUploadTotal && this.state.loaded >= this.state.total;
         let detail = 'Nothing has been uploaded yet.';
-        if (this.state.phase === 'register') {
+        if (this.state.phase === 'name') {
+            detail = 'Sending the changed Fractch diff directly to Sable Spark.';
+        } else if (this.state.phase === 'register') {
             detail = 'Setting up the project page.';
         } else if (this.state.phase === 'package') {
             detail = 'Compressing the project and its version history on this device.';
@@ -379,6 +406,10 @@ class ShareWindow extends React.Component {
                             placeholder="For example: Added a new level"
                             onChange={this.handleChangeMessage}
                         />
+                        <p className={styles.notice}>
+                            {'Write the name yourself, or click Skip to have Sable name this version ' +
+                                'from the Fractch diff.'}
+                        </p>
                         {this.renderStatus()}
                         {this.renderError()}
                     </div>

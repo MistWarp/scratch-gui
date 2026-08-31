@@ -4,6 +4,7 @@ const API_BASE = 'https://mwapi.mistium.com/api';
 const AVATARS = 'https://avatars.rotur.dev';
 const DEFAULT_IMAGE = 'https://warp.mistium.com/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
+const STATIC_FILE_PATH = /^\/(?:js|static\/assets)\//;
 
 const STATIC_META = {
     '/spaces': {
@@ -166,12 +167,23 @@ export const onRequest = async context => {
     const {request, next} = context;
     const url = new URL(request.url);
 
+    const response = await next();
+    const contentType = response.headers.get('content-type') || '';
+    if (STATIC_FILE_PATH.test(url.pathname) && contentType.includes('text/html')) {
+        return new Response('Not found', {
+            status: 404,
+            headers: {
+                'Cache-Control': 'no-store',
+                'Content-Type': 'text/plain; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff'
+            }
+        });
+    }
+
     const metaPromise = metaForPath(url.pathname);
     if (!STATIC_META[url.pathname.replace(/\/+$/, '') || '/'] &&
-        !/^\/(?:project|users|spaces)\//.test(url.pathname)) return next();
-
-    const response = await next();
-    if (!(response.headers.get('content-type') || '').includes('text/html')) return response;
+        !/^\/(?:project|users|spaces)\//.test(url.pathname)) return response;
+    if (!contentType.includes('text/html')) return response;
 
     const meta = await metaPromise;
     if (!meta) return response;

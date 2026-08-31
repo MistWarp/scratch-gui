@@ -27,6 +27,12 @@
     cursor: pointer;
 }
 
+.item > span:first-of-type,
+.active > span:first-of-type {
+    min-width: 0;
+    white-space: nowrap;
+}
+
 .active {
     background: var(--accent-soft);
     color: var(--accent-strong);

@@ -1,8 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Code2, Eye, FileCode2, FileQuestion} from 'lucide-react';
-import {fetchWorkspace} from '../../lib/community/api.js';
-import {inspectMwpFiles} from '../../lib/git/mwp.js';
 import api from '../api.js';
 import FileBrowserTree from './FileBrowserTree.jsx';
 import styles from './ProjectFiles.module.css';
@@ -48,16 +46,12 @@ export const projectSnapshotCacheKey = project =>
     `${project.id || project.workspaceUrl}:${project.gitHead || 'HEAD'}:${project.workspaceUrl}`;
 
 export const canLoadProjectSnapshot = project => Boolean(
-    (project.id && project.gitHead) || project.workspaceUrl
+    project.id && project.gitHead
 );
 
 export const canCacheProjectSnapshot = project => (
     project.shared === true && (project.visibility || 'public') === 'public' &&
     Number(project.price || 0) <= 0
-);
-
-export const shouldFallbackToWorkspace = (project, error) => Boolean(
-    project.workspaceUrl && !(project.id && project.gitHead) && (!error.status || error.status === 404)
 );
 
 const rememberSnapshot = (key, request) => {
@@ -71,10 +65,7 @@ const loadSnapshot = project => {
     const key = projectSnapshotCacheKey(project);
     const cacheable = canCacheProjectSnapshot(project);
     if (!cacheable || !snapshotCache.has(key)) {
-        const remoteSnapshot = project.id && project.gitHead ?
-            api.commitTree(project.id, project.gitHead) :
-            Promise.reject(new Error('The project does not have a server-side commit yet.'));
-        const request = remoteSnapshot
+        const request = api.commitTree(project.id, project.gitHead)
             .then(result => ({
                 head: result.sha,
                 remote: true,
@@ -84,11 +75,6 @@ const loadSnapshot = project => {
                     mediaType: mediaTypeForPath(file.path)
                 }))
             }))
-            .catch(error => {
-                if (!shouldFallbackToWorkspace(project, error)) throw error;
-                return fetchWorkspace(project.workspaceUrl)
-                    .then(workspace => inspectMwpFiles({workspace, oid: project.gitHead || ''}));
-            })
             .catch(error => {
                 if (cacheable) snapshotCache.delete(key);
                 throw error;
@@ -232,7 +218,7 @@ const formatSize = value => {
     return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const ProjectFiles = ({project, onCount, initialPath, onSelectPath}) => {
+const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) => {
     const [snapshot, setSnapshot] = useState(null);
     const [error, setError] = useState('');
     const [selectedPath, setSelectedPath] = useState('');
@@ -318,7 +304,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath}) => {
     if (!files.length) return <div className={styles.state}>This project has no files.</div>;
 
     return (
-        <section className={styles.browser}>
+        <section className={`${styles.browser} ${bounded ? styles.browserBounded : ''}`}>
             <FileBrowserTree files={files} selectedPath={selectedPath} onSelect={selectFile} showCount />
             <article className={styles.viewer}>
                 {selected ? (
@@ -389,6 +375,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath}) => {
 };
 
 ProjectFiles.propTypes = {
+    bounded: PropTypes.bool,
     project: PropTypes.object.isRequired,
     onCount: PropTypes.func,
     initialPath: PropTypes.string,
@@ -396,6 +383,7 @@ ProjectFiles.propTypes = {
 };
 
 ProjectFiles.defaultProps = {
+    bounded: false,
     onCount: () => {},
     initialPath: '',
     onSelectPath: () => {}

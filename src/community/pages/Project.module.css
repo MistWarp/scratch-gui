@@ -768,6 +768,17 @@
     display: none;
 }
 
+.versionControlLayout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.versionControlContent {
+    min-width: 0;
+}
+
 .commentsCol {
     min-width: 0;
     container: activity-tabs / inline-size;
@@ -1737,6 +1748,11 @@
 }
 
 @media (max-width: 620px) {
+    .versionControlLayout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
     .page {
         padding: 14px 12px 64px;
     }

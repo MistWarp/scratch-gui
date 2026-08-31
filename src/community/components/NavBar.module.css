@@ -8,8 +8,8 @@
 
 .inner {
     position: relative;
-    width: 100%;
-    margin: 0;
+    max-width: var(--maxw);
+    margin: 0 auto;
     height: 48px;
     display: flex;
     align-items: stretch;
