@@ -12,6 +12,7 @@ import api from '../community/api';
 import GameMarketplaceModal from '../community/components/GameMarketplaceModal.jsx';
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {MULTIPLAYER_ENABLED} from '../lib/mistwarp-games/config.js';
+import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
 
 class MistWarpGameHost extends React.Component {
     constructor (props) {
@@ -22,6 +23,7 @@ class MistWarpGameHost extends React.Component {
         this.listeners = new Set();
         this.draftSave = {};
         this.draftSaveRevision = 0;
+        this.handleBlockProject = this.handleBlockProject.bind(this);
         this.handleMarketplaceResult = this.handleMarketplaceResult.bind(this);
     }
 
@@ -140,6 +142,9 @@ class MistWarpGameHost extends React.Component {
             return grantProjectItem(projectId, 'editor', request.item, request.requestId);
         }
         if (method === 'marketplace.open' || method === 'marketplace.purchase') {
+            if (isProjectPromptBlocked({id: projectId})) {
+                return Promise.resolve({status: 'blocked'});
+            }
             return new Promise(resolve => {
                 this.setState({
                     marketplace: {
@@ -202,6 +207,13 @@ class MistWarpGameHost extends React.Component {
         this.setState({marketplace: null});
     }
 
+    handleBlockProject () {
+        const marketplace = this.state.marketplace;
+        if (!marketplace) return;
+        blockProjectPrompts({id: marketplace.projectId});
+        this.handleMarketplaceResult({status: 'blocked'});
+    }
+
     render () {
         const marketplace = this.state.marketplace;
         return (
@@ -210,6 +222,7 @@ class MistWarpGameHost extends React.Component {
                     <GameMarketplaceModal
                         projectId={marketplace.projectId}
                         productId={marketplace.productId}
+                        onBlockProject={this.handleBlockProject}
                         onResult={this.handleMarketplaceResult}
                     />
                 ) : null}

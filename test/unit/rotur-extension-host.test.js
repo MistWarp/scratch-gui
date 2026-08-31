@@ -17,7 +17,16 @@ jest.mock('../../src/lib/rotur/identity.js', () => ({
 }));
 
 import {callRotur, commitGrant} from '../../src/lib/rotur/extension-bridge.js';
+import {
+    BLOCKED_PROJECT_PROMPTS_KEY,
+    isProjectPromptBlocked
+} from '../../src/lib/project-prompt-blocking.js';
 import {RoturExtensionHost} from '../../src/containers/rotur-extension-host.jsx';
+
+beforeEach(() => {
+    localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
+    sessionStorage.removeItem('mw:mistwarp-current-project');
+});
 
 test('trusted projects skip Rotur permission prompts', async () => {
     const host = new RoturExtensionHost({
@@ -70,6 +79,29 @@ test('authenticated reads expand scopes without prompting', async () => {
         authenticatedOnly: true
     }, ['credits:view']);
     expect(host.acquireModalLock).not.toHaveBeenCalled();
+});
+
+test('blocked projects cannot reopen Rotur prompts', async () => {
+    sessionStorage.setItem('mw:mistwarp-current-project', JSON.stringify({id: 'blocked-project'}));
+    const host = new RoturExtensionHost({
+        vm: {runtime: {}},
+        projectTitle: 'Blocked project'
+    });
+    const callback = jest.fn();
+    host.state.callback = callback;
+    host.handleBlocked();
+
+    expect(callback).toHaveBeenCalledWith(false);
+    expect(isProjectPromptBlocked({id: 'blocked-project'})).toBe(true);
+
+    await expect(host.ensureConsent(['posts:create'], {name: 'Blocked project'})).resolves.toBe(false);
+    await expect(host.ensureActivitySharing()).resolves.toBe(false);
+    await expect(host.call('me.transfer', ['other-user', 10], {
+        sensitive: true,
+        label: 'me.transfer'
+    })).rejects.toThrow('cancelled');
+
+    expect(host.state.type).toBe(null);
 });
 
 test('clears project activities when the editor host unmounts', async () => {

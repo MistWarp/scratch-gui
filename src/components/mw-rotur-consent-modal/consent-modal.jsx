@@ -35,6 +35,13 @@ const RoturConsentModal = props => {
                     <Box className={styles.buttons}>
                         <button
                             type="button"
+                            className={styles.blockButton}
+                            onClick={props.onBlocked}
+                        >
+                            {'Block this project'}
+                        </button>
+                        <button
+                            type="button"
                             className={styles.denyButton}
                             onClick={props.onShareNo}
                         >
@@ -114,6 +121,13 @@ const RoturConsentModal = props => {
                 <Box className={styles.buttons}>
                     <button
                         type="button"
+                        className={styles.blockButton}
+                        onClick={props.onBlocked}
+                    >
+                        {'Block this project'}
+                    </button>
+                    <button
+                        type="button"
                         className={styles.denyButton}
                         onClick={props.onDenied}
                     >
@@ -137,6 +151,7 @@ RoturConsentModal.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
     onAllowed: PropTypes.func,
+    onBlocked: PropTypes.func.isRequired,
     onDenied: PropTypes.func,
     onShareThis: PropTypes.func,
     onShareAll: PropTypes.func,

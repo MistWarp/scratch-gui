@@ -64,6 +64,27 @@ describe('game marketplace purchases', () => {
         wrapper.unmount();
     });
 
+    test('offers a project block action', async () => {
+        const onBlockProject = jest.fn();
+        api.gameProducts.mockResolvedValue({products: []});
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <GameMarketplaceModal
+                    projectId="project-1"
+                    onBlockProject={onBlockProject}
+                    onResult={jest.fn()}
+                />
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        wrapper.find('button').filterWhere(button => button.text() === 'Block this project').simulate('click');
+        expect(onBlockProject).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
     test('clears stale products while a different project loads', async () => {
         let finishSecondLoad;
         api.gameProducts

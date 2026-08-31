@@ -2,7 +2,6 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {MemoryRouter} from 'react-router-dom';
 import {mount} from 'enzyme';
-import {Tags} from 'lucide-react';
 
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
@@ -10,20 +9,6 @@ jest.mock('../../src/community/api', () => ({
         updateProject: jest.fn().mockResolvedValue({project: {id: '123', tags: ['platformer', 'games']}})
     },
     projectUrl: id => `/project/${id}`
-}));
-jest.mock('../../src/community/suggest-project-tags.js', () => ({
-    loadLatestFractchSource: jest.fn().mockResolvedValue({
-        source: '// File: Stage.fractch\nproject source',
-        commitName: 'Add jumping',
-        commitSha: 'abc123456'
-    })
-}));
-jest.mock('../../src/lib/sable/smart-features.js', () => ({
-    suggestProjectTags: jest.fn().mockResolvedValue({
-        tags: ['platformer', 'games'],
-        charged: 0.04,
-        balance: 9.96
-    })
 }));
 
 import ProjectInfoPanel from '../../src/community/components/ProjectInfoPanel.jsx';
@@ -55,7 +40,7 @@ describe('ProjectInfoPanel tabs', () => {
         api.updateProject.mockClear();
     });
 
-    test('shows the source commit and SC cost before accepting and saving suggested tags', async () => {
+    test('keeps manual tag editing without a suggestion action', async () => {
         let wrapper;
         const onSaved = jest.fn();
         act(() => {
@@ -80,62 +65,21 @@ describe('ProjectInfoPanel tabs', () => {
         act(() => wrapper.find('button').filterWhere(button => button.text() === 'Edit details').props().onClick());
         wrapper.update();
 
-        const suggestButton = wrapper.find('button').filterWhere(button => button.text() === 'Suggest tags');
-        expect(suggestButton.find(Tags)).toHaveLength(1);
-        await act(async () => {
-            suggestButton.props().onClick();
-            await Promise.resolve();
-            await Promise.resolve();
-        });
+        expect(wrapper.find('button').filterWhere(button => button.text() === 'Suggest tags')).toHaveLength(0);
+        expect(wrapper.text()).toContain('Up to 10 tags.');
+        act(() => wrapper.find('input[placeholder="platformer game pixel-art"]').props().onChange({
+            target: {value: 'platformer game'}
+        }));
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Add jumping');
-        expect(wrapper.text()).toContain('abc1234');
-        expect(wrapper.text()).toContain('This request cost 0.04 SC.');
-        expect(wrapper.text()).toContain('#platformer');
-
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text().includes('Accept')).props().onClick();
+            wrapper.find('button').filterWhere(button => button.text() === 'Save').props().onClick();
             await Promise.resolve();
         });
         wrapper.update();
         expect(api.updateProject).toHaveBeenCalledWith('123', expect.objectContaining({
-            tags: ['platformer', 'games']
+            tags: ['platformer', 'game']
         }));
         expect(onSaved).toHaveBeenCalled();
-    });
-
-    test('cancels the full edit without saving suggested tags', async () => {
-        let wrapper;
-        act(() => {
-            wrapper = mount(
-                <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                    <ProjectInfoPanel
-                        project={{...defaultProject, title: 'Game', tags: [], gitHead: 'abc123456', isOwner: true}}
-                        onSaved={jest.fn()}
-                    />
-                </MemoryRouter>
-            );
-        });
-
-        act(() => wrapper.find('button[role="tab"]').at(1).props().onClick());
-        wrapper.update();
-        act(() => wrapper.find('button').filterWhere(button => button.text() === 'Edit details').props().onClick());
-        wrapper.update();
-        await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Suggest tags').props().onClick();
-            await Promise.resolve();
-            await Promise.resolve();
-        });
-        wrapper.update();
-
-        const cancel = wrapper.find('button').filterWhere(button => (
-            button.text().includes('Cancel') && !button.prop('disabled')
-        ));
-        expect(cancel).toHaveLength(1);
-        act(() => cancel.props().onClick());
-        wrapper.update();
-        expect(api.updateProject).not.toHaveBeenCalled();
-        expect(wrapper.find('input[placeholder="platformer game pixel-art"]')).toHaveLength(0);
     });
 });

@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Check, GitPullRequest, Pencil, Plus, Tags, Users, X, GitFork} from 'lucide-react';
+import {Check, GitPullRequest, Pencil, Plus, Users, X, GitFork} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
@@ -9,8 +9,6 @@ import SectionTabs from './SectionTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
-import {loadLatestFractchSource} from '../suggest-project-tags.js';
-import {suggestProjectTags} from '../../lib/sable/smart-features.js';
 import styles from './ProjectInfoPanel.module.css';
 
 const parseTags = text => {
@@ -41,11 +39,6 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     const [notes, setNotes] = useState(project.notes || '');
     const [credits, setCredits] = useState(project.credits || []);
     const [tagsText, setTagsText] = useState((project.tags || []).join(' '));
-    const [tagSuggestions, setTagSuggestions] = useState([]);
-    const [suggestingTags, setSuggestingTags] = useState(false);
-    const [tagSuggestionStatus, setTagSuggestionStatus] = useState('');
-    const [tagSuggestionCommit, setTagSuggestionCommit] = useState(null);
-    const [tagSuggestionCost, setTagSuggestionCost] = useState(null);
     const [compatibility, setCompatibility] = useState(project.compatibility || {mobile: false, keyboard: false, controller: false});
     const saveLocks = useRef(new Set());
     const currentProjectId = useRef(project.id);
@@ -55,11 +48,6 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
         setEditing(false);
         setSaving(false);
         setSaveError('');
-        setTagSuggestions([]);
-        setSuggestingTags(false);
-        setTagSuggestionStatus('');
-        setTagSuggestionCommit(null);
-        setTagSuggestionCost(null);
     }, [project.id]);
 
     const startEdit = () => {
@@ -67,10 +55,6 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
         setNotes(project.notes || '');
         setCredits(project.credits || []);
         setTagsText((project.tags || []).join(' '));
-        setTagSuggestions([]);
-        setTagSuggestionStatus('');
-        setTagSuggestionCommit(null);
-        setTagSuggestionCost(null);
         setCompatibility(project.compatibility || {mobile: false, keyboard: false, controller: false});
         setSaveError('');
         setEditing(true);
@@ -78,44 +62,10 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
 
     const cancelEdit = () => {
         setSaveError('');
-        setTagSuggestions([]);
-        setTagSuggestionStatus('');
-        setTagSuggestionCommit(null);
-        setTagSuggestionCost(null);
         setEditing(false);
     };
 
-    const suggestTags = async () => {
-        if (suggestingTags) return;
-        setSuggestingTags(true);
-        setTagSuggestionStatus('');
-        try {
-            const currentTags = parseTags(tagsText);
-            const committed = await loadLatestFractchSource(api, project);
-            const result = await suggestProjectTags({
-                title: project.title,
-                instructions,
-                notes,
-                existingTags: currentTags,
-                fractchSource: committed.source
-            });
-            const suggestions = result.tags.slice(0, Math.max(0, 10 - currentTags.length));
-            if (!suggestions.length) throw new Error('Sable did not return any tags that fit.');
-            setTagSuggestions(suggestions);
-            setTagSuggestionCommit({name: committed.commitName, sha: committed.commitSha});
-            const charged = Number(result.charged);
-            setTagSuggestionCost(Number.isFinite(charged) ? charged : null);
-        } catch (e) {
-            setTagSuggestions([]);
-            setTagSuggestionCommit(null);
-            setTagSuggestionCost(null);
-            setTagSuggestionStatus(e.message || 'Could not suggest tags.');
-        } finally {
-            setSuggestingTags(false);
-        }
-    };
-
-    const saveDetails = async tagsOverride => {
+    const saveDetails = async () => {
         const projectId = project.id;
         if (saveLocks.current.has(projectId)) return;
         saveLocks.current.add(projectId);
@@ -126,7 +76,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 instructions,
                 notes,
                 credits: credits.filter(c => c.who && c.who.trim()),
-                tags: tagsOverride || parseTags(tagsText),
+                tags: parseTags(tagsText),
                 compatibility
             });
             if (currentProjectId.current === projectId) {
@@ -143,11 +93,6 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
         }
     };
     const save = () => saveDetails();
-    const acceptTagSuggestions = () => {
-        const acceptedTags = parseTags(`${tagsText} ${tagSuggestions.join(' ')}`);
-        setTagsText(acceptedTags.join(' '));
-        return saveDetails(acceptedTags);
-    };
 
     const updateCredit = (i, field, value) => {
         setCredits(list => list.map((c, idx) => (idx === i ? {...c, [field]: value} : c)));
@@ -329,59 +274,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     <input
                                         className={styles.tagInput}
                                         value={tagsText}
-                                        disabled={saving || Boolean(tagSuggestions.length)}
+                                        disabled={saving}
                                         placeholder="platformer game pixel-art"
                                         onChange={e => setTagsText(e.target.value)}
                                     />
-                                    <div className={styles.tagEditorFooter}>
-                                        <p className={styles.fieldHint}>Separate tags with spaces. Up to 10.</p>
-                                        {!tagSuggestions.length ? (
-                                            <Button
-                                                variant="secondary"
-                                                className={styles.suggestTagsButton}
-                                                disabled={saving || parseTags(tagsText).length >= 10}
-                                                busy={suggestingTags}
-                                                busyLabel="Suggesting…"
-                                                onClick={suggestTags}
-                                            >
-                                                <Tags size={14} />
-                                                Suggest tags
-                                            </Button>
-                                        ) : null}
-                                    </div>
-                                    {tagSuggestions.length ? (
-                                        <div className={styles.tagSuggestions} aria-label="Suggested tags">
-                                            <p className={styles.tagSuggestionCommit}>
-                                                Suggested from <strong>{tagSuggestionCommit?.name || 'Untitled commit'}</strong>
-                                                {tagSuggestionCommit?.sha ? <code>{tagSuggestionCommit.sha.slice(0, 7)}</code> : null}
-                                            </p>
-                                            <div className={styles.tagSuggestionRow}>
-                                                {tagSuggestions.map(tag => (
-                                                    <span key={tag}>{`#${tag}`}</span>
-                                                ))}
-                                            </div>
-                                            <p className={styles.tagSuggestionCharge}>
-                                                {typeof tagSuggestionCost === 'number' ?
-                                                    `This request cost ${tagSuggestionCost} SC.` :
-                                                    'Sable did not report the SC cost.'}
-                                                {' '}Cancel discards all unsaved detail changes and does not refund this charge.
-                                            </p>
-                                            <div className={styles.tagSuggestionActions}>
-                                                <Button variant="secondary" disabled={saving} onClick={cancelEdit}>
-                                                    <X size={14} /> Cancel
-                                                </Button>
-                                                <Button
-                                                    variant="primary"
-                                                    busy={saving}
-                                                    busyLabel="Saving…"
-                                                    onClick={acceptTagSuggestions}
-                                                >
-                                                    <Check size={14} /> Accept
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                    {tagSuggestionStatus ? <p className={styles.tagSuggestionStatus} role="status">{tagSuggestionStatus}</p> : null}
+                                    <p className={styles.fieldHint}>Up to 10 tags.</p>
                                 </div>
                             ) : <div className={styles.tagRow}>
                                 {project.tags.map(tag => (
@@ -438,7 +335,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     variant="secondary"
                                     className={styles.panelContentAction}
                                     onClick={cancelEdit}
-                                    disabled={saving || suggestingTags || Boolean(tagSuggestions.length)}
+                                    disabled={saving}
                                 >
                                     <X size={14} />
                                     Cancel
@@ -448,7 +345,6 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     className={styles.panelSave}
                                     onClick={save}
                                     busy={saving}
-                                    disabled={suggestingTags || Boolean(tagSuggestions.length)}
                                     busyLabel="Saving…"
                                 >
                                     <Check size={14} />
