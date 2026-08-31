@@ -285,7 +285,12 @@ const api = {
             request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
         searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
         stats: (days = 30) => request(`/admin/stats?days=${encodeURIComponent(days)}`),
-        users: () => request('/admin/users'),
+        storage: () => request('/admin/storage'),
+        syncStorage: () => request('/admin/storage/sync', {method: 'POST'}),
+        users: ({q = '', offset = 0, limit = 30, sort = 'name'} = {}) => request(
+            `/admin/users?q=${encodeURIComponent(q)}&offset=${encodeURIComponent(offset)}` +
+            `&limit=${encodeURIComponent(limit)}&sort=${encodeURIComponent(sort)}`
+        ),
         payouts: () => request('/admin/payouts'),
         retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'}),
         extensions: () => request('/admin/extensions', {cache: false}),
@@ -375,9 +380,16 @@ const api = {
     deleteIdeaComment: (id, comment) => request(`/roadmap/${id}/comments/${comment}`, {method: 'DELETE'}),
     editIdeaComment: (id, commentId, content) => request(`/roadmap/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     commits: id => request(`/projects/${id}/commits`),
-    commitInspection: (id, sha) => request(
-        `/projects/${id}/commits/${encodeURIComponent(sha)}${projectAccessQuery()}`
-    ),
+    branches: id => request(`/projects/${id}/branches`),
+    mergeBranches: (id, source, target) => request(`/projects/${id}/branches/merge`, {
+        method: 'POST',
+        body: {source, target}
+    }),
+    commitInspection: (id, sha) => {
+        const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
+        params.set('inline', '1');
+        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}?${params.toString()}`);
+    },
     commitTree: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
         {cache: false}
@@ -413,11 +425,19 @@ const api = {
         request(`/bounties/${encodeURIComponent(id)}/comments/${comment}`, {method: 'DELETE'}),
     joinBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'POST'}),
     leaveBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'DELETE'}),
-    pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff`, {cache: false}),
+    pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff?inline=1`, {cache: false}),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
     closePull: (id, index) => request(`/projects/${id}/pulls/${index}/close`, {method: 'POST'}),
-    uploadPullMerge: (id, {sb3, mwp, git, expectedHead, pullId}) =>
-        uploadProject(id, sb3, null, null, {workspace: mwp, git, expectedHead, pullId}),
+    uploadPullMerge: (id, {sb3, mergeTree, expectedHead, pullId}) =>
+        uploadProject(id, sb3, null, null, {mergeTree, expectedHead, pullId}),
+    uploadBranchMerge: (id, {sb3, mergeTree, sourceBranch, targetBranch, sourceHead, targetHead}) =>
+        uploadProject(id, sb3, null, null, {
+            mergeTree,
+            mergeSourceBranch: sourceBranch,
+            mergeTargetBranch: targetBranch,
+            mergeSourceHead: sourceHead,
+            mergeTargetHead: targetHead
+        }),
     request
 };
 

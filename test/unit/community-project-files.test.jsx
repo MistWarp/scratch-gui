@@ -4,8 +4,7 @@ import {
     canLoadProjectSnapshot,
     highlightFractch,
     initiallyOpenFolders,
-    projectSnapshotCacheKey,
-    shouldFallbackToWorkspace
+    projectSnapshotCacheKey
 } from '../../src/community/components/ProjectFiles.jsx';
 
 describe('ProjectFiles', () => {
@@ -20,7 +19,7 @@ describe('ProjectFiles', () => {
 
     test('loads server-side commit trees without requiring a workspace archive', () => {
         expect(canLoadProjectSnapshot({id: 'project-1', gitHead: 'abc123'})).toBe(true);
-        expect(canLoadProjectSnapshot({workspaceUrl: 'https://example.com/workspace.mwp'})).toBe(true);
+        expect(canLoadProjectSnapshot({workspaceUrl: 'https://example.com/workspace.mwp'})).toBe(false);
         expect(canLoadProjectSnapshot({id: 'project-1'})).toBe(false);
     });
 
@@ -29,18 +28,6 @@ describe('ProjectFiles', () => {
         expect(canCacheProjectSnapshot({shared: true, visibility: 'unlisted', price: 0})).toBe(false);
         expect(canCacheProjectSnapshot({shared: true, visibility: 'public', price: 5})).toBe(false);
         expect(canCacheProjectSnapshot({shared: false, visibility: 'private', price: 0})).toBe(false);
-    });
-
-    test('does not download a workspace archive after a server failure', () => {
-        const project = {workspaceUrl: 'https://example.com/workspace.mwp'};
-        expect(shouldFallbackToWorkspace(project, {status: 404})).toBe(true);
-        expect(shouldFallbackToWorkspace(project, {status: 500})).toBe(false);
-        expect(shouldFallbackToWorkspace({
-            ...project,
-            id: 'project-1',
-            gitHead: 'a'.repeat(40)
-        }, {status: 404})).toBe(false);
-        expect(shouldFallbackToWorkspace({}, {status: 404})).toBe(false);
     });
 
     test('starts sprite source folders open and asset folders closed', () => {

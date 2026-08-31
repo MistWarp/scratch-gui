@@ -835,3 +835,30 @@
     background: var(--accent-soft);
     color: var(--accent-strong);
 }
+
+.adminPanel {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--accent) 5%, var(--bg-card));
+}
+
+.adminPanelHead {display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px;}
+.adminPanelHead span {color: var(--accent-strong); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;}
+.adminPanelHead h2 {margin: 2px 0 0; font-size: 18px;}
+.adminPanelHead > strong {padding: 5px 8px; border-radius: 7px; background: var(--bg-raised); font-size: 12px; text-transform: capitalize;}
+
+.adminFields {display: flex; align-items: flex-end; gap: 9px; margin-top: 10px;}
+.adminFields label {display: grid; gap: 5px; color: var(--text-dim); font-size: 12px; font-weight: 600;}
+.adminFields select,
+.adminFields input {min-height: 38px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--mw-text); font: inherit;}
+.adminReason {flex: 1;}
+.adminActions {display: flex; gap: 9px; margin-top: 12px;}
+.adminNote {margin: 10px 0 0; color: var(--text-dim); font-size: 13px;}
+
+@media (max-width: 600px) {
+    .adminFields {align-items: stretch; flex-direction: column;}
+    .adminFields label {width: 100%;}
+    .adminActions {flex-wrap: wrap;}
+}

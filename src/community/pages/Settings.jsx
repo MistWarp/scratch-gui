@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2} from 'lucide-react';
+import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, Sparkles} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
@@ -32,6 +32,10 @@ import api from '../api';
 import {analyticsEnabled, setAnalyticsEnabled} from '../analytics.js';
 import {LOCALES, useCommunityIntl} from '../i18n.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
+import {
+    getSmartFeaturesBalance,
+    topUpSmartFeatures
+} from '../../lib/sable/smart-features.js';
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
@@ -81,6 +85,7 @@ const matchesDeleteConfirmation = (value, username) => (
 const SECTIONS = [
     {key: 'theme', label: 'Theme', icon: Palette},
     {key: 'presence', label: 'Presence', icon: Radio},
+    {key: 'smart', label: 'Smart features', icon: Sparkles},
     {key: 'notifications', label: 'Notifications', icon: Bell},
     {key: 'privacy', label: 'Privacy', icon: Eye},
     {key: 'safety', label: 'Safety', icon: Shield},
@@ -170,6 +175,10 @@ const Settings = () => {
     const [privacyStatus, setPrivacyStatus] = useState('');
     const [privacyLoadError, setPrivacyLoadError] = useState(false);
     const [privacyAttempt, setPrivacyAttempt] = useState(0);
+    const [smartBalance, setSmartBalance] = useState(null);
+    const [smartRc, setSmartRc] = useState(null);
+    const [smartBusy, setSmartBusy] = useState('');
+    const [smartStatus, setSmartStatus] = useState('');
     const gameDataState = settingsLoadState(dataBusy === 'game-load', gameDataError);
     const dataContext = useRef((user && user.username) || '');
     dataContext.current = (user && user.username) || '';
@@ -194,6 +203,30 @@ const Settings = () => {
         setGameDataError('');
         setSaveToDelete(null);
     }, [user]);
+
+    useEffect(() => {
+        setSmartBalance(null);
+        setSmartRc(null);
+        setSmartStatus('');
+        setSmartBusy('');
+        if (!viewerName || activeSection !== 'smart') return () => {};
+        let cancelled = false;
+        setSmartBusy('balance');
+        getSmartFeaturesBalance()
+            .then(result => {
+                if (!cancelled) setSmartBalance(result.credits);
+                if (!cancelled) setSmartRc(result.rc);
+            })
+            .catch(error => {
+                if (!cancelled) setSmartStatus(error.message || 'Could not load your smart features balance.');
+            })
+            .finally(() => {
+                if (!cancelled) setSmartBusy('');
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [activeSection, viewerName]);
 
     const setActiveSection = section => {
         setSearchParams(settingsParamsForSection(searchParams, section));
@@ -343,6 +376,21 @@ const Settings = () => {
     const changeUsername = value => {
         setUsername(value);
         setUsernameOverride(value || null);
+    };
+    const topUpSmartBalance = async () => {
+        if (smartBusy) return;
+        setSmartBusy('topup');
+        setSmartStatus('');
+        try {
+            const result = await topUpSmartFeatures();
+            setSmartBalance(result.credits);
+            setSmartRc(result.rc);
+            setSmartStatus('Added 10 RC to your smart features balance.');
+        } catch (error) {
+            setSmartStatus(error.message || 'Could not add funds.');
+        } finally {
+            setSmartBusy('');
+        }
     };
     const changeAccentMenuBar = enabled => {
         setAccentMenuBar(enabled);
@@ -610,6 +658,41 @@ const Settings = () => {
                                     />
                                 ))}
                             </div>
+                        </section>
+                    ) : null}
+
+                    {activeSection === 'smart' ? (
+                        <section className={styles.card}>
+                            <h2>Smart features</h2>
+                            <p className={styles.lead}>Small optional helpers powered by Sable. Commit naming sends the changed Fractch diff only after you ask for it. Your projects and community posts stay yours.</p>
+                            {!user ? (
+                                <Button onClick={login}>Sign in with Rotur</Button>
+                            ) : (
+                                <React.Fragment>
+                                    <div className={styles.dataAction}>
+                                        <div>
+                                            <h3>Balance</h3>
+                                            <p>
+                                                <span>{smartBalance === -1 ? 'Unlimited Sable Credit' :
+                                                    (smartBalance === null ? 'Loading Sable Credit…' : `${smartBalance} SC available`)}</span>
+                                                {smartRc === null ? null : <span>{` · ${smartRc} RC in Rotur`}</span>}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            busy={smartBusy === 'topup'}
+                                            busyLabel="Adding…"
+                                            disabled={Boolean(smartBusy) || smartBalance === -1 ||
+                                                (typeof smartRc === 'number' && smartRc < 10)}
+                                            onClick={topUpSmartBalance}
+                                        >
+                                            Add 10 RC
+                                        </Button>
+                                    </div>
+                                    <p className={styles.note}>Adding funds moves 10 RC into Sable Credit. Sable deducts the exact model cost when a helper runs.</p>
+                                    <p className={styles.note}>Sable runs only when you leave a commit name blank and click Skip. It never reads ahead or drafts while you type.</p>
+                                </React.Fragment>
+                            )}
+                            {smartStatus ? <p className={styles.note} aria-live="polite">{smartStatus}</p> : null}
                         </section>
                     ) : null}
 

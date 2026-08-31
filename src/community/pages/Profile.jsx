@@ -135,6 +135,12 @@ const Profile = () => {
     const [commentsBusy, setCommentsBusy] = useState(false);
     const [reporting, setReporting] = useState(false);
     const [adminProjects, setAdminProjects] = useState([]);
+    const [adminUser, setAdminUser] = useState(null);
+    const [adminLevel, setAdminLevel] = useState('good');
+    const [adminReason, setAdminReason] = useState('');
+    const [adminMessage, setAdminMessage] = useState('');
+    const [adminBusy, setAdminBusy] = useState('');
+    const [adminNote, setAdminNote] = useState('');
     const [donating, setDonating] = useState(false);
     const [reviews, setReviews] = useState(null);
     const [safetyBusy, setSafetyBusy] = useState(false);
@@ -231,16 +237,48 @@ const Profile = () => {
     useEffect(() => {
         if (!user || !user.isAdmin) {
             setAdminProjects([]);
+            setAdminUser(null);
             return () => {};
         }
         let active = true;
-        api.myProjects(name)
-            .then(data => active && setAdminProjects(data.projects || []))
-            .catch(() => active && setAdminProjects([]));
+        api.admin.getUser(name)
+            .then(data => {
+                if (!active) return;
+                setAdminUser(data);
+                setAdminLevel((data.standing && data.standing.level) || 'good');
+                setAdminProjects(data.projects || []);
+            })
+            .catch(() => {
+                if (!active) return;
+                setAdminUser(null);
+                setAdminProjects([]);
+            });
         return () => {
             active = false;
         };
     }, [name, user]);
+
+    const refreshAdminUser = useCallback(async () => {
+        const data = await api.admin.getUser(name);
+        setAdminUser(data);
+        setAdminLevel((data.standing && data.standing.level) || 'good');
+        setAdminProjects(data.projects || []);
+    }, [name]);
+
+    const runAdminAction = useCallback(async (key, action, success) => {
+        if (adminBusy) return;
+        setAdminBusy(key);
+        setAdminNote('');
+        try {
+            await action();
+            await refreshAdminUser();
+            setAdminNote(success);
+        } catch (requestError) {
+            setAdminNote(requestError.message || 'Moderation action failed.');
+        } finally {
+            setAdminBusy('');
+        }
+    }, [adminBusy, refreshAdminUser]);
 
     useEffect(() => {
         if (!profile) return;
@@ -467,6 +505,79 @@ const Profile = () => {
                         <div className={styles.notOnMistwarp}>
                             Not on MistWarp yet. This is <UserLink username={profile.username || name}>{profile.username || name}</UserLink>&apos;s Rotur profile.
                         </div>
+                    ) : null}
+
+                    {user && user.isAdmin && adminUser ? (
+                        <section className={styles.adminPanel} aria-labelledby="profile-admin-heading">
+                            <div className={styles.adminPanelHead}>
+                                <div>
+                                    <span>Admin only</span>
+                                    <h2 id="profile-admin-heading">Moderate @{adminUser.username}</h2>
+                                </div>
+                                <strong>{adminUser.banned ? 'Banned' : (adminUser.standing?.level || 'Good standing')}</strong>
+                            </div>
+                            <div className={styles.adminFields}>
+                                <label>
+                                    <span>Account standing</span>
+                                    <select value={adminLevel} onChange={event => setAdminLevel(event.target.value)}>
+                                        {['good', 'warning', 'suspended', 'banned'].map(level => (
+                                            <option key={level} value={level}>{level}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label className={styles.adminReason}>
+                                    <span>Reason shown to the user</span>
+                                    <input value={adminReason} onChange={event => setAdminReason(event.target.value)} />
+                                </label>
+                                <Button
+                                    variant="secondary"
+                                    busy={adminBusy === 'standing'}
+                                    onClick={() => runAdminAction(
+                                        'standing',
+                                        () => api.admin.setStanding(adminUser.username, adminLevel, adminReason.trim()),
+                                        'Standing updated.'
+                                    )}
+                                >Apply</Button>
+                            </div>
+                            <div className={styles.adminFields}>
+                                <label className={styles.adminReason}>
+                                    <span>Private moderation message</span>
+                                    <input value={adminMessage} onChange={event => setAdminMessage(event.target.value)} />
+                                </label>
+                                <Button
+                                    variant="secondary"
+                                    disabled={!adminMessage.trim()}
+                                    busy={adminBusy === 'message'}
+                                    onClick={() => runAdminAction(
+                                        'message',
+                                        () => api.admin.messageUser(adminUser.username, adminMessage.trim()).then(() => setAdminMessage('')),
+                                        'Message sent.'
+                                    )}
+                                >Send message</Button>
+                            </div>
+                            <div className={styles.adminActions}>
+                                <Button
+                                    variant="secondary"
+                                    busy={adminBusy === 'comments'}
+                                    onClick={() => runAdminAction(
+                                        'comments',
+                                        () => api.admin.updateUserProfile(adminUser.username, {commentsOff: !adminUser.commentsOff}),
+                                        adminUser.commentsOff ? 'Profile comments enabled.' : 'Profile comments disabled.'
+                                    )}
+                                >{adminUser.commentsOff ? 'Enable comments' : 'Disable comments'}</Button>
+                                <Button
+                                    variant={adminUser.banned ? 'secondary' : 'danger'}
+                                    busy={adminBusy === 'ban'}
+                                    onClick={() => runAdminAction(
+                                        'ban',
+                                        () => (adminUser.banned ? api.admin.unban(adminUser.username) :
+                                            api.admin.ban(adminUser.username, adminReason.trim())),
+                                        adminUser.banned ? 'User unbanned.' : 'User banned.'
+                                    )}
+                                >{adminUser.banned ? 'Unban user' : 'Ban user'}</Button>
+                            </div>
+                            {adminNote ? <p className={styles.adminNote}>{adminNote}</p> : null}
+                        </section>
                     ) : null}
 
                     <div className={styles.tabs} role="tablist" aria-label="Profile content">

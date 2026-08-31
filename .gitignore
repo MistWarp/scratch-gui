@@ -11,6 +11,7 @@ npm-*
 
 # Build
 /build
+/deploy-build
 /dist
 /.opt-in
 

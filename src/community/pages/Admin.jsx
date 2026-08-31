@@ -2,12 +2,13 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    Activity, AlertTriangle, Ban, BarChart3, Eye, Flag, FolderOpen, HardDrive,
-    Heart, Newspaper, Puzzle, ShieldCheck, User
+    Activity, AlertTriangle, Ban, BarChart3, Cloud, Database, Eye, Flag, FolderOpen, HardDrive,
+    Heart, MemoryStick, Newspaper, Puzzle, RefreshCw, ShieldCheck, User
 } from 'lucide-react';
 import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import {timeAgo, formatBytes, formatDateTime, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
@@ -17,12 +18,14 @@ const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
 
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: BarChart3},
-    {key: 'reports', label: 'Reports', icon: Flag},
-    {key: 'users', label: 'Users', icon: User},
-    {key: 'projects', label: 'Projects', icon: FolderOpen},
-    {key: 'extensions', label: 'Extensions', icon: Puzzle},
-    {key: 'bans', label: 'Bans', icon: Ban},
-    {key: 'admins', label: 'Admins', icon: ShieldCheck}
+    {key: 'storage', label: 'Storage & runtime', icon: HardDrive, group: 'System'},
+    {key: 'activity', label: 'Activity', icon: Activity, group: 'System'},
+    {key: 'reports', label: 'Reports', icon: Flag, group: 'Moderation'},
+    {key: 'users', label: 'Users', icon: User, group: 'Moderation'},
+    {key: 'bans', label: 'Bans', icon: Ban, group: 'Moderation'},
+    {key: 'projects', label: 'Projects', icon: FolderOpen, group: 'Content'},
+    {key: 'extensions', label: 'Extensions', icon: Puzzle, group: 'Content'},
+    {key: 'admins', label: 'Admins', icon: ShieldCheck, group: 'Access'}
 ];
 
 const dayLabel = dayNumber => {
@@ -62,6 +65,51 @@ const num = v => Number(v || 0).toLocaleString();
 const percent = (part, total, digits = 1) => (total ? `${((part / total) * 100).toFixed(digits)}%` : '0%');
 const formatCompact = value => new Intl.NumberFormat([], {notation: 'compact', maximumFractionDigits: 1}).format(value);
 const formatLoadTime = value => (value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`);
+const STORAGE_LABELS = {
+    assets: 'Assets',
+    history: 'Project history',
+    projectData: 'Project data',
+    database: 'Database',
+    cache: 'Cache',
+    thumbnails: 'Thumbnails',
+    other: 'Other'
+};
+
+const StorageBreakdown = ({title, icon: Icon, data, detail}) => {
+    const types = data && data.types ? data.types : {};
+    const total = Number(data && data.bytes) || 0;
+    const rows = Object.entries(types)
+        .filter(([, bytes]) => Number(bytes) > 0)
+        .sort((a, b) => Number(b[1]) - Number(a[1]));
+    return (
+        <article className={styles.storagePanel}>
+            <header className={styles.storageHeader}>
+                <span className={styles.storageIcon}><Icon size={18} /></span>
+                <div><h4>{title}</h4><strong>{formatBytes(total)}</strong></div>
+                {detail ? <span>{detail}</span> : null}
+            </header>
+            <div className={styles.storageBar} aria-label={`${title} composition`}>
+                {rows.map(([type, bytes]) => (
+                    <span
+                        key={type}
+                        className={styles[`storageType${type[0].toUpperCase()}${type.slice(1)}`] || styles.storageTypeOther}
+                        style={{width: `${(Number(bytes) / total) * 100}%`}}
+                        title={`${STORAGE_LABELS[type] || type}: ${percent(bytes, total)}`}
+                    />
+                ))}
+            </div>
+            <div className={styles.storageTypes}>
+                {rows.length ? rows.map(([type, bytes]) => (
+                    <div key={type}>
+                        <span className={styles.storageTypeName}>{STORAGE_LABELS[type] || type}</span>
+                        <strong>{percent(bytes, total)}</strong>
+                        <small>{formatBytes(bytes)}</small>
+                    </div>
+                )) : <p>No data stored.</p>}
+            </div>
+        </article>
+    );
+};
 
 const AnalyticsChart = ({
     title, description, series, yLabel, formatValue = num, accent = 'var(--accent)', estimateToday = false
@@ -265,8 +313,11 @@ const AdminActionDialog = ({dialog, busy, error, onChange, onCancel, onConfirm})
 
 export {AdminActionDialog};
 
-const StatsOverview = () => {
+const StatsOverview = ({view}) => {
     const [stats, setStats] = useState(null);
+    const [storage, setStorage] = useState(null);
+    const [storageError, setStorageError] = useState('');
+    const [storageSyncBusy, setStorageSyncBusy] = useState(false);
     const [quota, setQuota] = useState(null);
     const [error, setError] = useState('');
     const [days, setDays] = useState(30);
@@ -303,6 +354,28 @@ const StatsOverview = () => {
     }, [days]);
 
     useEffect(() => {
+        if (view !== 'storage') return () => {};
+        let active = true;
+        setStorageError('');
+        api.admin.storage()
+            .then(result => {
+                if (active) {
+                    const nextStorage = result.storage || null;
+                    setStorage(nextStorage);
+                    if (nextStorage && nextStorage.inventorySync && nextStorage.inventorySync.ok === false) {
+                        setStorageError(nextStorage.inventorySync.error || 'Could not sync the R2 inventory.');
+                    }
+                }
+            })
+            .catch(e => {
+                if (active) setStorageError(e.message || 'Could not load storage stats.');
+            });
+        return () => {
+            active = false;
+        };
+    }, [view]);
+
+    useEffect(() => {
         let active = true;
         api.quota()
             .then(result => {
@@ -334,11 +407,25 @@ const StatsOverview = () => {
         }
     };
 
+    const syncR2Storage = async () => {
+        if (storageSyncBusy) return;
+        setStorageSyncBusy(true);
+        setStorageError('');
+        try {
+            const result = await api.admin.syncStorage();
+            if (mounted.current) setStorage(result.storage || null);
+        } catch (e) {
+            if (mounted.current) setStorageError(e.message || 'Could not sync the R2 inventory.');
+        } finally {
+            if (mounted.current) setStorageSyncBusy(false);
+        }
+    };
+
     if (error && !stats) {
-        return <div><h2>Overview</h2><p className={styles.error}>{error}</p></div>;
+        return <div><h2>Stats</h2><p className={styles.error}>{error}</p></div>;
     }
     if (!stats) {
-        return <div><h2>Overview</h2><p className={styles.status}>Loading…</p></div>;
+        return <div><h2>Stats</h2><p className={styles.status}>Loading…</p></div>;
     }
     const projectSeries = buildSeries(stats.projectsByDay, days);
     const updateSeries = buildSeries(stats.projectUpdatesByDay, days);
@@ -372,16 +459,21 @@ const StatsOverview = () => {
         link.click();
         URL.revokeObjectURL(url);
     };
+    const viewHeading = {
+        overview: ['Overview', 'Current platform health and totals.'],
+        storage: ['Storage & runtime', 'Local cache, durable R2 objects, upload queue, and memory.'],
+        activity: ['Activity', 'Traffic, publishing, sessions, and player performance over time.']
+    }[view || 'overview'];
 
     return (
         <div>
             <header className={styles.overviewHeader}>
                 <div>
-                    <span className={styles.eyebrow}>Admin dashboard</span>
-                    <h2>System overview</h2>
-                    <p>Account, project, and player health in one place.</p>
+                    <span className={styles.eyebrow}>System</span>
+                    <h2>{viewHeading[0]}</h2>
+                    <p>{viewHeading[1]}</p>
                 </div>
-                <div className={styles.rangePicker} aria-label="Analytics date range">
+                {(!view || view === 'activity') ? <div className={styles.rangePicker} aria-label="Analytics date range">
                     {[7, 30, 90, 365].map(option => (
                         <button
                             key={option}
@@ -393,243 +485,303 @@ const StatsOverview = () => {
                             {option === 365 ? '1 year' : `${option} days`}
                         </button>
                     ))}
-                </div>
+                </div> : null}
             </header>
             {statsBusy ? <p className={styles.refreshStatus}>Updating charts…</p> : null}
             {error ? <p className={styles.error}>{error}</p> : null}
 
-            {(stats.pendingPayouts > 0 || (quota && (quota.used / quota.limit) * 100 >= 80)) ? (
-                <div className={styles.alerts} aria-label="Items needing attention">
-                    {stats.pendingPayouts > 0 ? (
-                        <div className={styles.quotaWarning}>
-                            <AlertTriangle size={16} />
-                            <span>
-                                {stats.pendingPayouts} creator payout{stats.pendingPayouts === 1 ? '' : 's'} failed.
-                                {' '}{Math.round((stats.pendingPayoutAmount || 0) * 100) / 100} credits are still owed.
-                            </span>
+            {view === 'storage' && storage ? (
+                <section className={styles.overviewSection} aria-labelledby="admin-storage-heading">
+                    <div className={styles.sectionHeading}>
+                        <div>
+                            <h3 id="admin-storage-heading">Storage and memory</h3>
+                            <p>Local disk is the hot layer. R2 holds durable, content-addressed objects.</p>
+                        </div>
+                        {storage.r2Configured ? (
                             <button
+                                type="button"
                                 className={styles.secondary}
-                                onClick={retryPayouts}
-                                disabled={payoutBusy}
-                            >{payoutBusy ? 'Retrying…' : 'Retry now'}</button>
-                            {payoutNote ? <span className={styles.alertNote}>{payoutNote}</span> : null}
-                        </div>
-                    ) : null}
-                    {quota && (quota.used / quota.limit) * 100 >= 80 ? (
-                        <div className={styles.quotaWarning}>
-                            <AlertTriangle size={16} />
-                            <span>
-                                Upload storage is {Math.round((quota.used / quota.limit) * 100)}% full.
-                                {' '}{quota.used >= quota.limit ?
-                                    'New project uploads are blocked until usage drops.' :
-                                    'Manage projects soon to free up space.'}
-                            </span>
-                        </div>
-                    ) : null}
-                </div>
-            ) : null}
-
-            <section className={styles.overviewSection} aria-labelledby="admin-summary-heading">
-                <div className={styles.sectionHeading}>
-                    <div>
-                        <h3 id="admin-summary-heading">At a glance</h3>
-                        <p>Current platform totals.</p>
+                                disabled={storageSyncBusy}
+                                onClick={syncR2Storage}
+                            >
+                                <RefreshCw size={15} />
+                                {storageSyncBusy ? 'Syncing…' : 'Sync R2 inventory'}
+                            </button>
+                        ) : null}
                     </div>
-                </div>
-                <div className={styles.primaryStatGrid}>
-                    <StatTile
-                        prominent icon={FolderOpen} label="Projects" value={num(stats.totalProjects)}
-                        detail={`${num(stats.sharedProjects)} shared`}
-                    />
-                    <StatTile
-                        prominent icon={User} label="Users" value={num(stats.totalUsers)}
-                        detail={`${num(stats.bannedUsers)} banned`}
-                    />
-                    <StatTile
-                        prominent icon={Activity} label="Active sessions" value={num(stats.activeSessions)}
-                        detail="Signed in now"
-                    />
-                    <StatTile
-                        prominent icon={Flag} label="Open reports" value={num(stats.openReports)}
-                        detail={stats.openReports ? 'Needs review' : 'Queue is clear'}
-                    />
-                </div>
-            </section>
-
-            <div className={styles.summaryColumns}>
-                <section className={styles.summaryPanel} aria-labelledby="admin-content-heading">
-                    <div className={styles.sectionHeading}>
-                        <div>
-                            <h3 id="admin-content-heading">Projects and storage</h3>
-                            <p>Publishing state and disk use.</p>
-                        </div>
-                    </div>
-                    <div className={styles.compactStatGrid}>
-                        <StatTile label="Shared" value={num(stats.sharedProjects)} />
-                        <StatTile label="Unshared" value={num(stats.unsharedProjects)} />
-                        <StatTile label="Storage used" value={formatBytes(stats.totalBytes)} />
-                        {quota ? <QuotaTile quota={quota} /> : null}
+                    <div className={styles.storageGrid}>
+                        <StorageBreakdown
+                            title="Local data"
+                            icon={Database}
+                            data={storage.local}
+                            detail={`${formatBytes(storage.local.diskFreeBytes)} disk free`}
+                        />
+                        <StorageBreakdown
+                            title="R2 storage"
+                            icon={Cloud}
+                            data={storage.r2}
+                            detail={storage.r2Configured ? `${num(storage.r2.objects)} objects${storage.r2SyncedAt ?
+                                ` · synced ${timeAgo(storage.r2SyncedAt)}` : ''}` : 'Local mode'}
+                        />
+                        <StorageBreakdown
+                            title="Upload queue"
+                            icon={HardDrive}
+                            data={storage.queued}
+                            detail={`${num(storage.queued.objects)} waiting`}
+                        />
+                        <article className={styles.storagePanel}>
+                            <header className={styles.storageHeader}>
+                                <span className={styles.storageIcon}><MemoryStick size={18} /></span>
+                                <div><h4>RAM</h4><strong>{formatBytes(storage.local.memory.systemBytes)}</strong></div>
+                                <span>{num(storage.local.memory.goroutines)} goroutines</span>
+                            </header>
+                            <dl className={styles.memoryStats}>
+                                <div><dt>Heap</dt><dd>{formatBytes(storage.local.memory.heapBytes)}</dd></div>
+                                <div><dt>Stacks</dt><dd>{formatBytes(storage.local.memory.stackBytes)}</dd></div>
+                            </dl>
+                        </article>
                     </div>
                 </section>
-                <section className={styles.summaryPanel} aria-labelledby="admin-community-heading">
+            ) : null}
+            {view === 'storage' && !storage && !storageError ? <p className={styles.status}>Loading storage…</p> : null}
+            {view === 'storage' && storageError ? <p className={styles.error}>{storageError}</p> : null}
+
+            {(!view || view === 'overview') ? <React.Fragment>
+                {(stats.pendingPayouts > 0 || (quota && (quota.used / quota.limit) * 100 >= 80)) ? (
+                    <div className={styles.alerts} aria-label="Items needing attention">
+                        {stats.pendingPayouts > 0 ? (
+                            <div className={styles.quotaWarning}>
+                                <AlertTriangle size={16} />
+                                <span>
+                                    {stats.pendingPayouts} creator payout{stats.pendingPayouts === 1 ? '' : 's'} failed.
+                                    {' '}{Math.round((stats.pendingPayoutAmount || 0) * 100) / 100} credits are still owed.
+                                </span>
+                                <button
+                                    className={styles.secondary}
+                                    onClick={retryPayouts}
+                                    disabled={payoutBusy}
+                                >{payoutBusy ? 'Retrying…' : 'Retry now'}</button>
+                                {payoutNote ? <span className={styles.alertNote}>{payoutNote}</span> : null}
+                            </div>
+                        ) : null}
+                        {quota && (quota.used / quota.limit) * 100 >= 80 ? (
+                            <div className={styles.quotaWarning}>
+                                <AlertTriangle size={16} />
+                                <span>
+                                    Upload storage is {Math.round((quota.used / quota.limit) * 100)}% full.
+                                    {' '}{quota.used >= quota.limit ?
+                                        'New project uploads are blocked until usage drops.' :
+                                        'Manage projects soon to free up space.'}
+                                </span>
+                            </div>
+                        ) : null}
+                    </div>
+                ) : null}
+
+                <section className={styles.overviewSection} aria-labelledby="admin-summary-heading">
                     <div className={styles.sectionHeading}>
                         <div>
-                            <h3 id="admin-community-heading">Community activity</h3>
-                            <p>Engagement, publishing, and moderation totals.</p>
+                            <h3 id="admin-summary-heading">At a glance</h3>
+                            <p>Current platform totals.</p>
                         </div>
                     </div>
-                    <div className={styles.compactStatGrid}>
-                        <StatTile icon={Eye} label="Views" value={num(stats.totalViews)} />
-                        <StatTile icon={Heart} label="Loves" value={num(stats.totalLoves)} />
-                        <StatTile icon={Ban} label="Banned users" value={num(stats.bannedUsers)} />
-                        <StatTile icon={Newspaper} label="News posts" value={num(stats.newsPosts)} />
+                    <div className={styles.primaryStatGrid}>
+                        <StatTile
+                            prominent icon={FolderOpen} label="Projects" value={num(stats.totalProjects)}
+                            detail={`${num(stats.sharedProjects)} shared`}
+                        />
+                        <StatTile
+                            prominent icon={User} label="Users" value={num(stats.totalUsers)}
+                            detail={`${num(stats.bannedUsers)} banned`}
+                        />
+                        <StatTile
+                            prominent icon={Activity} label="Active sessions" value={num(stats.activeSessions)}
+                            detail="Signed in now"
+                        />
+                        <StatTile
+                            prominent icon={Flag} label="Open reports" value={num(stats.openReports)}
+                            detail={stats.openReports ? 'Needs review' : 'Queue is clear'}
+                        />
                     </div>
                 </section>
-            </div>
 
-            <section className={styles.overviewSection} aria-labelledby="admin-insights-heading">
-                <div className={styles.sectionHeading}>
+                <div className={styles.summaryColumns}>
+                    <section className={styles.summaryPanel} aria-labelledby="admin-content-heading">
+                        <div className={styles.sectionHeading}>
+                            <div>
+                                <h3 id="admin-content-heading">Projects and storage</h3>
+                                <p>Publishing state and disk use.</p>
+                            </div>
+                        </div>
+                        <div className={styles.compactStatGrid}>
+                            <StatTile label="Shared" value={num(stats.sharedProjects)} />
+                            <StatTile label="Unshared" value={num(stats.unsharedProjects)} />
+                            <StatTile label="Storage used" value={formatBytes(stats.totalBytes)} />
+                            {quota ? <QuotaTile quota={quota} /> : null}
+                        </div>
+                    </section>
+                    <section className={styles.summaryPanel} aria-labelledby="admin-community-heading">
+                        <div className={styles.sectionHeading}>
+                            <div>
+                                <h3 id="admin-community-heading">Community activity</h3>
+                                <p>Engagement, publishing, and moderation totals.</p>
+                            </div>
+                        </div>
+                        <div className={styles.compactStatGrid}>
+                            <StatTile icon={Eye} label="Views" value={num(stats.totalViews)} />
+                            <StatTile icon={Heart} label="Loves" value={num(stats.totalLoves)} />
+                            <StatTile icon={Ban} label="Banned users" value={num(stats.bannedUsers)} />
+                            <StatTile icon={Newspaper} label="News posts" value={num(stats.newsPosts)} />
+                        </div>
+                    </section>
+                </div>
+            </React.Fragment> : null}
+
+            {view === 'activity' ? <React.Fragment>
+                <section className={styles.overviewSection} aria-labelledby="admin-insights-heading">
+                    <div className={styles.sectionHeading}>
+                        <div>
+                            <h3 id="admin-insights-heading">Operational insights</h3>
+                            <p>Rates and averages that make the raw totals easier to judge.</p>
+                        </div>
+                    </div>
+                    <div className={styles.insightGrid}>
+                        <StatTile
+                            label="Projects published"
+                            value={percent(stats.sharedProjects, stats.totalProjects)}
+                            detail={`${num(stats.sharedProjects)} of ${num(stats.totalProjects)} projects`}
+                        />
+                        <StatTile
+                            label={`Average load, ${days} days`}
+                            value={formatLoadTime(stats.averageLoadMs || 0)}
+                            detail={`${num(stats.loadTimeSamples)} completed samples`}
+                        />
+                        <StatTile
+                            label="Loads reaching start"
+                            value={percent(stats.totalStarts, stats.totalLoads)}
+                            detail={`${num(stats.totalStarts)} starts from ${num(stats.totalLoads)} loads`}
+                        />
+                        <StatTile
+                            label="Crashes per 100 loads"
+                            value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
+                            detail={`${num(stats.totalCrashes)} crashes recorded`}
+                        />
+                        <StatTile
+                            label="Touch traffic"
+                            value={percent((stats.loadsByDevice || {}).touch, deviceLoads)}
+                            detail={`${num((stats.loadsByDevice || {}).touch)} of ${num(deviceLoads)} device-tagged loads`}
+                        />
+                        <StatTile
+                            label="Average project size"
+                            value={formatBytes(stats.averageProjectBytes || 0)}
+                            detail="Across all projects"
+                        />
+                        <StatTile
+                            label="Views per project"
+                            value={Number(stats.averageViews || 0).toFixed(1)}
+                            detail={`${num(stats.totalViews)} views total`}
+                        />
+                        <StatTile
+                            label="Loves per project"
+                            value={Number(stats.averageLoves || 0).toFixed(1)}
+                            detail={`${num(stats.totalLoves)} loves total`}
+                        />
+                        <StatTile
+                            label="Projects remixed"
+                            value={percent(stats.totalRemixes, stats.totalProjects)}
+                            detail={`${num(stats.totalRemixes)} remix projects`}
+                        />
+                        <StatTile
+                            label="Recorded playtime"
+                            value={formatPlaytime(stats.totalPlaytimeMs || 0, false)}
+                            detail="All time"
+                        />
+                    </div>
+                </section>
+
+                <section className={styles.overviewSection} aria-labelledby="admin-trends-heading">
+                    <div className={styles.sectionHeading}>
+                        <div>
+                            <h3 id="admin-trends-heading">Trends</h3>
+                            <p>Dashed lines estimate today&apos;s UTC close from its current pace and the prior seven days.</p>
+                        </div>
+                    </div>
+                    <div className={styles.charts}>
+                        <AnalyticsChart
+                            title="Average project load time"
+                            description={`${num(stats.loadTimeSamples)} completed player loads in this period. Days without a sample appear as gaps.`}
+                            series={loadTimeSeries}
+                            yLabel="Milliseconds"
+                            formatValue={formatLoadTime}
+                            estimateToday={false}
+                        />
+                        <AnalyticsChart
+                            title="Project uploads"
+                            description="Projects created each day, including shared and unshared projects."
+                            series={projectSeries}
+                            yLabel="Projects"
+                            estimateToday
+                        />
+                        <AnalyticsChart
+                            title="Project updates"
+                            description="Projects grouped by their latest edit date. Each project appears once."
+                            series={updateSeries}
+                            yLabel="Projects"
+                            accent="#8b7cf6"
+                            estimateToday
+                        />
+                        <AnalyticsChart
+                            title="Player loads"
+                            description="Completed loads from embedded MistWarp project players."
+                            series={loadSeries}
+                            yLabel="Loads"
+                            accent="#36b37e"
+                            estimateToday
+                        />
+                        <AnalyticsChart
+                            title="New users"
+                            description="Accounts grouped by the date their MistWarp profile was created."
+                            series={userSeries}
+                            yLabel="Users"
+                            accent="#e5a84b"
+                            estimateToday
+                        />
+                        <AnalyticsChart
+                            title="Current sessions by sign-in date"
+                            description="Unexpired sign-in sessions only. MistWarp removes sessions after seven days."
+                            series={loginSeries}
+                            yLabel="Sessions"
+                            accent="#dc6d9a"
+                            estimateToday
+                        />
+                    </div>
+                </section>
+
+                <div className={styles.dataHeader}>
                     <div>
-                        <h3 id="admin-insights-heading">Operational insights</h3>
-                        <p>Rates and averages that make the raw totals easier to judge.</p>
+                        <h2>Daily data</h2>
+                        <p>Exact values behind the charts. Load averages only use completed loads with a recorded duration.</p>
+                    </div>
+                    <div className={styles.dataActions}>
+                        <button type="button" className={styles.secondary} onClick={() => setShowDailyData(!showDailyData)}>
+                            {showDailyData ? 'Hide data' : 'View data'}
+                        </button>
+                        <button type="button" className={styles.secondary} onClick={exportDailyData}>Download CSV</button>
                     </div>
                 </div>
-                <div className={styles.insightGrid}>
-                    <StatTile
-                        label="Projects published"
-                        value={percent(stats.sharedProjects, stats.totalProjects)}
-                        detail={`${num(stats.sharedProjects)} of ${num(stats.totalProjects)} projects`}
-                    />
-                    <StatTile
-                        label={`Average load, ${days} days`}
-                        value={formatLoadTime(stats.averageLoadMs || 0)}
-                        detail={`${num(stats.loadTimeSamples)} completed samples`}
-                    />
-                    <StatTile
-                        label="Loads reaching start"
-                        value={percent(stats.totalStarts, stats.totalLoads)}
-                        detail={`${num(stats.totalStarts)} starts from ${num(stats.totalLoads)} loads`}
-                    />
-                    <StatTile
-                        label="Crashes per 100 loads"
-                        value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
-                        detail={`${num(stats.totalCrashes)} crashes recorded`}
-                    />
-                    <StatTile
-                        label="Touch traffic"
-                        value={percent((stats.loadsByDevice || {}).touch, deviceLoads)}
-                        detail={`${num((stats.loadsByDevice || {}).touch)} of ${num(deviceLoads)} device-tagged loads`}
-                    />
-                    <StatTile
-                        label="Average project size"
-                        value={formatBytes(stats.averageProjectBytes || 0)}
-                        detail="Across all projects"
-                    />
-                    <StatTile
-                        label="Views per project"
-                        value={Number(stats.averageViews || 0).toFixed(1)}
-                        detail={`${num(stats.totalViews)} views total`}
-                    />
-                    <StatTile
-                        label="Loves per project"
-                        value={Number(stats.averageLoves || 0).toFixed(1)}
-                        detail={`${num(stats.totalLoves)} loves total`}
-                    />
-                    <StatTile
-                        label="Projects remixed"
-                        value={percent(stats.totalRemixes, stats.totalProjects)}
-                        detail={`${num(stats.totalRemixes)} remix projects`}
-                    />
-                    <StatTile
-                        label="Recorded playtime"
-                        value={formatPlaytime(stats.totalPlaytimeMs || 0, false)}
-                        detail="All time"
-                    />
-                </div>
-            </section>
-
-            <section className={styles.overviewSection} aria-labelledby="admin-trends-heading">
-                <div className={styles.sectionHeading}>
-                    <div>
-                        <h3 id="admin-trends-heading">Trends</h3>
-                        <p>Dashed lines estimate today&apos;s UTC close from its current pace and the prior seven days.</p>
+                {showDailyData ? (
+                    <div className={styles.dataTableWrap}>
+                        <table className={styles.dataTable}>
+                            <thead><tr><th>Date</th><th>Uploads</th><th>Updates</th><th>Users</th><th>Sessions</th><th>Loads</th><th>Average load</th><th>Samples</th><th>Starts</th><th>Crashes</th></tr></thead>
+                            <tbody>{dailyRows.map(row => (
+                                <tr key={row.date}>
+                                    <th scope="row">{row.date}</th><td>{num(row.projects)}</td><td>{num(row.updates)}</td><td>{num(row.users)}</td><td>{num(row.sessions)}</td><td>{num(row.loads)}</td><td>{row.loadSamples ? formatLoadTime(row.averageLoadMs) : 'No sample'}</td><td>{num(row.loadSamples)}</td><td>{num(row.starts)}</td><td>{num(row.crashes)}</td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
                     </div>
-                </div>
-                <div className={styles.charts}>
-                    <AnalyticsChart
-                        title="Average project load time"
-                        description={`${num(stats.loadTimeSamples)} completed player loads in this period. Days without a sample appear as gaps.`}
-                        series={loadTimeSeries}
-                        yLabel="Milliseconds"
-                        formatValue={formatLoadTime}
-                        estimateToday={false}
-                    />
-                    <AnalyticsChart
-                        title="Project uploads"
-                        description="Projects created each day, including shared and unshared projects."
-                        series={projectSeries}
-                        yLabel="Projects"
-                        estimateToday
-                    />
-                    <AnalyticsChart
-                        title="Project updates"
-                        description="Projects grouped by their latest edit date. Each project appears once."
-                        series={updateSeries}
-                        yLabel="Projects"
-                        accent="#8b7cf6"
-                        estimateToday
-                    />
-                    <AnalyticsChart
-                        title="Player loads"
-                        description="Completed loads from embedded MistWarp project players."
-                        series={loadSeries}
-                        yLabel="Loads"
-                        accent="#36b37e"
-                        estimateToday
-                    />
-                    <AnalyticsChart
-                        title="New users"
-                        description="Accounts grouped by the date their MistWarp profile was created."
-                        series={userSeries}
-                        yLabel="Users"
-                        accent="#e5a84b"
-                        estimateToday
-                    />
-                    <AnalyticsChart
-                        title="Current sessions by sign-in date"
-                        description="Unexpired sign-in sessions only. MistWarp removes sessions after seven days."
-                        series={loginSeries}
-                        yLabel="Sessions"
-                        accent="#dc6d9a"
-                        estimateToday
-                    />
-                </div>
-            </section>
-
-            <div className={styles.dataHeader}>
-                <div>
-                    <h2>Daily data</h2>
-                    <p>Exact values behind the charts. Load averages only use completed loads with a recorded duration.</p>
-                </div>
-                <div className={styles.dataActions}>
-                    <button type="button" className={styles.secondary} onClick={() => setShowDailyData(!showDailyData)}>
-                        {showDailyData ? 'Hide data' : 'View data'}
-                    </button>
-                    <button type="button" className={styles.secondary} onClick={exportDailyData}>Download CSV</button>
-                </div>
-            </div>
-            {showDailyData ? (
-                <div className={styles.dataTableWrap}>
-                    <table className={styles.dataTable}>
-                        <thead><tr><th>Date</th><th>Uploads</th><th>Updates</th><th>Users</th><th>Sessions</th><th>Loads</th><th>Average load</th><th>Samples</th><th>Starts</th><th>Crashes</th></tr></thead>
-                        <tbody>{dailyRows.map(row => (
-                            <tr key={row.date}>
-                                <th scope="row">{row.date}</th><td>{num(row.projects)}</td><td>{num(row.updates)}</td><td>{num(row.users)}</td><td>{num(row.sessions)}</td><td>{num(row.loads)}</td><td>{row.loadSamples ? formatLoadTime(row.averageLoadMs) : 'No sample'}</td><td>{num(row.loadSamples)}</td><td>{num(row.starts)}</td><td>{num(row.crashes)}</td>
-                            </tr>
-                        ))}</tbody>
-                    </table>
-                </div>
-            ) : null}
+                ) : null}
+            </React.Fragment> : null}
         </div>
     );
 };
@@ -1043,6 +1195,9 @@ const UserDetailCard = ({username, onBack}) => {
 const UserManager = () => {
     const [query, setQuery] = useState('');
     const [users, setUsers] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [offset, setOffset] = useState(0);
+    const [sort, setSort] = useState('name');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(null);
@@ -1050,27 +1205,30 @@ const UserManager = () => {
 
     useEffect(() => {
         let active = true;
-        setLoading(true);
-        setError('');
-        api.admin.users()
-            .then(data => {
-                if (!active) return;
-                setUsers(data.users || []);
-                setLoading(false);
-            })
-            .catch(e => {
-                if (!active) return;
-                setError(e.message || 'Could not load users.');
-                setLoading(false);
-            });
+        const loadUsers = () => {
+            setLoading(true);
+            setError('');
+            api.admin.users({q: query.trim(), offset, limit: 30, sort})
+                .then(data => {
+                    if (!active) return;
+                    const nextUsers = data.users || [];
+                    setUsers(nextUsers);
+                    setTotal(Number.isFinite(Number(data.total)) ? Number(data.total) : nextUsers.length);
+                    setLoading(false);
+                })
+                .catch(e => {
+                    if (!active) return;
+                    setError(e.message || 'Could not load users.');
+                    setLoading(false);
+                });
+        };
+        const timer = query ? setTimeout(loadUsers, 180) : null;
+        if (!query) loadUsers();
         return () => {
             active = false;
+            if (timer) clearTimeout(timer);
         };
-    }, [loadAttempt]);
-
-    const filtered = query.trim() ?
-        users.filter(u => u.username.toLowerCase().includes(query.toLowerCase())) :
-        users;
+    }, [loadAttempt, offset, query, sort]);
 
     if (selected) {
         return (
@@ -1084,15 +1242,31 @@ const UserManager = () => {
     return (
         <div>
             <h2>Users</h2>
-            <div className={styles.addAdmin}>
+            <div className={styles.userToolbar}>
                 <input
                     className={styles.input}
-                    placeholder="Filter by username…"
+                    placeholder="Search usernames…"
                     value={query}
-                    onChange={e => setQuery(e.target.value)}
+                    onChange={e => {
+                        setQuery(e.target.value);
+                        setOffset(0);
+                    }}
                 />
+                <select
+                    className={styles.select}
+                    aria-label="Sort users"
+                    value={sort}
+                    onChange={e => {
+                        setSort(e.target.value);
+                        setOffset(0);
+                    }}
+                >
+                    <option value="name">Name</option>
+                    <option value="recent">Newest</option>
+                    <option value="followers">Most followed</option>
+                </select>
                 <span className={styles.status} style={{fontSize: 13, alignSelf: 'center'}}>
-                    {users.length} total
+                    {total.toLocaleString()} total
                 </span>
             </div>
             {error ? (
@@ -1105,10 +1279,11 @@ const UserManager = () => {
             ) : null}
             {loading ? (
                 <p className={styles.status}>Loading users…</p>
-            ) : error ? null : filtered.length ? (
+            ) : error ? null : users.length ? (
                 <div className={styles.list}>
-                    {filtered.map(user => {
+                    {users.map(user => {
                         const pct = user.quotaLimit > 0 ? (user.quotaUsed / user.quotaLimit) * 100 : 0;
+                        const joined = timeAgo(user.created);
                         return (
                             <div
                                 key={user.username}
@@ -1127,16 +1302,22 @@ const UserManager = () => {
                                 <Avatar username={user.username} size={32} />
                                 <div className={styles.rowInfo}>
                                     <span className={styles.rowTitle}>
-                                        {`@${user.username}`}
+                                        <a
+                                            href={`/users/${user.username}`}
+                                            onClick={event => event.stopPropagation()}
+                                        >{`@${user.username}`}</a>
                                         {user.banned ? (
                                             <span
                                                 className={styles.badge}
                                                 style={{borderColor: '#e25555', color: '#e25555'}}
                                             >banned</span>
+                                        ) : user.standingLevel && user.standingLevel !== 'good' ? (
+                                            <span className={styles.badge}>{user.standingLevel}</span>
                                         ) : null}
                                     </span>
                                     <span className={styles.rowMeta}>
                                         {`${user.followerCount} followers · ${user.projectCount} projects`}
+                                        {joined ? ` · joined ${joined} ago` : ''}
                                     </span>
                                 </div>
                                 <div className={styles.resetInfo}>
@@ -1157,8 +1338,25 @@ const UserManager = () => {
                     })}
                 </div>
             ) : (
-                <p className={styles.status}>No users match that filter.</p>
+                <p className={styles.status}>No users match that search.</p>
             )}
+            {!error && total > 30 ? (
+                <div className={styles.pagination}>
+                    <button
+                        type="button"
+                        className={styles.secondary}
+                        disabled={offset === 0 || loading}
+                        onClick={() => setOffset(Math.max(0, offset - 30))}
+                    >Previous</button>
+                    <span>{`${offset + 1}–${Math.min(offset + users.length, total)} of ${total}`}</span>
+                    <button
+                        type="button"
+                        className={styles.secondary}
+                        disabled={offset + users.length >= total || loading}
+                        onClick={() => setOffset(offset + 30)}
+                    >Next</button>
+                </div>
+            ) : null}
         </div>
     );
 };
@@ -1764,6 +1962,9 @@ const Admin = () => {
     }
 
     const openCount = reports ? reports.length : 0;
+    const sidebarSections = SECTIONS.map(section => (
+        section.key === 'reports' && openCount ? {...section, badge: openCount > 99 ? '99+' : openCount} : section
+    ));
 
     return (
         <main className={styles.page}>
@@ -1781,34 +1982,17 @@ const Admin = () => {
             {error ? <p className={styles.error}>{error}</p> : null}
 
             <div className={styles.layout}>
-                <nav
-                    className={styles.sidebar}
-                    aria-label="Admin sections"
-                >
-                    {SECTIONS.map(section => {
-                        const Icon = section.icon;
-                        const count = section.key === 'reports' ? openCount : 0;
-                        return (
-                            <button
-                                key={section.key}
-                                type="button"
-                                className={active === section.key ? styles.sidebarActive : styles.sidebarItem}
-                                onClick={() => setActive(section.key)}
-                            >
-                                <Icon size={18} />
-                                <span className={styles.sidebarLabel}>{section.label}</span>
-                                {count > 0 ? (
-                                    <span className={styles.sidebarCount}>{count > 99 ? '99+' : count}</span>
-                                ) : null}
-                            </button>
-                        );
-                    })}
-                </nav>
+                <Sidebar
+                    sections={sidebarSections}
+                    active={active}
+                    onChange={setActive}
+                    ariaLabel="Admin sections"
+                />
 
                 <div className={styles.content}>
-                    {active === 'overview' ? (
+                    {['overview', 'storage', 'activity'].includes(active) ? (
                         <section className={styles.card}>
-                            <StatsOverview />
+                            <StatsOverview view={active} />
                         </section>
                     ) : null}
 

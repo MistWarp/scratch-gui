@@ -4,6 +4,9 @@ import {shallow} from 'enzyme';
 import ShareWindow from '../../../src/components/mw-share-modal/share-window.jsx';
 import {publishToMistWarp} from '../../../src/lib/community/publish.js';
 import {request} from '../../../src/lib/community/api.js';
+import {getRepoChanges} from '../../../src/lib/git/browser-git.js';
+import {getFractchGitDiff} from '../../../src/lib/git/fractch-diff.js';
+import {generateCommitName} from '../../../src/lib/sable/smart-features.js';
 
 jest.mock('../../../src/lib/community/publish.js', () => ({
     captureThumbnailDataUri: jest.fn(() => Promise.resolve(null)),
@@ -12,6 +15,18 @@ jest.mock('../../../src/lib/community/publish.js', () => ({
 }));
 jest.mock('../../../src/lib/community/api.js', () => ({
     request: jest.fn()
+}));
+jest.mock('../../../src/lib/git/browser-git.js', () => ({
+    getRepoChanges: jest.fn()
+}));
+jest.mock('../../../src/lib/git/project-history.js', () => ({
+    ensureProjectHistoryHydrated: jest.fn(() => Promise.resolve())
+}));
+jest.mock('../../../src/lib/git/fractch-diff.js', () => ({
+    getFractchGitDiff: jest.fn()
+}));
+jest.mock('../../../src/lib/sable/smart-features.js', () => ({
+    generateCommitName: jest.fn()
 }));
 
 const makeWindow = (action = 'update') => shallow(
@@ -30,6 +45,9 @@ describe('MistWarp share window workflows', () => {
         request.mockReset();
         publishToMistWarp.mockReset();
         request.mockResolvedValue({agreement: {accepted: true, version: 1}});
+        getRepoChanges.mockResolvedValue([{filepath: 'Stage.fractch', description: 'modified'}]);
+        getFractchGitDiff.mockResolvedValue('diff --git a/Stage.fractch b/Stage.fractch');
+        generateCommitName.mockResolvedValue({name: 'Fix stage movement', balance: 9.98});
     });
 
     test('an immediate second publish click cannot start another upload', async () => {
@@ -89,6 +107,20 @@ describe('MistWarp share window workflows', () => {
 
         expect(publishToMistWarp).not.toHaveBeenCalled();
         expect(wrapper.state('error')).toMatch(/Could not load the community guidelines/);
+        wrapper.unmount();
+    });
+
+    test('asks Sable for a name only after Skip is clicked', async () => {
+        const wrapper = makeWindow();
+        const publish = jest.spyOn(wrapper.instance(), 'handlePublish').mockImplementation(() => {});
+
+        expect(generateCommitName).not.toHaveBeenCalled();
+        await wrapper.instance().handleSkipVersion();
+
+        expect(getRepoChanges).toHaveBeenCalledWith(wrapper.instance().props.vm);
+        expect(generateCommitName).toHaveBeenCalledWith('diff --git a/Stage.fractch b/Stage.fractch');
+        expect(wrapper.state('changeMessage')).toBe('Fix stage movement');
+        expect(publish).toHaveBeenCalledTimes(1);
         wrapper.unmount();
     });
 

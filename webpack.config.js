@@ -42,7 +42,8 @@ const htmlWebpackPluginCommon = {
 };
 
 // When this changes, the path for all JS files will change, bypassing any HTTP caches
-const CACHE_EPOCH = 'gleba';
+const CACHE_EPOCH = 'hazel';
+const BUILD_DIR = process.env.BUILD_DIR || 'build';
 
 const base = {
     mode: IS_PRODUCTION ? 'production' : 'development',
@@ -50,7 +51,7 @@ const base = {
     devtool: process.env.SOURCEMAP || (IS_PRODUCTION ? false : 'eval-cheap-module-source-map'),
     stats: IS_PRODUCTION ? 'normal' : 'errors-warnings',
     devServer: {
-        contentBase: path.resolve(__dirname, 'build'),
+        contentBase: path.resolve(__dirname, BUILD_DIR),
         host: '0.0.0.0',
         disableHostCheck: true,
         compress: true,
@@ -203,7 +204,7 @@ module.exports = [
             'credits': './src/playground/credits/credits.jsx'
         },
         output: {
-            path: path.resolve(__dirname, 'build')
+            path: path.resolve(__dirname, BUILD_DIR)
         },
         module: {
             rules: base.module.rules.concat([

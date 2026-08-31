@@ -332,12 +332,12 @@ const preserveCurrentRepo = async () => {
 
 const createMwp = async ({
     vm, sb3Files, projectId, remixParent, baseCommit, remoteHead,
-    message = 'Save project', commitChanges = true, baseHistory = null
+    message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null
 } = {}) => {
     const author = projectId ? await getMistWarpAuthor() : getDefaultAuthor();
     let shallowBase = false;
     if (!(await repoExists())) {
-        const initialParent = remoteHead && baseCommit ? remoteHead : '';
+        const initialParent = remoteHead || '';
         await initRepo({defaultBranch: 'main', vm, sb3Files, initialMessage: message, initialParent, author});
         shallowBase = Boolean(initialParent);
     } else if ((vm || sb3Files) && commitChanges) {
@@ -345,6 +345,11 @@ const createMwp = async ({
             await commitProject({vm, sb3Files, message, author, rememberAuthor: false});
         } catch (error) {
             if (!/No changes to commit/.test(error.message || '')) throw error;
+            if (requireChanges) {
+                const noChanges = new Error('No files changed in this commit.');
+                noChanges.code = 'no_changes';
+                throw noChanges;
+            }
         }
     }
     return exportCurrentMwp(
@@ -387,6 +392,33 @@ const removeDiffDirectory = async (pfs, path) => {
     await Promise.all(entries.map(entry => removeDiffDirectory(pfs, `${path}/${entry}`)));
     await pfs.rmdir(path);
 };
+
+const buildProjectArtifactsFromFileEntries = async files => {
+    const pfs = getFs().promises;
+    const tempDir = `${REPO_DIR}-materialize-${Date.now()}-${Math.random().toString(36)
+        .slice(2)}`;
+    const treeZip = new JSZip();
+    try {
+        await pfs.mkdir(tempDir);
+        for (const file of files || []) {
+            if (!safeArchivePath(file.path) || !(file.data instanceof Uint8Array)) {
+                throw new Error('The server returned an invalid project tree');
+            }
+            const destination = `${tempDir}/${file.path}`;
+            await ensureParentDir(pfs, destination);
+            await pfs.writeFile(destination, file.data);
+            treeZip.file(file.path, file.data);
+        }
+        const legacy = (files || []).find(file => file.path === 'project.sb3');
+        const bytes = legacy ? legacy.data : await buildSb3FromFractchTree({fs: pfs, dir: tempDir});
+        const tree = await treeZip.generateAsync({type: 'blob', compression: 'DEFLATE'});
+        return {sb3: new Blob([bytes], {type: 'application/x.scratch.sb3'}), tree};
+    } finally {
+        await removeDiffDirectory(pfs, tempDir);
+    }
+};
+
+const buildSb3FromFileEntries = async files => (await buildProjectArtifactsFromFileEntries(files)).sb3;
 
 const listDiffDirectory = async (pfs, root, current = root) => {
     const paths = [];
@@ -774,6 +806,8 @@ export {
     MWP_FORMAT,
     MWP_VERSION,
     attachMwpHistory,
+    buildProjectArtifactsFromFileEntries,
+    buildSb3FromFileEntries,
     buildSb3FromCurrentRepo,
     cancelMwpMerge,
     checkoutMwpBranch,

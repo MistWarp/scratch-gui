@@ -226,6 +226,7 @@ const Commit = () => {
             </nav>
             {fileView ? (
                 <ProjectFiles
+                    bounded
                     project={{...project, gitHead: sha}}
                     initialPath={historicalPath}
                     onSelectPath={selectHistoricalFile}

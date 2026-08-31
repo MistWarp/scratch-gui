@@ -15,6 +15,12 @@ const decodeBase64Bytes = value => {
 
 const decodeBase64Text = value => new TextDecoder().decode(decodeBase64Bytes(value));
 
+const decodeInlineText = value => (
+    typeof value === 'string' ? decodeBase64Text(value) : new TextDecoder().decode(value)
+);
+
+const hasInlineText = value => value !== null && typeof value !== 'undefined';
+
 const normalizedStatus = status => {
     if (status === 'removed' || status === 'deleted') return 'removed';
     if (status === 'added') return 'added';
@@ -117,10 +123,10 @@ export const buildCommitDiffFromInspection = async ({
         if (!TEXT_FILE.test(path)) return [...lines, 'Binary file changed'].join('\n');
 
         const [before, after] = await Promise.all([
-            status === 'added' ? '' : change.oldData ?
-                new TextDecoder().decode(change.oldData) : fileText(apiClient, parentProjectId, parent, path),
-            status === 'removed' ? '' : change.newData ?
-                new TextDecoder().decode(change.newData) : fileText(apiClient, projectId, sha, path)
+            status === 'added' ? '' : hasInlineText(change.oldData) ?
+                decodeInlineText(change.oldData) : fileText(apiClient, parentProjectId, parent, path),
+            status === 'removed' ? '' : hasInlineText(change.newData) ?
+                decodeInlineText(change.newData) : fileText(apiClient, projectId, sha, path)
         ]);
         const result = await computeLineDiff(before, after);
         if (!(result.hunks || []).length) return '';

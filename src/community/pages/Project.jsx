@@ -5,7 +5,8 @@ import {
     Play, GitFork, ExternalLink, EyeOff, Clock3,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
     ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronDown, ChevronRight, GitPullRequest, Search
+    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronRight, GitPullRequest, Search,
+    History, GitBranch, Package
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff, themeCustomFor} from '../api';
 import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
@@ -38,6 +39,8 @@ import {useUser} from '../UserContext.jsx';
 import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
+import ProjectBranches from '../components/ProjectBranches.jsx';
+import Sidebar from '../components/Sidebar.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -51,29 +54,32 @@ import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
 import copyText from '../copy-text.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import {fetchWorkspace, hashExtensionUrl} from '../../lib/community/api.js';
+import {hashExtensionUrl} from '../../lib/community/api.js';
 import {
     loadProjectSave,
     saveProjectData,
     loadProjectInventory,
     grantProjectItem
 } from '../../lib/mistwarp-games/data-client.js';
-import {restoreMwpVersion} from '../../lib/git/mwp.js';
+import {buildSb3FromFileEntries} from '../../lib/git/mwp.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import styles from './Project.module.css';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
-const MAIN_ACTIVITY_TABS = ['Comments', 'Files', 'Reviews', 'Releases'];
-const MORE_ACTIVITY_TABS = ['History', 'Pull requests', 'Bounties', 'Contribute'];
-const ACTIVITY_TABS = [...MAIN_ACTIVITY_TABS, ...MORE_ACTIVITY_TABS];
-const initialActivityTab = () => ({
-    '#pull-requests': 'Pull requests',
+const ACTIVITY_TABS = ['Comments', 'Files', 'Reviews', 'Version control', 'Bounties', 'Contribute'];
+const VERSION_CONTROL_HASHES = {
+    '#history': 'history',
+    '#branches': 'branches',
+    '#pull-requests': 'pulls',
+    '#releases': 'releases'
+};
+const initialActivityTab = () => (VERSION_CONTROL_HASHES[window.location.hash] ? 'Version control' : ({
+    '#files': 'Files',
     '#bounties': 'Bounties',
-    '#contribute': 'Contribute',
-    '#history': 'History',
-    '#files': 'Files'
-}[window.location.hash] || 'Comments');
+    '#contribute': 'Contribute'
+}[window.location.hash] || 'Comments'));
+const initialVersionControlTab = () => VERSION_CONTROL_HASHES[window.location.hash] || 'history';
 
 export const reviewPayload = (rating, message) => ({rating, message: message.trim()});
 export const releasePayload = form => ({...form, version: form.version.trim(), notes: form.notes.trim()});
@@ -206,6 +212,7 @@ const Project = () => {
     const [errorLoadContext, setErrorLoadContext] = useState('');
     const [actionError, setActionError] = useState(null);
     const [tab, setTab] = useState(initialActivityTab);
+    const [versionControlTab, setVersionControlTab] = useState(initialVersionControlTab);
     const [openPullCount, setOpenPullCount] = useState(null);
     const [openBountyCount, setOpenBountyCount] = useState(null);
     const [projectFileCount, setProjectFileCount] = useState(null);
@@ -337,6 +344,7 @@ const Project = () => {
         setActionError(null);
         setReporting(false);
         setTab(initialActivityTab());
+        setVersionControlTab(initialVersionControlTab());
         setThumbnailMenu(false);
         setCollectionOpen(false);
         setConfirmBuy(false);
@@ -367,8 +375,8 @@ const Project = () => {
     }, [actionContext, beginHistoryLoad, id, load, userLoading]);
 
     useEffect(() => {
-        if (tab === 'History' && versionHistory === null) loadHistory();
-    }, [loadHistory, tab, versionHistory]);
+        if (tab === 'Version control' && versionControlTab === 'history' && versionHistory === null) loadHistory();
+    }, [loadHistory, tab, versionControlTab, versionHistory]);
 
     useEffect(() => {
         if (userLoading) return;
@@ -2079,7 +2087,7 @@ const Project = () => {
                 </div>
             </div>
 
-            <div className={`${styles.bottomGrid} ${tab === 'Files' ? styles.filesGrid : ''}`}>
+            <div className={`${styles.bottomGrid} ${tab === 'Files' || tab === 'Version control' ? styles.filesGrid : ''}`}>
                 <section className={styles.commentsCol}>
                     <div className={styles.commentsHead}>
                         <nav className={styles.tabs} aria-label="Project activity">
@@ -2087,20 +2095,10 @@ const Project = () => {
                                 <button
                                     type="button"
                                     key={name}
-                                    className={`${name === tab ? styles.tabActive : styles.tab} ${
-                                        MORE_ACTIVITY_TABS.includes(name) ? styles.wideActivityTab : ''
-                                    }`}
+                                    className={name === tab ? styles.tabActive : styles.tab}
                                     onClick={() => setTab(name)}
                                 >
                                     {name}
-                                    {name === 'Pull requests' && openPullCount !== null ? (
-                                        <span className={styles.tabCount}>{openPullCount}</span>
-                                    ) : null}
-                                    {name === 'History' && project ? (
-                                        <span className={styles.tabCount}>
-                                            {versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount ?? 0}
-                                        </span>
-                                    ) : null}
                                     {name === 'Bounties' && openBountyCount !== null ? (
                                         <span className={styles.tabCount}>{openBountyCount}</span>
                                     ) : null}
@@ -2110,43 +2108,6 @@ const Project = () => {
                                 </button>
                             ))}
                         </nav>
-                        <Dropdown
-                            align="right"
-                            className={styles.moreTabs}
-                            menuClassName={styles.activityMenu}
-                            renderTrigger={({open, toggle}) => {
-                                const selected = MORE_ACTIVITY_TABS.includes(tab);
-                                return (
-                                    <button
-                                        type="button"
-                                        className={selected ? styles.moreTabActive : styles.moreTab}
-                                        aria-expanded={open}
-                                        aria-haspopup="menu"
-                                        onClick={toggle}
-                                    >
-                                        {selected ? tab : 'More'}
-                                        <ChevronDown size={14} />
-                                    </button>
-                                );
-                            }}
-                        >
-                            {({close}) => MORE_ACTIVITY_TABS.map(name => (
-                                <button
-                                    type="button"
-                                    key={name}
-                                    onClick={() => {
-                                        setTab(name);
-                                        close();
-                                    }}
-                                >
-                                    {name}
-                                    {name === 'Pull requests' && openPullCount !== null ? ` (${openPullCount})` : ''}
-                                    {name === 'History' && project ? ` (${versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount ?? 0})` : ''}
-                                    {name === 'Bounties' && openBountyCount !== null ? ` (${openBountyCount})` : ''}
-                                    {name === 'Files' && projectFileCount !== null ? ` (${projectFileCount})` : ''}
-                                </button>
-                            ))}
-                        </Dropdown>
                     </div>
                     {tab === 'Comments' && (
                         <CommentThread
@@ -2173,28 +2134,36 @@ const Project = () => {
                             ) : null}
                         />
                     )}
-                    {tab === 'History' && (
-                        <HistoryList
-                            id={id}
-                            history={versionHistory}
-                            canRestore={project.isOwner}
-                            onChange={refreshProjectAndHistory}
-                        />
-                    )}
-                    {tab === 'Files' && (
-                        <ProjectFiles project={project} onCount={setProjectFileCount} />
-                    )}
+                    {tab === 'Files' ? <ProjectFiles project={project} onCount={setProjectFileCount} /> : null}
                     {tab === 'Reviews' && <ReviewPanel key={id} id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
-                    {tab === 'Releases' && (
-                        <ReleaseList
-                            key={id}
-                            id={id}
-                            isOwner={project.isOwner}
-                            viewerName={viewerName}
-                        />
-                    )}
-                    {tab === 'Pull requests' && (
-                        <PullList id={id} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
+                    {tab === 'Version control' && (
+                        <div className={styles.versionControlLayout}>
+                            <Sidebar
+                                ariaLabel="Version control"
+                                active={versionControlTab}
+                                onChange={setVersionControlTab}
+                                sections={[
+                                    {key: 'history', label: 'History', icon: History, badge: versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount},
+                                    {key: 'branches', label: 'Branches', icon: GitBranch},
+                                    {key: 'pulls', label: 'Pull requests', icon: GitPullRequest, badge: openPullCount},
+                                    {key: 'releases', label: 'Releases', icon: Package}
+                                ]}
+                            />
+                            <div className={styles.versionControlContent}>
+                                {versionControlTab === 'history' ? (
+                                    <HistoryList id={id} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
+                                ) : null}
+                                {versionControlTab === 'branches' ? (
+                                    <ProjectBranches id={id} canMerge={project.isOwner} onMerged={refreshProjectAndHistory} />
+                                ) : null}
+                                {versionControlTab === 'pulls' ? (
+                                    <PullList id={id} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
+                                ) : null}
+                                {versionControlTab === 'releases' ? (
+                                    <ReleaseList key={id} id={id} isOwner={project.isOwner} viewerName={viewerName} />
+                                ) : null}
+                            </div>
+                        </div>
                     )}
                     {tab === 'Bounties' && (
                         <ProjectBounties
@@ -2426,13 +2395,20 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
         setRestoreError(null);
         try {
             const {project} = await api.getProject(actionId);
-            if (!project.workspaceUrl) throw new Error('This project does not have a saved version archive');
-            const workspace = await fetchWorkspace(project.workspaceUrl);
-            const result = await restoreMwpVersion({workspace, oid: commit.sha});
-            await api.uploadProject(actionId, result.sb3, null, null, {
-                workspace: result.mwp,
-                git: result.manifest,
-                expectedHead: result.expectedHead
+            if (!project.gitHead) throw new Error('This project does not have server-side history');
+            const tree = await api.commitTree(actionId, commit.sha);
+            const files = await Promise.all((tree.files || []).map(async file => {
+                const result = await api.commitFile(actionId, commit.sha, file.path);
+                const binary = atob(result.content || '');
+                const data = new Uint8Array(binary.length);
+                for (let index = 0; index < binary.length; index++) data[index] = binary.charCodeAt(index);
+                return {path: file.path, data};
+            }));
+            const sb3 = await buildSb3FromFileEntries(files);
+            await api.uploadProject(actionId, sb3, null, null, {
+                expectedHead: project.gitHead,
+                restoreCommit: commit.sha,
+                restoreMessage: `Restored version ${commit.sha.slice(0, 7)}`
             });
             if (idRef.current !== actionId) return;
             setRestoreCandidate(null);

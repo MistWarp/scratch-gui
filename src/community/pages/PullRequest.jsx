@@ -18,22 +18,37 @@ import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {buildCommitDiffFromInspection} from '../commit-diff.js';
-import {fetchWorkspace} from '../../lib/community/api.js';
-import {
-    cancelMwpMerge,
-    chooseMergeBinary,
-    finishMwpMerge,
-    startMwpMerge,
-    updateMergeConflict
-} from '../../lib/git/mwp.js';
+import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import styles from './PullRequest.module.css';
 
-const loadPullWorkspaces = async data => {
-    const [target, source] = await Promise.all([
-        fetchWorkspace(data.targetWorkspaceUrl),
-        fetchWorkspace(data.sourceWorkspaceUrl)
-    ]);
-    return {target, source};
+const decodeBase64 = value => {
+    const binary = atob(value || '');
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    return bytes;
+};
+
+const loadServerMerge = async data => {
+    const tree = await api.commitTree(data.targetProjectId, data.expectedHead);
+    const loaded = await Promise.all((tree.files || []).map(async file => {
+        const result = await api.commitFile(data.targetProjectId, data.expectedHead, file.path);
+        return [file.path, decodeBase64(result.content)];
+    }));
+    const files = new Map(loaded);
+    const conflicts = [];
+    const binaryConflicts = [];
+    for (const change of data.merge.changes || []) {
+        if (change.conflict && change.binary) {
+            binaryConflicts.push({...change, choice: ''});
+        } else {
+            if (change.deleted) files.delete(change.path);
+            else files.set(change.path, decodeBase64(change.content));
+            if (change.conflict) {
+                conflicts.push({path: change.path, content: new TextDecoder().decode(decodeBase64(change.content))});
+            }
+        }
+    }
+    return {files, conflicts, binaryConflicts};
 };
 
 const PULL_DIFF_CACHE_PREFIX = 'mw:pull-diff:';
@@ -210,9 +225,7 @@ const PullRequest = () => {
         setDiffError('');
         setCommentText('');
         setCommentError('');
-        cancelMwpMerge().catch(() => {});
         load();
-        return () => cancelMwpMerge().catch(() => {});
     }, [load]);
 
     useEffect(() => {
@@ -220,12 +233,13 @@ const PullRequest = () => {
         loadDiff(pull, `${id}:${index}`);
     }, [diff, diffError, id, index, loadDiff, pull, tab]);
 
-    const uploadMerge = async (data, activePull) => {
-        const result = await finishMwpMerge();
+    const uploadMerge = async (data, activePull, files) => {
+        const result = await buildProjectArtifactsFromFileEntries(
+            [...files].map(([path, fileData]) => ({path, data: fileData}))
+        );
         await api.uploadPullMerge(id, {
             sb3: result.sb3,
-            mwp: result.mwp,
-            git: result.manifest,
+            mergeTree: result.tree,
             expectedHead: data.expectedHead,
             pullId: activePull.index
         });
@@ -239,25 +253,24 @@ const PullRequest = () => {
         setMergeError('');
         try {
             const data = await api.mergePull(id, pull.index);
-            const files = await loadPullWorkspaces(data);
-            const result = await startMwpMerge({
-                ...files,
-                pullId: pull.index,
-                baseCommit: data.pull.baseCommit,
-                headCommit: data.pull.headCommit
-            });
+            if (data.merged) {
+                setMergeSession(null);
+                await load();
+                return;
+            }
+            const result = await loadServerMerge(data);
             if (result.conflicts.length || result.binaryConflicts.length) {
                 setMergeSession({
                     pull,
                     data,
+                    files: result.files,
                     conflicts: result.conflicts,
-                    binaryConflicts: result.binaryConflicts.map(path => ({path, choice: ''}))
+                    binaryConflicts: result.binaryConflicts
                 });
             } else {
-                await uploadMerge(data, pull);
+                await uploadMerge(data, pull, result.files);
             }
         } catch (error) {
-            await cancelMwpMerge();
             setMergeError(error.message || 'Merge failed.');
         } finally {
             setMerging(false);
@@ -270,14 +283,18 @@ const PullRequest = () => {
         setMerging(true);
         setMergeError('');
         try {
+            const resolvedFiles = new Map(session.files);
             for (const file of session.conflicts) {
-                await updateMergeConflict(file.path, file.content);
+                resolvedFiles.set(file.path, new TextEncoder().encode(file.content));
             }
             for (const file of session.binaryConflicts) {
                 if (!file.choice) throw new Error(`Choose a version for ${file.path}`);
-                await chooseMergeBinary(file.path, file.choice);
+                const deleted = file.choice === 'theirs' ? file.theirsDeleted : file.oursDeleted;
+                const content = file.choice === 'theirs' ? file.theirs : file.ours;
+                if (deleted) resolvedFiles.delete(file.path);
+                else resolvedFiles.set(file.path, decodeBase64(content));
             }
-            await uploadMerge(session.data, session.pull);
+            await uploadMerge(session.data, session.pull, resolvedFiles);
         } catch (error) {
             setMergeError(error.message || 'The conflicts could not be resolved.');
         } finally {

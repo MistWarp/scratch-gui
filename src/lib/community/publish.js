@@ -4,9 +4,10 @@ import {
     remixProject, deleteProject, collectExtensionSources
 } from './api';
 import {createMwp} from '../git/mwp.js';
+import {deleteRepo} from '../git/browser-git.js';
 import {syncConfiguredRemotes} from '../git/sync-remotes.js';
 import {
-    ensureProjectHistoryHydrated,
+    isProjectHistoryHydrated,
     preloadProjectHistory,
     setRemoteProjectHistory
 } from '../git/project-history.js';
@@ -258,9 +259,8 @@ const publishToMistWarp = async ({
             sb3Blob = await zipProjectFiles(sb3Files, () => true);
         }
         onProgress({phase: 'package', message: 'Preparing version history and extensions'});
-        if (!createdNow && platformProject && platformProject.workspaceUrl) {
-            onProgress({phase: 'history', message: 'Loading version history'});
-            await ensureProjectHistoryHydrated(vm);
+        if (platformProject && platformProject.workspaceUrl && !isProjectHistoryHydrated(vm)) {
+            await deleteRepo();
         }
         const mwpPromise = createMwp({
             vm,
@@ -271,6 +271,7 @@ const publishToMistWarp = async ({
             remoteHead: platformProject && platformProject.workspaceUrl ? platformProject.gitHead : '',
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
             commitChanges,
+            requireChanges: commitChanges && !createdNow,
             baseHistory
         });
         const extensionSourcesPromise = collectExtensionSources(sb3Blob);

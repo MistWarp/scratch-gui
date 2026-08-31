@@ -6,7 +6,7 @@ const mockCreateMwp = jest.fn();
 const mockGetProject = jest.fn();
 const mockGetProjectCommits = jest.fn();
 const mockRemixProject = jest.fn();
-const mockEnsureProjectHistoryHydrated = jest.fn(() => Promise.resolve());
+const mockDeleteRepo = jest.fn(() => Promise.resolve());
 
 jest.mock('../../src/lib/community/api.js', () => ({
     createProject: (...args) => mockCreateProject(...args),
@@ -23,11 +23,14 @@ jest.mock('../../src/lib/community/api.js', () => ({
 jest.mock('../../src/lib/git/mwp.js', () => ({
     createMwp: (...args) => mockCreateMwp(...args)
 }));
+jest.mock('../../src/lib/git/browser-git.js', () => ({
+    deleteRepo: (...args) => mockDeleteRepo(...args)
+}));
 jest.mock('../../src/lib/git/sync-remotes.js', () => ({
     syncConfiguredRemotes: jest.fn(() => Promise.resolve([]))
 }));
 jest.mock('../../src/lib/git/project-history.js', () => ({
-    ensureProjectHistoryHydrated: (...args) => mockEnsureProjectHistoryHydrated(...args),
+    isProjectHistoryHydrated: jest.fn(() => false),
     preloadProjectHistory: jest.fn(() => Promise.resolve()),
     setRemoteProjectHistory: jest.fn()
 }));
@@ -89,7 +92,7 @@ describe('MistWarp project upload packaging', () => {
 
         await publishToMistWarp({vm, title: 'Fork'});
 
-        expect(mockEnsureProjectHistoryHydrated).not.toHaveBeenCalled();
+        expect(mockDeleteRepo).toHaveBeenCalledTimes(1);
         expect(mockGetProjectCommits).toHaveBeenCalledWith('fork-1', undefined);
         expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
             projectId: 'fork-1',
@@ -98,5 +101,24 @@ describe('MistWarp project upload packaging', () => {
             remoteHead: 'base-sha',
             baseHistory: expect.objectContaining({branch: 'main'})
         }));
+    });
+
+    test('does not upload an update when no files changed', async () => {
+        const files = {'project.json': JSON.stringify({targets: []})};
+        const vm = {saveProjectSb3DontZip: jest.fn(() => files)};
+        rememberPlatformProject({id: 'project-1', isOwner: true, workspaceUrl: '/project.mwp', gitHead: 'abc'});
+        mockGetProject.mockResolvedValue({
+            project: {id: 'project-1', isOwner: true, workspaceUrl: '/project.mwp', gitHead: 'abc'}
+        });
+        const error = Object.assign(new Error('No files changed in this commit.'), {code: 'no_changes'});
+        mockCreateMwp.mockRejectedValue(error);
+
+        await expect(publishToMistWarp({vm, title: null, updateOnly: true})).rejects.toMatchObject({
+            message: 'No files changed in this commit.',
+            code: 'no_changes'
+        });
+
+        expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({requireChanges: true}));
+        expect(mockUploadProject).not.toHaveBeenCalled();
     });
 });

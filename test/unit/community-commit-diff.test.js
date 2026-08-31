@@ -8,6 +8,43 @@ import {parseDiff} from '../../src/community/components/DiffView.jsx';
 const encode = value => btoa(unescape(encodeURIComponent(value)));
 
 describe('server commit diff', () => {
+    test('uses text content embedded by the server without file requests', async () => {
+        const apiClient = {commitFile: jest.fn()};
+        const diff = await buildCommitDiffFromInspection({
+            apiClient,
+            projectId: 'project-1',
+            sha: 'b'.repeat(40),
+            inspection: {
+                parent: 'a'.repeat(40),
+                files: [{
+                    path: 'Sprite/main.fractch',
+                    status: 'modified',
+                    oldData: encode('say "old";\n'),
+                    newData: encode('say "new";\n')
+                }]
+            }
+        });
+
+        expect(diff).toContain('-say "old";');
+        expect(diff).toContain('+say "new";');
+        expect(apiClient.commitFile).not.toHaveBeenCalled();
+    });
+
+    test('does not refetch empty text embedded by the server', async () => {
+        const apiClient = {commitFile: jest.fn()};
+        await buildCommitDiffFromInspection({
+            apiClient,
+            projectId: 'project-1',
+            sha: 'b'.repeat(40),
+            inspection: {
+                parent: 'a'.repeat(40),
+                files: [{path: 'empty.txt', status: 'added', newData: ''}]
+            }
+        });
+
+        expect(apiClient.commitFile).not.toHaveBeenCalled();
+    });
+
     test('renders every root file as added and does not fetch binary assets', async () => {
         const apiClient = {
             commitFile: jest.fn().mockResolvedValue({content: encode('say "hello";')})
