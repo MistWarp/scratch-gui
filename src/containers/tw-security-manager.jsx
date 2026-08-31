@@ -164,7 +164,6 @@ class TWSecurityManagerComponent extends React.Component {
         bindAll(this, SECURITY_MANAGER_METHODS);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
-        this.projectBlockedForLifetime = false;
         this.state = {
             type: null,
             data: null,
@@ -258,7 +257,6 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     handleBlocked () {
-        this.projectBlockedForLifetime = true;
         blockProjectPrompts({name: this.props.vm.runtime.projectName || ''});
         this.state.callback(false);
     }
@@ -274,7 +272,6 @@ class TWSecurityManagerComponent extends React.Component {
 
     handleProjectLoading ({stage}) {
         if (stage !== 'building') return;
-        this.projectBlockedForLifetime = false;
         this.props.vm.runtime._mwProjectTrusted = false;
         extensionsTrustedByUser.clear();
         platformProjectExtensionUrls.clear();
@@ -288,8 +285,7 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     projectPromptsBlocked () {
-        return this.projectBlockedForLifetime ||
-            isProjectPromptBlocked({name: this.props.vm.runtime.projectName || ''});
+        return isProjectPromptBlocked({name: this.props.vm.runtime.projectName || ''});
     }
 
     /**

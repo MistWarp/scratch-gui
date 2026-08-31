@@ -11,7 +11,8 @@ import {
 } from '../../src/containers/tw-security-manager.jsx';
 import {rememberPlatformProject} from '../../src/lib/community/publish.js';
 import {
-    BLOCKED_PROJECT_PROMPTS_KEY,
+    clearBlockedProjectPrompts,
+    unblockProjectPrompts,
     isProjectPromptBlocked
 } from '../../src/lib/project-prompt-blocking.js';
 
@@ -19,7 +20,7 @@ Object.defineProperty(global, 'crypto', {value: webcrypto, configurable: true});
 Object.defineProperty(global, 'TextEncoder', {value: TextEncoder, configurable: true});
 
 beforeEach(() => {
-    localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
+    clearBlockedProjectPrompts();
 });
 
 test('blocked projects cannot reopen extension security prompts', async () => {
@@ -37,6 +38,19 @@ test('blocked projects cannot reopen extension security prompts', async () => {
     expect(isProjectPromptBlocked({name: 'Blocked project'})).toBe(true);
     await expect(component.canOpenWindow('https://example.com')).resolves.toBe(false);
     expect(component.state.type).toBe(null);
+});
+
+test('unblocking a project takes effect without reloading the editor', () => {
+    const component = new TWSecurityManagerComponent({
+        vm: {runtime: {projectName: 'Blocked project'}},
+        securityManager: {}
+    });
+    component.state.callback = jest.fn();
+    component.handleBlocked();
+
+    expect(component.projectPromptsBlocked()).toBe(true);
+    unblockProjectPrompts('name:Blocked project');
+    expect(component.projectPromptsBlocked()).toBe(false);
 });
 
 test('only official or explicitly trusted extensions run unsandboxed', () => {

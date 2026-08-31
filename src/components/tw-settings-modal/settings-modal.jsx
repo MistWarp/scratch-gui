@@ -24,6 +24,7 @@ import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import MenuBarFeatureSettings from './menu-bar-settings.jsx';
 import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
+import PermissionsPage from './permissions-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
@@ -1569,6 +1570,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <LanguagePage />;
     case 'shortcuts':
         return <ShortcutManager />;
+    case 'permissions':
+        return <PermissionsPage />;
     case 'theme':
         return <ThemeSettingsPage {...handlers} />;
     case 'debugger':
