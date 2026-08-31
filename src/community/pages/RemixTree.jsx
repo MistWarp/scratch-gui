@@ -6,43 +6,62 @@ import Avatar from '../components/Avatar.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {timeAgo} from '../format.js';
-import {buildRemixTree} from '../remix-tree.js';
+import {buildRemixTree, layoutRemixGraph} from '../remix-tree.js';
 import setPageMeta from '../page-meta.js';
 import styles from './RemixTree.module.css';
 
-const RemixNode = ({node, model, selectedId}) => {
-    const children = model.childrenOf(node.id);
-    const isSelected = String(node.id) === String(selectedId);
-    const age = timeAgo(node.sharedAt || node.created || node.edited);
+const RemixGraph = ({tree, selectedId}) => {
+    const model = useMemo(() => buildRemixTree(tree), [tree]);
+    const graph = useMemo(() => layoutRemixGraph(tree, selectedId), [selectedId, tree]);
     return (
-        <li className={styles.treeItem}>
-            <Link
-                className={isSelected ? styles.nodeSelected : styles.node}
-                to={`${projectUrl(node.id)}/remixes`}
-                aria-current={isSelected ? 'page' : null}
-            >
-                <Avatar username={node.owner} size={30} />
-                <span className={styles.nodeText}>
-                    <strong>{node.title || 'Untitled project'}</strong>
-                    <span>by {node.owner || 'unknown'}{age ? ` · ${age}` : ''}</span>
-                </span>
-                {children.length ? (
-                    <span
-                        className={styles.childCount}
-                        title={`${children.length} direct remix${children.length === 1 ? '' : 'es'}`}
-                    >
-                        <GitFork size={13} /> {children.length}
-                    </span>
-                ) : null}
-            </Link>
-            {children.length ? (
-                <ul className={styles.treeChildren}>
-                    {children.map(child => (
-                        <RemixNode key={child.id} node={child} model={model} selectedId={selectedId} />
-                    ))}
-                </ul>
-            ) : null}
-        </li>
+        <div className={styles.graphScroll}>
+            <div className={styles.graph} style={{width: graph.width, height: graph.height}}>
+                <svg className={styles.connections} width={graph.width} height={graph.height} aria-hidden="true">
+                    {graph.edges.map(edge => {
+                        const fromX = edge.from.x + 210;
+                        const fromY = edge.from.y + 33;
+                        const toX = edge.to.x;
+                        const toY = edge.to.y + 33;
+                        const middle = (fromX + toX) / 2;
+                        return (
+                            <path
+                                key={`${edge.from.node.id}-${edge.to.node.id}`}
+                                d={`M ${fromX} ${fromY} C ${middle} ${fromY}, ${middle} ${toY}, ${toX} ${toY}`}
+                            />
+                        );
+                    })}
+                </svg>
+                {graph.nodes.map(entry => {
+                    const node = entry.node;
+                    const children = model.childrenOf(node.id);
+                    const isSelected = String(node.id) === String(selectedId);
+                    const age = timeAgo(node.sharedAt || node.created || node.edited);
+                    return (
+                        <Link
+                            key={node.id}
+                            className={isSelected ? styles.nodeSelected : styles.node}
+                            to={`${projectUrl(node.id)}/remixes`}
+                            aria-current={isSelected ? 'page' : null}
+                            style={{left: entry.x, top: entry.y}}
+                        >
+                            <Avatar username={node.owner} size={30} />
+                            <span className={styles.nodeText}>
+                                <strong>{node.title || 'Untitled project'}</strong>
+                                <span>by {node.owner || 'unknown'}{age ? ` · ${age}` : ''}</span>
+                            </span>
+                            {children.length ? (
+                                <span
+                                    className={styles.childCount}
+                                    title={`${children.length} direct remix${children.length === 1 ? '' : 'es'}`}
+                                >
+                                    <GitFork size={13} /> {children.length}
+                                </span>
+                            ) : null}
+                        </Link>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 
@@ -170,9 +189,7 @@ const RemixTree = () => {
                             </div>
                         </div>
                         {model.root ? (
-                            <ul className={styles.tree}>
-                                <RemixNode node={model.root} model={model} selectedId={id} />
-                            </ul>
+                            <RemixGraph tree={tree} selectedId={id} />
                         ) : tree ? <p className={styles.state}>No projects found in this tree.</p> : null}
                     </aside>
 

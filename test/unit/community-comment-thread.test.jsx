@@ -194,4 +194,46 @@ describe('CommentThread signed-out flow', () => {
         expect(wrapper.find('[id^="comment-group-"]')).toHaveLength(25);
         wrapper.unmount();
     });
+
+    test('applies comment events from a project subscription', async () => {
+        useUser.mockReturnValue({user: null, login: jest.fn()});
+        let publish;
+        const unsubscribe = jest.fn();
+        const source = {
+            list: jest.fn(() => Promise.resolve({comments: [], totalRoots: 0, nextOffset: 0})),
+            subscribe: jest.fn(listener => {
+                publish = listener;
+                return unsubscribe;
+            })
+        };
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <CommentThread source={source} />
+            </MemoryRouter>
+        );
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        act(() => publish({
+            type: 'comment_created',
+            comment: {id: 'live-comment', author: 'Sophie', content: 'Arrived live', created: 10}
+        }));
+        wrapper.update();
+        expect(wrapper.text()).toContain('Arrived live');
+
+        act(() => publish({
+            type: 'comment_edited',
+            comment: {id: 'live-comment', author: 'Sophie', content: 'Edited live', edited: 11}
+        }));
+        wrapper.update();
+        expect(wrapper.text()).toContain('Edited live');
+
+        act(() => publish({type: 'comment_deleted', commentId: 'live-comment'}));
+        wrapper.update();
+        expect(wrapper.text()).not.toContain('Edited live');
+        wrapper.unmount();
+        expect(unsubscribe).toHaveBeenCalledTimes(1);
+    });
 });
