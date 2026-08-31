@@ -84,6 +84,52 @@
     overflow-y: auto;
 }
 
+.permissions-title {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.permissions-intro {
+    max-width: 34rem;
+    margin: 0.5rem 0 1.25rem;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.permissions-list {
+    overflow: hidden;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+}
+
+.permission-project {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 54px;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.permission-project:last-child {
+    border-bottom: 0;
+}
+
+.permission-project-name {
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+
+.permissions-empty {
+    padding: 2rem 1rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 6px;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    text-align: center;
+}
+
 /* For small screens, such as in the embed */
 @media (max-height: 600px) {
     .modal-content {

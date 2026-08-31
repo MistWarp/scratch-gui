@@ -5,6 +5,7 @@ import {
     Keyboard,
     Monitor,
     Settings,
+    Shield,
     SunMoon,
     Variable,
     Zap
@@ -33,6 +34,14 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
                         defaultMessage: 'Keyboard Shortcuts'
                     }),
                     icon: Keyboard
+                },
+                {
+                    id: 'permissions',
+                    label: intl.formatMessage({
+                        id: 'mw.settings.permissions',
+                        defaultMessage: 'Permissions'
+                    }),
+                    icon: Shield
                 }
             ]
         },

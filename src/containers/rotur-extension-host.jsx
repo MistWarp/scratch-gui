@@ -13,8 +13,7 @@ import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {
     blockProjectPrompts,
-    isProjectPromptBlocked,
-    projectPromptKey
+    isProjectPromptBlocked
 } from '../lib/project-prompt-blocking.js';
 
 // Attaches a Rotur "host" onto vm.runtime so builtin Rotur extensions can act as
@@ -30,7 +29,6 @@ class RoturExtensionHost extends React.Component {
         ]);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
-        this.blockedProjectKey = '';
         this.activityScope = new ProjectActivityScope(callRotur);
         this.projectKey = null;
         this.state = {type: null, data: null, callback: null, modalCount: 0};
@@ -58,7 +56,6 @@ class RoturExtensionHost extends React.Component {
             this.activityScope.clear();
             this.activityScope = new ProjectActivityScope(callRotur);
             this.projectKey = nextProjectKey;
-            this.blockedProjectKey = '';
         }
     }
 
@@ -111,7 +108,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     handleBlocked () {
-        this.blockedProjectKey = blockProjectPrompts(this.projectPromptDetails()) || this.activityKey();
+        blockProjectPrompts(this.projectPromptDetails());
         this.state.callback(false);
     }
 
@@ -143,8 +140,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     projectPromptsBlocked () {
-        const key = projectPromptKey(this.projectPromptDetails()) || this.activityKey();
-        return key === this.blockedProjectKey || isProjectPromptBlocked(this.projectPromptDetails());
+        return isProjectPromptBlocked(this.projectPromptDetails());
     }
 
     async ensureActivitySharing () {

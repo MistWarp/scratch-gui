@@ -56,9 +56,29 @@ const blockProjectPrompts = project => {
     if (!key) return '';
     volatileBlockedProjectPrompts.add(key);
     const blocked = readBlockedProjectPrompts();
-    blocked[key] = true;
+    const name = String((project && (project.name || project.projectName)) || '').trim();
+    blocked[key] = name ? {name} : true;
     writeBlockedProjectPrompts(blocked);
     return key;
+};
+
+const unblockProjectPrompts = key => {
+    if (!key) return false;
+    volatileBlockedProjectPrompts.delete(key);
+    const blocked = readBlockedProjectPrompts();
+    if (!Object.prototype.hasOwnProperty.call(blocked, key)) return false;
+    delete blocked[key];
+    writeBlockedProjectPrompts(blocked);
+    return true;
+};
+
+const clearBlockedProjectPrompts = () => {
+    volatileBlockedProjectPrompts.clear();
+    try {
+        localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
+    } catch (e) {
+        // The in-memory blocks have still been cleared.
+    }
 };
 
 export {
@@ -66,5 +86,7 @@ export {
     projectPromptKey,
     readBlockedProjectPrompts,
     isProjectPromptBlocked,
-    blockProjectPrompts
+    blockProjectPrompts,
+    unblockProjectPrompts,
+    clearBlockedProjectPrompts
 };
