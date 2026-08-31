@@ -37,16 +37,6 @@ const SecurityManagerModalComponent = props => (
         id="securitymanagermodal"
     >
         <Box className={styles.body}>
-            {props.showLoadAll ? (
-                <p>
-                    <FormattedMessage
-                        // eslint-disable-next-line max-len
-                        defaultMessage="Trust this project with full access and bypass every permission popup? Only continue if you made it or checked its contents."
-                        description="Warning before bypassing all security prompts for a trusted project"
-                        id="mw.securityManager.ownerBypassWarning"
-                    />
-                </p>
-            ) : null}
             {props.type === SecurityModals.LoadExtension ? (
                 <LoadExtensionModal {...props.data} />
             ) : props.type === SecurityModals.Fetch ? (
@@ -71,19 +61,62 @@ const SecurityManagerModalComponent = props => (
                 <Download {...props.data} />
             ) : null}
 
-            <Box className={styles.buttons}>
-                <button
-                    type="button"
-                    className={styles.blockButton}
-                    onClick={props.onBlocked}
-                    disabled={!props.enableButtons}
-                >
+            <Box className={styles.projectActions}>
+                <div className={styles.projectActionsTitle}>
                     <FormattedMessage
-                        defaultMessage="Block this project"
-                        description="Button blocking all future permission prompts from the current project"
-                        id="mw.securityManager.blockProject"
+                        defaultMessage="For future requests"
+                        description="Heading above options which apply to all permission requests from a project"
+                        id="mw.securityManager.futureRequests"
                     />
-                </button>
+                </div>
+                <div className={styles.projectActionsDescription}>
+                    {props.showLoadAll ? (
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Always deny this project's permission requests, or trust it for this session and allow them without asking. Only trust a project you made or checked."
+                            description="Explanation of project-wide deny and trust options"
+                            id="mw.securityManager.futureRequestsWithTrust"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Stop this project from asking for any more permissions."
+                            description="Explanation of the project-wide deny option"
+                            id="mw.securityManager.futureRequestsDeny"
+                        />
+                    )}
+                </div>
+                <Box className={styles.projectButtons}>
+                    <button
+                        type="button"
+                        className={styles.blockButton}
+                        onClick={props.onBlocked}
+                        disabled={!props.enableButtons}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Always deny requests"
+                            description="Button permanently denying future permission prompts from the current project"
+                            id="mw.securityManager.blockProject"
+                        />
+                    </button>
+                    {props.showLoadAll ? (
+                        <button
+                            type="button"
+                            className={styles.loadAllButton}
+                            onClick={props.onLoadAll}
+                            disabled={!props.enableButtons}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Trust for this session"
+                                // eslint-disable-next-line max-len
+                                description="Button allowing all permission requests from a trusted project for this session"
+                                id="mw.securityManager.ownerBypass"
+                            />
+                        </button>
+                    ) : null}
+                </Box>
+            </Box>
+
+            <Box className={styles.buttons}>
                 <button
                     type="button"
                     className={styles.denyButton}
@@ -104,20 +137,6 @@ const SecurityManagerModalComponent = props => (
                         />
                     )}
                 </button>
-                {props.showLoadAll ? (
-                    <button
-                        type="button"
-                        className={styles.loadAllButton}
-                        onClick={props.onLoadAll}
-                        disabled={!props.enableButtons}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Trust project, bypass all"
-                            description="Button bypassing all security prompts for a trusted project"
-                            id="mw.securityManager.ownerBypass"
-                        />
-                    </button>
-                ) : null}
                 <button
                     type="button"
                     className={styles.allowButton}
