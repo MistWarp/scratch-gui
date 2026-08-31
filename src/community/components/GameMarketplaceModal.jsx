@@ -7,7 +7,7 @@ import {buyGameProduct} from '../purchase';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
 
-const GameMarketplaceModal = ({projectId, productId, onResult}) => {
+const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [buying, setBuying] = useState('');
@@ -77,6 +77,15 @@ const GameMarketplaceModal = ({projectId, productId, onResult}) => {
             title={productId ? 'Purchase game content' : 'Game shop'}
             onClose={() => onResult({status: 'closed'})}
             dismissDisabled={Boolean(buying)}
+            actions={onBlockProject ? (
+                <Button
+                    variant="danger"
+                    disabled={Boolean(buying)}
+                    onClick={onBlockProject}
+                >
+                    Block this project
+                </Button>
+            ) : null}
         >
             {loading ? <p>Loading shop…</p> : null}
             {!loading && !products.length ? <p>This project does not have any matching products.</p> : null}
@@ -102,6 +111,7 @@ const GameMarketplaceModal = ({projectId, productId, onResult}) => {
 };
 
 GameMarketplaceModal.propTypes = {
+    onBlockProject: PropTypes.func,
     onResult: PropTypes.func.isRequired,
     productId: PropTypes.string,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired

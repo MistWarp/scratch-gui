@@ -64,6 +64,7 @@ import {
 import {buildSb3FromFileEntries} from '../../lib/git/mwp.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import projectRealtime from '../project-realtime.js';
+import {blockProjectPrompts, isProjectPromptBlocked} from '../../lib/project-prompt-blocking.js';
 import styles from './Project.module.css';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
@@ -685,6 +686,10 @@ const Project = () => {
             }
             if (data.kind !== 'call') return;
             if (data.method === 'marketplace.open' || data.method === 'marketplace.purchase') {
+                if (isProjectPromptBlocked({id: projectId})) {
+                    reply(event.source, {id: data.id, ok: true, result: {status: 'blocked'}});
+                    return;
+                }
                 setGameMarketplace({
                     projectId,
                     productId: data.method === 'marketplace.purchase' ? String((data.args && data.args[0]) || '') : '',
@@ -800,6 +805,10 @@ const Project = () => {
                     }
                     return;
                 }
+                if (isProjectPromptBlocked({id: gamesProjectId})) {
+                    reply({id: data.id, ok: true, result: false});
+                    return;
+                }
                 setRoturModal({
                     type: 'consent',
                     data: {scopes, username: identity.username, name: meta.name},
@@ -813,6 +822,11 @@ const Project = () => {
                         }
                     },
                     onDeny: () => {
+                        setRoturModal(null);
+                        reply({id: data.id, ok: true, result: false});
+                    },
+                    onBlock: () => {
+                        blockProjectPrompts({id: gamesProjectId});
                         setRoturModal(null);
                         reply({id: data.id, ok: true, result: false});
                     }
@@ -842,6 +856,10 @@ const Project = () => {
                         reply({id: data.id, ok: true, result: ''});
                         return;
                     }
+                    if (isProjectPromptBlocked({id: gamesProjectId})) {
+                        reply({id: data.id, ok: true, result: ''});
+                        return;
+                    }
                     setRoturModal({
                         type: 'share',
                         data: {username: identity.username, name: (project && project.title) || ''},
@@ -859,11 +877,21 @@ const Project = () => {
                             setRoturModal(null);
                             rememberActivityDecision(key, false);
                             reply({id: data.id, ok: true, result: ''});
+                        },
+                        onBlock: () => {
+                            blockProjectPrompts({id: gamesProjectId});
+                            setRoturModal(null);
+                            rememberActivityDecision(key, false);
+                            reply({id: data.id, ok: true, result: ''});
                         }
                     });
                     return;
                 }
                 if (opts && opts.sensitive) {
+                    if (isProjectPromptBlocked({id: gamesProjectId})) {
+                        reply({id: data.id, ok: false, error: 'You blocked prompts from this project'});
+                        return;
+                    }
                     setRoturModal({
                         type: 'confirm',
                         data: {
@@ -878,6 +906,11 @@ const Project = () => {
                         onDeny: () => {
                             setRoturModal(null);
                             reply({id: data.id, ok: false, error: 'You cancelled this Rotur action'});
+                        },
+                        onBlock: () => {
+                            blockProjectPrompts({id: gamesProjectId});
+                            setRoturModal(null);
+                            reply({id: data.id, ok: false, error: 'You blocked prompts from this project'});
                         }
                     });
                 } else {
@@ -1819,6 +1852,7 @@ const Project = () => {
                     type={roturModal.type}
                     data={roturModal.data}
                     onAllow={() => roturModal.onAllow && roturModal.onAllow()}
+                    onBlock={() => roturModal.onBlock && roturModal.onBlock()}
                     onDeny={() => roturModal.onDeny && roturModal.onDeny()}
                     onShareThis={() => roturModal.onShareThis && roturModal.onShareThis()}
                     onShareAll={() => roturModal.onShareAll && roturModal.onShareAll()}
@@ -1829,6 +1863,11 @@ const Project = () => {
                 <GameMarketplaceModal
                     projectId={gameMarketplace.projectId}
                     productId={gameMarketplace.productId}
+                    onBlockProject={() => {
+                        blockProjectPrompts({id: gameMarketplace.projectId});
+                        gameMarketplace.onResult({status: 'blocked'});
+                        setGameMarketplace(null);
+                    }}
                     onResult={result => {
                         gameMarketplace.onResult(result);
                         setGameMarketplace(null);
@@ -2191,7 +2230,7 @@ const Project = () => {
                                     <HistoryList id={id} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
                                 ) : null}
                                 {versionControlTab === 'branches' ? (
-                                    <ProjectBranches id={id} canMerge={project.isOwner} onMerged={refreshProjectAndHistory} />
+                                    <ProjectBranches id={id} canManage={project.isOwner} onChange={refreshProjectAndHistory} />
                                 ) : null}
                                 {versionControlTab === 'pulls' ? (
                                     <PullList id={id} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />

@@ -11,6 +11,11 @@ import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
+import {
+    blockProjectPrompts,
+    isProjectPromptBlocked,
+    projectPromptKey
+} from '../lib/project-prompt-blocking.js';
 
 // Attaches a Rotur "host" onto vm.runtime so builtin Rotur extensions can act as
 // the logged-in user without ever seeing the token. The token stays inside the
@@ -20,11 +25,12 @@ class RoturExtensionHost extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
-            'handleAllowed', 'handleDenied', 'handleShareThis', 'handleShareAll', 'handleShareNo',
+            'handleAllowed', 'handleBlocked', 'handleDenied', 'handleShareThis', 'handleShareAll', 'handleShareNo',
             'getUser', 'ensureConsent', 'ensureActivitySharing', 'call', 'getProjectId'
         ]);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
+        this.blockedProjectKey = '';
         this.activityScope = new ProjectActivityScope(callRotur);
         this.projectKey = null;
         this.state = {type: null, data: null, callback: null, modalCount: 0};
@@ -52,6 +58,7 @@ class RoturExtensionHost extends React.Component {
             this.activityScope.clear();
             this.activityScope = new ProjectActivityScope(callRotur);
             this.projectKey = nextProjectKey;
+            this.blockedProjectKey = '';
         }
     }
 
@@ -64,6 +71,9 @@ class RoturExtensionHost extends React.Component {
     }
 
     async acquireModalLock () {
+        if (this.projectPromptsBlocked()) {
+            return {showModal: () => Promise.resolve(false)};
+        }
         if (this.modalLocked) {
             await new Promise(resolve => this.nextModalCallbacks.push(resolve));
         } else {
@@ -78,6 +88,10 @@ class RoturExtensionHost extends React.Component {
             }
         };
         const showModal = async (type, data) => {
+            if (this.projectPromptsBlocked()) {
+                releaseLock();
+                return false;
+            }
             const result = await new Promise(resolve => {
                 this.setState(old => ({
                     type,
@@ -94,6 +108,11 @@ class RoturExtensionHost extends React.Component {
 
     handleAllowed () {
         this.state.callback(true);
+    }
+
+    handleBlocked () {
+        this.blockedProjectKey = blockProjectPrompts(this.projectPromptDetails()) || this.activityKey();
+        this.state.callback(false);
     }
 
     handleDenied () {
@@ -114,6 +133,18 @@ class RoturExtensionHost extends React.Component {
 
     activityKey () {
         return this.getProjectId() || `name:${this.props.projectTitle || ''}`;
+    }
+
+    projectPromptDetails () {
+        return {
+            id: this.getProjectId(),
+            name: this.props.projectTitle || this.props.vm.runtime.projectName || ''
+        };
+    }
+
+    projectPromptsBlocked () {
+        const key = projectPromptKey(this.projectPromptDetails()) || this.activityKey();
+        return key === this.blockedProjectKey || isProjectPromptBlocked(this.projectPromptDetails());
     }
 
     async ensureActivitySharing () {
@@ -221,6 +252,7 @@ class RoturExtensionHost extends React.Component {
                     type={this.state.type}
                     data={this.state.data}
                     onAllowed={this.handleAllowed}
+                    onBlocked={this.handleBlocked}
                     onDenied={this.handleDenied}
                     onShareThis={this.handleShareThis}
                     onShareAll={this.handleShareAll}

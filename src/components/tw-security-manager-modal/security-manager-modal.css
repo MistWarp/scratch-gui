@@ -16,11 +16,13 @@
 
 .buttons {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 .buttons :disabled {
     opacity: 0.8;
 }
-.deny-button, .load-all-button, .allow-button {
+.block-button, .deny-button, .load-all-button, .allow-button {
     flex-grow: 1;
     font: inherit;
     color: inherit;
@@ -30,14 +32,17 @@
     font-weight: 600;
     font-size: 0.85rem;
 }
+.block-button {
+    background-color: $ui-white;
+    color: rgb(190, 38, 38);
+    border-color: rgba(190, 38, 38, 0.45);
+}
 .load-all-button {
     background-color: $ui-white;
-    margin-right: 8px;
 }
 .deny-button {
     background-color: rgb(255, 92, 92);
     color: white;
-    margin-right: 8px;
 }
 .allow-button {
     background-color: #24cd11;
@@ -51,6 +56,7 @@
     }
 
     .deny-button,
+    .block-button,
     .load-all-button,
     .allow-button {
         min-height: 44px;

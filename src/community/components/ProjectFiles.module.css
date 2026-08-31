@@ -18,15 +18,17 @@
     max-height: 100%;
 }
 
-.browserBounded > .viewer {
+.viewer {
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
-.browserBounded > .viewer > .code,
-.browserBounded > .viewer > .mediaPreview,
-.browserBounded > .viewer > .binaryState,
-.browserBounded > .viewer > .state {
+.viewer > .code,
+.viewer > .mediaPreview,
+.viewer > .binaryState,
+.viewer > .state {
+    flex: 1 1 0;
     min-height: 0;
     max-height: none;
     overflow: auto;

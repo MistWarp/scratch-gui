@@ -17,7 +17,7 @@ const groupScopes = scopes => {
 // Trusted consent/confirm UI rendered in the community project page (the parent
 // of the project iframe). The sandboxed project cannot read or dismiss this, so
 // it can request an action but never approve one on the user's behalf.
-const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll, onShareNo}) => {
+const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, onShareAll, onShareNo}) => {
     const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     if (type === 'share') {
         return (
@@ -27,6 +27,7 @@ const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll
                 onDismiss={onShareNo}
                 actions={
                     <React.Fragment>
+                        <Button variant="danger" onClick={onBlock}>Block this project</Button>
                         <Button onClick={onShareNo}>Not now</Button>
                         <Button onClick={onShareAll}>Allow all</Button>
                         <Button
@@ -51,6 +52,7 @@ const RoturConsentModal = ({type, data, onAllow, onDeny, onShareThis, onShareAll
             onDismiss={onDeny}
             actions={
                 <React.Fragment>
+                    <Button variant="danger" onClick={onBlock}>Block this project</Button>
                     <Button onClick={onDeny}>
                         {type === 'confirm' ? 'Cancel' : 'Not now'}
                     </Button>

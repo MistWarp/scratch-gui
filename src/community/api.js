@@ -381,6 +381,18 @@ const api = {
     editIdeaComment: (id, commentId, content) => request(`/roadmap/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     commits: id => request(`/projects/${id}/commits`),
     branches: id => request(`/projects/${id}/branches`),
+    createBranch: (id, name, from) => request(`/projects/${id}/branches`, {
+        method: 'POST',
+        body: {name, from}
+    }),
+    renameBranch: (id, branch, name) => request(`/projects/${id}/branches`, {
+        method: 'PATCH',
+        body: {branch, name}
+    }),
+    deleteBranch: (id, branch) => request(`/projects/${id}/branches`, {
+        method: 'DELETE',
+        body: {branch}
+    }),
     mergeBranches: (id, source, target) => request(`/projects/${id}/branches/merge`, {
         method: 'POST',
         body: {source, target}

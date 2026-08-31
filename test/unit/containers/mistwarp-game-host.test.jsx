@@ -1,8 +1,13 @@
 import {MistWarpGameHost} from '../../../src/containers/mistwarp-game-host.jsx';
+import {
+    blockProjectPrompts,
+    BLOCKED_PROJECT_PROMPTS_KEY
+} from '../../../src/lib/project-prompt-blocking.js';
 
 describe('MistWarp game host', () => {
     afterEach(() => {
         sessionStorage.removeItem('mw:mistwarp-current-project');
+        localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
     });
 
     test('keeps save blocks usable before the project is saved', async () => {
@@ -38,5 +43,18 @@ describe('MistWarp game host', () => {
             status: 'multiplayer disabled'
         });
         await expect(host.call('multiplayer.setState', [{x: 10}])).resolves.toBe(false);
+    });
+
+    test('does not open the marketplace for a blocked project', async () => {
+        blockProjectPrompts({id: 'blocked-project'});
+        const host = new MistWarpGameHost({
+            projectId: 'blocked-project',
+            userId: 'user-id',
+            username: 'player',
+            vm: {runtime: {}}
+        });
+
+        await expect(host.call('marketplace.open', [])).resolves.toEqual({status: 'blocked'});
+        expect(host.state.marketplace).toBe(null);
     });
 });

@@ -74,6 +74,18 @@ const SecurityManagerModalComponent = props => (
             <Box className={styles.buttons}>
                 <button
                     type="button"
+                    className={styles.blockButton}
+                    onClick={props.onBlocked}
+                    disabled={!props.enableButtons}
+                >
+                    <FormattedMessage
+                        defaultMessage="Block this project"
+                        description="Button blocking all future permission prompts from the current project"
+                        id="mw.securityManager.blockProject"
+                    />
+                </button>
+                <button
+                    type="button"
                     className={styles.denyButton}
                     onClick={props.onDenied}
                     disabled={!props.enableButtons}
@@ -148,6 +160,7 @@ SecurityManagerModalComponent.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
     onAllowed: PropTypes.func.isRequired,
+    onBlocked: PropTypes.func.isRequired,
     onDenied: PropTypes.func.isRequired,
     onLoadAll: PropTypes.func.isRequired
 };

@@ -17,7 +17,7 @@ class ShareWindow extends React.Component {
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
         this.handleChangeMessage = this.handleChangeMessage.bind(this);
-        this.handleSkipVersion = this.handleSkipVersion.bind(this);
+        this.handleGenerateName = this.handleGenerateName.bind(this);
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.handleProgress = this.handleProgress.bind(this);
         this.prepareThumbnail = this.prepareThumbnail.bind(this);
@@ -67,7 +67,7 @@ class ShareWindow extends React.Component {
     handleChangeMessage (event) {
         this.setState({changeMessage: event.target.value});
     }
-    async handleSkipVersion () {
+    async handleGenerateName () {
         if (this.state.status) return;
         this.setState({status: 'Writing a commit name', phase: 'name', error: null});
         try {
@@ -83,7 +83,7 @@ class ShareWindow extends React.Component {
                 status: null,
                 phase: null,
                 notice
-            }, this.handlePublish);
+            });
         } catch (error) {
             this.setState({
                 status: null,
@@ -407,9 +407,10 @@ class ShareWindow extends React.Component {
                             onChange={this.handleChangeMessage}
                         />
                         <p className={styles.notice}>
-                            {'Write the name yourself, or click Skip to have Sable name this version ' +
-                                'from the Fractch diff.'}
+                            {'Write the name yourself, or click Generate name to ask Sable. ' +
+                                'Generating a name may use some of your Sable Credit (SC).'}
                         </p>
+                        {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                         {this.renderStatus()}
                         {this.renderError()}
                     </div>
@@ -423,9 +424,9 @@ class ShareWindow extends React.Component {
                         <button
                             type="button"
                             className={styles.secondary}
-                            onClick={this.handleSkipVersion}
+                            onClick={this.handleGenerateName}
                             disabled={!!this.state.status}
-                        >Skip</button>
+                        >Generate name</button>
                         <button
                             type="button"
                             className={styles.primary}
