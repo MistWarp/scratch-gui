@@ -210,6 +210,7 @@ const GUIComponent = props => {
     const stagePanelResizeCleanupRef = useRef(null);
     const syncingModeRef = useRef(false);
     const prevStageSizeModeRef = useRef(null);
+    const prevCustomStageSizeRef = useRef(props.customStageSize);
     const lastSyncedWidthRef = useRef(null);
     const [stagePanelWidth, setStagePanelWidth] = useState(null);
     const [stageContainerWidth, setStageContainerWidth] = useState(null);
@@ -415,6 +416,25 @@ const GUIComponent = props => {
             setStageWidth(null);
         }
     }, [props.stageSizeMode, props.stageSizeRequestId, props.isFullScreen, setStageWidth]);
+
+    useEffect(() => {
+        const previousSize = prevCustomStageSizeRef.current;
+        prevCustomStageSizeRef.current = props.customStageSize;
+
+        if (previousSize.width === props.customStageSize.width &&
+            previousSize.height === props.customStageSize.height) return;
+        if (props.isFullScreen || props.stageSizeMode !== STAGE_SIZE_MODES.full) return;
+        if (preferredPanelWidthRef.current !== null) return;
+
+        // The project can replace the default stage dimensions after the editor has already measured its panel.
+        // Clear that stale measurement so full-size mode is laid out using the loaded project's dimensions.
+        setStageWidth(null);
+    }, [
+        props.customStageSize,
+        props.isFullScreen,
+        props.stageSizeMode,
+        setStageWidth
+    ]);
 
     useEffect(() => {
         if (stageContainerWidth === lastSyncedWidthRef.current) return;
