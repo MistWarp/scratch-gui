@@ -3,6 +3,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 import api from '../../community/api';
 import CommentThread from '../../community/components/CommentThread.jsx';
+import projectRealtime from '../../community/project-realtime.js';
 import styles from './mw-project-activity.css';
 
 const MwProjectActivity = ({projectId}) => {
@@ -12,7 +13,8 @@ const MwProjectActivity = ({projectId}) => {
         list: () => api.getComments(projectId),
         add: (content, parent, kind) => api.addComment(projectId, content, parent, kind),
         remove: commentId => api.deleteComment(projectId, commentId),
-        react: (commentId, type) => api.reactComment(projectId, commentId, type)
+        react: (commentId, type) => api.reactComment(projectId, commentId, type),
+        subscribe: listener => projectRealtime.subscribe(projectId, listener)
     }), [projectId]);
 
     useEffect(() => {

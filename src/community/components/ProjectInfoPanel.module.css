@@ -185,6 +185,89 @@
     font-size: 12px;
 }
 
+.tagEditor {
+    display: grid;
+    gap: 8px;
+}
+
+.tagEditorFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.tagEditorFooter .fieldHint {
+    margin: 0;
+}
+
+.suggestTagsButton {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.tagSuggestions {
+    padding: 9px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: var(--bg-raised);
+}
+
+.tagSuggestions p,
+.tagSuggestionStatus {
+    margin: 0;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.tagSuggestionRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
+}
+
+.tagSuggestionRow span {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 7px;
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tagSuggestionCommit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.tagSuggestionCommit strong {
+    color: var(--mw-text);
+}
+
+.tagSuggestionCommit code {
+    color: var(--text-dim);
+}
+
+.tagSuggestionCharge {
+    margin-top: 9px !important;
+    line-height: 1.4;
+}
+
+.tagSuggestionActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 9px;
+}
+
 .teamPanel {
     display: grid;
     gap: 14px;

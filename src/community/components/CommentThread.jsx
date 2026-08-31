@@ -417,6 +417,55 @@ const CommentThread = ({
         load();
     }, [beginExtraLoad, load]);
 
+    useEffect(() => {
+        if (!source.subscribe) return;
+        return source.subscribe(event => {
+            if (event.type === 'comment_created' && event.comment) {
+                setComments(current => {
+                    if (current.some(comment => comment.id === event.comment.id)) return current;
+                    if (!event.comment.parent) {
+                        setTotalRoots(total => total + 1);
+                        setNextOffset(offset => offset + 1);
+                    }
+                    if (onCountChange) onCountChange(1);
+                    return addCreatedComment(current, event.comment);
+                });
+                return;
+            }
+            if (event.type === 'comment_deleted' && event.commentId) {
+                setComments(current => {
+                    const removed = current.filter(comment => (
+                        comment.id === event.commentId || comment.parent === event.commentId
+                    ));
+                    if (!removed.length) return current;
+                    if (removed.some(comment => !comment.parent)) {
+                        setTotalRoots(total => Math.max(0, total - 1));
+                        setNextOffset(offset => Math.max(0, offset - 1));
+                    }
+                    if (onCountChange) onCountChange(-removed.length);
+                    return current.filter(comment => (
+                        comment.id !== event.commentId && comment.parent !== event.commentId
+                    ));
+                });
+                return;
+            }
+            if (event.type === 'comment_edited' && event.comment) {
+                setComments(current => current.map(comment => (
+                    comment.id === event.comment.id ? {...comment, ...event.comment} : comment
+                )));
+                return;
+            }
+            if (event.type === 'comment_reaction' && event.commentId) {
+                setComments(current => current.map(comment => {
+                    if (comment.id !== event.commentId) return comment;
+                    const next = {...comment, reactionCounts: event.reactionCounts || {}};
+                    if (sameUser(event.actor, viewerRef.current)) next.myReaction = event.reaction || '';
+                    return next;
+                }));
+            }
+        });
+    }, [source, onCountChange]);
+
     const loadMore = async () => {
         if (loadingMore || nextOffset >= totalRoots) return;
         const actionSource = source;
@@ -508,12 +557,15 @@ const CommentThread = ({
             }) : await actionSource.add(text.trim(), parent, commentKind);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
             if (data && data.comment) {
-                setComments(current => addCreatedComment(current, data.comment));
-                if (!data.comment.parent) {
-                    setTotalRoots(total => total + 1);
-                    setNextOffset(offset => offset + 1);
-                }
-                if (onCountChange) onCountChange(1);
+                setComments(current => {
+                    if (current.some(comment => comment.id === data.comment.id)) return current;
+                    if (!data.comment.parent) {
+                        setTotalRoots(total => total + 1);
+                        setNextOffset(offset => offset + 1);
+                    }
+                    if (onCountChange) onCountChange(1);
+                    return addCreatedComment(current, data.comment);
+                });
             }
             setContent('');
             setKind('comment');
@@ -542,13 +594,16 @@ const CommentThread = ({
         try {
             await actionSource.remove(commentId);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-            const removedCount = comments.filter(c => c.id === commentId || c.parent === commentId).length;
-            setComments(cs => cs.filter(c => c.id !== commentId && c.parent !== commentId));
-            if (removingComment && !removingComment.parent) {
-                setTotalRoots(total => Math.max(0, total - 1));
-                setNextOffset(offset => Math.max(0, offset - 1));
-            }
-            if (onCountChange && removedCount) onCountChange(-removedCount);
+            setComments(current => {
+                const removedCount = current.filter(c => c.id === commentId || c.parent === commentId).length;
+                if (!removedCount) return current;
+                if (removingComment && !removingComment.parent) {
+                    setTotalRoots(total => Math.max(0, total - 1));
+                    setNextOffset(offset => Math.max(0, offset - 1));
+                }
+                if (onCountChange) onCountChange(-removedCount);
+                return current.filter(c => c.id !== commentId && c.parent !== commentId);
+            });
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {

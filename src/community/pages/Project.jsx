@@ -63,6 +63,7 @@ import {
 } from '../../lib/mistwarp-games/data-client.js';
 import {buildSb3FromFileEntries} from '../../lib/git/mwp.js';
 import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
+import projectRealtime from '../project-realtime.js';
 import styles from './Project.module.css';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
@@ -193,6 +194,8 @@ const Project = () => {
     const {id} = useParams();
     const {user, loading: userLoading, login} = useUser();
     const viewerName = (user && user.username) || '';
+    const realtimeViewer = useRef(viewerName);
+    realtimeViewer.current = viewerName;
     const actionContext = `${id}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -264,6 +267,35 @@ const Project = () => {
 
     const beginLoad = useLatest();
     const beginHistoryLoad = useLatest();
+
+    useEffect(() => {
+        const accessKey = new URLSearchParams(window.location.search).get('k') || '';
+        return projectRealtime.subscribe(id, event => {
+            if (event.type !== 'project_stats') return;
+            setProject(current => {
+                if (!current || String(current.id) !== String(event.projectId)) return current;
+                const next = {
+                    ...current,
+                    loveCount: Number(event.hearts) || 0,
+                    brokenHeartCount: Number(event.brokenHearts) || 0,
+                    saveCount: Number(event.saves) || 0
+                };
+                if (sameUser(event.actor, realtimeViewer.current)) {
+                    if (Object.prototype.hasOwnProperty.call(event, 'reaction')) {
+                        next.myReaction = event.reaction || '';
+                    }
+                    if (Object.prototype.hasOwnProperty.call(event, 'saved')) {
+                        next.saved = Boolean(event.saved);
+                    }
+                }
+                return next;
+            });
+        }, accessKey);
+    }, [id]);
+
+    useEffect(() => {
+        projectRealtime.refreshAuth();
+    }, [viewerName]);
 
     useEffect(() => {
         const scope = new ProjectActivityScope(callRotur);
@@ -455,7 +487,7 @@ const Project = () => {
                 return;
             }
             if (event.data.type === 'mw:diagnostic') {
-                api.recordDiagnostic(id, event.data.diagnostic).catch(() => {});
+                projectRealtime.diagnostic(id, event.data.diagnostic);
             }
         };
         window.addEventListener('message', onMessage);
@@ -1312,7 +1344,12 @@ const Project = () => {
         donationIntent: amount => api.commentDonationIntent(id, amount),
         remove: commentId => api.deleteComment(id, commentId),
         edit: (commentId, content) => api.editComment(id, commentId, content),
-        react: (commentId, type) => api.reactComment(id, commentId, type)
+        react: (commentId, type) => api.reactComment(id, commentId, type),
+        subscribe: listener => projectRealtime.subscribe(
+            id,
+            listener,
+            new URLSearchParams(window.location.search).get('k') || ''
+        )
     }), [id]);
 
     if (error && errorLoadContext === actionContext && projectLoadContext !== actionContext) {

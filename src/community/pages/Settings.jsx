@@ -664,7 +664,7 @@ const Settings = () => {
                     {activeSection === 'smart' ? (
                         <section className={styles.card}>
                             <h2>Smart features</h2>
-                            <p className={styles.lead}>Small optional helpers powered by Sable. Commit naming sends the changed Fractch diff only after you ask for it. Your projects and community posts stay yours.</p>
+                            <p className={styles.lead}>Small optional helpers powered by Sable. Commit naming sends the changed Fractch diff. Tag suggestions send the latest committed Fractch source without assets. Both run only after you ask.</p>
                             {!user ? (
                                 <Button onClick={login}>Sign in with Rotur</Button>
                             ) : (
@@ -689,7 +689,7 @@ const Settings = () => {
                                         </Button>
                                     </div>
                                     <p className={styles.note}>Adding funds moves 10 RC into Sable Credit. Sable deducts the exact model cost when a helper runs.</p>
-                                    <p className={styles.note}>Sable runs only when you leave a commit name blank and click Skip. It never reads ahead or drafts while you type.</p>
+                                    <p className={styles.note}>Commit naming runs when you leave a commit name blank and click Skip. Tag suggestions run when you press Suggest tags. Sable never reads ahead or drafts while you type.</p>
                                 </React.Fragment>
                             )}
                             {smartStatus ? <p className={styles.note} aria-live="polite">{smartStatus}</p> : null}
