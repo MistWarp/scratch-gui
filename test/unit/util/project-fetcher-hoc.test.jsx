@@ -6,7 +6,7 @@ import {mountWithIntl, shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 import ProjectFetcherHOC from '../../../src/lib/components/project-fetcher-hoc.jsx';
 import storage from '../../../src/lib/persistence/storage';
 import {LoadingState} from '../../../src/reducers/project-state';
-import {getEditorProject, fetchWorkspace, takeProjectHandoff} from '../../../src/lib/community/api.js';
+import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
@@ -19,8 +19,7 @@ jest.mock('../../../src/lib/git/mwp.js', () => ({
 }));
 jest.mock('../../../src/lib/community/api.js', () => ({
     fetchWorkspace: jest.fn(),
-    getEditorProject: jest.fn(),
-    takeProjectHandoff: jest.fn()
+    getEditorProject: jest.fn()
 }));
 jest.mock('../../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn()
@@ -151,15 +150,16 @@ describe('ProjectFetcherHOC', () => {
         expect(onFetchedProjectData.mock.calls[0][0]).toContain('/new.json');
     });
 
-    test('uses the project page handoff without refetching editor metadata', async () => {
-        const project = {
+    test('fetches current editor metadata before loading a platform project', async () => {
+        const currentProject = {
             id: 'handoff',
-            title: 'Handoff',
-            projectJsonUrl: 'https://projects.example/handoff.json',
-            workspaceUrl: 'https://projects.example/handoff.mwp'
+            title: 'Current project',
+            gitHead: 'current-head',
+            projectJsonUrl: 'https://projects.example/current.json',
+            workspaceUrl: 'https://projects.example/current.mwp'
         };
-        takeProjectHandoff.mockReturnValue(project);
-        cachedFetchBuffer.mockResolvedValue('handoff data');
+        getEditorProject.mockResolvedValue({project: currentProject});
+        cachedFetchBuffer.mockResolvedValue('current data');
         const Component = () => <div />;
         const WrappedComponent = ProjectFetcherHOC(Component);
         const onFetchedProjectData = jest.fn();
@@ -176,9 +176,10 @@ describe('ProjectFetcherHOC', () => {
         window.history.replaceState({}, '', '/?platform_project=handoff');
         await wrapper.dive().dive().instance().fetchProject('0', LoadingState.FETCHING_WITH_ID);
 
-        expect(getEditorProject).not.toHaveBeenCalled();
+        expect(getEditorProject).toHaveBeenCalledWith('handoff');
+        expect(cachedFetchBuffer).toHaveBeenCalledWith(currentProject.projectJsonUrl);
         expect(fetchWorkspace).not.toHaveBeenCalled();
-        expect(onFetchedProjectData).toHaveBeenCalledWith('handoff data', LoadingState.FETCHING_WITH_ID);
+        expect(onFetchedProjectData).toHaveBeenCalledWith('current data', LoadingState.FETCHING_WITH_ID);
     });
 
     test.skip('when there is an id, it tries to update the store with that id', () => {

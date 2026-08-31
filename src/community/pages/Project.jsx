@@ -8,7 +8,7 @@ import {
     Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronRight, GitPullRequest, Search,
     History, GitBranch, Package
 } from 'lucide-react';
-import api, {projectUrl, editorUrl, embedUrl, stashProjectHandoff, themeCustomFor} from '../api';
+import api, {projectUrl, editorUrl, embedUrl, themeCustomFor} from '../api';
 import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
 import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
@@ -1525,7 +1525,6 @@ const Project = () => {
                         <a
                             className={styles.primary}
                             href={seeInsideHref}
-                            onClick={() => stashProjectHandoff(project)}
                         >
                             <ExternalLink size={16} />
                             See inside
@@ -1994,7 +1993,6 @@ const Project = () => {
                                         <a
                                             className={styles.paywallButton}
                                             href={editorUrl({platformProject: project.id})}
-                                            onClick={() => stashProjectHandoff(project)}
                                         >
                                             <ExternalLink size={16} />
                                             Open in editor

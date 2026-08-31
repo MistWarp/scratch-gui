@@ -7,8 +7,7 @@ import {
     logout,
     createProject,
     uploadProject,
-    prepareSparseProjectUpload,
-    stashProjectHandoff
+    prepareSparseProjectUpload
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
 
@@ -456,5 +455,5 @@ const api = {
 export default api;
 export {
     editorUrl, embedUrl, projectUrl, loadSession, storeSession, exchangeValidator,
-    request, stashProjectHandoff, themeCustomFor
+    request, themeCustomFor
 };

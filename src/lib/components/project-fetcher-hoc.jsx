@@ -37,8 +37,7 @@ import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {rememberPlatformProject} from '../community/publish.js';
 import {
-    getEditorProject as getMistWarpEditorProject,
-    takeProjectHandoff
+    getEditorProject as getMistWarpEditorProject
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
@@ -99,7 +98,7 @@ const clearProjectSourceOnForeignLoads = vm => {
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
-    const project = source || takeProjectHandoff(id) || (await getMistWarpEditorProject(id)).project;
+    const project = source || (await getMistWarpEditorProject(id)).project;
     const data = await (hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl));
     return {data, title: project.title, platformProject: project};
 };
