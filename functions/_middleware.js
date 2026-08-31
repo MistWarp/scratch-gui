@@ -1,8 +1,8 @@
 /* global HTMLRewriter */
 
-const API_BASE = 'https://mwapi.mistium.com/api';
+const API_BASE = 'https://api.mistwarp.org/v1';
 const AVATARS = 'https://avatars.rotur.dev';
-const DEFAULT_IMAGE = 'https://warp.mistium.com/images/apple-touch-icon.png';
+const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:js|static\/assets)\//;
 
