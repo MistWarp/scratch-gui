@@ -1,6 +1,6 @@
 import {loadSession} from '../lib/community/api.js';
 
-const SOCKET_URL = 'wss://mwapi.mistium.com/v1/ws';
+const SOCKET_URL = 'wss://api.mistwarp.org/v1/ws';
 const MAX_PENDING_DIAGNOSTICS = 100;
 
 class ProjectRealtime {

@@ -119,7 +119,7 @@ test('only extensions discovered in a platform project use its saved source URL'
     const storedExtension = 'https://example.com/stored.js';
     await component.canLoadExtensionFromProject(storedExtension);
     expect(await component.rewriteExtensionURL(storedExtension)).toMatch(
-        /^https:\/\/mwapi\.mistium\.com\/api\/projects\/project-1\/extensions\/[a-f0-9]{64}\/source\?k=secret$/
+        /^https:\/\/api\.mistwarp\.org\/v1\/projects\/project-1\/extensions\/[a-f0-9]{64}\/source\?k=secret$/
     );
 
     window.history.replaceState(null, '', '/editor');

@@ -37,7 +37,7 @@ test('authenticates after opening without putting the ticket in the URL', async 
     const originalWebSocket = global.WebSocket;
     global.WebSocket = FakeWebSocket;
     mockRequest.mockResolvedValue({
-        connectUrl: 'wss://mwapi.mistium.com/v1/connect',
+        connectUrl: 'wss://api.mistwarp.org/v1/connect',
         ticket: 'mwt_secret'
     });
 
@@ -48,7 +48,7 @@ test('authenticates after opening without putting the ticket in the URL', async 
         await Promise.resolve();
 
         const socket = FakeWebSocket.instances[0];
-        expect(socket.url).toBe('wss://mwapi.mistium.com/v1/connect');
+        expect(socket.url).toBe('wss://api.mistwarp.org/v1/connect');
         socket.readyState = FakeWebSocket.OPEN;
         socket.dispatch('open');
         expect(JSON.parse(socket.sent[0])).toEqual({type: 'authenticate', ticket: 'mwt_secret'});
@@ -74,7 +74,7 @@ test('sends ping messages to keep the connection open and handles pong', async (
     const originalWebSocket = global.WebSocket;
     global.WebSocket = FakeWebSocket;
     mockRequest.mockResolvedValue({
-        connectUrl: 'wss://mwapi.mistium.com/v1/connect',
+        connectUrl: 'wss://api.mistwarp.org/v1/connect',
         ticket: 'mwt_secret'
     });
 
@@ -110,7 +110,7 @@ test('automatically reconnects and restores player state when socket closes unex
     global.WebSocket = FakeWebSocket;
     let ticketCounter = 1;
     mockRequest.mockImplementation(() => Promise.resolve({
-        connectUrl: 'wss://mwapi.mistium.com/v1/connect',
+        connectUrl: 'wss://api.mistwarp.org/v1/connect',
         ticket: `mwt_secret_${ticketCounter++}`
     }));
 
@@ -140,7 +140,7 @@ test('automatically reconnects and restores player state when socket closes unex
 
         expect(FakeWebSocket.instances.length).toBe(2);
         const socket2 = FakeWebSocket.instances[1];
-        expect(socket2.url).toBe('wss://mwapi.mistium.com/v1/connect');
+        expect(socket2.url).toBe('wss://api.mistwarp.org/v1/connect');
         socket2.readyState = FakeWebSocket.OPEN;
         socket2.dispatch('open');
         expect(JSON.parse(socket2.sent[0])).toEqual({type: 'authenticate', ticket: 'mwt_secret_2'});
@@ -158,7 +158,7 @@ test('explicit disconnect prevents automatic reconnect', async () => {
     const originalWebSocket = global.WebSocket;
     global.WebSocket = FakeWebSocket;
     mockRequest.mockResolvedValue({
-        connectUrl: 'wss://mwapi.mistium.com/v1/connect',
+        connectUrl: 'wss://api.mistwarp.org/v1/connect',
         ticket: 'mwt_secret'
     });
 

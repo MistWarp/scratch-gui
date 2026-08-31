@@ -117,7 +117,8 @@ self.addEventListener('fetch', event => {
     } else if (request.destination === 'image') {
         // Cache first for images
         event.respondWith(cacheFirst(request));
-    } else if (url.pathname.includes('/api/') || url.pathname.includes('/internalapi/')) {
+    } else if (url.pathname.includes('/v1/') || url.pathname.includes('/api/') ||
+        url.pathname.includes('/internalapi/')) {
         // Network first for API calls
         event.respondWith(networkFirst(request));
     } else if (url.pathname.endsWith('.sb3') || url.pathname.includes('projects')) {

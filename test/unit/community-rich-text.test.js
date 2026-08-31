@@ -19,6 +19,8 @@ describe('MistWarp rich text links', () => {
     test('accepts public MistWarp destinations', () => {
         expect(internalMistWarpRoute('/spaces/studio-1')).toBe('/spaces/studio-1');
         expect(internalMistWarpRoute('/spaces?kind=challenge')).toBe('/spaces?kind=challenge');
+        expect(internalMistWarpRoute('https://mistwarp.org/project/abc123#comments'))
+            .toBe('/project/abc123#comments');
         expect(internalMistWarpRoute('https://warp.mistium.com/project/abc123#comments'))
             .toBe('/project/abc123#comments');
         expect(internalMistWarpRoute('/users/sophie/followers')).toBe('/users/sophie/followers');
