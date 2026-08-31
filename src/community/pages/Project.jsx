@@ -2294,33 +2294,6 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
     );
 };
 
-const RemixTreeNode = ({node, childrenOf, currentId}) => (
-    <li>
-        <div
-            className={node.id === currentId ? styles.treeNodeCurrent : styles.treeNode}
-        >
-            <Avatar username={node.owner} size={22} />
-            <Link className={styles.treeTitle} to={projectUrl(node.id)}>{node.title}</Link>
-            <span className={styles.treeMeta}>
-                <UserLink username={node.owner}>{node.owner}</UserLink>{timeAgo(node.sharedAt || node.created || node.edited) ?
-                    ` · ${timeAgo(node.sharedAt || node.created || node.edited)}` : ''}
-            </span>
-        </div>
-        {childrenOf(node.id).length ? (
-            <ul className={styles.treeChildren}>
-                {childrenOf(node.id).map(child => (
-                    <RemixTreeNode
-                        key={child.id}
-                        node={child}
-                        childrenOf={childrenOf}
-                        currentId={currentId}
-                    />
-                ))}
-            </ul>
-        ) : null}
-    </li>
-);
-
 const RemixTree = ({id}) => {
     const [tree, setTree] = useState(null);
     const [failed, setFailed] = useState(false);
@@ -2336,34 +2309,17 @@ const RemixTree = ({id}) => {
             active = false;
         };
     }, [attempt, id]);
-    const childMap = useMemo(() => {
-        const map = new Map();
-        for (const node of (tree && tree.nodes) || []) {
-            if (!map.has(node.remixParent)) map.set(node.remixParent, []);
-            map.get(node.remixParent).push(node);
-        }
-        for (const list of map.values()) {
-            list.sort((a, b) => (a.sharedAt || a.created || 0) - (b.sharedAt || b.created || 0));
-        }
-        return map;
-    }, [tree]);
     if (!tree && !failed) return null;
     if (failed) return <p className={styles.sideEmpty}>Could not load remixes. <button type="button" onClick={() => setAttempt(value => value + 1)}>Try again</button></p>;
     const nodes = tree.nodes || [];
-    if (nodes.length < 2) return null;
-    const childrenOf = parentId => childMap.get(parentId) || [];
-    const root = nodes.find(node => node.id === tree.root);
-    if (!root) return null;
     return (
         <section className={styles.remixPanel}>
-            <h2 className={styles.colTitle}>Remixes</h2>
-            <ul className={styles.tree}>
-                <RemixTreeNode
-                    node={root}
-                    childrenOf={childrenOf}
-                    currentId={id}
-                />
-            </ul>
+            <GitFork size={20} />
+            <div>
+                <h2>Remix tree</h2>
+                <p>{nodes.length > 1 ? `${nodes.length} projects branch from the same original.` : 'See this project alongside its Git history.'}</p>
+            </div>
+            <Link to={`${projectUrl(id)}/remixes`}>Explore tree <ChevronRight size={15} /></Link>
         </section>
     );
 };

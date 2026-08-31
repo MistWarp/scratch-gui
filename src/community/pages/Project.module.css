@@ -1178,7 +1178,46 @@
 }
 
 .remixPanel {
-    padding-top: 4px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px 11px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.remixPanel > svg {
+    margin-top: 1px;
+    color: var(--accent-strong);
+}
+
+.remixPanel h2,
+.remixPanel p {
+    margin: 0;
+}
+
+.remixPanel h2 {
+    color: var(--mw-text);
+    font-size: 15px;
+}
+
+.remixPanel p {
+    margin-top: 4px;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.remixPanel > a {
+    display: inline-flex;
+    grid-column: 2;
+    align-items: center;
+    gap: 4px;
+    width: max-content;
+    color: var(--accent-strong);
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .tabActive {
