@@ -14,16 +14,23 @@
     margin: 8px 0;
 }
 
-.buttons {
+.buttons,
+.project-buttons {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
 }
-.buttons :disabled {
+
+.buttons {
+    margin-top: 12px;
+}
+
+.buttons :disabled,
+.project-buttons :disabled {
     opacity: 0.8;
 }
+
 .block-button, .deny-button, .load-all-button, .allow-button {
-    flex-grow: 1;
+    flex: 1 1 0;
     font: inherit;
     color: inherit;
     padding: 0.75rem 1rem;
@@ -32,6 +39,26 @@
     font-weight: 600;
     font-size: 0.85rem;
 }
+
+.project-actions {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.35rem;
+}
+
+.project-actions-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.project-actions-description {
+    margin: 4px 0 10px;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    opacity: 0.8;
+}
+
 .block-button {
     background-color: $ui-white;
     color: rgb(190, 38, 38);
@@ -41,8 +68,7 @@
     background-color: $ui-white;
 }
 .deny-button {
-    background-color: rgb(255, 92, 92);
-    color: white;
+    background-color: $ui-white;
 }
 .allow-button {
     background-color: #24cd11;
@@ -50,7 +76,8 @@
 }
 
 @media only screen and (max-width: 480px) {
-    .buttons {
+    .buttons,
+    .project-buttons {
         gap: 0.5rem;
         flex-direction: column;
     }
