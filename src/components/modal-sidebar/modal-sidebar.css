@@ -336,7 +336,7 @@
         margin: 0;
     }
 
-    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .group-header {
+    .layout:not(.mobile-list):not(.mobile-content) > .sidebar .groupHeader {
         display: none;
     }
 
