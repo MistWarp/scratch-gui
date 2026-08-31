@@ -17,6 +17,7 @@ const Project = lazy(() => import('./pages/Project.jsx'));
 const PullRequest = lazy(() => import('./pages/PullRequest.jsx'));
 const PullRequests = lazy(() => import('./pages/PullRequests.jsx'));
 const Commit = lazy(() => import('./pages/Commit.jsx'));
+const RemixTree = lazy(() => import('./pages/RemixTree.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const UserLibrary = lazy(() => import('./pages/UserLibrary.jsx'));
 const Followers = lazy(() => import('./pages/Followers.jsx'));
@@ -103,6 +104,7 @@ const App = () => {
                     <Route path="/groups/:tag" element={<Group />} />
                     <Route path="/p/:slug" element={<VanityProject />} />
                     <Route path="/project/:id" element={<Project />} />
+                    <Route path="/project/:id/remixes" element={<RemixTree />} />
                     <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
                     <Route path="/project/:id/pulls" element={<PullRequests />} />
                     <Route path="/project/:id/commits/:sha" element={<Commit />} />
