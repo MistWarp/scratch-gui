@@ -35,6 +35,7 @@ import TWUnknownPlatformModal from '../containers/tw-unknown-platform-modal.jsx'
 import TWUsernameModal from '../containers/tw-username-modal.jsx';
 import TWVariableManager from '../containers/tw-variable-manager.jsx';
 import MWProductsModal from '../containers/mw-products-modal.jsx';
+import MWGameItemsModal from '../containers/mw-game-items-modal.jsx';
 import Watermark from '../containers/watermark.jsx';
 import backdropLibrary from '../lib/libraries/backdrops.json';
 import costumeLibrary from '../lib/libraries/costumes.json';
@@ -81,6 +82,7 @@ setGuiComponents({
     MWHelpModal,
     MWProjectThemeModal,
     MWProductsModal,
+    MWGameItemsModal,
     loadExtensionLibrary: () => Promise.resolve({default: ExtensionLibrary})
 });
 

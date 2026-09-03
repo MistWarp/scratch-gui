@@ -89,12 +89,14 @@ class ProductsModalComponent extends React.Component {
 
         const initialProducts = props.vm && props.vm.getProducts ? props.vm.getProducts() : [];
         const initialEntitlements = props.vm && props.vm.getTestEntitlements ? props.vm.getTestEntitlements() : {};
+        const initialItems = props.vm && props.vm.getItems ? props.vm.getItems() : [];
         const hasProject = Boolean(props.projectId && props.projectId !== '0' && props.projectId !== 0);
 
         this.state = {
             tab: hasProject ? 'analytics' : 'catalog',
             projectData: null,
             products: initialProducts,
+            items: initialItems,
             entitlements: initialEntitlements,
             showForm: false,
             editingId: null,
@@ -102,6 +104,7 @@ class ProductsModalComponent extends React.Component {
             formId: '',
             formPrice: 10,
             formIcon: '',
+            formGrantsItem: '',
             idManuallyEdited: false,
             selectedProductForEntitlements: initialProducts.length > 0 ? initialProducts[0].id : '',
             grantUsernameInput: '',
@@ -138,8 +141,12 @@ class ProductsModalComponent extends React.Component {
             this.handleEntitlementsChanged = entitlements => {
                 this.setState({entitlements: entitlements || {}});
             };
+            this.handleItemsChanged = items => {
+                this.setState({items: items || []});
+            };
             this.props.vm.runtime.on('PRODUCTS_CHANGED', this.handleProductsChanged);
             this.props.vm.runtime.on('ENTITLEMENTS_CHANGED', this.handleEntitlementsChanged);
+            this.props.vm.runtime.on('ITEMS_CHANGED', this.handleItemsChanged);
         }
     }
 
@@ -150,6 +157,9 @@ class ProductsModalComponent extends React.Component {
             }
             if (this.handleEntitlementsChanged) {
                 this.props.vm.runtime.off('ENTITLEMENTS_CHANGED', this.handleEntitlementsChanged);
+            }
+            if (this.handleItemsChanged) {
+                this.props.vm.runtime.off('ITEMS_CHANGED', this.handleItemsChanged);
             }
         }
     }
@@ -162,6 +172,7 @@ class ProductsModalComponent extends React.Component {
             formId: '',
             formPrice: 10,
             formIcon: '',
+            formGrantsItem: '',
             idManuallyEdited: false,
             error: ''
         });
@@ -175,6 +186,7 @@ class ProductsModalComponent extends React.Component {
             formId: product.id || '',
             formPrice: typeof product.price === 'number' ? product.price : 10,
             formIcon: product.icon || '',
+            formGrantsItem: product.grantsItem || '',
             idManuallyEdited: true,
             error: ''
         });
@@ -188,6 +200,7 @@ class ProductsModalComponent extends React.Component {
             formId: '',
             formPrice: 10,
             formIcon: '',
+            formGrantsItem: '',
             error: ''
         });
     };
@@ -232,7 +245,7 @@ class ProductsModalComponent extends React.Component {
 
     handleSaveProduct = e => {
         if (e) e.preventDefault();
-        const {editingId, formName, formId, formPrice, formIcon, products} = this.state;
+        const {editingId, formName, formId, formPrice, formIcon, formGrantsItem, products} = this.state;
         const name = formName.trim();
         const id = (formId || slugify(name)).trim();
 
@@ -255,7 +268,8 @@ class ProductsModalComponent extends React.Component {
             id,
             name,
             price: formPrice,
-            icon: formIcon
+            icon: formIcon,
+            grantsItem: formGrantsItem
         };
 
         let nextProducts;
@@ -273,6 +287,7 @@ class ProductsModalComponent extends React.Component {
             formId: '',
             formPrice: 10,
             formIcon: '',
+            formGrantsItem: '',
             error: '',
             selectedProductForEntitlements: this.state.selectedProductForEntitlements || id
         });
@@ -335,7 +350,7 @@ class ProductsModalComponent extends React.Component {
                 name: product.name,
                 description: '',
                 price: product.price,
-                grantsItem: '',
+                grantsItem: product.grantsItem || '',
                 icon: product.icon || ''
             }))});
             this.setState({publishing: false, publishState: 'Products published live.'});
@@ -525,8 +540,8 @@ class ProductsModalComponent extends React.Component {
     }
 
     renderCatalogTab () {
-        const {products, showForm, editingId, formName, formId, formPrice, formIcon, error,
-            publishing, publishState} = this.state;
+        const {products, items, showForm, editingId, formName, formId, formPrice, formIcon,
+            formGrantsItem, error, publishing, publishState} = this.state;
 
         if (showForm) {
             return (
@@ -601,6 +616,33 @@ class ProductsModalComponent extends React.Component {
                             value={formPrice}
                             onChange={this.handlePriceChange}
                         />
+                    </div>
+
+                    <div className={styles.formRow}>
+                        <label className={styles.formLabel}>
+                            <FormattedMessage
+                                defaultMessage="Grants item (optional)"
+                                description="Label for product item grant field"
+                                id="mw.productsModal.grantsItem"
+                            />
+                        </label>
+                        <select
+                            className={styles.formInput}
+                            value={formGrantsItem}
+                            onChange={e => this.setState({formGrantsItem: e.target.value})}
+                        >
+                            <option value="">
+                                {'No item'}
+                            </option>
+                            {(items || []).map(item => (
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {`${item.name} (#${item.id})`}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className={styles.formRow}>

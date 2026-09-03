@@ -82,6 +82,7 @@ import {
     openExtensionManagerModal,
     openVariableManagerModal,
     openProductsModal,
+    openGameItemsModal,
     openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
@@ -180,10 +181,10 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo,     Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2, TerminalSquare,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video,
-    ShoppingBag
+    ShoppingBag, Backpack
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -413,6 +414,7 @@ class MenuBar extends React.Component {
             'handleClickDebugger',
             'handleClickVariableManager',
             'handleClickProducts',
+            'handleClickGameItems',
             'handleClickMediaRecorder',
             'handleOpenExtensionLibrary',
             'handleOpenExtensionManager',
@@ -701,6 +703,10 @@ class MenuBar extends React.Component {
     }
     handleClickProducts () {
         this.props.onClickProducts();
+        this.props.onRequestCloseEdit();
+    }
+    handleClickGameItems () {
+        this.props.onClickGameItems();
         this.props.onRequestCloseEdit();
     }
     handleClickMediaRecorder () {
@@ -2155,6 +2161,24 @@ class MenuBar extends React.Component {
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
                                 <MenuSection>
+                                    <MenuItem onClick={this.handleClickProducts}>
+                                        <ShoppingBag size={20} />
+                                        <FormattedMessage
+                                            defaultMessage="Products"
+                                            description="Menu bar item to manage project products"
+                                            id="mw.menuBar.products"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleClickGameItems}>
+                                        <Backpack size={20} />
+                                        <FormattedMessage
+                                            defaultMessage="Game Items"
+                                            description="Menu bar item to manage collectable game items"
+                                            id="mw.menuBar.gameItems"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
                                     <MenuItem
                                         onClick={this.handleClickHelp}
                                     >
@@ -2278,14 +2302,6 @@ class MenuBar extends React.Component {
                                             // eslint-disable-next-line max-len
                                             description="Menu bar item to view the open project's metadata (author, dates, contents)"
                                             id="mw.menuBar.projectMetadata"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.handleClickProducts}>
-                                        <ShoppingBag size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Products"
-                                            description="Menu bar item to manage project products"
-                                            id="mw.menuBar.products"
                                         />
                                     </MenuItem>
                                     {!this.props.isPlayerOnly && mediaRecorderSupported && (
@@ -2666,6 +2682,7 @@ MenuBar.propTypes = {
     onClickRestorePoints: PropTypes.func,
     onClickProjectMetadata: PropTypes.func,
     onClickProducts: PropTypes.func,
+    onClickGameItems: PropTypes.func,
     onClickVariableManager: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
@@ -2807,6 +2824,7 @@ const mapDispatchToProps = dispatch => ({
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
     onClickProducts: () => dispatch(openProductsModal()),
+    onClickGameItems: () => dispatch(openGameItemsModal()),
     onClickVariableManager: () => dispatch(openVariableManagerModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickGitModal: () => {

@@ -31,6 +31,7 @@ const MODAL_PROJECT_METADATA = 'projectMetadataModal';
 const MODAL_HELP = 'helpModal';
 const MODAL_VARIABLE_MANAGER = 'variableManagerModal';
 const MODAL_PRODUCTS = 'productsModal';
+const MODAL_GAME_ITEMS = 'gameItemsModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -62,6 +63,7 @@ const initialState = {
     [MODAL_HELP]: false,
     [MODAL_VARIABLE_MANAGER]: false,
     [MODAL_PRODUCTS]: false,
+    [MODAL_GAME_ITEMS]: false,
     projectMetadataView: 'project',
     helpEntry: null
 };
@@ -216,6 +218,12 @@ const openProductsModal = function () {
 const closeProductsModal = function () {
     return closeModal(MODAL_PRODUCTS);
 };
+const openGameItemsModal = function () {
+    return openModal(MODAL_GAME_ITEMS);
+};
+const closeGameItemsModal = function () {
+    return closeModal(MODAL_GAME_ITEMS);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -328,6 +336,8 @@ export {
     closeVariableManagerModal,
     openProductsModal,
     closeProductsModal,
+    openGameItemsModal,
+    closeGameItemsModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
