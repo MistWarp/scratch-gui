@@ -30,6 +30,7 @@ const messages = defineMessages({
 const ALL = 'all';
 const topExtensionIds = new Set(['tw', 'custom_extension', 'gallery']);
 const sources = [
+    ['mistwarp-games', 'MistWarp Games'],
     ['scratch', 'Scratch'],
     ['tw', 'TurboWarp'],
     ['mistium', 'Mistium'],
@@ -244,8 +245,9 @@ class TWExtensionLibrary extends React.Component {
         const visible = items.filter(matches);
         const top = visible.filter(item => topExtensionIds.has(item.extensionId));
         const sourceOf = item => item.source ||
-            (item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
-                item.tags.includes('tw') ? 'tw' : 'scratch');
+            (item.tags.includes('mistwarp-games') ? 'mistwarp-games' :
+                item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
+                    item.tags.includes('tw') ? 'tw' : 'scratch');
         const sections = sources.map(([source, sourceTitle]) => ({
             title: sourceTitle,
             items: visible.filter(item =>
