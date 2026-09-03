@@ -38,6 +38,7 @@ let components = {
     MWHelpModal: React.lazy(() => import('../../containers/mw-help-modal.jsx')),
     MWProjectThemeModal: React.lazy(() => import('../../containers/mw-project-theme-modal.jsx')),
     MWProductsModal: React.lazy(() => import('../../containers/mw-products-modal.jsx')),
+    MWGameItemsModal: React.lazy(() => import('../../containers/mw-game-items-modal.jsx')),
     loadExtensionLibrary
 };
 
