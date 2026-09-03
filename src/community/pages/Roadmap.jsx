@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
-import {Bug, Check, Circle, Hammer, Lightbulb, MessageCircle, Plus, Search, Sparkles, X} from 'lucide-react';
+import {Bug, Check, Circle, Hammer, Lightbulb, MessageCircle, Plus, Search, X} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -60,7 +60,7 @@ export const roadmapPayload = form => ({
     description: form.description.trim()
 });
 
-const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest, onCommentCount, busy}) => {
+const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) => {
     const [discussionOpen, setDiscussionOpen] = useState(false);
     const [detailsOpen, setDetailsOpen] = useState(false);
     const hasLongDescription = idea.description.length > 220 || idea.description.split('\n').length > 3;
@@ -90,24 +90,12 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest, onCommentCou
                     <div className={styles.labels}>
                         <span className={idea.kind === 'bug' ? styles.bugLabel : styles.ideaLabel}>{idea.kind === 'bug' ? <Bug size={11} /> : null}{idea.kind === 'bug' ? 'Bug' : 'Idea'}</span>
                         <span title="Area">{idea.category}</span>
-                        {(!user || !user.isAdmin) && idea.interested ? <span className={styles.official} title="MistWarp is interested in this suggestion"><Sparkles size={11} /> MistWarp is interested</span> : null}
                     </div>
                     {user && user.isAdmin ? (
                         <div className={styles.adminActions}>
                             <select aria-label="Suggestion status" value={idea.status} disabled={busy} onChange={event => onStatus(idea, event.target.value)}>
                                 {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                             </select>
-                            <Button
-                                variant="secondary"
-                                busy={busy}
-                                busyLabel="Saving…"
-                                className={idea.interested ? styles.officialToggleOn : styles.officialToggle}
-                                title={idea.interested ? 'Remove MistWarp interest' : 'Mark MistWarp as interested'}
-                                onClick={() => onInterest(idea, !idea.interested)}
-                            >
-                                <Sparkles size={11} />
-                                {idea.interested ? 'Interested' : 'Mark interested'}
-                            </Button>
                         </div>
                     ) : null}
                 </div>
@@ -311,28 +299,6 @@ const Roadmap = () => {
         }
     };
 
-    const updateInterest = async (idea, interested) => {
-        const actionViewer = viewerName;
-        const actionKey = `${actionViewer}\u0000idea`;
-        if (actionLocks.current.has(actionKey)) return;
-        actionLocks.current.add(actionKey);
-        setBusyIdea(idea._id);
-        setError('');
-        try {
-            await api.updateIdea(idea._id, {interested});
-            if (currentViewer.current === actionViewer) {
-                setIdeas(current => current.map(item => (item._id === idea._id ? {...item, interested} : item)));
-            }
-        } catch (e) {
-            if (currentViewer.current === actionViewer) {
-                setError(e.message || 'Could not update MistWarp interest.');
-            }
-        } finally {
-            actionLocks.current.delete(actionKey);
-            if (currentViewer.current === actionViewer) setBusyIdea('');
-        }
-    };
-
     const updateCommentCount = (id, delta) => {
         setIdeas(current => (current || []).map(idea => (idea._id === id ? {
             ...idea,
@@ -417,7 +383,7 @@ const Roadmap = () => {
                                     </header>
                                     {stageIdeas.length ? (
                                         <div className={styles.list}>{stageIdeas.map(idea => (
-                                            <IdeaCard key={idea._id} idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onInterest={updateInterest} onCommentCount={updateCommentCount} busy={busyIdea === idea._id} />
+                                            <IdeaCard key={idea._id} idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} busy={busyIdea === idea._id} />
                                         ))}</div>
                                     ) : <p className={styles.stageEmpty}>{filtering ? 'No matching entries in this stage.' : 'Nothing is in this stage yet.'}</p>}
                                 </section>

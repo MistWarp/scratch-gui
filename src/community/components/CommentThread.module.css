@@ -106,6 +106,26 @@
     font-size: 13px;
 }
 
+.pinned {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--accent-softer);
+    color: var(--accent-strong);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.commentGroupPinned {
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    border-radius: 0 10px 10px 0;
+}
+
 .playtime {
     padding: 2px 6px;
     border-radius: 5px;

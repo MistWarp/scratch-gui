@@ -262,8 +262,12 @@ const api = {
     reactProject: (id, type) => request(`/projects/${id}/react`, {method: 'POST', body: {type}}),
     reactComment: (id, commentId, type) =>
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    pinComment: (id, commentId, pinned) =>
+        request(`/projects/${id}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${encodeURIComponent(name)}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    pinProfileComment: (name, commentId, pinned) =>
+        request(`/users/${encodeURIComponent(name)}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
     agreement: () => request('/agreement'),
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
     quotaReset: () => request('/me/quota/reset', {method: 'POST'}),

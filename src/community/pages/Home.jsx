@@ -185,7 +185,6 @@ const RoadmapSection = ({viewerName}) => {
                                     {idea.kind === 'bug' ? <span><Bug size={10} /> Bug</span> : null}
                                     <span>{idea.category}</span>
                                     <span className={styles[`roadmapStatus${idea.status}`]}>{ROADMAP_STATUS_LABELS[idea.status] || idea.status}</span>
-                                    {idea.interested ? <span className={styles.roadmapOfficial}><Sparkles size={10} /> MistWarp is interested</span> : null}
                                 </div>
                                 <h3>{idea.title}</h3>
                                 <p>{idea.description}</p>

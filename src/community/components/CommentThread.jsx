@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins} from 'lucide-react';
+import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
@@ -68,18 +68,26 @@ export const addCreatedComment = (comments, comment) => {
         {...comment, playtimeMs: previous.playtimeMs} : comment;
     return [created, ...(comments || []).filter(item => item.id !== created.id)];
 };
+const isPinned = comment => Boolean(comment && comment.pinned);
+const compareRootOrder = (a, b) => {
+    const pinned = Number(isPinned(b)) - Number(isPinned(a));
+    if (pinned) return pinned;
+    if (isPinned(a) && isPinned(b)) return (b.pinnedAt || 0) - (a.pinnedAt || 0);
+    return (b.created || 0) - (a.created || 0);
+};
 export const mergeCommentPages = (current, incoming) => {
     const byId = new Map((current || []).map(comment => [comment.id, comment]));
     for (const comment of incoming || []) byId.set(comment.id, comment);
-    return Array.from(byId.values()).sort((a, b) => (b.created || 0) - (a.created || 0));
+    return Array.from(byId.values()).sort(compareRootOrder);
 };
 const kindLabel = kind => COMMENT_KINDS.find(item => item.value === kind)?.label || 'Comment';
 
 const CommentRow = ({
-    comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onReport, canReply, canDelete,
-    canEdit, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, isReply, id
+    comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onPin, onReport, canReply, canDelete,
+    canEdit, canPin, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, pinning,
+    isReply, id
 }) => {
-    const hasMenu = canEdit || canReport || canDelete;
+    const hasMenu = canEdit || canPin || canReport || canDelete;
     const donationTier = commentDonationTier(donationAmount(comment));
     return (
         <div
@@ -119,6 +127,9 @@ const CommentRow = ({
                     {comment.edited ? (
                         <span className={styles.edited} title="Edited" aria-label="Edited">✎</span>
                     ) : null}
+                    {comment.pinned ? (
+                        <span className={styles.pinned} title="Pinned comment"><Pin size={11} /> Pinned</span>
+                    ) : null}
                     <span className={styles.headSpacer} />
                     {canReply ? (
                         <button
@@ -152,6 +163,12 @@ const CommentRow = ({
                                             close(); onEdit();
                                         }}
                                     ><Pencil size={14} /> Edit comment</DropdownItem> : null}
+                                    {canPin ? <DropdownItem
+                                        disabled={pinning}
+                                        onClick={() => {
+                                            close(); onPin();
+                                        }}
+                                    ><Pin size={14} /> {comment.pinned ? 'Unpin' : 'Pin to top'}</DropdownItem> : null}
                                     {canReport ? <DropdownItem
                                         onClick={() => {
                                             close(); onReport();
@@ -282,8 +299,8 @@ const InlineComposer = ({
 };
 
 const CommentThread = ({
-    source, canModerate, disabled, disabledReason, reportContext, projectComments = false, composerAction,
-    onCountChange = null, donationRecipient = ''
+    source, canModerate, canPin = false, disabled, disabledReason, reportContext, projectComments = false,
+    composerAction, onCountChange = null, donationRecipient = ''
 }) => {
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
@@ -308,6 +325,7 @@ const CommentThread = ({
     const [editText, setEditText] = useState('');
     const [editBusy, setEditBusy] = useState(false);
     const [reactingId, setReactingId] = useState(null);
+    const [pinningId, setPinningId] = useState(null);
     const [rootLimit, setRootLimit] = useState(ROOT_PAGE);
     const [totalRoots, setTotalRoots] = useState(0);
     const [nextOffset, setNextOffset] = useState(0);
@@ -371,7 +389,7 @@ const CommentThread = ({
                 });
             })
             .then(fresh(d => {
-                const loaded = (d.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0));
+                const loaded = (d.comments || []).sort(compareRootOrder);
                 const loadedRoots = loaded.filter(comment => !comment.parent).length;
                 const hasPaging = Number.isFinite(d.totalRoots) && Number.isFinite(d.nextOffset);
                 setComments(loaded);
@@ -405,6 +423,7 @@ const CommentThread = ({
         setEditText('');
         setEditBusy(false);
         setReactingId(null);
+        setPinningId(null);
         setRootLimit(ROOT_PAGE);
         setTotalRoots(0);
         setNextOffset(0);
@@ -501,7 +520,7 @@ const CommentThread = ({
             actionSource.list({all: true, sort: sortOrder})
                 .then(fresh(data => {
                     if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-                    const loaded = (data.comments || []).sort((a, b) => (b.created || 0) - (a.created || 0));
+                    const loaded = (data.comments || []).sort(compareRootOrder);
                     const rootCount = Number.isFinite(data.totalRoots) ?
                         data.totalRoots : loaded.filter(comment => !comment.parent).length;
                     setComments(loaded);
@@ -666,6 +685,29 @@ const CommentThread = ({
         }
     };
 
+    const pin = async (commentId, pinned) => {
+        if (!source.pin || !user) return;
+        const actionSource = source;
+        const actionViewer = viewerName;
+        const releaseAction = beginAction(actionSource, actionViewer, 'pin');
+        if (!releaseAction) return;
+        setPinningId(commentId);
+        setError(null);
+        try {
+            const result = await actionSource.pin(commentId, pinned);
+            if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            const updated = result && result.comment ? result.comment : {id: commentId, pinned};
+            setComments(cs => cs.map(c => (c.id === commentId ? {...c, ...updated} : c)));
+        } catch (e) {
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                setError(e.message || 'Could not pin comment.');
+            }
+        } finally {
+            releaseAction();
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setPinningId(null);
+        }
+    };
+
     const openReply = (rootId, prefill = '') => {
         setReplyTo(rootId);
         setReplyText(prefill);
@@ -675,6 +717,7 @@ const CommentThread = ({
     const canDelete = comment => Boolean(user) &&
         (canModerate || user.isAdmin || sameUser(comment.author, user.username));
     const canEdit = comment => Boolean(source.edit && user) && sameUser(comment.author, user.username);
+    const canPinComment = comment => Boolean(canPin && source.pin && user) && !comment.parent;
     const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
     const canReply = Boolean(user) && !disabled;
 
@@ -701,11 +744,15 @@ const CommentThread = ({
             const matches = item => `${item.author || ''}\n${item.content || ''}`.toLowerCase().includes(query);
             return matches(comment) || (replyMap.get(comment.id) || []).some(matches);
         });
-        if (sortOrder === 'donations') {
-            filtered.sort((a, b) => donationAmount(b) - donationAmount(a) || (b.created || 0) - (a.created || 0));
-        } else {
-            filtered.sort((a, b) => (b.created || 0) - (a.created || 0));
-        }
+        filtered.sort((a, b) => {
+            const pinOrder = Number(isPinned(b)) - Number(isPinned(a));
+            if (pinOrder) return pinOrder;
+            if (isPinned(a)) return (b.pinnedAt || 0) - (a.pinnedAt || 0);
+            if (sortOrder === 'donations') {
+                return donationAmount(b) - donationAmount(a) || (b.created || 0) - (a.created || 0);
+            }
+            return (b.created || 0) - (a.created || 0);
+        });
         return filtered;
     }, [roots, replyMap, kindFilter, search, projectComments, sortOrder]);
     const visibleRoots = filteredRoots.slice(0, rootLimit);
@@ -793,7 +840,7 @@ const CommentThread = ({
                         <div
                             key={comment.id}
                             id={`comment-group-${comment.id}`}
-                            className={styles.commentGroup}
+                            className={`${styles.commentGroup} ${comment.pinned ? styles.commentGroupPinned : ''}`}
                         >
                             <CommentRow
                                 comment={comment}
@@ -813,15 +860,18 @@ const CommentThread = ({
                                 editText={editText}
                                 onEditTextChange={setEditText}
                                 onReact={type => react(comment.id, type)}
+                                onPin={() => pin(comment.id, !comment.pinned)}
                                 onReport={() => setReportId({id: comment.id, author: comment.author})}
                                 canReply={canReply}
                                 canDelete={canDelete(comment)}
                                 canEdit={canEdit(comment)}
+                                canPin={canPinComment(comment)}
                                 editing={editingId === comment.id}
                                 editBusy={editBusy}
                                 canReport={canReport(comment)}
                                 deleting={removingId !== null}
                                 reacting={reactingId !== null}
+                                pinning={pinningId !== null}
                             />
                             <div className={styles.replies}>
                                 {(() => {
@@ -860,6 +910,7 @@ const CommentThread = ({
                                                     editText={editText}
                                                     onEditTextChange={setEditText}
                                                     onReact={type => react(reply.id, type)}
+                                                    onPin={() => pin(reply.id, !reply.pinned)}
                                                     onReport={() => setReportId({id: reply.id, author: reply.author})}
                                                 />
                                             ))}

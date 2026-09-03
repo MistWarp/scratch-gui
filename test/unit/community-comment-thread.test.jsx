@@ -6,6 +6,7 @@ import {mount, shallow} from 'enzyme';
 import CommentThread, {
     addCreatedComment,
     commentDonationTier,
+    mergeCommentPages,
     parseCommentDonation,
     postCommentDonation
 } from '../../src/community/components/CommentThread.jsx';
@@ -235,5 +236,12 @@ describe('CommentThread signed-out flow', () => {
         expect(wrapper.text()).not.toContain('Edited live');
         wrapper.unmount();
         expect(unsubscribe).toHaveBeenCalledTimes(1);
+    });
+
+    test('sorts pinned root comments before newer unpinned ones', () => {
+        expect(mergeCommentPages(
+            [{id: 'new', created: 200}],
+            [{id: 'old', created: 100, pinned: true, pinnedAt: 150}]
+        ).map(comment => comment.id)).toEqual(['old', 'new']);
     });
 });
