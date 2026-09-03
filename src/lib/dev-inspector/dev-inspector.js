@@ -1,9 +1,22 @@
-import WindowManager from '../../window-system/window-manager.js';
+import WindowManager from '../../addons/window-system/window-manager.js';
+import AddonHooks from '../../addons/hooks.js';
+import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
 import JSONEditor from 'jsoneditor';
+import '!!style-loader!css-loader!jsoneditor/dist/jsoneditor.css';
+import '!!style-loader!css-loader!./dev-inspector.css';
 
-export default async function ({ addon, console }) {
-  const Blockly = await addon.tab.traps.getBlockly();
-  const vm = addon.tab.traps.vm;
+let initialized = false;
+
+/**
+ * Native Block Inspector (converted from the dev-inspector addon; always enabled).
+ * Call once with the VM and ScratchBlocks instance.
+ * @param {object} vm scratch-vm instance
+ * @param {object} Blockly ScratchBlocks instance
+ */
+export function initDevInspector (vm, Blockly) {
+    if (initialized) return;
+    initialized = true;
+    if (!vm || !Blockly) return;
 
   let inspectorWindow = null;
   let projectJSONCache = null;
@@ -179,7 +192,7 @@ export default async function ({ addon, console }) {
   const findBlockById = blockId => {
     if (!blockId) return null;
     try {
-      const workspace = addon.tab.traps.getWorkspace && addon.tab.traps.getWorkspace();
+      const workspace = AddonHooks.blocklyWorkspace;
       if (workspace && workspace.getBlockById) {
         const b = workspace.getBlockById(blockId);
         if (b) return b;
@@ -996,27 +1009,12 @@ export default async function ({ addon, console }) {
     container.style.minHeight = '0';
     container.style.height = '100%';
     container.innerHTML = `
-      <aside class="dev-inspector-sidebar">
-        <nav class="dev-inspector-sidebar-nav" aria-label="Inspector sections">
-          <div class="dev-inspector-group">
-            <div class="dev-inspector-group-header">Inspect</div>
-            <button type="button" class="dev-inspector-nav-item dev-inspector-nav-item-active" data-panel="overview">Overview</button>
-            <button type="button" class="dev-inspector-nav-item" data-panel="connections">Connections</button>
-            <button type="button" class="dev-inspector-nav-item" data-panel="inputs">Inputs</button>
-            <button type="button" class="dev-inspector-nav-item" data-panel="stack">Stack</button>
-          </div>
-          <div class="dev-inspector-group">
-            <div class="dev-inspector-group-header">Data</div>
-            <button type="button" class="dev-inspector-nav-item" data-panel="block-json">Block JSON</button>
-            <button type="button" class="dev-inspector-nav-item" data-panel="project-json">Project JSON</button>
-          </div>
-        </nav>
-      </aside>
+      <aside class="dev-inspector-sidebar-mount"></aside>
       <div class="dev-inspector-main">
         <div class="dev-inspector-pathbar">
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-back" title="Back" disabled>&#8592;</button>
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-forward" title="Forward" disabled>&#8594;</button>
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-up" title="Parent block" disabled>&#8593;</button>
+          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-back" title="Back" aria-label="Back" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-forward" title="Forward" aria-label="Forward" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-up" title="Parent block" aria-label="Parent block" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
           <div class="dev-inspector-crumbs" aria-label="Navigation path"></div>
         </div>
         <div class="dev-inspector-panel dev-inspector-panel-active" data-panel="overview"></div>
@@ -1047,7 +1045,33 @@ export default async function ({ addon, console }) {
       </div>
     `;
 
-    const navItems = container.querySelectorAll('.dev-inspector-nav-item');
+    // Shared settings-window sidebar. Selection visuals are driven through
+    // setPanel -> sidebar.setSelected so nav clicks and code agree.
+    const sidebar = createModalSidebar({
+        ariaLabel: 'Inspector sections',
+        groups: [
+            {
+                label: 'Inspect',
+                items: [
+                    {value: 'overview', label: 'Overview'},
+                    {value: 'connections', label: 'Connections'},
+                    {value: 'inputs', label: 'Inputs'},
+                    {value: 'stack', label: 'Stack'}
+                ]
+            },
+            {
+                label: 'Data',
+                items: [
+                    {value: 'block-json', label: 'Block JSON'},
+                    {value: 'project-json', label: 'Project JSON'}
+                ]
+            }
+        ],
+        selectedValue: activePanel,
+        onSelect: panelId => setPanel(panelId)
+    });
+    container.querySelector('.dev-inspector-sidebar-mount').replaceWith(sidebar.element);
+
     const panels = container.querySelectorAll('.dev-inspector-panel');
     const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
     const projectEditorContainer = container.querySelector('.dev-inspector-project-editor');
@@ -1091,9 +1115,7 @@ export default async function ({ addon, console }) {
 
     const setPanel = panelId => {
       activePanel = panelId;
-      navItems.forEach(item => {
-        item.classList.toggle('dev-inspector-nav-item-active', item.dataset.panel === panelId);
-      });
+      sidebar.setSelected(panelId);
       panels.forEach(panel => {
         panel.classList.toggle('dev-inspector-panel-active', panel.dataset.panel === panelId);
       });
@@ -1117,10 +1139,6 @@ export default async function ({ addon, console }) {
         });
       });
     };
-
-    navItems.forEach(item => {
-      item.addEventListener('click', () => setPanel(item.dataset.panel));
-    });
 
     copyBtn.addEventListener('click', () => {
       ensureBlockJSONEditor(blockEditorContainer);
@@ -1521,10 +1539,7 @@ export default async function ({ addon, console }) {
     }
   }
 
-  addon.tab.createBlockContextMenu(
-    (items, block) => {
-      if (addon.self.disabled) return items;
-
+  const injectInspectItem = (items, block) => {
       const inspectIndex = items.findIndex(obj => obj._isDevtoolsFirstItem);
       const insertBeforeIndex = inspectIndex !== -1 ? inspectIndex : items.length;
 
@@ -1538,7 +1553,39 @@ export default async function ({ addon, console }) {
       });
 
       return items;
-    },
-    {blocks: true}
-  );
+  };
+
+    // Native block context menu hook (replaces addon.tab.createBlockContextMenu).
+    if (Blockly.ContextMenu && !Blockly.ContextMenu._devInspectorWrapped) {
+        Blockly.ContextMenu._devInspectorWrapped = true;
+        const oldShow = Blockly.ContextMenu.show;
+        Blockly.ContextMenu.show = function (event, items, rtl) {
+            try {
+                const gesture = Blockly.mainWorkspace.currentGesture_;
+                const block = gesture.targetBlock_;
+                // Block in workspace (not flyout)
+                if (block && !gesture.flyout_) {
+                    items = injectInspectItem(items, block);
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            oldShow.call(this, event, items, rtl);
+
+            try {
+                const blocklyContextMenu = Blockly.WidgetDiv.DIV.firstChild;
+                items.forEach((item, i) => {
+                    if (i !== 0 && item.separator) {
+                        const itemElt = blocklyContextMenu.children[i];
+                        itemElt.style.paddingTop = '2px';
+                        itemElt.classList.add('sa-blockly-menu-item-border');
+                        itemElt.style.borderTop = '1px solid var(--ui-black-transparent)';
+                    }
+                });
+            } catch (e) {
+                // ignore
+            }
+        };
+    }
 }

@@ -1,9 +1,9 @@
-import turbowarpCss from '!css-loader!../addons/addons/tab-styles/turbowarp.css';
-import scratchboxCss from '!css-loader!../addons/addons/tab-styles/scratchbox.css';
-import iconOnlyCss from '!css-loader!../addons/addons/tab-styles/icon-only.css';
-import textOnlyCss from '!css-loader!../addons/addons/tab-styles/text-only.css';
-import macosCss from '!css-loader!../addons/addons/window-theme/macos.css';
-import windows10Css from '!css-loader!../addons/addons/window-theme/windows10.css';
+import turbowarpCss from '!css-loader!./mw-styles/turbowarp-tabs.css';
+import scratchboxCss from '!css-loader!./mw-styles/scratchbox-tabs.css';
+import iconOnlyCss from '!css-loader!./mw-styles/icon-only-tabs.css';
+import textOnlyCss from '!css-loader!./mw-styles/text-only-tabs.css';
+import macosCss from '!css-loader!./mw-styles/macos-windows.css';
+import windows10Css from '!css-loader!./mw-styles/windows10-windows.css';
 
 const STYLE_GROUPS = [
     {

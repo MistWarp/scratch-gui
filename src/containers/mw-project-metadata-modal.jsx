@@ -15,9 +15,8 @@ import Modal from './windowed-modal.jsx';
 import Box from '../components/box/box.jsx';
 import {
     ModalSidebar,
+    ModalSidebarCollapsibleGroup,
     ModalSidebarContent,
-    ModalSidebarGroup,
-    ModalSidebarGroupHeader,
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../components/modal-sidebar/modal-sidebar.jsx';
@@ -555,8 +554,10 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                     width="wide"
                 >
                     {groups.map(group => (
-                        <ModalSidebarGroup key={group.label}>
-                            <ModalSidebarGroupHeader label={group.label} />
+                        <ModalSidebarCollapsibleGroup
+                            key={group.label}
+                            label={group.label}
+                        >
                             {group.items.map(item => (
                                 <ModalSidebarItem
                                     key={item.id}
@@ -566,7 +567,7 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                                     onClick={item.handleClick}
                                 />
                             ))}
-                        </ModalSidebarGroup>
+                        </ModalSidebarCollapsibleGroup>
                     ))}
                 </ModalSidebar>
                 <ModalSidebarContent>

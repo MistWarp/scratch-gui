@@ -29,8 +29,8 @@ const HELP_ENTRIES = [
         keywords: ['file', 'edit', 'tools', 'top bar'],
         short: 'The menu bar holds the File, Edit, Tools, Bookmarks, and Settings menus. Everything from saving to opening the debugger starts here.',
         howTo: [
-            'File holds New, Save to MistWarp, Save to your computer, Package, and Restore points.',
-            'Tools holds the Git panel, Terminal, Live Collaboration, Debugger, and Variable Manager.',
+            'File holds New, Save to MistWarp (push), Save to your computer (.mwp, with history), Package, and Device backups.',
+            'Tools holds Project history, Live Collaboration, Debugger, and Variable Manager.',
             'Edit holds Undo, Redo, Addons, and the tutorial.'
         ],
         docsPath: '/editor/menu-bar'
@@ -219,27 +219,27 @@ const HELP_ENTRIES = [
     },
     {
         id: 'restore-points',
-        title: 'Restore points and autosave',
+        title: 'Device backups and autosave',
         category: 'Editor',
         keywords: ['backup', 'history', 'recovery', 'undo'],
-        short: 'Restore points are local snapshots of your project. Autosave creates them on a schedule so you can recover after a crash or mistake.',
+        short: 'Device backups are local snapshots on this browser only. Autosave creates them on a schedule so you can recover after a crash or mistake. Pushed history lives under Project history; .mwp files export with full history.',
         howTo: [
-            'Create a restore point manually from the File menu at any time.',
-            'Open Restore Points to load an earlier snapshot.',
+            'Create a device backup manually from the File menu at any time.',
+            'Open Device Backups to load an earlier snapshot.',
             'Pause or resume autosave, and change its interval, from the File menu or Settings.'
         ],
         docsPath: '/editor/restore-points'
     },
     {
         id: 'git',
-        title: 'Version control (Git)',
+        title: 'Project history (like git push)',
         category: 'Editor',
         keywords: ['git', 'commit', 'push', 'pull', 'diff', 'history'],
-        short: 'MistWarp can track a project as a git repository, so you get a full history with commits, pushes, pulls, diffs, and merge handling.',
+        short: 'Saving to MistWarp pushes your history, like git push. You get a full pushed history with commits and restores. .mwp files carry that same history for export.',
         howTo: [
-            'Open the Git panel from the Tools menu.',
-            'Commit changes with a message, then push to share them.',
-            'Review a visual diff before committing, and resolve merge conflicts in the editor.'
+            'Open Project history from the Tools menu.',
+            'Save a version with a message to push it to MistWarp.',
+            'Device backups stay local and are separate from pushed history.'
         ],
         docsPath: '/editor/git'
     },

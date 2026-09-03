@@ -1,10 +1,8 @@
 // This file is only used by pull.js to generate files. It is not used at runtime.
 
 const addons = [
-    'cat-blocks',
     'editor-devtools',
     'jump-to-def',
-    'tab-styles',
     'reorder-custom-inputs',
     'editor-searchable-dropdowns',
     'data-category-tweaks-v2',

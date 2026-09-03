@@ -16,11 +16,6 @@
     font-size: 0.8125rem;
 }
 
-.workspace.resizing {
-    cursor: ns-resize;
-    user-select: none;
-}
-
 .main {
     display: flex;
     flex: 1 1 auto;
@@ -112,15 +107,8 @@
 
 .folder svg,
 .file svg,
-.editor-tab svg,
-.panel-header svg {
+.editor-tab svg {
     flex: 0 0 auto;
-}
-
-.panel-header > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
 }
 
 .folder:hover,
@@ -154,7 +142,7 @@
     border-inline-start: 1px solid $ui-black-transparent;
 }
 
-.editor-and-terminal {
+.editor-column {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
@@ -378,34 +366,6 @@
     font-size: 0.8125rem;
 }
 
-.panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex: 0 0 auto;
-    height: 2.125rem;
-    padding: 0 0.35rem 0 0.75rem;
-    border-top: 1px solid $ui-black-transparent;
-    background: $ui-primary;
-    color: $text-primary-transparent;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    touch-action: none;
-    user-select: none;
-    cursor: pointer;
-}
-
-.panel-header.draggable {
-    cursor: ns-resize;
-}
-
-.panel-header.open {
-    color: $text-primary;
-    box-shadow: inset 0 -1px 0 $looks-secondary;
-}
-
 .panel-toggle {
     display: inline-flex;
     align-items: center;
@@ -421,17 +381,6 @@
 
 .panel-toggle:hover {
     background: $ui-tertiary;
-}
-
-.terminal {
-    flex: 0 0 auto;
-    min-height: 0;
-    padding: 0.35rem 0.5rem 0;
-    overflow: hidden;
-}
-
-.terminal.hidden {
-    display: none;
 }
 
 .status-bar {

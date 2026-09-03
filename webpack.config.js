@@ -87,8 +87,6 @@ const base = {
         alias: {
             'react': require.resolve('react'),
             'react-dom': require.resolve('react-dom'),
-            'just-bash$': path.resolve(__dirname, 'node_modules/just-bash/dist/bundle/browser.js'),
-            'node:zlib$': path.resolve(__dirname, 'src/lib/just-bash-zlib.js'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts'),
             'react-tooltip$': path.resolve(__dirname, 'node_modules/react-tooltip/dist/react-tooltip.min.cjs'),
             'exports-loader': require.resolve('exports-loader')
@@ -104,10 +102,8 @@ const base = {
                 /node_modules[\\/]pify/,
                 /node_modules[\\/]@vernier[\\/]godirect/,
                 /node_modules[\\/]@chenglou[\\/]pretext/,
-                /node_modules[\\/]@xterm[\\/]/,
                 /node_modules[\\/]fractch[\\/]src/,
                 /node_modules[\\/]isomorphic-git/,
-                /node_modules[\\/]just-bash/,
                 /node_modules[\\/]monaco-editor/,
                 /node_modules[\\/]rotur-sdk/,
                 /node_modules[\\/]fake-indexeddb/
@@ -126,12 +122,12 @@ const base = {
             }
         },
         {
-            test: /node_modules[\\/](?:@fontsource|@xterm[\\/]xterm|monaco-editor)[\\/].*\.css$/,
+            test: /node_modules[\\/](?:@fontsource|monaco-editor)[\\/].*\.css$/,
             use: ['style-loader', 'css-loader']
         },
         {
             test: /\.css$/,
-            exclude: /node_modules[\\/](?:@fontsource|@xterm[\\/]xterm|monaco-editor)[\\/]/,
+            exclude: /node_modules[\\/](?:@fontsource|monaco-editor)[\\/]/,
             use: [{
                 loader: 'style-loader'
             }, {

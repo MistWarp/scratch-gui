@@ -8,6 +8,7 @@ import locales from '@turbowarp/scratch-l10n';
 import Box from '../box/box.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
+import {BooleanSetting} from './setting.jsx';
 import {Theme, BLOCKS_CUSTOM, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_THREE}
     from '../../lib/themes/index.js';
 import {PageHeader} from './theme-accent-panel.jsx';
@@ -16,6 +17,7 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {selectLocale} from '../../reducers/locales.js';
 import {loadGoogleFont, isGoogleFont} from '../../lib/themes/google-fonts.js';
 import openMWFontsWindow from '../../lib/mw/open-mw-fonts-window.js';
+import {getCatBlocks, getCatBlocksWatch, setCatBlocks, setCatBlocksWatch} from '../../lib/mw-cat-blocks.js';
 
 import styles from './settings-modal.css';
 
@@ -113,6 +115,60 @@ const openBlocksAddonSettings = () => {
     }
 };
 
+class CatBlocksSettings extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleEnabledChange = this.handleEnabledChange.bind(this);
+        this.handleWatchChange = this.handleWatchChange.bind(this);
+        this.state = {
+            enabled: getCatBlocks(),
+            watch: getCatBlocksWatch()
+        };
+    }
+    handleEnabledChange (e) {
+        const enabled = e.target.checked;
+        setCatBlocks(enabled);
+        this.setState({enabled});
+    }
+    handleWatchChange (e) {
+        const watch = e.target.checked;
+        setCatBlocksWatch(watch);
+        this.setState({watch});
+    }
+    render () {
+        return (
+            <React.Fragment>
+                <BooleanSetting
+                    value={this.state.enabled}
+                    onChange={this.handleEnabledChange}
+                    label={<FormattedMessage
+                        defaultMessage="Cat Hat Blocks"
+                        id="mw.settingsModal.scratchHatBlocks"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage={'Draws cat ears and a face on hat blocks, like Scratch did ' +
+                            'for April Fools\' Day 2020. Takes effect after blocks reload.'}
+                        id="mw.settingsModal.scratchHatBlocksHelp"
+                    />}
+                />
+                <BooleanSetting
+                    value={this.state.watch}
+                    onChange={this.handleWatchChange}
+                    label={<FormattedMessage
+                        defaultMessage="Cat eyes follow mouse cursor"
+                        id="mw.settingsModal.scratchHatBlocksWatch"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage={'The face on hat blocks watches the mouse cursor. ' +
+                            'This may impact performance while the editor is open.'}
+                        id="mw.settingsModal.scratchHatBlocksWatchHelp"
+                    />}
+                />
+            </React.Fragment>
+        );
+    }
+}
+
 const UnconnectedThemePage = ({theme, onChangeTheme}) => (
     <Box className={styles.body}>
         <PageHeader>
@@ -161,6 +217,7 @@ const UnconnectedThemePage = ({theme, onChangeTheme}) => (
                 <ExternalLink size={14} />
             </button>
         </div>
+        <CatBlocksSettings />
     </Box>
 );
 UnconnectedThemePage.propTypes = {

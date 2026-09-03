@@ -6,7 +6,6 @@ import {
     Braces,
     ChevronDown,
     ChevronRight,
-    ChevronUp,
     File,
     Folder,
     FilePlus,
@@ -15,7 +14,6 @@ import {
     GitMerge,
     Pencil,
     Trash2,
-    TerminalSquare,
     X
 } from 'lucide-react';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -42,14 +40,11 @@ import {parseConflicts, resolutionText} from '../../lib/git/conflicts';
 import {sanitize} from '../../lib/git/fractch-tree';
 import {setCodeSearch} from '../../lib/find-bar/api';
 
-import FractchTerminal, {CODE_FONT} from './fractch-terminal.jsx';
-
 import styles from './fractch-workspace.css';
 
+const CODE_FONT = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
+
 const TEXT_FILE_RE = /(?:\.fractch|\.gitignore|\.(?:css|csv|html|js|json|md|svg|txt|xml|ya?ml))$/i;
-const MIN_TERMINAL_HEIGHT = 80;
-const MIN_EDITOR_HEIGHT = 120;
-const DEFAULT_TERMINAL_HEIGHT = 220;
 const MAX_GROUPS = 4;
 const MAX_SEARCH_RESULTS = 200;
 const SPLIT_DIRECTIONS = ['left', 'right', 'down'];
@@ -735,14 +730,12 @@ const parsePayload = raw => {
 };
 
 const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
-    const editorColumnElement = useRef(null);
     const editors = useRef(new Map());
     const focusedGroupRef = useRef(1);
     const models = useRef(new Map());
     const activeFileRef = useRef(null);
     const dirtyRef = useRef(new Set());
     const saveQueue = useRef(Promise.resolve());
-    const terminalHeightRef = useRef(DEFAULT_TERMINAL_HEIGHT);
     const searchMatches = useRef([]);
     const searchIndex = useRef(0);
     const searchDecorations = useRef([]);
@@ -760,9 +753,6 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
     const [cursor, setCursor] = useState({column: 1, line: 1});
     const [loading, setLoading] = useState(true);
     const [working, setWorking] = useState(false);
-    const [terminalVisible, setTerminalVisible] = useState(false);
-    const [terminalHeight, setTerminalHeight] = useState(DEFAULT_TERMINAL_HEIGHT);
-    const [resizing, setResizing] = useState(false);
     const [expandedFolders, setExpandedFolders] = useState(sessionExpandedFolders);
     const [status, setStatus] = useState('Preparing Fractch source…');
     const [merge, setMerge] = useState(getPendingMerge);
@@ -1039,23 +1029,6 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
             cancelled = true;
         };
     }, [vm]);
-
-
-    useEffect(() => {
-        const column = editorColumnElement.current;
-        const clamp = () => {
-            const available = column.getBoundingClientRect().height - MIN_EDITOR_HEIGHT;
-            const max = Math.max(MIN_TERMINAL_HEIGHT, available);
-            setTerminalHeight(height => Math.min(Math.max(height, MIN_TERMINAL_HEIGHT), max));
-        };
-        const resizeObserver = new ResizeObserver(clamp);
-        resizeObserver.observe(column);
-        return () => resizeObserver.disconnect();
-    }, []);
-
-    useEffect(() => {
-        terminalHeightRef.current = terminalHeight;
-    }, [terminalHeight]);
 
     useEffect(() => {
         const group = groups.find(candidate => candidate.id === focusedGroup);
@@ -1387,10 +1360,6 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
     }, [applyProject, syncFromWorktree]);
 
     const handleDismissError = useCallback(() => setError(null), []);
-    const handleToggleTerminal = useCallback(event => {
-        event.stopPropagation();
-        setTerminalVisible(value => !value);
-    }, []);
     const handleToggleFolder = useCallback(event => {
         const folder = event.currentTarget.dataset.folder;
         setExpandedFolders(value => {
@@ -1398,31 +1367,6 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
             return sessionExpandedFolders;
         });
     }, []);
-
-    const handlePanelPointerDown = useCallback(event => {
-        if (!terminalVisible || event.button !== 0 || event.target.closest('button')) return;
-        event.preventDefault();
-        const handle = event.currentTarget;
-        const startY = event.clientY;
-        const startHeight = terminalHeightRef.current;
-        handle.setPointerCapture(event.pointerId);
-        setResizing(true);
-        const move = moveEvent => {
-            const available = editorColumnElement.current.getBoundingClientRect().height - MIN_EDITOR_HEIGHT;
-            const max = Math.max(MIN_TERMINAL_HEIGHT, available);
-            const next = startHeight + startY - moveEvent.clientY;
-            setTerminalHeight(Math.min(Math.max(next, MIN_TERMINAL_HEIGHT), max));
-        };
-        const stop = () => {
-            handle.removeEventListener('pointermove', move);
-            handle.removeEventListener('pointerup', stop);
-            handle.removeEventListener('pointercancel', stop);
-            setResizing(false);
-        };
-        handle.addEventListener('pointermove', move);
-        handle.addEventListener('pointerup', stop);
-        handle.addEventListener('pointercancel', stop);
-    }, [terminalVisible]);
 
     const selectEditedTarget = useCallback(() => {
         const filepath = activeFileRef.current;
@@ -1449,7 +1393,7 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
     const rows = [...new Set(groups.map(group => group.row))].sort((a, b) => a - b);
 
     return (
-        <div className={classNames(styles.workspace, {[styles.resizing]: resizing})}>
+        <div className={styles.workspace}>
             {merge ? (
                 <div className={styles.mergeBanner}>
                     <GitMerge size={15} />
@@ -1501,8 +1445,7 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
                     />
                 </aside>
                 <div
-                    className={styles.editorAndTerminal}
-                    ref={editorColumnElement}
+                    className={styles.editorColumn}
                 >
                     <div className={styles.groups}>
                         {rows.map(row => (
@@ -1534,36 +1477,6 @@ const FractchWorkspace = ({exitRequested, onExit, theme, vm}) => {
                             </div>
                         ))}
                     </div>
-                    <div
-                        className={classNames(styles.panelHeader, {
-                            [styles.draggable]: terminalVisible,
-                            [styles.open]: terminalVisible
-                        })}
-                        role="presentation"
-                        title={terminalVisible ? 'Drag to resize the terminal' : 'Show the terminal'}
-                        onClick={terminalVisible ? null : handleToggleTerminal}
-                        onPointerDown={handlePanelPointerDown}
-                    >
-                        <span>
-                            <TerminalSquare size={14} />
-                            {' Terminal'}
-                        </span>
-                        <button
-                            aria-label={terminalVisible ? 'Hide terminal' : 'Show terminal'}
-                            className={styles.panelToggle}
-                            type="button"
-                            onClick={handleToggleTerminal}
-                        >
-                            {terminalVisible ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                        </button>
-                    </div>
-                    <FractchTerminal
-                        className={classNames(styles.terminal, {[styles.hidden]: !terminalVisible})}
-                        style={{height: terminalHeight}}
-                        themeId={theme.id}
-                        vm={vm}
-                        onWorktreeChanged={handleWorktreeChanged}
-                    />
                 </div>
             </div>
             <div className={classNames(styles.statusBar, {[styles.error]: !!error})}>

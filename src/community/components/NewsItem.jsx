@@ -135,12 +135,6 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
             </Modal>
         ) : null}
         <article className={`${styles.item} ${compact ? styles.compact : ''} ${full ? styles.full : ''}`}>
-            {item.archived ? <span className={styles.category}>Archived</span> : null}
-            {category === 'update' ? null : (
-                <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''}`}>
-                    {categoryLabel}
-                </span>
-            )}
             <div className={styles.head}>
                 <Title>{full ? item.title : <Link to={`/news/${item.id}`}>{item.title}</Link>}</Title>
                 {!full ? (
@@ -248,6 +242,12 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                     disabled={Boolean(actionBusy)}
                     disabledTitle={!user ? 'Sign in to react' : 'Saving…'}
                 />
+                {item.archived ? <span className={`${styles.category} ${styles.footerCategory}`}>Archived</span> : null}
+                {category === 'update' ? null : (
+                    <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''} ${styles.footerCategory}`}>
+                        {categoryLabel}
+                    </span>
+                )}
             </div>
             {canManage && item.reactionUsers ? (
                 <div className={styles.reactionUsers}>

@@ -148,8 +148,6 @@ import {
     onSettingsChanged
 } from '../../lib/menu-bar/settings.js';
 
-import openFractchTerminalWindow from '../../lib/mw/open-fractch-terminal-window.js';
-
 import WorkspaceBookmarksMenu from './workspace-bookmarks-menu.jsx';
 import MediaRecorderButton from './media-recorder.jsx';
 
@@ -181,8 +179,8 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo,     Handshake, Wrench,
-    Download, AppWindow, Computer, Shield, Code, Code2, TerminalSquare,
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
+    Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video,
     ShoppingBag, Backpack
 } from 'lucide-react';
@@ -410,7 +408,6 @@ class MenuBar extends React.Component {
             'handleClickAddonSettings',
             'handleClickHelp',
             'handleClickGitModal',
-            'handleClickFractchTerminal',
             'handleClickDebugger',
             'handleClickVariableManager',
             'handleClickProducts',
@@ -689,10 +686,6 @@ class MenuBar extends React.Component {
         this.props.onClickGitModal();
         this.props.onRequestCloseTools();
     }
-    handleClickFractchTerminal () {
-        openFractchTerminalWindow({vm: this.props.vm});
-        this.props.onRequestCloseTools();
-    }
     handleClickDebugger () {
         window.__mistwarpDebuggerToggle();
         this.props.onRequestCloseTools();
@@ -850,7 +843,8 @@ class MenuBar extends React.Component {
                 const ok = await this.showConfirm(
                     'Replace this project?',
                     this.props.intl.formatMessage({
-                        defaultMessage: 'Pulling will replace your project with the repository version. Continue?',
+                        // eslint-disable-next-line max-len
+                        defaultMessage: 'Pulling replaces your project with the pushed version. A device backup is saved first. Continue?',
                         description: 'Confirmation before git pull replaces the open project',
                         id: 'mw.menuBar.gitPull.confirmReplace'
                     })
@@ -957,7 +951,7 @@ class MenuBar extends React.Component {
             } else {
                 downloadBlob(filename, exported.blob);
             }
-            this.props.showToast('MistWarp project saved.', 'success');
+            this.props.showToast('MistWarp project file saved (includes full history).', 'success');
             return true;
         } catch (error) {
             if (error && error.name === 'AbortError') return false;
@@ -1903,7 +1897,7 @@ class MenuBar extends React.Component {
                                             <Save />
                                             <FormattedMessage
                                                 defaultMessage="Save to your computer"
-                                                description="File menu item to save the native project to the computer"
+                                                description="File menu item to save the .mwp file with full history"
                                                 id="mw.menuBar.saveMwp"
                                             />
                                         </MenuItem>
@@ -1989,16 +1983,16 @@ class MenuBar extends React.Component {
                                         >
                                             <RefreshCcw />
                                             <FormattedMessage
-                                                defaultMessage="Restore points"
-                                                description="Menu bar item to manage restore points"
+                                                defaultMessage="Device backups"
+                                                description="Menu bar item to manage local device backups"
                                                 id="tw.menuBar.restorePoints"
                                             />
                                         </MenuItem>
                                         <MenuItem onClick={this.handleClickAddRestorePoint}>
                                             <ClockPlus />
                                             <FormattedMessage
-                                                defaultMessage="Create restore point"
-                                                description="Menu bar item to create a manual restore point immediately"
+                                                defaultMessage="Create device backup"
+                                                description="Menu bar item to create a manual local backup immediately"
                                                 id="tw.menuBar.createRestorePoint"
                                             />
                                         </MenuItem>
@@ -2270,19 +2264,9 @@ class MenuBar extends React.Component {
                                     >
                                         <GitBranch />
                                         <FormattedMessage
-                                            defaultMessage="Version history"
-                                            description="Menu bar item to open project version history"
+                                            defaultMessage="Project history"
+                                            description="Menu bar item to open pushed project history"
                                             id="mw.menuBar.git"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={this.handleClickFractchTerminal}
-                                    >
-                                        <TerminalSquare />
-                                        <FormattedMessage
-                                            defaultMessage="Terminal"
-                                            description="Menu bar item that opens the shell in a window"
-                                            id="mw.menuBar.terminal"
                                         />
                                     </MenuItem>
                                     <MenuItem

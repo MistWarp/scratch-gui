@@ -157,7 +157,7 @@ export class TWGitModal extends React.Component {
 
         this.state = {
             busy: historyState.phase === 'loading',
-            busyMessage: historyState.phase === 'loading' ? 'Loading version history…' : null,
+            busyMessage: historyState.phase === 'loading' ? 'Loading project history…' : null,
             busyProgress: null,
             error: null,
             initialized: preloaded.initialized || false,
@@ -306,7 +306,7 @@ export class TWGitModal extends React.Component {
 
     handleHistoryState (historyState) {
         if (historyState.phase === 'loading') {
-            this.setState({busy: true, busyMessage: 'Loading version history…', error: null});
+            this.setState({busy: true, busyMessage: 'Loading project history…', error: null});
         } else if (historyState.phase === 'ready') {
             this.setState(current => ({
                 ...stateFromHistory(historyState.data, current),
@@ -314,14 +314,14 @@ export class TWGitModal extends React.Component {
                 busyMessage: null,
                 busyProgress: null,
                 error: this.props.vm._mwHistoryBootstrapError ?
-                    `Version history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
+                    `Project history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
             }));
         } else if (historyState.phase === 'error') {
             this.setState({
                 busy: false,
                 busyMessage: null,
                 error: historyState.error && historyState.error.message ?
-                    historyState.error.message : 'Could not load version history'
+                    historyState.error.message : 'Could not load project history'
             });
         }
     }

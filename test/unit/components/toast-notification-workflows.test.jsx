@@ -42,10 +42,10 @@ describe('toast notification timing', () => {
                 sequence={2}
             />);
         });
-        act(() => jest.advanceTimersByTime(1000));
+        act(() => jest.advanceTimersByTime(3000));
         expect(onClose).not.toHaveBeenCalled();
 
-        act(() => jest.advanceTimersByTime(2000));
+        act(() => jest.advanceTimersByTime(1000));
         expect(onClose).toHaveBeenCalledTimes(1);
         notification.unmount();
     });
