@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
     AppWindow, AtSign, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
-    MessageCircle, Reply, ShieldAlert, UserPlus, GitPullRequest, Layers3, Lightbulb, Star, Users
+    MessageCircle, Reply, ShieldAlert, UserPlus, GitPullRequest, GitMerge, Layers3, Lightbulb, Star, Users
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
@@ -48,6 +48,7 @@ const ICONS = {
     news: Megaphone,
     report_update: Flag,
     contribution: GitPullRequest,
+    contribution_merged: GitMerge,
     space_project: Layers3,
     space_comment: MessageCircle,
     space_curator_invite: UserPlus,
@@ -135,15 +136,21 @@ const describe = n => {
     case 'love': return n.projectTitle ?
         <span>loved <strong>{n.projectTitle}</strong></span> :
         <span>loved your project</span>;
-    case 'comment': return n.projectTitle ?
+    case 'comment': return n.pull ? (
+        n.projectTitle ?
+            <span>commented on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
+            <span>commented on pr #{n.pull}</span>
+    ) : n.projectTitle ?
         <span>commented on <strong>{n.projectTitle}</strong></span> :
         <span>commented on your project</span>;
     case 'profile_comment': return <span>commented on your profile</span>;
     case 'reply': return n.post_id ?
         <span>replied to your post</span> :
-        n.projectTitle ?
-            <span>replied to your comment on <strong>{n.projectTitle}</strong></span> :
-            <span>replied to your comment</span>;
+        n.pull && n.projectTitle ?
+            <span>replied to your comment on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
+            n.projectTitle ?
+                <span>replied to your comment on <strong>{n.projectTitle}</strong></span> :
+                <span>replied to your comment</span>;
     case 'purchase': return (
         <span>
             bought {n.projectTitle ? <strong>{n.projectTitle}</strong> : 'your project'}
@@ -159,9 +166,11 @@ const describe = n => {
     case 'follow': return <span>followed you</span>;
     case 'mention': return n.post_id ?
         <span>mentioned you in a post</span> :
-        n.projectTitle ?
-            <span>mentioned you on <strong>{n.projectTitle}</strong></span> :
-            <span>mentioned you in a comment</span>;
+        n.pull && n.projectTitle ?
+            <span>mentioned you on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
+            n.projectTitle ?
+                <span>mentioned you on <strong>{n.projectTitle}</strong></span> :
+                <span>mentioned you in a comment</span>;
     case 'like': return <span>liked your post</span>;
     case 'repost': return <span>reposted your post</span>;
     case 'group_invite': return <span>invited you to join <strong>{n.group_name}</strong></span>;
@@ -180,7 +189,16 @@ const describe = n => {
     case 'moderation': return <span>{n.message || 'A moderator sent you a message.'}</span>;
     case 'news': return <span>New announcement: <strong>{n.title}</strong></span>;
     case 'report_update': return <span>Your report was {REPORT_OUTCOMES[n.action] || 'reviewed'}.</span>;
-    case 'contribution': return <span>sent changes for <strong>{n.projectTitle}</strong></span>;
+    case 'contribution': return n.pull && n.projectTitle ?
+        <span>sent changes for <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
+        n.projectTitle ?
+            <span>sent changes for <strong>{n.projectTitle}</strong></span> :
+            <span>sent changes</span>;
+    case 'contribution_merged': return n.pull && n.projectTitle ?
+        <span>merged changes for <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
+        n.projectTitle ?
+            <span>merged changes for <strong>{n.projectTitle}</strong></span> :
+            <span>merged changes</span>;
     case 'space_project': return (
         <span>added <strong>{n.projectTitle}</strong> to <strong>{n.spaceTitle}</strong></span>
     );
@@ -220,7 +238,8 @@ const GenericNotification = ({n}) => {
     const text = isUser ? stripSender(sender, raw) : raw;
     const showTitle = !isUser && Boolean(sender) && sender !== text;
     const channel = n.channelName ? ` in #${n.channelName}` : '';
-    const target = n.projectId ? `${projectUrl(n.projectId)}${commentAnchor(n)}` : null;
+    const target = n.projectId && n.pull ? `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}` :
+        n.projectId ? `${projectUrl(n.projectId)}${commentAnchor(n)}` : null;
     const sourceLink = typeof n.source === 'string' && /^https?:\/\//.test(n.source);
     const showSource = Boolean(n.source) && n.source !== 'mistwarp' && !sourceLink;
 
@@ -469,6 +488,11 @@ const Notifications = ({hideHeading}) => {
                                     ) : n.roadmapId ? (
                                         <Link
                                             to={`/roadmap#idea-${n.roadmapId}`}
+                                            className={styles.body}
+                                        >{body}</Link>
+                                    ) : n.projectId && n.pull ? (
+                                        <Link
+                                            to={`/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`}
                                             className={styles.body}
                                         >{body}</Link>
                                     ) : n.projectId ? (

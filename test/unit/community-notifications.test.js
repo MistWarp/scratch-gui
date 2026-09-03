@@ -145,4 +145,70 @@ describe('notification read state', () => {
         expect(subscribeNotifications).toHaveBeenCalledTimes(1);
         wrapper.unmount();
     });
+
+    test('renders PR comment notification text and links to the pull request', async () => {
+        markNotificationsRead.mockResolvedValue(false);
+        fetchNotifications.mockResolvedValue([{
+            id: 'pr-comment-1',
+            type: 'comment',
+            actor: 'bob',
+            projectId: 'p178804',
+            projectTitle: 'Cool Game',
+            pull: 4,
+            commentId: 'c999',
+            created: Date.now()
+        }]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).toContain('commented on Cool Game pr #4');
+        expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c999"]')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    test('renders PR mention and reply notification texts and links to the pull request', async () => {
+        markNotificationsRead.mockResolvedValue(false);
+        fetchNotifications.mockResolvedValue([
+            {
+                id: 'pr-reply-1',
+                type: 'reply',
+                actor: 'bob',
+                projectId: 'p178804',
+                projectTitle: 'Cool Game',
+                pull: 4,
+                commentId: 'c1001',
+                created: Date.now()
+            },
+            {
+                id: 'pr-mention-1',
+                type: 'mention',
+                actor: 'charlie',
+                projectId: 'p178804',
+                projectTitle: 'Cool Game',
+                pull: 4,
+                commentId: 'c1002',
+                created: Date.now()
+            }
+        ]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).toContain('replied to your comment on Cool Game pr #4');
+        expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c1001"]')).toHaveLength(1);
+
+        expect(wrapper.text()).toContain('mentioned you on Cool Game pr #4');
+        expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c1002"]')).toHaveLength(1);
+        wrapper.unmount();
+    });
 });
+

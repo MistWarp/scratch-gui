@@ -206,7 +206,36 @@ const RoadmapSection = ({viewerName}) => {
 const notificationText = item => {
     if (item.type === 'project_review') return `rated ${item.projectTitle || 'your project'} ${item.rating} out of 5`;
     if (item.type === 'love') return `loved ${item.projectTitle || 'your project'}`;
-    if (item.type === 'comment') return `commented on ${item.projectTitle || 'your project'}`;
+    if (item.type === 'comment') {
+        if (item.pull) {
+            return `commented on ${item.projectTitle || 'your project'} pr #${item.pull}`;
+        }
+        return `commented on ${item.projectTitle || 'your project'}`;
+    }
+    if (item.type === 'reply') {
+        if (item.pull) {
+            return `replied to your comment on ${item.projectTitle || 'your project'} pr #${item.pull}`;
+        }
+        return `replied to your comment on ${item.projectTitle || 'your project'}`;
+    }
+    if (item.type === 'mention') {
+        if (item.pull) {
+            return `mentioned you on ${item.projectTitle || 'your project'} pr #${item.pull}`;
+        }
+        return `mentioned you on ${item.projectTitle || 'your project'}`;
+    }
+    if (item.type === 'contribution') {
+        if (item.pull) {
+            return `sent changes for ${item.projectTitle || 'your project'} pr #${item.pull}`;
+        }
+        return `sent changes for ${item.projectTitle || 'your project'}`;
+    }
+    if (item.type === 'contribution_merged') {
+        if (item.pull) {
+            return `merged changes for ${item.projectTitle || 'your project'} pr #${item.pull}`;
+        }
+        return `merged changes for ${item.projectTitle || 'your project'}`;
+    }
     if (item.type === 'roadmap_comment') return `commented on ${item.roadmapTitle || 'your suggestion'}`;
     if (item.type === 'follow') return 'followed you';
     if (item.type === 'remix') return `remixed ${item.projectTitle || 'your project'}`;
@@ -215,7 +244,8 @@ const notificationText = item => {
 
 const notificationLink = item => {
     if (item.roadmapId) return `/roadmap#idea-${item.roadmapId}`;
-    if (item.projectId) return projectUrl(item.projectId);
+    if (item.projectId && item.pull) return `/project/${item.projectId}/pulls/${item.pull}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
+    if (item.projectId) return `${projectUrl(item.projectId)}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
     if (item.actor) return `/users/${item.actor}`;
     return '/notifications';
 };
