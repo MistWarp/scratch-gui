@@ -133,7 +133,8 @@ test('project comments include their selected type', async () => {
     expect(JSON.parse(window.fetch.mock.calls[0][1].body)).toEqual({
         content: 'The start button does nothing',
         parent: null,
-        kind: 'bug'
+        kind: 'bug',
+        donation: null
     });
 });
 

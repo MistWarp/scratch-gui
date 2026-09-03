@@ -3121,5 +3121,5 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, onRemix, use
     );
 };
 
-export {HistoryList, PullList, ReviewPanel};
+export {HistoryList, PullList, ReleaseList, ReviewPanel};
 export default Project;

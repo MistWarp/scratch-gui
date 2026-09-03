@@ -36,6 +36,10 @@ import {
     getSmartFeaturesBalance,
     topUpSmartFeatures
 } from '../../lib/sable/smart-features.js';
+import {
+    readBlockedProjectPrompts,
+    unblockProjectPrompts
+} from '../../lib/project-prompt-blocking.js';
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
@@ -82,6 +86,13 @@ const matchesDeleteConfirmation = (value, username) => (
     String(value).trim().toLowerCase() === String(username).toLowerCase()
 );
 
+const formatProjectName = (key, value) => {
+    if (value && typeof value === 'object' && value.name) return String(value.name);
+    if (key.startsWith('name:')) return key.slice('name:'.length);
+    if (key.startsWith('id:')) return key.slice('id:'.length);
+    return key;
+};
+
 const SECTIONS = [
     {key: 'theme', label: 'Theme', icon: Palette},
     {key: 'presence', label: 'Presence', icon: Radio},
@@ -93,6 +104,7 @@ const SECTIONS = [
     {key: 'identity', label: 'Identity', icon: User}
 ];
 const settingsSection = value => {
+    if (value === 'permissions') return 'safety';
     if (SECTIONS.some(section => section.key === value)) return value;
     return SECTIONS[0].key;
 };
@@ -160,6 +172,11 @@ const Settings = () => {
     const [safetyError, setSafetyError] = useState('');
     const [safetyBusy, setSafetyBusy] = useState('');
     const [safetyAttempt, setSafetyAttempt] = useState(0);
+    const [blockedProjectPrompts, setBlockedProjectPrompts] = useState(readBlockedProjectPrompts);
+    const handleUnblockProjectPrompt = key => {
+        unblockProjectPrompts(key);
+        setBlockedProjectPrompts(readBlockedProjectPrompts());
+    };
     const [dataStatus, setDataStatus] = useState('');
     const [dataBusy, setDataBusy] = useState('');
     const [gameSaves, setGameSaves] = useState([]);
@@ -796,6 +813,28 @@ const Settings = () => {
                                     )) : <p className={styles.note}>You have not muted anyone.</p>}
                                 </div>
                             </div> : null}
+                            <div className={styles.safetySection}>
+                                <h3>Project permissions</h3>
+                                <p className={styles.lead}>
+                                    Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.
+                                </p>
+                                {Object.entries(blockedProjectPrompts).length > 0 ? (
+                                    <div>
+                                        {Object.entries(blockedProjectPrompts).map(([key, value]) => (
+                                            <div className={styles.safetyRow} key={key}>
+                                                <span>{formatProjectName(key, value)}</span>
+                                                <Button onClick={() => handleUnblockProjectPrompt(key)}>
+                                                    Allow prompts again
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className={styles.note}>
+                                        No projects are blocked from asking for permission.
+                                    </p>
+                                )}
+                            </div>
                             <p className={styles.note}>For immediate safety concerns, <Link to="/support?topic=safety">contact MistWarp support</Link>.</p>
                         </section>
                     ) : null}

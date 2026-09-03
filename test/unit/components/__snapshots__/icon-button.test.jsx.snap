@@ -2,8 +2,10 @@
 
 exports[`IconButtonComponent matches snapshot 1`] = `
 <button
+  aria-label={null}
   className="custom-class-name"
   onClick={[MockFunction]}
+  title={null}
   type="button"
 >
   <img

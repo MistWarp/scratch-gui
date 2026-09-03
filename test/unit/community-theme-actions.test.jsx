@@ -89,7 +89,7 @@ describe('theme marketplace action locks', () => {
                 />
             </MemoryRouter>
         );
-        expect(wrapper.find(Link).prop('state')).toEqual({
+        expect(wrapper.find(Link).first().prop('state')).toEqual({
             themeReturnLabel: 'Your themes',
             themeReturnTo: '/mystuff?section=themes&themeView=published'
         });

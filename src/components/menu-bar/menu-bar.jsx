@@ -81,6 +81,7 @@ import {
     openGitModal,
     openExtensionManagerModal,
     openVariableManagerModal,
+    openProductsModal,
     openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
@@ -181,7 +182,8 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2, TerminalSquare,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video,
+    ShoppingBag
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -410,6 +412,7 @@ class MenuBar extends React.Component {
             'handleClickFractchTerminal',
             'handleClickDebugger',
             'handleClickVariableManager',
+            'handleClickProducts',
             'handleClickMediaRecorder',
             'handleOpenExtensionLibrary',
             'handleOpenExtensionManager',
@@ -695,6 +698,10 @@ class MenuBar extends React.Component {
     handleClickVariableManager () {
         this.props.onClickVariableManager();
         this.props.onRequestCloseTools();
+    }
+    handleClickProducts () {
+        this.props.onClickProducts();
+        this.props.onRequestCloseEdit();
     }
     handleClickMediaRecorder () {
         this.setState(state => ({mediaRecorderOpenRequest: state.mediaRecorderOpenRequest + 1}));
@@ -2273,6 +2280,14 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.projectMetadata"
                                         />
                                     </MenuItem>
+                                    <MenuItem onClick={this.handleClickProducts}>
+                                        <ShoppingBag size={20} />
+                                        <FormattedMessage
+                                            defaultMessage="Products"
+                                            description="Menu bar item to manage project products"
+                                            id="mw.menuBar.products"
+                                        />
+                                    </MenuItem>
                                     {!this.props.isPlayerOnly && mediaRecorderSupported && (
                                         <MenuItem onClick={this.handleClickMediaRecorder}>
                                             <Video />
@@ -2650,6 +2665,7 @@ MenuBar.propTypes = {
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
     onClickProjectMetadata: PropTypes.func,
+    onClickProducts: PropTypes.func,
     onClickVariableManager: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
@@ -2790,6 +2806,7 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
+    onClickProducts: () => dispatch(openProductsModal()),
     onClickVariableManager: () => dispatch(openVariableManagerModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
     onClickGitModal: () => {

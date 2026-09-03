@@ -151,6 +151,7 @@ const GUIComponent = props => {
         MWExtensionManagerModal,
         MWHelpModal,
         MWProjectThemeModal,
+        MWProductsModal,
         loadExtensionLibrary
     } = getGuiComponents();
     const [fractchMode, setFractchMode] = useState(false);
@@ -851,6 +852,7 @@ const GUIComponent = props => {
                 {!isPlayerOnly && <TWRestorePointManager />}
                 {!isPlayerOnly && <MWExtensionManagerModal />}
                 {!isPlayerOnly && <TWVariableManager />}
+                {!isPlayerOnly && <MWProductsModal />}
                 {!isPlayerOnly && <MWHelpModal />}
                 {!isPlayerOnly && <MWProjectThemeModal />}
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
