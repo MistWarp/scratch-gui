@@ -444,7 +444,7 @@ const PullRequest = () => {
                                 <div>{pull.body ? <RichText text={pull.body} /> : <p>No description was provided.</p>}</div>
                             </article>
                             {conversationEvents.map((event, eventIndex) => (event.eventType === 'comment' ? (
-                                <article className={styles.commentCard} key={`comment-${event.id}`}>
+                                <article className={styles.commentCard} key={`comment-${event.id}`} id={`comment-id-${event.id}`}>
                                     <MessageSquare className={styles.commentMarker} size={14} />
                                     <header>
                                         <Link to={`/users/${event.author}`}><Avatar username={event.author} size={28} /><strong>{event.author}</strong></Link>
