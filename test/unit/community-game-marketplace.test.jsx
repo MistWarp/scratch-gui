@@ -113,6 +113,70 @@ describe('game marketplace purchases', () => {
         wrapper.unmount();
     });
 
+    test('supports instant test purchases for unsaved projects', async () => {
+        const vm = {
+            getProducts: () => [{id: 'vip', name: 'VIP', price: 10, icon: ''}],
+            ownsProduct: () => false,
+            grantProduct: jest.fn()
+        };
+        const onResult = jest.fn();
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <GameMarketplaceModal
+                    projectId="draft"
+                    isDraft
+                    vm={vm}
+                    username="tester"
+                    productId="vip"
+                    onResult={onResult}
+                />
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('Would you like to buy VIP for 10 credits?');
+        expect(api.gameProducts).not.toHaveBeenCalled();
+
+        await wrapper.find('Button').first().prop('onClick')();
+
+        expect(vm.grantProduct).toHaveBeenCalledWith('vip', 'tester');
+        expect(buyGameProduct).not.toHaveBeenCalled();
+        expect(onResult).toHaveBeenCalledWith({status: 'purchased', product: expect.objectContaining({id: 'vip'})});
+        wrapper.unmount();
+    });
+
+    test('reports already-owned test products without charging', async () => {
+        const vm = {
+            getProducts: () => [{id: 'vip', name: 'VIP', price: 10, icon: ''}],
+            ownsProduct: () => true,
+            grantProduct: jest.fn()
+        };
+        const onResult = jest.fn();
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <GameMarketplaceModal
+                    projectId="draft"
+                    isDraft
+                    vm={vm}
+                    username="tester"
+                    productId="vip"
+                    onResult={onResult}
+                />
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('Already owned');
+
+        await wrapper.find('Button').first().prop('onClick')();
+
+        expect(vm.grantProduct).not.toHaveBeenCalled();
+        expect(onResult).toHaveBeenCalledWith({status: 'owned', product: expect.objectContaining({id: 'vip'})});
+        wrapper.unmount();
+    });
+
     test('does not update state after a purchase result closes the modal', async () => {
         let finishPurchase;
         buyGameProduct.mockReturnValue(new Promise(resolve => {

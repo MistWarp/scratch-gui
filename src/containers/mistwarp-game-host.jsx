@@ -113,9 +113,25 @@ class MistWarpGameHost extends React.Component {
         if (method === 'multiplayer.players') return Promise.resolve([]);
         if (method === 'multiplayer.setState') return Promise.resolve(false);
         if (method === 'multiplayer.sendEvent') return Promise.resolve(false);
-        if (method === 'marketplace.owns') return Promise.resolve(false);
+        if (method === 'marketplace.owns') {
+            const productId = String(args[0] || '');
+            const username = this.props.username || '';
+            if (this.props.vm && this.props.vm.ownsProduct) {
+                return Promise.resolve(this.props.vm.ownsProduct(productId, username));
+            }
+            return Promise.resolve(false);
+        }
         if (method === 'marketplace.open' || method === 'marketplace.purchase') {
-            return Promise.resolve({status: 'save project first'});
+            return new Promise(resolve => {
+                this.setState({
+                    marketplace: {
+                        projectId: 'draft',
+                        productId: method === 'marketplace.purchase' ? String(args[0] || '') : '',
+                        isDraft: true,
+                        resolve
+                    }
+                });
+            });
         }
         if (method === 'marketplace.configure' || method.startsWith('inventory.')) {
             return Promise.resolve(false);
@@ -150,13 +166,19 @@ class MistWarpGameHost extends React.Component {
                     marketplace: {
                         projectId,
                         productId: method === 'marketplace.purchase' ? String(args[0] || '') : '',
+                        isDraft: false,
                         resolve
                     }
                 });
             });
         }
         if (method === 'marketplace.owns') {
-            return api.ownsGameProduct(projectId, String(args[0] || '')).then(result => result.owned);
+            const productId = String(args[0] || '');
+            const username = this.props.username || '';
+            if (this.props.vm && this.props.vm.ownsProduct && this.props.vm.ownsProduct(productId, username)) {
+                return Promise.resolve(true);
+            }
+            return api.ownsGameProduct(projectId, productId).then(result => result.owned);
         }
         if (method === 'marketplace.configure') {
             const product = args[0] || {};
@@ -203,7 +225,14 @@ class MistWarpGameHost extends React.Component {
 
     handleMarketplaceResult (result) {
         const marketplace = this.state.marketplace;
-        if (marketplace) marketplace.resolve(result);
+        if (marketplace) {
+            if (result && result.status === 'purchased' && marketplace.productId) {
+                if (this.props.vm && this.props.vm.grantProduct) {
+                    this.props.vm.grantProduct(marketplace.productId, this.props.username || '');
+                }
+            }
+            marketplace.resolve(result);
+        }
         this.setState({marketplace: null});
     }
 
@@ -220,9 +249,12 @@ class MistWarpGameHost extends React.Component {
             <React.Fragment>
                 {marketplace ? (
                     <GameMarketplaceModal
+                        isDraft={Boolean(marketplace.isDraft)}
                         projectId={marketplace.projectId}
                         productId={marketplace.productId}
-                        onBlockProject={this.handleBlockProject}
+                        username={this.props.username}
+                        vm={this.props.vm}
+                        onBlockProject={marketplace.isDraft ? null : this.handleBlockProject}
                         onResult={this.handleMarketplaceResult}
                     />
                 ) : null}

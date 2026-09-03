@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
 import api from '../../src/community/api.js';
-import {HistoryList} from '../../src/community/pages/Project.jsx';
+import {ReleaseList} from '../../src/community/pages/Project.jsx';
 
 jest.mock('../../src/community/api.js', () => ({
     __esModule: true,
@@ -17,21 +17,24 @@ jest.mock('../../src/community/api.js', () => ({
     projectUrl: jest.fn(id => `/project/${id}`)
 }));
 
-describe('project history checkpoints', () => {
+describe('project release publishing', () => {
+    beforeEach(() => jest.clearAllMocks());
+
     test('locks duplicate creates and ignores a result after changing projects', async () => {
         let finishCreate;
         api.createRelease.mockReturnValue(new Promise(resolve => {
             finishCreate = resolve;
         }));
         const wrapper = mount(
-            <HistoryList id="project-1" history={{commits: []}} canRestore onChange={jest.fn()} />
+            <ReleaseList id="project-1" isOwner viewerName="tester" />
         );
         await act(async () => {
             await Promise.resolve();
             await Promise.resolve();
         });
         wrapper.update();
-        wrapper.find('input[placeholder="Checkpoint name"]').simulate('change', {target: {value: 'Before change'}});
+        wrapper.find('input[placeholder="Version, such as 1.2.0"]')
+            .simulate('change', {target: {value: '1.2.0'}});
         const submit = wrapper.find('form').prop('onSubmit');
         const event = {preventDefault: jest.fn()};
 
@@ -44,14 +47,14 @@ describe('project history checkpoints', () => {
 
         wrapper.setProps({id: 'project-2'});
         await act(async () => {
-            finishCreate({release: {_id: 'old-release', version: 'Before change'}});
+            finishCreate({release: {_id: 'old-release', version: '1.2.0'}});
             await first;
             await Promise.resolve();
         });
         wrapper.update();
 
-        expect(wrapper.find('input[placeholder="Checkpoint name"]').prop('value')).toBe('');
-        expect(wrapper.text()).not.toContain('Before change');
+        expect(wrapper.find('input[placeholder="Version, such as 1.2.0"]').prop('value')).toBe('');
+        expect(wrapper.find('article').length).toBe(0);
         wrapper.unmount();
     });
 });

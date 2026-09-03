@@ -3,9 +3,9 @@ import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useParams, Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {
     ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark,
-    Link2, UserCog, Plus, Trash2, MessageCircle, Clock3
+    Link2, UserCog, Plus, Trash2, MessageCircle, Clock3, ShoppingBag
 } from 'lucide-react';
-import api, {projectUrl} from '../api';
+import api, {projectUrl, editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
@@ -74,12 +74,13 @@ const SECTION_ALIASES = {
     settings: 'page',
     preview: 'publishing',
     buyers: 'sales',
+    products: 'sales',
     team: 'collaboration',
     bounties: 'collaboration',
     feedback: 'activity',
     diagnostics: 'activity'
 };
-const SUBTAB_ROUTES = new Set(['buyers', 'bounties', 'diagnostics']);
+const SUBTAB_ROUTES = new Set(['buyers', 'products', 'bounties', 'diagnostics']);
 const resolveSection = value => {
     const resolved = SECTION_ALIASES[value] || value;
     return SECTIONS.some(item => item.key === resolved) ? resolved : 'overview';
@@ -92,7 +93,7 @@ const normalizeProjectSectionParam = value => {
 };
 const projectNavigationState = value => ({
     section: resolveSection(value),
-    salesTab: value === 'buyers' ? 'buyers' : 'pricing',
+    salesTab: (value === 'buyers' || value === 'products') ? value : 'pricing',
     collaborationTab: value === 'bounties' ? 'bounties' : 'team',
     activityTab: value === 'diagnostics' ? 'diagnostics' : 'feedback'
 });
@@ -727,11 +728,15 @@ const ManageProject = () => {
                         <div className={styles.stack}>
                             <PageHeading title="Sales" description="Set the price and review who has bought the project." />
                             <PageTabs
-                                items={[{key: 'pricing', label: 'Pricing'}, {key: 'buyers', label: `Buyers${buyers.length ? ` (${buyers.length})` : ''}`}]}
+                                items={[
+                                    {key: 'pricing', label: 'Pricing'},
+                                    {key: 'products', label: 'In-game products'},
+                                    {key: 'buyers', label: `Buyers${buyers.length ? ` (${buyers.length})` : ''}`}
+                                ]}
                                 value={salesTab}
                                 onChange={nextTab => {
                                     setSalesTab(nextTab);
-                                    setRouteSection(nextTab === 'buyers' ? 'buyers' : 'sales');
+                                    setRouteSection(nextTab === 'pricing' ? 'sales' : nextTab);
                                 }}
                                 label="Sales sections"
                             />
@@ -760,7 +765,64 @@ const ManageProject = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
+                            ) : null}
+                            {salesTab === 'products' ? (
+                                <div className={styles.card}>
+                                    <h2 className={styles.cardTitle}>In-game products</h2>
+                                    <p className={styles.empty}>
+                                        Products defined for this project that players can purchase during gameplay using credits.
+                                    </p>
+                                    {(project.gameProducts && project.gameProducts.length) ? (
+                                        <div className={styles.buyers}>
+                                            {project.gameProducts.map(prod => (
+                                                <div key={prod.id} className={styles.buyerRow}>
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                                        {prod.icon ? (
+                                                            <img
+                                                                src={prod.icon}
+                                                                alt={prod.name}
+                                                                style={{
+                                                                    width: '32px',
+                                                                    height: '32px',
+                                                                    borderRadius: '6px',
+                                                                    objectFit: 'cover'
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <ShoppingBag size={24} />
+                                                        )}
+                                                        <div>
+                                                            <strong>{prod.name}</strong>
+                                                            <div style={{fontSize: '12px', color: 'var(--text-dim)'}}>
+                                                                <code>{prod.id}</code>
+                                                                {prod.description ? ` · ${prod.description}` : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <span className={styles.buyerMeta}>
+                                                        <span className={styles.buyerAmount}>
+                                                            <Coins size={13} />
+                                                            {prod.price} credits
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className={styles.empty}>
+                                            No in-game products are configured for this project yet.
+                                        </p>
+                                    )}
+                                    <div className={styles.formActions} style={{marginTop: '16px'}}>
+                                        <Link to={editorUrl({platformProject: project.id})}>
+                                            <Button variant="secondary">
+                                                Open in editor to manage products
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : null}
+                            {salesTab === 'buyers' ? (
                                 <div className={styles.card}>
                                     {buyers.length ? (
                                         <ul className={styles.buyers}>
@@ -776,7 +838,7 @@ const ManageProject = () => {
                                         </ul>
                                     ) : <p className={styles.empty}>{paywalled ? 'No one has bought this project yet.' : 'This project is free. Set a price to start selling it.'}</p>}
                                 </div>
-                            )}
+                            ) : null}
                         </div>
                     ) : null}
 

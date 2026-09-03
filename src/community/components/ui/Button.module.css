@@ -7,8 +7,8 @@
     font-weight: 600;
     font-size: 14px;
     padding: 8px 14px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 12px);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
     cursor: pointer;
     min-height: 38px;
     text-decoration: none;
@@ -21,7 +21,7 @@
 }
 
 .button:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent, #855cd6);
     outline-offset: 2px;
 }
 
@@ -35,22 +35,22 @@
 }
 
 .secondary {
-    background: var(--bg-raised);
-    color: var(--mw-text);
+    background: var(--bg-raised, #2a2a2a);
+    color: var(--mw-text, #eeeeee);
 }
 
 .secondary:hover:not(:disabled) {
-    background: var(--bg-header);
+    background: var(--bg-header, #343434);
 }
 
 .primary {
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border-color: var(--accent-border);
+    background: var(--accent, #855cd6);
+    color: var(--accent-contrast, #ffffff);
+    border-color: var(--accent-border, rgba(133, 92, 214, 0.35));
 }
 
 .primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 88%, #000);
+    background: color-mix(in srgb, var(--accent, #855cd6) 88%, #000);
 }
 
 .danger {

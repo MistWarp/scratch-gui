@@ -118,6 +118,12 @@
     gap: 22px;
 }
 
+.safetySection {
+    margin-top: 24px;
+    border-top: 1px solid var(--mw-border);
+    padding-top: 20px;
+}
+
 .safetyGroups h3,
 .dataAction h3,
 .dangerZone h3 {

@@ -6,8 +6,69 @@ import api from '../api';
 import {buyGameProduct} from '../purchase';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
+import scopeStyles from '../../lib/mw/community-scope.css';
 
-const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) => {
+const rowStyle = {
+    borderTop: '1px solid var(--border, rgba(255, 255, 255, 0.12))',
+    padding: '14px 0',
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center'
+};
+const iconStyle = {
+    width: '48px',
+    height: '48px',
+    borderRadius: '10px',
+    objectFit: 'cover',
+    flexShrink: 0,
+    background: 'var(--bg-input, #2a2a2a)'
+};
+const iconFallbackStyle = {
+    ...iconStyle,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+};
+
+const ProductIcon = ({product}) => {
+    if (product.icon) {
+        return (
+            <img
+                alt=""
+                src={product.icon}
+                style={iconStyle}
+            />
+        );
+    }
+    return (
+        <span style={iconFallbackStyle}>
+            <ShoppingBag size={22} color="#888" />
+        </span>
+    );
+};
+
+ProductIcon.propTypes = {
+    product: PropTypes.object.isRequired
+};
+
+const localProducts = vm => {
+    try {
+        return (vm && vm.getProducts ? vm.getProducts() : []) || [];
+    } catch (e) {
+        return [];
+    }
+};
+
+const isOwned = (product, vm, username) => {
+    if (product.owned) return true;
+    try {
+        return Boolean(vm && vm.ownsProduct && vm.ownsProduct(product.id, username || ''));
+    } catch (e) {
+        return false;
+    }
+};
+
+const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBlockProject, onResult}) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [buying, setBuying] = useState('');
@@ -25,11 +86,28 @@ const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) 
         setProducts([]);
         setLoading(true);
         setError('');
+        if (isDraft) {
+            const local = localProducts(vm)
+                .filter(product => !productId || product.id === productId)
+                .map(product => ({...product, owned: isOwned(product, vm, username)}));
+            setProducts(local);
+            setLoading(false);
+            return () => {
+                cancelled = true;
+            };
+        }
         api.gameProducts(projectId)
             .then(result => {
-                if (!cancelled) {
-                    setProducts((result.products || []).filter(product => !productId || product.id === productId));
-                }
+                if (cancelled) return;
+                const remote = (result.products || [])
+                    .filter(product => !productId || product.id === productId);
+                const seen = new Set(remote.map(product => product.id));
+                const missingLocal = localProducts(vm)
+                    .filter(product => !seen.has(product.id) && (!productId || product.id === productId));
+                setProducts([
+                    ...remote.map(product => ({...product, owned: isOwned(product, vm, username)})),
+                    ...missingLocal.map(product => ({...product, owned: isOwned(product, vm, username)}))
+                ]);
             })
             .catch(e => {
                 if (!cancelled) setError(e.message || 'Could not load this game shop.');
@@ -40,14 +118,14 @@ const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) 
         return () => {
             cancelled = true;
         };
-    }, [projectId, productId]);
+    }, [projectId, productId, isDraft]);
 
     useEffect(() => () => {
         mounted.current = false;
     }, []);
 
     const purchase = async product => {
-        if (product.owned) {
+        if (isOwned(product, vm, username)) {
             onResult({status: 'owned', product});
             return;
         }
@@ -57,7 +135,13 @@ const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) 
         setBuying(product.id);
         setError('');
         try {
-            const purchased = await buyGameProduct(projectId, product.id);
+            let purchased;
+            if (isDraft) {
+                if (vm && vm.grantProduct) vm.grantProduct(product.id, username || '');
+                purchased = {...product, owned: true};
+            } else {
+                purchased = await buyGameProduct(projectId, product.id);
+            }
             if (mounted.current && currentProjectId.current === actionProjectId) {
                 onResult({status: 'purchased', product: purchased});
             }
@@ -71,50 +155,84 @@ const GameMarketplaceModal = ({projectId, productId, onBlockProject, onResult}) 
         }
     };
 
+    const close = () => onResult({status: 'cancelled'});
+    const focused = productId ? products.find(product => product.id === productId) : null;
+    const list = productId ? (focused ? [focused] : []) : products;
+
     return (
-        <Modal
-            icon={ShoppingBag}
-            title={productId ? 'Purchase game content' : 'Game shop'}
-            onClose={() => onResult({status: 'closed'})}
-            dismissDisabled={Boolean(buying)}
-            actions={onBlockProject ? (
-                <Button
-                    variant="danger"
-                    disabled={Boolean(buying)}
-                    onClick={onBlockProject}
-                >
-                    Block this project
-                </Button>
-            ) : null}
-        >
-            {loading ? <p>Loading shop…</p> : null}
-            {!loading && !products.length ? <p>This project does not have any matching products.</p> : null}
-            {products.map(product => (
-                <div key={product.id} style={{borderTop: '1px solid var(--border)', padding: '14px 0'}}>
-                    <strong>{product.name}</strong>
-                    {product.description ? <p>{product.description}</p> : null}
+        <div className={scopeStyles.scope}>
+            <Modal
+                icon={ShoppingBag}
+                title={productId ? 'Purchase game content' : 'Game shop'}
+                onClose={close}
+                dismissDisabled={Boolean(buying)}
+                actions={onBlockProject ? (
                     <Button
-                        variant="primary"
-                        busy={buying === product.id}
-                        busyLabel="Processing…"
+                        variant="danger"
                         disabled={Boolean(buying)}
-                        onClick={() => purchase(product)}
+                        onClick={onBlockProject}
                     >
-                        <Coins size={15} />
-                        {product.owned ? 'Owned' : `Pay ${product.price} credits`}
+                        Block this project
                     </Button>
-                </div>
-            ))}
-            {error ? <p aria-live="polite">{error}</p> : null}
-        </Modal>
+                ) : null}
+            >
+                {loading ? <p>Loading shop…</p> : null}
+                {!loading && !list.length ? <p>This project does not have any matching products.</p> : null}
+                {!loading && productId && focused ? (
+                    <p>
+                        {`Would you like to buy ${focused.name} for ${focused.price} credits?`}
+                        {isDraft ? ' (Test purchase — no credits charged.)' : null}
+                    </p>
+                ) : null}
+                {list.map(product => {
+                    const owned = isOwned(product, vm, username);
+                    return (
+                        <div
+                            key={product.id}
+                            style={rowStyle}
+                        >
+                            <ProductIcon product={product} />
+                            <div style={{flex: 1, minWidth: 0}}>
+                                <strong>{product.name}</strong>
+                                {product.description ? <p style={{margin: '4px 0 0'}}>{product.description}</p> : null}
+                                <div style={{display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap'}}>
+                                    <Button
+                                        variant="primary"
+                                        busy={buying === product.id}
+                                        busyLabel="Processing…"
+                                        disabled={Boolean(buying) || owned}
+                                        onClick={() => purchase(product)}
+                                    >
+                                        <Coins size={15} />
+                                        {owned ? 'Already owned' : `Buy (${product.price} credits)`}
+                                    </Button>
+                                    {productId ? (
+                                        <Button
+                                            disabled={Boolean(buying)}
+                                            onClick={close}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+                {error ? <p aria-live="polite">{error}</p> : null}
+            </Modal>
+        </div>
     );
 };
 
 GameMarketplaceModal.propTypes = {
+    isDraft: PropTypes.bool,
     onBlockProject: PropTypes.func,
     onResult: PropTypes.func.isRequired,
     productId: PropTypes.string,
-    projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired
+    projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    username: PropTypes.string,
+    vm: PropTypes.object
 };
 
 export default GameMarketplaceModal;

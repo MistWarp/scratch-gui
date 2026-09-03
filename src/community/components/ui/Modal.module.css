@@ -12,10 +12,11 @@
 .modal {
     width: 100%;
     max-width: 460px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
+    background: var(--bg-card, #1e1e1e);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius, 16px);
+    box-shadow: var(--card-shadow, 0 8px 28px rgba(0, 0, 0, 0.45));
+    color: var(--mw-text, #eeeeee);
     overflow: hidden;
     max-height: calc(100dvh - 40px);
 }
@@ -25,7 +26,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px;
-    border-bottom: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
 }
 
 .title {
@@ -34,11 +35,11 @@
     gap: 8px;
     font-weight: 700;
     font-size: 15px;
-    color: var(--mw-text);
+    color: var(--mw-text, #eeeeee);
 }
 
 .title > svg {
-    color: var(--accent-strong);
+    color: var(--accent-strong, var(--accent, #855cd6));
 }
 
 .close {
@@ -46,7 +47,7 @@
     align-items: center;
     background: none;
     border: none;
-    color: var(--text-dim);
+    color: var(--text-dim, rgba(238, 238, 238, 0.8));
     padding: 2px;
     cursor: pointer;
     width: 36px;
@@ -55,11 +56,11 @@
 }
 
 .close:hover {
-    color: var(--mw-text);
+    color: var(--mw-text, #ffffff);
 }
 
 .close:disabled {
-    color: var(--text-faint);
+    color: var(--text-faint, rgba(238, 238, 238, 0.62));
     cursor: not-allowed;
 }
 

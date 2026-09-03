@@ -214,6 +214,12 @@ const api = {
     gameProductConfirm: (id, product, key, paymentId) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/confirm`, {
         method: 'POST', body: {key, paymentId}
     }),
+    grantGameProduct: (id, product, username) => request(`/projects/${id}/products/${encodeURIComponent(product)}/grant`, {
+        method: 'POST', body: {username}
+    }),
+    revokeGameProduct: (id, product, {username, paymentId, noRefund}) => request(`/projects/${id}/products/${encodeURIComponent(product)}/revoke`, {
+        method: 'POST', body: {username, paymentId, noRefund}
+    }),
     createGameDataCapability: (id, context) => request(`/projects/${id}/data-capability`, {
         method: 'POST', body: {context}
     }),
