@@ -8,13 +8,13 @@ import styles from './modal-sidebar.css';
  * and behaves exactly like the settings window's. Every group heading is
  * collapsible.
  *
- * @param {object} options
+ * @param {object} options The sidebar options.
  * @param {string} options.ariaLabel Accessible label for the nav.
- * @param {Array<{label: string, items: Array<{value: string, label: string}>}>} options.groups
+ * @param {Array} options.groups Groups of `{label, items: [{value, label}]}`.
  * @param {string} options.selectedValue Initially selected item value.
  * @param {function} options.onSelect Called with the item value on click.
  * @param {string} [options.width] One of "default", "wide", "narrow".
- * @returns {{element: HTMLElement, setSelected: function, destroy: function}}
+ * @returns {{element: HTMLElement, setSelected: function, destroy: function}} The sidebar element and controls.
  */
 export const createModalSidebar = ({ariaLabel, groups, onSelect, selectedValue, width}) => {
     const widthClass = width === 'wide' ?
