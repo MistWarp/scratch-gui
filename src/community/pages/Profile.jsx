@@ -415,7 +415,8 @@ const Profile = () => {
         add: (content, parent) => api.addProfileComment(name, content, parent),
         remove: commentId => api.deleteProfileComment(name, commentId),
         edit: (commentId, content) => api.editProfileComment(name, commentId, content),
-        react: (commentId, type) => api.reactProfileComment(name, commentId, type)
+        react: (commentId, type) => api.reactProfileComment(name, commentId, type),
+        pin: (commentId, pinned) => api.pinProfileComment(name, commentId, pinned)
     }), [name]);
 
     if (error && errorLoadContext === loadContext && profileLoadContext !== loadContext) {
@@ -713,6 +714,7 @@ const Profile = () => {
                                         <CommentThread
                                             source={commentSource}
                                             canModerate={isSelf}
+                                            canPin={isSelf}
                                             disabled={commentsOff}
                                             reportContext={`profile ${name}`}
                                         />

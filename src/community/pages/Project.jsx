@@ -1378,6 +1378,7 @@ const Project = () => {
         remove: commentId => api.deleteComment(id, commentId),
         edit: (commentId, content) => api.editComment(id, commentId, content),
         react: (commentId, type) => api.reactComment(id, commentId, type),
+        pin: (commentId, pinned) => api.pinComment(id, commentId, pinned),
         subscribe: listener => projectRealtime.subscribe(
             id,
             listener,
@@ -2189,6 +2190,7 @@ const Project = () => {
                             source={commentSource}
                             donationRecipient={project.owner}
                             canModerate={project.isOwner}
+                            canPin={project.isOwner}
                             disabled={Boolean(project.commentsOff) || locked}
                             disabledReason={locked && !project.commentsOff ?
                                 'Buy this project to comment.' : 'Comments are turned off.'}
