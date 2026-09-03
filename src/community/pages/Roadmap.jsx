@@ -68,7 +68,8 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onInterest, onCommentCou
         list: options => api.ideaComments(idea._id, options),
         add: (content, parent) => api.addIdeaComment(idea._id, content, parent),
         remove: comment => api.deleteIdeaComment(idea._id, comment),
-        edit: (commentId, content) => api.editIdeaComment(idea._id, commentId, content)
+        edit: (commentId, content) => api.editIdeaComment(idea._id, commentId, content),
+        react: (commentId, type) => api.reactIdeaComment(idea._id, commentId, type)
     }), [idea._id]);
 
     return (

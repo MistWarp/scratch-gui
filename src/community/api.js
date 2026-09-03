@@ -384,6 +384,8 @@ const api = {
         request(`/roadmap/${id}/comments`, {method: 'POST', body: {content, parent}}),
     deleteIdeaComment: (id, comment) => request(`/roadmap/${id}/comments/${comment}`, {method: 'DELETE'}),
     editIdeaComment: (id, commentId, content) => request(`/roadmap/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
+    reactIdeaComment: (id, commentId, type) =>
+        request(`/roadmap/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     commits: id => request(`/projects/${id}/commits`),
     branches: id => request(`/projects/${id}/branches`),
     createBranch: (id, name, from) => request(`/projects/${id}/branches`, {
