@@ -1,6 +1,5 @@
 import {GUI, mapDispatchToProps} from '../../../src/containers/gui.jsx';
 
-jest.mock('../../../src/lib/mw/open-fractch-terminal-window.js', () => jest.fn());
 jest.mock('../../../src/components/gui/gui.jsx', () => () => null);
 
 describe('GUI sprite shortcut actions', () => {

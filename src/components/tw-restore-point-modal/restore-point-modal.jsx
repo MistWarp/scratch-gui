@@ -9,8 +9,8 @@ import {formatBytes} from '../../lib/utils/bytes';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Restore Points',
-        description: 'Title of restore point management modal',
+        defaultMessage: 'Device Backups',
+        description: 'Title of local device backup management modal (restore points, this browser only)',
         id: 'tw.restorePoints.title'
     },
     never: {
@@ -121,13 +121,14 @@ const RestorePointModal = props => (
                 <div>
                     <strong>
                         <FormattedMessage
-                            defaultMessage="Automatic restore points"
+                            defaultMessage="Automatic device backups"
                             id="tw.restorePoints.automaticHeading"
                         />
                     </strong>
                     <span>
                         <FormattedMessage
-                            defaultMessage="Local recovery snapshots. Keep separate backups too."
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Local recovery snapshots on this browser only. Pushed history lives under Project history."
                             id="tw.restorePoints.automaticDescription"
                         />
                     </span>
@@ -152,14 +153,14 @@ const RestorePointModal = props => (
                 <div>
                     <strong>
                         <FormattedMessage
-                            defaultMessage="Saved versions"
+                            defaultMessage="Saved on this device"
                             id="tw.restorePoints.savedHeading"
                         />
                     </strong>
                     {!props.isLoading && !props.error && (
                         <span className={styles.summary}>
                             <FormattedMessage
-                                defaultMessage="{count} restore points · {size}"
+                                defaultMessage="{count} device backups · {size}"
                                 id="tw.restorePoints.summary"
                                 values={{
                                     count: props.restorePoints.length,

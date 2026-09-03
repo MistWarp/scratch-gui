@@ -258,7 +258,7 @@ const publishToMistWarp = async ({
         } catch (e) {
             sb3Blob = await zipProjectFiles(sb3Files, () => true);
         }
-        onProgress({phase: 'package', message: 'Preparing version history and extensions'});
+        onProgress({phase: 'package', message: 'Preparing pushed history and extensions'});
         if (platformProject && platformProject.workspaceUrl && !isProjectHistoryHydrated(vm)) {
             await deleteRepo();
         }
@@ -297,7 +297,7 @@ const publishToMistWarp = async ({
                 throw e;
             }
         }
-        onProgress({phase: 'finish', message: 'Updating version history'});
+        onProgress({phase: 'finish', message: 'Updating pushed history'});
         await preloadProjectHistory(vm, {force: true});
     } catch (e) {
         if (createdNow && e.code !== 'upload_processing_timeout') {

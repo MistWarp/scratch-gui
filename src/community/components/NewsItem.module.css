@@ -38,7 +38,7 @@
 
 .category {
     display: inline-block;
-    margin-bottom: 8px;
+    flex-shrink: 0;
     padding: 3px 7px;
     border-radius: 5px;
     color: var(--accent-strong);
@@ -78,19 +78,7 @@
 }
 
 .compact {
-    padding: 14px 2px;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-soft);
-    background: transparent;
-    box-shadow: none;
-}
-
-.compact:first-child {
-    padding-top: 2px;
-}
-
-.compact:last-child {
-    border-bottom: 0;
+    padding: 14px;
 }
 
 .compact .head h3 {
@@ -292,6 +280,10 @@
 
 .compactFooter {
     margin-top: 4px;
+}
+
+.footerCategory {
+    margin-left: auto;
 }
 
 .author {

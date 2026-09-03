@@ -7,8 +7,7 @@ import {Search} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import {
     ModalSidebar,
-    ModalSidebarGroup,
-    ModalSidebarGroupHeader,
+    ModalSidebarCollapsibleGroup,
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
@@ -275,8 +274,7 @@ class TWExtensionLibrary extends React.Component {
                         ariaLabel={title}
                         width="wide"
                     >
-                        <ModalSidebarGroup>
-                            <ModalSidebarGroupHeader label="Extensions" />
+                        <ModalSidebarCollapsibleGroup label="Extensions">
                             {sidebarTags.map(tag => (
                                 <TagItem
                                     key={tag.tag}
@@ -286,7 +284,7 @@ class TWExtensionLibrary extends React.Component {
                                     onSelect={this.handleSelectTag}
                                 />
                             ))}
-                        </ModalSidebarGroup>
+                        </ModalSidebarCollapsibleGroup>
                     </ModalSidebar>
 
                     <div className={styles.content}>

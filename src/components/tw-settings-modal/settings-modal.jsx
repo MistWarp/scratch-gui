@@ -10,9 +10,8 @@ import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import {
     ModalSidebar,
+    ModalSidebarCollapsibleGroup,
     ModalSidebarContent,
-    ModalSidebarGroup,
-    ModalSidebarGroupHeader,
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
@@ -1020,75 +1019,6 @@ const MenuBarPage = props => (<PageRenderer
     {...props}
 />);
 
-const THEME_TABS = [
-    {id: 'appearance', label: 'Appearance'},
-    {id: 'blocks', label: 'Blocks'},
-    {id: 'wallpaper', label: 'Wallpaper'},
-    {id: 'fonts', label: 'Fonts'},
-    {id: 'editor', label: 'Editor'},
-    {id: 'menuBar', label: 'Menu bar'},
-    {id: 'loadingScreen', label: 'Loading screen'}
-];
-
-class ThemeSettingsPage extends React.Component {
-    constructor (props) {
-        super(props);
-        this.state = {activeTab: props.initialTab || 'appearance'};
-    }
-
-    renderPage () {
-        switch (this.state.activeTab) {
-        case 'blocks': return <ThemePage />;
-        case 'wallpaper': return <WallpaperPage />;
-        case 'fonts': return <FontsPage />;
-        case 'editor': return <EditorPage {...this.props} />;
-        case 'menuBar': return <MenuBarPage {...this.props} />;
-        case 'loadingScreen': return <LoadingScreenPage />;
-        case 'appearance':
-        default: return <StylesPage {...this.props} />;
-        }
-    }
-
-    render () {
-        return (
-            <div className={styles.themeSettingsPage}>
-                <div
-                    aria-label="Theme sections"
-                    className={styles.settingsTabs}
-                    role="tablist"
-                >
-                    {THEME_TABS.map(tab => (
-                        <button
-                            aria-controls="theme-settings-panel"
-                            aria-selected={this.state.activeTab === tab.id}
-                            className={classNames(styles.settingsTab, {
-                                [styles.settingsTabSelected]: this.state.activeTab === tab.id
-                            })}
-                            key={tab.id}
-                            role="tab"
-                            type="button"
-                            onClick={() => this.setState({activeTab: tab.id})}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-                <div
-                    className={styles.themeSettingsPanel}
-                    id="theme-settings-panel"
-                    role="tabpanel"
-                >
-                    {this.renderPage()}
-                </div>
-            </div>
-        );
-    }
-}
-
-ThemeSettingsPage.propTypes = {
-    initialTab: PropTypes.oneOf(THEME_TABS.map(tab => tab.id))
-};
-
 const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
 
 const UnwrappedDebuggerPage = ({intl}) => (
@@ -1569,8 +1499,20 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <LanguagePage />;
     case 'shortcuts':
         return <ShortcutManager />;
-    case 'theme':
-        return <ThemeSettingsPage {...handlers} />;
+    case 'appearance':
+        return <StylesPage {...handlers} />;
+    case 'blocks':
+        return <ThemePage />;
+    case 'wallpaper':
+        return <WallpaperPage />;
+    case 'fonts':
+        return <FontsPage />;
+    case 'editor':
+        return <EditorPage {...handlers} />;
+    case 'menuBar':
+        return <MenuBarPage {...handlers} />;
+    case 'loadingScreen':
+        return <LoadingScreenPage />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -1597,15 +1539,12 @@ class SettingsModalComponent extends React.Component {
         bindAll(this, [
             'handleNavigate',
             'handleStoreProjectOptions',
-            'handleToggleGroup',
             'handleMobileBack'
         ]);
 
         const requestedView = takeSettingsModalInitialView() || 'general';
-        const themeViews = THEME_TABS.map(tab => tab.id).concat('theme');
         this.state = {
-            currentView: themeViews.includes(requestedView) ? 'theme' : requestedView,
-            collapsedGroups: {},
+            currentView: requestedView === 'theme' ? 'appearance' : requestedView,
             mobileView: 'list'
         };
     }
@@ -1616,15 +1555,6 @@ class SettingsModalComponent extends React.Component {
 
     handleMobileBack () {
         this.setState({mobileView: 'list'});
-    }
-
-    handleToggleGroup (groupId) {
-        this.setState(prevState => ({
-            collapsedGroups: {
-                ...prevState.collapsedGroups,
-                [groupId]: !prevState.collapsedGroups[groupId]
-            }
-        }));
     }
 
     handleStoreProjectOptions () {
@@ -1651,28 +1581,22 @@ class SettingsModalComponent extends React.Component {
                         ariaLabel="Settings sections"
                         width="wide"
                     >
-                        {sidebarGroups.map(group => {
-                            const collapsed = !!this.state.collapsedGroups[group.id];
-                            return (
-                                <ModalSidebarGroup key={group.id}>
-                                    <ModalSidebarGroupHeader
-                                        collapsible
-                                        collapsed={collapsed}
-                                        label={group.label}
-                                        onClick={() => this.handleToggleGroup(group.id)}
+                        {sidebarGroups.map(group => (
+                            <ModalSidebarCollapsibleGroup
+                                key={group.id}
+                                label={group.label}
+                            >
+                                {group.items.map(cat => (
+                                    <ModalSidebarItem
+                                        key={cat.id}
+                                        icon={cat.icon}
+                                        label={cat.label}
+                                        selected={currentView === cat.id}
+                                        onClick={() => this.handleNavigate(cat.id)}
                                     />
-                                    {!collapsed && group.items.map(cat => (
-                                        <ModalSidebarItem
-                                            key={cat.id}
-                                            icon={cat.icon}
-                                            label={cat.label}
-                                            selected={currentView === cat.id}
-                                            onClick={() => this.handleNavigate(cat.id)}
-                                        />
-                                    ))}
-                                </ModalSidebarGroup>
-                            );
-                        })}
+                                ))}
+                            </ModalSidebarCollapsibleGroup>
+                        ))}
                     </ModalSidebar>
                     <ModalSidebarContent className={styles.contentArea}>
                         <button
@@ -1760,4 +1684,4 @@ SettingsModalComponent.propTypes = {
 
 export default injectIntl(SettingsModalComponent);
 
-export {CustomFPS, SettingsModalComponent, ThemeSettingsPage};
+export {CustomFPS, SettingsModalComponent};

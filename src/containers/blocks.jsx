@@ -19,6 +19,7 @@ import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
 import {VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
+import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
@@ -40,6 +41,7 @@ import {isTimeTravel2020} from '../reducers/time-travel';
 import {showStandardAlert} from '../reducers/alerts';
 
 import installSystemClipboardForBlocks from '../lib/mw/system-clipboard.js';
+import {initDevInspector} from '../lib/dev-inspector/dev-inspector.js';
 
 import {
     activateTab,
@@ -106,6 +108,7 @@ class Blocks extends React.Component {
         AddonHooks.blocklyCallbacks.length = [];
 
         installSystemClipboardForBlocks(this.ScratchBlocks, props.vm, props.onShowImportError);
+        initDevInspector(props.vm, this.ScratchBlocks);
 
         bindAll(this, [
             'attachVM',
@@ -147,6 +150,7 @@ class Blocks extends React.Component {
 
         this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
         this.handleVanillaPaletteChanged = this.handleVanillaPaletteChanged.bind(this);
+        this.handleCatBlocksChanged = this.handleCatBlocksChanged.bind(this);
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
@@ -169,6 +173,7 @@ class Blocks extends React.Component {
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
         window.addEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
+        window.addEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
 
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
@@ -413,6 +418,7 @@ class Blocks extends React.Component {
     componentWillUnmount () {
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
+        window.removeEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
         this.detachVM();
         this.unmounted = true;
         this.cancelDeferredWorkspaceLoad();
@@ -580,6 +586,34 @@ class Blocks extends React.Component {
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
+        }
+    }
+
+    handleCatBlocksChanged () {
+        // Cat hats change block shapes, so rebuild workspace and flyout like the old addon did.
+        try {
+            this.props.vm.emitWorkspaceUpdate();
+        } catch (e) {
+            // ignore
+        }
+        try {
+            const workspace = this.ScratchBlocks.getMainWorkspace();
+            const flyout = workspace && workspace.getFlyout();
+            if (workspace && flyout) {
+                this.ScratchBlocks.Events.disable();
+                const flyoutWorkspace = flyout.getWorkspace();
+                this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(
+                    this.ScratchBlocks.Xml.workspaceToDom(flyoutWorkspace),
+                    flyoutWorkspace
+                );
+                if (workspace.getToolbox() && workspace.getToolbox().refreshSelection) {
+                    workspace.getToolbox().refreshSelection();
+                }
+                workspace.toolboxRefreshEnabled_ = true;
+                this.ScratchBlocks.Events.enable();
+            }
+        } catch (e) {
+            // ignore
         }
     }
 

@@ -1,7 +1,7 @@
 /*
     src/lib/themes/fonts.js injects `*:not(...) { font-family: ... !important }`, which forces the
-    proportional UI font onto xterm and Monaco. xterm still measures its cell grid with the font it
-    was configured with, so the glyphs and the grid disagree and the text renders unevenly spaced.
+    proportional UI font onto Monaco. Monaco still measures its layout with the font it
+    was configured with, so the glyphs and the grid disagree without this override.
     These selectors are more specific than that rule, so the code surfaces keep a real monospace font.
 
     The `-50000px` selector is Monaco's off-screen font-measuring container (charWidthReader), which it
@@ -12,8 +12,6 @@
 
 html body > div[style*="-50000px"],
 html body > div[style*="-50000px"] *,
-html body .xterm,
-html body .xterm *,
 html body .monaco-editor .view-lines,
 html body .monaco-editor .view-line,
 html body .monaco-editor .view-line *,

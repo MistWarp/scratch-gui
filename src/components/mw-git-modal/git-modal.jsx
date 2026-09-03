@@ -38,8 +38,8 @@ import styles from './git-modal.css';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Version history',
-        description: 'Title of the git window',
+        defaultMessage: 'Project history',
+        description: 'Title of the git window (pushed history on MistWarp, like git push)',
         id: 'mw.git.title'
     },
     changes: {
@@ -236,7 +236,8 @@ class GitModalComponent extends React.Component {
                 <GitCommit className={styles.emptyIcon} />
                 <p>
                     <FormattedMessage
-                        defaultMessage="This project doesn't have version history yet."
+                        // eslint-disable-next-line max-len
+                        defaultMessage="This project has no pushed history yet. Device backups still protect you on this browser."
                         description="Shown when no repository exists"
                         id="mw.git.empty.description"
                     />
@@ -248,7 +249,7 @@ class GitModalComponent extends React.Component {
                     onClick={this.props.onInit}
                 >
                     <FormattedMessage
-                        defaultMessage="Start version history"
+                        defaultMessage="Start project history"
                         description="Init button"
                         id="mw.git.empty.init"
                     />
@@ -288,7 +289,7 @@ class GitModalComponent extends React.Component {
                         <p>
                             <FormattedMessage
                                 // eslint-disable-next-line max-len
-                                defaultMessage="Cloning replaces your current project. Discard unsaved changes and clone?"
+                                defaultMessage="Cloning replaces your current project. A device backup is saved first. Discard unsaved changes and clone?"
                                 description="Clone overwrite confirmation"
                                 id="mw.git.empty.cloneConfirm"
                             />
@@ -444,8 +445,8 @@ class GitModalComponent extends React.Component {
             <Box className={styles.section}>
                 <h2 className={styles.sectionTitle}>
                     <FormattedMessage
-                        defaultMessage="Version history"
-                        description="History section heading"
+                        defaultMessage="Project history"
+                        description="History section heading (pushed commits)"
                         id="mw.git.history.heading"
                     />
                 </h2>

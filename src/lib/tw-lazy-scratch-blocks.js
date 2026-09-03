@@ -1,4 +1,5 @@
 import {getVanillaPalette} from './mw-vanilla-palette';
+import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
 
 let _ScratchBlocks = null;
 
@@ -20,6 +21,12 @@ const set = ScratchBlocks => {
         if (operatorUtils) {
             operatorUtils.arrowsHidden = localStorage.getItem('mw:hide-operator-arrows') === 'true';
         }
+    } catch (e) {
+        // ignore
+    }
+
+    try {
+        applyCatBlocksToLoadedBlockly();
     } catch (e) {
         // ignore
     }

@@ -281,7 +281,7 @@ class ShareWindow extends React.Component {
         } else if (this.state.phase === 'register') {
             detail = 'Setting up the project page.';
         } else if (this.state.phase === 'package') {
-            detail = 'Compressing the project and its version history on this device.';
+            detail = 'Compressing the project and its pushed history on this device.';
         } else if (uploading && uploadComplete) {
             detail = 'Upload complete. MistWarp is validating and storing the files.';
         } else if (uploading && hasUploadTotal) {
@@ -293,7 +293,7 @@ class ShareWindow extends React.Component {
         } else if (this.state.phase === 'sync') {
             detail = 'The project is saved. Updating its connected repositories.';
         } else if (this.state.phase === 'finish') {
-            detail = 'The project is saved. Refreshing local version history.';
+            detail = 'The project is saved. Refreshing pushed project history.';
         } else if (this.state.phase === 'publish') {
             detail = 'Making the saved project visible to other people.';
         }

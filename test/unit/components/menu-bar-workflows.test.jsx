@@ -3,7 +3,6 @@ import {commitProject, pull, push, repoExists} from '../../../src/lib/git/browse
 import {createMwp} from '../../../src/lib/git/mwp.js';
 import requestVersionMessage from '../../../src/lib/mw/request-version-message.jsx';
 
-jest.mock('../../../src/lib/mw/open-fractch-terminal-window.js', () => jest.fn());
 jest.mock('../../../src/lib/git/browser-git', () => ({
     REPO_DIR: '/repo',
     commitProject: jest.fn(() => Promise.resolve()),
