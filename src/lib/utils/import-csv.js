@@ -7,9 +7,16 @@ export default () => new Promise((resolve, reject) => {
     // fileInput.setAttribute('accept', '.csv, .tsv, .txt'); // parser auto-detects delimiter
     let settled = false;
     let handleWindowFocus = null;
+    let handleWindowBlur = null;
+    // The file dialog blurs the window when it opens in most browsers.
+    // Only treat a later focus as a cancel if we actually saw that blur;
+    // otherwise focus events from closing the context menu would cancel
+    // the import before the user picks a file.
+    let sawBlur = false;
 
     const cleanup = () => {
         window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('blur', handleWindowBlur);
         fileInput.onchange = null;
         fileInput.oncancel = null;
         if (fileInput.parentNode) fileInput.parentNode.removeChild(fileInput);
@@ -31,11 +38,16 @@ export default () => new Promise((resolve, reject) => {
         error.name = 'AbortError';
         fail(error);
     };
+    handleWindowBlur = () => {
+        sawBlur = true;
+    };
     handleWindowFocus = () => {
-        // File inputs usually dispatch change just after returning focus to the page.
+        if (!sawBlur) return;
+        // File inputs usually dispatch change just after returning focus to the page,
+        // so wait a tick to give change/oncancel a chance to run first.
         setTimeout(() => {
             if (!settled && (!fileInput.files || fileInput.files.length === 0)) cancel();
-        }, 0);
+        }, 300);
     };
 
     fileInput.onchange = e => {
@@ -70,6 +82,7 @@ export default () => new Promise((resolve, reject) => {
         }
     };
     fileInput.oncancel = cancel;
+    window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
     document.body.appendChild(fileInput);
     fileInput.click();

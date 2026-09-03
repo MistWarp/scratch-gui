@@ -34,6 +34,11 @@
     position: sticky;
     top: 76px;
     min-width: 0;
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
 }
 
 .profileCard {
@@ -305,28 +310,39 @@
     margin: 0;
 }
 
-.recentActivity {
-    display: grid;
-    gap: 10px;
-    padding: 10px;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+.recentActivity,
+.grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 18px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-padding: 0;
+}
+
+.grid > *,
+.recentActivityItem {
+    flex: 0 0 210px;
+    width: 210px;
+    max-width: 210px;
+}
+
+.grid > * {
+    flex-shrink: 0;
 }
 
 .recentActivityItem {
     position: relative;
-    display: grid;
-    grid-template-columns: 176px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 14px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
     color: var(--mw-text);
+    transition: transform 0.13s ease, box-shadow 0.13s ease;
 }
 
 .recentActivityLink {
@@ -335,9 +351,56 @@
     inset: 0;
 }
 
+.recentActivityItem:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.recentActivityThumb {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--bg-raised);
+}
+
+.recentActivityThumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recentActivityBody {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 3px;
+    min-width: 0;
+    padding: 12px 14px 14px;
+}
+
+.recentActivityTitle {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--mw-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
 .recentActivityOwner {
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: var(--accent-strong);
+    font-size: 12.5px;
+    font-weight: 600;
 }
 
 .recentActivityOwner a {
@@ -349,39 +412,14 @@
     text-decoration: underline;
 }
 
-.recentActivityItem:hover {
-    border-color: var(--accent-border);
-    background: var(--accent-softer);
-}
-
-.recentActivityItem > img {
-    width: 176px;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    background: var(--bg-card);
-}
-
-.recentActivityCopy,
 .recentActivityStats {
-    display: grid;
-    min-width: 0;
-    gap: 5px;
-}
-
-.recentActivityCopy strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.recentActivityCopy small,
-.recentActivityStats small {
-    color: var(--text-dim);
-}
-
-.recentActivityStats {
-    padding-right: 16px;
-    text-align: right;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 10px;
+    color: var(--text-faint);
+    font-size: 12px;
 }
 
 .privateActivity {
@@ -514,12 +552,6 @@
     background: var(--accent-soft);
 }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr));
-    gap: 18px;
-}
-
 .loadMore {
     display: flex;
     justify-content: center;
@@ -626,6 +658,8 @@
         position: static;
         width: 100%;
         max-width: 100%;
+        max-height: none;
+        overflow-y: visible;
     }
 
     .profileCard {
@@ -658,20 +692,6 @@
 
     .reviewGrid {
         grid-template-columns: 1fr;
-    }
-
-    .recentActivityItem {
-        grid-template-columns: 112px minmax(0, 1fr);
-    }
-
-    .recentActivityItem > img {
-        width: 112px;
-    }
-
-    .recentActivityStats {
-        grid-column: 2;
-        padding: 0 10px 10px 0;
-        text-align: left;
     }
 
     .layout {
@@ -842,6 +862,19 @@
     border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
     border-radius: var(--radius);
     background: color-mix(in srgb, var(--accent) 5%, var(--bg-card));
+}
+
+.profileRail .adminPanel {
+    margin: 14px 0 0;
+}
+
+.profileRail .adminFields {
+    align-items: stretch;
+    flex-direction: column;
+}
+
+.profileRail .adminActions {
+    flex-wrap: wrap;
 }
 
 .adminPanelHead {display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px;}
