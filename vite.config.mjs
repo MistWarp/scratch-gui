@@ -423,6 +423,9 @@ export default defineConfig(({mode}) => {
     return {
         base: root,
         publicDir: resolve('static'),
+        // Isolate throwaway verification servers (VITE_CACHE_DIR) from the
+        // real dev cache so they never poison each other's pre-bundles.
+        cacheDir: process.env.VITE_CACHE_DIR || 'node_modules/.vite',
         define: {
             // webpack 4 polyfilled Node's `global` as `window`; linked
             // packages still use it (e.g. global.fetch).
