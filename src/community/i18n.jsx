@@ -17,8 +17,8 @@ const messages = {
         'nav.explore': 'Explore',
         'nav.spaces': 'Spaces',
         'nav.search': 'Search projects, people, and spaces',
-        'home.title': 'Make a project. Let someone improve it.',
-        'home.lead': 'MistWarp brings branches, project history, and contributions to visual coding without making you learn Git first.',
+        'home.title': 'Build something you want to come back to.',
+        'home.lead': 'Make games and animations with blocks. Build together, share your work, and restore earlier versions whenever you need them.',
         'home.start': 'Start creating',
         'home.explore': 'Explore projects',
         'home.signin': 'Sign in with Rotur',
@@ -38,7 +38,7 @@ const messages = {
         'settings.language': 'Language',
         'settings.languageHelp': 'Changes the language used by the MistWarp community site. More pages will move into this translation system as their copy changes.',
         'settings.analytics': 'Anonymous product analytics',
-        'settings.analyticsHelp': 'Records six creation milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details.'
+        'settings.analyticsHelp': 'Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details.'
     },
     es: {
         'a11y.skip': 'Saltar al contenido',
@@ -47,8 +47,8 @@ const messages = {
         'nav.explore': 'Explorar',
         'nav.spaces': 'Espacios',
         'nav.search': 'Buscar proyectos, personas y espacios',
-        'home.title': 'Crea un proyecto. Deja que alguien lo mejore.',
-        'home.lead': 'MistWarp añade ramas, historial y contribuciones a la programación visual sin obligarte a aprender Git primero.',
+        'home.title': 'Crea algo que quieras seguir mejorando.',
+        'home.lead': 'Crea juegos y animaciones con bloques. Colabora, comparte tu trabajo y recupera versiones anteriores cuando las necesites.',
         'home.start': 'Empezar a crear',
         'home.explore': 'Explorar proyectos',
         'home.signin': 'Iniciar sesión con Rotur',
@@ -68,7 +68,7 @@ const messages = {
         'settings.language': 'Idioma',
         'settings.languageHelp': 'Cambia el idioma del sitio de la comunidad de MistWarp. Más páginas usarán este sistema a medida que cambie su texto.',
         'settings.analytics': 'Análisis anónimo del producto',
-        'settings.analyticsHelp': 'Registra seis hitos de creación durante 31 días. MistWarp no envía nombres de usuario, identificadores de proyecto, URLs, direcciones IP ni datos del navegador.'
+        'settings.analyticsHelp': 'Registra hitos de creación y regreso durante 31 días. MistWarp no envía nombres de usuario, identificadores de proyecto, URLs, direcciones IP ni datos del navegador.'
     }
 };
 

@@ -15,6 +15,8 @@ import {textsFromInspectionFiles} from '../fractch-summary.js';
 import {formatDateTime} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {loadCommitInspection} from '../commit-diff.js';
+import {canViewProjectSource} from '../project-source-access.js';
+import {useUser} from '../UserContext.jsx';
 import styles from './Commit.module.css';
 
 export const canManageCommit = project => Boolean(
@@ -41,9 +43,12 @@ export const commitMutationSha = (result, fallback) => (
 
 const Commit = () => {
     const {id, sha} = useParams();
+    const {user} = useUser();
+    const viewer = user?.username || '';
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [project, setProject] = useState(null);
+    const [loadedContext, setLoadedContext] = useState('');
     const [entry, setEntry] = useState(null);
     const [diff, setDiff] = useState(null);
     const [activeSprite, setActiveSprite] = useState('');
@@ -53,19 +58,21 @@ const Commit = () => {
     const [manageBusy, setManageBusy] = useState('');
     const [manageError, setManageError] = useState('');
     const [loadProgress, setLoadProgress] = useState({progress: 8, label: 'Finding this commit'});
-    const contextRef = useRef(`${id}:${sha}`);
-    contextRef.current = `${id}:${sha}`;
+    const contextRef = useRef(`${viewer}:${id}:${sha}`);
+    contextRef.current = `${viewer}:${id}:${sha}`;
 
     const load = useCallback(async () => {
-        const context = `${id}:${sha}`;
+        const context = `${viewer}:${id}:${sha}`;
         setError('');
         setLoadProgress({progress: 8, label: 'Finding this commit'});
         try {
+            const projectData = await api.getProject(id);
+            if (contextRef.current !== context) return;
+            if (!canViewProjectSource(projectData.project || projectData)) {
+                throw new Error('Only the owner can view commits for this project.');
+            }
             const coAuthorsPromise = api.commitCoAuthors(id, sha).catch(() => null);
-            const [projectData, remoteInspection] = await Promise.all([
-                api.getProject(id),
-                api.commitInspection(id, sha)
-            ]);
+            const remoteInspection = await api.commitInspection(id, sha);
             if (contextRef.current !== context) return;
             setLoadProgress({progress: 34, label: 'Reading project details'});
             const loadedProject = projectData.project || projectData;
@@ -91,6 +98,7 @@ const Commit = () => {
             if (contextRef.current !== context) return;
             const metadata = inspected.commit || {};
             setProject(loadedProject);
+            setLoadedContext(context);
             setEntry({
                 ...metadata,
                 ...inspected,
@@ -111,7 +119,7 @@ const Commit = () => {
         } catch (loadError) {
             if (contextRef.current === context) setError(loadError.message || 'Could not load this commit.');
         }
-    }, [id, sha]);
+    }, [id, sha, viewer]);
 
     useEffect(() => {
         setProject(null);
@@ -226,7 +234,7 @@ const Commit = () => {
             </main>
         );
     }
-    if (!project || !entry) {
+    if (!project || !entry || loadedContext !== `${viewer}:${id}:${sha}`) {
         return (
             <main className={styles.page}>
                 <section className={styles.loadingCard} aria-live="polite" aria-busy="true">

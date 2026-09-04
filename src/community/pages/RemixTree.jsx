@@ -8,6 +8,8 @@ import UserLink from '../components/UserLink.jsx';
 import {timeAgo} from '../format.js';
 import {buildRemixTree, layoutRemixGraph} from '../remix-tree.js';
 import setPageMeta from '../page-meta.js';
+import {canViewProjectSource} from '../project-source-access.js';
+import {useUser} from '../UserContext.jsx';
 import styles from './RemixTree.module.css';
 
 const RemixGraph = ({tree, selectedId}) => {
@@ -69,6 +71,7 @@ const CommitHistory = ({id, history, onRetry}) => {
     if (!history) {
         return <p className={styles.state}>Loading Git history…</p>;
     }
+    if (history.restricted) return <p className={styles.state}>Only the owner can view commits for this project.</p>;
     if (history.error) {
         return (
             <p className={styles.state}>
@@ -100,8 +103,11 @@ const CommitHistory = ({id, history, onRetry}) => {
 
 const RemixTree = () => {
     const {id} = useParams();
+    const {user} = useUser();
+    const viewer = user?.username || '';
     const [tree, setTree] = useState(null);
     const [history, setHistory] = useState(null);
+    const [historyContext, setHistoryContext] = useState('');
     const [treeError, setTreeError] = useState(false);
     const [treeAttempt, setTreeAttempt] = useState(0);
     const [historyAttempt, setHistoryAttempt] = useState(0);
@@ -125,9 +131,16 @@ const RemixTree = () => {
     useEffect(() => {
         let active = true;
         setHistory(null);
-        api.commits(id)
+        api.getProject(id).then(data => {
+            if (!active) return null;
+            if (!canViewProjectSource(data.project || data)) return {restricted: true};
+            return api.commits(id);
+        })
             .then(data => {
-                if (active) setHistory(data);
+                if (active) {
+                    setHistory(data);
+                    setHistoryContext(`${viewer}:${id}`);
+                }
             })
             .catch(() => {
                 if (active) setHistory({error: true});
@@ -135,14 +148,15 @@ const RemixTree = () => {
         return () => {
             active = false;
         };
-    }, [historyAttempt, id]);
+    }, [historyAttempt, id, viewer]);
 
     const model = useMemo(() => buildRemixTree(tree), [tree]);
     const selected = model.byId.get(String(id));
     const path = model.pathTo(id);
     const directRemixes = selected ? model.childrenOf(selected.id).length : 0;
     const descendants = selected ? model.descendantCount(selected.id) : 0;
-    const commitCount = history?.graph?.nodes?.length || history?.commits?.length || 0;
+    const visibleHistory = historyContext === `${viewer}:${id}` ? history : null;
+    const commitCount = visibleHistory?.graph?.nodes?.length || visibleHistory?.commits?.length || 0;
 
     useEffect(() => {
         if (selected) setPageMeta({title: `${selected.title || 'Project'} · Remix tree`});
@@ -226,7 +240,7 @@ const RemixTree = () => {
                         </div>
                         <CommitHistory
                             id={id}
-                            history={history}
+                            history={visibleHistory}
                             onRetry={() => setHistoryAttempt(value => value + 1)}
                         />
                     </section>

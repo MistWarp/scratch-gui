@@ -188,6 +188,7 @@ const Explore = () => {
             </div>
             <div className={styles.categories}>
                 <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>All</button>
+                <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>Looking for feedback</button>
                 {CATEGORIES.map(category => (
                     <button type="button" key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
                 ))}

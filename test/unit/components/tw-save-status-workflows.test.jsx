@@ -30,13 +30,16 @@ describe('MistWarp save status', () => {
             />
         );
 
-        wrapper.find('[title="Save to MistWarp"]').simulate('click');
+        wrapper.find('button').simulate('click');
 
         expect(openMistWarpShareWindow).toHaveBeenCalledWith({
             vm,
             initialTitle: 'Project',
             action: 'update',
-            onPublished: onProjectUnchanged
+            onPublished: expect.any(Function)
         });
+        openMistWarpShareWindow.mock.calls[0][0].onPublished();
+        expect(onProjectUnchanged).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
     });
 });

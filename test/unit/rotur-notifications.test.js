@@ -1,3 +1,9 @@
+jest.mock('../../src/lib/community/api.js', () => ({loadSession: jest.fn(() => null)}));
+jest.mock('../../src/community/api.js', () => ({
+    __esModule: true,
+    default: {loadSession: jest.fn(() => null), notifications: jest.fn(), readNotifications: jest.fn()}
+}));
+
 jest.mock('rotur-sdk', () => {
     const notificationsList = jest.fn();
     return {
@@ -11,10 +17,14 @@ jest.mock('rotur-sdk', () => {
 });
 
 import {notificationsList} from 'rotur-sdk';
+import {loadSession} from '../../src/lib/community/api.js';
+import communityApi from '../../src/community/api.js';
 import {fetchNotifications, isVisibleNotification} from '../../src/lib/rotur/client.js';
 
 beforeEach(() => {
     notificationsList.mockReset();
+    loadSession.mockReturnValue(null);
+    communityApi.notifications.mockReset();
 });
 
 describe('Rotur notification visibility', () => {
@@ -75,4 +85,21 @@ describe('Rotur notification loading', () => {
 
         await expect(fetchNotifications()).rejects.toThrow('offline');
     });
+});
+
+test('includes locally stored milestone notifications when the shared inbox is unavailable', async () => {
+    loadSession.mockReturnValue('alice-session');
+    communityApi.notifications.mockResolvedValue({notifications: [{
+        id: 'local', type: 'like_milestone', platform: 'mistwarp',
+        platform_data: {milestone: 25, contentKind: 'project', path: '/project/p1'}, read: false
+    }]});
+    notificationsList.mockRejectedValue(new Error('offline'));
+    await expect(fetchNotifications()).resolves.toEqual([expect.objectContaining({
+        id: 'local', milestone: 25, path: '/project/p1'
+    })]);
+});
+
+test('does not show milestone notifications belonging to another app', () => {
+    expect(isVisibleNotification({type: 'like_milestone', platform: 'other-app'})).toBe(false);
+    expect(isVisibleNotification({type: 'follower_milestone', platform: 'mistwarp'})).toBe(true);
 });

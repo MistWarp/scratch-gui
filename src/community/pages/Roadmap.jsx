@@ -61,7 +61,8 @@ export const roadmapPayload = form => ({
 });
 
 const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) => {
-    const [discussionOpen, setDiscussionOpen] = useState(false);
+    const [discussionOpen, setDiscussionOpen] = useState(() =>
+        new URLSearchParams(window.location.search).get('idea') === String(idea._id));
     const [detailsOpen, setDetailsOpen] = useState(false);
     const hasLongDescription = idea.description.length > 220 || idea.description.split('\n').length > 3;
     const source = useMemo(() => ({

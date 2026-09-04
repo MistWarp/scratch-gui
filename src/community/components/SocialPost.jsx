@@ -5,6 +5,7 @@ import {
     Bookmark, Check, Copy, Edit3, Flag, Heart, MessageCircle, Pin, Repeat2,
     ShieldOff, Trash2
 } from 'lucide-react';
+import api from '../api.js';
 import rotur from '../rotur.js';
 import {timeAgo} from '../format.js';
 import {postUrl} from '../following-feed.js';
@@ -137,6 +138,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
         try {
             if (liked) await rotur.unlikePost(post.id);
             else await rotur.likePost(post.id);
+            api.checkPostMilestones(post.id).catch(() => {});
         } catch (cause) {
             update({...post, likes});
             throw cause;

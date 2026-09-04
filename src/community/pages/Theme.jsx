@@ -144,6 +144,7 @@ const Theme = () => {
     });
     const like = () => run('like', async () => {
         const result = await api.likeTheme(theme.id);
+        api.checkThemeMilestones(theme.id).catch(() => {});
         if (mounted.current) {
             setTheme(current => nextThemeRating(current, result));
         }

@@ -33,6 +33,7 @@ import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
+import {canViewProjectSource} from '../project-source-access';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -70,6 +71,8 @@ import styles from './Project.module.css';
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
 const ACTIVITY_TABS = ['Comments', 'Files', 'Reviews', 'Version control', 'Bounties', 'Contribute'];
+const activityTabsFor = project => ACTIVITY_TABS.filter(name =>
+    canViewProjectSource(project) || !['Files', 'Version control', 'Contribute'].includes(name));
 const VERSION_CONTROL_HASHES = {
     '#history': 'history',
     '#branches': 'branches',
@@ -325,11 +328,12 @@ const Project = () => {
     }, [actionContext, id, beginLoad]);
 
     const loadHistory = useCallback(() => {
+        if (!canViewProjectSource(project)) return Promise.resolve();
         const fresh = beginHistoryLoad();
         return api.commits(id)
             .then(fresh(setVersionHistory))
             .catch(fresh(() => setVersionHistory({commits: [], error: true})));
-    }, [beginHistoryLoad, id]);
+    }, [beginHistoryLoad, id, project]);
 
     const refreshProjectAndHistory = useCallback(() => Promise.all([load(), loadHistory()]), [load, loadHistory]);
 
@@ -408,8 +412,14 @@ const Project = () => {
     }, [actionContext, beginHistoryLoad, id, load, userLoading]);
 
     useEffect(() => {
+        if (!project) return;
+        if (!canViewProjectSource(project) && ['Files', 'Version control', 'Contribute'].includes(tab)) {
+            setTab('Comments');
+            setVersionHistory(null);
+            return;
+        }
         if (tab === 'Version control' && versionControlTab === 'history' && versionHistory === null) loadHistory();
-    }, [loadHistory, tab, versionControlTab, versionHistory]);
+    }, [loadHistory, tab, versionControlTab, versionHistory, project]);
 
     useEffect(() => {
         if (userLoading) return;
@@ -1522,7 +1532,7 @@ const Project = () => {
                             {project.saved ? 'Remove from library' : 'Save to library'}
                         </button>
                     ) : null}
-                    {!locked && project.canSeeInside !== false ? (
+                    {canViewProjectSource(project) ? (
                         <a
                             className={styles.primary}
                             href={seeInsideHref}
@@ -2166,7 +2176,7 @@ const Project = () => {
                 <section className={styles.commentsCol}>
                     <div className={styles.commentsHead}>
                         <nav className={styles.tabs} aria-label="Project activity">
-                            {ACTIVITY_TABS.map(name => (
+                            {activityTabsFor(project).map(name => (
                                 <button
                                     type="button"
                                     key={name}
@@ -2210,9 +2220,9 @@ const Project = () => {
                             ) : null}
                         />
                     )}
-                    {tab === 'Files' ? <ProjectFiles project={project} onCount={setProjectFileCount} /> : null}
+                    {tab === 'Files' && canViewProjectSource(project) ? <ProjectFiles project={project} onCount={setProjectFileCount} /> : null}
                     {tab === 'Reviews' && <ReviewPanel key={id} id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
-                    {tab === 'Version control' && (
+                    {tab === 'Version control' && canViewProjectSource(project) && (
                         <div className={styles.versionControlLayout}>
                             <Sidebar
                                 ariaLabel="Version control"
@@ -2258,7 +2268,7 @@ const Project = () => {
                             onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
                         />
                     )}
-                    {tab === 'Contribute' && (
+                    {tab === 'Contribute' && canViewProjectSource(project) && (
                         <div className={styles.contributionStack}>
                             <OutgoingPullNotice id={id} targetId={project.remixParent || ''} />
                             <ContributionPanel

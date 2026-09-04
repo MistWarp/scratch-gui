@@ -22,6 +22,7 @@ jest.mock('../../src/community/api.js', () => ({
         downloadTheme: jest.fn(),
         getTheme: jest.fn(),
         likeTheme: jest.fn(),
+        checkThemeMilestones: jest.fn(() => Promise.resolve()),
         saveTheme: jest.fn(),
         setThemePreview: jest.fn(() => Promise.resolve()),
         themes: jest.fn(() => Promise.resolve({themes: []})),

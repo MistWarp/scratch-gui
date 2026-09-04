@@ -65,6 +65,7 @@ import {dispose as disposeShortcuts, initialize as initializeShortcuts} from
 import startFractchLiveReload from '../lib/fractch-live';
 import smartSave from '../lib/mw/smart-save.js';
 import MwAutosave from './mw-autosave.jsx';
+import MwCreatorSession from './mw-creator-session.jsx';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -241,6 +242,7 @@ class GUI extends React.Component {
                     {children}
                 </GUIComponent>
                 <MwAutosave />
+                <MwCreatorSession />
             </React.Fragment>
         );
     }

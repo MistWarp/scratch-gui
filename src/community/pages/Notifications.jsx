@@ -1,3 +1,4 @@
+import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -23,6 +24,8 @@ import {getNotificationPreferences, categoryForNotification} from '../notificati
 
 const ICONS = {
     love: Heart,
+    like_milestone: Heart,
+    follower_milestone: Users,
     comment: MessageCircle,
     profile_comment: MessageCircle,
     reply: Reply,
@@ -434,6 +437,17 @@ const Notifications = ({hideHeading}) => {
                         const ts = n.created || n.timestamp;
                         const time = timeAgo(ts);
 
+                        if (isMilestoneNotification(n)) {
+                            return (
+                                <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
+                                    <span className={styles.sysAvatar}><Icon size={20} /></span>
+                                    <div className={styles.text}>
+                                        <Link to={milestoneLink(n)} className={styles.body}>{milestoneText(n)}</Link>
+                                    </div>
+                                    <span className={styles.time}>{time}</span>
+                                </div>
+                            );
+                        }
                         if (n.type === 'notification') {
                             return (
                                 <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>

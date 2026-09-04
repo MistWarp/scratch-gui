@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
+import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Bug, Clock, GitFork, Github, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Users} from 'lucide-react';
+import {Bell, Bug, Clock, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
@@ -16,7 +17,7 @@ import ReactionButtons from '../components/ReactionButtons.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
-import logo from '../assets/mistwarp-logo.png';
+import {ActiveChallenge, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
@@ -108,7 +109,7 @@ const FriendsSection = ({user, login}) => {
             {!user ? <div className={styles.empty}>Sign in to see projects, reviews, and activity from people you follow. <button type="button" onClick={login}>Sign in with Rotur</button></div> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
             {failed ? <div className={styles.empty}>Couldn&apos;t load activity. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
-            {items && !items.length && user ? <div className={styles.empty}>No recent activity from people you follow.</div> : null}
+            {items && !items.length && user ? <div className={styles.empty}>No recent activity yet. <Link to="/explore">Find a project you like and follow its creator.</Link></div> : null}
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
                     {items.slice(0, 4).map((item, index) => {
@@ -203,6 +204,7 @@ const RoadmapSection = ({viewerName}) => {
 };
 
 const notificationText = item => {
+    if (isMilestoneNotification(item)) return milestoneText(item);
     if (item.type === 'project_review') return `rated ${item.projectTitle || 'your project'} ${item.rating} out of 5`;
     if (item.type === 'love') return `loved ${item.projectTitle || 'your project'}`;
     if (item.type === 'comment') {
@@ -242,6 +244,7 @@ const notificationText = item => {
 };
 
 const notificationLink = item => {
+    if (isMilestoneNotification(item)) return milestoneLink(item);
     if (item.roadmapId) return `/roadmap#idea-${item.roadmapId}`;
     if (item.projectId && item.pull) return `/project/${item.projectId}/pulls/${item.pull}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
     if (item.projectId) return `${projectUrl(item.projectId)}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
@@ -302,7 +305,7 @@ const NotificationsSection = ({user, login}) => {
                                 </Link>
                                 <span className={styles.activityIcon}><Bell size={14} /></span>
                                 <span className={styles.activityText}>
-                                    {item.actor ? <Link to={`/users/${item.actor}`} className={styles.activityActor}>{actor}</Link> : <strong className={styles.activityActor}>{actor}</strong>}{' '}
+                                    {!isMilestoneNotification(item) && <>{item.actor ? <Link to={`/users/${item.actor}`} className={styles.activityActor}>{actor}</Link> : <strong className={styles.activityActor}>{actor}</strong>}{' '}</>}
                                     <Link to={target}>{notificationText(item)}</Link>
                                 </span>
                                 <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
@@ -316,56 +319,80 @@ const NotificationsSection = ({user, login}) => {
 };
 
 const Home = () => {
-    const {user, login} = useUser();
+    const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
+    const [projectCount, setProjectCount] = useState(null);
+    const showStarters = !loading && (!user ||
+        (projectCount && projectCount.username === viewerName && projectCount.total < 4));
     useEffect(() => {
         track('home_view');
     }, []);
     return (
         <main className={styles.page}>
-            <section className={styles.hero}>
-                <div className={styles.heroText}>
-                    <h1>{t('home.title')}</h1>
-                    <p>{t('home.lead')}</p>
-                    <div className={styles.heroActions}>
-                        <a className={styles.primaryButton} href={editorUrl()}>{t('home.start')}</a>
-                        {user ? <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link> : <button type="button" className={styles.secondaryButton} onClick={login}>{t('home.signin')}</button>}
-                        <a className={styles.secondaryButton} href="https://github.com/mistwarp" target="_blank" rel="noreferrer"><Github size={16} />{t('home.github')}</a>
-                    </div>
-                </div>
-                <div className={styles.heroArt}><img src={logo} alt="" className={styles.heroLogo} /></div>
-            </section>
-            <div className={styles.dashboardGrid}>
-                <NewsSection />
-                <FriendsSection user={user} login={login} />
+            {loading ? <p role="status">Loading your workspace…</p> : user ?
+                <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : (
+                    <section className={styles.hero}>
+                        <div className={styles.heroText}>
+                            <h1>{t('home.title')}</h1>
+                            <p>{t('home.lead')}</p>
+                            <div className={styles.heroActions}>
+                                <a className={styles.primaryButton} href="#starters">Try a starter</a>
+                                <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link>
+                            </div>
+                        </div>
+                        <div className={styles.heroDemo} aria-label="Build together, keep your progress">
+                            <span>Make your first version</span>
+                            <span>Invite someone to improve it</span>
+                            <span>Keep earlier versions to return to</span>
+                            <a href={editorUrl({starter: 'clicker'})}>Start with a working clicker →</a>
+                        </div>
+                    </section>
+                )}
+            <DeviceBackup />
+            {showStarters ? <StarterGallery /> : null}
+            {user ? <div className={styles.dashboardGrid}>
                 <NotificationsSection user={user} login={login} />
-                <RoadmapSection viewerName={viewerName} />
-            </div>
+                <FriendsSection user={user} login={login} />
+            </div> : null}
+            <ActiveChallenge />
+            <ProjectFeedRow
+                title="Looking for feedback"
+                icon={MessageCircle}
+                sort="recent"
+                tag="feedback"
+                link="/explore?tag=feedback"
+                hideEmpty
+            />
             <ProjectFeedRow
                 title="Trending"
                 icon={Sparkles}
                 sort="trending"
                 link="/explore?sort=trending"
             />
-            <ChallengeCalendar className={styles.homeCalendar} />
+
             <ProjectFeedRow
                 title="Freshly shared"
                 icon={Clock}
                 sort="recent"
                 link="/explore?sort=recent"
             />
+            <ChallengeCalendar className={styles.homeCalendar} />
+            <div className={styles.dashboardGrid}>
+                <NewsSection />
+                <RoadmapSection viewerName={viewerName} />
+            </div>
         </main>
     );
 };
 
-const ProjectFeedRow = ({title, icon, sort, link}) => {
+const ProjectFeedRow = ({title, icon, sort, link, tag = '', hideEmpty = false}) => {
     const [projects, setProjects] = useState(null);
     const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
         setProjects(null);
-        api.explore({sort, limit: 8})
+        api.explore({sort, limit: 8, ...(tag ? {tag} : {})})
             .then(data => {
                 if (active) setProjects(data.projects || []);
             })
@@ -375,7 +402,8 @@ const ProjectFeedRow = ({title, icon, sort, link}) => {
         return () => {
             active = false;
         };
-    }, [attempt, sort]);
+    }, [attempt, sort, tag]);
+    if (hideEmpty && Array.isArray(projects) && !projects.length) return null;
     return (
         <ProjectRow
             title={title}

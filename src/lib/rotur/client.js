@@ -1,4 +1,5 @@
 import {Rotur, resolvePermissions} from 'rotur-sdk';
+import {loadSession} from '../community/api.js';
 import {
     getRoturSettings,
     formatActivityTitle,
@@ -548,23 +549,44 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
 const isLoggedIn = () => getClient().loggedIn;
 const getRotur = () => getClient();
 
-// Notifications live on Rotur; the backend only posts them there. Fetch them
-// with the user's own token so each account sees its own notifications.
+// Read the shared inbox and MistWarp's local fallback using the current account.
 const fetchNotifications = afterDays => {
     const rotur = getClient();
     if (!rotur.loggedIn) {
         return Promise.resolve([]);
     }
-    const key = String(afterDays);
+    const key = `${loadStoredToken() || ''}:${loadSession() || ''}:${afterDays}`;
     if (notificationFetches.has(key)) {
         return notificationFetches.get(key);
     }
     const request = Promise.resolve().then(async () => {
-        const list = await rotur.notifications.list(afterDays);
-        if (!Array.isArray(list)) {
-            return [];
+        let local = [];
+        let localLoaded = false;
+        if (loadSession()) {
+            try {
+                const {default: communityApi} = await import('../../community/api.js');
+                const data = await communityApi.notifications();
+                local = data.notifications || [];
+                localLoaded = true;
+            } catch (_) {
+                // Rotur may still have the notification if MistWarp is unavailable.
+            }
         }
-        const visible = list.map(normalizeNotification).filter(isVisibleNotification);
+        let remote = [];
+        try {
+            const list = await rotur.notifications.list(afterDays);
+            remote = Array.isArray(list) ? list : [];
+        } catch (error) {
+            if (!localLoaded) throw error;
+        }
+        const seen = new Set();
+        const visible = [...remote, ...local].map(normalizeNotification).filter(isVisibleNotification)
+            .filter(item => {
+                if (item.id && seen.has(item.id)) return false;
+                if (item.id) seen.add(item.id);
+                return true;
+            })
+            .sort((a, b) => (b.created || b.timestamp || 0) - (a.created || a.timestamp || 0));
         for (const notification of visible) {
             if (typeof notification.id === 'string') {
                 visibleNotificationIds.add(notification.id);
@@ -608,8 +630,12 @@ const markNotificationsRead = async () => {
         return false;
     }
     try {
-        await rotur.notifications.markRead();
-        return true;
+        const {default: communityApi} = await import('../../community/api.js');
+        const results = await Promise.allSettled([
+            rotur.notifications.markRead(),
+            communityApi.loadSession() ? communityApi.readNotifications() : Promise.resolve()
+        ]);
+        return results.every(result => result.status === 'fulfilled');
     } catch (_) {
         return false;
     }
