@@ -126,6 +126,57 @@ const transformLinkedCjs = async (code, dir) => {
         }
         return specs.get(spec);
     };
+    const replaceDeclarator = (kind, binding, spec, prop) => {
+        const flat = binding.replace(/\s+/g, ' ');
+        const type = classify(spec);
+        if (flat.startsWith('{')) {
+            // Destructure from merged namespace so CJS defaults
+            // and ESM named exports both work.
+            const name = `__mwD${seen.size}`;
+            seen.set(`merge:${spec}`, name);
+            imports.push(`import * as ${name} from ${JSON.stringify(spec)};`);
+            const merged = `{...${name}, ...(${name}.default || {})}`;
+            return `${kind} ${flat} = ${merged}${prop || ''}`;
+        }
+        if (type === 'default') {
+            const name = unwrap(spec, false);
+            return `${kind} ${flat} = ${name}${prop || ''}`;
+        }
+        const name = unwrap(spec, true);
+        return `${kind} ${flat} = ${name}${prop || ''}`;
+    };
+    // Mask strings/comments (length-preserving) so requires inside them
+    // are ignored. Backtick templates are masked whole; linked sources do
+    // not nest require() inside ${}.
+    const maskCode = text => text.replace(
+        /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+        match => ' '.repeat(match.length)
+    );
+    // Pre-pass: multiline destructured requires, which the line passes below
+    // cannot see. Edits apply to the original by offset (mask is 1:1).
+    const masked = maskCode(code);
+    const declaratorRe = new RegExp(
+        '(const|let|var)\\s+(\\{[^}]*\\}|[A-Za-z_$][\\w$]*)\\s*=\\s*' +
+        'require\\(\\s*([\'"])([^\'"]+)\\3\\s*\\)(\\.[A-Za-z_$][\\w$]*)?',
+        'g'
+    );
+    const edits = [];
+    for (const match of masked.matchAll(declaratorRe)) {
+        if (!match[0].includes('\n')) continue;
+        const [full, kind, binding, _quote, spec, prop] = match;
+        classify(spec);
+        edits.push({
+            start: match.index,
+            end: match.index + full.length,
+            text: replaceDeclarator(kind, binding, spec, prop)
+        });
+    }
+    if (edits.length > 0) {
+        edits.sort((a, b) => b.start - a.start);
+        for (const edit of edits) {
+            code = code.slice(0, edit.start) + edit.text + code.slice(edit.end);
+        }
+    }
     const isComment = line => {
         const trimmed = line.trimStart();
         return trimmed.startsWith('//') || trimmed.startsWith('*');
@@ -142,7 +193,8 @@ const transformLinkedCjs = async (code, dir) => {
     const lookup = spec => specs.get(spec) || 'default';
     const lines = code.split('\n').map(line => {
         if (isComment(line) || !line.includes('require(')) return line;
-        // const X = require('S'); / const {a} = require('S'); / const X = require('S').prop;
+        // const X = require('S'); / const {a} = require('S'); / const X = require('S').prop.
+        // (Multiline forms were already handled by the pre-pass.)
         const declarator = new RegExp(
             '(const|let|var)\\s+(\\{[^}]*\\}|[A-Za-z_$][\\w$]*)\\s*=\\s*' +
             'require\\(\\s*([\'"])([^\'"]+)\\3\\s*\\)(\\.[A-Za-z_$][\\w$]*)?',
@@ -150,24 +202,8 @@ const transformLinkedCjs = async (code, dir) => {
         );
         return line.replace(
             declarator,
-            (match, kind, binding, quote, spec, prop) => {
-                const type = lookup(spec);
-                if (binding.startsWith('{')) {
-                    // Destructure from merged namespace so CJS defaults
-                    // and ESM named exports both work.
-                    const name = `__mwD${seen.size}`;
-                    seen.set(`merge:${spec}`, name);
-                    imports.push(`import * as ${name} from ${JSON.stringify(spec)};`);
-                    const merged = `{...${name}, ...(${name}.default || {})}`;
-                    return `${kind} ${binding} = ${merged}${prop || ''}`;
-                }
-                if (type === 'default') {
-                    const name = unwrap(spec, false);
-                    return `${kind} ${binding} = ${name}${prop || ''}`;
-                }
-                const name = unwrap(spec, true);
-                return `${kind} ${binding} = ${name}${prop || ''}`;
-            }
+            (match, kind, binding, _quote, spec, prop) =>
+                replaceDeclarator(kind, binding, spec, prop)
         );
     })
         .map(line => {
