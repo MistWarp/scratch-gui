@@ -37,6 +37,10 @@ import {
     getAuthorName, getAuthorEmail, setAuthorName, setAuthorEmail,
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
+import {
+    getSetting as getAutosaveSetting, setSetting as setAutosaveSetting,
+    onSettingsChanged as onAutosaveSettingsChanged
+} from '../../lib/mw/autosave-settings.js';
 import {BooleanSetting, LearnMore, Setting} from './setting.jsx';
 import {getSettingsSidebarGroups} from './settings-navigation.js';
 
@@ -1130,22 +1134,6 @@ const pageConfigurations = {
                         })
                     }
                 ]
-            },
-            {
-                headerMessage: 'headerAutosave',
-                settings: [
-                    {
-                        component: MenuBarFeatureSettings,
-                        props: () => ({
-                            ids: [
-                                'autosave_enabled',
-                                'autosave_interval',
-                                'autosave_notifications',
-                                'autosave_only_when_changed'
-                            ]
-                        })
-                    }
-                ]
             }
         ]
     },
@@ -1369,6 +1357,127 @@ UnwrappedVersionControlPage.propTypes = {
     intl: intlShape.isRequired
 };
 const VersionControlPage = injectIntl(UnwrappedVersionControlPage);
+
+class UnwrappedAutosavePage extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleEnabledChange',
+            'handleIntervalSubmit',
+            'handleNotificationsChange',
+            'handleOnlyWhenChangedChange'
+        ]);
+        this.state = {
+            enabled: getAutosaveSetting('enabled'),
+            interval: String(getAutosaveSetting('interval')),
+            notifications: getAutosaveSetting('notifications'),
+            onlyWhenChanged: getAutosaveSetting('only_when_changed')
+        };
+    }
+    componentDidMount () {
+        this.disposeAutosaveSettings = onAutosaveSettingsChanged(() => {
+            this.setState({
+                enabled: getAutosaveSetting('enabled'),
+                interval: String(getAutosaveSetting('interval')),
+                notifications: getAutosaveSetting('notifications'),
+                onlyWhenChanged: getAutosaveSetting('only_when_changed')
+            });
+        });
+    }
+    componentWillUnmount () {
+        if (this.disposeAutosaveSettings) this.disposeAutosaveSettings();
+    }
+    handleEnabledChange (e) {
+        const value = e.target.checked;
+        setAutosaveSetting('enabled', value);
+        this.setState({enabled: getAutosaveSetting('enabled')});
+    }
+    handleIntervalSubmit (value) {
+        setAutosaveSetting('interval', value);
+        this.setState({interval: String(getAutosaveSetting('interval'))});
+    }
+    handleNotificationsChange (e) {
+        const value = e.target.checked;
+        setAutosaveSetting('notifications', value);
+        this.setState({notifications: getAutosaveSetting('notifications')});
+    }
+    handleOnlyWhenChangedChange (e) {
+        const value = e.target.checked;
+        setAutosaveSetting('only_when_changed', value);
+        this.setState({onlyWhenChanged: getAutosaveSetting('only_when_changed')});
+    }
+    render () {
+        const {intl} = this.props;
+        return (
+            <Box className={styles.body}>
+                <Header>{intl.formatMessage(messages.headerAutosave)}</Header>
+                <BooleanSetting
+                    value={this.state.enabled}
+                    onChange={this.handleEnabledChange}
+                    label={<FormattedMessage
+                        defaultMessage="Enable autosave"
+                        id="mw.settings.autosave.enabled"
+                    />}
+                    help={<FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Periodically push the current worktree to MistWarp without creating a version. Edits stay as uncommitted changes."
+                        id="mw.settings.autosave.enabledHelp"
+                    />}
+                />
+                <div className={styles.setting}>
+                    <div className={styles.textSettingLabel}>
+                        <FormattedMessage
+                            defaultMessage="Autosave interval (minutes)"
+                            id="mw.settings.autosave.interval"
+                        />
+                    </div>
+                    <BufferedInput
+                        className={styles.textInput}
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={this.state.interval}
+                        onSubmit={this.handleIntervalSubmit}
+                    />
+                    <p className={styles.detail}>
+                        <FormattedMessage
+                            defaultMessage="How often autosave pushes, from 1 to 60 minutes."
+                            id="mw.settings.autosave.intervalHelp"
+                        />
+                    </p>
+                </div>
+                <BooleanSetting
+                    value={this.state.notifications}
+                    onChange={this.handleNotificationsChange}
+                    label={<FormattedMessage
+                        defaultMessage="Show autosave notifications"
+                        id="mw.settings.autosave.notifications"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Show a toast when autosave pushes or fails."
+                        id="mw.settings.autosave.notificationsHelp"
+                    />}
+                />
+                <BooleanSetting
+                    value={this.state.onlyWhenChanged}
+                    onChange={this.handleOnlyWhenChangedChange}
+                    label={<FormattedMessage
+                        defaultMessage="Only autosave changed projects"
+                        id="mw.settings.autosave.onlyWhenChanged"
+                    />}
+                    help={<FormattedMessage
+                        defaultMessage="Skip the push when nothing changed since the last save."
+                        id="mw.settings.autosave.onlyWhenChangedHelp"
+                    />}
+                />
+            </Box>
+        );
+    }
+}
+UnwrappedAutosavePage.propTypes = {
+    intl: intlShape.isRequired
+};
+const AutosavePage = injectIntl(UnwrappedAutosavePage);
 
 class VmSetting extends React.Component {
     constructor (props) {
@@ -1725,6 +1834,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
         return <VersionControlPage {...handlers} />;
+    case 'autosave':
+        return <AutosavePage {...handlers} />;
     case 'variableManager':
         return <VariableManagerPage {...handlers} />;
     case 'desktop':

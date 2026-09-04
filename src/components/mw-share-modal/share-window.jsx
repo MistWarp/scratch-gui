@@ -5,7 +5,7 @@ import {request} from '../../lib/community/api.js';
 import {getRepoChanges} from '../../lib/git/browser-git.js';
 import {ensureProjectHistoryHydrated} from '../../lib/git/project-history.js';
 import {getFractchGitDiff} from '../../lib/git/fractch-diff.js';
-import {generateCommitName} from '../../lib/sable/smart-features.js';
+import {generateCommitName, getSmartFeaturesBalance} from '../../lib/sable/smart-features.js';
 import Markdown from '../../community/components/Markdown.jsx';
 import styles from './share-window.css';
 
@@ -13,6 +13,7 @@ class ShareWindow extends React.Component {
     constructor (props) {
         super(props);
         this.handlePublish = this.handlePublish.bind(this);
+        this.handleSkipSave = this.handleSkipSave.bind(this);
         this.handleRetake = this.handleRetake.bind(this);
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
@@ -44,7 +45,8 @@ class ShareWindow extends React.Component {
             done: null,
             agreement: null,
             agreeBusy: false,
-            agreeError: ''
+            agreeError: '',
+            sableCredits: null
         };
     }
     componentDidMount () {
@@ -52,6 +54,19 @@ class ShareWindow extends React.Component {
             data => ({data}),
             error => ({error})
         );
+        if (typeof getSmartFeaturesBalance === 'function') {
+            getSmartFeaturesBalance().then(
+                result => {
+                    const credits = result && (
+                        typeof result.credits === 'number' ? result.credits :
+                            typeof result.balance === 'number' ? result.balance :
+                                typeof result.balance_sc === 'number' ? result.balance_sc : null
+                    );
+                    if (typeof credits === 'number') this.setState({sableCredits: credits});
+                },
+                () => {}
+            );
+        }
         if (this.props.action === 'update') {
             return;
         }
@@ -129,15 +144,24 @@ class ShareWindow extends React.Component {
     releasePublish () {
         this.publishInFlight = false;
     }
-    async handlePublish () {
+    handlePublish () {
+        const isUpdate = this.props.action === 'update';
+        if (isUpdate && !this.state.changeMessage.trim()) {
+            this.setState({error: 'Add a short note about what changed.'});
+            return Promise.resolve();
+        }
+        return this.runPublish({commitChanges: true, changeMessage: this.state.changeMessage});
+    }
+    handleSkipSave () {
+        // Save to MistWarp without creating a version. The uploaded worktree
+        // snapshot preserves the edits, which stay as uncommitted changes.
+        return this.runPublish({commitChanges: false, changeMessage: ''});
+    }
+    async runPublish ({commitChanges, changeMessage}) {
         if (this.publishInFlight || this.state.status || this.state.agreeBusy) {
             return;
         }
         const isUpdate = this.props.action === 'update';
-        if (isUpdate && !this.state.changeMessage.trim()) {
-            this.setState({error: 'Add a short note about what changed.'});
-            return;
-        }
         this.publishInFlight = true;
 
         this.setState({
@@ -193,8 +217,8 @@ class ShareWindow extends React.Component {
             const result = await publishToMistWarp({
                 vm: this.props.vm,
                 title: isUpdate ? null : this.state.title,
-                changeMessage: this.state.changeMessage,
-                commitChanges: true,
+                changeMessage,
+                commitChanges,
                 thumbnailBlob,
                 updateOnly: isUpdate,
                 onProgress: this.handleProgress
@@ -389,6 +413,7 @@ class ShareWindow extends React.Component {
         }
         const isUpdate = this.props.action === 'update';
         if (isUpdate) {
+            const showGenerate = this.state.sableCredits !== 0;
             return (
                 <div className={styles.root}>
                     <div className={styles.body}>
@@ -407,8 +432,10 @@ class ShareWindow extends React.Component {
                             onChange={this.handleChangeMessage}
                         />
                         <p className={styles.notice}>
-                            {'Write the name yourself, or click Generate name to ask Sable. ' +
-                                'Generating a name may use some of your Sable Credit (SC).'}
+                            {showGenerate ?
+                                'Write the name yourself, or click Generate name to ask Sable. ' +
+                                'Generating a name may use some of your Sable Credit (SC).' :
+                                'Write the name yourself. Sable naming needs Sable Credit (SC).'}
                         </p>
                         {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                         {this.renderStatus()}
@@ -424,9 +451,17 @@ class ShareWindow extends React.Component {
                         <button
                             type="button"
                             className={styles.secondary}
-                            onClick={this.handleGenerateName}
+                            onClick={this.handleSkipSave}
                             disabled={!!this.state.status}
-                        >Generate name</button>
+                        >Skip</button>
+                        {showGenerate ? (
+                            <button
+                                type="button"
+                                className={styles.secondary}
+                                onClick={this.handleGenerateName}
+                                disabled={!!this.state.status}
+                            >Generate name</button>
+                        ) : null}
                         <button
                             type="button"
                             className={styles.primary}

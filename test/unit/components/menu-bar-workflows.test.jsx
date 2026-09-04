@@ -236,48 +236,6 @@ describe('menu bar file workflows', () => {
         expect(menuBar.props.onGitStatusDone).toHaveBeenCalledWith('gitCommitSuccess');
     });
 
-    test('waits for autosave to finish before showing success', async () => {
-        let finishSave;
-        const handleSaveProject = jest.fn(() => new Promise(resolve => {
-            finishSave = resolve;
-        }));
-        const menuBar = makeMenuBar({
-            handleSaveProject,
-            projectChanged: true
-        });
-        menuBar.state = {
-            menuBarSettings: {
-                autosave_notifications: true,
-                autosave_only_when_changed: false
-            }
-        };
-        menuBar.showAutosaveNotification = jest.fn();
-
-        const autosave = menuBar.performAutosave();
-        expect(menuBar.showAutosaveNotification).not.toHaveBeenCalled();
-
-        finishSave(true);
-        await autosave;
-        expect(menuBar.showAutosaveNotification).toHaveBeenCalledWith('Project autosaved.', 'success');
-    });
-
-    test('does not claim success when a save is cancelled', async () => {
-        const menuBar = makeMenuBar({
-            handleSaveProject: jest.fn(() => Promise.resolve(false)),
-            projectChanged: true
-        });
-        menuBar.state = {
-            menuBarSettings: {
-                autosave_notifications: true,
-                autosave_only_when_changed: false
-            }
-        };
-        menuBar.showAutosaveNotification = jest.fn();
-
-        await menuBar.performAutosave();
-        expect(menuBar.showAutosaveNotification).not.toHaveBeenCalled();
-    });
-
     test('chooses an MWP destination before exporting uncommitted history', async () => {
         const writable = {
             close: jest.fn(() => Promise.resolve()),
@@ -306,7 +264,8 @@ describe('menu bar file workflows', () => {
             commitChanges: false
         }));
         expect(requestVersionMessage).not.toHaveBeenCalled();
-        expect(menuBar.props.showToast).toHaveBeenCalledWith('MistWarp project saved.', 'success');
+        expect(menuBar.props.showToast).toHaveBeenCalledWith(
+            'MistWarp project file saved (includes full history).', 'success');
     });
 
     test('ignores another MWP save while the first picker is open', async () => {

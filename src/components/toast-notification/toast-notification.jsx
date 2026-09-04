@@ -53,7 +53,7 @@ class ToastNotificationComponent extends React.Component {
             this.scheduleDismiss();
         }
         // Otherwise keep the pending timer untouched so unrelated
-        // parent re-renders (e.g. autosave countdown) never extend it.
+        // parent re-renders (e.g. menu updates) never extend it.
     }
     componentWillUnmount () {
         clearTimeout(this.timeout);
