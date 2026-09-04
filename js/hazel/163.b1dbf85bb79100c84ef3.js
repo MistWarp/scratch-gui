@@ -1,1 +1,0 @@
-(window.webpackJsonpGUI=window.webpackJsonpGUI||[]).push([[163],{835:function(n,e,i){"use strict";i.r(e);e.default=()=>{Promise.all([i.e(8),i.e(84)]).then(i.bind(null,1560))}}}]);
