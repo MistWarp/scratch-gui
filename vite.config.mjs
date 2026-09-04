@@ -284,16 +284,29 @@ const transformLinkedCjs = async (code, dir, file) => {
     const footer = [];
     let hasDefault = false;
     const named = [];
+    const memberNamed = new Set();
     output = output.replace(/^([ \t]*)module\.exports\s*=\s*/gm, (match, indent) => {
         hasDefault = true;
         footer.push('export default __mw_default;');
         return `${indent}const __mw_default = `;
     });
-    output = output.replace(/^([ \t]*)exports\.([A-Za-z_$][\w$]*)\s*=\s*/gm, (match, indent, name) => {
-        named.push(name);
-        footer.push(`export {__mw_exp_${name} as ${name}};`);
-        return `${indent}const __mw_exp_${name} = `;
-    });
+    output = output.replace(
+        /^([ \t]*)(module\.exports|exports)\.([A-Za-z_$][\w$]*)\s*=\s*/gm,
+        (match, indent, obj, name) => {
+            named.push(name);
+            if (obj === 'module.exports') memberNamed.add(name);
+            footer.push(`export {__mw_exp_${name} as ${name}};`);
+            return `${indent}const __mw_exp_${name} = `;
+        }
+    );
+    if (hasDefault) {
+        // module.exports.name = … mutates the default object itself; mirror
+        // that so `new Default()` and `Default.name` both keep working.
+        // (Only names assigned via module.exports.*, not via exports.*.)
+        for (const name of named.filter(n => memberNamed.has(n))) {
+            footer.push(`__mw_default.${name} = __mw_exp_${name};`);
+        }
+    }
     if (!hasDefault && named.length > 0) {
         // exports.*-only file (e.g. blocks-execute-cache.js): consumers
         // require() the whole exports object, so synthesize a default.
