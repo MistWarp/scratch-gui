@@ -146,11 +146,18 @@ const transformLinkedCjs = async (code, dir) => {
         return `${kind} ${flat} = ${name}${prop || ''}`;
     };
     // Mask strings/comments (length-preserving) so requires inside them
-    // are ignored. Backtick templates are masked whole; linked sources do
-    // not nest require() inside ${}.
+    // are ignored. Quotes are kept so match shapes survive; the real spec
+    // is re-extracted from the original by offset. Backtick templates are
+    // masked whole; linked sources do not nest require() inside ${}.
     const maskCode = text => text.replace(
         /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
-        match => ' '.repeat(match.length)
+        match => {
+            const first = match[0];
+            if ((first === '"' || first === '\'') && match.length >= 2) {
+                return first + ' '.repeat(match.length - 2) + first;
+            }
+            return ' '.repeat(match.length);
+        }
     );
     // Pre-pass: multiline destructured requires, which the line passes below
     // cannot see. Edits apply to the original by offset (mask is 1:1).
@@ -160,14 +167,22 @@ const transformLinkedCjs = async (code, dir) => {
         'require\\(\\s*([\'"])([^\'"]+)\\3\\s*\\)(\\.[A-Za-z_$][\\w$]*)?',
         'g'
     );
+    const realDeclaratorRe = new RegExp(
+        '^(const|let|var)\\s+(\\{[^}]*\\}|[A-Za-z_$][\\w$]*)\\s*=\\s*' +
+        'require\\(\\s*([\'"])([^\'"]+)\\3\\s*\\)(\\.[A-Za-z_$][\\w$]*)?$'
+    );
     const edits = [];
     for (const match of masked.matchAll(declaratorRe)) {
         if (!match[0].includes('\n')) continue;
-        const [full, kind, binding, _quote, spec, prop] = match;
+        const real = code
+            .slice(match.index, match.index + match[0].length)
+            .match(realDeclaratorRe);
+        if (!real) continue;
+        const [, kind, binding, , spec, prop] = real;
         classify(spec);
         edits.push({
             start: match.index,
-            end: match.index + full.length,
+            end: match.index + match[0].length,
             text: replaceDeclarator(kind, binding, spec, prop)
         });
     }
