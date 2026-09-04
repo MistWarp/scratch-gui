@@ -77,7 +77,13 @@ describe('MistWarp project upload packaging', () => {
         rememberPlatformProject({id: 'original', isOwner: false, canRemix: true});
         mockGetProject
             .mockResolvedValueOnce({
-                project: {id: 'original', isOwner: false, canRemix: true, workspaceUrl: '/original.mwp'}
+                project: {
+                    id: 'original',
+                    isOwner: false,
+                    canRemix: true,
+                    projectJsonUrl: '/original.json',
+                    workspaceUrl: '/original.mwp'
+                }
             })
             .mockResolvedValueOnce({
                 project: {
@@ -86,20 +92,111 @@ describe('MistWarp project upload packaging', () => {
                     remixParent: 'original',
                     remixBaseCommit: 'base-sha',
                     workspaceUrl: '/fork.mwp',
-                    gitHead: 'base-sha'
+                    gitHead: 'detached-bootstrap-sha'
                 }
             });
 
         await publishToMistWarp({vm, title: 'Fork'});
 
         expect(mockDeleteRepo).toHaveBeenCalledTimes(1);
-        expect(mockGetProjectCommits).toHaveBeenCalledWith('fork-1', undefined);
+        expect(mockGetProjectCommits).toHaveBeenCalledWith('original', '/original.json');
         expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
             projectId: 'fork-1',
             remixParent: 'original',
             baseCommit: 'base-sha',
             remoteHead: 'base-sha',
             baseHistory: expect.objectContaining({branch: 'main'})
+        }));
+    });
+
+    test('keeps the existing graph when an unhydrated remix is saved again', async () => {
+        const files = {'project.json': JSON.stringify({targets: []})};
+        const vm = {saveProjectSb3DontZip: jest.fn(() => files)};
+        const project = {
+            id: 'fork-1',
+            isOwner: true,
+            remixParent: 'original',
+            remixBaseCommit: 'base-sha',
+            projectJsonUrl: '/fork.json',
+            workspaceUrl: '/fork.mwp',
+            gitHead: 'fork-head'
+        };
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockGetProjectCommits.mockResolvedValue({
+            branch: 'main',
+            commits: [{sha: 'fork-head'}, {sha: 'base-sha'}],
+            graph: {
+                branches: ['main'],
+                branchLogs: [{branch: 'main', oids: ['fork-head', 'base-sha']}],
+                nodes: [
+                    {sha: 'fork-head', parents: ['base-sha']},
+                    {sha: 'base-sha', parents: []}
+                ]
+            }
+        });
+
+        await publishToMistWarp({vm, title: 'Fork'});
+
+        expect(mockGetProjectCommits).toHaveBeenCalledWith('fork-1', '/fork.json');
+        expect(mockDeleteRepo).toHaveBeenCalledTimes(1);
+        expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
+            remoteHead: 'fork-head',
+            additionalParents: [],
+            baseHistory: expect.objectContaining({branch: 'main'})
+        }));
+    });
+
+    test('reconnects an existing detached remix without discarding its commits', async () => {
+        const files = {'project.json': JSON.stringify({targets: []})};
+        const vm = {saveProjectSb3DontZip: jest.fn(() => files)};
+        const project = {
+            id: 'fork-1',
+            isOwner: true,
+            remixParent: 'original',
+            remixBaseCommit: 'base-sha',
+            projectJsonUrl: '/fork.json',
+            workspaceUrl: '/fork.mwp',
+            gitHead: 'detached-head'
+        };
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockGetProjectCommits
+            .mockResolvedValueOnce({
+                branch: 'main',
+                commits: [{sha: 'detached-head'}],
+                graph: {
+                    branches: ['main'],
+                    branchLogs: [{branch: 'main', oids: ['detached-head']}],
+                    nodes: [{sha: 'detached-head', parents: []}]
+                }
+            })
+            .mockResolvedValueOnce({
+                branch: 'main',
+                commits: [{sha: 'base-sha'}],
+                graph: {
+                    branches: ['main'],
+                    branchLogs: [{branch: 'main', oids: ['base-sha']}],
+                    nodes: [{sha: 'base-sha', parents: []}]
+                }
+            });
+
+        await publishToMistWarp({vm, title: 'Fork'});
+
+        expect(mockGetProjectCommits).toHaveBeenNthCalledWith(1, 'fork-1', '/fork.json');
+        expect(mockGetProjectCommits).toHaveBeenNthCalledWith(2, 'original');
+        expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
+            remoteHead: 'detached-head',
+            additionalParents: ['base-sha'],
+            baseHistory: expect.objectContaining({
+                commits: [{sha: 'detached-head'}, {sha: 'base-sha'}],
+                graph: expect.objectContaining({
+                    nodes: [
+                        {sha: 'detached-head', parents: []},
+                        {sha: 'base-sha', parents: []}
+                    ]
+                })
+            })
         }));
     });
 

@@ -268,7 +268,7 @@ const currentRepoMeta = async ({baseHead = '', baseHistory = null} = {}) => {
 };
 
 const exportCurrentMwp = async (metadata, {
-    baseHead = '', includeWorktree = false, assumeBaseKnown = false, baseHistory = null
+    baseHead = '', includeWorktree = false, assumeBaseKnown = false, baseHistory = null, knownBaseHeads = []
 } = {}) => {
     const repo = await currentRepoMeta({
         baseHead: assumeBaseKnown ? baseHead : '',
@@ -278,7 +278,8 @@ const exportCurrentMwp = async (metadata, {
     let delta = false;
     if (!includeWorktree && baseHead) {
         try {
-            const known = assumeBaseKnown ? new Set([baseHead]) : await collectReachableObjectOids(baseHead);
+            const known = assumeBaseKnown ?
+                new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectReachableObjectOids(baseHead);
             includeObjectOids = await collectReachableObjectOids(repo.head, known);
             delta = true;
         } catch (e) {
@@ -331,14 +332,23 @@ const preserveCurrentRepo = async () => {
 };
 
 const createMwp = async ({
-    vm, sb3Files, projectId, remixParent, baseCommit, remoteHead,
+    vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, additionalParents = [],
     message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null
 } = {}) => {
     const author = projectId ? await getMistWarpAuthor() : getDefaultAuthor();
     let shallowBase = false;
     if (!(await repoExists())) {
         const initialParent = remoteHead || '';
-        await initRepo({defaultBranch: 'main', vm, sb3Files, initialMessage: message, initialParent, author});
+        const initialParents = [initialParent, ...additionalParents].filter(Boolean);
+        await initRepo({
+            defaultBranch: 'main',
+            vm,
+            sb3Files,
+            initialMessage: message,
+            initialParent,
+            initialParents,
+            author
+        });
         shallowBase = Boolean(initialParent);
     } else if ((vm || sb3Files) && commitChanges) {
         try {
@@ -354,7 +364,13 @@ const createMwp = async ({
     }
     return exportCurrentMwp(
         {projectId, remixParent, baseCommit},
-        {baseHead: remoteHead, includeWorktree: !commitChanges, assumeBaseKnown: shallowBase, baseHistory}
+        {
+            baseHead: remoteHead,
+            includeWorktree: !commitChanges,
+            assumeBaseKnown: shallowBase,
+            baseHistory,
+            knownBaseHeads: additionalParents
+        }
     );
 };
 

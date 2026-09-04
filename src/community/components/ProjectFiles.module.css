@@ -37,9 +37,10 @@
 .sidebar {
     min-width: 0;
     overflow: hidden;
-    border: 1px solid var(--border-soft);
+    border: 0;
     border-radius: 12px;
     background: var(--bg-card);
+    box-shadow: var(--card-shadow);
 }
 
 .search {
@@ -142,9 +143,10 @@
 .viewer {
     min-width: 0;
     overflow: hidden;
-    border: 1px solid var(--border-soft);
+    border: 0;
     border-radius: 12px;
     background: var(--bg-card);
+    box-shadow: var(--card-shadow);
 }
 
 .viewer > header {
@@ -318,7 +320,7 @@
     }
 
     .sidebar {
-        border: 1px solid var(--border-soft);
+        border: 0;
     }
 
     .sidebar nav {

@@ -4,9 +4,10 @@
     min-width: 0;
     max-height: calc(100vh - 40px);
     overflow: auto;
-    border: 1px solid var(--border-soft);
+    border: 0;
     border-radius: 12px;
     background: var(--bg-card);
+    box-shadow: var(--card-shadow);
 }
 
 .search {

@@ -105,6 +105,21 @@ const appendUnifiedHunks = (lines, result) => {
     }
 };
 
+const FRACTCH_FILE = /\.fractch$/i;
+const SUMMARY_TEXT_LIMIT = 40;
+
+const pairTexts = async ({apiClient, projectId, sha, parentProjectId, parent, change}) => {
+    const path = change.path;
+    const status = normalizedStatus(change.status);
+    const [before, after] = await Promise.all([
+        status === 'added' || !parent ? '' : hasInlineText(change.oldData) ?
+            decodeInlineText(change.oldData) : fileText(apiClient, parentProjectId, parent, path),
+        status === 'removed' || !sha ? '' : hasInlineText(change.newData) ?
+            decodeInlineText(change.newData) : fileText(apiClient, projectId, sha, path)
+    ]);
+    return {path, before, after};
+};
+
 export const buildCommitDiffFromInspection = async ({
     apiClient,
     projectId,
@@ -122,18 +137,41 @@ export const buildCommitDiffFromInspection = async ({
         // either blob just to render the compact changed-asset card.
         if (!TEXT_FILE.test(path)) return [...lines, 'Binary file changed'].join('\n');
 
-        const [before, after] = await Promise.all([
-            status === 'added' ? '' : hasInlineText(change.oldData) ?
-                decodeInlineText(change.oldData) : fileText(apiClient, parentProjectId, parent, path),
-            status === 'removed' ? '' : hasInlineText(change.newData) ?
-                decodeInlineText(change.newData) : fileText(apiClient, projectId, sha, path)
-        ]);
+        const {before, after} = await pairTexts({apiClient, projectId, sha, parentProjectId, parent, change});
         const result = await computeLineDiff(before, after);
         if (!(result.hunks || []).length) return '';
         appendUnifiedHunks(lines, result);
         return lines.join('\n');
     }));
     return sections.filter(Boolean).join('\n');
+};
+
+export const loadCommitFileTexts = async ({apiClient, projectId, sha, inspection, parentProjectId = projectId}) => {
+    const parent = inspection.parent || '';
+    const changes = (inspection.files || []).filter(change => FRACTCH_FILE.test(change.path || ''));
+    if (changes.length > SUMMARY_TEXT_LIMIT) return {};
+    const texts = {};
+    await Promise.all(changes.map(async change => {
+        try {
+            const {path, before, after} = await pairTexts({apiClient, projectId, sha, parentProjectId, parent, change});
+            texts[path] = {before, after};
+        } catch (error) {
+            // Leave this file without summary texts; the line diff still renders.
+        }
+    }));
+    return texts;
+};
+
+export const withFileCache = apiClient => {
+    const cache = new Map();
+    return {
+        ...apiClient,
+        commitFile: (projectId, sha, path, ...rest) => {
+            const key = `${projectId}:${sha}:${path}:${rest.join(',')}`;
+            if (!cache.has(key)) cache.set(key, apiClient.commitFile(projectId, sha, path, ...rest));
+            return cache.get(key);
+        }
+    };
 };
 
 const treeFileMap = tree => new Map((tree?.files || []).map(file => [file.path, file]));
@@ -186,8 +224,20 @@ const recoverRemixBootstrapInspection = async ({apiClient, projectId, sha, remot
     };
 };
 
-export const loadCommitInspection = async ({apiClient, projectId, sha, remixBase = null}) => {
-    const remote = await apiClient.commitInspection(projectId, sha);
+export const loadCommitInspection = async ({
+    apiClient,
+    projectId,
+    sha,
+    remixBase = null,
+    inspection: prefetchedInspection = null,
+    onProgress = null
+}) => {
+    const report = (progress, label) => {
+        if (onProgress) onProgress({progress, label});
+    };
+    if (!prefetchedInspection) report(20, 'Reading commit');
+    const remote = prefetchedInspection || await apiClient.commitInspection(projectId, sha);
+    report(44, 'Checking ancestry');
     const recovered = await recoverRemixBootstrapInspection({
         apiClient,
         projectId,
@@ -196,15 +246,13 @@ export const loadCommitInspection = async ({apiClient, projectId, sha, remixBase
         remixBase
     });
     const inspection = recovered || remote;
-    return {
-        ...inspection,
-        oid: inspection.sha || sha,
-        diff: await buildCommitDiffFromInspection({
-            apiClient,
-            projectId,
-            sha,
-            inspection,
-            parentProjectId: inspection.parentProjectId || projectId
-        })
-    };
+    const parentProjectId = inspection.parentProjectId || projectId;
+    const cachingClient = withFileCache(apiClient);
+    report(58, 'Comparing project files');
+    const [diff, fileTexts] = await Promise.all([
+        buildCommitDiffFromInspection({apiClient: cachingClient, projectId, sha, inspection, parentProjectId}),
+        loadCommitFileTexts({apiClient: cachingClient, projectId, sha, inspection, parentProjectId})
+    ]);
+    report(92, 'Drawing changes');
+    return {...inspection, oid: inspection.sha || sha, diff, fileTexts};
 };
