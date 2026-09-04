@@ -6,10 +6,10 @@ import NavBar from './components/NavBar.jsx';
 import BetaBanner from './components/BetaBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
 import Footer from './components/Footer.jsx';
-import Home from './pages/Home.jsx';
 import NotFound from './pages/NotFound.jsx';
 import {useCommunityIntl} from './i18n.jsx';
 
+const Home = lazy(() => import('./pages/Home.jsx'));
 const Explore = lazy(() => import('./pages/Explore.jsx'));
 const Bounties = lazy(() => import('./pages/Bounties.jsx'));
 const Bounty = lazy(() => import('./pages/Bounty.jsx'));

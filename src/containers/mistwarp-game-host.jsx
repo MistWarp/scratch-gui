@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 
@@ -9,7 +9,10 @@ import {
     grantProjectItem
 } from '../lib/mistwarp-games/data-client.js';
 import api from '../community/api';
-import GameMarketplaceModal from '../community/components/GameMarketplaceModal.jsx';
+const GameMarketplaceModal = React.lazy(() => import(
+    /* webpackChunkName: "mw-game-marketplace" */
+    '../community/components/GameMarketplaceModal.jsx'
+));
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {MULTIPLAYER_ENABLED} from '../lib/mistwarp-games/config.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
@@ -248,15 +251,17 @@ class MistWarpGameHost extends React.Component {
         return (
             <React.Fragment>
                 {marketplace ? (
-                    <GameMarketplaceModal
-                        isDraft={Boolean(marketplace.isDraft)}
-                        projectId={marketplace.projectId}
-                        productId={marketplace.productId}
-                        username={this.props.username}
-                        vm={this.props.vm}
-                        onBlockProject={marketplace.isDraft ? null : this.handleBlockProject}
-                        onResult={this.handleMarketplaceResult}
-                    />
+                    <Suspense fallback={null}>
+                        <GameMarketplaceModal
+                            isDraft={Boolean(marketplace.isDraft)}
+                            projectId={marketplace.projectId}
+                            productId={marketplace.productId}
+                            username={this.props.username}
+                            vm={this.props.vm}
+                            onBlockProject={marketplace.isDraft ? null : this.handleBlockProject}
+                            onResult={this.handleMarketplaceResult}
+                        />
+                    </Suspense>
                 ) : null}
             </React.Fragment>
         );

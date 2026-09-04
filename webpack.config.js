@@ -16,6 +16,9 @@ try {
 }
 
 const ENABLE_COMMUNITY = process.env.MW_COMMUNITY === 'true';
+// Set ONLY_ENTRY=editor|community|player|... to build a single entry.
+// Keeps site vs editor iterations fast and proves entries stay independent.
+const ONLY_ENTRY = process.env.ONLY_ENTRY || '';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Plugins
@@ -190,7 +193,7 @@ if (!process.env.CI) {
 module.exports = [
     // to run editor examples
     defaultsDeep({}, base, {
-        entry: {
+        entry: Object.fromEntries(Object.entries({
             ...(ENABLE_COMMUNITY ? {community: './src/playground/community.jsx'} : {}),
             'editor': './src/playground/editor.jsx',
             'player': './src/playground/player.jsx',
@@ -198,7 +201,7 @@ module.exports = [
             'embed': './src/playground/embed.jsx',
             'addon-settings': './src/playground/addon-settings.jsx',
             'credits': './src/playground/credits/credits.jsx'
-        },
+        }).filter(([name]) => !ONLY_ENTRY || name === ONLY_ENTRY)),
         output: {
             path: path.resolve(__dirname, BUILD_DIR)
         },
@@ -216,11 +219,38 @@ module.exports = [
             ])
         },
         optimization: {
+            // Keep initial site vs editor bundles independent.
+            // Shared code only splits out of lazy-loaded chunks, so
+            // editor.html never pulls community code on first paint and
+            // index.html never pulls scratch-vm/blocks on first paint.
+            runtimeChunk: {
+                name: entrypoint => `runtime~${entrypoint.name}`
+            },
             splitChunks: {
-                chunks: 'all',
-                minChunks: 2,
+                // 'async' (not 'all') avoids shared initial chunks that would
+                // force HtmlWebpackPlugin to inject cross-entry scripts.
+                chunks: 'async',
                 minSize: 50000,
-                maxInitialRequests: 5
+                maxAsyncRequests: 6,
+                maxInitialRequests: 4,
+                automaticNameDelimiter: '~',
+                cacheGroups: {
+                    default: false,
+                    vendors: {
+                        test: /[\\/]node_modules[\\/]/,
+                        name: 'vendors-async',
+                        chunks: 'async',
+                        priority: -10,
+                        reuseExistingChunk: true
+                    },
+                    community: {
+                        test: /[\\/]src[\\/]community[\\/]/,
+                        name: 'community-async',
+                        chunks: 'async',
+                        priority: -5,
+                        reuseExistingChunk: true
+                    }
+                }
             }
         },
         plugins: base.plugins.concat([
@@ -234,7 +264,7 @@ module.exports = [
                 'process.env.MW_STATUS_URL': JSON.stringify(process.env.MW_STATUS_URL || 'https://status.warp.mistium.com')
             }),
             new HtmlWebpackPlugin({
-                chunks: ['editor'],
+                chunks: ['runtime~editor', 'editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'editor.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
@@ -242,13 +272,13 @@ module.exports = [
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin(ENABLE_COMMUNITY ? {
-                chunks: ['community'],
+                chunks: ['runtime~community', 'community'],
                 template: 'src/playground/simple.ejs',
                 filename: 'index.html',
                 title: APP_NAME,
                 ...htmlWebpackPluginCommon
             } : {
-                chunks: ['editor'],
+                chunks: ['runtime~editor', 'editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'index.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
@@ -256,35 +286,35 @@ module.exports = [
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
-                chunks: ['player'],
+                chunks: ['runtime~player', 'player'],
                 template: 'src/playground/index.ejs',
                 filename: 'player.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
-                chunks: ['fullscreen'],
+                chunks: ['runtime~fullscreen', 'fullscreen'],
                 template: 'src/playground/index.ejs',
                 filename: 'fullscreen.html',
                 title: `${APP_NAME} - Enhance Your Scratch Experience`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
-                chunks: ['embed'],
+                chunks: ['runtime~embed', 'embed'],
                 template: 'src/playground/embed.ejs',
                 filename: 'embed.html',
                 title: `Embedded Project - ${APP_NAME}`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
-                chunks: ['addon-settings'],
+                chunks: ['runtime~addon-settings', 'addon-settings'],
                 template: 'src/playground/simple.ejs',
                 filename: 'addons.html',
                 title: `Addon Settings - ${APP_NAME}`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
-                chunks: ['credits'],
+                chunks: ['runtime~credits', 'credits'],
                 template: 'src/playground/simple.ejs',
                 filename: 'credits.html',
                 title: `${APP_NAME} Credits`,

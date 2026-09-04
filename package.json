@@ -13,6 +13,9 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "build": "pnpm run clean && webpack --colors --bail",
+    "build:editor": "pnpm run clean && MW_COMMUNITY= ONLY_ENTRY=editor NODE_ENV=production webpack --colors --bail",
+    "build:community": "pnpm run clean && MW_COMMUNITY=true ONLY_ENTRY=community NODE_ENV=production webpack --colors --bail",
+    "build:stats": "pnpm run clean && webpack --colors --bail --profile --json > stats.json",
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
     "setup": "pnpm install",
     "reinstall": "pnpm install --force && pnpm run link",
