@@ -234,7 +234,7 @@ const transformLinkedCjs = async (code, dir) => {
             // The [^.\w$] guard skips property access like goog.require() or
             // __webpack_require__() inside prebuilt bundles.
             return line.replace(
-                /(^|[^.\w$])require\(\s*(['"])([^'"]+)\1\s*\)(\.[A-Za-z_$][\w$]*)?/g,
+                /(^|[^.\w$])require\(\s*(['"])([^'"]+)\2\s*\)(\.[A-Za-z_$][\w$]*)?/g,
                 (match, prefix, quote, spec, prop) => {
                     const type = lookup(spec);
                     const value = unwrap(spec, type === 'namespace');
