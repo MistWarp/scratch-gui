@@ -59,6 +59,19 @@ body {
     flex: 1;
 }
 
+.mw-route-loading {
+    width: min(420px, calc(100% - 40px));
+    margin: 72px auto;
+    padding: 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 650;
+    text-align: center;
+}
+
 .mw-skip-link {
     position: fixed;
     top: 8px;

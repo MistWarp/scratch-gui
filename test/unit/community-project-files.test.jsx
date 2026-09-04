@@ -2,7 +2,9 @@ import {
     buildProjectFileTree,
     canCacheProjectSnapshot,
     canLoadProjectSnapshot,
+    formatXml,
     highlightFractch,
+    highlightXml,
     initiallyOpenFolders,
     projectSnapshotCacheKey
 } from '../../src/community/components/ProjectFiles.jsx';
@@ -52,6 +54,24 @@ describe('ProjectFiles', () => {
             ['// hello', 'comment'],
             ['forever', 'keyword'],
             ['wait', 'keyword']
+        ]));
+    });
+
+    test('formats svg source with nested indentation', () => {
+        expect(formatXml('<svg><g><rect width="10" /></g></svg>')).toBe(
+            '<svg>\n  <g>\n    <rect width="10" />\n  </g>\n</svg>'
+        );
+    });
+
+    test('highlights svg tags, strings, and comments', () => {
+        const lines = highlightXml(formatXml('<!-- hi --><svg><rect width="10" /></svg>'));
+        const kinds = lines.flat().filter(token => token.kind).map(token => [token.value, token.kind]);
+
+        expect(kinds).toEqual(expect.arrayContaining([
+            ['<!-- hi -->', 'comment'],
+            ['<svg', 'keyword'],
+            ['<rect', 'keyword'],
+            ['"10"', 'string']
         ]));
     });
 });

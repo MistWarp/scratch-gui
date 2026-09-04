@@ -92,7 +92,7 @@ const App = () => {
         <BetaBanner />
         <StandingBanner />
         <div className="mw-app-content" id="mw-main-content" tabIndex="-1">
-            <Suspense fallback={<p role="status">Loading…</p>}>
+            <Suspense fallback={<p className="mw-route-loading" role="status">Loading page…</p>}>
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/explore" element={<Explore />} />

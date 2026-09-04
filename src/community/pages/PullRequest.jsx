@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
-import FileBrowserTree from '../components/FileBrowserTree.jsx';
+import SpriteList from '../components/SpriteList.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
@@ -17,7 +17,8 @@ import UserLink from '../components/UserLink.jsx';
 import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
-import {buildCommitDiffFromInspection} from '../commit-diff.js';
+import {buildCommitDiffFromInspection, loadCommitFileTexts, withFileCache} from '../commit-diff.js';
+import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import styles from './PullRequest.module.css';
 
@@ -107,19 +108,31 @@ export const shouldLoadPullDiff = ({tab, pull, diff, diffError}) => (
     tab === 'files' && Boolean(pull) && diff === null && !diffError
 );
 
+export const pullApiFor = (apiClient, data) => ({
+    commitFile: (projectId, sha, path) => apiClient.commitFile(
+        projectId,
+        sha,
+        path,
+        data.pull.index,
+        data.targetProjectId || data.pull.targetProjectId
+    )
+});
+
 export const buildPullRequestDiff = (apiClient, data) => {
     if (!data.inspection) throw new Error('The server did not return pull request changes.');
-    const pullApi = {
-        commitFile: (projectId, sha, path) => apiClient.commitFile(
-            projectId,
-            sha,
-            path,
-            data.pull.index,
-            data.targetProjectId || data.pull.targetProjectId
-        )
-    };
     return buildCommitDiffFromInspection({
-        apiClient: pullApi,
+        apiClient: pullApiFor(apiClient, data),
+        projectId: data.sourceProjectId || data.pull.sourceProjectId,
+        sha: data.pull.headCommit,
+        inspection: data.inspection,
+        parentProjectId: data.targetProjectId || data.pull.targetProjectId
+    });
+};
+
+export const buildPullRequestFileTexts = (apiClient, data) => {
+    if (!data.inspection) throw new Error('The server did not return pull request changes.');
+    return loadCommitFileTexts({
+        apiClient: pullApiFor(apiClient, data),
         projectId: data.sourceProjectId || data.pull.sourceProjectId,
         sha: data.pull.headCommit,
         inspection: data.inspection,
@@ -144,9 +157,11 @@ const PullRequest = () => {
     const [project, setProject] = useState(null);
     const [pull, setPull] = useState(null);
     const [diff, setDiff] = useState(null);
+    const [fileTexts, setFileTexts] = useState({});
+    const [assetRefs, setAssetRefs] = useState(null);
     const [timeline, setTimeline] = useState({comments: [], commits: [], targetCommits: []});
     const [tab, setTab] = useState('conversation');
-    const [selectedPath, setSelectedPath] = useState('');
+    const [activeSprite, setActiveSprite] = useState('');
     const [loadingError, setLoadingError] = useState('');
     const [diffError, setDiffError] = useState('');
     const [mergeError, setMergeError] = useState('');
@@ -165,6 +180,16 @@ const PullRequest = () => {
     const loadDiff = useCallback(async (activePull, context) => {
         if (diffRequestRef.current === context) return;
         diffRequestRef.current = context;
+        if (contextRef.current === context) {
+            setAssetRefs({
+                oldProject: activePull.targetProjectId || id,
+                oldSha: activePull.baseCommit || '',
+                newProject: activePull.sourceProjectId || id,
+                newSha: activePull.headCommit || '',
+                pullIndex: activePull.index,
+                pullTarget: activePull.targetProjectId || ''
+            });
+        }
         const cached = readPullDiffCache(activePull);
         if (cached !== null) {
             if (contextRef.current === context) setDiff(cached);
@@ -174,10 +199,17 @@ const PullRequest = () => {
         setDiffError('');
         try {
             const diffData = await api.pullDiff(id, index);
-            const nextDiff = await buildPullRequestDiff(api, diffData);
+            const cachingApi = withFileCache(api);
+            const [nextDiff, nextTexts] = await Promise.all([
+                buildPullRequestDiff(cachingApi, diffData),
+                buildPullRequestFileTexts(cachingApi, diffData)
+            ]);
             const renderedDiff = nextDiff || 'No textual changes.';
             writePullDiffCache(activePull, renderedDiff);
-            if (contextRef.current === context) setDiff(renderedDiff);
+            if (contextRef.current === context) {
+                setDiff(renderedDiff);
+                setFileTexts(nextTexts);
+            }
         } catch (error) {
             if (contextRef.current === context) setDiffError(error.message || 'Could not load these file changes.');
         } finally {
@@ -214,9 +246,11 @@ const PullRequest = () => {
         setProject(null);
         setPull(null);
         setDiff(null);
+        setFileTexts({});
+        setAssetRefs(null);
         setTimeline({comments: [], commits: [], targetCommits: []});
         setTab('conversation');
-        setSelectedPath('');
+        setActiveSprite('');
         setMergeSession(null);
         setMergeError('');
         setCloseConfirmOpen(false);
@@ -376,6 +410,21 @@ const PullRequest = () => {
     };
 
     const files = useMemo(() => parseDiff(diff), [diff]);
+    const loadPullAsset = useCallback(async (side, path) => {
+        if (!assetRefs) return null;
+        const target = side === 'old' ?
+            {projectId: assetRefs.oldProject, sha: assetRefs.oldSha} :
+            {projectId: assetRefs.newProject, sha: assetRefs.newSha};
+        if (!target.sha) return null;
+        const result = await api.commitFile(
+            target.projectId,
+            target.sha,
+            path,
+            assetRefs.pullIndex,
+            assetRefs.pullTarget
+        );
+        return {bytes: base64ToBytes(result.content || ''), mediaType: mediaTypeForAssetPath(path)};
+    }, [assetRefs]);
     const conversationEvents = useMemo(() => [
         ...timeline.targetCommits.map(commit => ({...commit, eventType: 'target-commit'})),
         ...timeline.commits.map(commit => ({...commit, eventType: 'source-commit'})),
@@ -518,11 +567,17 @@ const PullRequest = () => {
                 </section>
             ) : (
                 <div className={styles.filesLayout}>
-                    <FileBrowserTree files={files} selectedPath={selectedPath} onSelect={setSelectedPath} showAll showStats />
+                    <SpriteList
+                        files={files}
+                        fileTexts={fileTexts}
+                        loadAsset={loadPullAsset}
+                        activeSprite={activeSprite}
+                        onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+                    />
                     <section className={styles.diffColumn}>
                         {diffError ? <div className={styles.diffFailure}><p>{diffError}</p><Button onClick={() => loadDiff(pull, `${id}:${index}`)}>Try again</Button></div> : diff === null ? (
                             <div className={styles.loadState}>Loading file changes…</div>
-                        ) : <DiffView diff={diff} selectedPath={selectedPath} />}
+                        ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                     </section>
                 </div>
             )}

@@ -78,7 +78,7 @@ TreeRows.propTypes = {
     showStats: PropTypes.bool.isRequired
 };
 
-const FileBrowserTree = ({files, selectedPath, onSelect, showAll, showCount, showStats}) => {
+const FileBrowserTree = ({files, selectedPath, onSelect, showCount, showStats}) => {
     const [query, setQuery] = useState('');
     const completeTree = useMemo(() => buildProjectFileTree(files), [files]);
     const [openFolders, setOpenFolders] = useState(() => new Set(initiallyOpenFolders(completeTree)));
@@ -113,15 +113,6 @@ const FileBrowserTree = ({files, selectedPath, onSelect, showAll, showCount, sho
                 <Search size={15} />
                 <input value={query} placeholder="Filter files" onChange={event => setQuery(event.target.value)} />
             </label>
-            {showAll ? (
-                <button
-                    type="button"
-                    className={!selectedPath ? styles.allActive : styles.all}
-                    onClick={() => onSelect('')}
-                >
-                    <FileCode2 size={14} /> All files <span>{files.length}</span>
-                </button>
-            ) : null}
             {showCount ? (
                 <div className={styles.fileCount}>
                     {filteredFiles.length} {filteredFiles.length === 1 ? 'file' : 'files'}
@@ -145,13 +136,11 @@ FileBrowserTree.propTypes = {
     files: PropTypes.arrayOf(PropTypes.object).isRequired,
     selectedPath: PropTypes.string.isRequired,
     onSelect: PropTypes.func.isRequired,
-    showAll: PropTypes.bool,
     showCount: PropTypes.bool,
     showStats: PropTypes.bool
 };
 
 FileBrowserTree.defaultProps = {
-    showAll: false,
     showCount: false,
     showStats: false
 };

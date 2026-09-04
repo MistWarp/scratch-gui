@@ -37,6 +37,63 @@ const buildSparseSb3 = async (files, platformId) => {
 const PLATFORM_ID_KEY = 'mw:mistwarp-current-project';
 const SCRATCH_ORIGIN_KEY = 'mw:mistwarp-scratch-origin';
 
+const historyReaches = (history, head, ancestor) => {
+    if (!head || !ancestor) return false;
+    const nodes = new Map((history?.graph?.nodes || []).map(node => [node.sha || node.oid, node]));
+    const pending = [head];
+    const seen = new Set();
+    while (pending.length) {
+        const oid = pending.pop();
+        if (oid === ancestor) return true;
+        if (!oid || seen.has(oid)) continue;
+        seen.add(oid);
+        const node = nodes.get(oid);
+        pending.push(...(node?.parents || node?.commit?.parent || []));
+    }
+    return false;
+};
+
+const mergeHistories = (current, inherited) => {
+    const uniqueBy = (items, keyOf) => {
+        const seen = new Set();
+        return [...(items || [])].filter(item => {
+            const key = keyOf(item);
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    };
+    const currentGraph = current?.graph || {};
+    const inheritedGraph = inherited?.graph || {};
+    const branches = [...new Set([...(currentGraph.branches || []), ...(inheritedGraph.branches || [])])];
+    const branchNames = [...new Set([
+        ...(currentGraph.branchLogs || []).map(item => item.branch),
+        ...(inheritedGraph.branchLogs || []).map(item => item.branch)
+    ])];
+    const branchLogs = branchNames.map(branch => ({
+        branch,
+        oids: [...new Set([
+            ...((currentGraph.branchLogs || []).find(item => item.branch === branch)?.oids || []),
+            ...((inheritedGraph.branchLogs || []).find(item => item.branch === branch)?.oids || [])
+        ])]
+    }));
+    return {
+        ...current,
+        commits: uniqueBy(
+            [...(current?.commits || []), ...(inherited?.commits || [])],
+            item => item.sha || item.oid
+        ),
+        graph: {
+            branches,
+            branchLogs,
+            nodes: uniqueBy(
+                [...(currentGraph.nodes || []), ...(inheritedGraph.nodes || [])],
+                item => item.sha || item.oid
+            )
+        }
+    };
+};
+
 const rememberPlatformProject = project => {
     try {
         if (project) {
@@ -212,13 +269,14 @@ const publishToMistWarp = async ({
         }
         if (platformId && !platformProject.isOwner) {
             onProgress({phase: 'register', message: 'Creating remix'});
+            const remixSource = platformProject;
             const remix = await remixProject(platformId);
             platformId = remix.id;
             // The remix inherits the parent's history at its recorded base commit.
             // Keep the complete server state so createMwp can export only objects
             // created after that base instead of uploading the inherited DAG again.
             platformProject = (await getProject(platformId)).project;
-            baseHistory = await getProjectCommits(platformId, platformProject.projectJsonUrl);
+            baseHistory = await getProjectCommits(remixSource.id, remixSource.projectJsonUrl);
             rememberPlatformProject(platformProject);
             setRemoteProjectHistory(platformProject);
             createdNow = true;
@@ -259,7 +317,21 @@ const publishToMistWarp = async ({
             sb3Blob = await zipProjectFiles(sb3Files, () => true);
         }
         onProgress({phase: 'package', message: 'Preparing pushed history and extensions'});
-        if (platformProject && platformProject.workspaceUrl && !isProjectHistoryHydrated(vm)) {
+        const remixBaseHead = createdNow && platformProject?.remixParent ?
+            platformProject.remixBaseCommit || '' : '';
+        const remoteHead = remixBaseHead || (platformProject?.workspaceUrl ? platformProject.gitHead : '');
+        let additionalParents = [];
+        if (remoteHead && !isProjectHistoryHydrated(vm)) {
+            if (!baseHistory) {
+                baseHistory = await getProjectCommits(platformId, platformProject.projectJsonUrl);
+            }
+            const recordedBase = platformProject?.remixBaseCommit;
+            if (platformProject?.remixParent && recordedBase &&
+                !historyReaches(baseHistory, remoteHead, recordedBase)) {
+                const inherited = await getProjectCommits(platformProject.remixParent);
+                baseHistory = mergeHistories(baseHistory, inherited);
+                additionalParents = [recordedBase];
+            }
             await deleteRepo();
         }
         const mwpPromise = createMwp({
@@ -268,7 +340,8 @@ const publishToMistWarp = async ({
             projectId: platformId,
             remixParent: platformProject && platformProject.remixParent,
             baseCommit: platformProject && platformProject.remixBaseCommit,
-            remoteHead: platformProject && platformProject.workspaceUrl ? platformProject.gitHead : '',
+            remoteHead,
+            additionalParents,
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
             commitChanges,
             requireChanges: commitChanges && !createdNow,

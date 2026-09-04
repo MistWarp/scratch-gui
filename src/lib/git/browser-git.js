@@ -229,7 +229,7 @@ const clearWorkdirExceptGit = async pfs => {
 
 const initRepo = async ({
     defaultBranch = 'main', vm = null, sb3Files = null, initialMessage = 'Initial version', initialParent = '',
-    author, onProgress
+    initialParents = null, author, onProgress
 } = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -269,7 +269,9 @@ const initRepo = async ({
                 message: initialMessage,
                 author: author || getDefaultAuthor()
             };
-            if (initialParent) commitOptions.parent = [initialParent];
+            const parents = Array.isArray(initialParents) ?
+                [...new Set(initialParents.filter(Boolean))] : initialParent ? [initialParent] : [];
+            if (parents.length) commitOptions.parent = parents;
             await git.commit(commitOptions);
         } catch (e) {
             // Clean up partial initialization on error

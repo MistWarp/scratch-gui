@@ -90,6 +90,7 @@ const base = {
         alias: {
             'react': require.resolve('react'),
             'react-dom': require.resolve('react-dom'),
+            'fractch/browser$': path.resolve(__dirname, 'node_modules/fractch/src/browser.js'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts'),
             'react-tooltip$': path.resolve(__dirname, 'node_modules/react-tooltip/dist/react-tooltip.min.cjs'),
             'exports-loader': require.resolve('exports-loader')
@@ -106,6 +107,7 @@ const base = {
                 /node_modules[\\/]@vernier[\\/]godirect/,
                 /node_modules[\\/]@chenglou[\\/]pretext/,
                 /node_modules[\\/]fractch[\\/]src/,
+                /node_modules[\\/]scratchblocks[\\/]build/,
                 /node_modules[\\/]isomorphic-git/,
                 /node_modules[\\/]monaco-editor/,
                 /node_modules[\\/]rotur-sdk/,

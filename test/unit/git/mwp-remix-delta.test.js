@@ -3,6 +3,7 @@ import JSZip from '@turbowarp/jszip';
 const BASE = '1111111111111111111111111111111111111111';
 const HEAD = '2222222222222222222222222222222222222222';
 const NEW_OBJECT = '3333333333333333333333333333333333333333';
+const DETACHED = '4444444444444444444444444444444444444444';
 
 const mockRepoExists = jest.fn();
 const mockInitRepo = jest.fn();
@@ -76,6 +77,17 @@ const {createMwp} = require('../../../src/lib/git/mwp.js');
 describe('first remix delta export', () => {
     beforeEach(async () => {
         jest.clearAllMocks();
+        mockGit.readCommit.mockImplementation(({oid}) => {
+            if (oid === BASE) throw new Error('shallow base must not be read');
+            return Promise.resolve({
+                oid,
+                commit: {
+                    message: 'Change remix',
+                    author: {name: 'Mist', timestamp: 100},
+                    parent: [BASE]
+                }
+            });
+        });
         mockRepoExists.mockResolvedValue(false);
         mockInitRepo.mockResolvedValue({});
         mockCollectReachableObjectOids.mockResolvedValue(new Set([NEW_OBJECT]));
@@ -127,6 +139,50 @@ describe('first remix delta export', () => {
             remixParent: 'original'
         }));
         expect(result.manifest.commits.map(commit => commit.sha)).toEqual([HEAD, BASE]);
+    });
+
+    test('exports a bridge commit with both detached and inherited parents treated as known', async () => {
+        mockGit.readCommit.mockImplementation(({oid}) => {
+            if (oid === DETACHED || oid === BASE) throw new Error('known parent must not be read');
+            return Promise.resolve({
+                oid,
+                commit: {
+                    message: 'Reconnect remix',
+                    author: {name: 'Mist', timestamp: 100},
+                    parent: [DETACHED, BASE]
+                }
+            });
+        });
+
+        const result = await createMwp({
+            sb3Files: {'project.json': new Uint8Array([1])},
+            projectId: 'fork-1',
+            remixParent: 'original',
+            baseCommit: BASE,
+            remoteHead: DETACHED,
+            additionalParents: [BASE],
+            message: 'Reconnect remix',
+            baseHistory: {
+                commits: [{sha: DETACHED}, {sha: BASE}],
+                graph: {
+                    branches: ['main'],
+                    branchLogs: [{branch: 'main', oids: [DETACHED, BASE]}],
+                    nodes: [
+                        {sha: DETACHED, parents: []},
+                        {sha: BASE, parents: []}
+                    ]
+                }
+            }
+        });
+
+        expect(mockInitRepo).toHaveBeenCalledWith(expect.objectContaining({
+            initialParent: DETACHED,
+            initialParents: [DETACHED, BASE]
+        }));
+        const known = mockCollectReachableObjectOids.mock.calls[0][1];
+        expect(known.has(DETACHED)).toBe(true);
+        expect(known.has(BASE)).toBe(true);
+        expect(result.manifest.graph.nodes[0].parents).toEqual([DETACHED, BASE]);
     });
 
     test('keeps a new non-remix project parentless', async () => {

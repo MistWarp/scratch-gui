@@ -5,11 +5,13 @@ import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import api, {projectUrl} from '../api.js';
 import Avatar from '../components/Avatar.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
-import FileBrowserTree from '../components/FileBrowserTree.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
+import SpriteList from '../components/SpriteList.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import {base64ToBytes, inlineDataToBytes, mediaTypeForAssetPath} from '../asset-media.js';
+import {textsFromInspectionFiles} from '../fractch-summary.js';
 import {formatDateTime} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {loadCommitInspection} from '../commit-diff.js';
@@ -44,36 +46,42 @@ const Commit = () => {
     const [project, setProject] = useState(null);
     const [entry, setEntry] = useState(null);
     const [diff, setDiff] = useState(null);
-    const [selectedPath, setSelectedPath] = useState('');
+    const [activeSprite, setActiveSprite] = useState('');
     const [error, setError] = useState('');
     const [manageOpen, setManageOpen] = useState(false);
     const [collaboratorName, setCollaboratorName] = useState('');
     const [manageBusy, setManageBusy] = useState('');
     const [manageError, setManageError] = useState('');
+    const [loadProgress, setLoadProgress] = useState({progress: 8, label: 'Finding this commit'});
     const contextRef = useRef(`${id}:${sha}`);
     contextRef.current = `${id}:${sha}`;
 
     const load = useCallback(async () => {
         const context = `${id}:${sha}`;
         setError('');
+        setLoadProgress({progress: 8, label: 'Finding this commit'});
         try {
-            const [projectData, history, coAuthorData] = await Promise.all([
+            const coAuthorsPromise = api.commitCoAuthors(id, sha).catch(() => null);
+            const [projectData, remoteInspection] = await Promise.all([
                 api.getProject(id),
-                api.commits(id),
-                api.commitCoAuthors(id, sha).catch(() => ({coAuthors: []}))
+                api.commitInspection(id, sha)
             ]);
+            if (contextRef.current !== context) return;
+            setLoadProgress({progress: 34, label: 'Reading project details'});
             const loadedProject = projectData.project || projectData;
-            const branchHead = history.graph?.branchLogs?.find(branch => branch.branch === history.branch)?.oids?.[0];
-            const newestCommit = branchHead || history.graph?.nodes?.[0]?.sha || history.commits?.[0]?.sha || '';
             const inspected = await loadCommitInspection({
                 apiClient: api,
                 projectId: id,
                 sha,
+                inspection: remoteInspection,
+                onProgress: next => {
+                    if (contextRef.current === context) setLoadProgress(next);
+                },
                 remixBase: {
                     enabled: Boolean(
                         loadedProject.remixParent &&
                         loadedProject.remixBaseCommit &&
-                        newestCommit === sha
+                        loadedProject.gitHead === sha
                     ),
                     projectId: loadedProject.remixParent,
                     sha: loadedProject.remixBaseCommit,
@@ -81,19 +89,25 @@ const Commit = () => {
                 }
             });
             if (contextRef.current !== context) return;
-            const metadata = (history.commits || []).find(commit => commit.sha === sha) || {};
+            const metadata = inspected.commit || {};
             setProject(loadedProject);
             setEntry({
                 ...metadata,
                 ...inspected,
-                message: metadata.message || inspected.message || inspected.commit?.message || '',
-                date: metadata.date || inspected.date || inspected.commit?.date || 0,
-                authorName: metadata.author || inspected.commit?.author?.name || inspected.commit?.author || '',
-                coAuthors: coAuthorData.coAuthors || coAuthorData.collaborators ||
-                    metadata.coAuthors || metadata.collaborators || []
+                message: inspected.message || metadata.message || '',
+                date: inspected.date || metadata.date || 0,
+                authorName: metadata.author?.name || metadata.author || '',
+                coAuthors: metadata.coAuthors || metadata.collaborators || []
             });
             setDiff(inspected.diff || 'No textual changes.');
             setPageMeta({title: `${metadata.message || sha.slice(0, 7)} · Commit`});
+            coAuthorsPromise.then(coAuthorData => {
+                if (!coAuthorData || contextRef.current !== context) return;
+                setEntry(current => (current ? ({
+                    ...current,
+                    coAuthors: coAuthorData.coAuthors || coAuthorData.collaborators || current.coAuthors
+                }) : current));
+            });
         } catch (loadError) {
             if (contextRef.current === context) setError(loadError.message || 'Could not load this commit.');
         }
@@ -103,11 +117,36 @@ const Commit = () => {
         setProject(null);
         setEntry(null);
         setDiff(null);
-        setSelectedPath('');
+        setActiveSprite('');
+        setLoadProgress({progress: 8, label: 'Finding this commit'});
         load();
     }, [load]);
 
     const files = useMemo(() => parseDiff(diff), [diff]);
+    const fileTexts = useMemo(() => ({
+        ...textsFromInspectionFiles(entry?.files || []),
+        ...entry?.fileTexts
+    }), [entry]);
+    const assetMeta = useMemo(() => {
+        const meta = new Map();
+        for (const change of entry?.files || []) meta.set(change.path, change);
+        return meta;
+    }, [entry]);
+    const commitParent = entry?.parent || '';
+    const commitParentProject = entry?.parentProjectId || id;
+    const loadCommitAsset = useCallback(async (side, path) => {
+        const inline = side === 'old' ? assetMeta.get(path)?.oldData : assetMeta.get(path)?.newData;
+        const inlineBytes = inlineDataToBytes(inline);
+        if (inlineBytes && inlineBytes.length) {
+            return {bytes: inlineBytes, mediaType: mediaTypeForAssetPath(path)};
+        }
+        const target = side === 'old' ?
+            {projectId: commitParentProject, sha: commitParent} :
+            {projectId: id, sha};
+        if (!target.sha) return null;
+        const result = await api.commitFile(target.projectId, target.sha, path);
+        return {bytes: base64ToBytes(result.content || ''), mediaType: mediaTypeForAssetPath(path)};
+    }, [assetMeta, commitParent, commitParentProject, id, sha]);
     const fileView = searchParams.get('view') === 'files';
     const historicalPath = searchParams.get('path') || '';
     const showDiff = () => {
@@ -188,7 +227,26 @@ const Commit = () => {
         );
     }
     if (!project || !entry) {
-        return <main className={styles.page}><p className={styles.state}>Loading commit…</p></main>;
+        return (
+            <main className={styles.page}>
+                <section className={styles.loadingCard} aria-live="polite" aria-busy="true">
+                    <div className={styles.loadingCopy}>
+                        <h1>{loadProgress.label}</h1>
+                    </div>
+                    <div
+                        className={styles.loadingTrack}
+                        role="progressbar"
+                        aria-label="Commit loading progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={loadProgress.progress}
+                    >
+                        <span style={{width: `${loadProgress.progress}%`}} />
+                    </div>
+                    <small>{loadProgress.progress}%</small>
+                </section>
+            </main>
+        );
     }
 
     return (
@@ -233,8 +291,14 @@ const Commit = () => {
                 />
             ) : files.length ? (
                 <div className={styles.layout}>
-                    <FileBrowserTree files={files} selectedPath={selectedPath} onSelect={setSelectedPath} showAll showStats />
-                    <section className={styles.diff}><DiffView diff={diff} selectedPath={selectedPath} onOpenFile={showFiles} /></section>
+                    <SpriteList
+                        files={files}
+                        fileTexts={fileTexts}
+                        loadAsset={loadCommitAsset}
+                        activeSprite={activeSprite}
+                        onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+                    />
+                    <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
                 </div>
             ) : <p className={styles.rootCommit}>No files changed in this commit.</p>}
             {manageOpen ? (

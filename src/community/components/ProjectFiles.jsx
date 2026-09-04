@@ -212,6 +212,46 @@ export const highlightFractch = text => {
     });
 };
 
+export const formatXml = text => {
+    const tokens = String(text || '')
+        .replace(/>\s+</g, '><')
+        .match(/<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<![^>]*>|<\/?[^>]+>|[^<]+/g) || [];
+    let depth = 0;
+    const out = [];
+    for (const token of tokens) {
+        const trimmed = token.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith('</')) depth = Math.max(0, depth - 1);
+        out.push(`${'  '.repeat(depth)}${trimmed}`);
+        if (/^<(?!\/|!|\?)/.test(trimmed) && !trimmed.endsWith('/>')) depth++;
+    }
+    return out.join('\n');
+};
+
+const XML_TOKEN = /<!--[\s\S]*?-->|"(?:\\.|[^"\\])*"|<\/?[A-Za-z_][\w:.-]*|\/?>|=[^\S\n]*|[^<"\s=]+|\s+/g;
+
+export const highlightXml = text => text.split('\n').map(line => {
+    const tokens = [];
+    let cursor = 0;
+    XML_TOKEN.lastIndex = cursor;
+    let match;
+    while ((match = XML_TOKEN.exec(line)) !== null) {
+        if (match.index > cursor) tokens.push({value: line.slice(cursor, match.index), kind: ''});
+        const value = match[0];
+        let kind = '';
+        if (/^<!--/.test(value)) kind = 'comment';
+        else if (/^"/.test(value)) kind = 'string';
+        else if (/^<\/?[A-Za-z_]/.test(value) || value === '/>') kind = 'keyword';
+        else if (/^>$/.test(value) || /^=$/.test(value)) kind = 'operator';
+        else if (/^\s+$/.test(value)) kind = '';
+        tokens.push({value, kind});
+        cursor = match.index + value.length;
+        if (value && cursor >= line.length) break;
+    }
+    if (cursor < line.length) tokens.push({value: line.slice(cursor), kind: ''});
+    return tokens.filter(token => token.value);
+});
+
 const formatSize = value => {
     if (value < 1024) return `${value} B`;
     if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
@@ -292,6 +332,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
     const lines = useMemo(() => {
         if (!selected || selected.binary || typeof selected.text !== 'string') return [];
         if (/\.fractch$/i.test(selected.path)) return highlightFractch(selected.text);
+        if (/\.svg$/i.test(selected.path)) return highlightXml(formatXml(selected.text));
         return selected.text.split('\n').map(line => [{value: line, kind: ''}]);
     }, [selected]);
     const selectFile = path => {

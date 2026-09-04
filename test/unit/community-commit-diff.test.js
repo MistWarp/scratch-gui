@@ -1,11 +1,13 @@
 import {
     buildCommitDiffFromInspection,
     compareCommitTrees,
+    loadCommitFileTexts,
     loadCommitInspection
 } from '../../src/community/commit-diff.js';
 import {parseDiff} from '../../src/community/components/DiffView.jsx';
 
 const encode = value => btoa(unescape(encodeURIComponent(value)));
+const toBytes = value => Uint8Array.from(unescape(encodeURIComponent(value)), char => char.charCodeAt(0));
 
 describe('server commit diff', () => {
     test('uses text content embedded by the server without file requests', async () => {
@@ -208,6 +210,26 @@ describe('server commit diff', () => {
         expect(fallback).not.toHaveBeenCalled();
     });
 
+    test('uses a prefetched inspection without requesting it a second time', async () => {
+        const sha = '9'.repeat(40);
+        const progress = jest.fn();
+        const apiClient = {
+            commitInspection: jest.fn(),
+            commitFile: jest.fn()
+        };
+
+        await expect(loadCommitInspection({
+            apiClient,
+            projectId: 'project-1',
+            sha,
+            inspection: {sha, parent: '', files: []},
+            onProgress: progress
+        })).resolves.toEqual(expect.objectContaining({oid: sha, diff: ''}));
+
+        expect(apiClient.commitInspection).not.toHaveBeenCalled();
+        expect(progress).toHaveBeenLastCalledWith({progress: 92, label: 'Drawing changes'});
+    });
+
     test('does not download a workspace when remote inspection fails', async () => {
         const error = new Error('Commit inspection failed');
         const fallback = jest.fn();
@@ -245,5 +267,48 @@ describe('server commit diff', () => {
             diff: expect.stringContaining('Binary file changed')
         }));
         expect(apiClient.commitFile).not.toHaveBeenCalled();
+    });
+
+    test('loads summary texts inline and fetches tree-compare sides', async () => {
+        const apiClient = {
+            commitFile: jest.fn((projectId, sha, path) => Promise.resolve({content: encode(`${path} fetched`)}))
+        };
+        const texts = await loadCommitFileTexts({
+            apiClient,
+            projectId: 'fork',
+            sha: 'b'.repeat(40),
+            parentProjectId: 'original',
+            inspection: {
+                parent: 'a'.repeat(40),
+                files: [
+                    {path: 'Sprite/main.fractch', status: 'modified', oldData: encode('old inline'), newData: encode('new inline')},
+                    {path: 'Stage/main.fractch', status: 'modified', oldData: toBytes('old tree'), newData: null},
+                    {path: 'Other/main.fractch', status: 'modified', oldData: null, newData: null},
+                    {path: 'Sprite/assets/a.svg', status: 'added'},
+                    {path: 'Gone/main.fractch', status: 'removed', oldData: encode('gone'), newData: null}
+                ]
+            }
+        });
+
+        expect(texts['Sprite/main.fractch']).toEqual({before: 'old inline', after: 'new inline'});
+        expect(texts['Stage/main.fractch']).toEqual({before: 'old tree', after: 'Stage/main.fractch fetched'});
+        expect(texts['Other/main.fractch']).toEqual({before: 'Other/main.fractch fetched', after: 'Other/main.fractch fetched'});
+        expect(texts['Gone/main.fractch']).toEqual({before: 'gone', after: ''});
+        expect(texts).not.toHaveProperty('Sprite/assets/a.svg');
+        expect(apiClient.commitFile).not.toHaveBeenCalledWith('original', expect.anything(), 'Stage/main.fractch');
+        expect(apiClient.commitFile).toHaveBeenCalledWith('original', 'a'.repeat(40), 'Other/main.fractch');
+        expect(apiClient.commitFile).toHaveBeenCalledWith('fork', 'b'.repeat(40), 'Stage/main.fractch');
+    });
+
+    test('skips summary texts that fail to load', async () => {
+        const apiClient = {commitFile: jest.fn().mockRejectedValue(new Error('gone'))};
+        const texts = await loadCommitFileTexts({
+            apiClient,
+            projectId: 'fork',
+            sha: 'b'.repeat(40),
+            inspection: {parent: 'a'.repeat(40), files: [{path: 'Stage/main.fractch', status: 'modified'}]}
+        });
+
+        expect(texts).toEqual({});
     });
 });
