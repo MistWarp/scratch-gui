@@ -26,22 +26,27 @@ const resolve = p => path.resolve(dirname, p);
 const linkedTypeCache = new Map();
 const bareTypeCache = new Map();
 
-const linkedTargetType = (spec, dir) => {
+const resolveLinkedTarget = (spec, dir) => {
     const base = path.join(dir, spec);
     for (const candidate of [base, `${base}.js`, `${base}.json`, path.join(base, 'index.js')]) {
         try {
-            if (!fs.statSync(candidate).isFile()) continue;
-            if (candidate.endsWith('.json')) return 'default';
-            const cached = linkedTypeCache.get(candidate);
-            if (cached) return cached;
-            const source = fs.readFileSync(candidate, 'utf8');
-            const type = /(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source) ?
-                'default' : 'namespace';
-            linkedTypeCache.set(candidate, type);
-            return type;
+            if (fs.statSync(candidate).isFile()) return candidate;
         } catch (e) { /* try next candidate */ }
     }
-    return 'namespace';
+    return null;
+};
+
+const linkedTargetType = (spec, dir) => {
+    const target = resolveLinkedTarget(spec, dir);
+    if (!target) return 'namespace';
+    if (target.endsWith('.json')) return 'default';
+    const cached = linkedTypeCache.get(target);
+    if (cached) return cached;
+    const source = fs.readFileSync(target, 'utf8');
+    const type = /(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source) ?
+        'default' : 'namespace';
+    linkedTypeCache.set(target, type);
+    return type;
 };
 
 // How Vite will serve a bare import: CJS sources get pre-bundled with a
@@ -96,7 +101,7 @@ const bareTargetType = (spec, dir) => {
     return type;
 };
 
-const transformLinkedCjs = async (code, dir) => {
+const transformLinkedCjs = async (code, dir, file) => {
     const imports = [];
     const seen = new Map();
     const unwrap = (spec, wantNamespace) => {
@@ -110,6 +115,24 @@ const transformLinkedCjs = async (code, dir) => {
         }
         const name = seen.get(key);
         return wantNamespace ? name : `(${name}.default ?? ${name})`;
+    };
+    // Absolute registry key for targets served raw (relative paths and
+    // linked scratch-* packages). Others (Vite queries, pre-bundled bare
+    // imports) always use static imports.
+    const registryKey = spec => {
+        if (spec.includes('!') || spec.endsWith('.json')) return null;
+        if (spec.startsWith('.')) {
+            return resolveLinkedTarget(spec, dir);
+        }
+        if (/^scratch-(vm|render|audio|blocks|paint)\//.test(spec)) {
+            try {
+                const req = createRequire(`${dir}/package.json`);
+                return req.resolve(spec).split('?')[0];
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
     };
     // Classify once per spec. Vite query modules (?worker/?raw/…) and JSON
     // always export their payload as default.
@@ -126,8 +149,17 @@ const transformLinkedCjs = async (code, dir) => {
         }
         return specs.get(spec);
     };
-    const replaceDeclarator = (kind, binding, spec, prop) => {
+    const replaceDeclarator = (kind, binding, spec, prop, nested) => {
         const flat = binding.replace(/\s+/g, ' ');
+        // Nested (function-scope) requires of raw-served targets stay lazy
+        // through the registry: hoisting their evaluation creates TDZ cycles
+        // (e.g. thread.js -> compile -> … -> block-utility -> thread).
+        if (nested) {
+            const key = registryKey(spec);
+            if (key) {
+                return `${kind} ${flat} = globalThis.__mwCjsRegistry?.get(${JSON.stringify(key)})${prop || ''}`;
+            }
+        }
         const type = classify(spec);
         if (flat.startsWith('{')) {
             // Destructure from merged namespace so CJS defaults
@@ -183,7 +215,7 @@ const transformLinkedCjs = async (code, dir) => {
         edits.push({
             start: match.index,
             end: match.index + match[0].length,
-            text: replaceDeclarator(kind, binding, spec, prop)
+            text: replaceDeclarator(kind, binding, spec, prop, /^\s/.test(match[0]))
         });
     }
     if (edits.length > 0) {
@@ -218,7 +250,7 @@ const transformLinkedCjs = async (code, dir) => {
         return line.replace(
             declarator,
             (match, kind, binding, _quote, spec, prop) =>
-                replaceDeclarator(kind, binding, spec, prop)
+                replaceDeclarator(kind, binding, spec, prop, /^\s/.test(line))
         );
     })
         .map(line => {
@@ -236,6 +268,12 @@ const transformLinkedCjs = async (code, dir) => {
             return line.replace(
                 /(^|[^.\w$])require\(\s*(['"])([^'"]+)\2\s*\)(\.[A-Za-z_$][\w$]*)?/g,
                 (match, prefix, quote, spec, prop) => {
+                    if (/^\s/.test(line)) {
+                        const key = registryKey(spec);
+                        if (key) {
+                            return `${prefix}globalThis.__mwCjsRegistry?.get(${JSON.stringify(key)})${prop || ''}`;
+                        }
+                    }
                     const type = lookup(spec);
                     const value = unwrap(spec, type === 'namespace');
                     return `${prefix}${value}${prop || ''}`;
@@ -259,7 +297,9 @@ const transformLinkedCjs = async (code, dir) => {
     if (!hasDefault && named.length > 0) {
         // exports.*-only file (e.g. blocks-execute-cache.js): consumers
         // require() the whole exports object, so synthesize a default.
-        footer.push(`export default {${named.map(name => `${name}: __mw_exp_${name}`).join(', ')}};`);
+        footer.push(`const __mw_default = {${named.map(name => `${name}: __mw_exp_${name}`).join(', ')}};`);
+        footer.push('export default __mw_default;');
+        hasDefault = true;
     }
     if (hasDefault) {
         // Named re-exports so `import {x} from` works, like the build's
@@ -287,6 +327,13 @@ const transformLinkedCjs = async (code, dir) => {
                 footer.push(`export {${reexports.join(', ')}};`);
             }
         } catch (e) { /* lexer failure: default export still works */ }
+    }
+    if (hasDefault) {
+        // Register the exports object for lazy nested requires, which read
+        // it through the registry at call time (avoids eval-order cycles).
+        footer.push(
+            `(globalThis.__mwCjsRegistry ??= new Map()).set(${JSON.stringify(file)}, __mw_default);`
+        );
     }
     if (imports.length === 0 && footer.length === 0) return null;
     return `${imports.join('\n')}\n${output}\n${footer.join('\n')}\n`;
@@ -477,7 +524,7 @@ export default defineConfig(({mode}) => {
                     if (!/\/scratch-(vm|render|audio|blocks|paint)\//.test(file)) return null;
                     if (file.includes('/node_modules/')) return null;
                     if (!/require\(|module\.exports|exports\.[A-Za-z_$]/.test(code)) return null;
-                    return transformLinkedCjs(code, path.dirname(file));
+                    return transformLinkedCjs(code, path.dirname(file), file);
                 }
             },
             // The old webpack css-loader ran with modules:true for every .css
