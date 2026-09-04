@@ -40,16 +40,19 @@ const agreementAccepted = async () => {
     }
 };
 
-// Ctrl+S / save button. Own project already on MistWarp -> upload the current
-// version silently. Someone else's project -> the window (remix makes a copy).
-// Not on MistWarp yet -> download the native .mwp. The window only reappears for an
-// update when a new upload agreement needs accepting, or the silent upload fails.
+// Ctrl+S / save button. Saving never creates a version: it uploads the
+// current worktree snapshot and leaves the edits as uncommitted changes.
+// Own project already on MistWarp -> upload silently. Someone else's
+// project -> the window (remix makes a copy). Not on MistWarp yet ->
+// download the native .mwp. The window only reappears for an update when a
+// new upload agreement needs accepting, or the silent upload fails.
+// Commits happen explicitly from the save window or Project history.
 const smartSave = async ({vm, title, onSaved = () => {}}) => {
     const onSavedIfCurrent = guardSavedCallback(vm, onSaved);
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
     if (!platform) {
-        const {blob} = await createMwp({vm, message: 'Save MistWarp project'});
+        const {blob} = await createMwp({vm, message: 'Save MistWarp project', commitChanges: false});
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);
         onSavedIfCurrent();
         return true;
@@ -66,7 +69,7 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     }
 
     try {
-        onSavedIfCurrent(await publishToMistWarp({vm, title: null, updateOnly: true}));
+        onSavedIfCurrent(await publishToMistWarp({vm, title: null, updateOnly: true, commitChanges: false}));
         return true;
     } catch (e) {
         openMistWarpShareWindow({

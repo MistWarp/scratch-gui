@@ -64,6 +64,7 @@ import {dispose as disposeShortcuts, initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
 import startFractchLiveReload from '../lib/fractch-live';
 import smartSave from '../lib/mw/smart-save.js';
+import MwAutosave from './mw-autosave.jsx';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -232,12 +233,15 @@ class GUI extends React.Component {
             ...componentProps
         } = this.props;
         return (
-            <GUIComponent
-                loading={fetchingProject || isLoading || loadingStateVisible}
-                {...componentProps}
-            >
-                {children}
-            </GUIComponent>
+            <React.Fragment>
+                <GUIComponent
+                    loading={fetchingProject || isLoading || loadingStateVisible}
+                    {...componentProps}
+                >
+                    {children}
+                </GUIComponent>
+                <MwAutosave />
+            </React.Fragment>
         );
     }
 }

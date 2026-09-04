@@ -181,7 +181,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Pause, Play, HelpCircle, Video,
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
     ShoppingBag, Backpack
 } from 'lucide-react';
 
@@ -354,8 +354,6 @@ class MenuBar extends React.Component {
         const history = getProjectHistoryState();
         const historyData = history.phase === 'ready' && history.data ? history.data : null;
         this.state = {
-            autosaveTimeRemaining: 0,
-            autosavePaused: false,
             workspaceBookmarks: [],
             workspaceBookmarksCategories: ['General'],
             workspaceBookmarksCollapsedCategories: [],
@@ -379,7 +377,6 @@ class MenuBar extends React.Component {
         this.disposeMenuBarSettings = null;
         this.menuResizeObserver = null;
         this.workspaceBookmarksProjectListener = null;
-        this.autosaveCountdownInterval = null;
         this.undoRedoChangeListener = null;
         this.undoRedoWorkspace = null;
         this.unmounted = false;
@@ -427,9 +424,6 @@ class MenuBar extends React.Component {
             'handleRestoreOption',
             'getSaveToComputerHandler',
             'restoreOptionMessage',
-            'handleToggleAutosave',
-            'getAutosaveEnabled',
-            'getAutosaveTimeRemaining',
             'loadWorkspaceBookmarksFromProject',
             'saveWorkspaceBookmarksToProject',
             'ensureScratchBlocks',
@@ -454,7 +448,6 @@ class MenuBar extends React.Component {
         document.addEventListener('keydown', this.handleKeyPress);
         document.addEventListener('mousedown', this.handleDocumentMouseDown);
         this.observeMenuBarWidth();
-        this.startAutosaveCountdown();
         this.refreshMistWarpShared();
         this.disposeProjectHistory = subscribeProjectHistory(historyState => {
             if (historyState.phase === 'loading') {
@@ -477,14 +470,9 @@ class MenuBar extends React.Component {
             });
         }
         this.disposeMenuBarSettings = onSettingsChanged(() => {
-            const previousSettings = this.state.menuBarSettings;
             const menuBarSettings = getMenuBarSettings();
             this.setState({menuBarSettings}, () => {
                 if (this.blockCountController) this.blockCountController.update();
-                if (menuBarSettings.autosave_enabled !== previousSettings.autosave_enabled ||
-                    menuBarSettings.autosave_interval !== previousSettings.autosave_interval) {
-                    this.startAutosaveCountdown();
-                }
             });
         });
 
@@ -523,11 +511,6 @@ class MenuBar extends React.Component {
         if (this.menuResizeObserver) {
             this.menuResizeObserver.disconnect();
             this.menuResizeObserver = null;
-        }
-
-        if (this.autosaveCountdownInterval) {
-            clearInterval(this.autosaveCountdownInterval);
-            this.autosaveCountdownInterval = null;
         }
 
         if (this.props.vm && this.props.vm.runtime && this.workspaceBookmarksProjectListener) {
@@ -827,7 +810,7 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPushing');
-            this.showAutosaveNotification(`Push failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(`Push failed. ${e && e.message ? e.message : e}`, 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -871,7 +854,7 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPulling');
-            this.showAutosaveNotification(`Pull failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(`Pull failed. ${e && e.message ? e.message : e}`, 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -908,7 +891,7 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitCommitting');
-            this.showAutosaveNotification(`Commit failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(`Commit failed. ${e && e.message ? e.message : e}`, 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -1408,69 +1391,7 @@ class MenuBar extends React.Component {
             }
         };
     }
-    handleToggleAutosave () {
-        this.setState(prevState => ({autosavePaused: !prevState.autosavePaused}));
-    }
-    getAutosaveEnabled () {
-        return this.state.menuBarSettings.autosave_enabled;
-    }
-    getAutosaveTimeRemaining () {
-        return this.state.autosaveTimeRemaining;
-    }
-    startAutosaveCountdown () {
-        // Clear existing interval
-        if (this.autosaveCountdownInterval) {
-            clearInterval(this.autosaveCountdownInterval);
-        }
-
-        // Don't start countdown if autosave is disabled
-        if (!this.getAutosaveEnabled()) {
-            this.setState({autosaveTimeRemaining: 0});
-            return;
-        }
-
-        const intervalMinutes = this.state.menuBarSettings.autosave_interval;
-
-        // Set initial time
-        const totalSeconds = intervalMinutes * 60;
-        this.setState({autosaveTimeRemaining: totalSeconds});
-
-        // Start countdown
-        this.autosaveCountdownInterval = setInterval(() => {
-            this.setState(prevState => {
-                // Don't countdown if paused
-                if (prevState.autosavePaused) {
-                    return prevState; // No change
-                }
-
-                const newTime = prevState.autosaveTimeRemaining - 1;
-
-                if (newTime <= 0) {
-                    // Time to autosave!
-                    this.performAutosave();
-                    return {autosaveTimeRemaining: totalSeconds}; // Reset timer
-                }
-                return {autosaveTimeRemaining: newTime};
-            });
-        }, 1000);
-    }
-    async performAutosave () {
-        if (this.state.menuBarSettings.autosave_only_when_changed && !this.props.projectChanged) return;
-        // Save to the current file using the same method as manual save
-        if (this.props.handleSaveProject) {
-            try {
-                const saved = await this.props.handleSaveProject();
-                if (saved !== false && this.state.menuBarSettings.autosave_notifications) {
-                    this.showAutosaveNotification('Project autosaved.', 'success');
-                }
-            } catch (error) {
-                if (this.state.menuBarSettings.autosave_notifications) {
-                    this.showAutosaveNotification('Autosave failed.', 'error');
-                }
-            }
-        }
-    }
-    showAutosaveNotification (message, type = 'info') {
+    showToastMessage (message, type = 'info') {
         // Use the toast notification system instead of manual DOM manipulation
         if (this.props.showToast) {
             this.props.showToast(message, type);
@@ -1478,17 +1399,6 @@ class MenuBar extends React.Component {
             // Fallback to console if showToast is not available
             console.log(`[${type.toUpperCase()}] ${message}`);
         }
-    }
-    formatTimeRemaining (seconds) {
-        if (seconds <= 0) return '';
-
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-
-        if (minutes > 0) {
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-        return `${remainingSeconds}s`;
     }
     restoreOptionMessage (deletedItem) {
         switch (deletedItem) {
@@ -1997,39 +1907,6 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     </MenuSection>
-                                    {this.getAutosaveEnabled() && (
-                                        <MenuSection>
-                                            <MenuItem onClick={this.handleToggleAutosave}>
-                                                {this.state.autosavePaused ? <Play /> : <Pause />}
-                                                {this.state.autosavePaused ? (
-                                                    <FormattedMessage
-                                                        defaultMessage="Resume autosave"
-                                                        description="Menu bar item to resume autosave"
-                                                        id="tw.menuBar.resumeAutosave"
-                                                    />
-                                                ) : (
-                                                    <FormattedMessage
-                                                        defaultMessage="Pause autosave"
-                                                        description="Menu bar item to pause autosave"
-                                                        id="tw.menuBar.pauseAutosave"
-                                                    />
-                                                )}
-                                                {this.getAutosaveTimeRemaining() > 0 && (
-                                                    <span
-                                                        style={{
-                                                            marginLeft: '8px',
-                                                            fontSize: '0.9em',
-                                                            opacity: this.state.autosavePaused ? 0.5 : 0.7
-                                                        }}
-                                                    >
-                                                        {'('}
-                                                        {this.formatTimeRemaining(this.getAutosaveTimeRemaining())}
-                                                        {')'}
-                                                    </span>
-                                                )}
-                                            </MenuItem>
-                                        </MenuSection>
-                                    )}
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}

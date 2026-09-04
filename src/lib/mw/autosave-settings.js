@@ -1,47 +1,55 @@
-const STORAGE_PREFIX = 'mw:menu-bar:';
-const CHANGE_EVENT = 'mw-menu-bar-settings-changed';
+const STORAGE_PREFIX = 'mw:autosave:';
+const CHANGE_EVENT = 'mw-autosave-settings-changed';
 
 const DEFINITIONS = [
     {
-        id: 'menu_labels',
-        type: 'select',
-        default: 'both',
-        label: 'Menu item labels',
-        options: [
-            {value: 'both', label: 'Icons and labels'},
-            {value: 'icons', label: 'Icons only'},
-            {value: 'labels', label: 'Labels only'}
-        ]
+        id: 'enabled',
+        type: 'boolean',
+        default: false,
+        label: 'Enable autosave'
     },
     {
-        id: 'show_block_count',
+        id: 'interval',
+        type: 'number',
+        default: 5,
+        min: 1,
+        max: 60,
+        label: 'Autosave interval (minutes)'
+    },
+    {
+        id: 'notifications',
         type: 'boolean',
         default: true,
-        label: 'Show block count'
+        label: 'Show autosave notifications'
     },
     {
-        id: 'show_costume_count',
+        id: 'only_when_changed',
         type: 'boolean',
-        default: false,
-        label: 'Show costume count'
-    },
-    {
-        id: 'show_sound_count',
-        type: 'boolean',
-        default: false,
-        label: 'Show sound count'
-    },
-    {
-        id: 'show_complexity_score',
-        type: 'boolean',
-        default: false,
-        label: 'Show complexity score'
+        default: true,
+        label: 'Only autosave changed projects'
     }
 ];
 
 const byId = Object.fromEntries(DEFINITIONS.map(definition => [definition.id, definition]));
 
-const readLegacy = () => {
+// Previous home of these settings, kept as a migration source.
+const MENU_BAR_IDS = {
+    enabled: 'autosave_enabled',
+    interval: 'autosave_interval',
+    notifications: 'autosave_notifications',
+    only_when_changed: 'autosave_only_when_changed'
+};
+
+const readLegacyMenuBar = id => {
+    try {
+        const stored = localStorage.getItem(`mw:menu-bar:${MENU_BAR_IDS[id]}`);
+        return stored === null ? null : stored;
+    } catch (_) {
+        return null;
+    }
+};
+
+const readLegacyAddon = () => {
     try {
         return JSON.parse(localStorage.getItem('tw:addons')) || {};
     } catch (_) {
@@ -50,18 +58,19 @@ const readLegacy = () => {
 };
 
 const legacyValue = id => {
-    const addons = readLegacy();
-    const blockCount = addons['block-count'] || addons['tw-project-info'];
-
+    const fromMenuBar = readLegacyMenuBar(id);
+    if (fromMenuBar !== null) return fromMenuBar;
+    const autosave = readLegacyAddon().autosave;
+    if (!autosave) return null;
     switch (id) {
-    case 'menu_labels':
-        return addons['custom-menu-bar']?.enabled ? addons['custom-menu-bar']['menu-labels'] : null;
-    case 'show_block_count':
-        return blockCount ? blockCount.enabled !== false && blockCount.hide_block_count !== true : null;
-    case 'show_costume_count':
-    case 'show_sound_count':
-    case 'show_complexity_score':
-        return blockCount?.[id];
+    case 'enabled':
+        return autosave.enabled === true && autosave.autosaveEnabled !== false;
+    case 'interval':
+        return autosave.interval;
+    case 'notifications':
+        return autosave.showNotifications;
+    case 'only_when_changed':
+        return autosave.saveOnlyWhenChanged;
     default:
         return null;
     }
@@ -74,7 +83,7 @@ const normalize = (definition, value) => {
         if (!Number.isFinite(number)) return definition.default;
         return Math.min(definition.max, Math.max(definition.min, number));
     }
-    return definition.options.some(option => option.value === value) ? value : definition.default;
+    return definition.default;
 };
 
 const getSetting = id => {
@@ -100,7 +109,6 @@ const setSetting = (id, value) => {
     const normalized = normalize(definition, value);
     try {
         localStorage.setItem(`${STORAGE_PREFIX}${id}`, String(normalized));
-        require('../rotur/cloud-sync.js').notifyLocalChange();
     } catch (_) {
         // ignore
     }

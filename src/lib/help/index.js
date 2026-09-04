@@ -226,7 +226,7 @@ const HELP_ENTRIES = [
         howTo: [
             'Create a device backup manually from the File menu at any time.',
             'Open Device Backups to load an earlier snapshot.',
-            'Pause or resume autosave, and change its interval, from the File menu or Settings.'
+            'Turn autosave on, and change its interval, from Settings under Autosave.'
         ],
         docsPath: '/editor/restore-points'
     },

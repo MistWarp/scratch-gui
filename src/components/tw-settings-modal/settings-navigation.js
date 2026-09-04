@@ -4,6 +4,7 @@ import {
     Bug,
     GitBranch,
     Globe,
+    History,
     Image,
     Keyboard,
     Monitor,
@@ -97,6 +98,14 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
                         defaultMessage: 'Version Control'
                     }),
                     icon: GitBranch
+                },
+                {
+                    id: 'autosave',
+                    label: intl.formatMessage({
+                        id: 'mw.settings.autosave',
+                        defaultMessage: 'Autosave'
+                    }),
+                    icon: History
                 },
                 {
                     id: 'variableManager',
