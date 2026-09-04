@@ -1,0 +1,224 @@
+@import "../../css/colors.module.css";
+@import "../../css/default-colors.module.css";
+
+.modal-content {
+    width: 1040px;
+    max-width: 94vw;
+    height: 82vh;
+    max-height: 860px;
+}
+
+.layout {
+    height: 100%;
+}
+
+.content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.search-row {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px;
+    padding: 10px 14px;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 10px;
+}
+
+.search-icon {
+    flex-shrink: 0;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+}
+
+.search {
+    flex-grow: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    /* keep scrolling inside the panel; do not chain to the page/iframe host */
+    overscroll-behavior: contain;
+    padding: 0 16px 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    align-content: start;
+}
+
+.section + .section {
+    margin-top: 24px;
+}
+
+.section-title {
+    margin: 0 0 10px;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-align: left;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    color: $text-primary;
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.card-select {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.card-select:disabled {
+    cursor: default;
+}
+
+.card:hover {
+    border-color: $looks-secondary;
+    box-shadow: 0 4px 12px color-mix(in srgb, $ui-black-transparent 60%, transparent);
+    transform: translateY(-2px);
+}
+
+.card:focus-visible {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+    outline: none;
+}
+
+.card-disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.card-disabled:hover {
+    border-color: $ui-black-transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.card-icon {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    height: auto;
+    object-fit: cover;
+    object-position: center;
+    background: color-mix(in srgb, $text-primary 6%, $ui-primary);
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.card-inset-icon {
+    width: 40px;
+    height: 40px;
+    margin: -20px 14px 0;
+    padding: 6px;
+    border: 3px solid $ui-primary;
+    border-radius: 8px;
+    background: $pen-primary;
+    box-sizing: border-box;
+}
+
+.card-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px 16px;
+}
+
+.card-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: $text-primary;
+}
+
+.card-description {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    line-height: 1.35;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 14px 14px;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+.card-info a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+@media only screen and (max-width: 720px) {
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+    }
+
+    .search-row {
+        margin: 0.75rem;
+        padding: 0.7rem 0.75rem;
+    }
+
+    .search {
+        font-size: 16px;
+    }
+
+    .scroll {
+        padding: 0 0.75rem 0.75rem;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+        gap: 0.75rem;
+    }
+
+    .section + .section {
+        margin-top: 1.25rem;
+    }
+
+    .card:hover {
+        box-shadow: none;
+        transform: none;
+    }
+}

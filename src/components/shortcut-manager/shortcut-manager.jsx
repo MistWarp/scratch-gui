@@ -30,7 +30,7 @@ import Input from '../forms/input.jsx';
 import ShortcutCategory from './shortcut-category.jsx';
 import {isMac} from './key-combo.jsx';
 
-import styles from './shortcut-manager.css';
+import styles from './shortcut-manager.module.css';
 
 const CATEGORY_ICONS = {
     [SHORTCUT_CATEGORIES.FILE]: FileText,

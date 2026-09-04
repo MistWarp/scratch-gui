@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
-import styles from './icon-button.css';
+import styles from './icon-button.module.css';
 
 const IconButton = ({
     img,

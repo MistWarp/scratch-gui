@@ -11,7 +11,7 @@ import createMemoryTab from './tabs/memory.js';
 import playIcon from './icons/play.svg';
 import stepIcon from './icons/step.svg';
 
-import '!!style-loader!css-loader!./debugger.css';
+import './debugger.css';
 
 const INITIAL_WIDTH = 640;
 const INITIAL_HEIGHT = 460;

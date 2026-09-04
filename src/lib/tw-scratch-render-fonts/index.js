@@ -1,19 +1,21 @@
-/* eslint-disable import/no-commonjs */
+/* ESM build of the old scratch-render-fonts package.
+ * Font binaries come in through the ?base64 query (see vite.config.mjs),
+ * which yields the raw base64 string the CSS below expects. */
 
-const SansSerif = require('!!base64-loader!./NotoSans-Medium.woff2');
-const Serif = require('!!base64-loader!./SourceSerifPro-Regular.woff2');
-const Handwriting = require('!!base64-loader!./handlee-regular.woff2');
-const Marker = require('!!base64-loader!./Knewave.woff2');
-const Curly = require('!!base64-loader!./Griffy-Regular.woff2');
-const Pixel = require('!!base64-loader!./Grand9K-Pixel.woff2');
-const Scratch = require('!!base64-loader!./ScratchSavers_b2.woff2');
-const Playful = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/BadComic-Regular.ttf');
-const Bubbly = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/QTKooper.otf');
-const BitsAndBytes = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/freecam-v2.ttf');
-const Technological = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/MonospaceBold.ttf');
-const Arcade = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/PressStart2P.ttf');
-const Archivo = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Regular.ttf');
-const ArchivoBlack = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Black.ttf');
+import SansSerif from './NotoSans-Medium.woff2?base64';
+import Serif from './SourceSerifPro-Regular.woff2?base64';
+import Handwriting from './handlee-regular.woff2?base64';
+import Marker from './Knewave.woff2?base64';
+import Curly from './Griffy-Regular.woff2?base64';
+import Pixel from './Grand9K-Pixel.woff2?base64';
+import Scratch from './ScratchSavers_b2.woff2?base64';
+import Playful from 'scratch-paint/node_modules/scratch-render-fonts/src/BadComic-Regular.ttf?base64';
+import Bubbly from 'scratch-paint/node_modules/scratch-render-fonts/src/QTKooper.otf?base64';
+import BitsAndBytes from 'scratch-paint/node_modules/scratch-render-fonts/src/freecam-v2.ttf?base64';
+import Technological from 'scratch-paint/node_modules/scratch-render-fonts/src/MonospaceBold.ttf?base64';
+import Arcade from 'scratch-paint/node_modules/scratch-render-fonts/src/PressStart2P.ttf?base64';
+import Archivo from 'scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Regular.ttf?base64';
+import ArchivoBlack from 'scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Black.ttf?base64';
 
 const fontSource = {
     'Sans Serif': {data: SansSerif, mime: 'font/woff2'},
@@ -73,7 +75,8 @@ const loadFonts = () => {
 
 const getFonts = () => fontData;
 
-// We have to use legacy module.exports as some parts of Scratch expect require('scratch-render-font') to be a function
-module.exports = getFonts;
-module.exports.loadFonts = loadFonts;
-module.exports.FONTS = fontData;
+export default getFonts;
+export {
+    loadFonts,
+    fontData as FONTS
+};

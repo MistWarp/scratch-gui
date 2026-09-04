@@ -4,7 +4,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {BarChart3, FolderOpen} from 'lucide-react';
 
-import menuBarStyles from './menu-bar.css';
+import menuBarStyles from './menu-bar.module.css';
 import MwNotifications from './mw-notifications.jsx';
 import {openProductsModal} from '../../reducers/modals.js';
 

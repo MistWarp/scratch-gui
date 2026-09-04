@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Button from '../button/button.jsx';
 
-import styles from './share-button.css';
+import styles from './share-button.module.css';
 
 import {Share} from 'lucide-react';
 

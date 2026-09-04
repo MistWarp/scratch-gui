@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
-import styles from './fonts-modal.css';
+import styles from './fonts-modal.module.css';
 
 class FontDropdownItem extends React.Component {
     constructor (props) {

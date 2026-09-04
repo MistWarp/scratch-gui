@@ -15,7 +15,7 @@ import MenuItemContainer from '../../containers/menu-item.jsx';
 import UserAvatar from './user-avatar.jsx';
 import ChevronDown from './ChevronDown.jsx';
 
-import styles from './account-nav.css';
+import styles from './account-nav.module.css';
 
 const AccountNavComponent = ({
     className,

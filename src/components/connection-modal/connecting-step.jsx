@@ -9,7 +9,7 @@ import Dots from './dots.jsx';
 import bluetoothIcon from './icons/bluetooth-white.svg';
 import closeIcon from '../close-button/icon--close.svg';
 
-import styles from './connection-modal.css';
+import styles from './connection-modal.module.css';
 
 const ConnectingStep = props => (
     <Box className={styles.body}>

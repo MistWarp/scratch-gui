@@ -6,7 +6,7 @@ import VM from 'scratch-vm';
 import {getSetting, onSettingChanged} from '../../lib/mw-stage-controls/settings.js';
 import catIcon from './icons/cat.svg';
 import fullIcon from './icons/300cats.svg';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 // Wraps runtime._step once per VM so the counter updates after each step.
 const wrappedVMs = new WeakSet();

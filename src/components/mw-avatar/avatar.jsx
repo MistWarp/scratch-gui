@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import PropTypes from 'prop-types';
-import styles from './avatar.css';
+import styles from './avatar.module.css';
 
 const AVATARS = 'https://avatars.rotur.dev';
 

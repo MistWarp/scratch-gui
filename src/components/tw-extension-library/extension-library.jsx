@@ -11,7 +11,7 @@ import {
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
-import styles from './extension-library.css';
+import styles from './extension-library.module.css';
 
 const messages = defineMessages({
     all: {

@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 import Draggable from 'react-draggable';
 
-import styles from './card.css';
+import styles from './card.module.css';
 
 import shrinkIcon from './icon--shrink.svg';
 import expandIcon from './icon--expand.svg';

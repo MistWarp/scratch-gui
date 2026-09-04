@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import StudioView from './studioview';
-import styles from './studioview.css';
+import styles from './studioview.module.css';
 
 const messages = defineMessages({
     authorAttribution: {

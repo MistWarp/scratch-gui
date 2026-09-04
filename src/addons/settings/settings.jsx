@@ -33,7 +33,7 @@ import undoImage from './icons/undo.svg';
 import expandImageBlack from './icons/expand.svg';
 import infoImage from './icons/info.svg';
 import TWFancyCheckbox from '../../components/tw-fancy-checkbox/checkbox.jsx';
-import styles from './settings.css';
+import styles from './settings.module.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
 import {applyGuiColors} from '../../lib/themes/guiHelpers.js';
 import {APP_NAME, FEEDBACK_URL} from '../../lib/constants/brand.js';
@@ -47,7 +47,7 @@ import '../../lib/normalize.css';
 const locale = detectLocale(Object.keys(messagesByLocale));
 document.documentElement.lang = locale;
 
-const addonTranslations = messagesByLocale[locale] ? messagesByLocale[locale]() : {};
+const addonTranslations = messagesByLocale[locale] || {};
 
 const settingsTranslations = settingsTranslationsEnglish;
 if (locale !== 'en') {

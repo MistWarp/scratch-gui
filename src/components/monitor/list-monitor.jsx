@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
-import styles from './monitor.css';
+import styles from './monitor.module.css';
 import ListMonitorScroller from './list-monitor-scroller.jsx';
 
 const ListMonitor = ({draggable, label, width, height, value, onResizeMouseDown, onAdd, ...rowProps}) => (

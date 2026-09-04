@@ -15,7 +15,7 @@ import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
 
-import styles from './collaboration-modal.css';
+import styles from './collaboration-modal.module.css';
 
 class CollaborationModal extends Component {
     constructor (props) {

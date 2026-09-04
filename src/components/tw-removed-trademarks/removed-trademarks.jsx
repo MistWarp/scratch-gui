@@ -1,6 +1,6 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
-import styles from './removed-trademarks.css';
+import styles from './removed-trademarks.module.css';
 
 const RemovedTrademarks = () => (
     <div className={styles.removedTrademarks}>

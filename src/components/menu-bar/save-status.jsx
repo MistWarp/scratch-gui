@@ -13,7 +13,7 @@ import {
     filterInlineAlerts
 } from '../../reducers/alerts';
 
-import styles from './save-status.css';
+import styles from './save-status.module.css';
 
 // Wrapper for inline messages in the nav bar, which are all related to saving.
 // Show any inline messages if present, else show the "Save Now" button if the

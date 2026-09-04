@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import styles from './watermark.css';
+import styles from './watermark.module.css';
 
 const Watermark = props => (
     <img

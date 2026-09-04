@@ -1,0 +1,467 @@
+@import "../../css/colors.module.css";
+@import "../../css/z-index.module.css";
+
+.modal-content {
+    width: 100%;
+    height: 100%;
+}
+
+.body {
+    position: relative;
+    background: $ui-modal-background;
+    padding: 1rem 1.25rem;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dialog-overlay {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: color-mix(in srgb, $ui-modal-background 88%, transparent);
+}
+
+.dialog-card {
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    width: min(28rem, 100%);
+    padding: 1.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+    box-shadow: 0 8px 28px $ui-black-transparent;
+    color: $text-primary;
+    text-align: center;
+}
+
+.dialog-card > svg {
+    color: $motion-primary;
+}
+
+.dialog-card p {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.dialog-card label {
+    display: grid;
+    gap: 0.35rem;
+    width: 100%;
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    text-align: left;
+}
+
+.dialog-card input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-modal-background;
+    color: $text-primary;
+    font: inherit;
+}
+
+.dialog-error {
+    color: $error-primary;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dialog-cancel,
+.dialog-confirm,
+.dialog-delete {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-modal-background;
+    color: $text-primary;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.dialog-confirm {
+    border-color: $motion-primary;
+    background: $motion-primary;
+    color: white;
+}
+
+.dialog-delete {
+    border-color: $error-primary;
+    background: $error-primary;
+    color: white;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.add-button,
+.folder-button {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid $motion-primary;
+    border-radius: 0.25rem;
+    background: $motion-primary;
+    color: $ui-white;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.folder-button {
+    background: none;
+    color: $motion-primary;
+}
+
+.add-button:hover {
+    background: color-mix(in srgb, $motion-primary 85%, black);
+}
+
+.folder-button:hover {
+    background: color-mix(in srgb, $motion-primary 15%, transparent);
+}
+
+.file-input {
+    display: none;
+}
+
+.destination {
+    flex-grow: 1;
+    color: $text-primary-transparent;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.total {
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.columns {
+    display: flex;
+    gap: 0.75rem;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.tree-column {
+    flex: 1 1 55%;
+    min-width: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.empty {
+    padding: 0.75rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 0.5rem;
+    color: $text-primary-transparent;
+    text-align: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.tree {
+    flex-grow: 1;
+    min-height: 6rem;
+    padding: 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+}
+
+.folder {
+    border-radius: 0.25rem;
+}
+
+.folder-children {
+    padding-left: 1rem;
+    border-left: 1px solid $ui-black-transparent;
+    margin-left: 0.6rem;
+}
+
+.folder-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.folder-row:hover {
+    background: $ui-black-transparent;
+}
+
+.folder-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.folder-select {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.folder-toggle:focus-visible,
+.folder-select:focus-visible {
+    outline: 2px solid $motion-primary;
+    outline-offset: 2px;
+    border-radius: 0.2rem;
+}
+
+.folder-icon,
+.file-icon {
+    flex-shrink: 0;
+}
+
+.folder-name {
+    color: $text-primary;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    cursor: grab;
+}
+
+.file:hover {
+    background: $ui-black-transparent;
+}
+
+.file-name {
+    flex-grow: 1;
+    min-width: 0;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    background: none;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.125rem 0.25rem;
+}
+
+.file-name:focus {
+    border-color: $motion-primary;
+    background: $ui-white;
+}
+
+.file-size {
+    flex-shrink: 0;
+    color: $text-primary-transparent;
+    font-size: 0.7rem;
+}
+
+.drop-target {
+    outline: 2px dashed $motion-primary;
+    outline-offset: -2px;
+    border-radius: 0.25rem;
+}
+
+.selected.file,
+.selected > .folder-row {
+    background: color-mix(in srgb, $motion-primary 25%, transparent);
+}
+
+.tree.selected {
+    border-color: $motion-primary;
+}
+
+.preview {
+    flex: 1 1 45%;
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.preview-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 8rem;
+    max-height: 16rem;
+    border-radius: 0.25rem;
+    background: $ui-black-transparent;
+    overflow: hidden;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 16rem;
+    object-fit: contain;
+}
+
+.preview-audio {
+    width: 100%;
+    padding: 0 0.5rem;
+}
+
+.preview-text {
+    width: 100%;
+    max-height: 16rem;
+    margin: 0;
+    padding: 0.5rem;
+    overflow: auto;
+    color: $text-primary;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.preview-none {
+    margin: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: $text-primary-transparent;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.metadata {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.metadata dt {
+    color: $text-primary-transparent;
+    font-weight: bold;
+}
+
+.metadata dd {
+    margin: 0;
+    color: $text-primary;
+}
+
+.metadata-path {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+}
+
+.preview-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.preview-button {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    background: none;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.preview-button:hover {
+    background: $ui-black-transparent;
+}
+
+@media only screen and (max-width: 600px) {
+    .body {
+        padding: 0.75rem;
+    }
+
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+    .add-button,
+    .folder-button,
+    .dialog-cancel,
+    .dialog-confirm,
+    .dialog-delete,
+    .preview-button {
+        min-height: 44px;
+    }
+
+    .destination {
+        flex-basis: 100%;
+        order: 2;
+    }
+
+    .columns {
+        overflow-y: auto;
+        flex-direction: column;
+    }
+
+    .tree-column,
+    .preview {
+        flex: none;
+        min-height: 12rem;
+        overflow: visible;
+    }
+
+    .folder-row,
+    .file {
+        min-height: 40px;
+    }
+
+    .folder-toggle {
+        width: 40px;
+        min-height: 40px;
+    }
+}

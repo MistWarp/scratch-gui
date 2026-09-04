@@ -10,7 +10,7 @@ import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/c
 import showAlert from '../../addons/window-system/alert';
 import GradientBuilder from './gradient-builder.jsx';
 
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 import {
     Bookmark, Check, CirclePlus, Download, Edit, FolderInput,

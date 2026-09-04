@@ -6,7 +6,7 @@ import api from '../api';
 import {buyGameProduct} from '../purchase';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
-import scopeStyles from '../../lib/mw/community-scope.css';
+import scopeStyles from '../../lib/mw/community-scope.module.css';
 
 const rowStyle = {
     borderTop: '1px solid var(--border, rgba(255, 255, 255, 0.12))',

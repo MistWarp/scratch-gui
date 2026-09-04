@@ -16,7 +16,7 @@ import enterUpdateIcon from './icons/enter-update.svg';
 import radarIcon from './icons/searching.png';
 import warningIcon from './icons/warning.svg';
 
-import styles from './connection-modal.css';
+import styles from './connection-modal.module.css';
 
 const PHASES = keyMirror({
     prescan: null,

@@ -6,7 +6,7 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import Modal from '../../containers/windowed-modal.jsx';
 import {DOCS_BASE, getHelpEntry} from '../../lib/help/index.js';
 
-import styles from './help-modal.css';
+import styles from './help-modal.module.css';
 
 const messages = defineMessages({
     title: {

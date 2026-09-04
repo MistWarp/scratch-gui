@@ -31,7 +31,12 @@ const postcssVars = require('postcss-simple-vars');
 const postcssImport = require('postcss-import');
 
 const STATIC_PATH = process.env.STATIC_PATH || '/static';
-const {APP_NAME} = require('./src/lib/constants/brand');
+// brand.js is ESM now; the webpack fallback just uses the default name.
+let APP_NAME = 'MistWarp';
+try {
+    // eslint-disable-next-line global-require
+    APP_NAME = require('./src/lib/constants/brand').APP_NAME || APP_NAME;
+} catch (e) { /* brand.js is ESM; keep default */ }
 
 const root = process.env.ROOT || '/';
 if (root.length > 0 && !root.endsWith('/')) {

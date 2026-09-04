@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import {avatarForCollabUser} from '../lib/collaboration/avatar.js';
-import styles from './collaboration-sprite-indicator.css';
+import styles from './collaboration-sprite-indicator.module.css';
 
 const MAX_SHOWN = 2;
 const BADGE_STRIDE_PX = 14;

@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette, Github} from 'lucide-react';
 import {getLoaderSettings} from '../../lib/mw/loader-settings';
-import styles from './loader.css';
+import styles from './loader.module.css';
 import {getIsFetchingWithId, getIsLoadingWithId} from '../../reducers/project-state';
 import topBlock from './top-block.svg';
 import middleBlock from './middle-block.svg';

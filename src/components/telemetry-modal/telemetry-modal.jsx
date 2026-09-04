@@ -6,7 +6,7 @@ import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-int
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 
-import styles from './telemetry-modal.css';
+import styles from './telemetry-modal.module.css';
 
 const messages = defineMessages({
     label: {

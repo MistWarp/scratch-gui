@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-import styles from './toggle-buttons.css';
+import styles from './toggle-buttons.module.css';
 
 const ToggleButtons = ({buttons, className, disabled}) => (
     <div

@@ -19,7 +19,7 @@ import {loadGoogleFont, isGoogleFont} from '../../lib/themes/google-fonts.js';
 import openMWFontsWindow from '../../lib/mw/open-mw-fonts-window.js';
 import {getCatBlocks, getCatBlocksWatch, setCatBlocks, setCatBlocksWatch} from '../../lib/mw-cat-blocks.js';
 
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 import threeIcon from '../menu-bar/tw-blocks-three.svg';
 import highContrastIcon from '../menu-bar/tw-blocks-high-contrast.svg';

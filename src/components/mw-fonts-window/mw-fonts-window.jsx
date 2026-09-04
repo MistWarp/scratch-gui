@@ -15,8 +15,8 @@ import {
 } from '../../lib/themes/google-fonts.js';
 import {RotateCcw, Globe, Monitor, Check, History} from 'lucide-react';
 
-import styles from '../menu-bar/settings-menu.css';
-import localFontsStyles from '../tw-fonts-modal/fonts-modal.css';
+import styles from '../menu-bar/settings-menu.module.css';
+import localFontsStyles from '../tw-fonts-modal/fonts-modal.module.css';
 import AddSystemFont from '../tw-fonts-modal/add-system-font.jsx';
 import AddCustomFont from '../tw-fonts-modal/add-custom-font.jsx';
 import ManageFont from '../tw-fonts-modal/manage-font.jsx';

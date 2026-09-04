@@ -4,7 +4,7 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import classNames from 'classnames';
 import {AlertTriangle, CheckCircle2, Info, X, XCircle} from 'lucide-react';
-import styles from './toast-notification.css';
+import styles from './toast-notification.module.css';
 
 const DURATIONS = {
     success: 4000,

@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 
 import {Binoculars} from 'lucide-react';
 
-import styles from './tw-see-inside.css';
+import styles from './tw-see-inside.module.css';
 
 const SeeInsideButton = ({
     className,

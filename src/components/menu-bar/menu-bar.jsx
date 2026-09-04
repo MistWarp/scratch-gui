@@ -15,7 +15,7 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
 import ShareButton from './share-button.jsx';
-import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.jsx';
 import {
     getRememberedPlatformProjectState,
     getMistWarpAction,
@@ -160,8 +160,8 @@ import {
     writeWorkspaceBookmarksToStage
 } from '../../lib/mw/workspace-bookmarks.js';
 
-import styles from './menu-bar.css';
-import '!!style-loader!css-loader!./block-count.css';
+import styles from './menu-bar.module.css';
+import './block-count.css';
 
 // import helpIcon from '../../lib/assets/icon--tutorials.svg';
 // import mystuffIcon from './icon--mystuff.png';

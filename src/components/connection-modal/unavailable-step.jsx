@@ -10,7 +10,7 @@ import backIcon from './icons/back.svg';
 import bluetoothIcon from './icons/bluetooth.svg';
 import scratchLinkIcon from './icons/scratchlink.svg';
 
-import styles from './connection-modal.css';
+import styles from './connection-modal.module.css';
 
 const UnavailableStep = props => (
     <Box className={styles.body}>

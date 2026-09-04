@@ -5,7 +5,7 @@ import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import classNames from 'classnames';
 
-import styles from './username-modal.css';
+import styles from './username-modal.module.css';
 import isScratchDesktop from '../../lib/utils/isScratchDesktop.js';
 import {APP_NAME} from '../../lib/constants/brand.js';
 

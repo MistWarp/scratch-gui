@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 
 import {Binoculars} from 'lucide-react';
 
-import styles from './community-button.css';
+import styles from './community-button.module.css';
 
 const CommunityButton = ({
     className,

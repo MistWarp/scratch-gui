@@ -1,9 +1,11 @@
 import log from '../lib/utils/log';
-import serviceWorker from '!!file-loader?name=sw.js!./service-worker.js';
+
+// sw.js is emitted to the build root by the mw-service-worker plugin (see vite.config.mjs).
+const serviceWorkerUrl = `${process.env.ROOT}sw.js`;
 
 let loaded = false;
 const actuallyLoadServiceWorker = () => {
-    navigator.serviceWorker.register(serviceWorker)
+    navigator.serviceWorker.register(serviceWorkerUrl)
         .catch(err => {
             log.error('sw error', err);
         });

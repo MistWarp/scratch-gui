@@ -11,8 +11,8 @@ import {MenuSection} from '../menu/menu.jsx';
 import MenuItemContainer from '../../containers/menu-item.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 import ChevronDown from './ChevronDown.jsx';
-import menuBarStyles from './menu-bar.css';
-import accountNavStyles from './account-nav.css';
+import menuBarStyles from './menu-bar.module.css';
+import accountNavStyles from './account-nav.module.css';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import {buildAuthUrl} from '../../lib/rotur/client.js';
 import {

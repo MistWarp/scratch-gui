@@ -255,12 +255,13 @@ const generateRuntimeEntry = (id, manifest, assets) => {
 
     for (const userstyle of manifest.userstyles || []) {
         const src = userstyle.url;
-        const importName = importSection.add(`!css-loader!./${src}`, 'css');
+        // ?raw gives the CSS text. api.js consumes it as a string via toString().
+        const importName = importSection.add(`./${src}?raw`, 'css');
         exportSection += `  ${JSON.stringify(src)}: ${importName},\n`;
     }
 
     for (const assetName of assets) {
-        const importName = importSection.add(`!url-loader!./${assetName}`, 'asset');
+        const importName = importSection.add(`./${assetName}?url`, 'asset');
         exportSection += `  ${JSON.stringify(assetName)}: ${importName},\n`;
     }
 
@@ -400,12 +401,17 @@ const generateEntries = (items, callback) => {
     let exportSection = 'export default {\n';
     const importSection = new GeneratedImports();
     for (const i of items) {
-        const {src, name, type} = callback(i);
+        const {src, type} = callback(i);
         if (type === 'lazy-import') {
-            // eslint-disable-next-line max-len
-            exportSection += `  ${JSON.stringify(i)}: () => import(/* webpackChunkName: ${JSON.stringify(name)} */ ${JSON.stringify(src)}),\n`;
+            // Vite/Rollup code-splits each dynamic import on its own.
+            // The old webpackChunkName grouping is gone; default addons still
+            // share chunks automatically through shared modules.
+            exportSection += `  ${JSON.stringify(i)}: () => import(${JSON.stringify(src)}),\n`;
         } else if (type === 'lazy-require') {
-            exportSection += `  ${JSON.stringify(i)}: () => require(${JSON.stringify(src)}),\n`;
+            // Old webpack inlined these synchronously in the main bundle.
+            // Closest Vite equivalent: eager static import.
+            const importName = importSection.add(src, i);
+            exportSection += `  ${JSON.stringify(i)}: () => Promise.resolve(${importName}),\n`;
         } else if (type === 'eager-import') {
             const importName = importSection.add(src, i);
             exportSection += `  ${JSON.stringify(i)}: ${importName},\n`;
@@ -433,7 +439,7 @@ const generateL10nSettingsEntries = locales => generateEntries(
     locales.filter(i => i !== 'en'),
     locale => ({
         src: `../addons-l10n-settings/${locale}.json`,
-        type: 'lazy-require'
+        type: 'eager-import'
     })
 );
 

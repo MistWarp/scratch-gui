@@ -5,7 +5,7 @@ import {FormattedMessage} from 'react-intl';
 
 import {Theme, GUI_MAP, ACCENT_MAP} from '../../lib/themes/index.js';
 import {ACCENT_GROUPS} from '../../lib/themes/accents.js';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 const ACCENT_MESSAGES = {};
 for (const key of Object.keys(ACCENT_MAP)) {

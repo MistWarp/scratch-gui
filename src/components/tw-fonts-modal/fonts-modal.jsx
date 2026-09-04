@@ -6,7 +6,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import ManageFont from './manage-font.jsx';
 import AddSystemFont from './add-system-font.jsx';
 import AddCustomFont, {FONT_FORMATS} from './add-custom-font.jsx';
-import styles from './fonts-modal.css';
+import styles from './fonts-modal.module.css';
 
 const messages = defineMessages({
     title: {

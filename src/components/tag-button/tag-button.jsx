@@ -5,7 +5,7 @@ import {FormattedMessage} from 'react-intl';
 
 import Button from '../button/button.jsx';
 
-import styles from './tag-button.css';
+import styles from './tag-button.module.css';
 
 const TagButtonComponent = ({
     active,

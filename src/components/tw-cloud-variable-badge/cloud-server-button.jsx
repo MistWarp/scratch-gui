@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './cloud-variable-badge.css';
+import styles from './cloud-variable-badge.module.css';
 import bindAll from 'lodash.bindall';
 import classNames from 'classnames';
 

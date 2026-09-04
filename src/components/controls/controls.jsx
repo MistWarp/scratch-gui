@@ -11,7 +11,7 @@ import FramerateIndicator from '../tw-framerate-indicator/framerate-indicator.js
 import DebuggerStageControls from '../tw-debugger/stage-controls.jsx';
 import StageExtras from '../mw-stage-controls/stage-extras.jsx';
 
-import styles from './controls.css';
+import styles from './controls.module.css';
 
 const messages = defineMessages({
     goTitle: {

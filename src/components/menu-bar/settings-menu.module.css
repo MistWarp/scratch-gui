@@ -1,0 +1,1146 @@
+@import "../../css/colors.module.css";
+@import "../../css/filters.module.css";
+
+.button {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+}
+
+.icon {
+    width: 1.5rem;
+}
+
+.theme-label {
+    flex: 1;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+}
+
+.check {
+    margin: 0 .25rem 0 0;
+    visibility: hidden;
+}
+
+[dir="rtl"] .check {
+    margin: 0 0 0 .25rem;
+}
+
+.selected {
+    visibility: visible;
+}
+
+.submenu-label {
+    flex: 1;
+}
+
+.dropdown-label {
+    margin: 0 0.5rem 0 0.25rem;
+}
+
+[dir="rtl"] .dropdown-label {
+    margin: 0 0.25rem 0 0.5rem;
+}
+
+.expand-caret {
+    transform: rotate(-90deg);
+    vertical-align: middle;
+}
+
+[dir="rtl"] .expand-caret {
+    transform: rotate(90deg);
+}
+
+/* Extra padding to deal with scrollbar overlapping options in Firefox */
+
+[dir="ltr"] .language-menu-item {
+    padding-right: 1rem;
+}
+
+[dir="rtl"] .language-menu-item {
+    padding-left: 1rem;
+}
+
+.language-submenu > ul {
+    max-height: calc(100vh - 5rem); /* Fallback if dvh not supported */
+    max-height: calc(100dvh - 5rem);
+}
+
+@media only screen and (max-width: 1124px) {
+    .dropdown-label {
+        display: none;
+    }
+}
+
+.accent-icon-outer {
+    margin-right: 0.5rem;
+    width: 24px;
+    height: 24px;
+    border: 3px solid $menu-bar-foreground;
+    border-radius: 50%;
+    box-sizing: border-box;
+    transform-origin: center;
+    transform: scale(90%);
+    color: $text-primary;
+}
+
+/* Accessibility helper: visually hidden but available to screen readers */
+.srOnly {
+    position: absolute !important;
+    height: 1px; width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+}
+
+.disabled {
+    opacity: 0.5;
+}
+.disabled img {
+    filter: grayscale(100%);
+}
+
+.open-link {
+    margin-left: 0.5rem;
+}
+
+/* Wallpaper menu styles */
+.wallpaper-form {
+    padding: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.wallpaper-form form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.wallpaper-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background-color: $input-background;
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.wallpaper-button {
+    padding: 0.5rem 1rem;
+    background-color: $looks-secondary;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.wallpaper-button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.wallpaper-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.opacity-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.opacity-control label {
+    color: $text-primary;
+    font-weight: 500;
+}
+
+.opacity-slider {
+    flex: 1;
+    height: 4px;
+    background: $ui-black-transparent;
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+}
+
+.opacity-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+    border: none;
+}
+
+.opacity-value {
+    color: $text-primary;
+    font-weight: 500;
+    min-width: 2.5rem;
+    text-align: right;
+}
+
+.grid-toggle {
+    width: 18px;
+    height: 18px;
+    accent-color: $looks-secondary;
+    cursor: pointer;
+}
+
+.wallpaper-preview {
+    width: 24px;
+    height: 24px;
+    border: 2px solid $ui-black-transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $ui-tertiary;
+}
+
+.wallpaper-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-wallpaper {
+    font-size: 0.75rem;
+    color: $text-primary-transparent;
+    text-align: center;
+}
+
+.wallpaper-url {
+    flex: 1;
+    font-size: 0.875rem;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menu-separator {
+    height: 1px;
+    background: $ui-black-transparent;
+    margin: 0.25rem 0;
+}
+
+/* Accent submenu grid layout */
+.accent-submenu {
+    padding: 0;
+}
+
+.accent-submenu > ul {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.25rem;
+    padding: 0.5rem;
+    margin: 0;
+    min-width: 320px;
+    max-width: none;
+}
+
+.accent-submenu li,
+.accent-submenu .menu-item {
+    margin: 0;
+    padding: 0.5rem 0.25rem;
+    min-height: auto;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    line-height: normal;
+    transition: background-color 0.15s ease;
+}
+
+.accent-submenu .menu-item:hover {
+    background-color: $ui-black-transparent;
+}
+
+.accent-submenu .option {
+    flex-direction: column;
+    text-align: center;
+    font-size: 0.75rem;
+    gap: 0.375rem;
+}
+
+.accentLabel {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: normal;
+    color: $text-primary;
+    line-height: 1.2;
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.accent-submenu .option:has(.check.selected) .accent-icon-outer {
+    outline: 2px solid $text-primary;
+    outline-offset: 2px;
+}
+
+.accent-submenu .check {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    margin: 0;
+    width: 0.875rem !important;
+    height: 0.875rem;
+    line-height: 0;
+    background-color: $text-primary;
+    color: $ui-secondary;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.125rem;
+    box-sizing: border-box;
+    z-index: 3;
+}
+
+.accent-submenu .check img,
+.accent-submenu .check svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    stroke-width: 3px;
+}
+
+.accent-submenu .accent-icon-outer {
+    z-index: 1;
+    margin: 0 auto;
+    width: 28px;
+    height: 28px;
+    transform: none;
+}
+
+/* Responsive adjustments for smaller screens */
+@media only screen and (max-width: 768px) {
+    .accent-submenu > ul {
+        grid-template-columns: repeat(3, 1fr);
+        min-width: 160px;
+        max-width: 220px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .accent-submenu > ul {
+        grid-template-columns: repeat(2, 1fr);
+        min-width: 120px;
+        max-width: 160px;
+    }
+}
+
+/* Fonts menu styles */
+.fonts-submenu {
+    min-width: 320px;
+    max-width: 400px;
+}
+
+.fonts-submenu > ul {
+    max-height: calc(100vh - 5rem);
+    max-height: calc(100dvh - 5rem);
+    overflow-y: auto;
+}
+
+.fonts-container {
+    padding: 0.5rem;
+    overflow: visible;
+}
+
+.font-section {
+    margin-bottom: 1rem;
+}
+
+.font-section:last-child {
+    margin-bottom: 0;
+}
+
+.font-section-title {
+    font-weight: bold;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    color: $text-primary;
+    border-bottom: 1px solid $ui-black-transparent;
+    padding-bottom: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.font-section-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.inlineIcon {
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+
+.reset-button {
+    padding: 0.25rem 0.5rem;
+    background-color: $motion-primary;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+}
+
+.reset-button:hover {
+    opacity: 0.8;
+}
+
+.font-input-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.font-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    background-color: $input-background;
+    color: $text-primary;
+}
+
+.font-input:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.add-button {
+    padding: 0.5rem 0.75rem;
+    background-color: $looks-secondary;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-button:hover:not(:disabled) {
+    background-color: $looks-secondary-dark;
+}
+
+.add-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.font-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.font-item {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+    background-color: $input-background;
+    color: inherit;
+    font-family: inherit;
+    text-align: inherit;
+}
+
+.font-item:hover {
+    background-color: $looks-transparent;
+    color: white;
+}
+
+.font-item:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+.selected-fonts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.selected-font {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: $looks-light-transparent;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    gap: 0.5rem;
+}
+
+.font-type {
+    font-size: 0.75rem;
+    color: $text-primary;
+    opacity: 0.7;
+}
+
+.remove-button {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: $text-primary;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.remove-button:hover {
+    background-color: $error-transparent;
+}
+
+.loading,
+.fontHint {
+    font-size: 0.75rem;
+    color: $text-primary;
+    opacity: 0.7;
+    text-align: center;
+    padding: 0.25rem;
+}
+
+/* Custom theme menu styles */
+.customThemeSubmenu {
+    min-width: 280px;
+    max-width: 320px;
+}
+
+.customThemeAction {
+    transition: background-color 0.1s ease;
+}
+
+.customThemeAction:hover {
+    background-color: $ui-black-transparent;
+}
+
+.customThemeAction.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.customThemeAction.disabled:hover {
+    background-color: transparent;
+}
+
+.customThemeActionIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.customThemeItem {
+    position: relative;
+    transition: background-color 0.1s ease;
+}
+
+.customThemeItem:hover {
+    background-color: $ui-black-transparent;
+}
+
+.customThemeItem.selected {
+    background-color: $looks-transparent;
+}
+
+.customThemeItemInfo {
+    flex: 1;
+    min-width: 0;
+    margin-left: 8px;
+}
+
+.customThemeActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.customThemeActionButton,
+.customThemeEditButton,
+.customThemeDeleteButton {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customThemeActionButton:hover,
+.customThemeEditButton:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, $looks-secondary 15%, transparent);
+}
+
+.customThemeActionButton img,
+.customThemeEditButton img,
+.customThemeDeleteButton img {
+    width: 12px;
+    height: 12px;
+}
+
+.customThemeActionButton img {
+    filter: $filter-icon-black;
+}
+
+.customThemeItemName {
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.customThemeItemDescription {
+    font-size: 0.625rem;
+    color: $text-primary;
+    opacity: 0.7;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.customThemeDeleteButton:hover {
+    opacity: 1;
+    background-color: $error-transparent;
+}
+
+.customThemeEmpty {
+    padding: 12px;
+    text-align: center;
+    font-style: italic;
+    opacity: 0.6;
+    font-size: 0.75rem;
+    color: $text-primary;
+}
+
+.menuSeparator {
+    height: 1px;
+    background: $ui-black-transparent;
+    margin: 0.25rem 0;
+}
+
+/* Create theme dialog */
+.customThemeDialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.customThemeDialogContent {
+    background: none;
+    border-radius: 8px;
+    padding: 24px;
+    width: 400px;
+    overflow-y: auto;
+}
+
+.customThemeDialogContent h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: $text-primary;
+}
+
+.customThemeDialogField {
+    margin-bottom: 16px;
+}
+
+.customThemeDialogField label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    color: $text-primary;
+}
+
+.customThemeDialogField input,
+.customThemeDialogField textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $input-background;
+    color: $text-primary;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.customThemeDialogField input:focus,
+.customThemeDialogField textarea:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.customThemeDialogField textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.customThemeDialogButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.customThemeDialogButton {
+    padding: 8px 16px;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.customThemeDialogButton:hover {
+    background: $ui-secondary;
+}
+
+.customThemeDialogButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.customThemeDialogButton.primary {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.customThemeDialogButton.primary:hover {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.selectedIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+
+.gcRoot {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    color: $text-primary;
+}
+
+.gcBody {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-sizing: border-box;
+}
+
+.gcPreview {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    flex-shrink: 0;
+}
+
+.gcPreviewFill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.gcStopHandle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: col-resize;
+    transition: transform 0.1s ease;
+}
+
+.gcStopHandle:hover,
+.gcStopHandleActive {
+    transform: translate(-50%, -50%) scale(1.15);
+}
+
+.gcStops {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gcStopChip {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $input-background;
+}
+
+.gcStopColor {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+}
+
+.gcStopColor::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.gcStopColor::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.gcStopPos {
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+    min-width: 2rem;
+    text-align: center;
+}
+
+.gcStopRemove {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.875rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.gcStopRemove:hover {
+    opacity: 1;
+    background: $error-transparent;
+    color: $error-primary;
+}
+
+.gcAddStop {
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: $text-primary;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.gcAddStop:hover {
+    border-color: $looks-secondary;
+    color: $looks-secondary;
+}
+
+.gcField {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.gcLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-primary-transparent;
+}
+
+.gcInput,
+.gcTextarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    background: $input-background;
+    color: $text-primary;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gcTextarea {
+    resize: vertical;
+    min-height: 48px;
+}
+
+.gcInput:focus,
+.gcTextarea:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 3px color-mix(in srgb, $looks-secondary 15%, transparent);
+}
+
+.gcDirectionRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.gcSlider {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: $ui-black-transparent;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.gcSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+}
+
+.gcSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+    border: none;
+}
+
+.gcDegrees {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.gcDirectionPresets {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.gcDirBtn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: $text-primary;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gcDirBtn:hover {
+    border-color: $looks-secondary;
+}
+
+.gcDirBtnActive {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
+}
+
+.gcPresets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.gcPresetSwatch {
+    width: 44px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.1s ease, outline-color 0.15s ease;
+}
+
+.gcPresetSwatch:hover {
+    transform: scale(1.06);
+}
+
+.gcPresetSwatchActive {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.gcAccentRow {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.gcHex {
+    font-family: monospace;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.gcFooter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid $ui-black-transparent;
+    flex-shrink: 0;
+}
+
+.gcFooterSpacer {
+    flex: 1;
+}
+
+.gcBtn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: $text-primary;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.gcBtn:hover:not(:disabled) {
+    border-color: $looks-secondary;
+}
+
+.gcBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.gcBtnActive {
+    background: $looks-transparent;
+    border-color: $looks-secondary;
+    color: $looks-secondary;
+}
+
+.gcBtnPrimary {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
+}
+
+.gcBtnPrimary:hover:not(:disabled) {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.menuIcon {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.checkText {
+    font-size: 0.9rem;
+    font-weight: bold;
+}

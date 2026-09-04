@@ -11,7 +11,7 @@ import {defineMessages} from 'react-intl';
 
 import MenuBarMenu from './menu-bar-menu.jsx';
 
-import styles from './login-dropdown.css';
+import styles from './login-dropdown.module.css';
 
 // these are here as a hack to get them translated, so that equivalent messages will be translated
 // when passed in from www via gui's renderLogin() function

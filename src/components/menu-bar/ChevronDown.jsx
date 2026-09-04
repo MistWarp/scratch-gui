@@ -1,5 +1,5 @@
 import React from 'react';
-import dropdownCaret from '!!raw-loader!./dropdown-caret.svg';
+import dropdownCaret from './dropdown-caret.svg?raw';
 
 const ChevronDown = ({size = 8, ...props}) => {
     const height = size * (5 / 8);

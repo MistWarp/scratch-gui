@@ -4,7 +4,7 @@ import React from 'react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import styles from './project-theme-modal.css';
+import styles from './project-theme-modal.module.css';
 
 const messages = defineMessages({
     title: {

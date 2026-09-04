@@ -8,7 +8,7 @@ import {
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
 import {ensureColorContrast, parseColor} from './color-contrast';
-import './global-styles.css';
+import './global-styles.module.css';
 
 const BLOCK_COLOR_NAMES = [
     // Corresponds to the name of the object in blockColors

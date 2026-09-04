@@ -4,8 +4,8 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Bell} from 'lucide-react';
 
-import menuBarStyles from './menu-bar.css';
-import styles from './mw-notifications.css';
+import menuBarStyles from './menu-bar.module.css';
+import styles from './mw-notifications.module.css';
 import {fetchNotifications} from '../../lib/rotur/client.js';
 
 const MwNotifications = ({username}) => {

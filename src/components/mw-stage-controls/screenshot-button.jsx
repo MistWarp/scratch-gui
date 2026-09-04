@@ -11,7 +11,7 @@ import {
     getScreenshotSoundUrl,
     onSettingChanged
 } from '../../lib/mw-stage-controls/settings.js';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 class ScreenshotButton extends React.Component {
     constructor (props) {

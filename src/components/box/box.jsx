@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import stylePropType from 'react-style-proptype';
-import styles from './box.css';
+import styles from './box.module.css';
 
 const stylePropTypeAllowCssVars = function (props, propName, componentName, ...rest) {
     const style = props[propName];

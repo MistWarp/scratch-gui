@@ -17,7 +17,7 @@ import {
 } from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
-import styles from './settings-menu.css';
+import styles from './settings-menu.module.css';
 
 const AlignIcon = ({id}) => {
     const icons = Object.entries(MENUBAR_ALIGN).reduce((acc, [key, value]) => {

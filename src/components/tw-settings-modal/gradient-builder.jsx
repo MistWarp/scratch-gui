@@ -6,7 +6,7 @@ import {FormattedMessage} from 'react-intl';
 import {GradientUtils} from '../../lib/themes/custom-themes.js';
 import showAlert from '../../addons/window-system/alert';
 
-import styles from '../menu-bar/settings-menu.css';
+import styles from '../menu-bar/settings-menu.module.css';
 
 const startDrag = (index, e, dragging, setGradientColors, previewRef) => {
     e.preventDefault();

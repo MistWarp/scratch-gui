@@ -2,14 +2,14 @@ import React from 'react';
 import {mount} from 'enzyme';
 
 import {TWSaveStatus} from '../../../src/components/menu-bar/tw-save-status.jsx';
-import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.js';
+import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.jsx';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getMistWarpAction: jest.fn(() => 'update'),
     getRememberedPlatformProjectState: jest.fn(() => ({id: 'project', isOwner: true}))
 }));
-jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
+jest.mock('../../../src/lib/mw/open-mw-share-window.jsx', () => jest.fn());
 
 describe('MistWarp save status', () => {
     beforeEach(() => {

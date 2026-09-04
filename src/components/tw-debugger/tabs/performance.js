@@ -1,4 +1,6 @@
-import Chart from '../../../addons/libraries/thirdparty/cs/chart.min.js';
+import '../../../addons/libraries/thirdparty/cs/chart.min.js';
+// chart.min.js is UMD and exposes itself as window.Chart.
+const Chart = window.Chart;
 import {getSetting} from '../../../lib/debugger/settings.js';
 import performanceIcon from '../icons/performance.svg';
 

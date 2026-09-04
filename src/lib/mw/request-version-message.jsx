@@ -5,7 +5,7 @@ import {History} from 'lucide-react';
 
 import Modal from '../../community/components/ui/Modal.jsx';
 import CommunityScope from './community-scope.jsx';
-import styles from './request-version-message.css';
+import styles from './request-version-message.module.css';
 
 const VersionMessageModal = ({finish}) => {
     const [message, setMessage] = useState('');

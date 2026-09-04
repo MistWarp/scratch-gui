@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 
-import styles from './description.css';
+import styles from './description.module.css';
 import reactStringReplace from 'react-string-replace';
 
 const decorate = text => {

@@ -9,7 +9,7 @@ import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 import Dial from './dial.jsx';
 
-import styles from './direction-picker.css';
+import styles from './direction-picker.module.css';
 
 import {
     ArrowLeftRight as LeftRightIcon,

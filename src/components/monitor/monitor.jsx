@@ -12,7 +12,7 @@ import SliderMonitor from '../../containers/slider-monitor.jsx';
 import ListMonitor from '../../containers/list-monitor.jsx';
 import {Theme} from '../../lib/themes/index.js';
 
-import styles from './monitor.css';
+import styles from './monitor.module.css';
 
 // Map category name to color name used in scratch-blocks Blockly.Colours
 const categoryColorMap = {

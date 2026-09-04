@@ -2,7 +2,7 @@ import {defineMessages, FormattedMessage} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
 import Modal from '../../containers/windowed-modal.jsx';
-import styles from './simple-dialog.css';
+import styles from './simple-dialog.module.css';
 
 const messages = defineMessages({
     ok: {

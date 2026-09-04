@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './checkbox.css';
+import styles from './checkbox.module.css';
 import classNames from 'classnames';
 
 const FancyCheckbox = props => (

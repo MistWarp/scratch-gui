@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // eslint-disable-next-line import/no-unresolved, import/default
-import EditorWorker from 'worker-loader!monaco-editor/esm/vs/editor/editor.worker.js';
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker.js?worker';
 
 import '@fontsource/jetbrains-mono/latin-400.css';
-import '!!style-loader!css-loader!./code-font.css';
+import './code-font.css';
 
 import {Theme} from '../../lib/themes';
 import {
@@ -40,7 +40,7 @@ import {parseConflicts, resolutionText} from '../../lib/git/conflicts';
 import {sanitize} from '../../lib/git/fractch-tree';
 import {setCodeSearch} from '../../lib/find-bar/api';
 
-import styles from './fractch-workspace.css';
+import styles from './fractch-workspace.module.css';
 
 const CODE_FONT = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
 
