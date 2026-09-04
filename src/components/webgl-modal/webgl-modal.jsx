@@ -4,7 +4,7 @@ import Box from '../box/box.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 import Modal from '../../containers/windowed-modal.jsx';
 
-import styles from './webgl-modal.css';
+import styles from './webgl-modal.module.css';
 
 const messages = defineMessages({
     label: {

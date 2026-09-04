@@ -1,0 +1,184 @@
+@import "../../css/colors.module.css";
+@import "../../css/units.module.css";
+
+.wrapper {
+    width: min(100%, 36rem);
+    margin-top: 0.5rem;
+    color: $text-primary;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.wrapper button {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.mode-bar {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-tertiary;
+}
+
+.mode-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 2.25rem;
+    gap: 0.35rem;
+    border: 1px solid transparent;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.mode-button.selected {
+    border-color: $looks-secondary;
+    background: $ui-white;
+    color: $looks-secondary;
+}
+
+.mode-button:focus-visible,
+.key:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: -3px;
+}
+
+.gamepad {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 9rem;
+    padding: 0.5rem 1rem;
+    user-select: none;
+}
+
+.dpad {
+    display: grid;
+    grid-template: repeat(3, 2.75rem) / repeat(3, 2.75rem);
+}
+
+.dpad-up { grid-area: 1 / 2; }
+.dpad-left { grid-area: 2 / 1; }
+.dpad-right { grid-area: 2 / 3; }
+.dpad-down { grid-area: 3 / 2; }
+
+.key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2.25rem;
+    padding: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.45rem;
+    background: $ui-white;
+    box-shadow: 0 2px 0 $ui-black-transparent;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    transition: transform 70ms ease, box-shadow 70ms ease, background-color 70ms ease;
+}
+
+.key:active,
+.key.pressed {
+    transform: translateY(2px);
+    box-shadow: none;
+    background: $looks-transparent;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: repeat(2, 3.25rem);
+    gap: 0.75rem;
+    transform: rotate(-12deg);
+}
+
+.action-key {
+    flex-direction: column;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    color: $looks-secondary;
+    transform: rotate(12deg);
+}
+
+.action-key:active,
+.action-key.pressed {
+    transform: rotate(12deg) translateY(2px);
+}
+
+.action-key small {
+    max-width: 2.5rem;
+    overflow: hidden;
+    color: $text-primary-transparent;
+    font-size: 0.55rem;
+    text-overflow: ellipsis;
+}
+
+.native-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+}
+
+.native-keyboard-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.native-keyboard-input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-white;
+    color: $text-primary;
+    font: inherit;
+    font-size: 1rem;
+}
+
+.native-keyboard-input:focus {
+    border-color: $looks-secondary;
+    outline: 3px solid $looks-transparent;
+}
+
+.special-keys {
+    display: flex;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.special-keys .key {
+    width: clamp(2.75rem, 12vw, 3.5rem);
+    height: clamp(2.75rem, 12vw, 3.5rem);
+}
+
+@media only screen and (max-width: 420px) {
+    .wrapper {
+        margin-top: 0.25rem;
+    }
+
+    .gamepad {
+        padding-inline: 0.5rem;
+    }
+
+}

@@ -7,7 +7,7 @@ import VM from 'scratch-vm';
 import Box from '../box/box.jsx';
 import {dispatchMobileKeyboardEvent, getMobileGamepadKeys} from '../../lib/mobile-keyboard.js';
 
-import styles from './mobile-stage-controls.css';
+import styles from './mobile-stage-controls.module.css';
 
 const KEY_LABELS = {
     'ArrowLeft': '←',

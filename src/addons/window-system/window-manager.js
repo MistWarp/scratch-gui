@@ -117,7 +117,7 @@ let nextZIndex = WINDOW_Z_INDEX_BASE;
 
 // Some UI overlays (like the project loader) sit above the normal window range.
 // This tier is for specific windows that must remain interactable above those overlays.
-// Keep below the context menu layer (see src/css/z-index.css).
+// Keep below the context menu layer (see src/css/z-index.module.css).
 const WINDOW_ON_TOP_Z_INDEX_BASE = 9600;
 const WINDOW_ON_TOP_Z_INDEX_MAX = 9999;
 let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;

@@ -14,7 +14,7 @@ import Separator from '../tw-extension-separator/separator.jsx';
 import RemovedTrademarks from '../tw-removed-trademarks/removed-trademarks.jsx';
 import {APP_NAME} from '../../lib/constants/brand.js';
 
-import styles from './library.css';
+import styles from './library.module.css';
 
 const messages = defineMessages({
     filterPlaceholder: {

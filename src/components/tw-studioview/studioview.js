@@ -5,7 +5,7 @@
 // todo: we have to see if we are leaking memory when this is mounted and unmounted, esp. because of event listeners
 // todo: use react-intl for translations
 
-import styles from './studioview.css';
+import styles from './studioview.module.css';
 import classNames from 'classnames';
 
 /**

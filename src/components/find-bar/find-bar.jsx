@@ -8,9 +8,9 @@ import {loadAddonMessagesForLocale, formatAddonMessage} from './addon-i18n';
 import {waitForElement} from './dom-utils';
 import FindBarController from './FindBarController';
 
-import inputStyles from '../forms/input.css';
+import inputStyles from '../forms/input.module.css';
 
-import './find-bar.css';
+import './find-bar.module.css';
 
 /**
  * The find bar component

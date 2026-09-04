@@ -15,7 +15,7 @@ import {
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';

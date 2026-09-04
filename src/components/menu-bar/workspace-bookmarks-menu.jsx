@@ -18,7 +18,7 @@ const CARET_SIZE = 12;
 
 import {MenuItem, MenuSection} from '../menu/menu.jsx';
 
-import styles from './workspace-bookmarks-menu.css';
+import styles from './workspace-bookmarks-menu.module.css';
 
 const formatDate = timestamp => {
     try {

@@ -10,7 +10,7 @@ import booleanInputIcon from './icon--boolean-input.svg';
 import textInputIcon from './icon--text-input.svg';
 import labelIcon from './icon--label.svg';
 
-import styles from './custom-procedures.css';
+import styles from './custom-procedures.module.css';
 
 const messages = defineMessages({
     myblockModalTitle: {

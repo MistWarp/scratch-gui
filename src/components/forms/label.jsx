@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import styles from './label.css';
+import styles from './label.module.css';
 
 const Label = props => (
     <label className={props.above ? styles.inputGroupColumn : styles.inputGroup}>

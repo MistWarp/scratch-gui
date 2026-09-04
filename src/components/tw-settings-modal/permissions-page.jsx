@@ -6,7 +6,7 @@ import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
 } from '../../lib/project-prompt-blocking.js';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 const projectName = (key, value) => {
     if (value && typeof value === 'object' && value.name) return String(value.name);

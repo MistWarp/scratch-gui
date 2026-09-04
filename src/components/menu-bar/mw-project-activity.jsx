@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import api from '../../community/api';
 import CommentThread from '../../community/components/CommentThread.jsx';
 import projectRealtime from '../../community/project-realtime.js';
-import styles from './mw-project-activity.css';
+import styles from './mw-project-activity.module.css';
 
 const MwProjectActivity = ({projectId}) => {
     const [tab, setTab] = useState('comments');

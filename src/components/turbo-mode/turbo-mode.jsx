@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 
 import turboIcon from './icon--turbo.svg';
 
-import styles from './turbo-mode.css';
+import styles from './turbo-mode.module.css';
 
 const TurboMode = ({isSmall}) => (
     <div className={styles.turboContainer}>

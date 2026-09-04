@@ -1,6 +1,6 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
-import styles from './sound-editor-not-supported.css';
+import styles from './sound-editor-not-supported.module.css';
 
 const SoundEditorNotSupported = () => (
     <div className={styles.container}>

@@ -1,12 +1,12 @@
 import smartSave from '../../../src/lib/mw/smart-save.js';
-import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.js';
+import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.jsx';
 import {createMwp} from '../../../src/lib/git/mwp.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src/lib/community/publish.js';
 import downloadBlob from '../../../src/lib/utils/download-blob';
 import {request} from '../../../src/lib/community/api.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
-jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
+jest.mock('../../../src/lib/mw/open-mw-share-window.jsx', () => jest.fn());
 jest.mock('../../../src/lib/git/mwp.js', () => ({
     createMwp: jest.fn(() => Promise.resolve({blob: new Blob()}))
 }));

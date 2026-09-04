@@ -25,7 +25,7 @@ import {getLoadedProjectMeta} from '../lib/mw-project-metadata';
 import {getPerks, getProject} from '../lib/community/api';
 import {getRememberedPlatformProject} from '../lib/community/publish';
 
-import styles from '../components/mw-project-metadata/project-metadata-modal.css';
+import styles from '../components/mw-project-metadata/project-metadata-modal.module.css';
 
 const MB = 1024 * 1024;
 const LIMITS = {

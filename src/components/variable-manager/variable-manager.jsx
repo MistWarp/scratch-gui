@@ -42,7 +42,7 @@ import {
     setVariableValue
 } from '../../lib/variable-manager/model.js';
 
-import styles from './variable-manager.css';
+import styles from './variable-manager.module.css';
 
 /* eslint-disable react/jsx-no-bind */
 

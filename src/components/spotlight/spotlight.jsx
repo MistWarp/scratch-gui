@@ -34,7 +34,7 @@ import {
 
 import {loadAddonMessagesForLocale, formatAddonMessage} from '../find-bar/addon-i18n';
 
-import './spotlight.css';
+import './spotlight.module.css';
 
 const PREVIEW_LIMIT = 32;
 const POPUP_SCALE = 48;

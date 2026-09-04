@@ -34,7 +34,7 @@ import {
 import {takeGitModalInitialView} from '../../lib/git/modal-view.js';
 import {GIT_HOST, parseRepoUrl} from '../../lib/rotur/git-api.js';
 
-import styles from './git-modal.css';
+import styles from './git-modal.module.css';
 
 const messages = defineMessages({
     title: {

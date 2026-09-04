@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './spinner.css';
+import styles from './spinner.module.css';
 
 const Loading = () => (
     <div className={styles.container}>

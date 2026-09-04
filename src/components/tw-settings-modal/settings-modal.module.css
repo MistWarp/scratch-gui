@@ -1,0 +1,1262 @@
+@import "../../css/colors.module.css";
+@import "../../css/filters.module.css";
+@import "../../css/default-colors.module.css";
+
+.body {
+    background: $ui-modal-background;
+    padding: 1.5rem 2.25rem;
+    min-height: 150px;
+    overflow-y: auto;
+}
+
+.contentArea {
+    overflow-y: auto;
+
+    & > div {
+        height: 100%;
+
+        & > iframe {
+            height: 100%;
+            width: 100%;
+        }
+    }
+}
+
+.modalContent {
+    height: 100%;
+}
+
+.pageContent {
+    flex: 1;
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+}
+
+.permissions-title {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.permissions-intro {
+    max-width: 34rem;
+    margin: 0.5rem 0 1.25rem;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.permissions-list {
+    overflow: hidden;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+}
+
+.permission-project {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 54px;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.permission-project:last-child {
+    border-bottom: 0;
+}
+
+.permission-project-name {
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+
+.permissions-empty {
+    padding: 2rem 1rem;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 6px;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    text-align: center;
+}
+
+/* For small screens, such as in the embed */
+@media (max-height: 600px) {
+    .modal-content {
+        margin: 50px auto;
+    }
+    .body {
+        max-height: calc(100vh - 150px);
+    }
+}
+
+:global([data-mw-native-window]) .modal-content {
+    margin: 0;
+}
+:global([data-mw-native-window]) .body {
+    max-height: none;
+}
+
+.setting {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 4px;
+}
+.setting.active {
+    background: $badge-background;
+}
+.setting:hover,
+.setting:focus-within {
+    background: $badge-border;
+}
+
+.menu-bar-layout {
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+}
+
+.menu-bar-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.menu-bar-setting-row:last-child {
+    border-bottom: 0;
+}
+
+.menu-bar-setting-row > span {
+    flex: 1;
+    min-width: 0;
+}
+
+.label {
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.settingText {
+    flex: 1;
+    min-width: 0;
+    margin-right: 1rem;
+}
+
+.detail {
+    margin: 0.35rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+}
+
+.inline-link-button {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $link-color;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.inline-link-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+.textSettingLabel {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: $text-primary;
+}
+
+.textInput,
+.numberInput,
+.select {
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: $text-primary;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.textInput {
+    width: 100%;
+    max-width: 340px;
+}
+
+.numberInput {
+    width: 130px;
+}
+
+.select {
+    min-width: 170px;
+    cursor: pointer;
+}
+
+.textInput:focus,
+.numberInput:focus,
+.select:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.style-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.style-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    width: 8.5rem;
+    background: $ui-primary;
+    border: 2px solid $ui-black-transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: $text-primary;
+    font: inherit;
+}
+
+.style-option:hover {
+    border-color: color-mix(in srgb, $looks-secondary 60%, transparent);
+}
+
+.style-option-selected {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.style-preview {
+    width: 100%;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 4px;
+    background: $ui-tertiary;
+}
+
+.style-option-label {
+    font-size: 0.8125rem;
+}
+
+.menu-bar-hint {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    margin: 0.5rem 0 0.25rem;
+}
+
+.menu-bar-zone-label {
+    font-size: 0.8125rem;
+    font-weight: bold;
+    margin: 0.75rem 0 0.25rem;
+}
+
+.menu-bar-move-buttons {
+    display: inline-flex;
+    gap: 0.15rem;
+}
+
+.menu-bar-move-button {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+    place-items: center;
+}
+
+.menu-bar-move-button:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.menu-bar-move-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.menu-bar-move-button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.align-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.35rem 0 0.5rem;
+}
+
+.align-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+    min-width: 7.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-primary;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.align-option:hover {
+    border-color: $looks-transparent;
+    background: $ui-secondary;
+}
+
+.align-option-selected {
+    border-color: $looks-secondary;
+    background: $looks-light-transparent;
+    color: $looks-secondary;
+}
+
+.align-option-selected:hover {
+    border-color: $looks-secondary;
+    background: $looks-light-transparent;
+}
+
+.menu-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    margin: 0.25rem 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-primary;
+}
+
+.menu-bar-grip {
+    cursor: grab;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    flex-shrink: 0;
+}
+
+.menu-bar-row-label {
+    flex: 1;
+}
+
+.setting table {
+    border-collapse: collapse;
+}
+.setting tr,
+.setting td,
+.setting th {
+    padding: 0;
+    margin: 0;
+    border: 1px solid $ui-tertiary;
+}
+
+.checkbox {
+    margin-right: 0.5rem;
+}
+
+.help-icon {
+    position: relative;
+    border: 0;
+    background-color: transparent;
+    width: 20px;
+    height: 20px;
+    background-size: 100%;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+.help-icon img {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    filter: $filter-icon-black;
+}
+
+.custom-stage-size > * {
+    margin-right: 0.5rem;
+}
+.custom-stage-size-input {
+    width: 80px;
+}
+
+.info {
+    margin-bottom: 0.25rem;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 0.5rem 0 0 0;
+    font-weight: bold;
+}
+.divider {
+    flex-grow: 1;
+    margin-left: 1rem;
+    border-top: 1px dashed $ui-tertiary;
+}
+
+.button {
+    font-family: inherit;
+    font-size: 14px;
+    background-color: $looks-secondary;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+}
+.button:active, .button:focus-within {
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
+
+.warning {
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 4px;
+    background: rgb(233, 233, 53);
+    color: $text-primary-default;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $text-primary;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.icon-button:hover {
+    background: $badge-border;
+}
+
+.theme-card-preview {
+    width: 100%;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: $ui-tertiary;
+}
+.theme-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    stroke-width: 2;
+}
+
+.accent-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.accent-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    width: 4.75rem;
+    padding: 0.5rem 0.25rem;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: $text-primary;
+    font: inherit;
+}
+.accent-option:hover {
+    background: $badge-border;
+}
+.accent-option-selected {
+    border-color: $looks-secondary;
+}
+.accent-swatch {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid $ui-black-transparent;
+    background-size: cover;
+}
+.accent-name {
+    font-size: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wallpaper-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 32px;
+}
+.slider-label {
+    width: 6rem;
+}
+.slider-value {
+    width: 3rem;
+    font-size: 0.8125rem;
+}
+
+.wallpaper-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+.wallpaper-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.375rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+}
+.wallpaper-item:hover {
+    background: $badge-border;
+}
+.wallpaper-item-selected {
+    border-color: $looks-secondary;
+}
+.wallpaper-choice {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+.wallpaper-choice:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
+}
+.wallpaper-thumb {
+    width: 4rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 4px;
+    background: $ui-tertiary;
+    font-size: 0.75rem;
+}
+.wallpaper-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.wallpaper-item-url {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+}
+
+.font-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.font-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    margin-bottom: 0.5rem;
+}
+.font-row:hover {
+    border-color: color-mix(in srgb, $looks-secondary 60%, transparent);
+}
+
+.font-list .font-row {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.font-list .font-row:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+/* ── Custom Themes page ── */
+
+.ct-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ct-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0.85rem 0 0.75rem;
+    padding: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+}
+
+.ct-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-height: 2rem;
+    padding: 0.4rem 0.65rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.ct-tab:hover {
+    background: $ui-tertiary;
+    color: $text-primary;
+}
+
+.ct-tab-selected {
+    background: $looks-transparent;
+    color: white;
+}
+
+.ct-tab-selected:hover {
+    background: $looks-transparent;
+    color: white;
+}
+
+.ct-tab-badge {
+    min-width: 1.15rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 999px;
+    background: $ui-black-transparent;
+    color: inherit;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.ct-tab-selected .ct-tab-badge {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ct-status {
+    margin: 0 0 0.65rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 6px;
+    background: $looks-transparent;
+    color: $looks-secondary;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ct-content {
+    flex: 1;
+    min-height: 0;
+}
+
+.ct-library {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.ct-card {
+    display: flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-secondary;
+    overflow: hidden;
+    transition: border-color 0.12s ease;
+}
+
+.ct-card:hover {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+}
+
+.ct-card-selected {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 1px $looks-transparent;
+}
+
+.ct-card-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    flex: 1;
+}
+
+.ct-card-swatch {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-tertiary;
+    flex-shrink: 0;
+}
+
+.ct-card-body {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ct-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.ct-card-name {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ct-active-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: $looks-transparent;
+    color: $looks-secondary;
+    font-size: 0.625rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ct-card-desc,
+.ct-card-desc-muted {
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ct-card-desc {
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+}
+
+.ct-card-desc-muted {
+    color: color-mix(in srgb, $text-primary 48%, transparent);
+}
+
+.ct-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0 0.4rem 0 0;
+    flex-shrink: 0;
+}
+
+.ct-delete-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.65rem;
+}
+
+.ct-delete-confirm > span:first-child {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.ct-delete-confirm small {
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+}
+
+.ct-delete-error {
+    color: $error-primary !important;
+}
+
+.ct-delete-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.ct-delete-actions .button,
+.ct-delete-actions .ct-button-secondary {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.75rem;
+}
+
+.ct-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 2.5rem 1.25rem;
+    text-align: center;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+}
+
+.ct-empty h3 {
+    margin: 0.35rem 0 0;
+    color: $text-primary;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.ct-empty .detail {
+    max-width: 26rem;
+    margin: 0;
+}
+
+.ct-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.85rem;
+}
+
+.ct-empty-actions .button,
+.ct-form-actions .button,
+.ct-action-card .button,
+.ct-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.ct-button-secondary {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    background: $ui-primary;
+    color: $text-primary;
+    border: 1px solid $ui-black-transparent;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.ct-button-secondary:hover {
+    border-color: $looks-secondary;
+}
+
+.ct-button-secondary:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.ct-create {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ct-mode-switch {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+}
+
+.ct-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-height: 2rem;
+    padding: 0.4rem 0.75rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.ct-mode-btn:hover {
+    background: $ui-tertiary;
+    color: $text-primary;
+}
+
+.ct-mode-btn-selected {
+    background: $looks-transparent;
+    color: white;
+}
+
+.ct-mode-btn-selected:hover {
+    background: $looks-transparent;
+    color: white;
+}
+
+.ct-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-secondary;
+}
+
+.ct-panel-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ct-hint {
+    margin: 0;
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+.ct-snapshot {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+}
+
+.ct-snapshot-swatch {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-tertiary;
+    flex-shrink: 0;
+}
+
+.ct-snapshot-meta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ct-snapshot-meta strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.ct-snapshot-meta span {
+    color: color-mix(in srgb, $text-primary 58%, transparent);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.ct-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.ct-label {
+    color: color-mix(in srgb, $text-primary 78%, transparent);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ct-input,
+.ct-textarea {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-primary;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ct-input::placeholder,
+.ct-textarea::placeholder {
+    color: color-mix(in srgb, $text-primary 40%, transparent);
+}
+
+.ct-input:hover,
+.ct-textarea:hover {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+}
+
+.ct-input:focus,
+.ct-textarea:focus {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.ct-textarea {
+    min-height: 5rem;
+    resize: vertical;
+}
+
+.ct-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.15rem;
+}
+
+.ct-form-actions .button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ct-import {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.ct-action-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-secondary;
+}
+
+.ct-action-icon {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 6px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    flex-shrink: 0;
+    place-items: center;
+}
+
+.ct-action-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.ct-action-body h3 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.ct-action-body .detail {
+    margin: 0.2rem 0 0;
+}
+
+/* Legacy class names kept for any residual refs */
+.custom-themes-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+.custom-themes-actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+.custom-themes-editor {
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+}
+.custom-themes-editor .text-input {
+    margin-bottom: 0.75rem;
+}
+.custom-themes-editor-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.custom-themes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+.custom-themes-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.custom-themes-item:hover {
+    background: $badge-border;
+}
+.custom-themes-item-selected {
+    border-color: $looks-secondary;
+}
+.custom-themes-check {
+    flex-shrink: 0;
+    visibility: hidden;
+}
+.custom-themes-check-selected {
+    visibility: visible;
+}
+.custom-themes-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.accent-group-label {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.mobile-back-button {
+    display: none;
+}
+
+@media only screen and (max-width: 720px) {
+    .mobile-back-button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        width: 100%;
+        min-height: 44px;
+        padding: 0 0.75rem;
+        border: 0;
+        border-bottom: 1px solid $ui-black-transparent;
+        background: transparent;
+        color: $text-primary;
+        font: inherit;
+        font-weight: bold;
+        text-align: left;
+        cursor: pointer;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .body,
+    .page-content {
+        padding: 1rem;
+    }
+
+    .text-input,
+    .number-input,
+    .select,
+    .custom-stage-size-input {
+        font-size: 16px;
+    }
+
+    .custom-stage-size {
+        height: auto;
+        flex-wrap: wrap;
+    }
+
+    .menu-bar-row {
+        min-height: 48px;
+    }
+}

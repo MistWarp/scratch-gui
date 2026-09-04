@@ -10,7 +10,7 @@ import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import extensionLibrary from '../../lib/libraries/extensions/index.jsx';
 import centralDispatch from 'scratch-vm/src/dispatch/central-dispatch';
 
-import styles from './extension-manager-modal.css';
+import styles from './extension-manager-modal.module.css';
 
 /* eslint-disable react/jsx-no-bind */
 

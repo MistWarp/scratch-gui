@@ -2,7 +2,7 @@ import React from 'react';
 
 import Box from '../box/box.jsx';
 import Selector from './selector.jsx';
-import styles from './asset-panel.css';
+import styles from './asset-panel.module.css';
 
 const AssetPanel = props => (
     <Box className={styles.wrapper}>

@@ -5,7 +5,7 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import RecordingStep from '../../containers/recording-step.jsx';
 import PlaybackStep from '../../containers/playback-step.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
-import styles from './record-modal.css';
+import styles from './record-modal.module.css';
 
 const messages = defineMessages({
     title: {

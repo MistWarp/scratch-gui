@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import render from '../app-target';
-import styles from './credits.css';
+import styles from './credits.module.css';
 
 import {APP_NAME} from '../../lib/constants/brand';
 import {applyGuiColors} from '../../lib/themes/guiHelpers';

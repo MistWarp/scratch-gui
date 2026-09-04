@@ -10,7 +10,7 @@ import {
     setLoaderSettings
 } from '../../lib/mw/loader-settings';
 
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 const TOGGLES = [
     {

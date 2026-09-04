@@ -4,7 +4,7 @@ import React from 'react';
 import {AlertTriangle, Plus, RefreshCw, Trash2} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import RestorePoint from './restore-point.jsx';
-import styles from './restore-point-modal.css';
+import styles from './restore-point-modal.module.css';
 import {formatBytes} from '../../lib/utils/bytes';
 
 const messages = defineMessages({

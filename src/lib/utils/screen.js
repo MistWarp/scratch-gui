@@ -19,11 +19,11 @@ const isProfilePreview = typeof URLSearchParams !== 'undefined' &&
  */
 
 const STAGE_DIMENSION_DEFAULTS = {
-    // referencing css/units.css,
+    // referencing css/units.module.css,
     // spacingBorderAdjustment = 2 * $full-screen-top-bottom-margin +
     //   2 * $full-screen-border-width
     fullScreenSpacingBorderAdjustment: 8,
-    // referencing css/units.css,
+    // referencing css/units.module.css,
     // menuHeightAdjustment = $stage-menu-height
     menuHeightAdjustment: 44
 };

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {ChevronDown} from 'lucide-react';
 
-import styles from './modal-sidebar.css';
+import styles from './modal-sidebar.module.css';
 
 const ModalSidebarLayout = ({children, className, mobileView}) => (
     <div

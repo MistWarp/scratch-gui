@@ -1,4 +1,4 @@
-import openMistWarpShareWindow from './open-mw-share-window.js';
+import openMistWarpShareWindow from './open-mw-share-window.jsx';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
 import {request} from '../community/api.js';
 import communityEnabled from '../community/enabled.js';

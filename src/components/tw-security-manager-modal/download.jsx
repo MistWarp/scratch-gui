@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 import {APP_NAME} from '../../lib/constants/brand.js';
-import styles from './download.css';
+import styles from './download.module.css';
 
 const DEFINITELY_EXECUTABLE = [
     // Entries should be lowercase and without leading period.

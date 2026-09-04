@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import stopAllIcon from './icon--stop-all.svg';
-import styles from './stop-all.css';
+import styles from './stop-all.module.css';
 
 const StopAllComponent = function (props) {
     const {

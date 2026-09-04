@@ -5,7 +5,7 @@ import {FormattedMessage} from 'react-intl';
 import UserAvatar from './user-avatar.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 
-import styles from './author-info.css';
+import styles from './author-info.module.css';
 
 const ActualAuthorInfo = ({
     className,

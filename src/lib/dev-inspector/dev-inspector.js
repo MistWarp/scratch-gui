@@ -2,8 +2,8 @@ import WindowManager from '../../addons/window-system/window-manager.js';
 import AddonHooks from '../../addons/hooks.js';
 import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
 import JSONEditor from 'jsoneditor';
-import '!!style-loader!css-loader!jsoneditor/dist/jsoneditor.css';
-import '!!style-loader!css-loader!./dev-inspector.css';
+import 'jsoneditor/dist/jsoneditor.css';
+import './dev-inspector.css';
 
 let initialized = false;
 

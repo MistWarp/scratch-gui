@@ -7,7 +7,7 @@ import {FormattedMessage, IntlProvider} from 'react-intl';
 
 import WindowManager from '../addons/window-system/window-manager';
 import Box from '../components/box/box.jsx';
-import './windowed-modal.css';
+import './windowed-modal.module.css';
 
 class WindowedModal extends React.Component {
     constructor (props) {

@@ -1,4 +1,4 @@
-import icon from '!!raw-loader!../icons/midnight.svg';
+import icon from '../icons/midnight.svg?raw';
 
 const name = 'Midnight';
 

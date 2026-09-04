@@ -6,7 +6,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import {buildTree, AssetFolder} from './asset-tree.jsx';
 import AssetPreview from './asset-preview.jsx';
 import {formatBytes} from '../../lib/utils/bytes';
-import styles from './assets-modal.css';
+import styles from './assets-modal.module.css';
 
 const messages = defineMessages({
     title: {

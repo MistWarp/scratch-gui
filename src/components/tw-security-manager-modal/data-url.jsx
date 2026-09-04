@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './data-url.css';
+import styles from './data-url.module.css';
 
 /**
  * @param {string} dataURI data: URI

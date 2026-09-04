@@ -1,4 +1,4 @@
-import styles from './modal-sidebar.css';
+import styles from './modal-sidebar.module.css';
 
 /**
  * Vanilla-JS twin of the ModalSidebar React components, for windows that are

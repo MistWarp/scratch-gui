@@ -8,7 +8,7 @@ import {CommunityIntlProvider} from '../community/i18n.jsx';
 import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance.js';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import render from './app-target.js';
-import '!!style-loader!css-loader!../community/styles/tokens.css';
+import '../community/styles/tokens.css';
 
 // The dev server rewrites /<id>/embed to the embed player, but in production
 // that path falls through to this community bundle. Bounce it to the embed

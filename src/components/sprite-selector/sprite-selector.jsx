@@ -9,7 +9,7 @@ import ActionMenu from '../action-menu/action-menu.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
-import styles from './sprite-selector.css';
+import styles from './sprite-selector.module.css';
 
 import spriteIcon from '../action-menu/icon--sprite.svg';
 

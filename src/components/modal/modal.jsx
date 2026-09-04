@@ -9,7 +9,7 @@ import Button from '../button/button.jsx';
 import CloseButton from '../close-button/close-button.jsx';
 import {ArrowLeft, HelpCircle} from 'lucide-react';
 
-import styles from './modal.css';
+import styles from './modal.module.css';
 
 const ModalComponent = props => (
     <ReactModal
