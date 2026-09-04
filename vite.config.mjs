@@ -208,7 +208,7 @@ const transformLinkedCjs = async (code, dir) => {
     if (!hasDefault && named.length > 0) {
         // exports.*-only file (e.g. blocks-execute-cache.js): consumers
         // require() the whole exports object, so synthesize a default.
-        footer.push(`export default {${named.join(', ')}};`);
+        footer.push(`export default {${named.map(name => `${name}: __mw_exp_${name}`).join(', ')}};`);
     }
     if (hasDefault) {
         // Named re-exports so `import {x} from` works, like the build's
