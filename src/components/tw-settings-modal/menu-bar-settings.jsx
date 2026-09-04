@@ -10,7 +10,7 @@ import {
     onSettingsChanged,
     setSetting
 } from '../../lib/menu-bar/settings.js';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 const BufferedInput = BufferedInputHOC(Input);
 

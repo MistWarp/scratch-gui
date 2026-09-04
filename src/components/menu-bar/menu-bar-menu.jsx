@@ -3,7 +3,7 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {ArrowLeft, X} from 'lucide-react';
 import Menu from '../../containers/menu.jsx';
-import styles from './menu-bar-menu.css';
+import styles from './menu-bar-menu.module.css';
 
 const MenuBarMenu = ({
     children,

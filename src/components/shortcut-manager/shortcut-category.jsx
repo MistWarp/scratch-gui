@@ -3,7 +3,7 @@ import React from 'react';
 
 import ShortcutItem from './shortcut-item.jsx';
 
-import styles from './shortcut-manager.css';
+import styles from './shortcut-manager.module.css';
 
 const ShortcutCategory = ({
     category,

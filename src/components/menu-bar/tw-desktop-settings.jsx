@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 import {MenuItem} from '../menu/menu.jsx';
-import styles from './settings-menu.css';
+import styles from './settings-menu.module.css';
 
 import {Computer} from 'lucide-react';
 

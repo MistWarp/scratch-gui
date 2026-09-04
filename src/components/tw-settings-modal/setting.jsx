@@ -7,7 +7,7 @@ import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-int
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import helpIcon from './help-icon.svg';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 
 const messages = defineMessages({
     help: {

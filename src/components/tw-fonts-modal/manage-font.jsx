@@ -5,7 +5,7 @@ import bindAll from 'lodash.bindall';
 import {formatBytes} from '../../lib/utils/bytes';
 import downloadBlob from '../../lib/utils/download-blob';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
-import styles from './fonts-modal.css';
+import styles from './fonts-modal.module.css';
 import deleteIcon from './delete.svg';
 import exportIcon from './export.svg';
 

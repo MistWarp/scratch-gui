@@ -5,7 +5,7 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import Box from '../box/box.jsx';
 
-import styles from './connection-modal.css';
+import styles from './connection-modal.module.css';
 
 class PeripheralTile extends React.Component {
     constructor (props) {

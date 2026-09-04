@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import {ChevronDown, ChevronRight, Folder, FolderOpen} from 'lucide-react';
-import styles from './assets-modal.css';
+import styles from './assets-modal.module.css';
 import AssetFile, {DRAG_TYPE} from './asset-file.jsx';
 
 const buildTree = (assets, extraFolders = []) => {

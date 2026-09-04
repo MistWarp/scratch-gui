@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 import cloudIcon from './clouddata.svg';
 import CloudServerButton from './cloud-server-button.jsx';
-import styles from './cloud-variable-badge.css';
+import styles from './cloud-variable-badge.module.css';
 import {APP_NAME} from '../../lib/constants/brand';
 
 const hosts = [

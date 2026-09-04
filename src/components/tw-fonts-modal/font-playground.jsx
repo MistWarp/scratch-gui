@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './fonts-modal.css';
+import styles from './fonts-modal.module.css';
 import bindAll from 'lodash.bindall';
 
 // TODO: is this something to localize?

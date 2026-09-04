@@ -6,8 +6,8 @@ import {connect} from 'react-redux';
 
 import {openSettingsModal} from '../../reducers/modals.js';
 
-import menuBarStyles from './menu-bar.css';
-import styles from './settings-menu.css';
+import menuBarStyles from './menu-bar.module.css';
+import styles from './settings-menu.module.css';
 
 import {Settings} from 'lucide-react';
 

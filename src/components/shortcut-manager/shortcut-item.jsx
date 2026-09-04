@@ -7,7 +7,7 @@ import {Pencil, RotateCcw, X} from 'lucide-react';
 
 import KeyCombo, {eventToCombo} from './key-combo.jsx';
 
-import styles from './shortcut-manager.css';
+import styles from './shortcut-manager.module.css';
 
 const messages = defineMessages({
     edit: {

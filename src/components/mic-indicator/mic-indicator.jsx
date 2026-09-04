@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './mic-indicator.css';
+import styles from './mic-indicator.module.css';
 import micIcon from './mic-indicator.svg';
 import {stageSizeToTransform} from '../../lib/utils/screen';
 

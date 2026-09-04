@@ -7,7 +7,7 @@ import {openCollaborationModal} from '../../reducers/collaboration';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import CollaborationService from '../../lib/collaboration/index.js';
 
-import styles from './mw-collab-presence.css';
+import styles from './mw-collab-presence.module.css';
 
 const MAX_FACES = 4;
 

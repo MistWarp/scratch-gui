@@ -3,7 +3,7 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 import Box from '../box/box.jsx';
-import styles from './loaded-extensions-list.css';
+import styles from './loaded-extensions-list.module.css';
 
 const LoadedExtensionsList = ({extensions, onExtensionClick}) => {
     if (extensions.length === 0) {

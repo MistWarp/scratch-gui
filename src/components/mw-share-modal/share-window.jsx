@@ -7,7 +7,7 @@ import {ensureProjectHistoryHydrated} from '../../lib/git/project-history.js';
 import {getFractchGitDiff} from '../../lib/git/fractch-diff.js';
 import {generateCommitName, getSmartFeaturesBalance} from '../../lib/sable/smart-features.js';
 import Markdown from '../../community/components/Markdown.jsx';
-import styles from './share-window.css';
+import styles from './share-window.module.css';
 
 class ShareWindow extends React.Component {
     constructor (props) {

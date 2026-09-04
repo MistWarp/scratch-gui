@@ -16,7 +16,7 @@ import {
 import muteIcon from './icons/mute.svg';
 import quietIcon from './icons/quiet.svg';
 import loudIcon from './icons/loud.svg';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 class VolumeSlider extends React.Component {
     constructor (props) {

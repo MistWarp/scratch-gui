@@ -7,7 +7,7 @@ import classNames from 'classnames';
 import {AlignLeft, AlignCenter, AlignRight, ChevronDown, ChevronUp, GripVertical} from 'lucide-react';
 
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import styles from './settings-modal.css';
+import styles from './settings-modal.module.css';
 import {
     ZONES,
     ALWAYS_SHOW,

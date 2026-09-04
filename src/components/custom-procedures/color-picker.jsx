@@ -4,7 +4,7 @@ import React from 'react';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import styles from './custom-procedures.css';
+import styles from './custom-procedures.module.css';
 
 const PRESET_COLORS = [
     {name: 'My Blocks', color: '#FF6680'},

@@ -25,7 +25,7 @@ import {
     Maximize
 } from 'lucide-react';
 
-import styles from './stage-header.css';
+import styles from './stage-header.module.css';
 
 import FullscreenAPI from '../../lib/api/fullscreen';
 

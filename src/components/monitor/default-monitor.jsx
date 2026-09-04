@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styles from './monitor.css';
+import styles from './monitor.module.css';
 
 const formatValue = value => {
     // Avoid rendering objects directly as React children which throws.

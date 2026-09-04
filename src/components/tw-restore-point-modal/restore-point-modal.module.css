@@ -1,0 +1,442 @@
+@import "../../css/colors.module.css";
+
+.modal-content {
+    color: $text-primary;
+}
+
+.body {
+    box-sizing: border-box;
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 1rem 1.25rem;
+    overflow: hidden;
+    background: $ui-modal-background;
+    color: $text-primary;
+}
+
+.confirmation-overlay {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: color-mix(in srgb, $ui-modal-background 88%, transparent);
+}
+
+.confirmation-card {
+    display: grid;
+    justify-items: center;
+    gap: 0.55rem;
+    width: min(26rem, 100%);
+    padding: 1.25rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 8px;
+    background: $ui-primary;
+    box-shadow: 0 8px 28px $ui-black-transparent;
+    text-align: center;
+}
+
+.confirmation-card > svg {
+    width: 1.5rem;
+    color: $error-primary;
+}
+
+.confirmation-card p {
+    margin: 0;
+    color: color-mix(in srgb, $text-primary 72%, transparent);
+    font-size: 0.75rem;
+}
+
+.confirmation-error {
+    color: $error-primary !important;
+    overflow-wrap: anywhere;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.confirmation-actions .secondary-button {
+    margin-top: 0;
+}
+
+.confirmation-button {
+    appearance: none;
+    min-height: 1.9rem;
+    padding: 0 0.65rem;
+    border: 0;
+    border-radius: 4px;
+    background: $error-primary;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.confirmation-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.automatic-row,
+.list-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 1rem;
+}
+
+.automatic-row {
+    min-height: 3.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.automatic-row > div,
+.list-toolbar > div:first-child {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.automatic-row strong,
+.list-toolbar strong {
+    font-size: 0.8rem;
+}
+
+.automatic-row span,
+.summary {
+    margin-top: 0.2rem;
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+    font-size: 0.7rem;
+    font-weight: 400;
+}
+
+.interval-selector {
+    width: 9.5rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-primary;
+    color: $text-primary;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.interval-selector:focus-visible,
+button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+.warning {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.6rem;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, $error-primary 10%, transparent);
+    font-size: 0.7rem;
+}
+
+.warning svg {
+    flex: 0 0 auto;
+    width: 1rem;
+    color: $error-primary;
+}
+
+.list-toolbar {
+    min-height: 3.25rem;
+    margin-top: 0.35rem;
+}
+
+.header-actions,
+.restore-point-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.icon-button,
+.action-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled),
+.action-button:hover:not(:disabled) {
+    background: $badge-border;
+}
+
+.icon-button:disabled,
+.action-button:disabled,
+.primary-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.icon-button svg,
+.action-button svg,
+.primary-button svg,
+.secondary-button svg,
+.delete-all-button svg {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+.primary-button,
+.secondary-button,
+.delete-all-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 1.9rem;
+    padding: 0 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.primary-button {
+    border: 0;
+    background: $looks-secondary;
+    color: white;
+}
+
+.primary-button:hover:not(:disabled) {
+    filter: brightness(0.94);
+}
+
+.secondary-button {
+    margin-top: 0.4rem;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+}
+
+.table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+}
+
+.table-header,
+.restore-point {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.5fr) 0.65fr 1.15fr 0.7fr 5.9rem;
+    align-items: center;
+    column-gap: 0.6rem;
+}
+
+.table-header {
+    flex: 0 0 auto;
+    min-height: 1.8rem;
+    padding: 0 0.65rem;
+    border-bottom: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.restore-point-container {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.restore-point {
+    min-height: 3.7rem;
+    padding: 0.35rem 0.65rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.restore-point:last-child {
+    border-bottom: 0;
+}
+
+.project-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.55rem;
+}
+
+.thumbnail-container {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 56px;
+    height: 42px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: $ui-primary;
+}
+
+.thumbnail-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail-placeholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: color-mix(in srgb, $text-primary 45%, transparent);
+}
+
+.restore-point-title {
+    overflow: hidden;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-cell {
+    overflow: hidden;
+    color: color-mix(in srgb, $text-primary 72%, transparent);
+    font-size: 0.68rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-cell > span {
+    display: block;
+    margin-top: 0.15rem;
+    color: color-mix(in srgb, $text-primary 50%, transparent);
+    font-size: 0.62rem;
+}
+
+.restore-point-buttons {
+    justify-content: flex-end;
+}
+
+.delete-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $error-primary 10%, transparent);
+    color: $error-primary;
+}
+
+.footer {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2.5rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.68rem;
+}
+
+.delete-all-button {
+    border: 0;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 68%, transparent);
+}
+
+.delete-all-button:hover {
+    background: color-mix(in srgb, $error-primary 10%, transparent);
+    color: $error-primary;
+}
+
+.state {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 0;
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    text-align: center;
+    font-size: 0.75rem;
+}
+
+.state > svg {
+    width: 1.4rem;
+    color: $looks-secondary;
+}
+
+.state strong {
+    color: $text-primary;
+    font-size: 0.82rem;
+}
+
+.error-message {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-family: monospace;
+    user-select: text;
+}
+
+.spinner {
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 560px) {
+    .body {
+        padding: 0.75rem;
+    }
+
+    .automatic-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .interval-selector {
+        width: 100%;
+    }
+
+    .table-header,
+    .restore-point {
+        grid-template-columns: minmax(160px, 1fr) 1fr 5.9rem;
+    }
+
+    .table-header > :nth-child(2),
+    .table-header > :nth-child(4),
+    .restore-point > :nth-child(2),
+    .restore-point > :nth-child(4) {
+        display: none;
+    }
+}

@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import {File, FileAudio, FileCode, FileImage, FileText} from 'lucide-react';
 import {formatBytes} from '../../lib/utils/bytes';
-import styles from './assets-modal.css';
+import styles from './assets-modal.module.css';
 
 const DRAG_TYPE = 'application/x-mistwarp-asset';
 

@@ -9,7 +9,7 @@ import {getSetting, onSettingChanged} from '../../lib/debugger/settings.js';
 import pauseIcon from './stage-icons/pause.svg';
 import playIcon from './stage-icons/play.svg';
 import stepIcon from './stage-icons/step.svg';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 class DebuggerStageControls extends React.Component {
     constructor (props) {

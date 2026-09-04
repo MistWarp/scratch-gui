@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {ArrowLeft} from 'lucide-react';
 
-import styles from './menu.css';
+import styles from './menu.module.css';
 
 const menuFocusIndex = (key, currentIndex, itemCount) => {
     if (!itemCount) return -1;

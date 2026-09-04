@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {FormattedMessage} from 'react-intl';
 import {formatBytes} from '../../lib/utils/bytes';
-import styles from './assets-modal.css';
+import styles from './assets-modal.module.css';
 
 class ManageAsset extends React.Component {
     constructor (props) {

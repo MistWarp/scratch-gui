@@ -13,7 +13,7 @@ import {injectIntl, intlShape, defineMessages, FormattedMessage} from 'react-int
 import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants.js';
 import {isWideLocale} from '../../lib/utils/locale.js';
 
-import styles from './sprite-info.css';
+import styles from './sprite-info.module.css';
 
 import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 

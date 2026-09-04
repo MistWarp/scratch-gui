@@ -5,7 +5,7 @@ import VM from 'scratch-vm';
 import MousePos from './mouse-pos.jsx';
 import CloneCounter from './clone-counter.jsx';
 import VolumeSlider from './volume-slider.jsx';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 // Native stage extras rendered after the stop button, in the same order the
 // old addons used: volume slider, mouse position, clone counter.

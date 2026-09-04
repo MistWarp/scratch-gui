@@ -4,13 +4,13 @@ import React, {useCallback} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
 import {filterInlineAlerts} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
-import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.jsx';
 import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 
 import {Save} from 'lucide-react';
 
-import styles from './save-status.css';
+import styles from './save-status.module.css';
 
 const TWSaveStatus = ({
     alertsList,

@@ -3,7 +3,7 @@ import React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {UserProvider} from '../../community/UserContext.jsx';
-import styles from './community-scope.css';
+import styles from './community-scope.module.css';
 
 const openAnchorInNewTab = e => {
     const anchor = e.target.closest('a[href]');

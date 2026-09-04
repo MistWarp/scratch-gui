@@ -4,7 +4,7 @@ import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 
 import {getSetting, onSettingChanged} from '../../lib/mw-stage-controls/settings.js';
-import styles from './stage-controls.css';
+import styles from './stage-controls.module.css';
 
 // Patches the VM mouse device once so position updates flow into React state.
 const patchedVMs = new WeakSet();

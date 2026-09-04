@@ -3,7 +3,7 @@ import React from 'react';
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import {describePermission, categoryLabel} from '../../lib/rotur/permission-descriptions.js';
-import styles from '../tw-security-manager-modal/security-manager-modal.css';
+import styles from '../tw-security-manager-modal/security-manager-modal.module.css';
 
 const groupScopes = scopes => {
     const groups = {};

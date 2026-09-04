@@ -5,7 +5,7 @@ import bindAll from 'lodash.bindall';
 import {Tooltip} from 'react-tooltip';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {defaultProjectId} from '../../reducers/project-state';
-import styles from './project-input.css';
+import styles from './project-input.module.css';
 import {setProjectId} from '../../lib/utils/navigation';
 
 const PROJECT_BASE = 'https://scratch.mit.edu/projects/';

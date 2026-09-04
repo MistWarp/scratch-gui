@@ -18,7 +18,7 @@ import {
 import AddonWindow from '../../addons/window-system/window.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
-import styles from './media-recorder.css';
+import styles from './media-recorder.module.css';
 
 const MIME_TYPES = [
     'video/webm; codecs=vp9',

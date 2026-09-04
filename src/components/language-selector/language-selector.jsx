@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import locales from '@turbowarp/scratch-l10n';
-import styles from './language-selector.css';
+import styles from './language-selector.module.css';
 
 // supported languages to exclude from the menu, but allow as a URL option
 const ignore = [];

@@ -4,7 +4,7 @@ import bindAll from 'lodash.bindall';
 import {FormattedMessage} from 'react-intl';
 import {Download, FileQuestion, MousePointerClick, Trash2} from 'lucide-react';
 import {formatBytes} from '../../lib/utils/bytes';
-import styles from './assets-modal.css';
+import styles from './assets-modal.module.css';
 
 class AssetPreview extends React.Component {
     constructor (props) {

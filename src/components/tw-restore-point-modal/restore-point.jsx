@@ -10,7 +10,7 @@ import {
     intlShape
 } from 'react-intl';
 import bindAll from 'lodash.bindall';
-import styles from './restore-point-modal.css';
+import styles from './restore-point-modal.module.css';
 import {formatBytes} from '../../lib/utils/bytes';
 import RestorePointAPI from '../../lib/api/restore-points';
 import log from '../../lib/utils/log';

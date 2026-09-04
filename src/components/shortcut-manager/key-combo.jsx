@@ -4,7 +4,7 @@ import classNames from 'classnames';
 
 import {parseKeyCombo} from '../../lib/shortcuts/registry.js';
 
-import styles from './shortcut-manager.css';
+import styles from './shortcut-manager.module.css';
 
 const isMac = typeof navigator !== 'undefined' &&
     navigator.platform.toUpperCase().includes('MAC');

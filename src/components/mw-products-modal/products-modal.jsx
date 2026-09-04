@@ -28,7 +28,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import api from '../../community/api.js';
 import {sendCommercePayment} from '../../community/credits.js';
-import styles from './products-modal.css';
+import styles from './products-modal.module.css';
 
 const messages = defineMessages({
     title: {

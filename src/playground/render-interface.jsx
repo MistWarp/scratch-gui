@@ -46,7 +46,7 @@ import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
 import windowManager from '../addons/window-system/window-manager';
 
-import styles from './interface.css';
+import styles from './interface.module.css';
 
 trackOnce('editor_open', {source: 'editor'});
 

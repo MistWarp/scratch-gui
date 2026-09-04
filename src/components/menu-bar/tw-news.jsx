@@ -2,7 +2,7 @@ import React from 'react';
 import {APP_NAME} from '../../lib/constants/brand';
 import {isScratchDesktop} from '../../lib/utils/isScratchDesktop';
 import CloseButton from '../close-button/close-button.jsx';
-import styles from './tw-news.css';
+import styles from './tw-news.module.css';
 
 const LOCAL_STORAGE_KEY = 'tw:closedNews';
 const NEWS_ID = 'vanilla-compatible-extendables';

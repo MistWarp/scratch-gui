@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import styles from './diff-viewer.css';
+import styles from './diff-viewer.module.css';
 
 const DiffHunk = ({hunk}) => (
     <div className={styles.hunk}>

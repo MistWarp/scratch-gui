@@ -40,7 +40,7 @@ import {setStageSize} from '../../reducers/stage-size';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
-import styles from './gui.css';
+import styles from './gui.module.css';
 import {getGuiComponents} from './gui-components';
 
 const messages = defineMessages({

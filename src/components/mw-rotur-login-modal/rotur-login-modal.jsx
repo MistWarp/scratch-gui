@@ -7,7 +7,7 @@ import {Activity, Cloud, GitBranch, Users} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
-import styles from './rotur-login-modal.css';
+import styles from './rotur-login-modal.module.css';
 
 const messages = defineMessages({
     title: {

@@ -8,7 +8,7 @@ import {
     isNewFunctionSupported,
     findIncompatibleUserscripts
 } from '../../lib/utils/tw-environment-support-prober.js';
-import styles from './browser-modal.css';
+import styles from './browser-modal.module.css';
 import {APP_NAME} from '../../lib/constants/brand.js';
 
 import unhappyBrowser from './unsupported-browser.svg';
