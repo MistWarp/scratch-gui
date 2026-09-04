@@ -29,6 +29,8 @@ import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 import {ChevronLeft} from 'lucide-react';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
+import {getSetting as getStageControlSetting, setSetting as setStageControlSetting,
+    getScreenshotSoundUrl, setScreenshotSoundUrl} from '../../lib/mw-stage-controls/settings.js';
 import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
     setSetting as setVariableManagerSetting} from '../../lib/variable-manager/settings.js';
 import {
@@ -76,6 +78,18 @@ const messages = defineMessages({
     headerStage: {
         defaultMessage: 'Stage',
         id: 'mw.settings.stageHeader'
+    },
+    headerStageOverlays: {
+        defaultMessage: 'Stage Overlays',
+        id: 'mw.settings.stageOverlaysHeader'
+    },
+    headerStageSound: {
+        defaultMessage: 'Stage Sound',
+        id: 'mw.settings.stageSoundHeader'
+    },
+    headerStageScreenshot: {
+        defaultMessage: 'Stage Screenshot',
+        id: 'mw.settings.stageScreenshotHeader'
     },
     headerBlockPalette: {
         defaultMessage: 'Block Palette',
@@ -331,6 +345,66 @@ const settingDefinitions = {
                 'frame so you can watch behavior change step by step.',
             id: 'mw.settingsModal.showStepButtonHelp'
         }
+    },
+    showMousePosition: {
+        label: {
+            defaultMessage: 'Show Mouse Position',
+            id: 'mw.settingsModal.showMousePosition'
+        },
+        help: {
+            defaultMessage: 'Displays the current mouse x/y position next to the stage controls.',
+            id: 'mw.settingsModal.showMousePositionHelp'
+        }
+    },
+    showCloneCounter: {
+        label: {
+            defaultMessage: 'Show Clone Counter',
+            id: 'mw.settingsModal.showCloneCounter'
+        },
+        help: {
+            defaultMessage: 'Shows the total number of active clones next to the stage controls.',
+            id: 'mw.settingsModal.showCloneCounterHelp'
+        }
+    },
+    showVolumeSlider: {
+        label: {
+            defaultMessage: 'Show Volume Slider',
+            id: 'mw.settingsModal.showVolumeSlider'
+        },
+        help: {
+            defaultMessage: 'Adds a volume slider next to the green flag controls.',
+            id: 'mw.settingsModal.showVolumeSliderHelp'
+        }
+    },
+    muteCtrlClick: {
+        label: {
+            defaultMessage: 'Ctrl+Click Green Flag to Mute',
+            id: 'mw.settingsModal.muteCtrlClick'
+        },
+        help: {
+            defaultMessage: 'Ctrl+Click (Cmd+Click on macOS) the green flag to mute or unmute the project.',
+            id: 'mw.settingsModal.muteCtrlClickHelp'
+        }
+    },
+    stageScreenshot: {
+        label: {
+            defaultMessage: 'Show Screenshot Button',
+            id: 'mw.settingsModal.stageScreenshot'
+        },
+        help: {
+            defaultMessage: 'Adds a camera button to the stage header that copies the stage to the clipboard.',
+            id: 'mw.settingsModal.stageScreenshotHelp'
+        }
+    },
+    screenshotNotifications: {
+        label: {
+            defaultMessage: 'Show Screenshot Preview',
+            id: 'mw.settingsModal.screenshotNotifications'
+        },
+        help: {
+            defaultMessage: 'Shows a small preview popup after a stage screenshot is captured.',
+            id: 'mw.settingsModal.screenshotNotificationsHelp'
+        }
     }
 };
 
@@ -382,6 +456,73 @@ DebuggerBooleanSetting.propTypes = {
     label: PropTypes.node.isRequired,
     help: PropTypes.node
 };
+
+class StageControlBooleanSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleChange = this.handleChange.bind(this);
+        this.state = {value: getStageControlSetting(props.settingId)};
+    }
+    handleChange (e) {
+        const value = e.target.checked;
+        setStageControlSetting(this.props.settingId, value);
+        this.setState({value});
+    }
+    render () {
+        return (
+            <BooleanSetting
+                value={this.state.value}
+                onChange={this.handleChange}
+                label={this.props.label}
+                help={this.props.help}
+            />
+        );
+    }
+}
+
+StageControlBooleanSetting.propTypes = {
+    settingId: PropTypes.string.isRequired,
+    label: PropTypes.node.isRequired,
+    help: PropTypes.node
+};
+
+class ScreenshotSoundUrlSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.state = {value: getScreenshotSoundUrl()};
+    }
+    handleSubmit (value) {
+        setScreenshotSoundUrl(value);
+        this.setState({value: getScreenshotSoundUrl()});
+    }
+    render () {
+        return (
+            <div className={styles.setting}>
+                <div className={styles.textSettingLabel}>
+                    <FormattedMessage
+                        defaultMessage="Screenshot Sound Effect URL"
+                        id="mw.settingsModal.screenshotSoundUrl"
+                    />
+                </div>
+                <BufferedInput
+                    className={styles.textInput}
+                    type="text"
+                    value={this.state.value}
+                    placeholder="https://…"
+                    onSubmit={this.handleSubmit}
+                />
+                <p className={styles.detail}>
+                    <FormattedMessage
+                        defaultMessage={'Optional sound played after a stage screenshot is captured. ' +
+                            'Leave empty for silence.'}
+                        id="mw.settingsModal.screenshotSoundUrlHelp"
+                    />
+                </p>
+            </div>
+        );
+    }
+}
 
 const HighQualityPen = createBooleanSetting('HighQualityPen', settingDefinitions.highQualityPen);
 const Interpolation = createBooleanSetting('Interpolation', settingDefinitions.interpolation);
@@ -808,6 +949,73 @@ const pageConfigurations = {
                             value: props.squareStageCorners,
                             onChange: props.onSquareStageCornersChange
                         })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerStageOverlays',
+                settings: [
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'mouse_position',
+                            label: <FormattedMessage {...settingDefinitions.showMousePosition.label} />,
+                            help: <FormattedMessage {...settingDefinitions.showMousePosition.help} />
+                        })
+                    },
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'clone_counter',
+                            label: <FormattedMessage {...settingDefinitions.showCloneCounter.label} />,
+                            help: <FormattedMessage {...settingDefinitions.showCloneCounter.help} />
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerStageSound',
+                settings: [
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'volume_slider',
+                            label: <FormattedMessage {...settingDefinitions.showVolumeSlider.label} />,
+                            help: <FormattedMessage {...settingDefinitions.showVolumeSlider.help} />
+                        })
+                    },
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'mute_ctrl_click',
+                            label: <FormattedMessage {...settingDefinitions.muteCtrlClick.label} />,
+                            help: <FormattedMessage {...settingDefinitions.muteCtrlClick.help} />
+                        })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerStageScreenshot',
+                settings: [
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'screenshot',
+                            label: <FormattedMessage {...settingDefinitions.stageScreenshot.label} />,
+                            help: <FormattedMessage {...settingDefinitions.stageScreenshot.help} />
+                        })
+                    },
+                    {
+                        component: StageControlBooleanSetting,
+                        props: () => ({
+                            settingId: 'screenshot_notifications',
+                            label: <FormattedMessage {...settingDefinitions.screenshotNotifications.label} />,
+                            help: <FormattedMessage {...settingDefinitions.screenshotNotifications.help} />
+                        })
+                    },
+                    {
+                        component: ScreenshotSoundUrlSetting,
+                        props: () => ({})
                     }
                 ]
             },

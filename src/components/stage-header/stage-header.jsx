@@ -9,6 +9,7 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 import Controls from '../../containers/controls.jsx';
+import ScreenshotButton from '../mw-stage-controls/screenshot-button.jsx';
 import {getStageDimensions} from '../../lib/utils/screen';
 import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 
@@ -252,6 +253,11 @@ const StageHeaderComponent = function (props) {
                                 />
                             </Button>
                         </div>
+                        <ScreenshotButton
+                            vm={vm}
+                            buttonClassName={styles.stageButton}
+                            buttonIconClassName={styles.icon}
+                        />
                         {hideFullscreenButton ? null : <div>
                             <Button
                                 aria-label={props.intl.formatMessage(messages.fullScreenMessage)}
