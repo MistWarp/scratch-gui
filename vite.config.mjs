@@ -364,6 +364,9 @@ export default defineConfig(({mode}) => {
         base: root,
         publicDir: resolve('static'),
         define: {
+            // webpack 4 polyfilled Node's `global` as `window`; linked
+            // packages still use it (e.g. global.fetch).
+            'global': 'globalThis',
             'process.env.NODE_ENV': JSON.stringify(mode),
             'process.env.DEBUG': JSON.stringify(Boolean(env.DEBUG)),
             'process.env.ENABLE_SERVICE_WORKER': JSON.stringify(env.ENABLE_SERVICE_WORKER || ''),
