@@ -11,11 +11,13 @@ import {
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
 
-const editorUrl = ({clone, platformProject, projectJson, assets} = {}) => {
+const editorUrl = ({clone, platformProject, projectJson, assets, starter, restore} = {}) => {
     if (platformProject) {
         return `/editor#mw-${platformProject}`;
     }
     const params = new URLSearchParams();
+    if (starter) params.set('starter', starter);
+    if (restore) params.set('restore', String(restore));
     if (clone) params.set('clone', clone);
     if (projectJson) params.set('project_url', projectJson);
     if (assets) params.set('mw_assets', assets);
@@ -167,12 +169,15 @@ const api = {
     muteUser: name => request(`/me/mutes/${encodeURIComponent(name)}`, {method: 'POST'}),
     unmuteUser: name => request(`/me/mutes/${encodeURIComponent(name)}`, {method: 'DELETE'}),
     support: ticket => request('/support', {method: 'POST', body: ticket}),
-    notifications: () => request('/notifications'),
+    notifications: () => request('/notifications', {cache: false}),
+    checkFollowerMilestones: name => request(`/milestones/followers/${encodeURIComponent(name)}`, {method: 'POST'}),
+    checkPostMilestones: id => request(`/milestones/posts/${encodeURIComponent(id)}`, {method: 'POST'}),
+    checkThemeMilestones: id => request(`/milestones/themes/${encodeURIComponent(id)}`, {method: 'POST'}),
     readNotifications: () => request('/notifications/read', {method: 'POST'}),
     explore: ({sort = 'recent', q = '', tag = '', offset = 0, limit = 24} = {}) =>
         request(`/explore?sort=${sort}&q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&offset=${offset}&limit=${limit}`),
     leaderboard: by => request(`/leaderboard?by=${by}`),
-    getProject: id => request(`/projects/${id}${projectAccessQuery()}`),
+    getProject: id => request(`/projects/${id}${projectAccessQuery()}`, {cache: false}),
     createProject,
     uploadProject,
     prepareSparseProjectUpload,
@@ -411,7 +416,7 @@ const api = {
     commitInspection: (id, sha) => {
         const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
         params.set('inline', '1');
-        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}?${params.toString()}`);
+        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}?${params.toString()}`, {cache: false});
     },
     commitTree: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,

@@ -6,6 +6,10 @@ import SocialPost from '../../src/community/components/SocialPost.jsx';
 import {useUser} from '../../src/community/UserContext.jsx';
 import rotur from '../../src/community/rotur.js';
 
+jest.mock('../../src/community/api.js', () => ({
+    __esModule: true, default: {checkPostMilestones: jest.fn(() => Promise.resolve())}
+}));
+
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
 jest.mock('../../src/community/rotur.js', () => ({
     likePost: jest.fn(),

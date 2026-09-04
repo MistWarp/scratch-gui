@@ -41,6 +41,8 @@ import {
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
+import {createStarterProject, getStarter} from '../starter-projects.js';
+import RestorePointAPI from '../api/restore-points';
 
 const cloneProjectFromRepo = async url => {
     const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
@@ -63,7 +65,7 @@ const clearProjectSourceFromUrl = () => {
     if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
     const params = new URLSearchParams(location.search);
     let changed = false;
-    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te']) {
+    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te', 'starter', 'restore']) {
         if (params.has(key)) {
             params.delete(key);
             changed = true;
@@ -253,6 +255,18 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 const jsonUrl = projectUrl;
                 assetPromise = (hasBridge() ? bridgeFetch(jsonUrl) : fetchArrayBuffer(jsonUrl))
                     .then(buffer => ({data: buffer}));
+            } else if (isInitialFetch && searchParams && searchParams.has('restore')) {
+                const id = Number(searchParams.get('restore'));
+                assetPromise = Number.isSafeInteger(id) && id > 0 ?
+                    RestorePointAPI.exportRestorePoint(id)
+                        .then(async ({blob, title}) => ({data: await blob.arrayBuffer(), title})) :
+                    Promise.reject(new Error('This device backup is not available. Open Device backups from File.'));
+            } else if (isInitialFetch && searchParams && searchParams.has('starter')) {
+                const starter = getStarter(searchParams.get('starter'));
+                assetPromise = starter ? Promise.resolve({
+                    data: JSON.stringify(createStarterProject(starter.id, this.props.intl.formatMessage)),
+                    title: starter.title
+                }) : Promise.reject(new Error('This starter is not available. Choose a starter from the homepage.'));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)

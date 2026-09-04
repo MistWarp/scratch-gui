@@ -314,6 +314,7 @@ const Profile = () => {
                 setFollowers(fs => fs.filter(f => f.toLowerCase() !== me.toLowerCase()));
             } else {
                 await rotur.follow(name);
+                api.checkFollowerMilestones(name).catch(() => {});
                 if (actionContextRef.current !== context) return;
                 setProfile(p => ({...p, followed: true, followers: (p.followers || 0) + 1}));
                 setFollowers(fs => [me, ...fs.filter(f => f.toLowerCase() !== me.toLowerCase())]);

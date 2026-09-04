@@ -6,6 +6,9 @@ import {
 import {createMwp} from '../git/mwp.js';
 import {deleteRepo} from '../git/browser-git.js';
 import {syncConfiguredRemotes} from '../git/sync-remotes.js';
+import {enableAfterCloudSave} from '../mw/autosave-settings.js';
+import {setSaveFeedback} from '../mw/save-feedback.js';
+import {trackDaily} from '../../community/analytics.js';
 import {
     isProjectHistoryHydrated,
     preloadProjectHistory,
@@ -398,10 +401,16 @@ const publishToMistWarp = async ({
     try {
         const withHash = new URL(window.location.href);
         withHash.hash = `mw-${platformId}`;
+        withHash.searchParams.delete('starter');
+        withHash.searchParams.delete('restore');
         window.history.replaceState(null, '', withHash);
     } catch (e) {
         // ignore
     }
+
+    enableAfterCloudSave();
+    setSaveFeedback(vm, 'cloud');
+    trackDaily('project_saved', {kind: 'cloud'});
 
     return {id: platformId, url: `/project/${platformId}`, shared, remoteWarnings};
 };

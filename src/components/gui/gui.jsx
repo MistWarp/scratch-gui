@@ -23,6 +23,7 @@ import {closeRoturLoginModal} from '../../reducers/modals.js';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
+import StarterGuide from './starter-guide.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
 import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
 
@@ -1077,6 +1078,10 @@ const GUIComponent = props => {
                         onShare={onShare}
                         onStartSelectingFileUpload={onStartSelectingFileUpload}
                         onToggleLoginOpen={onToggleLoginOpen}
+                    />
+                    <StarterGuide
+                        vm={vm}
+                        onImport={onStartSelectingFileUpload}
                     />
                     <Box className={styles.bodyWrapper}>
                         <Box className={styles.flexWrapper}>

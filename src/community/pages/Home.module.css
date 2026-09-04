@@ -84,6 +84,25 @@
     background: var(--accent);
 }
 
+.heroDemo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    font-size: 14px;
+}
+
+.heroDemo span {
+    padding-left: 14px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.5;
+}
+
+.heroDemo a { color: var(--accent-strong); font-weight: 700; }
+
 .dashboardGrid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

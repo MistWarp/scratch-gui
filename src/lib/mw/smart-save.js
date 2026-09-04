@@ -5,6 +5,8 @@ import communityEnabled from '../community/enabled.js';
 import downloadBlob from '../utils/download-blob';
 import {createMwp} from '../git/mwp.js';
 import {projectFilename} from '../utils/safe-filename.js';
+import {setSaveFeedback} from './save-feedback.js';
+import {trackDaily} from '../../community/analytics.js';
 
 const projectChangeStates = new WeakMap();
 
@@ -54,6 +56,8 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     if (!platform) {
         const {blob} = await createMwp({vm, message: 'Save MistWarp project', commitChanges: false});
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);
+        setSaveFeedback(vm, 'downloaded');
+        trackDaily('project_saved', {kind: 'download'});
         onSavedIfCurrent();
         return true;
     }

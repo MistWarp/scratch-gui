@@ -66,6 +66,19 @@ export const trackOnce = (name, properties = {}) => {
     track(name, properties);
 };
 
+export const trackDaily = (name, properties = {}) => {
+    if (!analyticsEnabled()) return;
+    try {
+        const day = new Date().toISOString().slice(0, 10);
+        const key = `mw:analytics-day:${name}`;
+        if (sessionStorage.getItem(key) === day) return;
+        sessionStorage.setItem(key, day);
+    } catch (e) {
+        // Storage restrictions must not break editing.
+    }
+    track(name, properties);
+};
+
 export const trackApiSuccess = (path, method) => {
     if (method !== 'POST') return;
     if (path === '/projects') track('project_created', {source: 'editor'});

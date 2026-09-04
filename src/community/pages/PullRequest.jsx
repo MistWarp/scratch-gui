@@ -14,6 +14,7 @@ import Modal from '../components/ui/Modal.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
+import {canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
@@ -154,7 +155,9 @@ export const canClosePullRequest = (project, pull, user) => {
 const PullRequest = () => {
     const {id, index} = useParams();
     const {user, login} = useUser();
+    const viewer = user?.username || '';
     const [project, setProject] = useState(null);
+    const [loadedContext, setLoadedContext] = useState('');
     const [pull, setPull] = useState(null);
     const [diff, setDiff] = useState(null);
     const [fileTexts, setFileTexts] = useState({});
@@ -173,11 +176,12 @@ const PullRequest = () => {
     const [commentText, setCommentText] = useState('');
     const [commentBusy, setCommentBusy] = useState(false);
     const [commentError, setCommentError] = useState('');
-    const contextRef = useRef(`${id}:${index}`);
+    const contextRef = useRef(`${viewer}:${id}:${index}`);
     const diffRequestRef = useRef('');
-    contextRef.current = `${id}:${index}`;
+    contextRef.current = `${viewer}:${id}:${index}`;
 
     const loadDiff = useCallback(async (activePull, context) => {
+        if (contextRef.current !== context || loadedContext !== context) return;
         if (diffRequestRef.current === context) return;
         diffRequestRef.current = context;
         if (contextRef.current === context) {
@@ -215,19 +219,31 @@ const PullRequest = () => {
         } finally {
             if (diffRequestRef.current === context) diffRequestRef.current = '';
         }
-    }, [id, index]);
+    }, [id, index, loadedContext]);
 
     const load = useCallback(async () => {
-        const context = `${id}:${index}`;
+        const context = `${viewer}:${id}:${index}`;
         setLoadingError('');
         try {
-            const [projectData, pullData, timelineData] = await Promise.all([
-                api.getProject(id),
-                api.getPull(id, index),
-                api.pullTimeline(id, index)
-            ]);
+            const projectData = await api.getProject(id);
+            if (contextRef.current !== context) return;
+            if (!canViewProjectSource(projectData.project || projectData)) {
+                throw new Error('Only the owner can view changes for this project.');
+            }
+            const pullData = await api.getPull(id, index);
+            if (contextRef.current !== context) return;
+            if (pullData.pull.canInspect === false) {
+                throw new Error('You do not have access to these changes.');
+            }
+            const sourceData = await api.getProject(pullData.pull.sourceProjectId);
+            if (contextRef.current !== context) return;
+            if (!canViewProjectSource(sourceData.project || sourceData)) {
+                throw new Error('You do not have access to the source project.');
+            }
+            const timelineData = await api.pullTimeline(id, index);
             if (contextRef.current !== context) return;
             setProject(projectData.project || projectData);
+            setLoadedContext(context);
             setPull(pullData.pull);
             setTimeline({
                 comments: timelineData.comments || [],
@@ -240,7 +256,7 @@ const PullRequest = () => {
                 setLoadingError(error.message || 'Could not load this pull request.');
             }
         }
-    }, [id, index, loadDiff]);
+    }, [id, index, viewer]);
 
     useEffect(() => {
         setProject(null);
@@ -264,8 +280,8 @@ const PullRequest = () => {
 
     useEffect(() => {
         if (!shouldLoadPullDiff({tab, pull, diff, diffError})) return;
-        loadDiff(pull, `${id}:${index}`);
-    }, [diff, diffError, id, index, loadDiff, pull, tab]);
+        loadDiff(pull, `${viewer}:${id}:${index}`);
+    }, [diff, diffError, id, index, loadDiff, pull, tab, viewer]);
 
     const uploadMerge = async (data, activePull, files) => {
         const result = await buildProjectArtifactsFromFileEntries(
@@ -439,7 +455,7 @@ const PullRequest = () => {
             </main>
         );
     }
-    if (!pull || !project) return <main className={styles.page}><p className={styles.loadState}>Loading pull request…</p></main>;
+    if (!pull || !project || loadedContext !== `${viewer}:${id}:${index}`) return <main className={styles.page}><p className={styles.loadState}>Loading pull request…</p></main>;
 
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
@@ -575,7 +591,7 @@ const PullRequest = () => {
                         onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
                     />
                     <section className={styles.diffColumn}>
-                        {diffError ? <div className={styles.diffFailure}><p>{diffError}</p><Button onClick={() => loadDiff(pull, `${id}:${index}`)}>Try again</Button></div> : diff === null ? (
+                        {diffError ? <div className={styles.diffFailure}><p>{diffError}</p><Button onClick={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>Try again</Button></div> : diff === null ? (
                             <div className={styles.loadState}>Loading file changes…</div>
                         ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                     </section>

@@ -68,6 +68,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
     const saveDetails = async () => {
         const projectId = project.id;
         if (saveLocks.current.has(projectId)) return;
+        if (parseTags(tagsText).includes('feedback') && !notes.trim()) {
+            setSaveError('Add a question to Creator notes so people know what feedback would help.');
+            setTab('About');
+            return;
+        }
         saveLocks.current.add(projectId);
         setSaving(true);
         setSaveError('');
@@ -115,6 +120,28 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 {saveError ? <p className={styles.panelError}>{saveError}</p> : null}
                 {tab === 'About' && (
                     <div className={styles.aboutSections}>
+                        {editing ? <section>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={parseTags(tagsText).includes('feedback')}
+                                    disabled={saving}
+                                    onChange={event => {
+                                        const tags = parseTags(tagsText).filter(tag => tag !== 'feedback');
+                                        if (event.target.checked && tags.length >= 10) {
+                                            setSaveError('Remove a tag in Details to make room for the feedback tag.');
+                                            return;
+                                        }
+                                        setSaveError('');
+                                        setTagsText([...tags, ...(event.target.checked ? ['feedback'] : [])].join(' '));
+                                    }}
+                                />{' '}Looking for feedback
+                            </label>
+                            <p className={styles.fieldHint}>Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as &quot;Is the first level too difficult?&quot;</p>
+                        </section> : (project.tags || []).includes('feedback') ? <section>
+                            <h3>Looking for feedback</h3>
+                            <p className={styles.panelText}>Try the project and answer the creator&apos;s question in the comments.</p>
+                        </section> : null}
                         <section>
                             <h3>Instructions</h3>
                             {editing ? (

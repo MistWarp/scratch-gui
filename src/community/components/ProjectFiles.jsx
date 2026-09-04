@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Code2, Eye, FileCode2, FileQuestion} from 'lucide-react';
 import api from '../api.js';
+import {canViewProjectSource} from '../project-source-access';
 import FileBrowserTree from './FileBrowserTree.jsx';
 import styles from './ProjectFiles.module.css';
 
@@ -46,12 +47,12 @@ export const projectSnapshotCacheKey = project =>
     `${project.id || project.workspaceUrl}:${project.gitHead || 'HEAD'}:${project.workspaceUrl}`;
 
 export const canLoadProjectSnapshot = project => Boolean(
-    project.id && project.gitHead
+    project.id && project.gitHead && canViewProjectSource(project)
 );
 
 export const canCacheProjectSnapshot = project => (
     project.shared === true && (project.visibility || 'public') === 'public' &&
-    Number(project.price || 0) <= 0
+    Number(project.price || 0) <= 0 && project.seeInside !== false && project.canViewSource !== false
 );
 
 const rememberSnapshot = (key, request) => {
@@ -275,7 +276,8 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         setSnapshot(null);
         setError('');
         if (!canLoadProjectSnapshot(project)) {
-            setError('This project does not have a saved file archive yet.');
+            setError(canViewProjectSource(project) ? 'This project does not have a saved file archive yet.' :
+                'Only the owner can view files for this project.');
             return () => {};
         }
         loadSnapshot(project).then(result => {
@@ -291,7 +293,8 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         return () => {
             active = false;
         };
-    }, [project.gitHead, project.workspaceUrl, onCount]);
+    }, [project.id, project.gitHead, project.workspaceUrl, project.price, project.seeInside,
+        project.canSeeInside, project.canViewSource, project.isOwner, project.myRole, onCount]);
 
     const files = snapshot ? snapshot.files : [];
     useEffect(() => {
@@ -302,7 +305,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         let active = true;
         setSelectedContent(null);
         setContentError('');
-        if (!selectedFile || !snapshot) {
+        if (!selectedFile || !snapshot || !canViewProjectSource(project)) {
             setContentLoading(false);
             return () => {};
         }
@@ -317,7 +320,8 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         return () => {
             active = false;
         };
-    }, [project.id, selectedFile, snapshot]);
+    }, [project.id, project.canViewSource, project.canSeeInside, project.seeInside, project.price,
+        project.isOwner, project.myRole, selectedFile, snapshot]);
     const selected = selectedContent || selectedFile;
     useEffect(() => {
         setViewMode(selected?.media ? 'preview' : 'code');
@@ -340,6 +344,9 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         onSelectPath(path);
     };
 
+    if (!canViewProjectSource(project)) {
+        return <div className={styles.state}>Only the owner can view files for this project.</div>;
+    }
     if (error) return <div className={styles.state}>{error}</div>;
     if (!snapshot) return <div className={styles.state}>Loading project files…</div>;
     if (!files.length) return <div className={styles.state}>This project has no files.</div>;

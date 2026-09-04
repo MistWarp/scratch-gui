@@ -53,3 +53,21 @@ test('round-trips settings through storage', () => {
     expect(getSetting('enabled')).toBe(true);
     expect(getSetting('interval')).toBe(2);
 });
+
+describe('autosave after choosing cloud storage', () => {
+    const {enableAfterCloudSave} = require('../../../src/lib/mw/autosave-settings.js');
+    test('enables autosave when there is no saved preference', () => {
+        enableAfterCloudSave();
+        expect(getSetting('enabled')).toBe(true);
+    });
+    test('preserves an explicit opt-out', () => {
+        setSetting('enabled', false);
+        enableAfterCloudSave();
+        expect(getSetting('enabled')).toBe(false);
+    });
+    test('preserves a legacy opt-out', () => {
+        localStorage.setItem('mw:menu-bar:autosave_enabled', 'false');
+        enableAfterCloudSave();
+        expect(getSetting('enabled')).toBe(false);
+    });
+});

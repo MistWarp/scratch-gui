@@ -3,6 +3,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List, WindowScroller} from 'react-virtualized';
 import {Link} from 'react-router-dom';
 import {ExternalLink, Heart, MessageCircle, Pin, Trash2} from 'lucide-react';
+import api from '../api.js';
 import rotur from '../rotur';
 import {timeAgo} from '../format';
 import Avatar from './Avatar.jsx';
@@ -122,6 +123,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
         try {
             if (liked) await rotur.unlikePost(post.id);
             else await rotur.likePost(post.id);
+            api.checkPostMilestones(post.id).catch(() => {});
         } catch (cause) {
             onChange(posts);
             setError(cause.message || 'Could not update this post.');
