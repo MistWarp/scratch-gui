@@ -11,6 +11,7 @@ import {viteStaticCopy} from 'vite-plugin-static-copy';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
 import {APP_NAME} from './src/lib/constants/brand.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -45,48 +46,58 @@ const linkedTargetType = (spec, dir) => {
 
 // How Vite will serve a bare import: CJS sources get pre-bundled with a
 // default export, ESM sources stay namespaces. Inspect the resolved file.
-const bareTargetType = async (spec, resolveFn) => {
-    const cached = bareTypeCache.get(spec);
+const bareTargetType = (spec, dir) => {
+    const cached = bareTypeCache.get(`${dir}::${spec}`);
     if (cached) return cached;
+    // Plain Node resolution, not this.resolve(): in dev that can return the
+    // pre-bundled ESM-ified file, which misclassifies CJS sources.
     let type = 'default';
     try {
-        const resolved = await resolveFn(spec);
-        const file = resolved && resolved.id.split('?')[0];
-        if (file && !file.includes('\0')) {
-            if (file.endsWith('.mjs')) {
-                type = 'namespace';
-            } else if (!file.endsWith('.cjs')) {
-                let dir = path.dirname(file);
-                let pkgType = '';
-                for (let i = 0; i < 6; i++) {
-                    const pkgPath = path.join(dir, 'package.json');
-                    if (fs.existsSync(pkgPath)) {
-                        try {
-                            pkgType = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).type || '';
-                        } catch (e) { /* ignore */ }
-                        break;
-                    }
-                    const parent = path.dirname(dir);
-                    if (parent === dir) break;
-                    dir = parent;
+        const req = createRequire(`${dir}/package.json`);
+        const file = req.resolve(spec).split('?')[0];
+        if (file.endsWith('.mjs')) {
+            type = 'namespace';
+        } else if (!file.endsWith('.cjs') && !file.endsWith('.json')) {
+            let pkgDir = path.dirname(file);
+            let pkg = null;
+            for (let i = 0; i < 6; i++) {
+                const pkgPath = path.join(pkgDir, 'package.json');
+                if (fs.existsSync(pkgPath)) {
+                    try {
+                        pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+                    } catch (e) { /* ignore */ }
+                    break;
                 }
-                if (pkgType === 'module') {
-                    type = 'namespace';
-                } else if (pkgType !== 'commonjs') {
-                    const source = fs.readFileSync(file, 'utf8').slice(0, 65536);
-                    if (!/(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source) &&
-                        /(^|\n)\s*(import|export)\s/.test(source)) {
+                const parent = path.dirname(pkgDir);
+                if (parent === pkgDir) break;
+                pkgDir = parent;
+            }
+            // Prefer the bundler entry: `module` is what Vite serves.
+            const entry = (pkg && pkg.module) || '';
+            if (entry) {
+                const entryFile = path.join(pkgDir, entry);
+                if (fs.existsSync(entryFile)) {
+                    const source = fs.readFileSync(entryFile, 'utf8').slice(0, 65536);
+                    if (!/(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source)) {
                         type = 'namespace';
                     }
+                }
+            } else if (pkg && pkg.type === 'module') {
+                type = 'namespace';
+            } else if (!pkg || pkg.type !== 'commonjs') {
+                const source = fs.readFileSync(file, 'utf8').slice(0, 65536);
+                if (!/(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source) &&
+                    /(^|\n)\s*(import|export)\s/.test(source)) {
+                    type = 'namespace';
                 }
             }
         }
     } catch (e) { /* keep default */ }
-    bareTypeCache.set(spec, type);
+    bareTypeCache.set(`${dir}::${spec}`, type);
     return type;
 };
 
-const transformLinkedCjs = async (code, dir, resolveFn) => {
+const transformLinkedCjs = async (code, dir) => {
     const imports = [];
     const seen = new Map();
     const unwrap = (spec, wantNamespace) => {
@@ -104,13 +115,13 @@ const transformLinkedCjs = async (code, dir, resolveFn) => {
     // Classify once per spec. Vite query modules (?worker/?raw/…) and JSON
     // always export their payload as default.
     const specs = new Map();
-    const classify = async spec => {
+    const classify = spec => {
         if (!specs.has(spec)) {
             let type = 'default';
             if (!spec.includes('!') && !spec.endsWith('.json')) {
                 type = spec.startsWith('.') ?
                     linkedTargetType(spec, dir) :
-                    await bareTargetType(spec, s => resolveFn(s));
+                    bareTargetType(spec, dir);
             }
             specs.set(spec, type);
         }
@@ -126,7 +137,7 @@ const transformLinkedCjs = async (code, dir, resolveFn) => {
     for (const line of code.split('\n')) {
         if (isComment(line)) continue;
         for (const match of line.matchAll(specPattern)) {
-            await classify(match[2]);
+            classify(match[2]);
         }
     }
     const lookup = spec => specs.get(spec) || 'default';
@@ -413,7 +424,7 @@ export default defineConfig(({mode}) => {
                     if (!/\/scratch-(vm|render|audio|blocks|paint)\//.test(file)) return null;
                     if (file.includes('/node_modules/')) return null;
                     if (!/require\(|module\.exports|exports\.[A-Za-z_$]/.test(code)) return null;
-                    return transformLinkedCjs(code, path.dirname(file), spec => this.resolve(spec, id));
+                    return transformLinkedCjs(code, path.dirname(file));
                 }
             },
             // The old webpack css-loader ran with modules:true for every .css
