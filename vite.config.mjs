@@ -55,41 +55,40 @@ const bareTargetType = (spec, dir) => {
     try {
         const req = createRequire(`${dir}/package.json`);
         const file = req.resolve(spec).split('?')[0];
-        if (file.endsWith('.mjs')) {
-            type = 'namespace';
-        } else if (!file.endsWith('.cjs') && !file.endsWith('.json')) {
-            let pkgDir = path.dirname(file);
-            let pkg = null;
-            for (let i = 0; i < 6; i++) {
-                const pkgPath = path.join(pkgDir, 'package.json');
-                if (fs.existsSync(pkgPath)) {
-                    try {
-                        pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-                    } catch (e) { /* ignore */ }
-                    break;
-                }
-                const parent = path.dirname(pkgDir);
-                if (parent === pkgDir) break;
-                pkgDir = parent;
+        // Nearest package.json, since format depends on it.
+        let pkgDir = path.dirname(file);
+        let pkg = null;
+        for (let i = 0; i < 6; i++) {
+            const pkgPath = path.join(pkgDir, 'package.json');
+            if (fs.existsSync(pkgPath)) {
+                try {
+                    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+                } catch (e) { /* ignore */ }
+                break;
             }
-            // Prefer the bundler entry: `module` is what Vite serves.
-            const entry = (pkg && pkg.module) || '';
-            if (entry) {
-                const entryFile = path.join(pkgDir, entry);
-                if (fs.existsSync(entryFile)) {
-                    const source = fs.readFileSync(entryFile, 'utf8').slice(0, 65536);
-                    if (!/(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source)) {
-                        type = 'namespace';
-                    }
-                }
-            } else if (pkg && pkg.type === 'module') {
-                type = 'namespace';
-            } else if (!pkg || pkg.type !== 'commonjs') {
-                const source = fs.readFileSync(file, 'utf8').slice(0, 65536);
-                if (!/(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source) &&
-                    /(^|\n)\s*(import|export)\s/.test(source)) {
+            const parent = path.dirname(pkgDir);
+            if (parent === pkgDir) break;
+            pkgDir = parent;
+        }
+        const hasCjs = source => /(^|\n)\s*module\.exports|[^.]exports\.[A-Za-z_$]/.test(source);
+        const hasEsm = source => /(^|\n)\s*(import|export)\s/.test(source);
+        // Bundlers (and Vite dev) prefer `module` over `main`; it decides.
+        const entry = (pkg && pkg.module) || '';
+        if (entry) {
+            const entryFile = path.join(pkgDir, entry);
+            if (fs.existsSync(entryFile)) {
+                const source = fs.readFileSync(entryFile, 'utf8').slice(0, 65536);
+                if (!hasCjs(source)) {
                     type = 'namespace';
                 }
+            }
+        } else if (file.endsWith('.mjs') || (pkg && pkg.type === 'module')) {
+            type = 'namespace';
+        } else if (!file.endsWith('.cjs') && !file.endsWith('.json') &&
+            (!pkg || pkg.type !== 'commonjs')) {
+            const source = fs.readFileSync(file, 'utf8').slice(0, 65536);
+            if (!hasCjs(source) && hasEsm(source)) {
+                type = 'namespace';
             }
         }
     } catch (e) { /* keep default */ }
