@@ -7,11 +7,6 @@ import _data_category_tweaks_v2 from "../addons/data-category-tweaks-v2/_manifes
 import _block_palette_icons from "../addons/block-palette-icons/_manifest_entry.js";
 import _hide_flyout from "../addons/hide-flyout/_manifest_entry.js";
 import _drag_drop from "../addons/drag-drop/_manifest_entry.js";
-import _canvas_screenshot from "../addons/canvas-screenshot/_manifest_entry.js";
-import _mute_project from "../addons/mute-project/_manifest_entry.js";
-import _vol_slider from "../addons/vol-slider/_manifest_entry.js";
-import _clones from "../addons/clones/_manifest_entry.js";
-import _mouse_pos from "../addons/mouse-pos/_manifest_entry.js";
 import _color_picker from "../addons/color-picker/_manifest_entry.js";
 import _remove_sprite_confirm from "../addons/remove-sprite-confirm/_manifest_entry.js";
 import _onion_skinning from "../addons/onion-skinning/_manifest_entry.js";
@@ -77,11 +72,6 @@ export default {
   "block-palette-icons": _block_palette_icons,
   "hide-flyout": _hide_flyout,
   "drag-drop": _drag_drop,
-  "canvas-screenshot": _canvas_screenshot,
-  "mute-project": _mute_project,
-  "vol-slider": _vol_slider,
-  "clones": _clones,
-  "mouse-pos": _mouse_pos,
   "color-picker": _color_picker,
   "remove-sprite-confirm": _remove_sprite_confirm,
   "onion-skinning": _onion_skinning,

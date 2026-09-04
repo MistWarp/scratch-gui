@@ -9,6 +9,7 @@ import StopAll from '../stop-all/stop-all.jsx';
 import TurboMode from '../turbo-mode/turbo-mode.jsx';
 import FramerateIndicator from '../tw-framerate-indicator/framerate-indicator.jsx';
 import DebuggerStageControls from '../tw-debugger/stage-controls.jsx';
+import StageExtras from '../mw-stage-controls/stage-extras.jsx';
 
 import styles from './controls.css';
 
@@ -57,6 +58,9 @@ const Controls = function (props) {
                 title={intl.formatMessage(messages.stopTitle)}
                 onClick={onStopAllClick}
             />
+            {vm ? (
+                <StageExtras vm={vm} />
+            ) : null}
             {turbo ? (
                 <TurboMode isSmall={isSmall} />
             ) : null}

@@ -5,6 +5,8 @@ import VM from 'scratch-vm';
 import {connect} from 'react-redux';
 
 import ControlsComponent from '../components/controls/controls.jsx';
+import {getSetting} from '../lib/mw-stage-controls/settings.js';
+import {setMuted, isMuted, setup as setupVolume} from '../lib/mw-stage-controls/volume.js';
 
 class Controls extends React.Component {
     constructor (props) {
@@ -16,6 +18,13 @@ class Controls extends React.Component {
     }
     handleGreenFlagClick (e) {
         e.preventDefault();
+        // mw: ctrl/cmd+click toggles mute (promoted from mute-project addon)
+        if (getSetting('mute_ctrl_click') && (e.ctrlKey || e.metaKey)) {
+            e.stopPropagation();
+            setupVolume(this.props.vm);
+            setMuted(!isMuted());
+            return;
+        }
         // tw: implement alt+click and right click to toggle FPS
         if (e.shiftKey || e.altKey || e.type === 'contextmenu') {
             if (e.shiftKey) {
