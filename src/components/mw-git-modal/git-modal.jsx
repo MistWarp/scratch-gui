@@ -935,7 +935,7 @@ class GitModalComponent extends React.Component {
                 <p className={styles.muted}>
                     <FormattedMessage
                         // eslint-disable-next-line max-len
-                        defaultMessage="MistWarp syncs every connection after Save to MistWarp. RoturGit URLs use your Rotur sign-in automatically."
+                        defaultMessage="Connections you add here sync after Save to MistWarp. Connections imported from a file require an explicit Push."
                         description="Explains automatic repository syncing"
                         id="mw.git.remote.syncNote"
                     />

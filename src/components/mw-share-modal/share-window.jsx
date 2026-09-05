@@ -1,6 +1,9 @@
+import {guardSavedCallback} from '../../lib/mw/save-guard.js';
 import React from 'react';
 import PropTypes from 'prop-types';
-import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
+import {
+    publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob, getRememberedPlatformProjectState
+} from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
 import {getRepoChanges} from '../../lib/git/browser-git.js';
 import {ensureProjectHistoryHydrated} from '../../lib/git/project-history.js';
@@ -28,6 +31,7 @@ class ShareWindow extends React.Component {
         this.agreementPromise = null;
         this.agreementInFlight = false;
         this.publishInFlight = false;
+        this.initialDestination = getRememberedPlatformProjectState()?.id;
         this.thumbnailPreparation = null;
         this.thumbnailPreparationSource = null;
         this.state = {
@@ -161,8 +165,14 @@ class ShareWindow extends React.Component {
         if (this.publishInFlight || this.state.status || this.state.agreeBusy) {
             return;
         }
+        if (this.initialDestination !== getRememberedPlatformProjectState()?.id) {
+            this.setState({error: 'The workspace changed. Close this window and save from the current workspace.'});
+            return;
+        }
         const isUpdate = this.props.action === 'update';
         this.publishInFlight = true;
+        const destination = getRememberedPlatformProjectState()?.id;
+        const onSaved = guardSavedCallback(this.props.vm, this.props.onPublished);
 
         this.setState({
             status: 'Checking your account',
@@ -214,6 +224,9 @@ class ShareWindow extends React.Component {
             }
         }
         try {
+            if (destination !== getRememberedPlatformProjectState()?.id) {
+                throw new Error('The open workspace changed. Close this window and save from the current workspace.');
+            }
             const result = await publishToMistWarp({
                 vm: this.props.vm,
                 title: isUpdate ? null : this.state.title,
@@ -235,7 +248,7 @@ class ShareWindow extends React.Component {
                     this.state.notice
             });
             this.releasePublish();
-            this.props.onPublished(result);
+            onSaved(result);
         } catch (e) {
             this.releasePublish();
             if (e.code === 'agreement_required' && e.data && e.data.agreement) {
@@ -418,8 +431,12 @@ class ShareWindow extends React.Component {
                 <div className={styles.root}>
                     <div className={styles.body}>
                         <p className={styles.doneMessage}>
-                            {'Upload the current version of this project to MistWarp. ' +
-                            'The title and thumbnail stay as they are; edit those on the project page.'}
+                            {this.props.vm._mwHistoryHydration?.replaceHistory ?
+                                'Saving replaces the saved project and all its commits and branches ' +
+                                'with the imported history.' :
+                                'Saving replaces the saved project code. Existing commits stay in history.'}
+                            {' Save without a version uploads your code without adding a commit. ' +
+                            'Create version and save adds a named commit. Cancel uploads nothing.'}
                         </p>
                         <label className={styles.label} htmlFor="mw-share-change">What changed?</label>
                         <input
@@ -453,7 +470,7 @@ class ShareWindow extends React.Component {
                             className={styles.secondary}
                             onClick={this.handleSkipSave}
                             disabled={!!this.state.status}
-                        >Skip</button>
+                        >Save without a version</button>
                         {showGenerate ? (
                             <button
                                 type="button"
@@ -467,7 +484,7 @@ class ShareWindow extends React.Component {
                             className={styles.primary}
                             onClick={this.handlePublish}
                             disabled={!!this.state.status || !this.state.changeMessage.trim()}
-                        >{this.state.status ? 'Saving…' : actionLabel}</button>
+                        >{this.state.status ? 'Saving…' : 'Create version and save'}</button>
                     </div>
                 </div>
             );

@@ -109,3 +109,12 @@ test('notifies on unexpected failures', async () => {
 
     expect(showToast).toHaveBeenCalledWith('Autosave failed.', 'error');
 });
+
+
+test.each([
+    {_mwPendingDiskOverwrite: true},
+    {_mwHistoryHydration: {replaceHistory: true}}
+])('does not publish an imported replacement before a manual save', async vm => {
+    await expect(runAutosave({vm, projectChanged: true, settings})).resolves.toBe(false);
+    expect(publishToMistWarp).not.toHaveBeenCalled();
+});

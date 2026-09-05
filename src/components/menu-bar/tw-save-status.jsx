@@ -27,7 +27,10 @@ const TWSaveStatus = ({
     const [autosave, setAutosave] = useState(() => getSetting('enabled'));
     const [downloadError, setDownloadError] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [, refreshPlatform] = useState(0);
     useEffect(() => {
+        const refresh = () => refreshPlatform(version => version + 1);
+        window.addEventListener('mw:platform-project-changed', refresh);
         const update = event => {
             if (event.detail.vm === vm) setFeedback(getSaveFeedback(vm));
         };
@@ -39,13 +42,14 @@ const TWSaveStatus = ({
         if (vm.on) vm.on('PROJECT_LOADED', reset);
         const unsubscribe = onSettingsChanged(() => setAutosave(getSetting('enabled')));
         return () => {
+            window.removeEventListener('mw:platform-project-changed', refresh);
             window.removeEventListener(SAVE_FEEDBACK_EVENT, update);
             if (vm.off) vm.off('PROJECT_LOADED', reset);
             unsubscribe();
         };
     }, [vm]);
     const platformState = communityEnabled && roturReady ? getRememberedPlatformProjectState() : null;
-    const isOwner = platformState && platformState.isOwner === true;
+    const isOwner = platformState && (platformState.isOwner === true || platformState.canSaveDirectly === true);
     const mistwarpAction = getMistWarpAction(platformState, projectChanged) ||
         (isOwner ? 'update' : platformState ? 'remix' : 'save');
     const onSaveClick = useCallback(() => {
@@ -67,27 +71,34 @@ const TWSaveStatus = ({
     const status = busy ? 'Preparing download…' : downloadError ? 'Download failed. Try again' :
         projectChanged ? 'Unsaved changes' : isOwner ? 'Saved to MistWarp' :
             feedback === 'downloaded' ? 'Downloaded to computer' : platformState ? 'Shared project' : 'Local project';
-    const label = communityEnabled ? (mistwarpAction === 'remix' ? 'Remix to MistWarp' : 'Save to MistWarp') :
+    const label = communityEnabled ?
+        (mistwarpAction === 'remix' ? 'Remix to MistWarp' :
+            mistwarpAction === 'update' ? 'Save changes' : 'Save to MistWarp') :
         'Save to your computer';
-    const detail = isOwner ? (autosave ? 'Autosave is on. Publishing is separate.' : 'Autosave is off.') :
-        'Device backups stay in this browser. Save a copy to keep your work.';
-    const Icon = isOwner ? Cloud : feedback === 'downloaded' ? Download : Save;
-    const readOnly = platformState && platformState.isOwner === false && platformState.canRemix === false;
+    const detail = communityEnabled ?
+        (mistwarpAction === 'remix' ? 'Creates your own copy of this project on MistWarp.' :
+            mistwarpAction === 'update' ? 'Uploads your latest changes to this MistWarp project.' :
+                'Uploads this project to your MistWarp account.') :
+        'Downloads a project file to your computer.';
+    const autosaveDetail = isOwner ? (autosave ? ' Browser autosave is on.' : ' Browser autosave is off.') : '';
+    const Icon = communityEnabled ? Cloud : feedback === 'downloaded' ? Download : Save;
+    const readOnly = platformState && platformState.isOwner === false &&
+        !platformState.canSaveDirectly && platformState.canRemix === false;
     return (
         <React.Fragment>
             <button
                 type="button"
                 className={styles.saveNow}
-                aria-label={`${status}. ${label}`}
+                aria-label={`${label}. ${status}. ${detail}${autosaveDetail}`}
                 disabled={busy || readOnly}
                 onClick={onSaveClick}
-                title={`${status}. ${detail} ${label}`}
+                title={`${detail}${autosaveDetail}`}
             >
                 <Icon
                     className={styles.saveIconAlways}
                     size={16}
                 />
-                <span className={styles.saveLabel}>{status}</span>
+                <span className={styles.saveAction}>{label}</span>
             </button>
             {filterInlineAlerts(alertsList).length > 0 ? <InlineMessages /> : null}
         </React.Fragment>

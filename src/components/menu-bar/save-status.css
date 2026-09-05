@@ -38,8 +38,9 @@
     flex-shrink: 0;
 }
 
-.save-label {
+.save-action {
     white-space: nowrap;
+    font-weight: 600;
 }
 
 @media only screen and (max-width: 900px) {
@@ -47,7 +48,7 @@
         display: block;
     }
 
-    .save-label {
+    .save-action {
         display: none;
     }
 }
@@ -56,6 +57,6 @@
     display: block;
 }
 
-:global(.mw-compact-save) .save-label {
+:global(.mw-compact-save) .save-action {
     display: none;
 }

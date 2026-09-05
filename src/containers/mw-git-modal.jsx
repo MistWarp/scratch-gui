@@ -1,3 +1,5 @@
+import {withProjectReplacement} from '../lib/project-replacement.js';
+import {detachWorkspace} from '../lib/workspace-state.js';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
@@ -5,7 +7,7 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 
 import GitModalComponent from '../components/mw-git-modal/git-modal.jsx';
-import {closeGitModal} from '../reducers/modals.js';
+import {closeGitModal, openSimpleDialog} from '../reducers/modals.js';
 
 import downloadBlob from '../lib/utils/download-blob.js';
 import log from '../lib/utils/log.js';
@@ -99,13 +101,9 @@ export const loadClonedProject = async (vm, projectTitle) => {
     const bytes = await buildSb3FromFractchTree({fs: pfs, dir: REPO_DIR});
     const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 
-    try {
-        await RestorePointAPI.createSafetyRestorePoint(vm, projectTitle);
-    } catch (error) {
-        log.warn('Could not create a restore point before loading the cloned project:', error);
-    }
+    await RestorePointAPI.createSafetyRestorePoint(vm, projectTitle);
     vm.quit();
-    await vm.loadProject(buffer, {skipGitImport: true});
+    await vm.loadProject(buffer, {skipGitImport: true, mwPreserveProjectSource: true});
     try {
         vm.renderer.draw();
     } catch (error) {
@@ -276,6 +274,93 @@ export class TWGitModal extends React.Component {
             'handleChangeRoturCloneOther',
             'handleRoturCloneOther'
         ]);
+        this.confirmingAction = false;
+        const replacements = {
+            handleClone: [
+                'Open cloned project in a new workspace',
+                'Clone into new workspace',
+                'The clone replaces the editor contents and local history. Your saved MistWarp project stays unchanged.'
+            ],
+            handleRoturClone: [
+                'Open cloned project in a new workspace',
+                'Clone into new workspace',
+                'The clone replaces the editor contents and local history. Your saved MistWarp project stays unchanged.'
+            ],
+            handleUndoCommit: [
+                'Undo the latest commit',
+                'Back up and undo commit',
+                'This loads the previous version and records a new undo commit. Uncommitted edits leave the editor.'
+            ],
+            handleCheckoutBranch: [
+                'Switch branches',
+                'Back up and switch branch',
+                'The selected branch replaces the code in the editor. Uncommitted edits are not ' +
+                    'carried to the other branch.'
+            ],
+            handleRestoreCommit: [
+                'Open this history version',
+                'Back up and open version',
+                'This replaces the editor code with the selected version. Existing commits remain in history.'
+            ],
+            handleDeleteRepo: [
+                'Delete local project history',
+                'Delete local history',
+                'This removes all local commits, branches and connections. Your editor code and the ' +
+                    'saved MistWarp project remain. Download an MWP first to keep local history.'
+            ],
+            handleDeleteBranch: [
+                'Delete this branch',
+                'Delete branch',
+                'Commits found only on this branch may become inaccessible. Download an MWP first to keep its history.'
+            ],
+            handleResolveInEditor: [
+                'Prepare a merge in the editor',
+                'Back up and prepare merge',
+                'This replaces the working files with the merge result. Uncommitted edits are not ' +
+                    'included in the merge.'
+            ],
+            handleApplyMerge: [
+                'Apply this merge',
+                'Back up and apply merge',
+                'This replaces the editor code with the merge result. Uncommitted edits are not included in the merge.'
+            ]
+        };
+        for (const [method, [title, action, message]] of Object.entries(replacements)) {
+            const perform = this[method];
+            this[method] = async (...args) => {
+                if (this.state.busy || this.confirmingAction) return false;
+                // React releases synthetic event fields before the dialog resolves.
+                args = args.map(arg => (arg && (arg.currentTarget || arg.target) ? {
+                    currentTarget: {dataset: {...arg.currentTarget?.dataset}},
+                    target: {value: arg.target?.value}
+                } : arg));
+                if (method === 'handleClone' && !this.state.cloneUrl.trim()) return false;
+                if (method === 'handleRoturClone' && !args[0]?.cloneUrl) return false;
+                this.confirmingAction = true;
+                try {
+                    const accepted = await new Promise(resolve => this.props.openSimpleDialog({
+                        type: 'confirm',
+                        title,
+                        message: `${message} A device backup keeps your current code. ` +
+                            'Cancel leaves everything as it is.',
+                        choices: [{value: 'continue', label: action}],
+                        onOk: () => resolve(true),
+                        onCancel: () => resolve(false)
+                    }));
+                    if (!accepted) return false;
+                    await withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before history change',
+                        () => perform(...args));
+                    if (method === 'handleClone' || method === 'handleRoturClone') detachWorkspace(this.props.vm);
+                    else this.props.vm._mwPendingDiskOverwrite = true;
+                    return true;
+                } catch (error) {
+                    this.setState({error: error.message});
+                    return false;
+                } finally {
+                    this.confirmingAction = false;
+                }
+            };
+        }
     }
 
     componentDidMount () {
@@ -456,12 +541,6 @@ export class TWGitModal extends React.Component {
             this.setState({error: 'Enter a git URL to clone'});
             return;
         }
-        // Cloning replaces the current project (and any repo). Confirm first when
-        // there are unsaved changes to avoid silently discarding work.
-        if (this.props.projectChanged && !this.state.cloneConfirm) {
-            this.setState({cloneConfirm: true, error: null});
-            return;
-        }
         this.setState({cloneConfirm: false});
         const token = this.state.remoteToken;
         const username = (this.state.authorName || '').trim();
@@ -481,8 +560,6 @@ export class TWGitModal extends React.Component {
 
             this.setState({cloneUrl: ''});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -542,7 +619,7 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             const snapshot = await readSnapshotAtCommit(previous.oid);
             this.props.vm.quit();
-            await this.props.vm.loadProject(snapshot, {skipGitImport: true});
+            await this.props.vm.loadProject(snapshot, {skipGitImport: true, mwPreserveProjectSource: true});
 
             const headLine = head && head.commit && head.commit.message ? head.commit.message.split('\n')[0] : '';
             const undoMessage = `Undo: ${headLine || head.oid.slice(0, 7)}`;
@@ -558,8 +635,6 @@ export class TWGitModal extends React.Component {
             });
 
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -576,8 +651,7 @@ export class TWGitModal extends React.Component {
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
-            await createBranch({ref, vm: this.props.vm});
-            await checkoutBranchAndRestore({vm: this.props.vm, ref});
+            await createBranch({ref, vm: this.props.vm, checkout: true});
             this.setState({newBranchName: ''});
             await this.refresh();
         } catch (err) {
@@ -597,8 +671,6 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -614,8 +686,6 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             await checkoutCommitAndRestore({vm: this.props.vm, oid});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -649,8 +719,6 @@ export class TWGitModal extends React.Component {
             await deleteRepo();
             this.setState({diffData: null, diffFilepath: null, selectedCommitOid: null, commitFiles: []});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -670,8 +738,6 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             await deleteBranch(ref);
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -985,8 +1051,6 @@ export class TWGitModal extends React.Component {
             }
             this.props.onClose();
             openFractchMode();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -1012,8 +1076,6 @@ export class TWGitModal extends React.Component {
             await restoreProjectFromCurrentRef(this.props.vm);
             this.setState({mergeConflicts: [], mergeResolutions: {}, mergeSourceBranch: ''});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -1134,10 +1196,6 @@ export class TWGitModal extends React.Component {
 
     async handleRoturClone (repo) {
         if (!repo || !repo.cloneUrl) return;
-        if (this.props.projectChanged && this.state.roturCloneConfirm !== repo.fullName) {
-            this.setState({roturCloneConfirm: repo.fullName, error: null});
-            return;
-        }
         this.setState({
             roturCloneConfirm: null,
             busy: true,
@@ -1155,8 +1213,6 @@ export class TWGitModal extends React.Component {
             await this.loadProjectFromClonedRepo();
             this.setState({roturCloneOther: ''});
             await this.refresh();
-        } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
         } finally {
             this.setState({busy: false, busyMessage: null, busyProgress: null});
         }
@@ -1325,21 +1381,21 @@ export class TWGitModal extends React.Component {
 }
 
 TWGitModal.propTypes = {
+    openSimpleDialog: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
-    projectChanged: PropTypes.bool,
     projectTitle: PropTypes.string,
     roturUsername: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     vm: state.scratchGui.vm,
-    projectChanged: state.scratchGui.projectChanged,
     projectTitle: state.scratchGui.projectTitle,
     roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
 });
 
 const mapDispatchToProps = dispatch => ({
+    openSimpleDialog: config => dispatch(openSimpleDialog(config)),
     onClose: () => dispatch(closeGitModal())
 });
 

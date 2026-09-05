@@ -19,6 +19,7 @@ import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
 import MyStuffThemes from '../components/MyStuffThemes.jsx';
 import MyStuffLibrary from '../components/MyStuffLibrary.jsx';
+import SharedProjects from '../components/SharedProjects.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Markdown from '../components/Markdown.jsx';
 import {CREDIT_PACKS, openCreditCheckout} from '../credits';
@@ -508,6 +509,7 @@ const AgreementTab = () => {
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: LayoutDashboard},
     {key: 'projects', label: 'My Projects', icon: FolderOpen, group: 'Projects'},
+    {key: 'shared', label: 'Shared with you', icon: HeartHandshake, group: 'Projects'},
     {key: 'library', label: 'Library', icon: Bookmark, group: 'Projects'},
     {key: 'collections', label: 'Collections', icon: Library, group: 'Projects'},
     {key: 'spaces', label: 'Spaces', icon: Layers3, group: 'Projects'},
@@ -1391,6 +1393,8 @@ const MyStuff = () => {
                         ) : (
                             <p className={styles.status}>Loading…</p>
                         )
+                    ) : tab === 'shared' ? (
+                        <SharedProjects key={username} />
                     ) : tab === 'library' ? (
                         <MyStuffLibrary
                             projects={libraryProjects || []}

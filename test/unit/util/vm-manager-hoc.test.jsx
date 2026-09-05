@@ -177,7 +177,7 @@ describe('VMManagerHOC', () => {
         ));
     });
 
-    test('an older load finishing late cannot complete the newer project state', async () => {
+    test('a second load cannot replace code while the first load is running', async () => {
         const loadResolvers = [];
         vm.loadProject = jest.fn(() => new Promise(resolve => loadResolvers.push(resolve)));
         const onLoadedProject = jest.fn();
@@ -208,13 +208,10 @@ describe('VMManagerHOC', () => {
             projectData: 'new'
         });
 
-        loadResolvers[1]();
-        await Promise.resolve();
+        expect(loadResolvers).toHaveLength(1);
         loadResolvers[0]();
-        await Promise.resolve();
-
-        expect(onLoadedProject).toHaveBeenCalledTimes(1);
-        expect(onLoadedProject).toHaveBeenCalledWith(LoadingState.LOADING_VM_WITH_ID, true);
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+        expect(onLoadedProject).not.toHaveBeenCalled();
     });
 
     test('version history does not keep the editor on the loading screen', async () => {
@@ -246,6 +243,7 @@ describe('VMManagerHOC', () => {
         });
         await Promise.resolve();
 
+        for (let i = 0; i < 10; i++) await Promise.resolve();
         expect(onLoadedProject).toHaveBeenCalledWith(LoadingState.LOADING_VM_WITH_ID, true);
         await Promise.resolve();
         expect(prepareProjectHistory).toHaveBeenCalledTimes(1);

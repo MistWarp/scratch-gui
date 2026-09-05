@@ -14,6 +14,7 @@ import {
     projectError
 } from '../../reducers/project-state';
 import log from '../utils/log';
+import {withProjectOperation} from '../project-operation.js';
 
 /**
  * List of fonts that could be used by security prompts.
@@ -98,7 +99,12 @@ const vmManagerHOC = function (WrappedComponent) {
             vm.quit();
             const prepareProjectHistory = vm._mwPrepareProjectHistory;
             vm._mwPrepareProjectHistory = null;
-            return vm.loadProject(projectData, {skipGitImport: true})
+            const rollback = vm._mwRollbackProjectLoad;
+            vm._mwRollbackProjectLoad = null;
+            const release = vm._mwReleaseProjectLoad;
+            vm._mwReleaseProjectLoad = null;
+            const load = () => vm.loadProject(projectData, {skipGitImport: true});
+            return (release ? Promise.resolve().then(load) : withProjectOperation(vm, load))
                 .then(() => {
                     if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
                     if (prepareProjectHistory) {
@@ -139,11 +145,15 @@ const vmManagerHOC = function (WrappedComponent) {
                     }
                     return true;
                 })
-                .catch(e => {
+                .catch(async e => {
+                    if (rollback) await rollback();
                     if (this._isMounted && loadGeneration === this.loadGeneration) {
                         onError(e);
                     }
                     return false;
+                })
+                .finally(() => {
+                    if (release) release();
                 });
         }
         render () {

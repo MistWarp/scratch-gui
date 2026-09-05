@@ -77,6 +77,8 @@ const {createMwp} = require('../../../src/lib/git/mwp.js');
 describe('first remix delta export', () => {
     beforeEach(async () => {
         jest.clearAllMocks();
+        mockGit.listBranches.mockResolvedValue(['main']);
+        mockGit.currentBranch.mockResolvedValue('main');
         mockGit.readCommit.mockImplementation(({oid}) => {
             if (oid === BASE) throw new Error('shallow base must not be read');
             return Promise.resolve({
@@ -193,6 +195,40 @@ describe('first remix delta export', () => {
         });
 
         expect(mockInitRepo).toHaveBeenCalledWith(expect.objectContaining({initialParent: ''}));
-        expect(mockCollectReachableObjectOids).not.toHaveBeenCalled();
+        expect(mockCollectReachableObjectOids).toHaveBeenCalledWith(HEAD);
     });
+    test('does not label a failed delta traversal as a full archive', async () => {
+        mockCollectReachableObjectOids.mockRejectedValue(new Error('missing parent'));
+        await expect(createMwp({projectId: 'fork', remixParent: 'parent', remoteHead: BASE}))
+            .rejects.toThrow('missing parent');
+        expect(mockExportRepoToZip).not.toHaveBeenCalled();
+    });
+
+    test('does not create a root when inherited history is unavailable', async () => {
+        await expect(createMwp({projectId: 'fork', remixParent: 'parent', baseCommit: BASE}))
+            .rejects.toThrow('Remix history is unavailable');
+        expect(mockInitRepo).not.toHaveBeenCalled();
+    });
+
+    test('refuses a full export of a shallow repository', async () => {
+        mockRepoExists.mockResolvedValue(true);
+        mockCollectReachableObjectOids.mockRejectedValue(new Error('missing ancestor'));
+        await expect(createMwp({projectId: 'fork', commitChanges: false}))
+            .rejects.toThrow('missing ancestor');
+        expect(mockExportRepoToZip).not.toHaveBeenCalled();
+    });
+
+    test('initializes a shallow save on the selected inherited branch', async () => {
+        mockGit.listBranches.mockResolvedValue(['feature']);
+        mockGit.currentBranch.mockResolvedValue('feature');
+        const result = await createMwp({
+            projectId: 'fork', remixParent: 'parent', remoteHead: BASE, branch: 'feature'
+        });
+        expect(mockInitRepo).toHaveBeenCalledWith(expect.objectContaining({
+            defaultBranch: 'feature', initialParent: BASE
+        }));
+        expect(result.manifest.branch).toBe('feature');
+        expect(result.manifest.baseHead).toBe(BASE);
+    });
+
 });

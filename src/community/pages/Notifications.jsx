@@ -23,6 +23,7 @@ import styles from './Notifications.module.css';
 import {getNotificationPreferences, categoryForNotification} from '../notification-preferences';
 
 const ICONS = {
+    project_shared: Users,
     love: Heart,
     like_milestone: Heart,
     follower_milestone: Users,
@@ -136,6 +137,7 @@ const actorFor = n => {
 
 const describe = n => {
     switch (n.type) {
+    case 'project_shared': return <span>shared <strong>{n.projectTitle || 'a project'}</strong> with you</span>;
     case 'love': return n.projectTitle ?
         <span>loved <strong>{n.projectTitle}</strong></span> :
         <span>loved your project</span>;

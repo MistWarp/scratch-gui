@@ -12,7 +12,7 @@
  * authoritative for who sent a message.
  */
 
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 
 const KIND = {
     OP: 'op',
@@ -26,6 +26,7 @@ const KIND = {
 
 // Sequenced operations (host-ordered). Used by both `op` and `propose`.
 const OP = {
+    VM_EDIT: 'vm-edit',
     BLOCK_EVENT: 'block-event',
     BLOCKS_SHARE: 'blocks-share',
     TARGET_UPDATE: 'target-update',
@@ -54,6 +55,7 @@ const OP = {
 // Unsequenced control-plane messages.
 const CTRL = {
     HELLO: 'hello',
+    COMMAND_ACK: 'command-ack',
     JOIN_REQUEST: 'join-request',
     JOIN_APPROVED: 'join-approved',
     JOIN_DENIED: 'join-denied',
@@ -184,6 +186,16 @@ const isAssetRefs = value =>
  * the payload is acceptable. Types without an entry accept any plain object.
  */
 const PAYLOAD_VALIDATORS = {
+    [OP.VM_EDIT]: payload => {
+        if (!isOptionalString(payload.requestId, LIMITS.MAX_ID)) return 'invalid request ID';
+        if (!isAssetRefs(payload.assetRefs)) return 'invalid assetRefs';
+        if (payload.command) {
+            if (!isPlainObject(payload.command) || !isNonEmptyString(payload.command.method, 64) ||
+                !Array.isArray(payload.command.args)) return 'invalid VM command';
+        } else if (!isPlainObject(payload.commit) || !Array.isArray(payload.commit.patches) ||
+            !Array.isArray(payload.commit.order)) return 'invalid VM commit';
+        return null;
+    },
     [OP.BLOCK_EVENT]: payload => {
         if (!isPlainObject(payload.event)) return 'block-event requires an event object';
         if (!isNonEmptyString(payload.event.type, LIMITS.MAX_STRING)) return 'block event missing type';
@@ -327,6 +339,11 @@ const PAYLOAD_VALIDATORS = {
         return null;
     },
 
+    [CTRL.COMMAND_ACK]: payload => {
+        if (!isNonNegativeInt(payload.clientOpId)) return 'invalid command acknowledgement';
+        if (!isOptionalString(payload.requestId, LIMITS.MAX_ID)) return 'invalid request ID';
+        return null;
+    },
     [REJECT.OP_REJECT]: payload => {
         if (!isNonNegativeInt(payload.clientOpId)) return 'op-reject requires clientOpId';
         if (!isOptionalString(payload.reason, LIMITS.MAX_REASON)) return 'op-reject reason too long';
@@ -338,6 +355,9 @@ const PAYLOAD_VALIDATORS = {
         if (!isNonEmptyString(payload.username, LIMITS.MAX_USERNAME)) return 'hello requires username';
         if (!isOptionalString(payload.handle, LIMITS.MAX_USERNAME)) return 'hello handle must be a string';
         if (!isNonEmptyString(payload.roomId, LIMITS.MAX_ROOM_ID)) return 'hello requires roomId';
+        if (payload.scope && (!isPlainObject(payload.scope) ||
+            !isNonEmptyString(payload.scope.projectId, LIMITS.MAX_ID) ||
+            !isNonEmptyString(payload.scope.branch, 200))) return 'hello requires a valid project and branch scope';
         if (typeof payload.lastAppliedSeq !== 'undefined' && !isNonNegativeInt(payload.lastAppliedSeq)) {
             return 'hello lastAppliedSeq must be a non-negative integer';
         }

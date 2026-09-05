@@ -80,101 +80,18 @@ const serializeEvent = (vm, event) => {
     if (target) {
         json.targetName = target.getName();
     }
+    for (const key of ['newCoordinate', 'oldCoordinate', 'xy', 'newCoordinate_', 'newContents_',
+        'title', 'width', 'height', 'collapsed', 'blockIds', 'frameId']) {
+        if (typeof event[key] !== 'undefined') json[key] = event[key];
+    }
     return json;
-};
-
-const reconstructEvent = (workspace, serializedEvent) => {
-    if (!serializedEvent || !workspace) {
-        return null;
-    }
-
-    const ScratchBlocks = window.ScratchBlocks;
-    if (!ScratchBlocks || !ScratchBlocks.Events || !ScratchBlocks.Events.fromJson) {
-        return null;
-    }
-
-    try {
-        const event = ScratchBlocks.Events.fromJson(serializedEvent, workspace);
-
-        if (event.type === 'move' && serializedEvent.oldCoordinate) {
-            const xy = serializedEvent.oldCoordinate.split(',');
-            event.oldCoordinate = {x: parseFloat(xy[0]), y: parseFloat(xy[1])};
-        }
-        if (event.type === 'move' && serializedEvent.oldParentId) {
-            event.oldParentId = serializedEvent.oldParentId;
-        }
-        if (event.type === 'move' && serializedEvent.oldInputName) {
-            event.oldInputName = serializedEvent.oldInputName;
-        }
-
-        if (event.type === 'change') {
-            if (typeof serializedEvent.newValue !== 'undefined') event.newValue = serializedEvent.newValue;
-            if (typeof serializedEvent.oldValue !== 'undefined') event.oldValue = serializedEvent.oldValue;
-            if (serializedEvent.name) event.name = serializedEvent.name;
-            if (serializedEvent.element) event.element = serializedEvent.element;
-        }
-
-        if (event.type === 'comment_create') {
-            if (serializedEvent.xy) event.xy = serializedEvent.xy;
-            if (serializedEvent.commentId) event.commentId = serializedEvent.commentId;
-            if (serializedEvent.blockId) event.blockId = serializedEvent.blockId;
-            if (typeof serializedEvent.text !== 'undefined') event.text = serializedEvent.text;
-            if (typeof serializedEvent.width !== 'undefined') event.width = serializedEvent.width;
-            if (typeof serializedEvent.height !== 'undefined') event.height = serializedEvent.height;
-            if (typeof serializedEvent.minimized !== 'undefined') event.minimized = serializedEvent.minimized;
-            if (serializedEvent.xml && !event.xml) {
-                try {
-                    event.xml = ScratchBlocks.Xml.textToDom(`<xml>${serializedEvent.xml}</xml>`).firstChild;
-                } catch (e) {
-                    // XML parsing failed; create will fall back to no-op
-                }
-            }
-        }
-
-        if (event.type === 'comment_delete') {
-            if (serializedEvent.commentId) event.commentId = serializedEvent.commentId;
-            if (serializedEvent.blockId) event.blockId = serializedEvent.blockId;
-        }
-
-        if (event.type === 'comment_move') {
-            if (serializedEvent.commentId) event.commentId = serializedEvent.commentId;
-            if (serializedEvent.newCoordinate) {
-                const xy = serializedEvent.newCoordinate.split(',');
-                event.newCoordinate_ = {x: parseFloat(xy[0]), y: parseFloat(xy[1])};
-                event.newCoordinate = event.newCoordinate_;
-            }
-        }
-
-        if (event.type === 'comment_change') {
-            if (typeof serializedEvent.oldContents !== 'undefined') event.oldContents_ = serializedEvent.oldContents;
-            if (typeof serializedEvent.newContents !== 'undefined') event.newContents_ = serializedEvent.newContents;
-            if (serializedEvent.commentId) event.commentId = serializedEvent.commentId;
-        }
-
-        if (event.type === 'var_create' || event.type === 'var_delete') {
-            if (typeof serializedEvent.varType !== 'undefined') event.varType = serializedEvent.varType;
-            if (typeof serializedEvent.varName !== 'undefined') event.varName = serializedEvent.varName;
-            if (typeof serializedEvent.isLocal !== 'undefined') event.isLocal = serializedEvent.isLocal;
-            if (typeof serializedEvent.isCloud !== 'undefined') event.isCloud = serializedEvent.isCloud;
-            if (serializedEvent.varId) event.varId = serializedEvent.varId;
-        }
-
-        if (event.type === 'var_rename') {
-            if (typeof serializedEvent.oldName !== 'undefined') event.oldName = serializedEvent.oldName;
-            if (typeof serializedEvent.newName !== 'undefined') event.newName = serializedEvent.newName;
-            if (serializedEvent.varId) event.varId = serializedEvent.varId;
-        }
-
-        return event;
-    } catch (error) {
-        return null;
-    }
 };
 
 const SYNCABLE_EVENTS = [
     'create', 'delete', 'change', 'move',
     'var_create', 'var_delete', 'var_rename',
-    'comment_create', 'comment_delete', 'comment_change', 'comment_move'
+    'comment_create', 'comment_delete', 'comment_change', 'comment_move',
+    'frame_create', 'frame_delete', 'frame_change', 'frame_move'
 ];
 
 const shouldSyncEvent = event => {
@@ -199,6 +116,5 @@ const shouldSyncEvent = event => {
 
 export {
     serializeEvent,
-    reconstructEvent,
     shouldSyncEvent
 };

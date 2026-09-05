@@ -277,7 +277,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         setError('');
         if (!canLoadProjectSnapshot(project)) {
             setError(canViewProjectSource(project) ? 'This project does not have a saved file archive yet.' :
-                'Only the owner can view files for this project.');
+                'You do not have permission to view files for this project.');
             return () => {};
         }
         loadSnapshot(project).then(result => {
@@ -345,7 +345,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
     };
 
     if (!canViewProjectSource(project)) {
-        return <div className={styles.state}>Only the owner can view files for this project.</div>;
+        return <div className={styles.state}>You do not have permission to view files for this project.</div>;
     }
     if (error) return <div className={styles.state}>{error}</div>;
     if (!snapshot) return <div className={styles.state}>Loading project files…</div>;

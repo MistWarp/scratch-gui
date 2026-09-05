@@ -10,7 +10,15 @@ const {
 } = require('../../src/lib/git/browser-git.js');
 
 describe('incremental project history uploads', () => {
+    beforeEach(() => jest.spyOn(git, 'readBlob').mockResolvedValue({blob: new Uint8Array([1])}));
     afterEach(() => jest.restoreAllMocks());
+
+    test('rejects a missing reachable blob', async () => {
+        jest.spyOn(git, 'readCommit').mockResolvedValue({commit: {tree: 'missing-tree', parent: []}});
+        jest.spyOn(git, 'readTree').mockResolvedValue({tree: [{type: 'blob', oid: 'missing-blob'}]});
+        git.readBlob.mockRejectedValue(new Error('missing blob'));
+        await expect(collectReachableObjectOids('missing-head')).rejects.toThrow('missing blob');
+    });
 
     test('collects only objects created after the server head', async () => {
         const baseCommit = 'a'.repeat(40);

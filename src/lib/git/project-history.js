@@ -1,6 +1,6 @@
 import {
     computeCommitGraph,
-    deleteRepo,
+    createRepoBackup,
     getRemotes,
     getRepoStatus,
     readReadme
@@ -115,6 +115,19 @@ const preloadRemoteProjectHistory = project => {
     return currentPromise;
 };
 
+// An imported workspace owns the local repository until it is saved or another project opens.
+const adoptImportedProjectHistory = (vm, manifest, project, replaceHistory = true) => {
+    setRemoteProjectHistory(project);
+    vm._mwHistoryHydration = project ? {
+        key: remoteProjectKey(project),
+        projectId: String(project.id),
+        ready: true,
+        manifest,
+        replaceHistory,
+        promise: null
+    } : null;
+};
+
 const isProjectHistoryHydrated = vm => {
     const expected = remoteProjectKey(remoteProject);
     return !expected || Boolean(vm && vm._mwHistoryHydration &&
@@ -132,11 +145,14 @@ const ensureProjectHistoryHydrated = vm => {
         if (existing.promise) return existing.promise;
     }
     const hydration = {key, ready: false, manifest: null, promise: null};
+    let restoreRepo;
     hydration.promise = fetchWorkspace(project.workspaceUrl)
-        .then(workspace => importMwp(workspace))
+        .then(async workspace => {
+            restoreRepo = await createRepoBackup();
+            return importMwp(workspace);
+        })
         .then(async manifest => {
             if (project.gitHead && manifest.head && manifest.head !== project.gitHead) {
-                await deleteRepo();
                 throw new Error('The project history changed while it was loading. Try again.');
             }
             if (project.gitBranch) await checkoutMwpBranch(project.gitBranch);
@@ -145,7 +161,8 @@ const ensureProjectHistoryHydrated = vm => {
             hydration.promise = null;
             return manifest;
         })
-        .catch(error => {
+        .catch(async error => {
+            if (restoreRepo) await restoreRepo();
             if (vm._mwHistoryHydration === hydration) vm._mwHistoryHydration = null;
             throw error;
         });
@@ -204,6 +221,7 @@ const subscribeProjectHistory = listener => {
 };
 
 export {
+    adoptImportedProjectHistory,
     ensureProjectHistoryHydrated,
     getProjectHistoryState,
     isProjectHistoryHydrated,

@@ -46,6 +46,7 @@ class HostSnapshotService extends Emitter {
         this.getExtensions = getExtensions || null;
         this._transfers = new Map(); // peerId -> transfer state
         this._transferCounter = 0;
+        this._capture = null;
 
         this._onSnapshotNeeded = ({peerId}) => {
             this.startTransfer(peerId);
@@ -93,11 +94,29 @@ class HostSnapshotService extends Emitter {
             // Capture the sequence number BEFORE serializing: ops that land
             // during serialization are not in the snapshot, and the client
             // replays everything after atSeq, so it must not skip them.
-            atSeq = this.session.seq;
-            targetIds = this.getTargetIds ? this.getTargetIds() : null;
-            extensions = this.getExtensions ? this.getExtensions() : null;
-            buffer = toArrayBuffer(await this.getProjectData());
+            // Joiners arriving during the same serialization share its bytes
+            // and base sequence. Each still has its own acknowledgements.
+            if (!this._capture) {
+                const capture = {};
+                const take = async () => {
+                    capture.atSeq = this.session.seq;
+                    capture.targetIds = this.getTargetIds ? this.getTargetIds() : null;
+                    capture.extensions = this.getExtensions ? this.getExtensions() : null;
+                    return toArrayBuffer(await this.getProjectData());
+                };
+                capture.promise = this.session.queue ? this.session.queue.run(take) : take();
+                this._capture = capture;
+                capture.promise.finally(() => {
+                    if (this._capture === capture) this._capture = null;
+                }).catch(() => {});
+            }
+            const capture = this._capture;
+            buffer = await capture.promise;
+            atSeq = capture.atSeq;
+            targetIds = capture.targetIds;
+            extensions = capture.extensions;
         } catch (error) {
+            if (this._transfers.get(peerId)?.transferId !== transferId) return;
             this._transfers.delete(peerId);
             this.emit('upload-error', {peerId, error});
             return;
@@ -112,7 +131,8 @@ class HostSnapshotService extends Emitter {
             buffer,
             chunkCount,
             nextIndex: 0,
-            ackedCount: 0
+            ackedCount: 0,
+            acked: new Set()
         };
         this._transfers.set(peerId, transfer);
 
@@ -142,9 +162,11 @@ class HostSnapshotService extends Emitter {
         }));
     }
 
-    _onAck (peerId, {transferId}) {
+    _onAck (peerId, {transferId, index}) {
         const transfer = this._transfers.get(peerId);
         if (!transfer || transfer.transferId !== transferId || transfer.starting) return;
+        if (!Number.isInteger(index) || index < 0 || index >= transfer.nextIndex || transfer.acked.has(index)) return;
+        transfer.acked.add(index);
         transfer.ackedCount++;
         this.emit('upload-progress', {
             peerId,
@@ -205,9 +227,20 @@ class ClientSnapshotService extends Emitter {
         };
         session.on('snapshot-message', this._onSnapshotMessage);
         session.on('resync-needed', this._onResyncNeeded);
+        this._destroyed = false;
+        this._generation = 0;
+        this._attempts = 0;
+        this._loadChain = Promise.resolve();
+        this._onApproved = () => {
+            if (session.lastAppliedSeq === null) this._armTimeout();
+        };
+        session.on('join-approved', this._onApproved);
     }
 
     destroy () {
+        this._destroyed = true;
+        this._generation++;
+        this.session.off('join-approved', this._onApproved);
         this.session.off('snapshot-message', this._onSnapshotMessage);
         this.session.off('resync-needed', this._onResyncNeeded);
         this._clearTimeout();
@@ -221,12 +254,18 @@ class ClientSnapshotService extends Emitter {
      * host explicitly demands a resync.
      */
     requestResync () {
+        if (this._destroyed) return;
+        this._generation++;
+        this._incoming = null;
         this.session.beginResync();
+        this._armTimeout();
         this.transport.sendToHost(makeSnapshot(SNAPSHOT.REQUEST, {}));
     }
 
     _onBegin ({transferId, totalBytes, chunkCount, atSeq, targetIds, extensions}) {
+        this._generation++;
         this._incoming = {
+            generation: this._generation,
             transferId,
             totalBytes,
             chunkCount,
@@ -258,13 +297,20 @@ class ClientSnapshotService extends Emitter {
         });
 
         if (incoming.receivedCount === incoming.chunkCount) {
-            this._finish(incoming);
+            this._incoming = null;
+            this._clearTimeout();
+            this._loadChain = this._loadChain.then(() => this._finish(incoming)).catch(error => {
+                if (!this._destroyed) this._fail(error);
+            });
         }
     }
 
     async _finish (incoming) {
-        this._incoming = null;
-        this._clearTimeout();
+        const active = () => !this._destroyed && incoming.generation === this._generation;
+        if (!active()) return;
+        if (this.session.queue) await this.session.queue.tail;
+        if (this.session.applier && this.session.applier.queue) await this.session.applier.queue.tail;
+        if (!active()) return;
 
         const combined = new Uint8Array(incoming.receivedBytes);
         let offset = 0;
@@ -275,18 +321,17 @@ class ClientSnapshotService extends Emitter {
         if (combined.byteLength !== incoming.totalBytes) {
             const error = new Error(
                 `snapshot size mismatch: expected ${incoming.totalBytes}, got ${combined.byteLength}`);
-            this.emit('download-error', {error});
-            this.requestResync();
+            this._fail(error);
             return;
         }
 
         this.emit('download-complete');
 
         try {
-            await this.applyProjectData(combined.buffer);
+            await this.applyProjectData(combined.buffer, active);
+            if (!active()) return;
         } catch (error) {
-            this.emit('download-error', {error});
-            this.requestResync();
+            this._fail(error);
             return;
         }
 
@@ -294,9 +339,11 @@ class ClientSnapshotService extends Emitter {
         // targetIds resolve identically on every peer.
         if (incoming.targetIds && this.remapTargetIds) {
             try {
-                this.remapTargetIds(incoming.targetIds);
+                await this.remapTargetIds(incoming.targetIds, active);
+                if (!active()) return;
             } catch (error) {
-                // Ids stay divergent; name-based fallbacks still work.
+                this._fail(error);
+                return;
             }
         }
 
@@ -305,15 +352,27 @@ class ClientSnapshotService extends Emitter {
         if (incoming.extensions && this.loadExtensions) {
             try {
                 await this.loadExtensions(incoming.extensions);
+                if (!active()) return;
             } catch (error) {
-                // A failed extension load shouldn't abort onboarding.
+                this._fail(error);
+                return;
             }
         }
 
+        if (!active()) return;
+        this._attempts = 0;
         this.session.setBaseSeq(incoming.atSeq);
         this.transport.sendToHost(makeSnapshot(SNAPSHOT.COMPLETE, {
             transferId: incoming.transferId
         }));
+    }
+
+    _fail (error) {
+        if (this._destroyed) return;
+        this.emit('download-error', {error});
+        if (++this._attempts >= 3) {
+            this.session.emit('connection-failed', {error: error.message || 'Could not load collaboration project'});
+        } else this.requestResync();
     }
 
     _armTimeout () {
@@ -321,7 +380,7 @@ class ClientSnapshotService extends Emitter {
         this._timeout = setTimeout(() => {
             const error = new Error('snapshot transfer stalled');
             this._incoming = null;
-            this.emit('download-error', {error});
+            this._fail(error);
         }, RECEIVE_TIMEOUT_MS);
     }
 

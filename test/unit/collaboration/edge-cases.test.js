@@ -1,6 +1,7 @@
 import {createRoom} from '../../fixtures/collab-harness.js';
 import {
     KIND,
+    PROTOCOL_VERSION,
     OP,
     CTRL,
     SNAPSHOT,
@@ -25,10 +26,10 @@ describe('hostile or confused peers', () => {
     test('proposals from unapproved peers are ignored', async () => {
         const room = await createRoom({clientCount: 1, privacy: 'private'});
         const client = room.clients[0];
-        room.hub.flush(); // hello queued -> pending approval
+        await room.hub.flush(); // hello queued -> pending approval
 
         client.session.submitLocal(OP.BLOCK_EVENT, createBlock('stage', 'evil'));
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(room.host.session.seq).toBe(0);
         expect(room.host.applier.doc.blocks['stage:evil']).toBeUndefined();
@@ -44,7 +45,7 @@ describe('hostile or confused peers', () => {
             seq: 99, clientId: clientB.id, clientOpId: 1
         }));
         clientA.transport.sendToHost(makeReject(1, 'gotcha'));
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(room.host.session.seq).toBe(0);
         expect(room.host.applier.doc.blocks['stage:forged']).toBeUndefined();
@@ -65,7 +66,7 @@ describe('hostile or confused peers', () => {
             makePropose(OP.TARGET_UPDATE, {targetId: 'ghost', props: {x: 1}}, 42)
         ];
         weird.forEach(envelope => client.transport.sendToHost(envelope));
-        expect(() => room.hub.flush()).not.toThrow();
+        await expect(room.hub.flush()).resolves.toBeGreaterThan(0);
         room.expectConverged();
         room.destroy();
     });
@@ -74,9 +75,9 @@ describe('hostile or confused peers', () => {
         const room = await createRoom({clientCount: 1});
         const client = room.clients[0];
         client.transport.sendToHost(makeCtrl(CTRL.HELLO, {
-            protocolVersion: 1, username: 'user1', roomId: 'room'
+            protocolVersion: PROTOCOL_VERSION, username: 'user1', roomId: 'room'
         }));
-        room.hub.flush();
+        await room.hub.flush();
         expect(room.host.session.getUsers()).toHaveLength(2);
         room.destroy();
     });
@@ -85,7 +86,7 @@ describe('hostile or confused peers', () => {
         const room = await createRoom({clientCount: 1});
         const client = room.clients[0];
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         const applied = jest.fn();
         client.session.on('op-applied', applied);
@@ -93,7 +94,7 @@ describe('hostile or confused peers', () => {
         const op = room.host.session.opLog[0];
         room.host.transport.send(client.id, op);
         room.host.transport.send(client.id, op);
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(applied).not.toHaveBeenCalled(); // seq <= lastAppliedSeq
         room.expectConverged();
@@ -110,7 +111,7 @@ describe('churn under adverse delivery', () => {
             peers.forEach((peer, index) => {
                 room.edit(peer, OP.BLOCK_EVENT, createBlock('stage', `b${index}`));
             });
-            room.hub.flush();
+            await room.hub.flush();
 
             for (let round = 0; round < 6; round++) {
                 peers.forEach((peer, index) => {
@@ -123,12 +124,12 @@ describe('churn under adverse delivery', () => {
                         item.to === room.clients[1].id && item.envelope.kind === KIND.OP);
                 }
                 if (round % 2 === 0) room.hub.reorderLastToFront();
-                room.hub.flush();
+                await room.hub.flush();
             }
 
             // Let gap recovery fire and replay.
             jest.advanceTimersByTime(3000);
-            room.hub.flush();
+            await room.hub.flush();
 
             room.expectConverged();
             peers.slice(1).forEach(peer => {
@@ -144,11 +145,11 @@ describe('churn under adverse delivery', () => {
         const room = await createRoom({clientCount: 2});
         const [clientA, clientB] = room.clients;
         room.host.session.kickUser(clientA.id);
-        room.hub.flush();
+        await room.hub.flush();
 
         const seqBefore = clientA.session.lastAppliedSeq;
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'after-kick'));
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(clientA.session.lastAppliedSeq).toBe(seqBefore);
         expect(clientB.applier.doc.blocks['stage:after-kick']).toBeDefined();
@@ -161,12 +162,12 @@ describe('churn under adverse delivery', () => {
         const clientA = room.clients[0];
 
         room.edit(clientA, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         // A second client joins; ops keep flowing while it onboards.
         const clientB = await room.addClient('late');
         room.edit(clientA, OP.BLOCK_EVENT, changeField('stage', 'b1', 'while-joining'));
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(clientB.applier.snapshot()).toEqual(room.host.applier.snapshot());
         expect(clientB.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBe('while-joining');

@@ -294,6 +294,26 @@ const GUIComponent = props => {
         }
     }, [props.onSetStageSize]);
 
+    const handleStagePanelResizeKeyDown = useCallback(event => {
+        const step = event.shiftKey ? 80 : 24;
+        if (event.key === 'Home') {
+            event.preventDefault();
+            handleStagePanelResizeDoubleClick();
+            return;
+        }
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const direction = event.key === 'ArrowLeft' ? -1 : 1;
+        const currentWidth = stagePanelWidth || preferredPanelWidthRef.current || MIN_STAGE_PANEL_WIDTH;
+        const nextWidth = Math.max(MIN_STAGE_PANEL_WIDTH, currentWidth + (direction * step));
+        preferredPanelWidthRef.current = nextWidth;
+        setStagePanelWidth(nextWidth);
+        setStageContainerWidth(Math.max(0, nextWidth - 18));
+        if (isStageHiddenRef.current && typeof props.onSetStageSize === 'function') {
+            props.onSetStageSize(STAGE_SIZE_MODES.small);
+        }
+    }, [handleStagePanelResizeDoubleClick, props.onSetStageSize, stagePanelWidth]);
+
     const getStageBorderExtraWidth = useCallback(containerEl => {
         if (!containerEl || typeof window === 'undefined') return 0;
         
@@ -1362,9 +1382,11 @@ const GUIComponent = props => {
                                         className={styles.stagePaneResizer}
                                         onPointerDown={handleStagePanelResizePointerDown}
                                         onDoubleClick={handleStagePanelResizeDoubleClick}
+                                        onKeyDown={handleStagePanelResizeKeyDown}
                                         role="separator"
                                         aria-orientation="vertical"
-                                        tabIndex={-1}
+                                        aria-label="Resize stage panel. Use left and right arrow keys."
+                                        tabIndex={0}
                                     />
                                     <Box
                                         className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {

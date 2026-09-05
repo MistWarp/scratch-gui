@@ -2,9 +2,16 @@ import 'web-audio-test-api';
 
 import React from 'react';
 import configureStore from 'redux-mock-store';
-import {mountWithIntl, shallowWithIntl} from '../../helpers/intl-helpers.jsx';
+import {shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 import {LoadingState} from '../../../src/reducers/project-state';
 import VM from 'scratch-vm';
+import * as mwp from '../../../src/lib/git/mwp.js';
+import * as history from '../../../src/lib/git/project-history.js';
+
+import {rememberPlatformProject, getRememberedPlatformProjectState} from '../../../src/lib/community/publish.js';
+
+import RestorePointAPI from '../../../src/lib/api/restore-points.js';
+import * as browserGit from '../../../src/lib/git/browser-git.js';
 
 import SBFileUploaderHOC from '../../../src/lib/components/sb-file-uploader-hoc.jsx';
 
@@ -48,7 +55,10 @@ describe('SBFileUploaderHOC', () => {
             .instance(); // SBFileUploaderComponent
     };
 
+    afterEach(() => jest.restoreAllMocks());
+
     beforeEach(() => {
+        rememberPlatformProject(null);
         vm = new VM();
         store = mockStore({
             scratchGui: {
@@ -61,6 +71,71 @@ describe('SBFileUploaderHOC', () => {
                 locale: 'en'
             }
         });
+    });
+
+    test.each(['new', 'overwrite'])('loads an MWP into the chosen destination: %s', async destination => {
+        jest.spyOn(RestorePointAPI, 'createSafetyRestorePoint').mockResolvedValue(42);
+        jest.spyOn(browserGit, 'createRepoBackup').mockResolvedValue(jest.fn());
+        const manifest = {head: 'imported', branch: 'custom'};
+        const importSpy = jest.spyOn(mwp, 'importMwp').mockResolvedValue(manifest);
+        const buildSpy = jest.spyOn(mwp, 'buildSb3FromCurrentRepo').mockResolvedValue({
+            arrayBuffer: () => Promise.resolve(new ArrayBuffer(1))
+        });
+        const preloadSpy = jest.spyOn(history, 'preloadProjectHistory').mockResolvedValue(null);
+        rememberPlatformProject({id: 'saved', isOwner: true});
+        window.history.replaceState(null, '', '#mw-saved');
+        const loadedVm = {loadProject: jest.fn().mockResolvedValue(), quit: jest.fn(), renderer: {draw: jest.fn()}};
+        const instance = unwrappedInstance({
+            vm: loadedVm, projectChanged: false, onSetProjectTitle: jest.fn()
+        });
+        instance.fileReader = {result: new ArrayBuffer(1)};
+        instance.fileToUpload = {name: 'imported.mwp'};
+        instance.uploadDestination = destination;
+        await instance.onload();
+        expect(loadedVm.loadProject).toHaveBeenCalled();
+        if (destination === 'new') {
+            expect(getRememberedPlatformProjectState()).toBeNull();
+            expect(window.location.hash).toBe('');
+            expect(loadedVm._mwHistoryHydration).toBeNull();
+        } else {
+            expect(getRememberedPlatformProjectState().id).toBe('saved');
+            expect(loadedVm._mwHistoryHydration).toEqual(expect.objectContaining({
+                manifest, ready: true, replaceHistory: true, projectId: 'saved'
+            }));
+        }
+        expect(instance.props.onLoadingFinished).toHaveBeenCalledWith(instance.props.loadingState, true);
+        importSpy.mockRestore();
+        buildSpy.mockRestore();
+        preloadSpy.mockRestore();
+    });
+
+    test.each(['new', 'overwrite'])('asks for a destination for an unchanged saved project: %s', async choice => {
+        rememberPlatformProject({id: 'saved', isOwner: true});
+        const openSimpleDialog = jest.fn(config => config.onOk(choice));
+        const instance = unwrappedInstance({openSimpleDialog, projectChanged: false});
+        await instance.handleChange({target: {files: [{name: 'imported.mwp'}]}});
+        expect(openSimpleDialog).toHaveBeenCalledWith(expect.objectContaining({
+            choices: [
+                {value: 'new', label: 'Open in new workspace'},
+                {value: 'overwrite', label: 'Replace project and history'}
+            ],
+            message: expect.stringContaining('commits and branches')
+        }));
+        expect(instance.uploadDestination).toBe(choice);
+        expect(instance.props.requestProjectUpload).toHaveBeenCalled();
+        // The old destination remains intact until the file has loaded successfully.
+        expect(getRememberedPlatformProjectState().id).toBe('saved');
+    });
+
+    test('cancelling a saved project import preserves its destination', async () => {
+        rememberPlatformProject({id: 'saved', isOwner: true});
+        const instance = unwrappedInstance({
+            projectChanged: false,
+            openSimpleDialog: config => config.onCancel()
+        });
+        await instance.handleChange({target: {files: [{name: 'imported.sb3'}]}});
+        expect(instance.props.requestProjectUpload).not.toHaveBeenCalled();
+        expect(getRememberedPlatformProjectState().id).toBe('saved');
     });
 
     test('correctly sets title with .sb3 filename', () => {
@@ -102,6 +177,80 @@ describe('SBFileUploaderHOC', () => {
         expect(instance.handleStartSelectingFileUpload()).toBe(false);
 
         expect(instance.createFileObjects).toHaveBeenCalledTimes(1);
+    });
+
+    test('loads a file delivered after window focus returns', async () => {
+        jest.useFakeTimers();
+        const instance = unwrappedInstance({projectChanged: false, showOpenFilePicker: null});
+        try {
+            instance.handleStartSelectingFileUpload();
+            const input = instance.inputElement;
+            window.dispatchEvent(new Event('focus'));
+            jest.runOnlyPendingTimers();
+
+            expect(instance.inputElement).toBe(input);
+            const file = new File(['project'], 'project.sb3');
+            Object.defineProperty(input, 'files', {value: [file]});
+            input.dispatchEvent(new Event('change'));
+            await Promise.resolve();
+            expect(instance.props.requestProjectUpload).toHaveBeenCalledWith(instance.props.loadingState);
+            const read = jest.spyOn(instance.fileReader, 'readAsArrayBuffer').mockImplementation(() => {});
+            instance.handleFinishedLoadingUpload();
+            expect(read).toHaveBeenCalledWith(file);
+        } finally {
+            instance.removeFileObjects();
+            jest.useRealTimers();
+        }
+    });
+
+    test('cleans up on the input cancel event and allows retrying', () => {
+        const instance = unwrappedInstance({showOpenFilePicker: null});
+        try {
+            instance.handleStartSelectingFileUpload();
+            instance.inputElement.dispatchEvent(new Event('cancel'));
+            expect(instance.inputElement).toBeNull();
+            expect(instance.expectingFileUploadFinish).toBe(false);
+            expect(instance.handleStartSelectingFileUpload()).toBe(true);
+        } finally {
+            instance.removeFileObjects();
+        }
+    });
+
+    test('allows retrying when a browser does not emit an input cancel event', () => {
+        const instance = unwrappedInstance({showOpenFilePicker: null});
+        try {
+            instance.handleStartSelectingFileUpload();
+            const previousInput = instance.inputElement;
+            expect(instance.handleStartSelectingFileUpload()).toBe(true);
+            expect(previousInput.isConnected).toBe(false);
+            expect(instance.inputElement).not.toBe(previousInput);
+        } finally {
+            instance.removeFileObjects();
+        }
+    });
+
+    test('shows an error when the native picker cannot read the selected file', async () => {
+        const error = new Error('Permission denied');
+        const onLoadingFailed = jest.fn();
+        const instance = unwrappedInstance({
+            showOpenFilePicker: jest.fn().mockResolvedValue([{
+                getFile: jest.fn().mockRejectedValue(error)
+            }]),
+            onLoadingFailed
+        });
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            instance.handleStartSelectingFileUpload();
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(onLoadingFailed).toHaveBeenCalledWith(error);
+            expect(instance.expectingFileUploadFinish).toBe(false);
+            expect(instance.fileReader).toBeNull();
+        } finally {
+            instance.removeFileObjects();
+            consoleError.mockRestore();
+        }
     });
 
     test('clears the pending upload when project replacement is declined', async () => {

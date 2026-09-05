@@ -1,3 +1,4 @@
+import {isProjectOperationActive} from '../project-operation.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -42,6 +43,7 @@ const confirmProjectSwitch = ({confirmWithMessage, openDialog, message}) => {
         openDialog({
             type: 'confirm',
             title: 'Switch projects?',
+            choices: [{value: 'switch', label: 'Back up and switch projects'}],
             message,
             onOk: () => resolve(true),
             onCancel: () => resolve(false)
@@ -591,6 +593,10 @@ const TWStateManager = function (WrappedComponent) {
             });
         }
         async onSetProjectId (id) {
+            if (isProjectOperationActive(this.props.vm)) {
+                this.restoreCurrentRoute();
+                return false;
+            }
             if (`${id}` === `${this.props.reduxProjectId}`) {
                 return true;
             }
@@ -598,7 +604,8 @@ const TWStateManager = function (WrappedComponent) {
                 const confirmed = await confirmProjectSwitch({
                     confirmWithMessage: this.props.confirmWithMessage,
                     openDialog: this.props.openSimpleDialog,
-                    message: 'Your unsaved changes will be lost. Switch projects?'
+                    message: 'Switching closes this workspace. Your current code will be kept in Device backups. ' +
+                        'Cancel to keep editing or save it before switching.'
                 });
                 if (!confirmed) {
                     this.restoreCurrentRoute();

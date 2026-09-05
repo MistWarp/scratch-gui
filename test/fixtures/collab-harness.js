@@ -91,11 +91,14 @@ class FakeHub {
      * Deliver everything, including messages produced by deliveries.
      * @returns {number} How many queue items were processed.
      */
-    flush () {
+    async flush () {
         let delivered = 0;
-        while (this.deliverOne()) {
-            delivered++;
-            if (delivered > 100000) throw new Error('hub flush did not quiesce');
+        for (let quiet = 0; quiet < 20; quiet++) {
+            while (this.deliverOne()) {
+                quiet = 0;
+                if (++delivered > 100000) throw new Error('hub flush did not quiesce');
+            }
+            await Promise.resolve();
         }
         return delivered;
     }
@@ -289,7 +292,7 @@ const nextPeerId = prefix => `${prefix}-${++peerCounter}`;
  * @param {boolean} [options.autoSnapshot] Auto-serve snapshots (default true).
  * @returns {Promise<object>} {hub, host, clients, quiesce, edit, allDocs, expectConverged}
  */
-const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = true, maxUsers = 128} = {}) => {
+const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = true, maxUsers = 128, scope = null} = {}) => {
     const hub = new FakeHub();
     const clientsById = new Map();
 
@@ -301,7 +304,8 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
         roomId: 'room',
         username: 'host',
         privacy,
-        maxUsers
+        maxUsers,
+        scope
     });
     await hostSession.start();
 
@@ -317,7 +321,7 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
 
     const host = {session: hostSession, applier: hostApplier, transport: hostTransport, id: hostTransport.id};
 
-    const addClient = async (username, handle) => {
+    const addClient = async (username, handle, clientScope = scope) => {
         const applier = new DocApplier();
         const transport = new FakeCollabTransport(hub, nextPeerId('client'));
         const session = new ClientSession({
@@ -325,7 +329,8 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
             applier,
             roomId: 'room',
             username,
-            handle
+            handle,
+            scope: clientScope
         });
         const client = {session, applier, transport, id: transport.id, username};
         clientsById.set(transport.id, client);
@@ -337,7 +342,7 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
     for (let i = 0; i < clientCount; i++) {
         clients.push(await addClient(`user${i + 1}`));
     }
-    hub.flush();
+    await hub.flush();
 
     /**
      * Simulate a user edit on a peer: mutate the local doc directly
@@ -348,12 +353,9 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
      * @returns {number|object} clientOpId (client) or op envelope (host).
      */
     const edit = (peer, type, payload) => {
-        try {
-            peer.applier._apply(type, payload, {});
-        } catch (error) {
-            // Local UI wouldn't allow an invalid edit; tests may force one.
-        }
-        return peer.session.submitLocal(type, payload);
+        const result = peer.session.submitLocal(type, payload);
+        if (result && result.catch) result.catch(() => {});
+        return result;
     };
 
     const allDocs = () => [host.applier.snapshot()].concat(clients.map(c => c.applier.snapshot()));

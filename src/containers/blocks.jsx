@@ -416,6 +416,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        clearTimeout(this.collabRefreshTimer);
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
         window.removeEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
@@ -1077,6 +1078,18 @@ class Blocks extends React.Component {
         }
     }
     onWorkspaceUpdate (data) {
+        const commandEditing = this.props.vm.editingCommands?.handler;
+        const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
+        if (commandEditing && this.lastWorkspaceTargetId === targetId &&
+            ((this.workspace.isDragging && this.workspace.isDragging()) ||
+                (this.ScratchBlocks.WidgetDiv && this.ScratchBlocks.WidgetDiv.isVisible()))) {
+            clearTimeout(this.collabRefreshTimer);
+            this.collabRefreshTimer = setTimeout(() => {
+                this.collabRefreshTimer = null;
+                if (!this.unmounted) this.props.vm.emitWorkspaceUpdate();
+            }, 50);
+            return;
+        }
         // Batch this with target-dependent extension updates. A sprite switch
         // should describe and rebuild the toolbox once, not once per event.
         this.requestToolboxStateUpdate();
@@ -1098,9 +1111,11 @@ class Blocks extends React.Component {
         const blockCount = descs ?
             Object.keys(descs.blocks || {}).length :
             dom.getElementsByTagName('block').length;
-        const useDeferredLoad = !!this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred &&
+        const useDeferredLoad = !this.props.vm.editingCommands?.handler &&
+            !!this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred &&
             (blockCount >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS ||
                 Object.keys(this.workspace.blockDB_ || {}).length >= DEFERRED_WORKSPACE_LOAD_MIN_BLOCKS);
+        this.ScratchBlocks.Events.disable();
         try {
             if (useDeferredLoad) {
                 this.deferredWorkspaceLoad = this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXmlDeferred(
@@ -1132,6 +1147,8 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
+        } finally {
+            this.ScratchBlocks.Events.enable();
         }
         this.workspace.addChangeListener(this.props.vm.blockListener);
 
@@ -1146,7 +1163,12 @@ class Blocks extends React.Component {
         // Clear the undo state of the workspace since this is a
         // fresh workspace and we don't want any changes made to another sprites
         // workspace to be 'undone' here.
-        this.workspace.clearUndo();
+        const editingTargetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
+        if (!this.props.vm.editingCommands?.handler || this.lastWorkspaceTargetId !== editingTargetId) {
+            this.workspace.clearUndo();
+        }
+        this.lastWorkspaceTargetId = editingTargetId;
+        this.workspace._mwEditingTargetId = editingTargetId;
 
         this.workspace.toolboxRefreshEnabled_ = true;
     }

@@ -9,6 +9,7 @@ import {getFractchGitDiff} from '../../../src/lib/git/fractch-diff.js';
 import {generateCommitName} from '../../../src/lib/sable/smart-features.js';
 
 jest.mock('../../../src/lib/community/publish.js', () => ({
+    getRememberedPlatformProjectState: jest.fn(() => null),
     captureThumbnailDataUri: jest.fn(() => Promise.resolve(null)),
     prepareThumbnailBlob: jest.fn(() => Promise.resolve(null)),
     publishToMistWarp: jest.fn()

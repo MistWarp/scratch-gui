@@ -7,7 +7,7 @@ import {OP} from '../../../src/lib/collaboration/protocol.js';
 // alternate flushing and yielding until everything settles.
 const settle = async hub => {
     for (let i = 0; i < 50; i++) {
-        hub.flush();
+        await hub.flush();
         await Promise.resolve();
         await Promise.resolve();
     }
@@ -50,6 +50,29 @@ const changeField = (targetId, blockId, value) => blockEvent(targetId, {
 });
 
 describe('snapshot streaming', () => {
+    test('concurrent transfers serialize once and duplicate ACKs cannot finish a transfer', async () => {
+        const room = await createRoom({clientCount: 0, autoSnapshot: false});
+        const getProjectData = jest.fn(() => new Uint8Array(CHUNK_SIZE * 3).buffer);
+        const hostService = new HostSnapshotService({
+            session: room.host.session, transport: room.host.transport, getProjectData
+        });
+        await Promise.all([hostService.startTransfer('a'), hostService.startTransfer('b')]);
+        expect(getProjectData).toHaveBeenCalledTimes(1);
+        const transfer = hostService._transfers.get('a');
+        const ack = {transferId: transfer.transferId, index: 0};
+        hostService._onAck('a', ack);
+        hostService._onAck('a', ack);
+        hostService._onAck('a', {...ack, index: 99});
+        expect(transfer.ackedCount).toBe(1);
+        expect(hostService._transfers.has('a')).toBe(true);
+        expect(hostService._transfers.get('b').ackedCount).toBe(0);
+        hostService._onAck('a', {...ack, index: 1});
+        hostService._onAck('a', {...ack, index: 2});
+        expect(hostService._transfers.has('a')).toBe(false);
+        hostService.destroy();
+        room.destroy();
+    });
+
     test('a joiner receives the project in chunks and converges', async () => {
         const room = await createRoom({clientCount: 0, autoSnapshot: false});
         const {hostService, wireClient} = wireSnapshots(room);
@@ -144,7 +167,7 @@ describe('snapshot streaming', () => {
         const service = wireClient(client);
         // Hello is queued but nothing has been delivered yet; interleave
         // edits with the snapshot handshake as the hub pumps.
-        room.hub.flush(); // hello -> approved -> snapshot begins
+        await room.hub.flush(); // hello -> approved -> snapshot begins
         room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', 'during-transfer'));
         await settle(room.hub);
 
@@ -185,7 +208,7 @@ describe('snapshot streaming', () => {
         const {hostService, wireClient} = wireSnapshots(room);
         const client = await room.addClient('anna');
         const service = wireClient(client);
-        room.hub.flush(); // approval + first BEGIN/chunks queued
+        await room.hub.flush(); // approval + first BEGIN/chunks queued
 
         // Request again before the first transfer completes.
         await hostService.startTransfer(client.id);
@@ -249,10 +272,10 @@ describe('asset channel', () => {
         clientB.session._hasAsset = md5ext => stores.get(clientB.id).has(md5ext);
         const channelA = wireClient(clientA);
         const channelB = wireClient(clientB);
-        room.hub.flush();
+        await room.hub.flush();
 
         room.edit(room.host, OP.SPRITE_ADD, {targetId: 'sprite1', spriteJson: {name: 'Cat'}});
-        room.hub.flush();
+        await room.hub.flush();
 
         // Client A "imports a costume": bytes exist locally, are pushed to
         // the host first, then the op is proposed.
@@ -283,7 +306,7 @@ describe('asset channel', () => {
         const {hostChannel, wireClient} = wireAssets(room, stores);
         const client = await room.addClient('anna');
         const channel = wireClient(client);
-        room.hub.flush();
+        await room.hub.flush();
 
         const unavailable = jest.fn();
         hostChannel.on('asset-unavailable', unavailable);
@@ -303,7 +326,7 @@ describe('asset channel', () => {
         const {hostChannel, wireClient} = wireAssets(room, stores);
         const client = await room.addClient('anna');
         const channel = wireClient(client);
-        room.hub.flush();
+        await room.hub.flush();
 
         channel.requestFromHost([md5A]);
         channel.requestFromHost([md5A]);

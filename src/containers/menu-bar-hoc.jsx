@@ -7,7 +7,7 @@ import ToastNotification from '../components/toast-notification/toast-notificati
 import smartSave from '../lib/mw/smart-save.js';
 import {setProjectUnchanged} from '../reducers/project-changed';
 
-const shouldConfirmProjectReplacement = ({projectChanged, canSave}) => projectChanged && !canSave;
+const shouldConfirmProjectReplacement = ({projectChanged}) => Boolean(projectChanged);
 
 const MenuBarHOC = function (WrappedComponent) {
     class MenuBarContainer extends React.PureComponent {
@@ -27,7 +27,8 @@ const MenuBarHOC = function (WrappedComponent) {
             return new Promise(resolve => {
                 this.props.openSimpleDialog({
                     type: 'confirm',
-                    title: 'Replace this project?',
+                    title: 'Start a new project?',
+                    choices: [{value: 'replace', label: 'Back up and start new project'}],
                     message,
                     onOk: () => resolve(true),
                     onCancel: () => resolve(false)

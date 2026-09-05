@@ -9,6 +9,7 @@ import log from '../utils/log';
 import storage from '../persistence/storage';
 import dataURItoBlob from '../utils/data-uri-to-blob';
 import saveProjectToServer from '../utils/save-project-to-server';
+import {isProjectOperationActive} from '../project-operation.js';
 import {guardSavedCallback} from '../mw/smart-save.js';
 
 import {
@@ -125,7 +126,9 @@ const ProjectSaverHOC = function (WrappedComponent) {
             this.props.onSetProjectSaver(null);
         }
         leavePageConfirm (e) {
-            if (this.props.projectChanged) {
+            if (this.props.projectChanged || this.props.vm._mwPendingDiskOverwrite ||
+                isProjectOperationActive(this.props.vm)) {
+                if (e && e.preventDefault) e.preventDefault();
                 // both methods of returning a value may be necessary for browser compatibility
                 (e || window.event).returnValue = true;
                 return true;

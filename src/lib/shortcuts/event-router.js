@@ -166,11 +166,8 @@ const executeReduxAction = shortcut => {
     
     const actionMap = {
         requestNewProject: () => {
-            if (dispatch.requestNewProject) {
-                dispatch.requestNewProject(false);
-            } else {
-                console.warn('requestNewProject not available in dispatch');
-            }
+            // Use the same confirmation and backup flow as File > New.
+            window.dispatchEvent(new Event('mw:request-new-project'));
         },
         manualUpdateProject: () => {
             if (dispatch.manualUpdateProject) {

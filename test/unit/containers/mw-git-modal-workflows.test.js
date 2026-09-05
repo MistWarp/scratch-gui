@@ -38,14 +38,13 @@ describe('git modal project loading', () => {
         RestorePointAPI.createSafetyRestorePoint.mockResolvedValue();
     });
 
-    test('restore point storage failure does not block a cloned project', async () => {
+    test('restore point storage failure leaves the current code untouched', async () => {
         RestorePointAPI.createSafetyRestorePoint.mockRejectedValue(new Error('storage unavailable'));
 
-        await loadClonedProject(vm, 'Current project');
+        await expect(loadClonedProject(vm, 'Current project')).rejects.toThrow('storage unavailable');
 
-        expect(vm.quit).toHaveBeenCalledTimes(1);
-        expect(vm.loadProject).toHaveBeenCalledWith(expect.any(ArrayBuffer), {skipGitImport: true});
-        expect(vm.renderer.draw).toHaveBeenCalledTimes(1);
+        expect(vm.quit).not.toHaveBeenCalled();
+        expect(vm.loadProject).not.toHaveBeenCalled();
     });
 
     test('renderer failure does not report a valid cloned project as failed', async () => {

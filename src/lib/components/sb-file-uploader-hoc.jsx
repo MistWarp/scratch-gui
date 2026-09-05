@@ -9,9 +9,12 @@ import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
 import {importRepoFromSb3} from '../git/browser-git';
 import {buildSb3FromCurrentRepo, importMwp} from '../git/mwp.js';
-import {markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
-import {getRememberedPlatformProjectState} from '../community/publish.js';
-import RestorePointAPI from '../api/restore-points';
+import {adoptImportedProjectHistory, markProjectHistoryLoading, preloadProjectHistory} from '../git/project-history.js';
+import {
+    getRememberedPlatformProjectState
+} from '../community/publish.js';
+import {detachWorkspace} from '../workspace-state.js';
+import {withProjectReplacement} from '../project-replacement.js';
 
 import {
     LoadingStates,
@@ -75,7 +78,9 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         }
         // step 1: this is where the upload process begins
         handleStartSelectingFileUpload () {
-            if (this.expectingFileUploadFinish) return false;
+            // Older browsers may not emit cancel for file inputs. Allow another
+            // attempt while waiting for selection, but never interrupt a selected file.
+            if (this.expectingFileUploadFinish && (!this.inputElement || this.fileToUpload)) return false;
             this.expectingFileUploadFinish = true;
             this.createFileObjects(); // go to step 2
             return true;
@@ -102,7 +107,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                             multiple: false
                         });
                         const file = await handle.getFile();
-                        this.handleChange({
+                        await this.handleChange({
                             target: {
                                 files: [file],
                                 handle: handle
@@ -116,7 +121,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                         }
                         // eslint-disable-next-line no-console
                         console.error(err);
-                        this.handleFileSelectionCancel();
+                        this.handleFileReadError(err);
                     }
                 })();
             } else {
@@ -126,15 +131,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 this.inputElement.type = 'file';
                 this.inputElement.onchange = this.handleChange; // connects to step 3
                 this.inputElement.oncancel = this.handleFileSelectionCancel;
-                this.handleWindowFocus = () => {
-                    setTimeout(() => {
-                        if (this.expectingFileUploadFinish && this.inputElement &&
-                            (!this.inputElement.files || this.inputElement.files.length === 0)) {
-                            this.handleFileSelectionCancel();
-                        }
-                    }, 0);
-                };
-                window.addEventListener('focus', this.handleWindowFocus);
+                // Focus can return before the browser delivers change/files.
+                // Only the input's cancel event can reliably identify cancellation.
                 document.body.appendChild(this.inputElement);
                 // simulate a click to open file chooser dialog
                 this.inputElement.click();
@@ -142,7 +140,31 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         }
         // step 3: user has picked a file using the file chooser dialog.
         // We don't actually load the file here, we only decide whether to do so.
-        confirmProjectReplacement () {
+        confirmProjectReplacement (platformProject) {
+            if (platformProject && platformProject.id) {
+                const isMwp = /\.mwp$/i.test(this.fileToUpload.name);
+                const format = (id, defaultMessage) => this.props.intl.formatMessage({id, defaultMessage});
+                return new Promise(resolve => this.props.openSimpleDialog({
+                    type: 'confirm',
+                    title: format('gui.projectLoader.diskDestinationTitle', 'Open project from computer'),
+                    message: isMwp ? format('gui.projectLoader.mwpDestinationMessage',
+                        'New workspace opens this file separately. Your saved MistWarp project stays intact. ' +
+                        'Replace project and history keeps the current save destination and replaces all its code, ' +
+                        'commits and branches on your next manual save. A device backup keeps your current code.') :
+                        format('gui.projectLoader.diskDestinationMessage',
+                            'New workspace opens this file separately. Your saved MistWarp project stays intact. ' +
+                            'Replace project keeps the current save destination and replaces its code on your next ' +
+                            'manual save, keeping its history. A device backup keeps your current code.'),
+                    choices: [
+                        {value: 'new', label: format('gui.projectLoader.newWorkspace', 'Open in new workspace')},
+                        {value: 'overwrite',
+                            label: isMwp ? format('gui.projectLoader.replaceHistory', 'Replace project and history') :
+                                format('gui.projectLoader.replaceCode', 'Replace project')}
+                    ],
+                    onOk: value => resolve(value),
+                    onCancel: () => resolve(false)
+                }));
+            }
             return new Promise(resolve => {
                 this.props.openSimpleDialog({
                     type: 'confirm',
@@ -172,19 +194,14 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 // replace it. (If they don't own the project and haven't
                 // changed it, no need to confirm.)
                 let uploadAllowed = true;
-                if (userOwnsProject || projectChanged) {
-                    uploadAllowed = await this.confirmProjectReplacement();
+                const platformProject = getRememberedPlatformProjectState();
+                if (platformProject || userOwnsProject || projectChanged) {
+                    uploadAllowed = await this.confirmProjectReplacement(platformProject);
                 }
+                this.uploadDestination = uploadAllowed === 'new' ? 'new' : 'overwrite';
                 if (uploadAllowed && !this.unmounted) {
-                    // Don't update file handle until after confirming replace.
-                    const handle = thisFileInput.handle;
-                    if (handle) {
-                        if (this.fileToUpload.name.endsWith('.sb3')) {
-                            this.props.onSetFileHandle(handle);
-                        } else {
-                            this.props.onSetFileHandle(null);
-                        }
-                    }
+                    this.pendingFileHandle = thisFileInput.handle && /\.sb3$/i.test(this.fileToUpload.name) ?
+                        thisFileInput.handle : null;
 
                     // cues step 4
                     this.props.requestProjectUpload(loadingState);
@@ -240,92 +257,63 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         // step 6: attached as a handler on our FileReader object; called when
         // file upload raw data is available in the reader
         async onload () {
-            if (this.fileReader) {
-                this.props.onLoadingStarted();
-                const filename = this.fileToUpload && this.fileToUpload.name;
-                let loadingSuccess = false;
-                if (this.props.projectChanged) {
-                    try {
-                        await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
-                    } catch (restoreError) {
-                        log.error('Failed to create safety restore point:', restoreError);
-                    }
+            if (!this.fileReader) return;
+            this.props.onLoadingStarted();
+            const filename = this.fileToUpload && this.fileToUpload.name;
+            const isMwp = /\.mwp$/i.test(filename || '');
+            const platform = this.uploadDestination === 'new' ? null : getRememberedPlatformProjectState();
+            let projectData = this.fileReader.result;
+            let importedManifest;
+            let loadingSuccess = false;
+            try {
+                if (/\.html$/i.test(filename || '')) {
+                    // The selected file is private to this upload operation.
+                    // eslint-disable-next-line require-atomic-updates
+                    projectData = (await unpackage(new Blob([projectData], {type: 'text/html'}))).data;
                 }
-                // tw: stop when loading new project
-                this.props.vm.quit();
-                let projectData = this.fileReader.result;
-                const isMwp = filename && filename.toLowerCase().endsWith('.mwp');
-                markProjectHistoryLoading();
-
-                if (isMwp) {
-                    try {
-                        await importMwp(projectData);
-                        projectData = await buildSb3FromCurrentRepo();
-                        projectData = await projectData.arrayBuffer();
-                    } catch (mwpError) {
-                        log.error('Failed to open MistWarp project:', mwpError);
-                        this.props.onLoadingFailed(mwpError);
-                        this.props.onLoadingFinished(this.props.loadingState, false);
-                        this.removeFileObjects();
-                        return;
-                    }
-                }
-
-                if (filename && filename.toLowerCase().endsWith('.html')) {
-                    try {
-                        const blob = new Blob([projectData], {type: 'text/html'});
-                        const unpackaged = await unpackage(blob);
-                        projectData = unpackaged.data;
-                    } catch (error) {
-                        log.error('Failed to unpackage HTML file:', error);
-                        this.props.onLoadingFailed(error);
-                        this.props.onLoadingFinished(this.props.loadingState, false);
-                        this.removeFileObjects();
-                        return;
-                    }
-                }
-
-                // Snapshot the resolved bytes so the async handler below reads a
-                // stable value (projectData may have been reassigned for .html).
-                const loadedBytes = projectData;
-                Promise.resolve()
-                    .then(() => this.props.vm.loadProject(loadedBytes, {mwCanTrustProject: true}))
-                    .then(async () => {
-                        loadingSuccess = true;
-                        if (filename) {
-                            const uploadedProjectTitle = this.getProjectTitleFromFilename(filename);
-                            this.props.onSetProjectTitle(uploadedProjectTitle);
+                await withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before opening a file',
+                    async () => {
+                        markProjectHistoryLoading();
+                        if (isMwp) {
+                            importedManifest = await importMwp(projectData);
+                            // eslint-disable-next-line require-atomic-updates
+                            projectData = await (await buildSb3FromCurrentRepo()).arrayBuffer();
                         }
-                        try {
-                            this.props.vm.renderer.draw();
-                        } catch (drawError) {
-                            log.error('Failed to draw loaded project:', drawError);
-                        }
-                        // Restore any git history embedded in the .sb3 (fractch tree + .git),
-                        // or keep the current MistWarp history when this file is replacing
-                        // the contents of an online project.
-                        try {
-                            if (!isMwp) {
-                                const platformProject = getRememberedPlatformProjectState();
-                                await importRepoFromSb3(loadedBytes, {
-                                    preserveExisting: Boolean(platformProject && platformProject.id)
-                                });
-                            }
-                            await preloadProjectHistory(this.props.vm, {force: true});
-                        } catch (gitError) {
-                            log.error('Failed to restore embedded git history:', gitError);
-                        }
-                    })
-                    .catch(error => {
-                        log.error(error);
-                        this.props.onLoadingFailed(error);
-                    })
-                    .then(() => {
-                        this.props.onLoadingFinished(this.props.loadingState, loadingSuccess);
-                        // go back to step 7: whether project loading succeeded
-                        // or failed, reset file objects
-                        this.removeFileObjects();
+                        this.props.vm.quit();
+                        await this.props.vm.loadProject(projectData, {
+                            mwCanTrustProject: true, skipGitImport: true, mwPreserveProjectSource: true
+                        });
+                        // SB files replacing an online project change its code, not its history.
+                        if (!isMwp && !platform) await importRepoFromSb3(projectData);
                     });
+                if (!platform) {
+                    detachWorkspace(this.props.vm);
+                } else if (isMwp) {
+                    this.props.vm._mwRequireExplicitPush = true;
+                    this.props.vm._mwApprovedRemotes = new Set();
+                    adoptImportedProjectHistory(this.props.vm, importedManifest, platform);
+                }
+                // Only an explicit save may publish the imported code/history.
+                this.props.vm._mwPendingDiskOverwrite = Boolean(platform);
+                this.props.onSetFileHandle(this.pendingFileHandle || null);
+                if (filename) this.props.onSetProjectTitle(this.getProjectTitleFromFilename(filename));
+                loadingSuccess = true;
+                try {
+                    this.props.vm.renderer.draw();
+                } catch (error) {
+                    log.error('Could not draw loaded project:', error);
+                }
+            } catch (error) {
+                log.error(error);
+                this.props.onLoadingFailed(error);
+            } finally {
+                try {
+                    await preloadProjectHistory(this.props.vm, {force: true});
+                } catch (error) {
+                    log.error('Could not refresh project history:', error);
+                }
+                this.props.onLoadingFinished(this.props.loadingState, loadingSuccess);
+                this.removeFileObjects();
             }
         }
         // step 7: remove the <input> element from the DOM and clear reader and
@@ -339,11 +327,11 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                     this.inputElement.parentNode.removeChild(this.inputElement);
                 }
             }
-            window.removeEventListener('focus', this.handleWindowFocus);
-            this.handleWindowFocus = null;
             this.inputElement = null;
             this.fileReader = null;
             this.fileToUpload = null;
+            this.uploadDestination = null;
+            this.pendingFileHandle = null;
         }
         render () {
             const {
@@ -397,6 +385,9 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         showOpenFilePicker: PropTypes.func,
         userOwnsProject: PropTypes.bool,
         vm: PropTypes.shape({
+            _mwPendingDiskOverwrite: PropTypes.bool,
+            _mwRequireExplicitPush: PropTypes.bool,
+            _mwApprovedRemotes: PropTypes.object,
             loadProject: PropTypes.func,
             quit: PropTypes.func,
             renderer: PropTypes.shape({

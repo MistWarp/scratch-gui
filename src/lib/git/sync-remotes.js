@@ -22,7 +22,10 @@ const authForRemoteUrl = url => {
 
 const syncConfiguredRemotes = async ({vm, onProgress} = {}) => {
     const remotes = await getRemotes(vm);
-    return Promise.all(remotes.map(async remote => {
+    // An imported connection is not permission to write to that repository.
+    const approved = vm && vm._mwRequireExplicitPush ?
+        remotes.filter(remote => vm._mwApprovedRemotes?.has(remote.url)) : remotes;
+    return Promise.all(approved.map(async remote => {
         try {
             await push({
                 vm,

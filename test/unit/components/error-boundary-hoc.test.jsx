@@ -40,4 +40,19 @@ describe('ErrorBoundary', () => {
         expect(wrapper.containsMatchingElement(child)).toBeFalsy();
         expect(wrapper.containsMatchingElement(crashMessagePattern)).toBeTruthy();
     });
+
+    test('reload preserves the requested project URL', () => {
+        const originalLocation = window.location;
+        const reload = jest.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: {reload}
+        });
+        try {
+            new ErrorBoundary({action: 'test'}).handleReload();
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            Object.defineProperty(window, 'location', {configurable: true, value: originalLocation});
+        }
+    });
 });

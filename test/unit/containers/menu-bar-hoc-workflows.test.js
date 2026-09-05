@@ -9,12 +9,12 @@ describe('project replacement warning', () => {
         })).toBe(true);
     });
 
-    test('does not warn when changed work will be saved before replacement', () => {
+    test('requires consent even when cloud saving is available', () => {
         expect(shouldConfirmProjectReplacement({
             canCreateNew: true,
             canSave: true,
             projectChanged: true
-        })).toBe(false);
+        })).toBe(true);
     });
 
     test('does not warn when the project has no changes', () => {

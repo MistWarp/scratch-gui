@@ -1,3 +1,5 @@
+const SET_PROJECT_PRESENCE = 'scratch-gui/collaboration/SET_PROJECT_PRESENCE';
+export const setProjectPresence = presence => ({type: SET_PROJECT_PRESENCE, presence});
 const OPEN_COLLABORATION_MODAL = 'scratch-gui/collaboration/OPEN_COLLABORATION_MODAL';
 const CLOSE_COLLABORATION_MODAL = 'scratch-gui/collaboration/CLOSE_COLLABORATION_MODAL';
 const SET_COLLABORATION_CONNECTED = 'scratch-gui/collaboration/SET_COLLABORATION_CONNECTED';
@@ -12,6 +14,7 @@ const SET_USER_ACTIVITY = 'scratch-gui/collaboration/SET_USER_ACTIVITY';
 const REMOVE_USER_ACTIVITY = 'scratch-gui/collaboration/REMOVE_USER_ACTIVITY';
 
 const initialState = {
+    projectPresence: null,
     modalVisible: false,
     isConnected: false,
     isReconnecting: false,
@@ -31,6 +34,8 @@ const reducer = function (state, action) {
     if (typeof state === 'undefined') state = initialState;
     
     switch (action.type) {
+    case SET_PROJECT_PRESENCE:
+        return Object.assign({}, state, {projectPresence: action.presence});
     case OPEN_COLLABORATION_MODAL:
         return Object.assign({}, state, {
             modalVisible: true,

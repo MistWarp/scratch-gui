@@ -83,6 +83,16 @@
     opacity: 1;
 }
 
+.stage-pane-resizer:focus-visible {
+    opacity: 1;
+    outline: 3px solid $looks-secondary;
+    outline-offset: -1px;
+}
+
+.stage-pane-resizer:focus-visible::before {
+    opacity: 1;
+}
+
 .tab-list {
     height: $stage-menu-height;
     width: 250px; /* Match width of the toolbox */

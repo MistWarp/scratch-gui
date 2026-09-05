@@ -1,7 +1,7 @@
 import React from 'react';
 import {mount} from 'enzyme';
 
-import BlocksCompare, {BLOCKS_PREVIEW_SCALE} from '../../src/community/components/BlocksCompare.jsx';
+import BlocksCompare, {addChangeStripes, BLOCKS_PREVIEW_SCALE} from '../../src/community/components/BlocksCompare.jsx';
 
 const mockCanvas = () => {
     HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
@@ -34,6 +34,46 @@ describe('BlocksCompare', () => {
 
     afterEach(() => {
         Element.prototype.getBoundingClientRect = getBoundingClientRect;
+    });
+
+    test('gives nested and partially overlapping blocks a single background per row', () => {
+        const canvas = document.createElement('div');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        canvas.appendChild(svg);
+        const addBlock = (top, height, removed = false) => {
+            const block = document.createElementNS(svg.namespaceURI, 'g');
+            block.getBoundingClientRect = () => ({top: top + 10, height});
+            svg.appendChild(block);
+            if (removed) {
+                const marker = document.createElementNS(svg.namespaceURI, 'path');
+                marker.classList.add('sb3-diff-del');
+                svg.appendChild(marker);
+            } else {
+                block.classList.add('sb3-diff-ins');
+            }
+        };
+        addBlock(0, 120, true);
+        addBlock(30, 60);
+        addBlock(45, 20);
+        addBlock(110, 30);
+        addBlock(160, 20, true);
+
+        addChangeStripes(canvas, svg);
+
+        const bands = Array.from(canvas.querySelectorAll('[data-block-change]')).map(stripe => [
+            Number.parseFloat(stripe.style.top),
+            Number.parseFloat(stripe.style.height),
+            stripe.dataset.blockChange
+        ]);
+        expect(bands).toEqual([
+            [0, 30, 'removed'],
+            [30, 15, 'added'],
+            [45, 20, 'added'],
+            [65, 25, 'added'],
+            [90, 20, 'removed'],
+            [110, 30, 'added'],
+            [160, 20, 'removed']
+        ]);
     });
 
     test('renders one script with red and green change rows', async () => {

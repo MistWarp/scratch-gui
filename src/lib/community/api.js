@@ -158,7 +158,7 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
-const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true} = {}) => {
+const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs = 0} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
     const cacheKey = cacheable ? getCacheKey(path) : '';
     if (cacheable) {
@@ -166,7 +166,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
         if (hit) return hit;
         const pending = inFlightGets.get(cacheKey);
         if (pending) return pending;
-    } else if (method !== 'GET' && !path.endsWith('/view')) {
+    } else if (method !== 'GET' && !path.endsWith('/view') && !path.endsWith('/live')) {
         clearApiCache();
     }
     const generation = cacheGeneration;
@@ -184,7 +184,19 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
                 finalHeaders['Content-Type'] = 'application/json';
                 options.body = JSON.stringify(body);
             }
-            return fetch(`${API_BASE}${path}`, options);
+            const controller = timeoutMs ? new AbortController() : null;
+            if (controller) options.signal = controller.signal;
+            const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+            return fetch(`${API_BASE}${path}`, options)
+                .catch(error => {
+                    if (controller && controller.signal.aborted) {
+                        throw new Error('The server did not respond in time. Retrying the connection.');
+                    }
+                    throw error;
+                })
+                .finally(() => {
+                    if (timer) clearTimeout(timer);
+                });
         };
         let response = await doFetch();
         if (
@@ -371,6 +383,8 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     workspace,
     git,
     expectedHead,
+    expectedEdited,
+    replaceHistory = false,
     pullId,
     mergeSourceBranch,
     mergeTargetBranch,
@@ -389,6 +403,8 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     if (workspace) form.append('workspace', workspace, 'project.mwp');
     if (git) form.append('git', JSON.stringify(git));
     if (expectedHead) form.append('expectedHead', expectedHead);
+    if (replaceHistory) form.append('replaceHistory', 'true');
+    if (typeof expectedEdited === 'number') form.append('expectedEdited', String(expectedEdited));
     if (pullId) form.append('pullId', String(pullId));
     if (mergeSourceBranch) form.append('mergeSourceBranch', mergeSourceBranch);
     if (mergeTargetBranch) form.append('mergeTargetBranch', mergeTargetBranch);

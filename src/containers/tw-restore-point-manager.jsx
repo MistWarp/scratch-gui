@@ -1,3 +1,6 @@
+import {withProjectReplacement} from '../lib/project-replacement.js';
+import {detachWorkspace} from '../lib/workspace-state.js';
+import {deleteRepo} from '../lib/git/browser-git.js';
 import React from 'react';
 import {connect} from 'react-redux';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
@@ -20,7 +23,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const messages = defineMessages({
     confirmLoad: {
-        defaultMessage: 'You have unsaved changes. Replace existing project?',
+        defaultMessage: 'Open this backup in a new workspace? Your current code will be kept in Device backups. ' +
+            'Your saved MistWarp project will stay unchanged. Cancel keeps the current workspace open.',
         description: 'Confirmation that appears when loading a restore point to confirm overwriting unsaved changes.',
         id: 'tw.restorePoints.confirmLoad'
     },
@@ -192,21 +196,16 @@ export class TWRestorePointManager extends React.Component {
         if (this.loadingRestorePoint || !this.canLoadProject()) {
             return;
         }
-        if (this.props.projectChanged) {
-            this.setState({
-                confirmation: {
-                    type: 'load',
-                    id,
-                    title: 'Replace current project?',
-                    message: this.props.intl.formatMessage(messages.confirmLoad),
-                    action: 'Load restore point'
-                },
-                confirmationError: ''
-            });
-            return;
-        }
-
-        return this.loadRestorePoint(id);
+        this.setState({
+            confirmation: {
+                type: 'load',
+                id,
+                title: 'Open backup in a new workspace?',
+                message: this.props.intl.formatMessage(messages.confirmLoad),
+                action: 'Back up and open workspace'
+            },
+            confirmationError: ''
+        });
     }
 
     loadRestorePoint (id) {
@@ -216,12 +215,12 @@ export class TWRestorePointManager extends React.Component {
         this.props.onCloseModal();
         this.props.onStartLoadingRestorePoint(this.props.loadingState);
 
-        const backup = this.props.projectChanged ?
-            RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle) :
-            Promise.resolve();
-        return backup
-            .then(() => RestorePointAPI.loadRestorePoint(this.props.vm, id))
+        return withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before opening a backup', async () => {
+            await RestorePointAPI.loadRestorePoint(this.props.vm, id);
+            await deleteRepo();
+        })
             .then(() => {
+                detachWorkspace(this.props.vm);
                 this.props.onFinishLoadingRestorePoint(true, this.props.loadingState);
                 setTimeout(() => {
                     this.props.vm.renderer.draw();

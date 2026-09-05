@@ -57,6 +57,7 @@ import vmManagerHOC from '../lib/components/vm-manager-hoc.jsx';
 import cloudManagerHOC from '../lib/components/cloud-manager-hoc.jsx';
 
 import GUIComponent from '../components/gui/gui.jsx';
+import ProjectLoadError from '../components/project-load-error/project-load-error.jsx';
 import {setIsScratchDesktop} from '../lib/utils/isScratchDesktop.js';
 import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.jsx';
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
@@ -195,6 +196,14 @@ class GUI extends React.Component {
         if (this.props.isError) {
             throw this.props.error;
         }
+        if (this.props.projectFetchError) {
+            return (
+                <ProjectLoadError
+                    error={this.props.projectFetchError}
+                    onRetry={this.props.onRetryProjectFetch}
+                />
+            );
+        }
         const {
             /* eslint-disable no-unused-vars */
             activateTab,
@@ -209,6 +218,7 @@ class GUI extends React.Component {
             onDeleteEditingSprite,
             onDuplicateEditingSprite,
             onProjectLoaded,
+            onRetryProjectFetch,
             onShowRestoreError,
             onStorageInit,
             onUpdateProjectId,
@@ -220,6 +230,7 @@ class GUI extends React.Component {
             openSoundLibrary,
             openSpriteLibrary,
             projectHost,
+            projectFetchError,
             projectId,
             projectTitle,
             requestNewProject,
@@ -264,6 +275,8 @@ GUI.propTypes = {
     isTotallyNormal: PropTypes.bool,
     loadingStateVisible: PropTypes.bool,
     onProjectLoaded: PropTypes.func,
+    onRetryProjectFetch: PropTypes.func,
+    projectFetchError: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     onDeleteEditingSprite: PropTypes.func,
     onDuplicateEditingSprite: PropTypes.func,
     onClearDeletionRestore: PropTypes.func,

@@ -69,7 +69,7 @@ const Commit = () => {
             const projectData = await api.getProject(id);
             if (contextRef.current !== context) return;
             if (!canViewProjectSource(projectData.project || projectData)) {
-                throw new Error('Only the owner can view commits for this project.');
+                throw new Error('You do not have permission to view commits for this project.');
             }
             const coAuthorsPromise = api.commitCoAuthors(id, sha).catch(() => null);
             const remoteInspection = await api.commitInspection(id, sha);
