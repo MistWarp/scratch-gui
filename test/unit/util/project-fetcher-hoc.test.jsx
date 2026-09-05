@@ -8,6 +8,7 @@ import storage from '../../../src/lib/persistence/storage';
 import {LoadingState} from '../../../src/reducers/project-state';
 import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
+import {isProjectOperationActive} from '../../../src/lib/project-operation.js';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -83,7 +84,7 @@ describe('ProjectFetcherHOC', () => {
         storage.load = originalLoad;
     });
 
-    test('ignores an older fetch that finishes after a newer project', async () => {
+    test('rejects another project switch while a fetch is in progress', async () => {
         const Component = () => <div />;
         const WrappedComponent = ProjectFetcherHOC(Component);
         const pendingLoads = [];
@@ -108,13 +109,13 @@ describe('ProjectFetcherHOC', () => {
         await Promise.resolve();
         const newFetch = instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         await Promise.resolve();
-        pendingLoads[1]({data: 'new project'});
+        expect(pendingLoads).toHaveLength(1);
         await newFetch;
         pendingLoads[0]({data: 'old project'});
         await oldFetch;
 
         expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
-        expect(onFetchedProjectData).toHaveBeenCalledWith('new project', LoadingState.FETCHING_WITH_ID);
+        expect(onFetchedProjectData).toHaveBeenCalledWith('old project', LoadingState.FETCHING_WITH_ID);
         storage.load = originalLoad;
     });
 
@@ -180,6 +181,52 @@ describe('ProjectFetcherHOC', () => {
         expect(cachedFetchBuffer).toHaveBeenCalledWith(currentProject.projectJsonUrl);
         expect(fetchWorkspace).not.toHaveBeenCalled();
         expect(onFetchedProjectData).toHaveBeenCalledWith('current data', LoadingState.FETCHING_WITH_ID);
+    });
+
+    test.each(['metadata', 'content'])('can retry a failed %s download without crashing or losing the URL', async step => {
+        const project = {
+            id: 'p17880301792408280002shiaF',
+            projectJsonUrl: 'https://projects.example/current.json'
+        };
+        const error = new TypeError('Failed to fetch');
+        getEditorProject.mockResolvedValue({project});
+        cachedFetchBuffer.mockResolvedValue('project data');
+        if (step === 'metadata') getEditorProject.mockRejectedValueOnce(error);
+        else cachedFetchBuffer.mockRejectedValueOnce(error);
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const onFetchedProjectData = jest.fn();
+        const onError = jest.fn();
+        const vm = {loadProject: jest.fn(), quit: jest.fn()};
+        const wrapper = shallowWithIntl(
+            <WrappedComponent
+                onError={onError}
+                onFetchedProjectData={onFetchedProjectData}
+                store={store}
+                vm={vm}
+            />,
+            {context: {store}}
+        );
+        const instance = wrapper.dive().dive().instance();
+        window.history.replaceState({}, '', `/editor?test=1#mw-${project.id}`);
+        const originalUrl = window.location.href;
+
+        await instance.fetchProject('0', LoadingState.FETCHING_NEW_DEFAULT);
+
+        expect(onError).not.toHaveBeenCalled();
+        expect(onFetchedProjectData).not.toHaveBeenCalled();
+        expect(instance.render().props.projectFetchError).toBe(error);
+        expect(isProjectOperationActive(vm)).toBe(false);
+        expect(window.location.href).toBe(originalUrl);
+
+        await instance.render().props.onRetryProjectFetch();
+
+        expect(instance.render().props.projectFetchError).toBeNull();
+        expect(onError).not.toHaveBeenCalled();
+        expect(onFetchedProjectData).toHaveBeenCalledWith('project data', LoadingState.FETCHING_NEW_DEFAULT);
+        expect(getEditorProject).toHaveBeenLastCalledWith(project.id);
+        expect(window.location.href).toBe(originalUrl);
+        vm._mwReleaseProjectLoad();
     });
 
     test.skip('when there is an id, it tries to update the store with that id', () => {

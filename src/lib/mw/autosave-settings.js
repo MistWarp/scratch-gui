@@ -120,16 +120,9 @@ const onSettingsChanged = listener => {
     return () => window.removeEventListener(CHANGE_EVENT, listener);
 };
 
-// Choosing cloud storage opts new users into autosave. Explicit preferences,
-// including ones saved by older versions, always win.
-const enableAfterCloudSave = () => {
-    try {
-        if (localStorage.getItem(`${STORAGE_PREFIX}enabled`) !== null || legacyValue('enabled') !== null) return;
-        setSetting('enabled', true);
-    } catch (e) {
-        // Saving a project must still work when preferences cannot be stored.
-    }
-};
+// Saving once is not consent to background uploads. Only the settings toggle
+// enables autosave; keep this export for older callers.
+const enableAfterCloudSave = () => {};
 
 export {
     STORAGE_PREFIX,

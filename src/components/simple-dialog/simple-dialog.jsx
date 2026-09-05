@@ -44,12 +44,16 @@ class SimpleDialogComponent extends React.Component {
         }
     };
 
+    handleChoice = event => {
+        this.props.onOk(event.currentTarget.value);
+    };
+
     handleConfirm = () => {
         this.props.onOk(this.state.inputValue);
     };
     
     render () {
-        const {type, title, message} = this.props;
+        const {type, title, message, choices} = this.props;
         const isPrompt = type === 'prompt';
         const isConfirm = type === 'confirm';
         
@@ -100,13 +104,23 @@ class SimpleDialogComponent extends React.Component {
                                 <FormattedMessage {...messages.cancel} />
                             </button>
                         )}
-                        <button
+                        {choices ? choices.map(choice => (
+                            <button
+                                key={choice.value}
+                                className={styles.okButton}
+                                onClick={this.handleChoice}
+                                value={choice.value}
+                                type="button"
+                            >
+                                {choice.label}
+                            </button>
+                        )) : <button
                             className={styles.okButton}
                             onClick={this.handleConfirm}
                             type="button"
                         >
                             <FormattedMessage {...messages.ok} />
-                        </button>
+                        </button>}
                     </div>
                 </div>
             </Modal>
@@ -119,6 +133,10 @@ SimpleDialogComponent.propTypes = {
     title: PropTypes.string.isRequired,
     message: PropTypes.node.isRequired,
     defaultValue: PropTypes.string,
+    choices: PropTypes.arrayOf(PropTypes.shape({
+        value: PropTypes.string.isRequired,
+        label: PropTypes.string.isRequired
+    })),
     onOk: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired
 };

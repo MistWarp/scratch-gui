@@ -106,7 +106,12 @@ class PresenceChannel extends Emitter {
     sendCursor (payload) {
         const now = Date.now();
         const elapsed = now - this._lastCursorSentAt;
-        if (elapsed >= CURSOR_MIN_INTERVAL_MS) {
+        const people = this.session.users ? this.session.users.size : 1;
+        const interval = people > 16 ? 200 : people > 8 ? 100 : CURSOR_MIN_INTERVAL_MS;
+        if (elapsed >= interval) {
+            this._pendingCursor = null;
+            if (this._cursorTimer) clearTimeout(this._cursorTimer);
+            this._cursorTimer = null;
             this._lastCursorSentAt = now;
             this._send(PRESENCE.CURSOR, payload);
             return;
@@ -119,7 +124,7 @@ class PresenceChannel extends Emitter {
             this._lastCursorSentAt = Date.now();
             this._send(PRESENCE.CURSOR, this._pendingCursor);
             this._pendingCursor = null;
-        }, CURSOR_MIN_INTERVAL_MS - elapsed);
+        }, interval - elapsed);
     }
 
     sendCursorLeave () {

@@ -30,6 +30,7 @@ jest.mock('../../src/lib/git/sync-remotes.js', () => ({
     syncConfiguredRemotes: jest.fn(() => Promise.resolve([]))
 }));
 jest.mock('../../src/lib/git/project-history.js', () => ({
+    adoptImportedProjectHistory: jest.fn(),
     isProjectHistoryHydrated: jest.fn(() => false),
     preloadProjectHistory: jest.fn(() => Promise.resolve()),
     setRemoteProjectHistory: jest.fn()
@@ -51,6 +52,82 @@ describe('MistWarp project upload packaging', () => {
         mockCollectExtensionSources.mockResolvedValue({});
         mockCreateMwp.mockResolvedValue({blob: new Blob(['history']), manifest: {head: 'abc'}});
         mockUploadProject.mockResolvedValue({ok: true});
+    });
+
+    test('a background metadata refresh cannot authorize overwriting newer cloud code', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'opened', edited: 10});
+        rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'newer', edited: 20});
+        mockGetProject.mockResolvedValue({project: {
+            id: 'project-1', isOwner: true, gitHead: 'newer', edited: 20
+        }});
+        await expect(publishToMistWarp({vm: {}})).rejects.toMatchObject({code: 'head_changed'});
+        expect(mockUploadProject).not.toHaveBeenCalled();
+        expect(mockDeleteRepo).not.toHaveBeenCalled();
+    });
+
+    test('the successful upload establishes the base for the next save', async () => {
+        const project = {id: 'project-1', isOwner: true, gitHead: 'opened', edited: 10};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockUploadProject.mockResolvedValue({ok: true, project: {gitHead: 'abc', edited: 20}});
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+        await publishToMistWarp({vm});
+        const {getRememberedPlatformProjectState} = require('../../src/lib/community/publish.js');
+        expect(getRememberedPlatformProjectState().saveBase).toEqual({head: 'abc', edited: 20});
+    });
+
+    test('uploads imported history in full without restoring the old remote graph', async () => {
+        const project = {id: 'project-1', isOwner: true, workspaceUrl: '/old.mwp', gitHead: 'old'};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        const vm = {
+            saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'}),
+            _mwHistoryHydration: {projectId: project.id, replaceHistory: true, ready: true}
+        };
+        await publishToMistWarp({vm, title: 'Imported'});
+        expect(mockDeleteRepo).not.toHaveBeenCalled();
+        expect(mockGetProjectCommits).not.toHaveBeenCalled();
+        expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
+            remoteHead: '', baseHistory: null, requireChanges: false
+        }));
+        expect(mockUploadProject.mock.calls[0][4]).toEqual(expect.objectContaining({expectedHead: 'old', replaceHistory: true}));
+        const {adoptImportedProjectHistory} = require('../../src/lib/git/project-history.js');
+        expect(adoptImportedProjectHistory).toHaveBeenCalledWith(vm, {head: 'abc'},
+            expect.objectContaining({id: project.id, gitHead: 'abc'}), false);
+    });
+
+    test('keeps history replacement pending when an upload fails', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: true});
+        const vm = {
+            saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'}),
+            _mwHistoryHydration: {projectId: 'project-1', replaceHistory: true}
+        };
+        mockUploadProject.mockRejectedValueOnce(Object.assign(new Error('Retry later'), {code: 'debounced'}));
+        await expect(publishToMistWarp({vm})).rejects.toThrow('Retry later');
+        expect(vm._mwHistoryHydration.replaceHistory).toBe(true);
+        const {adoptImportedProjectHistory} = require('../../src/lib/git/project-history.js');
+        expect(adoptImportedProjectHistory).not.toHaveBeenCalled();
+    });
+
+    test('approved contributors save directly without becoming owners', async () => {
+        const project = {id: 'project-1', isOwner: false, canSaveDirectly: true, edited: 123};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        const vm = {saveProjectSb3DontZip: jest.fn(() => ({'project.json': '{"targets":[]}'}))};
+        await publishToMistWarp({vm, title: 'Team project'});
+        expect(mockRemixProject).not.toHaveBeenCalled();
+        expect(mockUploadProject.mock.calls[0][0]).toBe(project.id);
+        const {getRememberedPlatformProjectState} = require('../../src/lib/community/publish.js');
+        expect(getRememberedPlatformProjectState().isOwner).toBe(false);
+        expect(mockUploadProject.mock.calls[0][4]).toEqual(expect.objectContaining({expectedEdited: 123}));
+    });
+
+    test('revoked live approval does not silently remix or upload', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: false, canSaveDirectly: true});
+        mockGetProject.mockResolvedValue({project: {id: 'project-1', isOwner: false, canSaveDirectly: false}});
+        await expect(publishToMistWarp({vm: {}, title: 'Team project'})).rejects.toThrow('access ended');
+        expect(mockRemixProject).not.toHaveBeenCalled();
+        expect(mockUploadProject).not.toHaveBeenCalled();
     });
 
     test('serializes the VM once and reuses those files for the commit', async () => {
@@ -147,7 +224,7 @@ describe('MistWarp project upload packaging', () => {
         }));
     });
 
-    test('reconnects an existing detached remix without discarding its commits', async () => {
+    test('does not infer repair parents from bounded history metadata', async () => {
         const files = {'project.json': JSON.stringify({targets: []})};
         const vm = {saveProjectSb3DontZip: jest.fn(() => files)};
         const project = {
@@ -184,16 +261,15 @@ describe('MistWarp project upload packaging', () => {
         await publishToMistWarp({vm, title: 'Fork'});
 
         expect(mockGetProjectCommits).toHaveBeenNthCalledWith(1, 'fork-1', '/fork.json');
-        expect(mockGetProjectCommits).toHaveBeenNthCalledWith(2, 'original');
+        expect(mockGetProjectCommits).toHaveBeenCalledTimes(1);
         expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({
             remoteHead: 'detached-head',
-            additionalParents: ['base-sha'],
+            additionalParents: [],
             baseHistory: expect.objectContaining({
-                commits: [{sha: 'detached-head'}, {sha: 'base-sha'}],
+                commits: [{sha: 'detached-head'}],
                 graph: expect.objectContaining({
                     nodes: [
-                        {sha: 'detached-head', parents: []},
-                        {sha: 'base-sha', parents: []}
+                        {sha: 'detached-head', parents: []}
                     ]
                 })
             })

@@ -9,6 +9,10 @@ jest.mock('../../../src/lib/api/restore-points', () => ({
     createSafetyRestorePoint: jest.fn(() => Promise.resolve())
 }));
 
+jest.mock('../../../src/lib/git/browser-git.js', () => ({
+    createRepoBackup: jest.fn(async () => jest.fn()), importRepoFromSb3: jest.fn()
+}));
+
 describe('SB3PostMessageHOC', () => {
     const mockStore = configureStore();
     let store;
@@ -17,8 +21,13 @@ describe('SB3PostMessageHOC', () => {
     const createInstance = () => {
         const Component = () => <div />;
         const ConnectedComponent = SB3PostMessageHOC(Component);
-        const wrapper = shallow(<ConnectedComponent store={store} />);
-        return wrapper.dive().instance();
+        const wrapper = shallow(<ConnectedComponent
+            store={store}
+            openSimpleDialog={config => config.onOk()}
+        />);
+        const instance = wrapper.dive().instance();
+        instance.props = {...instance.props, openSimpleDialog: config => config.onOk()};
+        return instance;
     };
 
     const createEvent = (data, source = {postMessage: jest.fn()}) => ({
@@ -48,41 +57,31 @@ describe('SB3PostMessageHOC', () => {
         RestorePointAPI.createSafetyRestorePoint.mockResolvedValue();
     });
 
-    test('an older request cannot load or reply after a newer request arrives', async () => {
-        const restoreResolvers = [];
-        RestorePointAPI.createSafetyRestorePoint.mockImplementation(() => (
-            new Promise(resolve => restoreResolvers.push(resolve))
-        ));
-        const oldSource = {postMessage: jest.fn()};
-        const newSource = {postMessage: jest.fn()};
+    test('a request canceled during backup cannot replace the project', async () => {
+        let finishBackup;
+        RestorePointAPI.createSafetyRestorePoint.mockImplementation(() => new Promise(resolve => {
+            finishBackup = resolve;
+        }));
         const instance = createInstance();
-
-        const oldLoad = instance.handleMessage(createEvent(new Uint8Array([1]), oldSource));
-        const newLoad = instance.handleMessage(createEvent(new Uint8Array([2]), newSource));
-        restoreResolvers[0]();
-        restoreResolvers[1]();
-        await Promise.all([oldLoad, newLoad]);
-
-        expect(vm.loadProject).toHaveBeenCalledTimes(1);
-        expect(new Uint8Array(vm.loadProject.mock.calls[0][0])).toEqual(new Uint8Array([2]));
-        expect(oldSource.postMessage).not.toHaveBeenCalled();
-        expect(newSource.postMessage).toHaveBeenCalledWith(
-            expect.objectContaining({status: 'success'}),
-            window.location.origin
-        );
+        const load = instance.handleMessage(createEvent(new Uint8Array([1])));
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+        instance.componentWillUnmount();
+        finishBackup(42);
+        await load;
+        expect(vm.loadProject).not.toHaveBeenCalled();
     });
 
-    test('restore point storage failure does not block an external project', async () => {
+    test('restore point storage failure prevents an external page replacing code', async () => {
         RestorePointAPI.createSafetyRestorePoint.mockRejectedValue(new Error('storage unavailable'));
         const source = {postMessage: jest.fn()};
         const instance = createInstance();
 
         await instance.handleMessage(createEvent(new Uint8Array([3]), source));
 
-        expect(vm.quit).toHaveBeenCalledTimes(1);
-        expect(vm.loadProject).toHaveBeenCalledTimes(1);
+        expect(vm.quit).not.toHaveBeenCalled();
+        expect(vm.loadProject).not.toHaveBeenCalled();
         expect(source.postMessage).toHaveBeenCalledWith(
-            expect.objectContaining({status: 'success'}),
+            expect.objectContaining({status: 'error'}),
             window.location.origin
         );
     });

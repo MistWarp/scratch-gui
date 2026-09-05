@@ -177,6 +177,42 @@ describe('scratchblocks translation', () => {
         ].join('\n'));
     });
 
+    test('closes a deleted loop before adding its replacement inside a condition', () => {
+        const before = [
+            'when I receive [coinclaim v]',
+            'change [wealth v] by (cointype)',
+            'repeat (10)',
+            '  turn left (5) degrees',
+            '  change y by (5)',
+            'end',
+            'hide'
+        ];
+        const after = [
+            before[0],
+            'if <(coin claiming?) = (0)> then',
+            '  set [coin claiming? v] to (1)',
+            ...before.slice(1).map(line => `  ${line}`),
+            'end'
+        ];
+        const expected = [
+            before[0],
+            ...before.slice(1).map(line => line.trim() === 'end' ? line : `- ${line}`),
+            ...after.slice(1).map(line => line.trim() === 'end' ? line : `+ ${line}`)
+        ].join('\n');
+
+        expect(mergeScriptDiff(before.join('\n'), after.join('\n'))).toBe(expected);
+        expect(compactScriptDiff(expected)).toBe(expected);
+    });
+
+    test('keeps both branches of a replaced condition outside the new condition', () => {
+        const before = 'if <(x) = (1)> then\n  show\nelse\n  hide\nend';
+        const after = 'if <(x) = (2)> then\n  show\nelse\n  hide\nend';
+        expect(mergeScriptDiff(before, after)).toBe([
+            '- if <(x) = (1)> then', '-   show', 'else', '-   hide', 'end',
+            '+ if <(x) = (2)> then', '+   show', 'else', '+   hide', 'end'
+        ].join('\n'));
+    });
+
     test('keeps nearby blocks but drops distant unchanged code', () => {
         const source = [
             'when green flag clicked',

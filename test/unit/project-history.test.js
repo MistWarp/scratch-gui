@@ -13,6 +13,7 @@ jest.mock('../../src/lib/git/browser-git.js', () => ({
     computeCommitGraph: (...args) => mockComputeCommitGraph(...args),
     getRemotes: (...args) => mockGetRemotes(...args),
     readReadme: (...args) => mockReadReadme(...args),
+    createRepoBackup: jest.fn(async () => mockDeleteRepo),
     deleteRepo: (...args) => mockDeleteRepo(...args)
 }));
 jest.mock('../../src/lib/community/api.js', () => ({
@@ -25,6 +26,7 @@ jest.mock('../../src/lib/git/mwp.js', () => ({
 }));
 
 const {
+    adoptImportedProjectHistory,
     ensureProjectHistoryHydrated,
     getProjectHistoryState,
     markProjectHistoryLoading,
@@ -38,6 +40,26 @@ describe('project history preload', () => {
         jest.clearAllMocks();
         setRemoteProjectHistory(null);
         markProjectHistoryLoading();
+    });
+
+    test('uses imported history instead of fetching the old saved workspace', async () => {
+        const vm = {};
+        const manifest = {head: 'imported', branch: 'custom'};
+        const project = {id: 'saved', gitHead: 'old', workspaceUrl: '/old.mwp'};
+        adoptImportedProjectHistory(vm, manifest, project);
+        await expect(ensureProjectHistoryHydrated(vm)).resolves.toBe(manifest);
+        expect(mockFetchWorkspace).not.toHaveBeenCalled();
+        expect(vm._mwHistoryHydration.replaceHistory).toBe(true);
+    });
+
+    test('detaches remote history for a new workspace', async () => {
+        const vm = {};
+        const project = {id: 'saved', gitHead: 'old', workspaceUrl: '/old.mwp'};
+        adoptImportedProjectHistory(vm, {head: 'imported'}, project);
+        adoptImportedProjectHistory(vm, null, null);
+        await expect(ensureProjectHistoryHydrated(vm)).resolves.toBeNull();
+        expect(mockFetchWorkspace).not.toHaveBeenCalled();
+        expect(vm._mwHistoryHydration).toBeNull();
     });
 
     test('loads the graph and connections before a history surface opens', async () => {

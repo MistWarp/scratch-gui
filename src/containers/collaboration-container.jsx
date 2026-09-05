@@ -1,14 +1,19 @@
 import React, {Component} from 'react';
+import {getIsShowingProject} from '../reducers/project-state.js';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
+import ProjectSession from '../components/collaboration-modal/project-session.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import api from '../community/api.js';
+import {setGitModalInitialView} from '../lib/git/modal-view.js';
 
 import {
+    setProjectPresence,
+    openCollaborationModal,
     closeCollaborationModal,
     setCollaborationConnected,
     setCollaborationUsers,
@@ -27,7 +32,9 @@ import {
 } from '../reducers/tw';
 
 import {
-    openUsernameModal
+    openSimpleDialog,
+    openUsernameModal,
+    openGitModal
 } from '../reducers/modals';
 
 class CollaborationContainer extends Component {
@@ -77,6 +84,9 @@ class CollaborationContainer extends Component {
     }
 
     componentDidMount () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('branches') === '1') this.props.onOpenBranches();
+        else if (params.get('collaborate') === '1') this.props.onOpen();
         // Initialize collaboration service with VM
         if (this.props.vm) {
             this.collaborationService.init(this.props.vm);
@@ -112,6 +122,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('reconnecting', this.handleReconnecting);
         this.collaborationService.on('reconnected', this.handleReconnected);
 
+        this._onEditError = ({error}) => NotificationSystem.error(error, 5000);
+        this.collaborationService.on('edit-error', this._onEditError);
         this.projectSyncProgress = 0;
         this.projectSyncLoadingBar = null;
     }
@@ -125,6 +137,7 @@ class CollaborationContainer extends Component {
     }
 
     componentWillUnmount () {
+        this.collaborationService.off('edit-error', this._onEditError);
         // Clean up event listeners
         this.collaborationService.off('user-joined', this.handleUserJoined);
         this.collaborationService.off('user-left', this.handleUserLeft);
@@ -172,11 +185,26 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleJoinRoom (roomId, username) {
+    async handleJoinRoom (roomId, username, scope = null) {
+        const accepted = await new Promise(resolve => this.props.openSimpleDialog({
+            type: 'confirm',
+            title: 'Join live editing?',
+            message: `Joining replaces the editor with the host's project. ` +
+                'Everyone in the room can change that code. ' +
+                `A device backup keeps your current code before each full synchronization. ${
+                    scope ? 'Shared edits can be saved to this MistWarp project.' :
+                        'Your current MistWarp save destination will be disconnected.'}`,
+            choices: [{value: 'join', label: 'Back up and join live editing'}],
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false)
+        }));
+        if (!accepted) throw new Error('Joining canceled. Your current project is unchanged.');
         try {
             this.props.onSetError(null);
 
-            await this.collaborationService.connectToRoom(roomId, username, false, 'public', this.props.roturHandle);
+            await this.collaborationService.connectToRoom(
+                roomId, username, false, 'public', this.props.roturHandle, 3, scope
+            );
 
             // Don't set connected immediately - wait for connected-to-host event
             this.props.onSetRoomId(roomId);
@@ -191,7 +219,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom (roomId, username, privacy = 'public') {
+    async handleCreateRoom (roomId, username, privacy = 'public', scope = null) {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
@@ -213,7 +241,8 @@ class CollaborationContainer extends Component {
                 true,
                 privacy,
                 this.props.roturHandle,
-                maxUsers
+                maxUsers,
+                scope
             );
 
             // For hosts, set connected immediately since they're always connected
@@ -221,7 +250,9 @@ class CollaborationContainer extends Component {
             this.props.onSetRoomId(roomId);
             this.props.onSetRoomPrivacy(privacy);
             this.updateUsersList();
-            NotificationSystem.info(`Your ${tier} Rotur plan allows up to ${maxUsers} people in this room.`, 4500);
+            if (!scope) {
+                NotificationSystem.info(`Your ${tier} Rotur plan allows up to ${maxUsers} people in this room.`, 4500);
+            }
 
             // Try to attach to workspace if it exists
             this.tryAttachToWorkspace();
@@ -585,36 +616,56 @@ class CollaborationContainer extends Component {
 
     render () {
         return (
-            <CollaborationModal
-                visible={this.props.isVisible}
-                currentUsername={this.props.currentUsername}
-                currentUserId={this.getCurrentUserId()}
-                roturHandle={this.props.roturHandle}
-                isConnected={this.props.isConnected}
-                roomId={this.props.roomId}
-                roomPrivacy={this.props.roomPrivacy}
-                connectedUsers={this.props.connectedUsers}
-                userActivity={this.props.userActivity}
+            <ProjectSession
+                onPresence={this.props.onPresence}
+                service={this.collaborationService}
                 vm={this.props.vm}
-                connectionError={this.props.connectionError}
-                onRequestClose={this.props.onRequestClose}
+                isReady={this.props.isProjectReady}
+                username={this.props.roturHandle}
                 onJoinRoom={this.handleJoinRoom}
                 onCreateRoom={this.handleCreateRoom}
                 onLeaveRoom={this.handleLeaveRoom}
-                onKickUser={this.handleKickUser}
-                onChangeUsername={this.handleChangeUsername}
-                onCancelConnection={this.handleCancelConnection}
-                onApproveJoinRequest={this.handleApproveJoinRequest}
-                onDenyJoinRequest={this.handleDenyJoinRequest}
-                onCancelJoinRequest={this.handleCancelJoinRequest}
-                onChangeRoomPrivacy={this.handleChangeRoomPrivacy}
-                onOpenChangeUsername={this.props.onOpenChangeUsername}
-            />
+            >
+                {/* eslint-disable-next-line react/jsx-no-bind */}
+                {(projectSessionActive, projectSession) => (<React.Fragment>
+                    <CollaborationModal
+                        projectSessionActive={projectSessionActive}
+                        projectSession={projectSession}
+                        onOpenBranches={this.props.onOpenBranches}
+                        visible={this.props.isVisible}
+                        currentUsername={this.props.currentUsername}
+                        currentUserId={this.getCurrentUserId()}
+                        roturHandle={this.props.roturHandle}
+                        isConnected={!projectSessionActive && this.props.isConnected}
+                        roomId={projectSessionActive ? null : this.props.roomId}
+                        roomPrivacy={this.props.roomPrivacy}
+                        connectedUsers={this.props.connectedUsers}
+                        userActivity={this.props.userActivity}
+                        vm={this.props.vm}
+                        connectionError={projectSessionActive ? null : this.props.connectionError}
+                        onRequestClose={this.props.onRequestClose}
+                        onJoinRoom={this.handleJoinRoom}
+                        onCreateRoom={this.handleCreateRoom}
+                        onLeaveRoom={this.handleLeaveRoom}
+                        onKickUser={this.handleKickUser}
+                        onChangeUsername={this.handleChangeUsername}
+                        onCancelConnection={this.handleCancelConnection}
+                        onApproveJoinRequest={this.handleApproveJoinRequest}
+                        onDenyJoinRequest={this.handleDenyJoinRequest}
+                        onCancelJoinRequest={this.handleCancelJoinRequest}
+                        onChangeRoomPrivacy={this.handleChangeRoomPrivacy}
+                        onOpenChangeUsername={this.props.onOpenChangeUsername}
+                    />
+                </React.Fragment>)}
+            </ProjectSession>
         );
     }
 }
 
 CollaborationContainer.propTypes = {
+    onPresence: PropTypes.func.isRequired,
+    onOpenBranches: PropTypes.func.isRequired,
+    onOpen: PropTypes.func.isRequired,
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
     roomId: PropTypes.string,
@@ -623,6 +674,8 @@ CollaborationContainer.propTypes = {
     connectionError: PropTypes.string,
     currentUsername: PropTypes.string,
     roturHandle: PropTypes.string,
+    isProjectReady: PropTypes.bool,
+    openSimpleDialog: PropTypes.func.isRequired,
     vm: PropTypes.object.isRequired,
     onRequestClose: PropTypes.func.isRequired,
     onSetConnected: PropTypes.func.isRequired,
@@ -643,6 +696,7 @@ CollaborationContainer.propTypes = {
 };
 
 const mapStateToProps = state => ({
+    isProjectReady: getIsShowingProject(state.scratchGui.projectState?.loadingState),
     isVisible: state.scratchGui.collaboration.modalVisible,
     isConnected: state.scratchGui.collaboration.isConnected,
     roomId: state.scratchGui.collaboration.roomId,
@@ -660,6 +714,14 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+    openSimpleDialog: config => dispatch(openSimpleDialog(config)),
+    onPresence: presence => dispatch(setProjectPresence(presence)),
+    onOpenBranches: () => {
+        setGitModalInitialView('branches');
+        dispatch(closeCollaborationModal());
+        dispatch(openGitModal());
+    },
+    onOpen: () => dispatch(openCollaborationModal()),
     onRequestClose: () => dispatch(closeCollaborationModal()),
     onSetConnected: connected => dispatch(setCollaborationConnected(connected)),
     onSetUsers: users => dispatch(setCollaborationUsers(users)),

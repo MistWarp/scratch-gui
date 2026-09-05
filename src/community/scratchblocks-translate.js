@@ -578,13 +578,52 @@ const markDiffLine = (line, marker) => {
     return `${marker} ${line}`;
 };
 
-export const mergeScriptDiff = (beforeText, afterText) => {
-    const before = beforeText ? beforeText.split('\n') : [];
-    const after = afterText ? afterText.split('\n') : [];
+const lineContent = line => line.replace(/^[+-]\s/, '');
+
+const isControlLine = line => /^(?:forever|repeat\b|repeat until\b|while\b|if\b)/.test(lineContent(line).trim());
+
+// Keep control blocks and their closing lines together while matching siblings.
+const scriptDiffNodes = source => {
+    const roots = [];
+    const stack = [];
+    let children = roots;
+    for (const line of source ? source.split('\n') : []) {
+        const trimmed = line.trim();
+        if (trimmed === 'end' && stack.length) {
+            const frame = stack.pop();
+            frame.node.end = line;
+            children = frame.parent;
+        } else if (trimmed === 'else' && stack.length) {
+            const {node} = stack[stack.length - 1];
+            node.elseLine = line;
+            node.alternate = [];
+            children = node.alternate;
+        } else {
+            const node = {line};
+            children.push(node);
+            if (isControlLine(line)) {
+                node.body = [];
+                stack.push({node, parent: children});
+                children = node.body;
+            }
+        }
+    }
+    return roots;
+};
+
+const markedNodeLines = (node, marker) => [
+    markDiffLine(node.line, marker),
+    ...(node.body || []).flatMap(child => markedNodeLines(child, marker)),
+    ...(node.elseLine ? [node.elseLine] : []),
+    ...(node.alternate || []).flatMap(child => markedNodeLines(child, marker)),
+    ...(node.end ? [node.end] : [])
+];
+
+const mergeDiffNodes = (before, after) => {
     const lengths = Array.from({length: before.length + 1}, () => new Uint16Array(after.length + 1));
     for (let oldIndex = before.length - 1; oldIndex >= 0; oldIndex--) {
         for (let newIndex = after.length - 1; newIndex >= 0; newIndex--) {
-            lengths[oldIndex][newIndex] = before[oldIndex] === after[newIndex] ?
+            lengths[oldIndex][newIndex] = before[oldIndex].line === after[newIndex].line ?
                 lengths[oldIndex + 1][newIndex + 1] + 1 :
                 Math.max(lengths[oldIndex + 1][newIndex], lengths[oldIndex][newIndex + 1]);
         }
@@ -593,26 +632,35 @@ export const mergeScriptDiff = (beforeText, afterText) => {
     let oldIndex = 0;
     let newIndex = 0;
     while (oldIndex < before.length || newIndex < after.length) {
-        if (oldIndex < before.length && newIndex < after.length && before[oldIndex] === after[newIndex]) {
-            lines.push(before[oldIndex]);
+        const oldNode = before[oldIndex];
+        const newNode = after[newIndex];
+        if (oldNode && newNode && oldNode.line === newNode.line) {
+            lines.push(oldNode.line);
+            if (oldNode.body || newNode.body) {
+                lines.push(...mergeDiffNodes(oldNode.body || [], newNode.body || []));
+                if (oldNode.elseLine || newNode.elseLine) {
+                    lines.push(oldNode.elseLine || newNode.elseLine);
+                    lines.push(...mergeDiffNodes(oldNode.alternate || [], newNode.alternate || []));
+                }
+                lines.push(oldNode.end || newNode.end);
+            }
             oldIndex++;
             newIndex++;
-        } else if (oldIndex < before.length && (
-            newIndex >= after.length || lengths[oldIndex + 1][newIndex] >= lengths[oldIndex][newIndex + 1]
+        } else if (oldNode && (
+            !newNode || lengths[oldIndex + 1][newIndex] >= lengths[oldIndex][newIndex + 1]
         )) {
-            lines.push(markDiffLine(before[oldIndex], '-'));
+            lines.push(...markedNodeLines(oldNode, '-'));
             oldIndex++;
         } else {
-            lines.push(markDiffLine(after[newIndex], '+'));
+            lines.push(...markedNodeLines(newNode, '+'));
             newIndex++;
         }
     }
-    return lines.join('\n');
+    return lines;
 };
 
-const lineContent = line => line.replace(/^[+-]\s/, '');
-
-const isControlLine = line => /^(?:forever|repeat\b|repeat until\b|while\b|if\b)/.test(lineContent(line).trim());
+export const mergeScriptDiff = (beforeText, afterText) =>
+    mergeDiffNodes(scriptDiffNodes(beforeText), scriptDiffNodes(afterText)).join('\n');
 
 const omissionLine = omittedLines => {
     const indents = omittedLines

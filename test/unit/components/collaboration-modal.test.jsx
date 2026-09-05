@@ -29,6 +29,54 @@ const buttonWithText = (wrapper, text) => wrapper.find('ButtonComponent')
     .first();
 
 describe('CollaborationModal', () => {
+    test('live project sessions show participants and an explicit end control', () => {
+        const wrapper = mountModal({
+            ...defaultProps(),
+            projectSessionActive: true,
+            projectSession: {active: true, isHost: true, phase: 'live', editors: [], onLeave: jest.fn()},
+            connectedUsers: [{id: 'user-1', username: 'Mist'}, {id: 'user-2', username: 'MistWarp'}]
+        });
+        expect(wrapper.text()).toContain('Project collaboration');
+        expect(wrapper.text()).toContain('End live session for everyone');
+        expect(wrapper.text()).toContain('MistWarp');
+        expect(wrapper.text()).toContain('You');
+        expect(wrapper.text()).not.toContain('Join Room');
+        expect(wrapper.text()).not.toContain('Leave Room');
+        wrapper.unmount();
+    });
+
+    test('joining asks before replacing the current project', () => {
+        const onJoin = jest.fn();
+        const wrapper = mountModal({...defaultProps(), projectSession: {
+            session: {id: 'live', host: 'friend', public: true}, canJoin: true,
+            editors: [], onJoin
+        }});
+        buttonWithText(wrapper, 'Join session').props().onClick();
+        wrapper.update();
+        expect(onJoin).not.toHaveBeenCalled();
+        expect(wrapper.text()).toContain("Joining replaces this editor's project");
+        buttonWithText(wrapper, 'Join and load host project').props().onClick();
+        expect(onJoin).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
+    test('loading, connecting, and stale discovery never claim a live connection', () => {
+        const wrapper = mountModal({...defaultProps(), projectSession: {
+            checking: true, canHost: true, editors: []
+        }});
+        expect(wrapper.text()).toContain('Checking project collaboration');
+        expect(buttonWithText(wrapper, 'Open to collaborators').props().disabled).toBe(true);
+        wrapper.setProps({projectSession: {active: true, phase: 'joining', editors: []}});
+        expect(wrapper.text()).toContain('Joining and loading');
+        expect(wrapper.text()).not.toContain('Your edits are syncing');
+        expect(wrapper.text()).toContain('Cancel joining');
+        wrapper.setProps({projectSession: {
+            discoveryError: 'Could not check who is online.', canHost: true, editors: []
+        }});
+        expect(buttonWithText(wrapper, 'Open to collaborators').props().disabled).toBe(true);
+        wrapper.unmount();
+    });
+
     test('renders nothing when not visible', () => {
         const wrapper = mountModal({...defaultProps(), visible: false});
 
@@ -114,7 +162,7 @@ describe('CollaborationModal', () => {
         expect(modalOf(wrapper).state.error).toContain('Nobody is hosting room "test-room" yet');
     });
 
-    test('creating a room uses the typed room id and hosts it publicly', async () => {
+    test('creating a room uses the typed room id and hosts it privately by default', async () => {
         const props = defaultProps();
         const wrapper = mountModal(props);
 
@@ -124,7 +172,7 @@ describe('CollaborationModal', () => {
         await buttonWithText(wrapper, 'Host room "my-room"').props()
             .onClick();
 
-        expect(props.onCreateRoom).toHaveBeenCalledWith('my-room', 'TestUser', 'public');
+        expect(props.onCreateRoom).toHaveBeenCalledWith('my-room', 'TestUser', 'private');
     });
 
     test('creating a room with no room id generates one', async () => {
@@ -138,7 +186,17 @@ describe('CollaborationModal', () => {
         const [roomCode, username, privacy] = props.onCreateRoom.mock.calls[0];
         expect(roomCode).toBeTruthy();
         expect(username).toBe('TestUser');
-        expect(privacy).toBe('public');
+        expect(privacy).toBe('private');
+    });
+
+    test('the host can explicitly create a public room', async () => {
+        const props = defaultProps();
+        const wrapper = mountModal(props);
+
+        wrapper.find('button[role="radio"]').at(1).simulate('click');
+        await buttonWithText(wrapper, 'Create New Room').props().onClick();
+
+        expect(props.onCreateRoom).toHaveBeenCalledWith(expect.any(String), 'TestUser', 'public');
     });
 
     test('a failed create surfaces the error message', async () => {

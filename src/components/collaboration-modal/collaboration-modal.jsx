@@ -22,13 +22,15 @@ class CollaborationModal extends Component {
         super(props);
 
         this.state = {
+            confirmProjectJoin: null,
             roomId: props.roomId || '',
             isConnecting: false,
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
             showJoinRequest: false,
-            privacyBusy: false
+            privacyBusy: false,
+            newRoomPrivacy: 'private'
         };
 
         this._autoJoinKey = null;
@@ -58,6 +60,9 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.handleSelectPublicPrivacy = this.handleSelectPublicPrivacy.bind(this);
         this.handleSelectPrivatePrivacy = this.handleSelectPrivatePrivacy.bind(this);
+        this.handleSelectNewRoomPrivacy = this.handleSelectNewRoomPrivacy.bind(this);
+        this.handleSelectPrivateNewRoom = this.handleSelectPrivateNewRoom.bind(this);
+        this.handleSelectPublicNewRoom = this.handleSelectPublicNewRoom.bind(this);
     }
 
     componentDidMount () {
@@ -106,7 +111,7 @@ class CollaborationModal extends Component {
 
         this.maybeAutoJoin();
 
-        if (this.props.visible && CollaborationService) {
+        if (this.props.visible && !this.props.projectSessionActive && CollaborationService) {
             try {
                 const service = CollaborationService.getInstance();
                 if (service && service.getPendingJoinRequests) {
@@ -163,6 +168,18 @@ class CollaborationModal extends Component {
         return this.handleChangeCurrentRoomPrivacy('private');
     }
 
+    handleSelectNewRoomPrivacy (newRoomPrivacy) {
+        this.setState({newRoomPrivacy});
+    }
+
+    handleSelectPrivateNewRoom () {
+        this.handleSelectNewRoomPrivacy('private');
+    }
+
+    handleSelectPublicNewRoom () {
+        this.handleSelectNewRoomPrivacy('public');
+    }
+
     handleRoomIdChange (event) {
         this.setState({roomId: event.target.value});
     }
@@ -209,7 +226,7 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+            await this.props.onCreateRoom(roomCode, this.props.currentUsername, this.state.newRoomPrivacy);
 
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('room', roomCode);
@@ -308,6 +325,7 @@ class CollaborationModal extends Component {
     }
 
     maybeAutoJoin () {
+        if (this.props.projectSession || this.props.projectSessionActive) return;
         const {roomId, currentUsername, isConnected} = this.props;
         if (!roomId || !currentUsername || isConnected) return;
         if (CollaborationService.getInstance().roomId) return;
@@ -387,6 +405,7 @@ class CollaborationModal extends Component {
     }
 
     handleAwaitingApproval () {
+        if (CollaborationService?.getInstance().scope) return;
         console.log('[COLLAB MODAL] Awaiting approval from host', {
             isConnected: this.props.isConnected,
             connectionStep: this.state.connectionStep
@@ -400,6 +419,7 @@ class CollaborationModal extends Component {
     }
 
     handleApprovalResolved () {
+        if (CollaborationService?.getInstance().scope) return;
         console.log('[COLLAB MODAL] Approval resolved', {
             isConnected: this.props.isConnected,
             connectionStep: this.state.connectionStep
@@ -412,6 +432,7 @@ class CollaborationModal extends Component {
     }
 
     handleJoinDenied (reason) {
+        if (CollaborationService?.getInstance().scope) return;
         console.log('[COLLAB MODAL] Join request denied:', reason);
         this.setState({
             connectionStep: 'join',
@@ -438,6 +459,7 @@ class CollaborationModal extends Component {
     }
 
     handleJoinRequestEvent (data) {
+        if (CollaborationService?.getInstance().scope) return;
         console.log('[COLLAB MODAL] Join request event received:', data);
         if (CollaborationService) {
             try {
@@ -483,8 +505,7 @@ class CollaborationModal extends Component {
                     <AlertTriangle size={16} />
                 </div>
                 <div className={styles.bannerContent}>
-                    <strong>{'Alpha: '}</strong>
-                    {'This feature is in early development. Your projects may get corrupted or broken.'}
+                    {'Collaboration is experimental. Keep a downloaded backup before a shared editing session.'}
                 </div>
             </div>
         );
@@ -597,10 +618,45 @@ class CollaborationModal extends Component {
                         </h3>
                         <div className={styles.createDescription}>
                             <FormattedMessage
-                                defaultMessage="Host a room and share its URL to invite people."
+                                defaultMessage={'Private rooms require your approval. ' +
+                                    'Share the invite URL when you are ready.'}
                                 description="Create room description"
                                 id="gui.collaboration.createDescription"
                             />
+                        </div>
+                        <div
+                            className={styles.privacySelector}
+                            role="radiogroup"
+                            aria-label="New room privacy"
+                        >
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.state.newRoomPrivacy === 'private'
+                                })}
+                                role="radio"
+                                aria-checked={this.state.newRoomPrivacy === 'private'}
+                                onClick={this.handleSelectPrivateNewRoom}
+                                type="button"
+                            >
+                                <div className={styles.privacyCardTitle}>{'Private room'}</div>
+                                <div className={styles.privacyCardDesc}>
+                                    {'Approve each person who asks to join.'}
+                                </div>
+                            </button>
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.state.newRoomPrivacy === 'public'
+                                })}
+                                role="radio"
+                                aria-checked={this.state.newRoomPrivacy === 'public'}
+                                onClick={this.handleSelectPublicNewRoom}
+                                type="button"
+                            >
+                                <div className={styles.privacyCardTitle}>{'Public room'}</div>
+                                <div className={styles.privacyCardDesc}>
+                                    {'Anyone with the room link can join.'}
+                                </div>
+                            </button>
                         </div>
                         <Button
                             className={styles.secondaryButton}
@@ -665,6 +721,8 @@ class CollaborationModal extends Component {
         const users = this.props.connectedUsers || [];
         const currentUser = users.find(user => user.id === this.props.currentUserId);
         const isHost = currentUser && currentUser.isHost;
+        const pendingRequests = this.state.pendingRequests.filter(request =>
+            !(this.props.projectPeerIds || []).includes(request.id));
 
         return (
             <Box className={styles.content}>
@@ -763,7 +821,7 @@ class CollaborationModal extends Component {
                     </div>
                 </div>
 
-                {isHost && this.state.pendingRequests.length > 0 && (
+                {isHost && pendingRequests.length > 0 && (
                     <>
                         <div className={styles.requestsSection}>
                             <h3 className={styles.sectionTitle}>
@@ -771,12 +829,12 @@ class CollaborationModal extends Component {
                                     defaultMessage="Pending Join Requests ({count})"
                                     description="Pending requests section title"
                                     id="gui.collaboration.pendingRequests"
-                                    values={{count: this.state.pendingRequests.length}}
+                                    values={{count: pendingRequests.length}}
                                 />
                             </h3>
 
                             <div className={styles.requestsList}>
-                                {this.state.pendingRequests.map(request => (
+                                {pendingRequests.map(request => (
                                     <div
                                         key={request.id}
                                         className={styles.requestItem}
@@ -966,9 +1024,145 @@ class CollaborationModal extends Component {
         );
     }
 
+    /* eslint-disable react/jsx-no-bind, react/jsx-handler-names */
+    renderProjectSession () {
+        const users = this.props.connectedUsers || [];
+        const project = this.props.projectSession || {};
+        const session = project.session;
+        const pending = project.busy || ['joining', 'reconnecting'].includes(project.phase);
+        const disabled = pending || project.checking || project.viewingCommit || Boolean(project.discoveryError);
+        const progress = {
+            opening: 'Opening your session…',
+            joining: "Joining and loading the host's project…",
+            leaving: 'Disconnecting and updating the online listing…',
+            reconnecting: 'Connection lost. Reconnecting…'
+        }[project.phase];
+        let status = 'Working independently. Your live edits are not shared.';
+        if (project.active) {
+            status = project.isHost ?
+                'Your session is open to collaborators.' : 'Connected. Your edits are syncing.';
+        }
+        if (progress) status = progress;
+        if (project.checking) status = 'Checking project collaboration…';
+        if (project.loadingProject) status = 'Loading project…';
+        if (project.viewingCommit) status = 'Viewing a past commit. Open a branch to use live collaboration.';
+        const others = (project.editors || []).filter(editor =>
+            editor.username !== project.username?.toLowerCase());
+        const otherNames = others.map(editor => editor.username).join(', ');
+        const confirming = session && this.state.confirmProjectJoin === session.id;
+        let leaveLabel = project.isHost ? 'End live session for everyone' : 'Leave live session';
+        if (project.phase === 'joining') leaveLabel = 'Cancel joining';
+        if (project.busy) leaveLabel = 'Disconnecting…';
+        return (
+            <Box className={styles.content}>
+                <h2 className={styles.headerText}>{'Project collaboration'}</h2>
+                {project.branch && <p>{`Branch: ${project.branch}`}</p>}
+                <div
+                    className={styles.projectStatus}
+                    role="status"
+                    aria-live="polite"
+                >{status}</div>
+                {project.discoveryError && <p role="status">{project.discoveryError}</p>}
+                {!project.discoveryError && others.length > 0 && (
+                    <p>{`${otherNames} ${others.length === 1 ? 'is' : 'are'} also on this branch.`}</p>
+                )}
+                {session && !project.active && !project.checking && !project.discoveryError && (
+                    <p>{session.public ? `${session.host} has opened a live session to collaborators.` :
+                        `${session.host} is working privately.`}</p>
+                )}
+                {project.error && (
+                    <div
+                        className={styles.error}
+                        role="alert"
+                    >{project.error}</div>
+                )}
+                <div className={styles.projectActions}>
+                    {project.active && (
+                        <Button
+                            className={styles.secondaryButton}
+                            disabled={project.busy}
+                            onClick={project.onLeave}
+                        >{leaveLabel}</Button>
+                    )}
+                    {!project.active && !session && project.canHost && (
+                        <Button
+                            className={styles.primaryButton}
+                            disabled={disabled}
+                            onClick={project.onHost}
+                        >{project.phase === 'opening' ? 'Opening session…' : 'Open to collaborators'}</Button>
+                    )}
+                    {!project.active && session?.public && project.canJoin && !confirming && (
+                        <Button
+                            className={styles.primaryButton}
+                            disabled={disabled}
+                            onClick={() => this.setState({confirmProjectJoin: session.id})}
+                        >{'Join session…'}</Button>
+                    )}
+                    {!project.active && session?.public && project.canJoin && confirming && (
+                        <div className={styles.projectConfirm}>
+                            <p>{"Joining replaces this editor's project with the host's version. " +
+                                'Save your changes or put them on a branch first.'}</p>
+                            <Button
+                                className={styles.primaryButton}
+                                disabled={disabled}
+                                onClick={project.onJoin}
+                            >{'Join and load host project'}</Button>
+                            <Button
+                                className={styles.secondaryButton}
+                                disabled={pending}
+                                onClick={() => this.setState({confirmProjectJoin: null})}
+                            >{'Keep working independently'}</Button>
+                        </div>
+                    )}
+                    {!project.active && (
+                        <Button
+                            className={styles.secondaryButton}
+                            disabled={pending || project.checking}
+                            onClick={this.props.onOpenBranches}
+                        >{'Open branches…'}</Button>
+                    )}
+                </div>
+                {!project.active && !project.checking && (
+                    <p>{"Live sessions are open only to this project's collaborators. " +
+                        'To work separately, create a branch in Project history.'}</p>
+                )}
+                {project.active && project.phase === 'live' && (
+                    <p>{users.length < 2 ? 'No one else has joined yet.' :
+                        `${users.length} people in this session.`}</p>
+                )}
+                {project.active && (
+                    <div className={styles.usersList}>
+                        {users.map(user => (
+                            <div
+                                className={styles.userItem}
+                                key={user.id}
+                            >
+                                {this.renderUserIcon(user, false)}
+                                <span className={styles.username}>
+                                    {user.username}
+                                    {user.id === this.props.currentUserId && (
+                                        <span className={styles.youBadge}>{'You'}</span>
+                                    )}
+                                    {this.describeActivity(user.id) && (
+                                        <span className={styles.userActivity}>{this.describeActivity(user.id)}</span>
+                                    )}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </Box>
+        );
+    }
+    /* eslint-enable react/jsx-no-bind, react/jsx-handler-names */
+
     render () {
         let content;
-        switch (this.state.connectionStep) {
+        const projectMode = this.props.projectSession || this.props.projectSessionActive;
+        switch (projectMode ? 'project' : this.state.connectionStep) {
+        case 'project':
+            content = this.renderProjectSession();
+            break;
         case 'join':
             content = this.renderJoinStep();
             break;
@@ -993,7 +1187,7 @@ class CollaborationModal extends Component {
                 contentLabel="Live Collaboration"
                 id="collaborationModal"
                 width={600}
-                height={720}
+                height={projectMode ? 560 : 720}
                 resizable
             >
                 <Box className={styles.body}>
@@ -1005,6 +1199,10 @@ class CollaborationModal extends Component {
 }
 
 CollaborationModal.propTypes = {
+    projectSession: PropTypes.object,
+    onOpenBranches: PropTypes.func,
+    projectSessionActive: PropTypes.bool,
+    projectPeerIds: PropTypes.arrayOf(PropTypes.string),
     visible: PropTypes.bool,
     currentUsername: PropTypes.string,
     currentUserId: PropTypes.string,

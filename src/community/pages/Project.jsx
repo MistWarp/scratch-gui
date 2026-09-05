@@ -33,6 +33,7 @@ import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
+import LiveProjectSession from '../components/LiveProjectSession.jsx';
 import {canViewProjectSource} from '../project-source-access';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
@@ -1932,6 +1933,7 @@ const Project = () => {
                 </Modal>
             ) : null}
             {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
+            <LiveProjectSession project={project} />
             {copied ? <div className={styles.actionSuccess}>Link copied to clipboard.</div> : null}
             {thumbnailStatus !== 'idle' ? (
                 <div className={styles.actionSuccess}>

@@ -137,7 +137,9 @@ class CostumeTab extends React.Component {
         }
     }
     handleSelectCostume (costumeIndex) {
-        this.props.vm.editingTarget.setCostume(costumeIndex);
+        if (this.props.vm.editingCommands && this.props.vm.editingCommands.handler) {
+            this.props.vm.editingCommands.request('selectCostume', [costumeIndex]);
+        } else this.props.vm.editingTarget.setCostume(costumeIndex);
         this.setState({selectedCostumeIndex: costumeIndex});
         CollaborationService.getInstance().setActivity({assetIndex: costumeIndex});
     }

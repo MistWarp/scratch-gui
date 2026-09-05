@@ -19,12 +19,6 @@ const GIT_EMBED_DIR = '.mistwarp-git';
 
 let fsSingleton = null;
 
-const getFs = () => {
-    if (!fsSingleton) {
-        fsSingleton = new LightningFS(FS_NAME);
-    }
-    return fsSingleton;
-};
 
 const pathJoin = (...parts) => parts
     .filter(Boolean)
@@ -44,7 +38,8 @@ const exists = async (pfs, filePath) => {
         await pfs.stat(filePath);
         return true;
     } catch (e) {
-        return false;
+        if (e.code === 'ENOENT') return false;
+        throw e;
     }
 };
 
@@ -66,35 +61,19 @@ const ensureDir = async (pfs, dirPath) => {
 };
 
 const removeRecursive = async (pfs, filePath) => {
-    if (!pfs || !filePath || typeof filePath !== 'string') {
-        return;
-    }
-
     let stat;
     try {
         stat = await pfs.stat(filePath);
-    } catch (e) {
-        // File doesn't exist, nothing to remove
-        return;
+    } catch (error) {
+        if (error.code === 'ENOENT') return;
+        throw error;
     }
-
     if (stat.isDirectory()) {
         const entries = await pfs.readdir(filePath);
         await Promise.all(entries.map(entry => removeRecursive(pfs, `${filePath}/${entry}`)));
-        try {
-            await pfs.rmdir(filePath);
-        } catch (e) {
-            // Directory might not be empty or have permission issues
-            console.warn('Failed to remove directory:', filePath, e);
-        }
-        return;
-    }
-
-    try {
+        await pfs.rmdir(filePath);
+    } else {
         await pfs.unlink(filePath);
-    } catch (e) {
-        // File might be locked or have permission issues
-        console.warn('Failed to remove file:', filePath, e);
     }
 };
 
@@ -190,11 +169,6 @@ const setDefaultAuthor = author => {
     }
 };
 
-const repoExists = () => {
-    const fs = getFs();
-    const pfs = fs.promises;
-    return exists(pfs, pathJoin(REPO_DIR, '.git'));
-};
 
 const listFilesRecursive = async (pfs, rootDir) => {
     const out = [];
@@ -212,6 +186,61 @@ const listFilesRecursive = async (pfs, rootDir) => {
     };
     await walk(rootDir);
     return out;
+};
+
+const getFs = () => {
+    if (!fsSingleton) {
+        // Each page owns a separate database. A duplicated tab may inherit
+        // sessionStorage, so it copies the previous workspace instead of sharing it.
+        let previousName = FS_NAME;
+        const name = `${FS_NAME}-${Date.now()}-${Math.random().toString(36)
+            .slice(2)}`;
+        try {
+            previousName = sessionStorage.getItem('mw:git-workspace') || FS_NAME;
+        } catch (error) {
+            // A private in-memory session still gets its own database name.
+        }
+        const next = new LightningFS(name);
+        const raw = next.promises;
+        const source = new LightningFS(previousName).promises;
+        const ready = (async () => {
+            let found = false;
+            try {
+                await source.stat(REPO_DIR);
+                found = true;
+            } catch (error) {
+                if (error.code !== 'ENOENT') throw error;
+            }
+            if (found) {
+                for (const path of await listFilesRecursive(source, REPO_DIR)) {
+                    await ensureParentDir(raw, path);
+                    await raw.writeFile(path, await source.readFile(path));
+                }
+            }
+            try {
+                sessionStorage.setItem('mw:git-workspace', name);
+            } catch (error) {
+                // The current workspace remains usable without session storage.
+            }
+        })();
+        // Reads below still reject on copy failure, even if nobody has requested one yet.
+        ready.catch(() => {});
+        // Git and the editor only see methods that wait for the copy to finish.
+        next.promises = new Proxy(raw, {
+            get: (target, property) => (typeof target[property] === 'function' ?
+                async (...args) => {
+                    await ready; return target[property](...args);
+                } : target[property])
+        });
+        fsSingleton = next;
+    }
+    return fsSingleton;
+};
+
+const repoExists = () => {
+    const fs = getFs();
+    const pfs = fs.promises;
+    return exists(pfs, pathJoin(REPO_DIR, '.git'));
 };
 
 const clearWorkdirExceptGit = async pfs => {
@@ -377,7 +406,7 @@ const restoreProjectFromCurrentRef = async vm => {
 
         await RestorePointAPI.createSafetyRestorePoint(vm, 'Before git restore');
         vm.quit();
-        await vm.loadProject(snapshot, {skipGitImport: true});
+        await vm.loadProject(snapshot, {skipGitImport: true, mwPreserveProjectSource: true});
     } catch (e) {
         throw new Error(`Failed to restore project: ${e.message}`);
     }
@@ -442,7 +471,14 @@ const getRepoStatus = async vm => {
     };
 };
 
-const createBranch = async ({ref} = {}) => {
+const getCurrentProjectBranch = async fallback => {
+    const fs = getFs();
+    if (!await exists(fs.promises, pathJoin(REPO_DIR, '.git'))) return fallback || 'main';
+    // A detached commit is not a branch and must not join a live branch room.
+    return git.currentBranch({fs, dir: REPO_DIR, fullname: false});
+};
+
+const createBranch = async ({ref, checkout = false} = {}) => {
     if (!ref || typeof ref !== 'string') {
         throw new Error('Invalid branch name');
     }
@@ -465,7 +501,7 @@ const createBranch = async ({ref} = {}) => {
     }
 
     try {
-        await git.branch({fs, dir: REPO_DIR, ref});
+        await git.branch({fs, dir: REPO_DIR, ref, checkout});
     } catch (e) {
         throw new Error(`Failed to create branch ${ref}: ${e.message}`);
     }
@@ -503,14 +539,24 @@ const checkoutCommit = async oid => {
 };
 
 const checkoutBranchAndRestore = async ({vm, ref}) => {
-    await checkoutBranch(ref);
-    await restoreProjectFromCurrentRef(vm);
+    window.dispatchEvent(new Event('mw:branch-changing'));
+    try {
+        await checkoutBranch(ref);
+        await restoreProjectFromCurrentRef(vm);
+    } finally {
+        window.dispatchEvent(new Event('mw:branch-changed'));
+    }
     return 'ok';
 };
 
 const checkoutCommitAndRestore = async ({vm, oid}) => {
-    await checkoutCommit(oid);
-    await restoreProjectFromCurrentRef(vm);
+    window.dispatchEvent(new Event('mw:branch-changing'));
+    try {
+        await checkoutCommit(oid);
+        await restoreProjectFromCurrentRef(vm);
+    } finally {
+        window.dispatchEvent(new Event('mw:branch-changed'));
+    }
     return 'ok';
 };
 
@@ -526,6 +572,10 @@ const addRemote = async ({vm, name, url}) => {
     }
 
     await git.addRemote({fs, dir: REPO_DIR, remote: name, url});
+    if (vm._mwRequireExplicitPush) {
+        if (!vm._mwApprovedRemotes) vm._mwApprovedRemotes = new Set();
+        vm._mwApprovedRemotes.add(url);
+    }
 };
 
 const removeRemote = async ({vm, name}) => {
@@ -794,15 +844,31 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
     }
 };
 
-const reachableObjectCache = new Map();
-
 const deleteRepo = async () => {
     const fs = getFs();
     const pfs = fs.promises;
-    reachableObjectCache.clear();
     if (!(await exists(pfs, REPO_DIR))) return;
     await removeRecursive(pfs, REPO_DIR);
 };
+
+// Capture every file, including uncommitted work and refs, before a destructive operation.
+const createRepoBackup = async () => {
+    const pfs = getFs().promises;
+    const files = new Map();
+    if (await exists(pfs, REPO_DIR)) {
+        for (const path of await listFilesRecursive(pfs, REPO_DIR)) {
+            files.set(path, new Uint8Array(await pfs.readFile(path)));
+        }
+    }
+    return async () => {
+        await deleteRepo();
+        for (const [path, data] of files) {
+            await ensureParentDir(pfs, path);
+            await pfs.writeFile(path, data);
+        }
+    };
+};
+
 
 const deleteBranch = async ref => {
     if (!ref || typeof ref !== 'string') {
@@ -1125,21 +1191,21 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-const collectReachableObjectOids = async (head, known = new Set()) => {
-    // Traversals stopped at a known object are partial. Caching them as the
-    // complete reachable set can make a later full export omit ancestors.
-    const cacheable = known.size === 0;
-    const cached = cacheable ? reachableObjectCache.get(head) : null;
-    if (cached) return new Set(cached);
+const collectReachableObjectOids = async (head, known = new Set(), dir = REPO_DIR) => {
+    // Verify objects on every export/import. A prior traversal cannot establish
+    // that objects still exist after another checkout or import.
     const fs = getFs();
     const found = new Set();
     const visitTree = async oid => {
         if (known.has(oid) || found.has(oid)) return;
         found.add(oid);
-        const {tree} = await git.readTree({fs, dir: REPO_DIR, oid});
+        const {tree} = await git.readTree({fs, dir, oid});
         for (const entry of tree) {
             if (entry.type === 'tree') await visitTree(entry.oid);
-            else if (!known.has(entry.oid)) found.add(entry.oid);
+            else if (!known.has(entry.oid) && !found.has(entry.oid)) {
+                await git.readBlob({fs, dir, oid: entry.oid});
+                found.add(entry.oid);
+            }
         }
     };
     const pending = [head];
@@ -1147,11 +1213,10 @@ const collectReachableObjectOids = async (head, known = new Set()) => {
         const oid = pending.pop();
         if (!oid || known.has(oid) || found.has(oid)) continue;
         found.add(oid);
-        const {commit} = await git.readCommit({fs, dir: REPO_DIR, oid});
+        const {commit} = await git.readCommit({fs, dir, oid});
         await visitTree(commit.tree);
         pending.push(...(commit.parent || []));
     }
-    if (cacheable) reachableObjectCache.set(head, new Set(found));
     return found;
 };
 
@@ -1592,6 +1657,7 @@ export {
     setDefaultAuthor,
     ensureParentDir,
     getRepoStatus,
+    getCurrentProjectBranch,
     getRepoChanges,
     getFs,
     initRepo,
@@ -1618,6 +1684,7 @@ export {
     push,
     pull,
     exportRepoToZip,
+    createRepoBackup,
     downloadRepoZip,
     commitSb3,
     pickAndCommitSb3,

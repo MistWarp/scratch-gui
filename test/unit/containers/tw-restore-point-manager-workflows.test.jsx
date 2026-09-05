@@ -22,6 +22,10 @@ jest.mock('../../../src/lib/api/restore-points', () => ({
     }))
 }));
 
+jest.mock('../../../src/lib/git/browser-git.js', () => ({
+    createRepoBackup: jest.fn(async () => jest.fn()), deleteRepo: jest.fn()
+}));
+
 const makeManager = overrides => {
     const props = {
         intl: {formatMessage: jest.fn(message => message.defaultMessage)},
@@ -68,9 +72,10 @@ describe('restore point manager workflows', () => {
         }));
         const manager = makeManager();
 
-        const firstLoad = manager.handleClickLoad(4);
         manager.handleClickLoad(4);
-        await Promise.resolve();
+        const firstLoad = manager.handleConfirmAction();
+        manager.handleClickLoad(4);
+        for (let i = 0; i < 10; i++) await Promise.resolve();
         expect(RestorePointAPI.loadRestorePoint).toHaveBeenCalledTimes(1);
 
         finishLoad();
@@ -150,7 +155,8 @@ describe('restore point manager workflows', () => {
         RestorePointAPI.loadRestorePoint.mockRejectedValueOnce(new Error('damaged restore point'));
         const manager = makeManager();
 
-        await manager.handleClickLoad(4);
+        manager.handleClickLoad(4);
+        await manager.handleConfirmAction();
 
         expect(manager.props.onShowLoadError).toHaveBeenCalledTimes(1);
         expect(manager.props.onFinishLoadingRestorePoint).toHaveBeenCalledWith(false, 'SHOWING_WITH_ID');

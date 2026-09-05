@@ -1,3 +1,5 @@
+import {withProjectReplacement} from '../../lib/project-replacement.js';
+import {isProjectOperationActive} from '../../lib/project-operation.js';
 /* eslint-disable react/no-unused-prop-types */
 /* eslint-disable no-unused-vars */
 import classNames from 'classnames';
@@ -148,7 +150,6 @@ import {
     onSettingsChanged
 } from '../../lib/menu-bar/settings.js';
 
-import WorkspaceBookmarksMenu from './workspace-bookmarks-menu.jsx';
 import MediaRecorderButton from './media-recorder.jsx';
 
 import {
@@ -179,7 +180,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
+    GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
     ShoppingBag, Backpack
@@ -240,8 +241,8 @@ const menuLabelMessages = defineMessages({
     },
     tools: {
         id: 'gui.menuBar.tools',
-        defaultMessage: 'Tools',
-        description: 'Text for tools dropdown menu'
+        defaultMessage: 'Project',
+        description: 'Text for project management dropdown menu'
     }
 });
 
@@ -445,6 +446,7 @@ class MenuBar extends React.Component {
     }
     componentDidMount () {
         this.unmounted = false;
+        window.addEventListener('mw:request-new-project', this.handleClickNew);
         document.addEventListener('keydown', this.handleKeyPress);
         document.addEventListener('mousedown', this.handleDocumentMouseDown);
         this.observeMenuBarWidth();
@@ -479,10 +481,8 @@ class MenuBar extends React.Component {
         // Prevent the legacy addon from also injecting a bookmarks menu.
         window.__mistwarpNativeWorkspaceBookmarks = true;
 
-        this.loadWorkspaceBookmarksFromProject();
         if (this.props.vm && this.props.vm.runtime) {
             this.workspaceBookmarksProjectListener = () => {
-                this.loadWorkspaceBookmarksFromProject();
                 this.refreshMistWarpShared();
             };
             this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
@@ -503,6 +503,7 @@ class MenuBar extends React.Component {
     }
     componentWillUnmount () {
         this.unmounted = true;
+        window.removeEventListener('mw:request-new-project', this.handleClickNew);
         document.removeEventListener('keydown', this.handleKeyPress);
         document.removeEventListener('mousedown', this.handleDocumentMouseDown);
         if (this.blockCountController) this.blockCountController.destroy();
@@ -584,21 +585,21 @@ class MenuBar extends React.Component {
     }
 
     async handleClickNew () {
-        if (this.newProjectPending) return false;
+        if (this.newProjectPending || isProjectOperationActive(this.props.vm)) return false;
         this.newProjectPending = true;
-        // if the project is dirty, and user owns the project, we will autosave.
-        // but if they are not logged in and can't save, user should consider
-        // downloading or logging in first.
-        // Note that if user is logged in and editing someone else's project,
-        // they'll lose their work.
         this.props.onRequestCloseFile();
         try {
             const readyToReplaceProject = await this.props.confirmReadyToReplaceProject(
-                this.props.intl.formatMessage(sharedMessages.replaceProjectWarning)
+                'Starting a new project closes this workspace. A device backup will keep your current code. ' +
+                'The saved MistWarp project stays unchanged. Cancel to keep editing.'
             );
             if (!readyToReplaceProject) return false;
-            await Promise.resolve(this.props.onClickNew(this.props.canSave && this.props.canCreateNew));
+            await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
+            await Promise.resolve(this.props.onClickNew(false));
             return true;
+        } catch (error) {
+            this.showToastMessage(error.message, 'error');
+            return false;
         } finally {
             this.newProjectPending = false;
         }
@@ -822,9 +823,9 @@ class MenuBar extends React.Component {
         this.gitActionInFlight = true;
         this.props.onRequestCloseFile();
         try {
-            if (this.props.projectChanged) {
+            {
                 const ok = await this.showConfirm(
-                    'Replace this project?',
+                    'Replace code with the remote version?',
                     this.props.intl.formatMessage({
                         // eslint-disable-next-line max-len
                         defaultMessage: 'Pulling replaces your project with the pushed version. A device backup is saved first. Continue?',
@@ -836,18 +837,20 @@ class MenuBar extends React.Component {
             }
             this.props.onShowGitStatus('gitPulling');
             await ensureProjectHistoryHydrated(this.props.vm);
-            await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
-            await gitPull({
-                vm: this.props.vm,
-                remote,
-                onAuth: this.gitAuth()
+            await withProjectReplacement(this.props.vm, this.props.projectTitle, async () => {
+                await gitPull({
+                    vm: this.props.vm,
+                    remote,
+                    onAuth: this.gitAuth()
+                });
+                // The working tree changed; rebuild the project and reload it.
+                const fs = getGitFs();
+                const bytes = await buildSb3FromFractchTree({fs: fs.promises, dir: GIT_REPO_DIR});
+                const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+                this.props.vm.quit();
+                await this.props.vm.loadProject(buffer, {skipGitImport: true, mwPreserveProjectSource: true});
             });
-            // The working tree changed; rebuild the project and reload it.
-            const fs = getGitFs();
-            const bytes = await buildSb3FromFractchTree({fs: fs.promises, dir: GIT_REPO_DIR});
-            const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-            this.props.vm.quit();
-            await this.props.vm.loadProject(buffer, {skipGitImport: true});
+            this.props.vm._mwPendingDiskOverwrite = true;
             this.props.vm.renderer.draw();
             this.props.onGitStatusDone('gitPullSuccess');
             return true;
@@ -2121,8 +2124,8 @@ class MenuBar extends React.Component {
                             <Wrench size={20} />
                             <span className={styles.collapsibleLabel}>
                                 <FormattedMessage
-                                    defaultMessage="Tools"
-                                    description="Text for tools dropdown menu"
+                                    defaultMessage="Project"
+                                    description="Text for project management dropdown menu"
                                     id="gui.menuBar.tools"
                                 />
                             </span>
@@ -2230,50 +2233,6 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
-                        {!this.props.isPlayerOnly && (
-                            <MenuLabel
-                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.bookmarks)}
-                                dataItem="bookmarks"
-                                open={this.props.workspaceBookmarksMenuOpen}
-                                onOpen={this.props.onClickWorkspaceBookmarks}
-                                onClose={this.props.onRequestCloseWorkspaceBookmarks}
-                            >
-                                <Bookmark size={20} />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="Bookmarks"
-                                        description="Workspace bookmarks menu label"
-                                        id="tw.workspaceBookmarks.menuLabel"
-                                    />
-                                </span>
-                                <ChevronDown size={8} />
-                                <MenuBarMenu
-                                    className={classNames(styles.menuBarMenu)}
-                                    mobileBack
-                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.bookmarks)}
-                                    onMobileClose={this.props.onRequestCloseWorkspaceBookmarks}
-                                    open={this.props.workspaceBookmarksMenuOpen}
-                                    place={this.props.isRtl ? 'left' : 'right'}
-                                >
-                                    <WorkspaceBookmarksMenu
-                                        bookmarks={this.state.workspaceBookmarks}
-                                        categories={this.state.workspaceBookmarksCategories}
-                                        collapsedCategories={this.state.workspaceBookmarksCollapsedCategories}
-                                        enableCategories
-                                        showSearch
-                                        intl={this.props.intl}
-                                        onAddBookmark={this.handleAddWorkspaceBookmark}
-                                        onSwitchToBookmark={this.handleSwitchWorkspaceBookmark}
-                                        onEditBookmark={this.handleEditWorkspaceBookmark}
-                                        onDeleteBookmark={this.handleDeleteWorkspaceBookmark}
-                                        onToggleCategoryCollapsed={this.handleToggleWorkspaceBookmarkCategoryCollapsed}
-                                        onExport={this.handleExportWorkspaceBookmarks}
-                                        onImport={this.handleImportWorkspaceBookmarks}
-                                        onClearAll={this.handleClearAllWorkspaceBookmarks}
-                                    />
-                                </MenuBarMenu>
-                            </MenuLabel>
-                        )}
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
                     </div>
 

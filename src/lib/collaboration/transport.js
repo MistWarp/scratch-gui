@@ -89,6 +89,7 @@ class Transport extends Emitter {
         this.droppedMessageCount = 0;
 
         this._connections = new Map();
+        this._pendingConnections = new Set();
         this._heartbeatTimer = null;
         this._reconnectTimer = null;
         this._reconnectAttempts = 0;
@@ -245,6 +246,8 @@ class Transport extends Emitter {
 
     destroy () {
         this.destroyed = true;
+        this._pendingConnections.forEach(cancel => cancel());
+        this._pendingConnections.clear();
         this._onPeerUnavailable = null;
         this._stopHeartbeat();
         if (this._reconnectTimer) {
@@ -275,10 +278,27 @@ class Transport extends Emitter {
             let settled = false;
             const peer = this._createPeer(peerId, this._peerConfig);
             this.peer = peer;
+            const pending = {timer: null};
+            const cancel = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(pending.timer);
+                this._pendingConnections.delete(cancel);
+                reject(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
+            };
+            pending.timer = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                this._pendingConnections.delete(cancel);
+                reject(collabError('SERVER_UNREACHABLE', 'The collaboration server did not respond.'));
+            }, this._dialTimeoutMs);
+            this._pendingConnections.add(cancel);
 
             peer.on('open', id => {
                 if (!settled) {
                     settled = true;
+                    clearTimeout(pending.timer);
+                    this._pendingConnections.delete(cancel);
                     resolve(id);
                 }
             });
@@ -286,6 +306,8 @@ class Transport extends Emitter {
             peer.on('error', error => {
                 if (!settled) {
                     settled = true;
+                    clearTimeout(pending.timer);
+                    this._pendingConnections.delete(cancel);
                     reject(this._describeError(error));
                     return;
                 }
@@ -314,11 +336,13 @@ class Transport extends Emitter {
         return new Promise((resolve, reject) => {
             let conn = null;
             let timeout = null;
+            const pending = {cancel: null};
             const settle = (error, openConn) => {
                 if (timeout === null) return;
                 clearTimeout(timeout);
                 timeout = null;
                 this._onPeerUnavailable = null;
+                this._pendingConnections.delete(pending.cancel);
                 if (!error) {
                     this._registerConnection(openConn);
                     this.emit('connected');
@@ -335,6 +359,8 @@ class Transport extends Emitter {
                 reject(error);
             };
 
+            pending.cancel = () => settle(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
+            this._pendingConnections.add(pending.cancel);
             timeout = setTimeout(() => settle(collabError(
                 'DIAL_TIMEOUT',
                 `Room "${this.roomId}" did not respond. The host may have a slow or blocked connection.`

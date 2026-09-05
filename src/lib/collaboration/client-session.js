@@ -6,7 +6,7 @@ import {
     makePropose,
     makeCtrl
 } from './protocol.js';
-import {entityKeysForOp} from './op-applier.js';
+import CommandQueue from './command-queue.js';
 
 const GAP_REQUEST_DELAY_MS = 3000;
 const GAP_RESYNC_DELAY_MS = 10000;
@@ -18,11 +18,9 @@ const MAX_BUFFERED_OPS = 5000;
  * A client's view of the room. Sends local edits to the host as proposals
  * and applies the host's sequenced op stream in strict order.
  *
- * Optimistic concurrency: a local edit has already mutated the local
- * document when it is submitted (capture is post-hoc), so it is queued as
- * a pending op. When its host echo arrives it is confirmed and skipped.
- * When a conflicting remote op arrives first, the remote op is applied and
- * the pending local op re-asserted, which matches eventual host order.
+ * Local commands remain pending until the host accepts and applies them.
+ * Every accepted operation applies once, including our own commands.
+ * Retrying an unacknowledged command preserves its request ID.
  *
  * Events:
  *  - 'awaiting-approval' () — hello sent, waiting on the host
@@ -47,11 +45,12 @@ class ClientSession extends Emitter {
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */
-    constructor ({transport, applier, roomId, username, handle, hasAsset}) {
+    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null}) {
         super();
         this.transport = transport;
         this.applier = applier;
         this.roomId = roomId;
+        this.scope = scope;
         this.username = username;
         this.handle = handle || null;
         // Optional md5ext => boolean; when provided, ops carrying assetRefs
@@ -61,6 +60,9 @@ class ClientSession extends Emitter {
 
         // null until the snapshot establishes a base sequence number.
         this.lastAppliedSeq = null;
+        this.queue = new CommandQueue();
+        this._applying = false;
+        this._ready = false;
         this.users = new Map();
         this.pendingOps = [];
         this.isApproved = false;
@@ -98,6 +100,10 @@ class ClientSession extends Emitter {
     }
 
     destroy () {
+        clearTimeout(this._approvalTimer);
+        this.queue.cancel();
+        this._destroyed = true;
+        this.pendingOps.forEach(op => op.reject(new Error('Collaboration session ended')));
         this.transport.off('message', this._onMessage);
         this.transport.off('peer-disconnected', this._onPeerDisconnected);
         this.transport.off('reconnecting', this._onReconnecting);
@@ -124,8 +130,8 @@ class ClientSession extends Emitter {
     }
 
     /**
-     * Submit a local edit that has already been applied to the local
-     * document. It becomes a pending op until the host echoes it back.
+     * Submit a local editing request. The local VM changes only after
+     * the host commits it.
      * @param {string} type Op type.
      * @param {object} payload Op payload.
      * @returns {number} The clientOpId assigned to the proposal.
@@ -137,11 +143,26 @@ class ClientSession extends Emitter {
             clientOpId,
             type,
             payload,
-            keys: entityKeysForOp(type, payload),
+            resolve: () => {},
+            reject: () => {},
             submittedAt: Date.now()
         });
         this.transport.sendToHost(makePropose(type, payload, clientOpId));
         return clientOpId;
+    }
+
+    submitCommand (type, payload) {
+        const id = this.submitLocal(type, payload);
+        const pending = this.pendingOps.find(op => op.clientOpId === id);
+        return new Promise((resolve, reject) => Object.assign(pending, {resolve, reject}));
+    }
+
+    _retryPending () {
+        if (!this.isApproved || this.lastAppliedSeq === null) return;
+        this.pendingOps.forEach(op => {
+            this.transport.sendToHost(makePropose(op.type, op.payload, op.clientOpId));
+            op.submittedAt = Date.now();
+        });
     }
 
     /**
@@ -168,6 +189,7 @@ class ClientSession extends Emitter {
      */
     setBaseSeq (atSeq) {
         this.lastAppliedSeq = atSeq;
+        this._retryPending();
         this._drainBuffer();
     }
 
@@ -176,10 +198,7 @@ class ClientSession extends Emitter {
      * channel once the requested assets are stored locally.
      */
     resumeApply () {
-        if (!this._blockedOp) return;
-        const envelope = this._blockedOp;
         this._blockedOp = null;
-        this._applyOp(envelope);
         this._drainBuffer();
     }
 
@@ -189,7 +208,8 @@ class ClientSession extends Emitter {
      */
     beginResync () {
         this.lastAppliedSeq = null;
-        this.pendingOps = [];
+        this.queue.cancel();
+        if (this.applier.queue) this.applier.queue.cancel();
         this._blockedOp = null;
         this._opBuffer.clear();
         this._clearGapTimers();
@@ -202,9 +222,15 @@ class ClientSession extends Emitter {
             roomId: this.roomId
         };
         if (this.handle) payload.handle = this.handle;
+        if (this.scope) payload.scope = this.scope;
         if (this.lastAppliedSeq !== null) {
             payload.lastAppliedSeq = this.lastAppliedSeq;
         }
+        clearTimeout(this._approvalTimer);
+        this._approvalTimer = setTimeout(() => {
+            this.emit('connection-failed', {error: 'The host did not approve the connection. ' +
+                'Check that both editors are up to date and try again.'});
+        }, 120000);
         this.transport.sendToHost(makeCtrl(CTRL.HELLO, payload));
         this.emit('awaiting-approval');
     }
@@ -236,104 +262,86 @@ class ClientSession extends Emitter {
     }
 
     _onOp (envelope) {
-        if (this.lastAppliedSeq === null || this._blockedOp) {
-            // Snapshot not applied yet, or the queue is blocked on assets;
-            // hold on to everything.
-            this._bufferOp(envelope);
+        if (this.lastAppliedSeq !== null && envelope.seq <= this.lastAppliedSeq) {
+            this._confirm(envelope);
             return;
         }
-        if (envelope.seq <= this.lastAppliedSeq) return; // duplicate/replay
-        if (envelope.seq === this.lastAppliedSeq + 1) {
-            this._applyOp(envelope);
-            this._drainBuffer();
-            return;
-        }
-        this._bufferOp(envelope);
-        this._scheduleGapRecovery();
-    }
-
-    _bufferOp (envelope) {
         if (this._opBuffer.size >= MAX_BUFFERED_OPS) {
-            this._opBuffer.clear();
             this.emit('resync-needed', 'op buffer overflow');
             return;
         }
         this._opBuffer.set(envelope.seq, envelope);
+        this._drainBuffer();
+    }
+
+    _confirm (envelope) {
+        const index = this.pendingOps.findIndex(op => (envelope.payload.requestId ?
+            op.payload.requestId === envelope.payload.requestId :
+            envelope.clientId === this.id && op.clientOpId === envelope.clientOpId));
+        if (index !== -1) {
+            const [pending] = this.pendingOps.splice(index, 1);
+            pending.resolve(envelope.payload);
+        }
     }
 
     _drainBuffer () {
-        while (!this._blockedOp && this._opBuffer.has(this.lastAppliedSeq + 1)) {
-            const next = this._opBuffer.get(this.lastAppliedSeq + 1);
-            this._opBuffer.delete(next.seq);
-            this._applyOp(next);
-        }
-        // Drop anything the snapshot already covered.
+        if (this._destroyed || this._applying || this.lastAppliedSeq === null || this._blockedOp) return;
         this._opBuffer.forEach((op, seq) => {
-            if (seq <= this.lastAppliedSeq) this._opBuffer.delete(seq);
-        });
-        if (this._opBuffer.size === 0) {
-            this._clearGapTimers();
-        } else {
-            this._scheduleGapRecovery();
-        }
-    }
-
-    _applyOp (envelope) {
-        // Our own echo: the edit is already in the local doc. Confirm and skip.
-        if (envelope.clientId === this.id) {
-            const index = this.pendingOps.findIndex(p => p.clientOpId === envelope.clientOpId);
-            if (index !== -1) {
-                this.lastAppliedSeq = envelope.seq;
-                this.pendingOps.splice(index, 1);
-                return;
+            if (seq <= this.lastAppliedSeq) {
+                this._opBuffer.delete(seq);
+                this._confirm(op);
             }
+        });
+        const envelope = this._opBuffer.get(this.lastAppliedSeq + 1);
+        if (!envelope) {
+            if (this._opBuffer.size) this._scheduleGapRecovery();
+            else {
+                this._clearGapTimers();
+                if (this._ready) {
+                    this._ready = false;
+                    this._retryPending();
+                    this.emit('session-ready');
+                    if (this._rejoining) {
+                        this._rejoining = false; this.emit('reconnected');
+                    }
+                }
+            }
+            return;
         }
-
-        // Strict ordering requires the op's assets before it can apply;
-        // block the queue until the asset channel delivers them.
         if (this._hasAsset && Array.isArray(envelope.payload.assetRefs)) {
-            const missing = envelope.payload.assetRefs.filter(md5ext => !this._hasAsset(md5ext));
-            if (missing.length > 0) {
+            const missing = envelope.payload.assetRefs.filter(id => !this._hasAsset(id));
+            if (missing.length) {
                 this._blockedOp = envelope;
                 this.emit('assets-needed', missing);
                 return;
             }
         }
-
-        this.lastAppliedSeq = envelope.seq;
-
-        try {
-            this.applier.apply(envelope.type, envelope.payload, {
-                clientId: envelope.clientId,
-                seq: envelope.seq
-            });
-        } catch (error) {
-            this.emit('resync-needed', `failed to apply op ${envelope.seq}: ${error.message}`);
-            return;
-        }
-        this.emit('op-applied', envelope);
-
-        // Re-assert unconfirmed local ops the remote op just overwrote, so
-        // our doc matches eventual host order (the host will sequence our
-        // proposal after this op).
-        const keys = entityKeysForOp(envelope.type, envelope.payload);
-        if (keys.length === 0) return;
-        this.pendingOps.forEach(pending => {
-            if (!pending.keys.some(key => keys.indexOf(key) !== -1)) return;
-            try {
-                this.applier.apply(pending.type, pending.payload, {clientId: this.id});
-            } catch (error) {
-                // The re-assert no longer applies (e.g. entity deleted).
-                // The host will reject or no-op it identically.
+        this._applying = true;
+        this.queue.run(async active => {
+            await this.applier.apply(envelope.type, envelope.payload, {clientId: envelope.clientId, seq: envelope.seq});
+            if (!active()) return;
+            this.lastAppliedSeq = envelope.seq;
+            this._opBuffer.delete(envelope.seq);
+            this._confirm(envelope);
+            this.emit('op-applied', envelope);
+        }).catch(error => {
+            if (!this._destroyed) {
+                this.beginResync();
+                this.emit('resync-needed', `failed to apply op ${envelope.seq}: ${error.message}`);
             }
-        });
+        })
+            .finally(() => {
+                this._applying = false;
+                this._drainBuffer();
+            });
     }
 
     _onReject (envelope) {
         const {clientOpId, reason} = envelope.payload;
         const index = this.pendingOps.findIndex(p => p.clientOpId === clientOpId);
         if (index !== -1) {
-            this.pendingOps.splice(index, 1);
+            const [pending] = this.pendingOps.splice(index, 1);
+            pending.reject(new Error(reason));
         }
         this.emit('op-rejected', {clientOpId, reason});
     }
@@ -341,11 +349,19 @@ class ClientSession extends Emitter {
     _onCtrl (envelope) {
         const payload = envelope.payload;
         switch (envelope.type) {
+        case CTRL.COMMAND_ACK: {
+            const index = this.pendingOps.findIndex(op => (payload.requestId ?
+                op.payload.requestId === payload.requestId : op.clientOpId === payload.clientOpId));
+            if (index !== -1) this.pendingOps.splice(index, 1)[0].resolve({});
+            break;
+        }
         case CTRL.JOIN_APPROVED:
+            clearTimeout(this._approvalTimer);
             this.isApproved = true;
             this.emit('join-approved', {hostUsername: payload.hostUsername});
             break;
         case CTRL.JOIN_DENIED:
+            clearTimeout(this._approvalTimer);
             this.emit('join-denied', payload.reason || 'Join request was denied');
             break;
         case CTRL.USERS_LIST:
@@ -375,13 +391,15 @@ class ClientSession extends Emitter {
             this.emit('kicked', payload.reason || 'You were removed from the room');
             break;
         case CTRL.PRIVACY_CHANGED:
+            this.privacy = payload.privacy;
             this.emit('room-privacy-changed', payload.privacy);
             break;
         case CTRL.RESYNC_REQUIRED:
             this.emit('resync-needed', 'host op log no longer covers our position');
             break;
         case CTRL.SESSION_READY:
-            this.emit('session-ready');
+            this._ready = true;
+            this._drainBuffer();
             break;
         case CTRL.HOST_LOADING_START:
             this.emit('host-loading-start');
@@ -426,14 +444,7 @@ class ClientSession extends Emitter {
     }
 
     _prunePendingOps () {
-        const now = Date.now();
-        const before = this.pendingOps.length;
-        this.pendingOps = this.pendingOps.filter(
-            pending => now - pending.submittedAt < PENDING_OP_TIMEOUT_MS
-        );
-        if (this.pendingOps.length < before) {
-            this.emit('resync-needed', 'local ops were never acknowledged by the host');
-        }
+        if (this.pendingOps.some(op => Date.now() - op.submittedAt >= PENDING_OP_TIMEOUT_MS)) this._retryPending();
     }
 
     _onPeerDisconnected (peerId) {
@@ -451,8 +462,8 @@ class ClientSession extends Emitter {
         // Re-join. With lastAppliedSeq in the hello the host can replay
         // the missed window from its log instead of re-streaming the
         // whole project.
+        this._rejoining = true;
         this._sendHello();
-        this.emit('reconnected');
     }
 
     _onFatal ({error}) {

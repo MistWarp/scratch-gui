@@ -18,9 +18,15 @@ import {
     openSettingsModal,
     openExtensionLibrary,
     openExtensionManagerModal,
-    openHelp
+    openHelp,
+    openGitModal,
+    openProjectMetadataModal,
+    openVariableManagerModal,
+    openDebuggerModal,
+    openRestorePointModal
 } from '../../reducers/modals.js';
 import {activateTab} from '../../reducers/editor-tab.js';
+import {openCollaborationModal} from '../../reducers/collaboration.js';
 import {HELP_ENTRIES} from '../../lib/help/index.js';
 import {renderMenuItem, calculateActualHeight} from '../../lib/spotlight/renderingUtils.js';
 import {
@@ -164,6 +170,42 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                     label: 'Open Help',
                     keywords: ['help', 'docs', 'documentation', 'guide', 'support'],
                     run: () => dispatchAction(openHelp())
+                },
+                {
+                    id: 'project-history',
+                    label: 'Open Project History',
+                    keywords: ['git', 'version control', 'commits', 'restore', 'history'],
+                    run: () => dispatchAction(openGitModal())
+                },
+                {
+                    id: 'restore-points',
+                    label: 'Open Restore Points',
+                    keywords: ['backup', 'recover', 'history', 'version', 'restore'],
+                    run: () => dispatchAction(openRestorePointModal())
+                },
+                {
+                    id: 'project-details',
+                    label: 'Open Project Details',
+                    keywords: ['metadata', 'author', 'project', 'information'],
+                    run: () => dispatchAction(openProjectMetadataModal())
+                },
+                {
+                    id: 'live-collaboration',
+                    label: 'Open Live Collaboration',
+                    keywords: ['collaborate', 'share', 'invite', 'room', 'multiplayer'],
+                    run: () => dispatchAction(openCollaborationModal())
+                },
+                {
+                    id: 'variable-manager',
+                    label: 'Open Variable Manager',
+                    keywords: ['variables', 'lists', 'data', 'manage'],
+                    run: () => dispatchAction(openVariableManagerModal())
+                },
+                {
+                    id: 'debugger',
+                    label: 'Open Debugger',
+                    keywords: ['debug', 'errors', 'breakpoints', 'developer'],
+                    run: () => dispatchAction(openDebuggerModal())
                 },
                 {
                     id: 'help-blocks',

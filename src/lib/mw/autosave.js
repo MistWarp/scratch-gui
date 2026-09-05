@@ -1,4 +1,5 @@
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
+import {isProjectOperationActive} from '../project-operation.js';
 import communityEnabled from '../community/enabled.js';
 import {guardSavedCallback} from './smart-save.js';
 import {getSettings} from './autosave-settings.js';
@@ -21,8 +22,9 @@ const runAutosave = async ({
     if (!communityEnabled) return false;
     const platform = platformState || getRememberedPlatformProjectState();
     if (!platform || !platform.id) return false;
-    if (platform.isOwner === false) return false;
-    if (!vm) return false;
+    if (platform.isOwner === false && !platform.canSaveDirectly) return false;
+    if (!vm || isProjectOperationActive(vm) || vm._mwHistoryHydration?.replaceHistory ||
+        vm._mwPendingDiskOverwrite) return false;
     if (inFlight) return false;
     // Module-level re-entry guard; intentionally not atomic with the await below.
     // eslint-disable-next-line require-atomic-updates

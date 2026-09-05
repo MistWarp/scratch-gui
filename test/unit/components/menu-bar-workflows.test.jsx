@@ -22,6 +22,10 @@ jest.mock('../../../src/lib/git/project-history.js', () => ({
 }));
 jest.mock('../../../src/lib/mw/request-version-message.jsx', () => jest.fn(() => Promise.resolve(false)));
 
+jest.mock('../../../src/lib/api/restore-points.js', () => ({
+    createSafetyRestorePoint: jest.fn(async () => 42)
+}));
+
 const makeMenuBar = props => {
     const menuBar = Object.create(MenuBar.prototype);
     menuBar.props = props;

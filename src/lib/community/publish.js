@@ -1,4 +1,5 @@
 import JSZip from '@turbowarp/jszip';
+import {withProjectOperation} from '../project-operation.js';
 import {
     createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, getProjectCommits,
     remixProject, deleteProject, collectExtensionSources
@@ -10,6 +11,7 @@ import {enableAfterCloudSave} from '../mw/autosave-settings.js';
 import {setSaveFeedback} from '../mw/save-feedback.js';
 import {trackDaily} from '../../community/analytics.js';
 import {
+    adoptImportedProjectHistory,
     isProjectHistoryHydrated,
     preloadProjectHistory,
     setRemoteProjectHistory
@@ -40,88 +42,6 @@ const buildSparseSb3 = async (files, platformId) => {
 const PLATFORM_ID_KEY = 'mw:mistwarp-current-project';
 const SCRATCH_ORIGIN_KEY = 'mw:mistwarp-scratch-origin';
 
-const historyReaches = (history, head, ancestor) => {
-    if (!head || !ancestor) return false;
-    const nodes = new Map((history?.graph?.nodes || []).map(node => [node.sha || node.oid, node]));
-    const pending = [head];
-    const seen = new Set();
-    while (pending.length) {
-        const oid = pending.pop();
-        if (oid === ancestor) return true;
-        if (!oid || seen.has(oid)) continue;
-        seen.add(oid);
-        const node = nodes.get(oid);
-        pending.push(...(node?.parents || node?.commit?.parent || []));
-    }
-    return false;
-};
-
-const mergeHistories = (current, inherited) => {
-    const uniqueBy = (items, keyOf) => {
-        const seen = new Set();
-        return [...(items || [])].filter(item => {
-            const key = keyOf(item);
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-    };
-    const currentGraph = current?.graph || {};
-    const inheritedGraph = inherited?.graph || {};
-    const branches = [...new Set([...(currentGraph.branches || []), ...(inheritedGraph.branches || [])])];
-    const branchNames = [...new Set([
-        ...(currentGraph.branchLogs || []).map(item => item.branch),
-        ...(inheritedGraph.branchLogs || []).map(item => item.branch)
-    ])];
-    const branchLogs = branchNames.map(branch => ({
-        branch,
-        oids: [...new Set([
-            ...((currentGraph.branchLogs || []).find(item => item.branch === branch)?.oids || []),
-            ...((inheritedGraph.branchLogs || []).find(item => item.branch === branch)?.oids || [])
-        ])]
-    }));
-    return {
-        ...current,
-        commits: uniqueBy(
-            [...(current?.commits || []), ...(inherited?.commits || [])],
-            item => item.sha || item.oid
-        ),
-        graph: {
-            branches,
-            branchLogs,
-            nodes: uniqueBy(
-                [...(currentGraph.nodes || []), ...(inheritedGraph.nodes || [])],
-                item => item.sha || item.oid
-            )
-        }
-    };
-};
-
-const rememberPlatformProject = project => {
-    try {
-        if (project) {
-            const value = typeof project === 'object' ? project : {id: project, isOwner: true};
-            sessionStorage.setItem(PLATFORM_ID_KEY, JSON.stringify({
-                id: String(value.id),
-                isOwner: value.isOwner,
-                shared: !!value.shared,
-                canRemix: value.canRemix,
-                projectJsonUrl: value.projectJsonUrl,
-                trustedExtensions: value.trustedExtensions || [],
-                workspaceUrl: value.workspaceUrl,
-                gitHead: value.gitHead,
-                gitBranch: value.gitBranch,
-                remixParent: value.remixParent,
-                remixBaseCommit: value.remixBaseCommit
-            }));
-        } else {
-            sessionStorage.removeItem(PLATFORM_ID_KEY);
-        }
-    } catch (e) {
-        // ignore
-    }
-};
-
 const getRememberedPlatformProjectState = () => {
     try {
         const stored = sessionStorage.getItem(PLATFORM_ID_KEY);
@@ -137,6 +57,43 @@ const getRememberedPlatformProjectState = () => {
     }
 };
 
+const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
+    try {
+        const previous = sessionStorage.getItem(PLATFORM_ID_KEY);
+        const previousProject = getRememberedPlatformProjectState();
+        if (project) {
+            const value = typeof project === 'object' ? project : {id: project, isOwner: true};
+            sessionStorage.setItem(PLATFORM_ID_KEY, JSON.stringify({
+                id: String(value.id),
+                isOwner: value.isOwner,
+                canSaveDirectly: value.canSaveDirectly === true,
+                shared: !!value.shared,
+                canRemix: value.canRemix,
+                projectJsonUrl: value.projectJsonUrl,
+                trustedExtensions: value.trustedExtensions || [],
+                workspaceUrl: value.workspaceUrl,
+                edited: value.edited,
+                saveBase: !resetSaveBase && String(previousProject?.id) === String(value.id) &&
+                    previousProject?.saveBase ?
+                    previousProject.saveBase : (typeof value.gitHead !== 'undefined' ||
+                        typeof value.edited === 'number' ? {head: value.gitHead || '', edited: value.edited} : null),
+                gitHead: value.gitHead,
+                gitBranch: value.gitBranch,
+                remixParent: value.remixParent,
+                remixBaseCommit: value.remixBaseCommit
+            }));
+        } else {
+            sessionStorage.removeItem(PLATFORM_ID_KEY);
+        }
+        if (previous !== sessionStorage.getItem(PLATFORM_ID_KEY)) {
+            window.dispatchEvent(new Event('mw:platform-project-changed'));
+        }
+    } catch (e) {
+        // ignore
+    }
+};
+
+
 const getRememberedPlatformProject = () => {
     const project = getRememberedPlatformProjectState();
     return project && project.id;
@@ -144,7 +101,9 @@ const getRememberedPlatformProject = () => {
 
 const getMistWarpAction = (project, changed) => {
     if (!project) return 'save';
-    if (project.isOwner === false) return changed && project.canRemix !== false ? 'remix' : null;
+    if (project.isOwner === false && !project.canSaveDirectly) {
+        return changed && project.canRemix !== false ? 'remix' : null;
+    }
     return changed ? 'update' : null;
 };
 
@@ -246,7 +205,7 @@ const prepareThumbnailBlob = async dataUri => {
 
 // Save to MistWarp first, then mirror the new version to any connections the
 // user has added. Sharing remains a separate action.
-const publishToMistWarp = async ({
+const publishWorkspace = async ({
     vm, title, thumbnailBlob, changeMessage = '', commitChanges = true,
     share = false, updateOnly = false, onProgress = () => {}
 }) => {
@@ -255,10 +214,21 @@ const publishToMistWarp = async ({
     let createdNow = false;
     let baseHistory = null;
     let platformProject = getRememberedPlatformProjectState();
+    const wasLiveContributor = platformProject && !platformProject.isOwner && platformProject.canSaveDirectly;
     let platformId = platformProject && platformProject.id;
+    const saveBase = platformProject && platformProject.saveBase;
+    const importedHistory = vm && vm._mwHistoryHydration;
+    const replaceHistory = Boolean(importedHistory && importedHistory.replaceHistory &&
+        importedHistory.projectId === String(platformId));
     if (platformId) {
         try {
             const existing = (await getProject(platformId)).project;
+            if (saveBase && ((saveBase.head || '') !== (existing.gitHead || '') ||
+                (typeof saveBase.edited === 'number' && saveBase.edited !== existing.edited))) {
+                throw Object.assign(new Error('This project was saved elsewhere after you opened it. ' +
+                    'Your code has not been uploaded. Download your work before reopening the saved project.'),
+                {code: 'head_changed'});
+            }
             platformProject = existing;
             rememberPlatformProject(existing);
             setRemoteProjectHistory(existing);
@@ -270,7 +240,10 @@ const publishToMistWarp = async ({
                 throw e;
             }
         }
-        if (platformId && !platformProject.isOwner) {
+        if (wasLiveContributor && !platformProject.canSaveDirectly) {
+            throw new Error('Your live editing access ended. Ask the owner to approve a new session before saving.');
+        }
+        if (platformId && !platformProject.isOwner && !platformProject.canSaveDirectly) {
             onProgress({phase: 'register', message: 'Creating remix'});
             const remixSource = platformProject;
             const remix = await remixProject(platformId);
@@ -301,7 +274,7 @@ const publishToMistWarp = async ({
         createdNow = true;
     }
 
-    if (!createdNow && !updateOnly && title && platformProject.title !== projectTitle) {
+    if (!createdNow && platformProject.isOwner && !updateOnly && title && platformProject.title !== projectTitle) {
         await updateProject(platformId, {title: projectTitle});
     }
 
@@ -322,19 +295,15 @@ const publishToMistWarp = async ({
         onProgress({phase: 'package', message: 'Preparing pushed history and extensions'});
         const remixBaseHead = createdNow && platformProject?.remixParent ?
             platformProject.remixBaseCommit || '' : '';
-        const remoteHead = remixBaseHead || (platformProject?.workspaceUrl ? platformProject.gitHead : '');
-        let additionalParents = [];
+        const remoteHead = replaceHistory ? '' :
+            remixBaseHead || (platformProject?.workspaceUrl ? platformProject.gitHead : '');
+        const additionalParents = [];
         if (remoteHead && !isProjectHistoryHydrated(vm)) {
             if (!baseHistory) {
                 baseHistory = await getProjectCommits(platformId, platformProject.projectJsonUrl);
             }
-            const recordedBase = platformProject?.remixBaseCommit;
-            if (platformProject?.remixParent && recordedBase &&
-                !historyReaches(baseHistory, remoteHead, recordedBase)) {
-                const inherited = await getProjectCommits(platformProject.remixParent);
-                baseHistory = mergeHistories(baseHistory, inherited);
-                additionalParents = [recordedBase];
-            }
+            // Bounded graph metadata cannot prove that an older fork base is
+            // missing. Ordinary saves never add speculative repair parents.
             await deleteRepo();
         }
         const mwpPromise = createMwp({
@@ -344,10 +313,11 @@ const publishToMistWarp = async ({
             remixParent: platformProject && platformProject.remixParent,
             baseCommit: platformProject && platformProject.remixBaseCommit,
             remoteHead,
+            branch: platformProject?.gitBranch || 'main',
             additionalParents,
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
             commitChanges,
-            requireChanges: commitChanges && !createdNow,
+            requireChanges: commitChanges && !createdNow && !replaceHistory,
             baseHistory
         });
         const extensionSourcesPromise = collectExtensionSources(sb3Blob);
@@ -357,21 +327,33 @@ const publishToMistWarp = async ({
             extensionSourcesPromise
         ]);
         onProgress({phase: 'upload', message: 'Uploading project'});
-        try {
-            await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
-                const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-                onProgress({
-                    phase: 'upload',
-                    message: percent !== null && percent >= 100 ? 'Processing on server' :
-                        percent === null ? 'Uploading project' : `Uploading ${percent}%`,
-                    loaded,
-                    total
-                });
-            }, {workspace: mwp.blob, git: mwp.manifest, extensions});
-        } catch (e) {
-            if (e.code !== 'debounced' || createdNow) {
-                throw e;
-            }
+        const uploaded = await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
+            const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
+            onProgress({
+                phase: 'upload',
+                message: percent !== null && percent >= 100 ? 'Processing on server' :
+                    percent === null ? 'Uploading project' : `Uploading ${percent}%`,
+                loaded,
+                total
+            });
+        }, {workspace: mwp.blob,
+            git: mwp.manifest,
+            replaceHistory,
+            extensions,
+            expectedHead: platformProject.gitHead || '',
+            expectedEdited: platformProject.edited});
+        platformProject = {...platformProject,
+            ...(uploaded && uploaded.project),
+            gitHead: uploaded?.project?.gitHead || mwp.manifest.head,
+            gitBranch: uploaded?.project?.gitBranch || mwp.manifest.branch
+        };
+        rememberPlatformProject(platformProject, {resetSaveBase: true});
+        // The operation lock keeps this workspace stable through the upload.
+        // eslint-disable-next-line require-atomic-updates
+        vm._mwPendingDiskOverwrite = false;
+        if (replaceHistory) {
+            platformProject = {...platformProject, gitHead: mwp.manifest.head, gitBranch: mwp.manifest.branch};
+            adoptImportedProjectHistory(vm, mwp.manifest, platformProject, false);
         }
         onProgress({phase: 'finish', message: 'Updating pushed history'});
         await preloadProjectHistory(vm, {force: true});
@@ -391,12 +373,12 @@ const publishToMistWarp = async ({
     const remoteWarnings = remoteSync.filter(remote => !remote.ok);
 
     let shared = Boolean(platformProject && platformProject.shared);
-    if (share && !shared) {
+    if (share && !shared && platformProject.isOwner) {
         onProgress({phase: 'publish', message: 'Sharing'});
         await publishProject(platformId);
         shared = true;
     }
-    rememberPlatformProject({...platformProject, id: platformId, isOwner: true, shared});
+    rememberPlatformProject({...platformProject, id: platformId, shared});
 
     try {
         const withHash = new URL(window.location.href);
@@ -414,6 +396,8 @@ const publishToMistWarp = async ({
 
     return {id: platformId, url: `/project/${platformId}`, shared, remoteWarnings};
 };
+
+const publishToMistWarp = options => withProjectOperation(options.vm, () => publishWorkspace(options));
 
 export {
     publishToMistWarp,

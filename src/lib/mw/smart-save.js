@@ -1,3 +1,5 @@
+import {guardSavedCallback} from './save-guard.js';
+import {withProjectOperation} from '../project-operation.js';
 import openMistWarpShareWindow from './open-mw-share-window.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
 import {request} from '../community/api.js';
@@ -7,31 +9,6 @@ import {createMwp} from '../git/mwp.js';
 import {projectFilename} from '../utils/safe-filename.js';
 import {setSaveFeedback} from './save-feedback.js';
 import {trackDaily} from '../../community/analytics.js';
-
-const projectChangeStates = new WeakMap();
-
-const getProjectChangeState = vm => {
-    if (!vm || (typeof vm !== 'object' && typeof vm !== 'function')) return null;
-    let state = projectChangeStates.get(vm);
-    if (!state) {
-        state = {sequence: 0};
-        projectChangeStates.set(vm, state);
-        if (typeof vm.on === 'function') {
-            vm.on('PROJECT_CHANGED', () => {
-                state.sequence++;
-            });
-        }
-    }
-    return state;
-};
-
-const guardSavedCallback = (vm, onSaved) => {
-    const state = getProjectChangeState(vm);
-    const sequence = state && state.sequence;
-    return result => {
-        if (!state || state.sequence === sequence) onSaved(result);
-    };
-};
 
 const agreementAccepted = async () => {
     try {
@@ -54,7 +31,8 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
     if (!platform) {
-        const {blob} = await createMwp({vm, message: 'Save MistWarp project', commitChanges: false});
+        const {blob} = await withProjectOperation(vm, () =>
+            createMwp({vm, message: 'Save MistWarp project', commitChanges: false}));
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);
         setSaveFeedback(vm, 'downloaded');
         trackDaily('project_saved', {kind: 'download'});
@@ -62,7 +40,7 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
         return true;
     }
 
-    if (platform.isOwner === false) {
+    if (platform.isOwner === false && !platform.canSaveDirectly) {
         openMistWarpShareWindow({vm, initialTitle: title, action: 'remix', onPublished: onSavedIfCurrent});
         return false;
     }

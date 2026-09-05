@@ -228,7 +228,7 @@ const PullRequest = () => {
             const projectData = await api.getProject(id);
             if (contextRef.current !== context) return;
             if (!canViewProjectSource(projectData.project || projectData)) {
-                throw new Error('Only the owner can view changes for this project.');
+                throw new Error('You do not have permission to view changes for this project.');
             }
             const pullData = await api.getPull(id, index);
             if (contextRef.current !== context) return;

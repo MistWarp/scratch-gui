@@ -10,20 +10,42 @@ const loadScratchblocks = () => {
     return scratchblocksPromise;
 };
 
-const addChangeStripes = (canvas, svg) => {
+export const addChangeStripes = (canvas, svg) => {
     const canvasRect = canvas.getBoundingClientRect();
     const markers = svg.querySelectorAll('.sb3-diff-del, .sb3-diff-ins, .sb-diff-del, .sb-diff-ins');
+    const changes = [];
     for (const marker of markers) {
         const removed = marker.classList.contains('sb3-diff-del') || marker.classList.contains('sb-diff-del');
         const changedBlock = removed ? marker.previousElementSibling : marker;
         const rect = changedBlock?.getBoundingClientRect();
         if (!rect || !rect.height) continue;
+        changes.push({top: rect.top - canvasRect.top, height: rect.height, removed});
+    }
+    // Partition the vertical extent so nested blocks never stack translucent backgrounds.
+    // The smallest block owns any overlap with its enclosing control blocks.
+    changes.sort((a, b) => a.height - b.height);
+    const boundaries = [...new Set(changes.flatMap(change => [change.top, change.top + change.height]))]
+        .sort((a, b) => a - b);
+    const bands = [];
+    for (let index = 0; index < boundaries.length - 1; index++) {
+        const top = boundaries[index];
+        const bottom = boundaries[index + 1];
+        const change = changes.find(candidate => candidate.top <= top && candidate.top + candidate.height >= bottom);
+        if (!change) continue;
+        const previous = bands[bands.length - 1];
+        if (previous && previous.change === change && previous.bottom === top) {
+            previous.bottom = bottom;
+        } else {
+            bands.push({top, bottom, change});
+        }
+    }
+    for (const {top, bottom, change: {removed}} of bands) {
         const stripe = document.createElement('div');
         stripe.className = `${styles.blockChangeStripe} ${
             removed ? styles.blockChangeRemoved : styles.blockChangeAdded
         }`;
-        stripe.style.top = `${rect.top - canvasRect.top}px`;
-        stripe.style.height = `${rect.height}px`;
+        stripe.style.top = `${top}px`;
+        stripe.style.height = `${bottom - top}px`;
         stripe.dataset.blockChange = removed ? 'removed' : 'added';
         stripe.setAttribute('aria-hidden', 'true');
         stripe.textContent = removed ? '−' : '+';

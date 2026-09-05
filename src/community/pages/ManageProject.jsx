@@ -50,6 +50,7 @@ const normalizeCollaborators = team => team
         share: Math.max(0, Math.min(50, Number(member.share) || 0))
     }));
 const ROLE_DESCRIPTIONS = {
+    editor: 'Can edit and save anytime, including when you are offline. Joins live editing on the same branch.',
     maintainer: 'Can edit, publish, and merge changes.',
     contributor: 'Can work through pull requests.',
     tester: 'Can open and test private drafts.'
@@ -701,6 +702,10 @@ const ManageProject = () => {
                                     <div className={styles.switches}>
                                         <SwitchRow checked={form.remixable} disabled={saving} label="Allow remixes" onChange={value => set('remixable', value)} />
                                         <SwitchRow checked={form.seeInside} disabled={saving} label="Allow people to see inside" onChange={value => set('seeInside', value)} />
+                                        <p className={styles.cardHint}>
+                                            See inside includes project files and version history. For paid projects,
+                                            only buyers can use it. Enable remixes too to let them make a private fork.
+                                        </p>
                                         <SwitchRow checked={form.commentsOff} disabled={saving} label="Turn off comments" onChange={value => set('commentsOff', value)} />
                                     </div>
                                     <div className={styles.formActions}>
@@ -965,7 +970,7 @@ const ManageProject = () => {
                                         disabled={teamSaving}
                                         onClick={() => setTeam(current => [
                                             ...current,
-                                            {username: '', role: 'contributor', share: 0}
+                                            {username: '', role: 'editor', share: 0}
                                         ])}
                                     >
                                         <Plus size={15} /> Add teammate
@@ -997,6 +1002,7 @@ const ManageProject = () => {
                                                             setTeam(current => current.map((item, itemIndex) => (itemIndex === index ? {...item, role: value} : item)));
                                                         }}
                                                     >
+                                                        <option value="editor">Editor</option>
                                                         <option value="maintainer">Maintainer</option>
                                                         <option value="contributor">Contributor</option>
                                                         <option value="tester">Tester</option>

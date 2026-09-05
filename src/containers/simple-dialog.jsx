@@ -51,7 +51,7 @@ class SimpleDialogContainer extends React.PureComponent {
             return null;
         }
 
-        const {type, title, message, defaultValue, dialogId} = this.props.simpleDialogConfig;
+        const {type, title, message, defaultValue, dialogId, choices} = this.props.simpleDialogConfig;
 
         return (
             <SimpleDialog
@@ -60,6 +60,7 @@ class SimpleDialogContainer extends React.PureComponent {
                 title={title}
                 message={message}
                 defaultValue={defaultValue}
+                choices={choices}
                 onOk={this.handleOk}
                 onCancel={this.handleCancel}
             />
@@ -75,6 +76,7 @@ SimpleDialogContainer.propTypes = {
         title: PropTypes.string.isRequired,
         message: PropTypes.node.isRequired,
         defaultValue: PropTypes.string,
+        choices: PropTypes.arrayOf(PropTypes.object),
         dialogId: PropTypes.number,
         onOk: PropTypes.func,
         onCancel: PropTypes.func

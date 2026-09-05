@@ -51,7 +51,11 @@ describe('CollaborationContainer', () => {
     );
 
     // The class itself is not exported; reach it through its displayName.
-    const instanceOf = wrapper => wrapper.find('CollaborationContainer').instance();
+    const instanceOf = wrapper => {
+        const instance = wrapper.find('CollaborationContainer').instance();
+        instance.props = {...instance.props, openSimpleDialog: config => config.onOk()};
+        return instance;
+    };
 
     const collaborationState = () => store.getState().scratchGui.collaboration;
 
@@ -111,13 +115,20 @@ describe('CollaborationContainer', () => {
         expect(mockCollaborationService.disconnect).toHaveBeenCalled();
     });
 
+    test('canceling live editing leaves the current workspace disconnected', async () => {
+        const container = instanceOf(mountContainer());
+        container.props = {...container.props, openSimpleDialog: config => config.onCancel()};
+        await expect(container.handleJoinRoom('room', 'Alice')).rejects.toThrow('Joining canceled');
+        expect(mockCollaborationService.connectToRoom).not.toHaveBeenCalled();
+    });
+
     test('handleJoinRoom connects as a guest and stores the room id', async () => {
         const container = instanceOf(mountContainer());
 
         await container.handleJoinRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE);
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE, 3, null);
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
@@ -137,7 +148,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice', 'private');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, 3);
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, 3, null);
         expect(collaborationState().roomId).toBe('test-room');
         expect(collaborationState().roomPrivacy).toBe('private');
         // the host is connected straight away
@@ -150,7 +161,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE, 3);
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE, 3, null);
         expect(collaborationState().roomPrivacy).toBe('public');
     });
 

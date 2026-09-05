@@ -1,18 +1,17 @@
+import {withProjectReplacement} from '../project-replacement.js';
+import {detachWorkspace} from '../workspace-state.js';
 import Emitter from './emitter.js';
 import {Transport} from './transport.js';
 import HostSession from './host-session.js';
 import ClientSession from './client-session.js';
 import VMApplier, {remapTargetIds} from './vm-applier.js';
 import VMAdapter from './vm-adapter.js';
-import VmPatcher from './vm-patcher.js';
-import wrapVmMethods from './vm-capture.js';
 import {HostSnapshotService, ClientSnapshotService} from './snapshot.js';
 import AssetChannel from './assets.js';
 import PresenceChannel from './presence.js';
 import CursorOverlay from './cursor-overlay.js';
 import {getAssetData, storeAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
 import {avatarForCollabUser} from './avatar.js';
-import RestorePointAPI from '../api/restore-points.js';
 
 /**
  * The collaboration engine facade — the only module the React layer talks
@@ -34,7 +33,6 @@ class CollabService extends Emitter {
         this._session = null;
         this._applier = null;
         this._adapter = null;
-        this._patcher = null;
         this._snapshot = null;
         this._assets = null;
         this._presence = null;
@@ -46,7 +44,10 @@ class CollabService extends Emitter {
     }
 
     init (vm) {
+        if (this.vm && this._onEditError) this.vm.removeListener('EDIT_COMMAND_ERROR', this._onEditError);
         this.vm = vm;
+        this._onEditError = error => this.emit('edit-error', {error: error.message || String(error)});
+        vm.on('EDIT_COMMAND_ERROR', this._onEditError);
     }
 
     /**
@@ -57,19 +58,24 @@ class CollabService extends Emitter {
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
      * @param {number} [maxUsers] Maximum number of people in a hosted room.
+     * @param {object|null} [scope] Project ID and branch required by this room.
      * @returns {Promise<string>} Our peer id.
      */
-    async connectToRoom (roomId, username, isHost = false, privacy = 'public', handle = null, maxUsers = 3) {
+    async connectToRoom (
+        roomId, username, isHost = false, privacy = 'public', handle = null, maxUsers = 3, scope = null
+    ) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
         if (this._transport) this.disconnect();
 
         this.roomId = roomId;
-        this.username = username || `User${Math.floor(Math.random() * 1000)}`;
+        this.username = handle || username || `User${Math.floor(Math.random() * 1000)}`;
         this.handle = handle || null;
+        this.scope = scope;
         this.isHost = isHost;
 
-        this._transport = new Transport();
+        const transport = new Transport();
+        this._transport = transport;
         this._applier = new VMApplier({
             vm: this.vm,
             getWorkspace: () => this._workspace
@@ -79,23 +85,18 @@ class CollabService extends Emitter {
             applier: this._applier,
             onLocalOp: (type, payload) => this._submitLocalOp(type, payload)
         });
-        this._patcher = new VmPatcher();
-        this._unwrapVm = wrapVmMethods({
-            vm: this.vm,
-            patcher: this._patcher,
-            isSuppressed: () => !this._adapter || this._adapter.isSuppressed(),
-            onLocalOp: (type, payload) => this._submitLocalOp(type, payload)
-        });
 
         try {
             const id = isHost ?
                 await this._connectAsHost(roomId, privacy, maxUsers) :
                 await this._connectAsClient(roomId);
+            if (this._transport !== transport) throw new Error('Collaboration connection cancelled');
             this.isConnected = true;
+            this.onEditingTargetChange();
             if (this._workspace) this._adapter.attach(this._workspace);
             return id;
         } catch (error) {
-            this._teardown();
+            if (this._transport === transport) this._teardown();
             throw error;
         }
     }
@@ -108,21 +109,16 @@ class CollabService extends Emitter {
             username: this.username,
             handle: this.handle,
             privacy,
-            maxUsers
+            maxUsers,
+            scope: this.scope
         });
         this._session = session;
 
         this._snapshot = new HostSnapshotService({
             session,
             transport: this._transport,
-            getProjectData: () => this.vm.saveProjectSb3('arraybuffer'),
-            getTargetIds: () => this.vm.runtime.targets
-                .filter(target => target.isOriginal)
-                .map(target => ({
-                    id: target.id,
-                    name: target.getName(),
-                    isStage: Boolean(target.isStage)
-                })),
+            getProjectData: () => this.vm.saveProjectSb3('arraybuffer', {allowOptimization: false}),
+            getTargetIds: () => this.vm.editingCommands.snapshot(),
             getExtensions: () => this._getLoadedExtensions()
         });
         this._assets = new AssetChannel({
@@ -166,15 +162,16 @@ class CollabService extends Emitter {
             roomId,
             username: this.username,
             handle: this.handle,
-            hasAsset: md5ext => hasAssetData(this.vm, md5ext)
+            hasAsset: md5ext => hasAssetData(this.vm, md5ext),
+            scope: this.scope
         });
         this._session = session;
 
         this._snapshot = new ClientSnapshotService({
             session,
             transport: this._transport,
-            applyProjectData: buffer => this._loadProjectSuppressed(buffer),
-            remapTargetIds: targetIds => remapTargetIds(this.vm, targetIds),
+            applyProjectData: (buffer, active) => this._loadProjectSuppressed(buffer, active),
+            remapTargetIds: (targetIds, active) => remapTargetIds(this.vm, targetIds, active),
             loadExtensions: extensions => this._loadMissingExtensions(extensions)
         });
         this._assets = new AssetChannel({
@@ -206,8 +203,12 @@ class CollabService extends Emitter {
             this.emit('connected-to-host');
             this.onEditingTargetChange();
         });
+        session.on('host-connection-lost', () => {
+            this._approved = false;
+        });
         session.on('join-denied', reason => {
             this.emit('approval-resolved');
+            this.disconnect();
             this.emit('join-denied', reason);
         });
         session.on('kicked', () => {
@@ -219,10 +220,7 @@ class CollabService extends Emitter {
             this.disconnect();
         });
         session.on('op-applied', () => this._projectChanged());
-        session.on('op-rejected', () => {
-            // Our op was invalid against host state; re-onboard to be safe.
-            if (this._snapshot) this._snapshot.requestResync();
-        });
+        session.on('op-rejected', ({reason}) => this.vm.emit('EDIT_COMMAND_ERROR', new Error(reason)));
         session.on('assets-needed', md5exts => this._assets.requestFromHost(md5exts));
         this._assets.on('asset-received', () => session.resumeApply());
         session.on('connection-failed', payload => {
@@ -260,6 +258,10 @@ class CollabService extends Emitter {
 
     _setupPresence (session) {
         this._presence = new PresenceChannel({session});
+        // Refresh after onboarding and target-id remapping, even if the user
+        // never switches sprites. New peers also need existing users' activity.
+        this._activityTimer = setInterval(() => this.setActivity(), 5000);
+        session.on('user-joined', () => this.setActivity());
         this._cursorOverlay = new CursorOverlay({
             vm: this.vm,
             presence: this._presence,
@@ -284,27 +286,21 @@ class CollabService extends Emitter {
     }
 
     _submitLocalOp (type, payload) {
-        if (!this._session || !this.isConnected) return;
-        // Clients may not propose until approved AND onboarded — anything
-        // captured before the snapshot landed is render noise.
-        if (!this.isHost && (!this._approved || this._session.lastAppliedSeq === null)) return;
-
-        const assetRefs = !this.isHost && Array.isArray(payload.assetRefs) ? payload.assetRefs : null;
-
-        // Asset bytes travel ahead of the op on the same ordered channel, so
-        // the host always has them before the proposal arrives. Pushing them
-        // is paced (and so async), and ops must stay in causal order — a
-        // block edit cannot overtake the sprite-add it belongs to — so every
-        // op leaves through this one chain.
-        this._sendChain = this._sendChain.then(async () => {
-            if (!this._session || !this.isConnected) return;
-            if (assetRefs && this._assets) await this._assets.sendAssets('host', assetRefs);
-            if (!this._session || !this.isConnected) return;
-            this._session.submitLocal(type, payload);
-        }).catch(error => {
-            // eslint-disable-next-line no-console
-            console.warn(`[Collab] Could not submit ${type}:`, error);
+        const session = this._session;
+        const assets = this._assets;
+        const isHost = this.isHost;
+        if (!session || !this.isConnected || (!isHost && (!this._approved || session.lastAppliedSeq === null))) {
+            return Promise.reject(new Error('Wait for the collaboration project to finish loading.'));
+        }
+        const send = this._sendChain.then(async () => {
+            if (this._session !== session) throw new Error('Collaboration session ended');
+            if (!isHost && payload.assetRefs) await assets.sendAssets('host', payload.assetRefs);
+            if (this._session !== session) throw new Error('Collaboration session ended');
+            return isHost ? {completion: session.submitLocal(type, payload).then(op => op && op.payload)} :
+                {completion: session.submitCommand(type, payload)};
         });
+        this._sendChain = send.then(() => {}, () => {});
+        return send.then(({completion}) => completion);
     }
 
     /**
@@ -334,30 +330,31 @@ class CollabService extends Emitter {
         if (!manager) return;
         for (const {id, url} of extensions) {
             if (manager.isExtensionLoaded(id)) continue;
-            try {
-                await manager.loadExtensionURL(url || id);
-            } catch (error) {
-                // eslint-disable-next-line no-console
-                console.warn(`[Collab] Could not load host extension "${id}":`, error);
-            }
+            const load = this.vm.editingCommands.extensions.loadExtensionURL;
+            await load(url || id);
         }
     }
 
-    async _loadProjectSuppressed (buffer) {
-        if (!this._backedUpBeforeSync) {
-            this._backedUpBeforeSync = true;
-            await RestorePointAPI.createSafetyRestorePoint(this.vm, 'Before joining collaboration');
-        }
+    async _loadProjectSuppressed (buffer, active = () => true) {
+        const adapter = this._adapter;
+        const scope = this.scope;
+        if (!active()) return;
+        if (!active()) return;
         this.emit('project-sync-apply-start');
-        this._adapter.setSuppressed(true);
+        adapter.setSuppressed(true);
         try {
-            await this.vm.loadProject(buffer);
+            await withProjectReplacement(this.vm, 'Before live synchronization', async () => {
+                await this.vm.loadProject(buffer, {
+                    mwPreserveProjectSource: true, skipGitImport: true, editSessionActive: active
+                });
+            });
+            if (!scope && active()) detachWorkspace(this.vm);
         } finally {
-            this._adapter.setSuppressed(false);
-            this.emit('project-sync-apply-complete');
+            if (adapter === this._adapter) adapter.setSuppressed(false);
+            if (active()) this.emit('project-sync-apply-complete');
         }
         // Loading rebuilt the workspace contents; re-hook capture.
-        this.emit('request-workspace-reattach');
+        if (active()) this.emit('request-workspace-reattach');
     }
 
     _projectChanged () {
@@ -374,25 +371,20 @@ class CollabService extends Emitter {
 
     _teardown () {
         this.isConnected = false;
+        this.scope = null;
+        this._sendChain = Promise.resolve();
         this._approved = false;
         this._backedUpBeforeSync = false;
         if (this._adapter) {
             this._adapter.destroy();
             this._adapter = null;
         }
-        if (this._unwrapVm) {
-            this._unwrapVm();
-            this._unwrapVm = null;
-        }
-        if (this._patcher) {
-            this._patcher.unpatchAll();
-            this._patcher = null;
-        }
         if (this._cursorOverlay) {
             this._cursorOverlay.destroy();
             this._cursorOverlay = null;
         }
         if (this._presence) {
+            clearInterval(this._activityTimer);
             this._presence.destroy();
             this._presence = null;
         }
@@ -490,7 +482,7 @@ class CollabService extends Emitter {
     }
 
     getRoomPrivacy () {
-        if (this._session && this.isHost) return this._session.privacy;
+        if (this._session) return this._session.privacy || 'public';
         return 'public';
     }
 
@@ -508,7 +500,7 @@ class CollabService extends Emitter {
     }
 
     approveJoinRequest (requesterId) {
-        if (this._session && this.isHost) this._session.approveJoinRequest(requesterId);
+        return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId));
     }
 
     denyJoinRequest (requesterId, reason) {
@@ -552,4 +544,5 @@ if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
     window.CollaborationService = CollabServiceModule;
 }
 
+export {CollabService};
 export default CollabServiceModule;

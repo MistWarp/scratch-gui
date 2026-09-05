@@ -53,6 +53,9 @@ class AssetChannel extends Emitter {
         this._requestedFromHost = new Set();
         this._pendingServes = new Map(); // md5ext -> Set of peerIds waiting for it
         this._destroyed = false;
+        this._retries = new Map();
+        this._progressAt = new Map();
+        this._retryTimer = setInterval(() => this._retryMissing(), 10000);
 
         if (isHost) {
             this._onAssetMessage = (peerId, envelope) => this._onMessage(peerId, envelope);
@@ -64,6 +67,7 @@ class AssetChannel extends Emitter {
 
     destroy () {
         this._destroyed = true;
+        clearInterval(this._retryTimer);
         this.session.off('asset-message', this._onAssetMessage);
         this._incoming.clear();
         this._requestedFromHost.clear();
@@ -82,23 +86,25 @@ class AssetChannel extends Emitter {
      */
     async sendAsset (peerId, md5ext) {
         const raw = this.getAsset(md5ext);
-        if (!raw) return false;
+        if (!raw) throw new Error(`Asset ${md5ext} is unavailable`);
         const buffer = toArrayBuffer(raw);
         const chunkCount = Math.max(1, Math.ceil(buffer.byteLength / CHUNK_SIZE));
 
         const send = envelope => (
             peerId === 'host' ? this.transport.sendToHost(envelope) : this.transport.send(peerId, envelope)
         );
-        send(makeAsset(ASSET.BEGIN, {md5ext, totalBytes: buffer.byteLength, chunkCount}));
+        if (!send(makeAsset(ASSET.BEGIN, {md5ext, totalBytes: buffer.byteLength, chunkCount}))) {
+            throw new Error('Asset connection is closed');
+        }
         for (let index = 0; index < chunkCount; index++) {
             await this._waitForDrain(peerId);
             if (this._destroyed) return false;
             const start = index * CHUNK_SIZE;
-            send(makeAsset(ASSET.CHUNK, {
+            if (!send(makeAsset(ASSET.CHUNK, {
                 md5ext,
                 index,
                 data: buffer.slice(start, Math.min(start + CHUNK_SIZE, buffer.byteLength))
-            }));
+            }))) throw new Error('Asset connection closed during transfer');
         }
         return true;
     }
@@ -143,6 +149,21 @@ class AssetChannel extends Emitter {
         this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts: wanted}));
     }
 
+    _retryMissing () {
+        if (this.isHost || this._destroyed) return;
+        for (const md5ext of this._requestedFromHost) {
+            if (Date.now() - (this._progressAt.get(md5ext) || 0) < 10000) continue;
+            const attempts = (this._retries.get(md5ext) || 0) + 1;
+            this._retries.set(md5ext, attempts);
+            if (attempts >= 3) {
+                this._requestedFromHost.delete(md5ext);
+                this.session.emit('connection-failed', {error: `Could not download asset ${md5ext}. Rejoin to retry.`});
+                return;
+            }
+            this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts: [md5ext]}));
+        }
+    }
+
     _onMessage (peerId, envelope) {
         switch (envelope.type) {
         case ASSET.REQUEST: {
@@ -156,7 +177,8 @@ class AssetChannel extends Emitter {
                     this._pendingServes.get(md5ext).add(peerId);
                     this.emit('asset-unavailable', {peerId, md5ext});
                 });
-            this.sendAssets(peerId, md5exts.filter(md5ext => this.getAsset(md5ext)));
+            this.sendAssets(peerId, md5exts.filter(md5ext => this.getAsset(md5ext)))
+                .catch(error => this.emit('transfer-error', {peerId, error}));
             break;
         }
         case ASSET.BEGIN: {
@@ -177,6 +199,7 @@ class AssetChannel extends Emitter {
             const incoming = this._incoming.get(key);
             if (!incoming || index >= incoming.chunkCount || incoming.chunks[index]) return;
             incoming.chunks[index] = toArrayBuffer(data);
+            this._progressAt.set(md5ext, Date.now());
             incoming.receivedCount++;
             incoming.receivedBytes += incoming.chunks[index].byteLength;
             if (incoming.receivedCount === incoming.chunkCount) {
@@ -203,16 +226,18 @@ class AssetChannel extends Emitter {
         try {
             await this.storeAsset(incoming.md5ext, combined);
         } catch (error) {
-            this._requestedFromHost.delete(incoming.md5ext);
             return;
         }
         this._requestedFromHost.delete(incoming.md5ext);
+        if (this._destroyed) return;
+        this._retries.delete(incoming.md5ext);
         this.emit('asset-received', incoming.md5ext);
 
         const waiting = this._pendingServes.get(incoming.md5ext);
         if (waiting) {
             this._pendingServes.delete(incoming.md5ext);
-            waiting.forEach(peerId => this.sendAsset(peerId, incoming.md5ext));
+            waiting.forEach(peerId => this.sendAsset(peerId, incoming.md5ext)
+                .catch(error => this.emit('transfer-error', {peerId, error})));
         }
     }
 }

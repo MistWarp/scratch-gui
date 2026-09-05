@@ -397,12 +397,11 @@ const createRestorePoint = (
     });
 }));
 
-const createSafetyRestorePoint = (vm, title) => Promise.resolve()
-    .then(() => createRestorePoint(vm, title || '?', TYPE_AUTOMATIC))
-    .then(() => removeExtraneousRestorePoints())
+// Safety copies are retained until the user deletes them. A failed backup must
+// stop the replacement that promised to preserve the current work.
+const createSafetyRestorePoint = (vm, title) => createRestorePoint(vm, title || '?', TYPE_MANUAL)
     .catch(error => {
-        // eslint-disable-next-line no-console
-        console.warn('Could not create safety restore point', error);
+        throw new Error(`Could not back up the current project. Nothing was replaced. ${error.message}`);
     });
 
 /**
@@ -604,7 +603,7 @@ const loadRestorePoint = (vm, id) => openDB().then(db => new Promise((resolvePro
         const request = projectStore.get(id);
         request.onsuccess = () => {
             if (request.result) {
-                vm.loadProject(request.result)
+                vm.loadProject(request.result, {skipGitImport: true, mwPreserveProjectSource: true})
                     .then(() => {
                         cleanup();
                         resolveProject();

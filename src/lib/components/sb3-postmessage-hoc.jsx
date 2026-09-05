@@ -2,7 +2,10 @@ import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import log from '../utils/log';
-import RestorePointAPI from '../api/restore-points';
+import {withProjectReplacement} from '../project-replacement.js';
+import {detachWorkspace} from '../workspace-state.js';
+import {importRepoFromSb3} from '../git/browser-git.js';
+import {openSimpleDialog} from '../../reducers/modals';
 
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
@@ -222,18 +225,27 @@ const SB3PostMessageHOC = function (WrappedComponent) {
                 arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
             }
 
-            // Stop current project and load new one
-            return RestorePointAPI.createSafetyRestorePoint(this.props.vm, 'Before external load')
-                .catch(error => {
-                    log.warn('Could not create a restore point before external load:', error);
-                })
-                .then(() => {
-                    if (!this.isCurrentRequest(request)) {
-                        return false;
-                    }
+            const consent = this.props.isPlayerOnly && !this.props.projectChanged ? Promise.resolve(true) :
+                new Promise(resolve => this.props.openSimpleDialog({
+                    type: 'confirm',
+                    title: 'Open a project sent by another page?',
+                    message: 'This replaces the editor contents in a new workspace. A device backup keeps your ' +
+                        'current code. Your saved MistWarp project stays unchanged. Cancel keeps editing here.',
+                    choices: [{value: 'open', label: 'Back up and open new workspace'}],
+                    onOk: () => resolve(true),
+                    onCancel: () => resolve(false)
+                }));
+            return consent.then(async accepted => {
+                if (!accepted || !this.isCurrentRequest(request)) return false;
+                await withProjectReplacement(this.props.vm, 'Before external load', async () => {
+                    if (!this.isCurrentRequest(request)) throw new Error('A newer open request replaced this one.');
                     this.props.vm.quit();
-                    return this.props.vm.loadProject(arrayBuffer);
-                })
+                    await this.props.vm.loadProject(arrayBuffer, {skipGitImport: true, mwPreserveProjectSource: true});
+                    await importRepoFromSb3(arrayBuffer);
+                });
+                detachWorkspace(this.props.vm);
+                return true;
+            })
                 .then(loadResult => {
                     if (loadResult === false || !this.isCurrentRequest(request)) {
                         return false;
@@ -315,6 +327,9 @@ const SB3PostMessageHOC = function (WrappedComponent) {
     }
 
     SB3PostMessageComponent.propTypes = {
+        openSimpleDialog: PropTypes.func.isRequired,
+        isPlayerOnly: PropTypes.bool,
+        projectChanged: PropTypes.bool,
         vm: PropTypes.shape({
             loadProject: PropTypes.func,
             quit: PropTypes.func,
@@ -325,10 +340,12 @@ const SB3PostMessageHOC = function (WrappedComponent) {
     };
 
     const mapStateToProps = state => ({
+        isPlayerOnly: state.scratchGui.mode?.isPlayerOnly,
+        projectChanged: state.scratchGui.projectChanged,
         vm: state.scratchGui.vm
     });
 
-    const mapDispatchToProps = () => ({});
+    const mapDispatchToProps = dispatch => ({openSimpleDialog: config => dispatch(openSimpleDialog(config))});
 
     return connect(
         mapStateToProps,

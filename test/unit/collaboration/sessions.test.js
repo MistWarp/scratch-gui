@@ -1,6 +1,6 @@
 import {createRoom, DocApplier, FakeCollabTransport} from '../../fixtures/collab-harness.js';
 import ClientSession from '../../../src/lib/collaboration/client-session.js';
-import {OP, CTRL, KIND} from '../../../src/lib/collaboration/protocol.js';
+import {OP, CTRL, KIND, PROTOCOL_VERSION} from '../../../src/lib/collaboration/protocol.js';
 
 const blockEvent = (targetId, event) => ({targetId, event});
 const createBlock = (targetId, blockId) => blockEvent(targetId, {type: 'create', blockId});
@@ -12,14 +12,56 @@ const moveBlock = (targetId, blockId, x, y) => blockEvent(targetId, {
 });
 
 describe('join flow', () => {
+    test('project sessions reject different projects, branches, and unscoped joins', async () => {
+        const scope = {projectId: 'project-1', branch: 'main'};
+        const room = await createRoom({clientCount: 0, scope});
+        const same = await room.addClient('same', null, scope);
+        const otherProject = await room.addClient('other', null, {...scope, projectId: 'project-2'});
+        const otherBranch = await room.addClient('feature', null, {...scope, branch: 'feature'});
+        const unscoped = await room.addClient('guest', null, null);
+        await room.hub.flush();
+        expect(same.session.isApproved).toBe(true);
+        [otherProject, otherBranch, unscoped].forEach(client => expect(client.session.isApproved).toBe(false));
+        expect(room.host.session.getUsers()).toHaveLength(2);
+        room.destroy();
+    });
+
+    test('pending peers cannot receive project operations or presence', async () => {
+        const room = await createRoom({clientCount: 0, privacy: 'private'});
+        const client = await room.addClient('waiting');
+        await room.hub.flush();
+        const send = jest.spyOn(room.host.transport, 'send');
+        room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'private-block'));
+        room.host.session.submitLocalPresence({kind: KIND.PRESENCE, type: 'cursor', payload: {x: 1, y: 2}});
+        await room.hub.flush();
+        expect(send.mock.calls.filter(([peerId]) => peerId === client.id)).toHaveLength(0);
+        room.destroy();
+    });
+
+    test('32 simultaneous participants converge after interleaved edits', async () => {
+        const room = await createRoom({clientCount: 0, maxUsers: 32});
+        for (let i = 0; i < 31; i++) await room.addClient(`person-${i}`);
+        await room.hub.flush();
+        expect(room.host.session.getUsers()).toHaveLength(32);
+        room.clients.forEach((client, i) => {
+            room.edit(client, OP.BLOCK_EVENT, createBlock('stage', `block-${i}`));
+        });
+        await room.hub.flush();
+        room.clients.forEach(client => {
+            expect(client.applier.snapshot()).toEqual(room.host.applier.snapshot());
+            expect(client.session.lastAppliedSeq).toBe(room.host.session.seq);
+        });
+        room.destroy();
+    });
+
     test('the host plan limits the total number of people in a room', async () => {
         const room = await createRoom({clientCount: 0, maxUsers: 2});
         const first = await room.addClient('anna');
-        room.hub.flush();
+        await room.hub.flush();
         const second = await room.addClient('ben');
         const denied = jest.fn();
         second.session.on('join-denied', denied);
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(first.session.isApproved).toBe(true);
         expect(second.session.isApproved).toBe(false);
@@ -44,7 +86,7 @@ describe('join flow', () => {
     test('a rotur handle reaches every peer, so avatars survive a renamed display name', async () => {
         const room = await createRoom({clientCount: 0});
         const client = await room.addClient('Sophie', 'sophie');
-        room.hub.flush();
+        await room.hub.flush();
 
         const seenByHost = room.host.session.getUsers().find(user => user.id === client.id);
         expect(seenByHost.handle).toBe('sophie');
@@ -59,7 +101,7 @@ describe('join flow', () => {
 
         await room.addClient('anna');
         await room.addClient('ben');
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(ready).toHaveBeenCalled();
         room.destroy();
@@ -74,7 +116,7 @@ describe('join flow', () => {
         // 1s cooldown would drop the second one.
         const clientA = await room.addClient('anna');
         const clientB = await room.addClient('ben');
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(snapshotRequests).toContain(clientA.id);
         expect(snapshotRequests).toContain(clientB.id);
@@ -93,14 +135,14 @@ describe('join flow', () => {
         const denied = jest.fn();
         client.session.on('join-approved', approved);
         client.session.on('join-denied', denied);
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(requests).toEqual([{requesterId: client.id, requesterUsername: 'anna'}]);
         expect(approved).not.toHaveBeenCalled();
         expect(room.host.session.getPendingJoinRequests()).toHaveLength(1);
 
         room.host.session.approveJoinRequest(client.id);
-        room.hub.flush();
+        await room.hub.flush();
         expect(approved).toHaveBeenCalled();
         expect(client.session.isApproved).toBe(true);
         expect(denied).not.toHaveBeenCalled();
@@ -112,10 +154,10 @@ describe('join flow', () => {
         const client = await room.addClient('anna');
         const denied = jest.fn();
         client.session.on('join-denied', denied);
-        room.hub.flush();
+        await room.hub.flush();
 
         room.host.session.denyJoinRequest(client.id, 'not today');
-        room.hub.flush();
+        await room.hub.flush();
         expect(denied).toHaveBeenCalledWith('not today');
         expect(room.host.session.getPendingJoinRequests()).toHaveLength(0);
         room.destroy();
@@ -127,9 +169,9 @@ describe('join flow', () => {
         room.host.session.on('join-request-cancelled', cancelled);
 
         const client = await room.addClient('anna');
-        room.hub.flush();
+        await room.hub.flush();
         client.session.cancelJoinRequest();
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(cancelled).toHaveBeenCalledWith({
             requesterId: client.id,
@@ -143,11 +185,11 @@ describe('join flow', () => {
         const room = await createRoom({clientCount: 0, privacy: 'private'});
         const clientA = await room.addClient('anna');
         const clientB = await room.addClient('ben');
-        room.hub.flush();
+        await room.hub.flush();
         expect(room.host.session.getPendingJoinRequests()).toHaveLength(2);
 
         room.host.session.changeRoomPrivacy('public');
-        room.hub.flush();
+        await room.hub.flush();
         expect(clientA.session.isApproved).toBe(true);
         expect(clientB.session.isApproved).toBe(true);
         room.destroy();
@@ -167,7 +209,7 @@ describe('join flow', () => {
         const hello = room.hub.queue.find(item =>
             item.envelope && item.envelope.type === CTRL.HELLO && item.from === 'old-client');
         hello.envelope.payload.protocolVersion = 0;
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(denied).toHaveBeenCalledWith(expect.stringMatching(/version/));
         expect(room.host.session.getUsers()).toHaveLength(1);
@@ -180,7 +222,7 @@ describe('op sequencing and convergence', () => {
     test('a client edit reaches every peer', async () => {
         const room = await createRoom({clientCount: 3});
         room.edit(room.clients[0], OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
         room.expectConverged();
         expect(room.host.session.seq).toBe(1);
         room.destroy();
@@ -189,12 +231,12 @@ describe('op sequencing and convergence', () => {
     test('a host edit reaches every client', async () => {
         const room = await createRoom({clientCount: 2});
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
         room.expectConverged();
         room.destroy();
     });
 
-    test('own echoes are confirmed, not re-applied, and pending queues drain', async () => {
+    test('own commands apply once on acknowledgement and pending queues drain', async () => {
         const room = await createRoom({clientCount: 2});
         const clientA = room.clients[0];
         const applied = jest.fn();
@@ -202,10 +244,10 @@ describe('op sequencing and convergence', () => {
 
         room.edit(clientA, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
         expect(clientA.session.pendingOps).toHaveLength(1);
-        room.hub.flush();
+        await room.hub.flush();
 
-        // Own op came back but was skipped (echo), so no op-applied event.
-        expect(applied).not.toHaveBeenCalled();
+        // The local VM only mutates when the accepted command arrives.
+        expect(applied).toHaveBeenCalledTimes(1);
         expect(clientA.session.pendingOps).toHaveLength(0);
         room.expectConverged();
         room.destroy();
@@ -215,15 +257,15 @@ describe('op sequencing and convergence', () => {
         const room = await createRoom({clientCount: 3});
         const [clientA, clientB, clientC] = room.clients;
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         // Both edits happen "simultaneously" — neither has seen the other.
         room.edit(clientA, OP.BLOCK_EVENT, changeField('stage', 'b1', '20'));
         room.edit(clientB, OP.BLOCK_EVENT, changeField('stage', 'b1', '30'));
-        expect(clientA.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBe('20');
-        expect(clientB.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBe('30');
+        expect(clientA.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBeUndefined();
+        expect(clientB.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBeUndefined();
 
-        room.hub.flush();
+        await room.hub.flush();
 
         // Host received A first, then B: last write in host order wins.
         const finalValue = room.host.applier.doc.blocks['stage:b1'].fields['field:NUM'];
@@ -239,13 +281,13 @@ describe('op sequencing and convergence', () => {
         const room = await createRoom({clientCount: 2});
         const [clientA, clientB] = room.clients;
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         room.edit(clientA, OP.BLOCK_EVENT, changeField('stage', 'b1', '20'));
         room.edit(clientB, OP.BLOCK_EVENT, changeField('stage', 'b1', '30'));
         // Deliver B's proposal to the host before A's.
         room.hub.reorderLastToFront();
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(room.host.applier.doc.blocks['stage:b1'].fields['field:NUM']).toBe('20');
         room.expectConverged();
@@ -256,11 +298,11 @@ describe('op sequencing and convergence', () => {
         const room = await createRoom({clientCount: 2});
         const [clientA, clientB] = room.clients;
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         room.edit(clientA, OP.BLOCK_EVENT, moveBlock('stage', 'b1', 100, 50));
         room.edit(clientB, OP.BLOCK_EVENT, changeField('stage', 'b1', '7'));
-        room.hub.flush();
+        await room.hub.flush();
 
         const hostBlock = room.host.applier.doc.blocks['stage:b1'];
         expect(hostBlock.pos).toEqual({x: 100, y: 50});
@@ -273,11 +315,11 @@ describe('op sequencing and convergence', () => {
         const room = await createRoom({clientCount: 3});
         const [clientA, clientB] = room.clients;
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-        room.hub.flush();
+        await room.hub.flush();
 
         room.edit(clientA, OP.BLOCK_EVENT, blockEvent('stage', {type: 'delete', blockId: 'b1'}));
         room.edit(clientB, OP.BLOCK_EVENT, changeField('stage', 'b1', '99'));
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(room.host.applier.doc.blocks['stage:b1']).toBeUndefined();
         room.expectConverged();
@@ -290,7 +332,7 @@ describe('op sequencing and convergence', () => {
         peers.forEach((peer, index) => {
             room.edit(peer, OP.BLOCK_EVENT, createBlock('stage', `b${index}`));
         });
-        room.hub.flush();
+        await room.hub.flush();
 
         for (let round = 0; round < 10; round++) {
             peers.forEach((peer, index) => {
@@ -300,7 +342,7 @@ describe('op sequencing and convergence', () => {
                     moveBlock('stage', `b${index}`, round * 10, index * 10));
             });
             if (round % 3 === 0) room.hub.reorderLastToFront();
-            room.hub.flush();
+            await room.hub.flush();
         }
         room.expectConverged();
         expect(room.host.session.seq).toBe(4 + 10 * 4 * 2);
@@ -318,7 +360,7 @@ describe('rejects', () => {
         // Bypass room.edit so the local doc isn't corrupted: propose
         // deleting a sprite that doesn't exist.
         clientA.session.submitLocal(OP.SPRITE_DELETE, {targetId: 'ghost'});
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(rejected).toHaveBeenCalledWith({
             clientOpId: 1,
@@ -340,24 +382,24 @@ describe('gap recovery', () => {
             const [clientA, clientB] = room.clients;
 
             room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-            room.hub.flush();
+            await room.hub.flush();
 
             // Drop the next op broadcast to clientB only.
-            room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '5'));
+            await room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '5'));
             const dropped = room.hub.dropNext(item =>
                 item.to === clientB.id && item.envelope.kind === KIND.OP);
             expect(dropped).not.toBeNull();
-            room.hub.flush();
+            await room.hub.flush();
 
             // A third op arrives out of order at clientB and gets buffered.
             room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '6'));
-            room.hub.flush();
+            await room.hub.flush();
             expect(clientB.session.lastAppliedSeq).toBe(1);
             expect(clientA.session.lastAppliedSeq).toBe(3);
 
             // Gap timer fires -> ops-request -> host replays from its log.
             jest.advanceTimersByTime(3000);
-            room.hub.flush();
+            await room.hub.flush();
             expect(clientB.session.lastAppliedSeq).toBe(3);
             room.expectConverged();
             room.destroy();
@@ -376,18 +418,19 @@ describe('gap recovery', () => {
 
             // Age the op log far past the client's position.
             room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
-            room.hub.flush();
+            await room.hub.flush();
             for (let i = 0; i < 600; i++) {
                 room.host.session.submitLocal(OP.BLOCK_EVENT, changeField('stage', 'b1', `${i}`));
             }
+            await room.host.session.queue.tail;
             // Drop everything queued for the client, then let one final op
             // through so it notices the gap.
             while (room.hub.dropNext(item => item.to === client.id)) { /* drain */ }
             room.host.session.submitLocal(OP.BLOCK_EVENT, changeField('stage', 'b1', 'last'));
-            room.hub.flush();
+            await room.hub.flush();
 
             jest.advanceTimersByTime(3000);
-            room.hub.flush();
+            await room.hub.flush();
             expect(resync).toHaveBeenCalledWith(expect.stringMatching(/no longer covers/));
             room.destroy();
         } finally {
@@ -401,6 +444,7 @@ describe('gap recovery', () => {
         for (let i = 0; i < 5; i++) {
             room.host.session.submitLocal(OP.BLOCK_EVENT, changeField('stage', 'b1', `${i}`));
         }
+        await room.host.session.queue.tail;
         expect(room.host.session.opsSince(3).map(op => op.seq)).toEqual([3, 4, 5, 6]);
         expect(room.host.session.opsSince(7)).toEqual([]);
         room.destroy();
@@ -416,15 +460,16 @@ describe('onboarding while ops are in flight', () => {
         });
 
         const client = await room.addClient('anna');
-        room.hub.flush();
+        await room.hub.flush();
         expect(snapshotRequest).toEqual({peerId: client.id});
 
         // Host keeps editing while the "snapshot streams".
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
         room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '5'));
+        await room.host.session.queue.tail;
         const atSeq = room.host.session.seq;
         room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '6'));
-        room.hub.flush();
+        await room.hub.flush();
 
         // Client buffered everything (no base seq yet).
         expect(client.session.lastAppliedSeq).toBeNull();
@@ -434,6 +479,7 @@ describe('onboarding while ops are in flight', () => {
             targets: {}, blocks: {'stage:b1': {fields: {'field:NUM': '5'}, pos: {x: 0, y: 0}}}, extensions: []
         });
         client.session.setBaseSeq(atSeq);
+        await room.hub.flush();
 
         // Ops <= atSeq were dropped, the one after was applied.
         expect(client.session.lastAppliedSeq).toBe(atSeq + 1);
@@ -452,7 +498,7 @@ describe('membership changes', () => {
         clientB.session.on('user-left', userLeft);
 
         room.host.session.kickUser(clientA.id);
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(kicked).toHaveBeenCalledWith('You were removed from the room');
         expect(userLeft).toHaveBeenCalledWith(expect.objectContaining({id: clientA.id}));
@@ -467,7 +513,7 @@ describe('membership changes', () => {
         clientB.session.on('user-left', userLeft);
 
         room.hub.enqueueClose(clientA.id);
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(userLeft).toHaveBeenCalledWith(expect.objectContaining({id: clientA.id}));
         expect(room.host.session.getUsers()).toHaveLength(2);
@@ -478,7 +524,7 @@ describe('membership changes', () => {
         const room = await createRoom({clientCount: 2});
         const [clientA, clientB] = room.clients;
         clientA.session.changeUsername('renamed');
-        room.hub.flush();
+        await room.hub.flush();
 
         const findUser = users => users.find(u => u.id === clientA.id);
         expect(findUser(room.host.session.getUsers()).username).toBe('renamed');
@@ -491,7 +537,7 @@ describe('membership changes', () => {
         const changed = jest.fn();
         room.clients[0].session.on('room-privacy-changed', changed);
         room.host.session.changeRoomPrivacy('private');
-        room.hub.flush();
+        await room.hub.flush();
         expect(changed).toHaveBeenCalledWith('private');
         room.destroy();
     });
@@ -504,13 +550,13 @@ describe('reconnection catch-up', () => {
 
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));
         room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '5'));
-        room.hub.flush();
+        await room.hub.flush();
         const docBeforeDrop = client.applier.snapshot();
         const seqBeforeDrop = client.session.lastAppliedSeq;
 
         // Client goes away; the host keeps editing.
         room.hub.enqueueClose(client.id);
-        room.hub.flush();
+        await room.hub.flush();
         room.edit(room.host, OP.BLOCK_EVENT, changeField('stage', 'b1', '6'));
         room.edit(room.host, OP.BLOCK_EVENT, moveBlock('stage', 'b1', 10, 20));
 
@@ -525,7 +571,7 @@ describe('reconnection catch-up', () => {
         });
         session.lastAppliedSeq = seqBeforeDrop;
         await session.connect();
-        room.hub.flush();
+        await room.hub.flush();
 
         expect(skipped).toHaveBeenCalled();
         expect(applier.snapshot()).toEqual(room.host.applier.snapshot());
@@ -549,10 +595,10 @@ describe('presence relay', () => {
         room.host.session.on('presence', seenByHost);
 
         clientA.session.submitLocalPresence({
-            v: 1, kind: 'presence', type: 'cursor', ts: Date.now(),
+            v: PROTOCOL_VERSION, kind: 'presence', type: 'cursor', ts: Date.now(),
             payload: {x: 5, y: 6, userId: 'spoofed'}
         });
-        room.hub.flush();
+        await room.hub.flush();
 
         // The host stamps the real sender id over anything the client wrote.
         expect(seenByB).toHaveBeenCalledWith(clientA.id, expect.objectContaining({

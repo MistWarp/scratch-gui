@@ -56,9 +56,9 @@ test('round-trips settings through storage', () => {
 
 describe('autosave after choosing cloud storage', () => {
     const {enableAfterCloudSave} = require('../../../src/lib/mw/autosave-settings.js');
-    test('enables autosave when there is no saved preference', () => {
+    test('saving once does not grant permission for background uploads', () => {
         enableAfterCloudSave();
-        expect(getSetting('enabled')).toBe(true);
+        expect(getSetting('enabled')).toBe(false);
     });
     test('preserves an explicit opt-out', () => {
         setSetting('enabled', false);

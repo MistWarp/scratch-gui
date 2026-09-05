@@ -27,7 +27,7 @@ const HELP_ENTRIES = [
         title: 'Menu bar',
         category: 'Editor',
         keywords: ['file', 'edit', 'tools', 'top bar'],
-        short: 'The menu bar holds the File, Edit, Tools, Bookmarks, and Settings menus. Everything from saving to opening the debugger starts here.',
+        short: 'The menu bar holds the File, Edit, Project, and Settings menus. Saving and project tools start here.',
         howTo: [
             'File holds New, Save to MistWarp (push), Save to your computer (.mwp, with history), Package, and Device backups.',
             'Tools holds Project history, Live Collaboration, Debugger, and Variable Manager.',
@@ -281,19 +281,6 @@ const HELP_ENTRIES = [
             'Use it to jump to a custom block definition quickly.'
         ],
         docsPath: '/editor/find-bar'
-    },
-    {
-        id: 'bookmarks',
-        title: 'Workspace bookmarks',
-        category: 'Editor',
-        keywords: ['navigation', 'saved positions'],
-        short: 'Workspace bookmarks save spots in the code canvas so you can jump back to them in large projects.',
-        howTo: [
-            'Save a bookmark for the current workspace location.',
-            'Open the Bookmarks menu to jump to a saved spot.',
-            'Handy for moving between distant scripts without scrolling.'
-        ],
-        docsPath: '/editor/bookmarks'
     },
     {
         id: 'shortcuts',

@@ -71,7 +71,9 @@ const CommitHistory = ({id, history, onRetry}) => {
     if (!history) {
         return <p className={styles.state}>Loading Git history…</p>;
     }
-    if (history.restricted) return <p className={styles.state}>Only the owner can view commits for this project.</p>;
+    if (history.restricted) {
+        return <p className={styles.state}>You do not have permission to view commits for this project.</p>;
+    }
     if (history.error) {
         return (
             <p className={styles.state}>

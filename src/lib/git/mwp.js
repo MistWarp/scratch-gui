@@ -2,10 +2,10 @@ import JSZip from '@turbowarp/jszip';
 import {
     abortEditorMerge,
     commitProject,
+    createRepoBackup,
     collectReachableObjectOids,
     completeEditorMerge,
     computeCommitGraph,
-    deleteRepo,
     ensureParentDir,
     exportRepoToZip,
     getDefaultAuthor,
@@ -90,70 +90,81 @@ const loadMwp = async input => {
     return {zip, manifest, paths};
 };
 
-const clearImportedWorktree = async () => {
-    const pfs = getFs().promises;
-    const entries = await pfs.readdir(REPO_DIR);
-    const remove = async path => {
-        const stat = await pfs.stat(path);
-        if (stat.isDirectory()) {
-            for (const entry of await pfs.readdir(path)) await remove(`${path}/${entry}`);
-            await pfs.rmdir(path);
-        } else {
-            await pfs.unlink(path);
-        }
-    };
-    for (const entry of entries) {
-        if (entry !== '.git') await remove(`${REPO_DIR}/${entry}`);
+const removeDiffDirectory = async (pfs, path) => {
+    let stat;
+    try {
+        stat = await pfs.stat(path);
+    } catch (e) {
+        return;
     }
+    if (!stat.isDirectory()) {
+        await pfs.unlink(path);
+        return;
+    }
+    const entries = await pfs.readdir(path);
+    await Promise.all(entries.map(entry => removeDiffDirectory(pfs, `${path}/${entry}`)));
+    await pfs.rmdir(path);
 };
 
-const ensureManifestBranch = async manifest => {
-    const branch = manifest.branch || 'main';
-    if (!safeBranchName(branch)) throw new Error('Invalid MistWarp branch name');
-    const fs = getFs();
-    const branches = await git.listBranches({fs, dir: REPO_DIR});
-    if (branches.includes(branch)) return branch;
-    if (!manifest.head || typeof manifest.head !== 'string') {
-        throw new Error(`MistWarp project is missing the ${branch} branch and its recorded head`);
-    }
-    await git.readCommit({fs, dir: REPO_DIR, oid: manifest.head});
-    await git.writeRef({
-        fs,
-        dir: REPO_DIR,
-        ref: `refs/heads/${branch}`,
-        value: manifest.head,
-        force: false
-    });
-    return branch;
-};
 
 const importMwp = async input => {
     const {zip, manifest, paths} = await loadMwp(input);
+    if (manifest.delta) throw new Error('A history delta must be combined with its base before importing');
     const fs = getFs();
     const pfs = fs.promises;
-    await deleteRepo();
-    await pfs.mkdir(REPO_DIR).catch(error => {
-        if (error.code !== 'EEXIST') throw error;
-    });
-    let total = 0;
-    for (const path of paths) {
-        if (path === MWP_MANIFEST) continue;
-        const data = await zip.files[path].async('uint8array');
-        total += data.byteLength;
-        if (total > MAX_MWP_UNCOMPRESSED_BYTES) throw new Error('MistWarp project expands beyond 512 MB');
-        const destination = `${REPO_DIR}/${path}`;
-        await ensureParentDir(pfs, destination);
-        await pfs.writeFile(destination, data);
+    const staging = `${REPO_DIR}-import-${Date.now()}-${Math.random().toString(36)
+        .slice(2)}`;
+    const backup = `${staging}-previous`;
+    let previousMoved = false;
+    try {
+        await pfs.mkdir(staging);
+        let total = 0;
+        for (const path of paths) {
+            if (path === MWP_MANIFEST) continue;
+            // Compact archives materialize their worktree from Git after validation.
+            if (manifest.worktree === false && !path.startsWith('.git/')) continue;
+            const data = await zip.files[path].async('uint8array');
+            total += data.byteLength;
+            if (total > MAX_MWP_UNCOMPRESSED_BYTES) throw new Error('MistWarp project expands beyond 512 MB');
+            const destination = `${staging}/${path}`;
+            await ensureParentDir(pfs, destination);
+            await pfs.writeFile(destination, data);
+        }
+        const branch = await git.currentBranch({fs, dir: staging, fullname: false});
+        if (!safeBranchName(branch) || branch !== manifest.branch) {
+            throw new Error('MistWarp manifest branch disagrees with HEAD');
+        }
+        const branches = await git.listBranches({fs, dir: staging});
+        for (const name of branches) {
+            const head = await git.resolveRef({fs, dir: staging, ref: name});
+            await collectReachableObjectOids(head, new Set(), staging);
+        }
+        manifest.head = await git.resolveRef({fs, dir: staging, ref: 'HEAD'});
+        manifest.branch = branch;
+        if (manifest.worktree === false) await git.checkout({fs, dir: staging, ref: branch, force: true});
+        let existingDirectory = false;
+        try {
+            await pfs.stat(REPO_DIR);
+            existingDirectory = true;
+        } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+        }
+        if (existingDirectory) {
+            await pfs.rename(REPO_DIR, backup);
+            previousMoved = true;
+        }
+        try {
+            await pfs.rename(staging, REPO_DIR);
+        } catch (error) {
+            if (previousMoved) await pfs.rename(backup, REPO_DIR);
+            previousMoved = false;
+            throw error;
+        }
+        if (previousMoved) await removeDiffDirectory(pfs, backup);
+        return manifest;
+    } finally {
+        await removeDiffDirectory(pfs, staging);
     }
-    if (!(await repoExists())) throw new Error('MistWarp project has no Git history');
-    const branch = await ensureManifestBranch(manifest);
-    if (manifest.worktree === false) {
-        // Compact MWP files carry Git as the source of truth and omit the
-        // duplicate worktree, so materialize it after import.
-        await clearImportedWorktree();
-        await git.checkout({fs, dir: REPO_DIR, ref: branch, force: true});
-    }
-    return manifest;
 };
 
 const checkoutMwpBranch = async branch => {
@@ -162,10 +173,7 @@ const checkoutMwpBranch = async branch => {
     }
     const fs = getFs();
     const branches = await git.listBranches({fs, dir: REPO_DIR});
-    if (!branches.includes(branch)) {
-        const head = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
-        await git.writeRef({fs, dir: REPO_DIR, ref: `refs/heads/${branch}`, value: head, force: false});
-    }
+    if (!branches.includes(branch)) throw new Error(`History is missing branch ${branch}; reload it before saving`);
     await git.checkout({fs, dir: REPO_DIR, ref: branch});
 };
 
@@ -277,14 +285,23 @@ const exportCurrentMwp = async (metadata, {
     let includeObjectOids = null;
     let delta = false;
     if (!includeWorktree && baseHead) {
-        try {
-            const known = assumeBaseKnown ?
-                new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectReachableObjectOids(baseHead);
-            includeObjectOids = await collectReachableObjectOids(repo.head, known);
-            delta = true;
-        } catch (e) {
-            // The server's base is not in this clone. A full archive is the safe fallback.
-            includeObjectOids = null;
+        const known = assumeBaseKnown ?
+            new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectReachableObjectOids(baseHead);
+        includeObjectOids = new Set();
+        const branches = await git.listBranches({fs: getFs(), dir: REPO_DIR});
+        for (const branch of branches) {
+            const head = await git.resolveRef({fs: getFs(), dir: REPO_DIR, ref: branch});
+            for (const oid of await collectReachableObjectOids(head, known)) includeObjectOids.add(oid);
+        }
+        delta = true;
+    }
+    if (!delta) {
+        // A full archive promises closure for every ref, regardless of how
+        // shallow the editor's checkout or cached metadata happens to be.
+        const branches = await git.listBranches({fs: getFs(), dir: REPO_DIR});
+        for (const branch of branches) {
+            const head = await git.resolveRef({fs: getFs(), dir: REPO_DIR, ref: branch});
+            await collectReachableObjectOids(head);
         }
     }
     const repoBlob = await exportRepoToZip({
@@ -318,30 +335,23 @@ const exportCurrentMwp = async (metadata, {
     return {blob, manifest};
 };
 
-const preserveCurrentRepo = async () => {
-    if (!(await repoExists())) return null;
-    try {
-        return (await exportCurrentMwp({})).blob;
-    } catch (error) {
-        // A cancelled or older import can leave a .git directory whose HEAD
-        // points at a missing branch. It cannot be restored, but it must not
-        // prevent an unrelated pull request from loading.
-        console.warn('Discarding an incomplete browser Git workspace:', error);
-        return null;
-    }
-};
+// Inspection must preserve uncommitted files and incomplete repositories too.
+const preserveCurrentRepo = () => createRepoBackup();
 
 const createMwp = async ({
-    vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, additionalParents = [],
+    vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, branch = 'main', additionalParents = [],
     message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null
 } = {}) => {
     const author = projectId ? await getMistWarpAuthor() : getDefaultAuthor();
     let shallowBase = false;
     if (!(await repoExists())) {
+        if (remixParent && !remoteHead) {
+            throw new Error('Remix history is unavailable; reload its inherited history before saving');
+        }
         const initialParent = remoteHead || '';
         const initialParents = [initialParent, ...additionalParents].filter(Boolean);
         await initRepo({
-            defaultBranch: 'main',
+            defaultBranch: branch,
             vm,
             sb3Files,
             initialMessage: message,
@@ -361,6 +371,10 @@ const createMwp = async ({
                 throw noChanges;
             }
         }
+    } else if (vm || sb3Files) {
+        // A non-committing save still needs the current editor snapshot. Keep
+        // HEAD and the index intact so these edits remain uncommitted on import.
+        await writeProjectToFractchTree({vm, sb3Files, fs: getFs().promises, dir: REPO_DIR});
     }
     return exportCurrentMwp(
         {projectId, remixParent, baseCommit},
@@ -393,21 +407,6 @@ const bytesEqual = (a, b) => {
     return true;
 };
 
-const removeDiffDirectory = async (pfs, path) => {
-    let stat;
-    try {
-        stat = await pfs.stat(path);
-    } catch (e) {
-        return;
-    }
-    if (!stat.isDirectory()) {
-        await pfs.unlink(path);
-        return;
-    }
-    const entries = await pfs.readdir(path);
-    await Promise.all(entries.map(entry => removeDiffDirectory(pfs, `${path}/${entry}`)));
-    await pfs.rmdir(path);
-};
 
 const buildProjectArtifactsFromFileEntries = async files => {
     const pfs = getFs().promises;
@@ -636,12 +635,9 @@ const prepareMwpPull = async ({target, source, pullId, baseCommit, headCommit}) 
     return {diff, sourceRef, sourceManifest, targetManifest};
 };
 
-const restorePreviousRepo = async previous => {
-    if (previous) await importMwp(previous);
-    else await deleteRepo();
-};
+const restorePreviousRepo = previous => previous();
 
-const restoreMwpVersion = async ({workspace, oid, message} = {}) => {
+const restoreMwpVersionInternal = async ({workspace, oid, message} = {}) => {
     if (!workspace || !oid) throw new Error('Choose a version to restore');
     const previous = await preserveCurrentRepo();
     try {
@@ -688,7 +684,7 @@ const restoreMwpVersion = async ({workspace, oid, message} = {}) => {
     }
 };
 
-const inspectMwpPull = async options => {
+const inspectMwpPullInternal = async options => {
     const previous = await preserveCurrentRepo();
     try {
         return await prepareMwpPull(options);
@@ -697,7 +693,7 @@ const inspectMwpPull = async options => {
     }
 };
 
-const inspectMwpCommit = async ({workspace, oid, parentOid = ''}) => {
+const inspectMwpCommitInternal = async ({workspace, oid, parentOid = ''}) => {
     if (!workspace || !oid) throw new Error('Choose a commit to inspect');
     const previous = await preserveCurrentRepo();
     try {
@@ -729,7 +725,7 @@ const inspectMwpCommit = async ({workspace, oid, parentOid = ''}) => {
     }
 };
 
-const inspectMwpFiles = async ({workspace, oid = ''}) => {
+const inspectMwpFilesInternal = async ({workspace, oid = ''}) => {
     if (!workspace) throw new Error('This project does not have a saved file archive');
     const previous = await preserveCurrentRepo();
     try {
@@ -761,29 +757,34 @@ const inspectMwpFiles = async ({workspace, oid = ''}) => {
     }
 };
 
-const startMwpMerge = async ({target, source, pullId, baseCommit, headCommit}) => {
+const startMwpMergeInternal = async ({target, source, pullId, baseCommit, headCommit}) => {
     const author = await getMistWarpAuthor();
     const previous = await preserveCurrentRepo();
-    const inspected = await prepareMwpPull({target, source, pullId, baseCommit, headCommit});
-    const {diff, sourceRef, sourceManifest, targetManifest} = inspected;
-    const result = await startEditorMerge({
-        ours: targetManifest.branch,
-        theirs: sourceRef,
-        author
-    });
-    const conflicts = [];
-    for (const path of result.conflicts || []) {
-        const data = await readWorktreeFile(path);
-        conflicts.push({path, content: new TextDecoder().decode(data)});
+    try {
+        const inspected = await prepareMwpPull({target, source, pullId, baseCommit, headCommit});
+        const {diff, sourceRef, sourceManifest, targetManifest} = inspected;
+        const result = await startEditorMerge({
+            ours: targetManifest.branch,
+            theirs: sourceRef,
+            author
+        });
+        const conflicts = [];
+        for (const path of result.conflicts || []) {
+            const data = await readWorktreeFile(path);
+            conflicts.push({path, content: new TextDecoder().decode(data)});
+        }
+        activeMerge = {pullId, targetManifest, sourceManifest, sourceRef, merged: result.merged, previous};
+        return {
+            diff,
+            conflicts,
+            binaryConflicts: result.binaryConflicts || [],
+            merged: result.merged,
+            expectedHead: targetManifest.head
+        };
+    } catch (error) {
+        await restorePreviousRepo(previous);
+        throw error;
     }
-    activeMerge = {pullId, targetManifest, sourceManifest, sourceRef, merged: result.merged, previous};
-    return {
-        diff,
-        conflicts,
-        binaryConflicts: result.binaryConflicts || [],
-        merged: result.merged,
-        expectedHead: targetManifest.head
-    };
 };
 
 const updateMergeConflict = (path, content) => writeWorktreeFile(path, new TextEncoder().encode(content));
@@ -817,6 +818,21 @@ const cancelMwpMerge = async () => {
     if (merge && !merge.merged) await abortEditorMerge();
     if (merge) await restorePreviousRepo(merge.previous);
 };
+
+let inspectionQueue = Promise.resolve();
+const queueInspection = operation => {
+    const result = inspectionQueue.then(() => {
+        if (activeMerge) throw new Error('Finish or cancel the current merge before opening another history view.');
+        return operation();
+    });
+    inspectionQueue = result.catch(() => {});
+    return result;
+};
+const restoreMwpVersion = options => queueInspection(() => restoreMwpVersionInternal(options));
+const inspectMwpPull = options => queueInspection(() => inspectMwpPullInternal(options));
+const inspectMwpCommit = options => queueInspection(() => inspectMwpCommitInternal(options));
+const inspectMwpFiles = options => queueInspection(() => inspectMwpFilesInternal(options));
+const startMwpMerge = options => queueInspection(() => startMwpMergeInternal(options));
 
 export {
     MWP_FORMAT,

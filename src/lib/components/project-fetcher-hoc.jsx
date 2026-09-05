@@ -1,3 +1,5 @@
+import {prepareProjectReplacement} from '../project-replacement.js';
+import {beginProjectOperation, isProjectOperationActive} from '../project-operation.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {intlShape, injectIntl} from 'react-intl';
@@ -35,7 +37,7 @@ import {
 } from '../git/project-history.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
-import {rememberPlatformProject} from '../community/publish.js';
+import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
     getEditorProject as getMistWarpEditorProject
 } from '../community/api.js';
@@ -88,12 +90,12 @@ const clearProjectSourceOnForeignLoads = vm => {
     const originalLoadProject = vm.loadProject.bind(vm);
     vm.loadProject = (...args) => {
         vm._mwCanTrustProject = Boolean(args[1] && args[1].mwCanTrustProject);
-        if (fetchInitiatedLoad) {
-            fetchInitiatedLoad = false;
-        } else {
-            clearProjectSourceFromUrl();
-        }
-        return originalLoadProject(...args);
+        const foreign = !fetchInitiatedLoad && !(args[1] && args[1].mwPreserveProjectSource);
+        fetchInitiatedLoad = false;
+        return Promise.resolve(originalLoadProject(...args)).then(result => {
+            if (foreign) clearProjectSourceFromUrl();
+            return result;
+        });
     };
 };
 
@@ -146,6 +148,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             storage.setAssetHost(props.assetHost);
             storage.setTranslatorFunction(props.intl.formatMessage);
             clearProjectSourceOnForeignLoads(props.vm);
+            this.state = {projectFetchError: null};
             this.fetchGeneration = 0;
             if (typeof location !== 'undefined' && typeof URLSearchParams !== 'undefined') {
                 const initialPlatformId = new URLSearchParams(location.search).get('platform_project') ||
@@ -187,7 +190,33 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         componentWillUnmount () {
             this.fetchGeneration++;
         }
-        fetchProject (projectId, loadingState) {
+        async fetchProject (projectId, loadingState) {
+            if (isProjectOperationActive(this.props.vm)) {
+                this.props.onError(new Error(
+                    'Wait for the current save or project change to finish before opening another project.'
+                ));
+                return;
+            }
+            const release = beginProjectOperation(this.props.vm);
+            this.setState({projectFetchError: null});
+            let handedOff = false;
+            let rollback;
+            if (this.props.vm.runtime?.targets?.length) {
+                try {
+                    const project = getRememberedPlatformProjectState();
+                    const restore = await prepareProjectReplacement(this.props.vm, 'Before switching projects');
+                    rollback = async () => {
+                        await restore();
+                        rememberPlatformProject(project, {resetSaveBase: true});
+                        setRemoteProjectHistory(project);
+                    };
+                    this.props.vm._mwRollbackProjectLoad = rollback;
+                } catch (error) {
+                    release();
+                    this.props.onError(error);
+                    return;
+                }
+            }
             const fetchGeneration = ++this.fetchGeneration;
             // Stop scripts while fetching, but keep the current project intact until replacement data exists.
             this.props.vm.quit();
@@ -196,7 +225,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             this.props.vm._mwHistoryBootstrapError = null;
 
             const isInitialFetch = !this.hasFetchedProject;
-            this.hasFetchedProject = true;
             if (!isInitialFetch && getIsFetchingWithoutId(loadingState)) {
                 clearProjectSourceFromUrl();
             }
@@ -276,7 +304,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     });
             }
 
+            let downloadFailed = false;
             return assetPromise
+                .catch(error => {
+                    downloadFailed = true;
+                    throw error;
+                })
                 .then(async projectAsset => {
                     if (fetchGeneration !== this.fetchGeneration) return;
                     if (projectAsset) {
@@ -288,7 +321,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                                     if (project.assetsBase && isHttpUrl(project.assetsBase)) {
                                         storage.addMistWarpAssetStore(project.assetsBase);
                                     }
-                                    rememberPlatformProject(project);
+                                    rememberPlatformProject(project, {resetSaveBase: true});
                                     await deleteRepo();
                                     this.props.vm._mwHistoryHydration = null;
                                     setRemoteProjectHistory(project);
@@ -307,6 +340,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         if (projectAsset.title) {
                             this.props.onSetProjectTitle(projectAsset.title);
                         }
+                        handedOff = true;
+                        this.hasFetchedProject = true;
+                        this.props.vm._mwReleaseProjectLoad = release;
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
                     } else {
                         // Treat failure to load as an error
@@ -314,11 +350,21 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         throw new Error('Could not find project');
                     }
                 })
-                .catch(err => {
+                .catch(async err => {
+                    if (rollback) await rollback();
+                    this.props.vm._mwRollbackProjectLoad = null;
                     if (fetchGeneration !== this.fetchGeneration) return;
                     this.props.vm._mwPrepareProjectHistory = null;
-                    this.props.onError(err);
+                    if (downloadFailed) {
+                        this.handleRetryProjectFetch = () => this.fetchProject(projectId, loadingState);
+                        this.setState({projectFetchError: err});
+                    } else {
+                        this.props.onError(err);
+                    }
                     log.error(err);
+                })
+                .finally(() => {
+                    if (!handedOff) release();
                 });
         }
         render () {
@@ -344,6 +390,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 <WrappedComponent
                     fetchingProject={isFetchingWithIdProp}
                     {...componentProps}
+                    projectFetchError={this.state.projectFetchError}
+                    onRetryProjectFetch={this.handleRetryProjectFetch}
                 />
             );
         }

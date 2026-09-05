@@ -2,7 +2,7 @@ const ZONES = [
     {
         id: 'left',
         items: [
-            '__errors', 'file', 'edit', 'mode', 'tools', 'bookmarks', 'view',
+            '__errors', 'file', 'edit', 'mode', 'tools', 'view',
             '__divider', 'project-title', '__view-counter', 'community', 'block-count',
             'share', 'remix', 'feedback'
         ],
