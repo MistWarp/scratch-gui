@@ -242,7 +242,10 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
         onProgress({phase: 'pack', message: 'Rebuilding project from fractch…', completed: 0, total: 1});
     }
 
-    const {manifest, assetFiles} = await buildProjectFromBuildDir({buildDir: dir, fs});
+    // The editor is the source of truth: unused costumes/sounds must stay
+    // visible in the Costumes/Sounds tabs, exactly like Scratch. Fractch's
+    // asset pruner is for CLI packaging, not for loading into the editor.
+    const {manifest, assetFiles} = await buildProjectFromBuildDir({buildDir: dir, fs, prune: false});
 
     const zip = new JSZip();
     const vfs = toPromiseFs(fs);
