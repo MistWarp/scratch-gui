@@ -19,9 +19,10 @@ import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt
 const extensionsTrustedByUser = new Set();
 
 /**
- * Extension URLs discovered while loading the current platform project. Only these URLs may be
- * rewritten to the server's saved-source endpoint. Extensions added from the library or custom
- * extension modal do not exist in the saved project index yet and must load from their original URL.
+ * Extension URLs from the whole-project install of the current platform project.
+ * Only these URLs may be rewritten to the server's saved-source endpoint. Sprite
+ * imports and library-added extensions do not exist in the saved project index
+ * yet and must load from their original URL.
  */
 const platformProjectExtensionUrls = new Set();
 
@@ -331,7 +332,10 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canLoadExtensionFromProject (url) {
         const allowProjectExtension = () => {
-            if (isPlatformProjectLoad()) {
+            // Only extensions from a whole-project install were saved with the platform
+            // project and have a pinned server copy. Sprites imported afterwards
+            // (installTargets with wholeProject=false) must load from their original URL.
+            if (isPlatformProjectLoad() && this.props.vm._mwInstallingWholeProject === true) {
                 platformProjectExtensionUrls.add(url);
             }
             return true;
@@ -525,6 +529,7 @@ TWSecurityManagerComponent.propTypes = {
     vm: PropTypes.shape({
         on: PropTypes.func.isRequired,
         off: PropTypes.func.isRequired,
+        _mwInstallingWholeProject: PropTypes.bool,
         runtime: PropTypes.shape({
             on: PropTypes.func.isRequired,
             off: PropTypes.func.isRequired,

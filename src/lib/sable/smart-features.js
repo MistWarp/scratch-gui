@@ -85,7 +85,7 @@ const generateCommitName = async diff => {
         const body = await request('/chat/completions', {
             method: 'POST',
             body: JSON.stringify({
-                model: 'sable/spark',
+                model: 'z-ai/glm-5.3-flash',
                 messages: requestMessages,
                 tools: [COMMIT_TOOL],
                 max_completion_tokens: 512,
