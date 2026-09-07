@@ -2,6 +2,18 @@ const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
 const fs = require('fs');
 const webpack = require('webpack');
+const {execSync} = require('child_process');
+
+const resolveBuildId = () => {
+    if (process.env.MW_BUILD_ID) return process.env.MW_BUILD_ID;
+    if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+    try {
+        return execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim();
+    } catch (e) {
+        return 'dev';
+    }
+};
+const MW_BUILD_ID = resolveBuildId();
 
 try {
     const envFile = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
@@ -263,9 +275,7 @@ module.exports = [
                 'process.env.ROOT': JSON.stringify(root),
                 'process.env.ROUTING_STYLE': JSON.stringify(process.env.ROUTING_STYLE || 'wildcard'),
                 'process.env.MW_COMMUNITY': JSON.stringify(ENABLE_COMMUNITY ? 'true' : ''),
-                'process.env.MW_BUILD_ID': JSON.stringify(
-                    process.env.MW_BUILD_ID || process.env.GITHUB_SHA || 'dev'
-                ),
+                'process.env.MW_BUILD_ID': JSON.stringify(MW_BUILD_ID),
                 'process.env.MW_BUILD_TIME': JSON.stringify(
                     process.env.MW_BUILD_TIME || ''
                 ),
