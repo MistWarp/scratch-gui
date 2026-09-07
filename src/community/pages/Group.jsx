@@ -185,7 +185,7 @@ const Group = () => {
 
     const spacePanel = (items, kind, title, Icon) => (
         <section className={styles.contentSection}>
-            <div className={styles.sectionHeading}><div><span>{kind}</span><h1>{title}</h1></div>{createLink(kind, kind)}</div>
+            <div className={styles.sectionHeading}><div><h1>{title}</h1></div>{createLink(kind, kind)}</div>
             {items.length ? <div className={styles.spaceGrid}>{items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}</div> : <EmptyState icon={Icon} title={`No ${kind}s yet`} action={createLink(kind, kind)}>{manager ? `Create the first ${kind} for ${group.name}.` : `${group.name} has not published any ${kind}s.`}</EmptyState>}
         </section>
     );
@@ -202,7 +202,7 @@ const Group = () => {
 
                     {activeTab === 'projects' ? (
                         <section className={styles.contentSection}>
-                            <div className={styles.sectionHeading}><div><span>Projects</span><h1>Projects by {group.name}</h1></div>{manager ? <small>Assign a project from its metadata settings</small> : null}</div>
+                            <div className={styles.sectionHeading}><div><h1>Projects by {group.name}</h1></div>{manager ? <small>Assign a project from its metadata settings</small> : null}</div>
                             {projects.length ? <div className={styles.projectGrid}>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <EmptyState icon={FolderKanban} title="No projects yet">Projects assigned to this group will appear here.</EmptyState>}
                         </section>
                     ) : null}
@@ -213,7 +213,7 @@ const Group = () => {
 
                     {activeTab === 'members' ? (
                         <section className={styles.contentSection}>
-                            <div className={styles.sectionHeading}><div><span>Members</span><h1>{formatNumber(memberCount)} people</h1></div></div>
+                            <div className={styles.sectionHeading}><div><h1>{formatNumber(memberCount)} members</h1></div></div>
                             {members.length ? <div className={styles.memberGrid}>{members.map(name => <Link to={`/users/${name}`} key={name}><Avatar username={name} size={44} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>Member of {group.tag}</small></span></Link>)}</div> : data.membershipLive ? <EmptyState icon={Users} title="No members yet">Members will appear here after they join.</EmptyState> : null}
                             {!members.length && !data.membershipLive ? <EmptyState icon={Users} title={`${formatNumber(memberCount)} members`}>{user ? 'The member directory is private.' : 'Join this group to browse its member directory.'}</EmptyState> : null}
                         </section>
@@ -222,11 +222,11 @@ const Group = () => {
                     {activeTab === 'support' ? (
                         <div className={styles.supportSections}>
                             <section className={styles.contentSection}>
-                                <div className={styles.sectionHeading}><div><span>Fundraisers</span><h1>Support {group.name}</h1></div></div>
+                                <div className={styles.sectionHeading}><div><h1>Support {group.name}</h1></div></div>
                                 {campaigns.length ? <div className={styles.cardGrid}>{campaigns.map(campaign => <article className={styles.dataCard} key={campaign.id}><span className={styles.cardType}><HeartHandshake size={14} /> {campaign.status === 'ACTIVE' ? 'Accepting support' : campaign.status}</span><h2>{campaign.title}</h2><p>{campaign.description}</p><div className={styles.progress}><i style={{width: `${Math.min(100, (campaign.raised_credits / campaign.goal_credits) * 100)}%`}} /></div><small>{formatNumber(campaign.raised_credits)} of {formatNumber(campaign.goal_credits)} credits</small>{campaign.status === 'ACTIVE' ? <div className={styles.fund}><input min="0.01" step="0.01" type="number" aria-label={`Credits for ${campaign.title}`} placeholder="Credits" value={amounts[campaign.id] || ''} onChange={event => setAmounts({...amounts, [campaign.id]: event.target.value})} /><Button busy={busy === campaign.id} onClick={() => contribute(campaign)}>Contribute</Button></div> : null}</article>)}</div> : <EmptyState icon={HeartHandshake} title="No active fundraisers">You can still support this group through its Rotur page.</EmptyState>}
                             </section>
-                            {products.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><span>Memberships</span><h1>Join in another way</h1></div></div><div className={styles.cardGrid}>{products.map(product => <article className={styles.dataCard} key={product.id}><span className={styles.cardType}><Coins size={14} /> {formatNumber(product.price_credits || product.price)} credits</span><h2>{product.name || product.title}</h2><p>{product.description}</p><a href={roturGroupUrl} target="_blank" rel="noreferrer">Purchase on Rotur <ExternalLink size={13} /></a></article>)}</div></section> : null}
-                            {announcements.length || events.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><span>Updates</span><h1>From the group</h1></div></div><div className={styles.cardGrid}>{announcements.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><Megaphone size={14} /> Announcement</span><h2>{item.title}</h2><p>{item.body}</p></article>)}{events.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><CalendarDays size={14} /> Event</span><h2>{item.title}</h2><p>{item.description}</p></article>)}</div></section> : null}
+                            {products.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><h1>Join with a membership</h1></div></div><div className={styles.cardGrid}>{products.map(product => <article className={styles.dataCard} key={product.id}><span className={styles.cardType}><Coins size={14} /> {formatNumber(product.price_credits || product.price)} credits</span><h2>{product.name || product.title}</h2><p>{product.description}</p><a href={roturGroupUrl} target="_blank" rel="noreferrer">Purchase on Rotur <ExternalLink size={13} /></a></article>)}</div></section> : null}
+                            {announcements.length || events.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><h1>Updates from {group.name}</h1></div></div><div className={styles.cardGrid}>{announcements.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><Megaphone size={14} /> Announcement</span><h2>{item.title}</h2><p>{item.body}</p></article>)}{events.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><CalendarDays size={14} /> Event</span><h2>{item.title}</h2><p>{item.description}</p></article>)}</div></section> : null}
                         </div>
                     ) : null}
                 </div>

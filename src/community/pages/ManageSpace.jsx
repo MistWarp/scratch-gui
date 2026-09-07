@@ -595,7 +595,7 @@ const ManageSpace = () => {
             ) : null}
             <Link to={`/spaces/${id}`} className={styles.back}><ArrowLeft size={15} /> Back to {space.title}</Link>
             <header className={styles.manageHeader}>
-                <div><span>{space.kind === 'challenge' ? 'Manage challenge' : 'Manage space'}</span><h1>{space.title}</h1></div>
+                <div><h1>Manage {space.title}</h1></div>
                 <Link to={`/spaces/${id}`}>View public page</Link>
             </header>
             <div className={styles.manageLayout}>

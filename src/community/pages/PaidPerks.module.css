@@ -13,14 +13,6 @@
     margin-bottom: 28px;
 }
 
-.hero > span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--accent-strong);
-    font-weight: 700;
-}
-
 .hero h1 {
     margin: 12px 0 10px;
     color: var(--mw-text);

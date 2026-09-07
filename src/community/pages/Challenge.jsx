@@ -289,8 +289,8 @@ const Challenge = ({id, space, user, login, load}) => {
             {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong><UserLink username={space.owner}>{space.owner}</UserLink> invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
             <header className={styles.hero}>
                 <div className={styles.heroMain}>
-                    <span className={styles.phase}>{phase.label}</span>
                     <h1>{space.title}</h1>
+                    <p>{phase.label}. {phase.detail}</p>
                     <p>{space.description || 'The host has not added a description yet.'}</p>
                     <div className={styles.host}><Avatar username={space.owner} size={30} /><span>Hosted by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
                 </div>
@@ -310,7 +310,7 @@ const Challenge = ({id, space, user, login, load}) => {
             {tab === 'overview' ? (
                 <div className={styles.overview}>
                     <div className={styles.mainColumn}>
-                        {space.theme ? <section className={styles.theme}><span>Theme</span><strong>{space.theme}</strong></section> : null}
+                        {space.theme ? <section className={styles.theme}><strong>Challenge theme: {space.theme}</strong></section> : null}
                         <section className={styles.panel}><h2>About this challenge</h2><div className={styles.longText}><RichText text={space.description} /></div></section>
                         <section className={styles.panel}><h2>Rules</h2><div className={styles.longText}><RichText text={space.rules || 'The host has not added rules yet.'} /></div></section>
                     </div>
