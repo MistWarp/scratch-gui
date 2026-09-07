@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import CrashMessageComponent from '../components/crash-message/crash-message.jsx';
 import log from '../lib/utils/log.js';
+import {reportSiteError} from '../lib/error-reporter.js';
 
 class ErrorBoundary extends React.Component {
     constructor (props) {
@@ -41,6 +42,12 @@ class ErrorBoundary extends React.Component {
             `Unhandled Error with action='${this.props.action}': ${error.stack}`,
             `Component stack: ${errorInfo.componentStack}`
         ].join('\n'));
+        reportSiteError({
+            message: error.message || String(error),
+            stack: error.stack || '',
+            kind: 'react',
+            componentStack: errorInfo.componentStack || ''
+        });
     }
 
     handleBack () {

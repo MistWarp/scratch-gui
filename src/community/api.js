@@ -279,6 +279,7 @@ const api = {
     quotaResetConfirm: key => request('/me/quota/reset/confirm', {method: 'POST', body: {key}}),
     report: (type, target, reason, context, targetUser) =>
         request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser}}),
+    reportError: payload => request('/errors', {method: 'POST', body: payload}),
     admin: {
         reports: () => request('/admin/reports'),
         reportAction: (id, action, reason) =>
@@ -318,7 +319,12 @@ const api = {
                 return response.text();
             }),
         indexProjectExtensions: (id, sources) =>
-            request(`/admin/projects/${id}/extensions/index`, {method: 'POST', body: {sources}})
+            request(`/admin/projects/${id}/extensions/index`, {method: 'POST', body: {sources}}),
+        siteErrors: (show = 'open') => request(`/admin/errors?show=${encodeURIComponent(show)}`, {cache: false}),
+        resolveSiteError: (id, resolved = true) =>
+            request('/admin/errors/resolve', {method: 'POST', body: {id, resolved}}),
+        deleteSiteError: id =>
+            request('/admin/errors/delete', {method: 'POST', body: {id}})
     },
     news: () => request('/news'),
     newsItem: id => request(`/news/${encodeURIComponent(id)}`),

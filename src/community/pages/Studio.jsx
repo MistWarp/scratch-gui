@@ -10,7 +10,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import {formatPlaytime} from '../format';
 import styles from './Studio.module.css';
@@ -105,7 +105,7 @@ const Studio = ({id, space, user, login, load}) => {
                     </dl>
                 </aside>
                 <section className={styles.content}>
-                    <SectionTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} activeClassName={styles.tabActive} ariaLabel="Studio sections" />
+                    <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Studio sections" />
                     {error ? <p className={styles.error}>{error}</p> : null}
                     {tab === 'projects' ? <section className={styles.projects}><header><div><h2>Projects</h2><p>Projects collected and shared by this studio.</p></div>{space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}</header>{space.projects.length ? <div className={styles.projectGrid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.empty}><FolderOpen size={28} /><strong>No projects yet</strong><span>{space.openSubmissions ? 'Add the first project to this studio.' : 'The curators have not added anything yet.'}</span></div>}</section> : null}
                     {tab === 'comments' ? <section className={styles.comments}><header><MessageCircle size={19} /><div><h2>Comments</h2><p>Talk with the studio community.</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`studio ${space.title}`} /></section> : null}

@@ -190,28 +190,9 @@
     color: var(--accent-strong);
 }
 
+/* Spacing around the shared UnderlineTabs; tab visuals live there. */
 .tabs {
-    display: flex;
-    gap: 22px;
     margin: 22px 0;
-    border-bottom: 1px solid var(--border);
-}
-
-.tabs button {
-    margin-bottom: -1px;
-    padding: 10px 1px;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    color: var(--text-dim);
-    background: transparent;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.tabs .tabActive {
-    border-bottom-color: var(--accent);
-    color: var(--mw-text);
 }
 
 .overview {
@@ -646,9 +627,5 @@
     .timeline > div {
         border-right: 0;
         border-bottom: 1px solid var(--border);
-    }
-
-    .tabs {
-        overflow-x: auto;
     }
 }

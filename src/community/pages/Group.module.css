@@ -42,66 +42,6 @@
     grid-area: rail;
 }
 
-.tabs {
-    display: flex;
-    gap: 24px;
-    overflow-x: auto;
-    border-bottom: 1px solid var(--mw-border);
-    scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.tab {
-    position: relative;
-    flex: 0 0 auto;
-    padding: 11px 1px 14px;
-    border: 0;
-    background: transparent;
-    color: var(--text-dim);
-    cursor: pointer;
-    font: inherit;
-    font-size: .9rem;
-    font-weight: 700;
-}
-
-.tab > span {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.tab b {
-    min-width: 20px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: var(--bg-raised);
-    color: var(--text-dim);
-    font-size: .7rem;
-}
-
-.tab::after {
-    position: absolute;
-    right: 0;
-    bottom: -1px;
-    left: 0;
-    height: 2px;
-    border-radius: 2px 2px 0 0;
-    background: var(--accent);
-    content: '';
-    opacity: 0;
-}
-
-.activeTab {
-    color: var(--mw-text);
-}
-
-.activeTab::after {
-    opacity: 1;
-}
-
 .contentSection {
     padding-top: 28px;
 }

@@ -4,7 +4,8 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
     AppWindow, AtSign, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
-    MessageCircle, Reply, ShieldAlert, UserPlus, GitPullRequest, GitMerge, Layers3, Lightbulb, Star, Users
+    MessageCircle, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
+    Lightbulb, Star
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
@@ -18,55 +19,58 @@ import {
     subscribeNotifications
 } from '../../lib/rotur/client.js';
 import {timeAgo} from '../format';
+import {fetchCommentPreview} from '../comment-preview.js';
 import {interleaveTimeline, postUrl} from '../following-feed.js';
 import styles from './Notifications.module.css';
 import {getNotificationPreferences, categoryForNotification} from '../notification-preferences';
 
-const ICONS = {
-    project_shared: Users,
-    love: Heart,
-    like_milestone: Heart,
-    follower_milestone: Users,
-    comment: MessageCircle,
-    profile_comment: MessageCircle,
-    reply: Reply,
-    remix: GitFork,
-    follow: UserPlus,
-    mention: AtSign,
-    like: Heart,
-    repost: GitFork,
-    group_invite: UserPlus,
-    group_request_accepted: UserPlus,
-    group_request_declined: UserPlus,
-    group_kicked: ShieldAlert,
-    group_banned: ShieldAlert,
-    group_ownership_transferred: ShieldAlert,
-    cosmetic_gift: Coins,
-    item_received: Coins,
-    item_sold: Coins,
-    item_purchased: Coins,
-    purchase: Coins,
-    donation: Coins,
-    standing: ShieldAlert,
-    moderation: ShieldAlert,
-    news: Megaphone,
-    report_update: Flag,
-    contribution: GitPullRequest,
-    contribution_merged: GitMerge,
-    space_project: Layers3,
-    space_comment: MessageCircle,
-    space_curator_invite: UserPlus,
-    space_curator_accepted: Users,
-    space_curator_declined: Users,
-    space_curator_removed: ShieldAlert,
-    challenge_judge_invite: Gavel,
-    challenge_judge_accepted: Gavel,
-    challenge_join: UserPlus,
-    project_feedback: Lightbulb,
-    project_review: Star,
-    roadmap_comment: Lightbulb,
-    notification: AppWindow
+const TYPE_STYLE = {
+    project_shared: {icon: Users, color: '#38b8a5'},
+    love: {icon: Heart, color: '#e5639c'},
+    like: {icon: Heart, color: '#e5639c'},
+    like_milestone: {icon: Heart, color: '#e5639c'},
+    follower_milestone: {icon: Users, color: '#38b8a5'},
+    comment: {icon: MessageCircle, color: '#4c8dff'},
+    profile_comment: {icon: MessageCircle, color: '#4c8dff'},
+    space_comment: {icon: MessageCircle, color: '#4c8dff'},
+    roadmap_comment: {icon: Lightbulb, color: '#e0a63c'},
+    reply: {icon: Reply, color: '#3fae6a'},
+    remix: {icon: GitFork, color: '#ef8f3c'},
+    repost: {icon: GitFork, color: '#ef8f3c'},
+    follow: {icon: UserPlus, color: '#38b8a5'},
+    mention: {icon: AtSign, color: '#9a6ff0'},
+    group_invite: {icon: UserPlus, color: '#38b8a5'},
+    group_request_accepted: {icon: UserPlus, color: '#3fae6a'},
+    group_request_declined: {icon: UserPlus, color: '#e35d6a'},
+    group_kicked: {icon: ShieldAlert, color: '#e35d6a'},
+    group_banned: {icon: ShieldAlert, color: '#e35d6a'},
+    group_ownership_transferred: {icon: ShieldAlert, color: '#e0a63c'},
+    cosmetic_gift: {icon: Coins, color: '#e0a63c'},
+    item_received: {icon: Coins, color: '#e0a63c'},
+    item_sold: {icon: Coins, color: '#e0a63c'},
+    item_purchased: {icon: Coins, color: '#e0a63c'},
+    purchase: {icon: Coins, color: '#e0a63c'},
+    donation: {icon: Coins, color: '#e0a63c'},
+    standing: {icon: ShieldAlert, color: '#e35d6a'},
+    moderation: {icon: ShieldAlert, color: '#e35d6a'},
+    news: {icon: Megaphone, color: '#9a6ff0'},
+    report_update: {icon: Flag, color: '#e35d6a'},
+    contribution: {icon: GitPullRequest, color: '#4c8dff'},
+    contribution_merged: {icon: GitMerge, color: '#3fae6a'},
+    space_project: {icon: Layers3, color: '#ef8f3c'},
+    space_curator_invite: {icon: UserPlus, color: '#38b8a5'},
+    space_curator_accepted: {icon: Users, color: '#3fae6a'},
+    space_curator_declined: {icon: Users, color: '#e35d6a'},
+    space_curator_removed: {icon: ShieldAlert, color: '#e35d6a'},
+    challenge_judge_invite: {icon: Gavel, color: '#e0a63c'},
+    challenge_judge_accepted: {icon: Gavel, color: '#3fae6a'},
+    challenge_join: {icon: UserPlus, color: '#38b8a5'},
+    project_feedback: {icon: Lightbulb, color: '#e0a63c'},
+    project_review: {icon: Star, color: '#e0a63c'},
+    notification: {icon: AppWindow, color: '#8a93a6'}
 };
+
+const typeStyle = type => TYPE_STYLE[type] || TYPE_STYLE.notification;
 
 const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
 
@@ -97,6 +101,52 @@ const REPORT_OUTCOMES = {
 const escapeRegex = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const linkify = text => <RichText text={text} />;
+
+// Comment-bearing notifications carry no text (Rotur relays strip the
+// payload), so resolve the comment through its thread: `?anchor=` returns
+// just that thread. Rendered like a comment section, as a block under the
+// headline — never nested inside the headline link, since rendered
+// mentions/URLs are links themselves.
+const PREVIEW_TYPES = new Set([
+    'comment',
+    'reply',
+    'mention',
+    'profile_comment',
+    'space_comment',
+    'roadmap_comment'
+]);
+
+const canPreview = n => {
+    if (typeof n.preview === 'string' && n.preview.trim()) return true;
+    if (PREVIEW_TYPES.has(n.type)) return true;
+    return n.type === 'like_milestone' && n.contentKind === 'comment';
+};
+
+const CommentPreview = ({n}) => {
+    const inline = typeof n.preview === 'string' && n.preview.trim() ? n.preview : null;
+    const [fetched, setFetched] = useState(null);
+    useEffect(() => {
+        if (inline || !canPreview(n)) return () => {};
+        let cancelled = false;
+        fetchCommentPreview(n).then(text => {
+            if (!cancelled && text) setFetched(text);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [inline, n.id]);
+    const text = inline || fetched;
+    if (!text) return null;
+    return (
+        <div className={styles.preview}>
+            <RichText text={text} />
+        </div>
+    );
+};
+
+CommentPreview.propTypes = {
+    n: PropTypes.object.isRequired
+};
 
 // Generic notifications carry the sender in `title` (MistWarp posts
 // title = actor) and the full sentence in `body`; drop the duplicated
@@ -272,9 +322,8 @@ const GenericNotification = ({n}) => {
             <>
                 <span className={styles.avatarWrap}>
                     <Link to={`/users/${sender}`}>
-                        <Avatar username={sender} size={40} />
+                        <Avatar username={sender} size={32} />
                     </Link>
-                    <span className={styles.iconBadge}><AtSign size={12} /></span>
                 </span>
                 <div className={styles.text}>
                     <Link to={`/users/${sender}`} className={styles.actor}>{sender}</Link>
@@ -286,7 +335,7 @@ const GenericNotification = ({n}) => {
     }
     return (
         <>
-            <span className={styles.sysAvatar}><AppWindow size={20} /></span>
+            <span className={styles.sysAvatar}><AppWindow size={16} /></span>
             <div className={styles.text}>
                 {content}
                 {showSource ? <span className={styles.sourceTag}>{n.source}</span> : null}
@@ -305,8 +354,7 @@ const FollowingPost = ({post}) => {
     return (
         <div className={styles.followingPost}>
             <span className={styles.avatarWrap}>
-                <Link to={`/users/${post.user}`}><Avatar username={post.user} size={40} /></Link>
-                <span className={styles.iconBadge}><MessageCircle size={12} /></span>
+                <Link to={`/users/${post.user}`}><Avatar username={post.user} size={32} /></Link>
             </span>
             <div className={styles.text}>
                 <div className={styles.postHead}>
@@ -327,6 +375,86 @@ const FollowingPost = ({post}) => {
 
 FollowingPost.propTypes = {
     post: PropTypes.object.isRequired
+};
+
+const targetFor = (n, viewerName) => {
+    if (isMilestoneNotification(n)) return {to: milestoneLink(n)};
+    if (GROUP_TYPES.includes(n.type) && groupUrl(n)) return {href: groupUrl(n)};
+    if (n.spaceId) return {to: `/spaces/${n.spaceId}`};
+    if (n.roadmapId) return {to: `/roadmap#idea-${n.roadmapId}`};
+    if (n.projectId && n.pull) return {to: `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`};
+    if (n.projectId) return {to: `${projectUrl(n.projectId)}${commentAnchor(n)}`};
+    if (n.type === 'profile_comment' || n.profile) {
+        return {to: `/users/${n.profile || viewerName}${commentAnchor(n)}`};
+    }
+    if (n.type === 'news' && n.newsId) return {to: '/news'};
+    return null;
+};
+
+// Uniform row: avatar (or a flat tinted icon when there is no actor),
+// a metadata line, and a plain comment preview below it.
+const NotificationRow = ({n, viewerName}) => {
+    const {icon: Icon, color} = typeStyle(n.type);
+    const time = timeAgo(n.created || n.timestamp);
+    const itemClass = n.read ? styles.item : styles.itemUnread;
+    const target = targetFor(n, viewerName);
+
+    let title;
+    if (isMilestoneNotification(n)) {
+        title = <Link to={milestoneLink(n)} className={styles.body}>{milestoneText(n)}</Link>;
+    } else if (SYSTEM_TYPES.includes(n.type)) {
+        title = target ?
+            <Link to={target.to} className={styles.body}>{describe(n)}</Link> :
+            <span className={styles.body}>{describe(n)}</span>;
+    } else {
+        const actor = actorFor(n);
+        if (!actor) return null;
+        const body = describe(n);
+        const linked = target && target.href ?
+            <a href={target.href} target="_blank" rel="noreferrer" className={styles.body}>{body}</a> :
+            target ?
+                <Link to={target.to} className={styles.body}>{body}</Link> :
+                body;
+        title = (
+            <>
+                <Link to={`/users/${actor}`} className={styles.actor}>{actor}</Link>
+                {' '}
+                {linked}
+            </>
+        );
+    }
+
+    const actor = actorFor(n);
+    const visual = actor ? (
+        <span className={styles.avatarWrap}>
+            <Link to={`/users/${actor}`}>
+                <Avatar username={actor} size={32} />
+            </Link>
+        </span>
+    ) : (
+        <span
+            className={styles.typeIcon}
+            style={{color, backgroundColor: `${color}1a`}}
+        ><Icon size={16} /></span>
+    );
+
+    return (
+        <div className={itemClass}>
+            {visual}
+            <div className={styles.main}>
+                <div className={styles.headline}>
+                    <span className={styles.title}>{title}</span>
+                    <span className={styles.time}>{time}</span>
+                </div>
+                <CommentPreview n={n} />
+            </div>
+        </div>
+    );
+};
+
+NotificationRow.propTypes = {
+    n: PropTypes.object.isRequired,
+    viewerName: PropTypes.string
 };
 
 const Notifications = ({hideHeading}) => {
@@ -435,97 +563,15 @@ const Notifications = ({hideHeading}) => {
                         if (n.timelineType === 'following-post') {
                             return <FollowingPost key={`post:${n.id}`} post={n} />;
                         }
-                        const Icon = ICONS[n.type] || Heart;
-                        const ts = n.created || n.timestamp;
-                        const time = timeAgo(ts);
-
-                        if (isMilestoneNotification(n)) {
-                            return (
-                                <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                    <span className={styles.sysAvatar}><Icon size={20} /></span>
-                                    <div className={styles.text}>
-                                        <Link to={milestoneLink(n)} className={styles.body}>{milestoneText(n)}</Link>
-                                    </div>
-                                    <span className={styles.time}>{time}</span>
-                                </div>
-                            );
-                        }
                         if (n.type === 'notification') {
                             return (
                                 <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
                                     <GenericNotification n={n} />
-                                    <span className={styles.time}>{time}</span>
+                                    <span className={styles.time}>{timeAgo(n.created || n.timestamp)}</span>
                                 </div>
                             );
                         }
-
-                        if (SYSTEM_TYPES.includes(n.type)) {
-                            return (
-                                <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                    <span className={styles.sysAvatar}><Icon size={20} /></span>
-                                    <div className={styles.text}>
-                                        {n.type === 'news' && n.newsId ? (
-                                            <Link to="/news" className={styles.body}>{describe(n)}</Link>
-                                        ) : (
-                                            <span className={styles.body}>{describe(n)}</span>
-                                        )}
-                                    </div>
-                                    <span className={styles.time}>{time}</span>
-                                </div>
-                            );
-                        }
-
-                        const actor = actorFor(n);
-                        if (!actor) {
-                            return null;
-                        }
-                        const groupLink = GROUP_TYPES.includes(n.type) ? groupUrl(n) : null;
-                        const body = groupLink ? (
-                            <a href={groupLink} target="_blank" rel="noreferrer" className={styles.body}>
-                                {describe(n)}
-                            </a>
-                        ) : describe(n);
-                        return (
-                            <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
-                                <span className={styles.avatarWrap}>
-                                    <Link to={`/users/${actor}`}>
-                                        <Avatar username={actor} size={40} />
-                                    </Link>
-                                    <span className={styles.iconBadge}><Icon size={12} /></span>
-                                </span>
-                                <div className={styles.text}>
-                                    <Link to={`/users/${actor}`} className={styles.actor}>{actor}</Link>
-                                    {' '}
-                                    {n.spaceId ? (
-                                        <Link
-                                            to={`/spaces/${n.spaceId}`}
-                                            className={styles.body}
-                                        >{body}</Link>
-                                    ) : n.roadmapId ? (
-                                        <Link
-                                            to={`/roadmap#idea-${n.roadmapId}`}
-                                            className={styles.body}
-                                        >{body}</Link>
-                                    ) : n.projectId && n.pull ? (
-                                        <Link
-                                            to={`/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`}
-                                            className={styles.body}
-                                        >{body}</Link>
-                                    ) : n.projectId ? (
-                                        <Link
-                                            to={`${projectUrl(n.projectId)}${commentAnchor(n)}`}
-                                            className={styles.body}
-                                        >{body}</Link>
-                                    ) : (n.type === 'profile_comment' || n.profile) ? (
-                                        <Link
-                                            to={`/users/${n.profile || user.username}${commentAnchor(n)}`}
-                                            className={styles.body}
-                                        >{body}</Link>
-                                    ) : body}
-                                </div>
-                                <span className={styles.time}>{time}</span>
-                            </div>
-                        );
+                        return <NotificationRow key={n.id} n={n} viewerName={viewerName} />;
                     })}
                 </div>
             ) : items.length ? (

@@ -25,6 +25,7 @@ const SECTIONS = [
     {key: 'bans', label: 'Bans', icon: Ban, group: 'Moderation'},
     {key: 'projects', label: 'Projects', icon: FolderOpen, group: 'Content'},
     {key: 'extensions', label: 'Extensions', icon: Puzzle, group: 'Content'},
+    {key: 'errors', label: 'Errors', icon: AlertTriangle, group: 'System'},
     {key: 'admins', label: 'Admins', icon: ShieldCheck, group: 'Access'}
 ];
 
@@ -1765,6 +1766,206 @@ const ExtensionManager = () => {
     );
 };
 
+const ErrorManager = () => {
+    const [data, setData] = useState(null);
+    const [show, setShow] = useState('open');
+    const [error, setError] = useState('');
+    const [query, setQuery] = useState('');
+    const [expanded, setExpanded] = useState(null);
+    const [busy, setBusy] = useState('');
+
+    const load = useCallback(nextShow => {
+        setError('');
+        return api.admin.siteErrors(nextShow || show)
+            .then(result => setData(result))
+            .catch(e => setError(e.message || 'Could not load errors.'));
+    }, [show]);
+
+    useEffect(() => {
+        load(show);
+    }, [show, load]);
+
+    const setResolved = async (id, resolved) => {
+        setBusy(id);
+        setError('');
+        try {
+            await api.admin.resolveSiteError(id, resolved);
+            setData(current => {
+                if (!current) return current;
+                const remaining = (current.errors || []).filter(item => item._id !== id);
+                const updated = (current.errors || []).map(item => {
+                    if (item._id === id) return {...item, resolved};
+                    return item;
+                });
+                return {
+                    ...current,
+                    errors: show === 'open' ? remaining : updated,
+                    openCount: resolved ?
+                        Math.max(0, Number(current.openCount || 1) - 1) :
+                        Number(current.openCount || 0) + 1
+                };
+            });
+        } catch (e) {
+            setError(e.message || 'Could not update that error.');
+        } finally {
+            setBusy('');
+        }
+    };
+
+    const remove = async id => {
+        setBusy(id);
+        setError('');
+        try {
+            await api.admin.deleteSiteError(id);
+            setData(current => {
+                if (!current) return current;
+                return {
+                    ...current,
+                    errors: (current.errors || []).filter(item => item._id !== id)
+                };
+            });
+            if (expanded === id) setExpanded(null);
+        } catch (e) {
+            setError(e.message || 'Could not delete that error.');
+        } finally {
+            setBusy('');
+        }
+    };
+
+    if (!data) {
+        return (
+            <div>
+                <h2>Errors</h2>
+                <p className={error ? styles.error : styles.status}>{error || 'Loading…'}</p>
+            </div>
+        );
+    }
+
+    const search = query.trim().toLowerCase();
+    const errors = (data.errors || []).filter(item => {
+        if (!search) return true;
+        return [
+            item.message,
+            item.stack,
+            item.url,
+            item.username,
+            item.userAgent,
+            item.projectId,
+            item.kind,
+            item.viewport,
+            item.appVersion
+        ].some(value => typeof value === 'string' && value.toLowerCase().includes(search));
+    });
+
+    return (
+        <div>
+            <h2>Errors</h2>
+            <input
+                type="search"
+                className={`${styles.input} ${styles.extensionSearch}`}
+                placeholder="Search errors"
+                aria-label="Search errors"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+            />
+            <div className={styles.extensionTabs}>
+                {[
+                    {value: 'open', label: `Open (${data.openCount || 0})`},
+                    {value: 'resolved', label: 'Resolved'},
+                    {value: 'all', label: 'All'}
+                ].map(item => (
+                    <button
+                        key={item.value}
+                        className={show === item.value ? styles.extensionTabActive : styles.extensionTab}
+                        onClick={() => {
+                            setShow(item.value);
+                            setExpanded(null);
+                        }}
+                    >{item.label}</button>
+                ))}
+            </div>
+            {error ? <p className={styles.error}>{error}</p> : null}
+            {errors.length ? (
+                <div className={styles.list}>
+                    {errors.map(item => {
+                        const id = item._id;
+                        const isOpen = expanded === id;
+                        return (
+                            <div
+                                key={id}
+                                className={styles.extensionRow}
+                            >
+                                <div className={styles.row}>
+                                    <div className={styles.rowInfo}>
+                                        <span className={styles.rowTitle}>{item.message || 'Unknown error'}</span>
+                                        <span className={styles.rowMeta}>
+                                            {`${item.kind || 'uncaught'}${item.username ? ` · @${item.username}` : ' · anonymous'}${timeAgo(item.created) ? ` · ${timeAgo(item.created)} ago` : ''}`}
+                                        </span>
+                                        {item.url ? (
+                                            <span className={styles.extensionUrl}>{item.url}</span>
+                                        ) : null}
+                                    </div>
+                                    <div className={styles.rowActions}>
+                                        <button
+                                            className={styles.secondary}
+                                            onClick={() => setExpanded(isOpen ? null : id)}
+                                        >{isOpen ? 'Hide trace' : 'View trace'}</button>
+                                        {item.resolved ? (
+                                            <button
+                                                className={styles.secondary}
+                                                disabled={busy === id}
+                                                onClick={() => setResolved(id, false)}
+                                            >Reopen</button>
+                                        ) : (
+                                            <button
+                                                className={styles.secondary}
+                                                disabled={busy === id}
+                                                onClick={() => setResolved(id, true)}
+                                            >Resolve</button>
+                                        )}
+                                        <button
+                                            className={styles.danger}
+                                            disabled={busy === id}
+                                            onClick={() => remove(id)}
+                                        >Delete</button>
+                                    </div>
+                                </div>
+                                {isOpen ? (
+                                    <div>
+                                        <span className={styles.rowMeta}>
+                                            {[
+                                                item.projectId ? `Project: ${item.projectId}` : null,
+                                                item.viewport ? `Viewport: ${item.viewport}` : null,
+                                                item.appVersion ? `Version: ${item.appVersion}` : null,
+                                                item.created ? formatDateTime(item.created, 'Date unavailable') : null
+                                            ].filter(Boolean).join(' · ')}
+                                        </span>
+                                        {item.userAgent ? (
+                                            <span className={styles.rowMeta}>{item.userAgent}</span>
+                                        ) : null}
+                                        {item.stack ? (
+                                            <pre className={styles.extensionSource}>{item.stack}</pre>
+                                        ) : (
+                                            <p className={styles.status}>No stack trace was captured.</p>
+                                        )}
+                                        {item.componentStack ? (
+                                            <pre className={styles.extensionSource}>{item.componentStack}</pre>
+                                        ) : null}
+                                    </div>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <p className={styles.status}>
+                    {search ? 'No matching errors.' : 'No errors here.'}
+                </p>
+            )}
+        </div>
+    );
+};
+
 const Admin = () => {
     const {user, loading} = useUser();
     const [reports, setReports] = useState(null);
@@ -2101,6 +2302,12 @@ const Admin = () => {
                     {active === 'extensions' ? (
                         <section className={styles.card}>
                             <ExtensionManager />
+                        </section>
+                    ) : null}
+
+                    {active === 'errors' ? (
+                        <section className={styles.card}>
+                            <ErrorManager />
                         </section>
                     ) : null}
 

@@ -23,7 +23,7 @@ import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import GroupTag from '../components/GroupTag.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
 import Button from '../components/ui/Button.jsx';
 import styles from './Group.module.css';
@@ -171,12 +171,12 @@ const Group = () => {
     const groupIcon = group.icon_url || `https://api.rotur.dev/groups/${encodeURIComponent(tag)}/icon.jpg`;
 
     const tabItems = [
-        {key: 'projects', label: <span>Projects <b>{projects.length}</b></span>},
-        {key: 'studios', label: <span>Studios <b>{studios.length}</b></span>},
-        {key: 'challenges', label: <span>Challenges <b>{challenges.length}</b></span>},
-        {key: 'collections', label: <span>Collections <b>{collections.length}</b></span>},
-        {key: 'members', label: <span>Members <b>{memberCount}</b></span>},
-        {key: 'support', label: <span>Support <b>{campaigns.length + products.length}</b></span>}
+        {key: 'projects', label: <>Projects <b>{projects.length}</b></>},
+        {key: 'studios', label: <>Studios <b>{studios.length}</b></>},
+        {key: 'challenges', label: <>Challenges <b>{challenges.length}</b></>},
+        {key: 'collections', label: <>Collections <b>{collections.length}</b></>},
+        {key: 'members', label: <>Members <b>{memberCount}</b></>},
+        {key: 'support', label: <>Support <b>{campaigns.length + products.length}</b></>}
     ];
 
     const createLink = (kind, label) => (manager ? (
@@ -195,7 +195,7 @@ const Group = () => {
             <Link className={styles.backLink} to="/groups"><ArrowLeft size={16} /> All groups</Link>
             <div className={styles.layout}>
                 <div className={styles.mainColumn}>
-                    <SectionTabs items={tabItems} value={activeTab} onChange={selectTab} className={styles.tabs} itemClassName={styles.tab} activeClassName={styles.activeTab} ariaLabel="Group content" />
+                    <UnderlineTabs items={tabItems} value={activeTab} onChange={selectTab} ariaLabel="Group content" />
 
                     {error ? <p className={styles.error}>{error}</p> : null}
                     {message ? <p className={styles.message}>{message}</p> : null}
