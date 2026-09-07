@@ -539,17 +539,20 @@ const mapStateToProps = (state, {soundIndex}) => {
     const sprite = state.scratchGui.vm.editingTarget.sprite;
     // Make sure the sound index doesn't go out of range.
     const index = soundIndex < sprite.sounds.length ? soundIndex : sprite.sounds.length - 1;
-    const sound = state.scratchGui.vm.editingTarget.sprite.sounds[index];
+    const sound = index >= 0 ? sprite.sounds[index] : null;
+    // A sound whose asset failed to load never gets a soundId, so the audio
+    // engine has no player for it and getSoundBuffer returns null. Render the
+    // editor with empty data instead of crashing.
     const audioBuffer = state.scratchGui.vm.getSoundBuffer(index);
     return {
-        isStereo: audioBuffer.numberOfChannels !== 1,
-        duration: sound.sampleCount / sound.rate,
-        size: sound.asset ? sound.asset.data.byteLength : 0,
-        soundId: sound.soundId,
-        sampleRate: audioBuffer.sampleRate,
-        samples: audioBuffer.getChannelData(0),
+        isStereo: audioBuffer ? audioBuffer.numberOfChannels !== 1 : false,
+        duration: sound && sound.rate ? sound.sampleCount / sound.rate : 0,
+        size: sound && sound.asset && sound.asset.data ? sound.asset.data.byteLength : 0,
+        soundId: sound ? sound.soundId : null,
+        sampleRate: audioBuffer ? audioBuffer.sampleRate : (sound && sound.rate ? sound.rate : 48000),
+        samples: audioBuffer ? audioBuffer.getChannelData(0) : new Float32Array(0),
         isFullScreen: state.scratchGui.mode.isFullScreen,
-        name: sound.name,
+        name: sound ? sound.name : '',
         vm: state.scratchGui.vm
     };
 };
