@@ -284,7 +284,10 @@ const exportCurrentMwp = async (metadata, {
     });
     let includeObjectOids = null;
     let delta = false;
-    if (!includeWorktree && baseHead) {
+    // A worktree-only save (no new commit) still shares the stored base, so
+    // emit it as a delta too. A shallow checkout does not contain the base
+    // objects, and traversing them throws "Could not find <oid>".
+    if (baseHead) {
         const known = assumeBaseKnown ?
             new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectReachableObjectOids(baseHead);
         includeObjectOids = new Set();
