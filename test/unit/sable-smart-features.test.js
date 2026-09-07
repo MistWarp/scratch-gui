@@ -41,7 +41,7 @@ describe('Sable smart features', () => {
         expect(url).toBe('https://sable.rotur.dev/v1/chat/completions');
         expect(options.headers.Authorization).toBe('Bearer rotur_test_token');
         const request = JSON.parse(options.body);
-        expect(request.model).toBe('sable/spark');
+        expect(request.model).toBe('z-ai/glm-5.3-flash');
         expect(request.sable).toEqual({personality: 'none', remember: false, builtin_tools: false});
         expect(JSON.parse(request.messages[1].content)).toEqual({diff});
         expect(request.tools[0].function.name).toBe('commit');

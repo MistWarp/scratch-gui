@@ -117,10 +117,18 @@ test('only extensions discovered in a platform project use its saved source URL'
     expect(await component.rewriteExtensionURL(pastedText)).toBe(pastedText);
 
     const storedExtension = 'https://example.com/stored.js';
+    component.props.vm._mwInstallingWholeProject = true;
     await component.canLoadExtensionFromProject(storedExtension);
+    component.props.vm._mwInstallingWholeProject = null;
     expect(await component.rewriteExtensionURL(storedExtension)).toMatch(
         /^https:\/\/api\.mistwarp\.org\/v1\/projects\/project-1\/extensions\/[a-f0-9]{64}\/source\?k=secret$/
     );
+
+    const spriteExtension = 'https://example.com/sprite.js';
+    component.props.vm._mwInstallingWholeProject = false;
+    await component.canLoadExtensionFromProject(spriteExtension);
+    component.props.vm._mwInstallingWholeProject = null;
+    expect(await component.rewriteExtensionURL(spriteExtension)).toBe(spriteExtension);
 
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
