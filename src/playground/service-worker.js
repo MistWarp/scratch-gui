@@ -110,6 +110,10 @@ self.addEventListener('fetch', event => {
     // Skip Chrome extension requests
     if (url.protocol === 'chrome-extension:') return;
 
+    // Never cache the deploy version check; the update toast must always
+    // see the latest version.json from the network.
+    if (url.pathname.endsWith('/version.json')) return;
+
     // Handle different types of requests with appropriate strategies
     if (request.destination === 'script' || request.destination === 'style') {
         // Cache first for JS/CSS files

@@ -27,6 +27,7 @@ import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
 import {ChevronLeft} from 'lucide-react';
+import BuildVersionFooter from './build-version-footer.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 import {getSetting as getStageControlSetting, setSetting as setStageControlSetting,
@@ -1935,6 +1936,7 @@ class SettingsModalComponent extends React.Component {
                             {...this.props}
                             onStoreProjectOptions={this.handleStoreProjectOptions}
                         />
+                        <BuildVersionFooter />
                     </ModalSidebarContent>
                 </ModalSidebarLayout>
             </Modal>

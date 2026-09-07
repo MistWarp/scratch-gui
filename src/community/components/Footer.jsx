@@ -2,8 +2,12 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import {Github} from 'lucide-react';
 import {editorUrl} from '../api';
+import {BUILD_ID, BUILD_TIME, shortId} from '../../lib/build-version.js';
 import logo from '../assets/mistwarp-logo.png';
 import styles from './Footer.module.css';
+
+const commitUrl = BUILD_ID && BUILD_ID !== 'dev' ?
+    `https://github.com/MistWarp/scratch-gui/commit/${BUILD_ID}` : null;
 
 const Footer = () => (
     <footer className={styles.footer}>
@@ -69,6 +73,21 @@ const Footer = () => (
         </div>
         <div className={styles.legal}>
             MistWarp is a mod of TurboWarp and Scratch. Not affiliated with Scratch or the Scratch Foundation.
+            <span
+                className={styles.version}
+                title={BUILD_TIME ? `Deployed ${BUILD_TIME}` : BUILD_ID}
+            >
+                {' · Version '}
+                {commitUrl ? (
+                    <a
+                        href={commitUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {shortId(BUILD_ID)}
+                    </a>
+                ) : shortId(BUILD_ID)}
+            </span>
         </div>
     </footer>
 );

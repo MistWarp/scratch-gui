@@ -33,6 +33,9 @@ jobs:
       env:
         NODE_ENV: production
         ROUTING_STYLE: hash
+        MW_BUILD_ID: ${{ github.sha }}
+        MW_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
     - name: Upload pages artifact
       uses: actions/upload-pages-artifact@v3
       with:

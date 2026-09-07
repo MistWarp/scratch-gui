@@ -86,6 +86,16 @@
     font-size: 12.5px;
 }
 
+.version {
+    white-space: nowrap;
+}
+
+.version a {
+    color: var(--text-faint);
+    font-family: monospace;
+    text-decoration: underline;
+}
+
 @media (max-width: 760px) {
     .footer {
         display: none;

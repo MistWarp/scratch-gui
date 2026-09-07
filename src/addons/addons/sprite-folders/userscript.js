@@ -103,8 +103,8 @@ export default async ({addon, console, msg}) => {
         renderFileList();
     }
     
-    function createNewFolder() {
-        const folderName = prompt('Enter folder name:');
+    async function createNewFolder() {
+        const folderName = await addon.tab.prompt('New folder', 'Enter folder name:');
         if (!folderName) return;
         
         // Check if folder already exists
@@ -123,8 +123,12 @@ export default async ({addon, console, msg}) => {
         renderFileList();
     }
     
-    function renameFolder(oldFolderName) {
-        const newFolderName = prompt(`Rename folder "${oldFolderName}" to:`, oldFolderName);
+    async function renameFolder(oldFolderName) {
+        const newFolderName = await addon.tab.prompt(
+            'Rename folder',
+            `Rename folder "${oldFolderName}" to:`,
+            oldFolderName
+        );
         if (!newFolderName || newFolderName === oldFolderName) return;
         
         const hasSprites = vm.runtime.targets.some(t => {
@@ -575,9 +579,13 @@ export default async ({addon, console, msg}) => {
         const renameBtn = document.createElement('div');
         renameBtn.className = 'sa-context-menu-item';
         renameBtn.textContent = 'Rename';
-        renameBtn.addEventListener('click', () => {
+        renameBtn.addEventListener('click', async () => {
             menu.remove();
-            const newName = prompt('Rename sprite:', sprite.name || sprite.sprite?.name);
+            const newName = await addon.tab.prompt(
+                'Rename sprite',
+                'Rename sprite:',
+                sprite.name || sprite.sprite?.name
+            );
             if (newName && newName !== (sprite.name || sprite.sprite?.name)) {
                 vm.renameSprite(sprite.id, newName);
             }
