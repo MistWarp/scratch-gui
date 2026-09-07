@@ -461,7 +461,7 @@ const StatsOverview = ({view}) => {
         URL.revokeObjectURL(url);
     };
     const viewHeading = {
-        overview: ['Overview', 'Current platform health and totals.'],
+        overview: ['System overview', 'Current platform health and totals.'],
         storage: ['Storage & runtime', 'Local cache, durable R2 objects, upload queue, and memory.'],
         activity: ['Activity', 'Traffic, publishing, sessions, and player performance over time.']
     }[view || 'overview'];
@@ -470,7 +470,6 @@ const StatsOverview = ({view}) => {
         <div>
             <header className={styles.overviewHeader}>
                 <div>
-                    <span className={styles.eyebrow}>System</span>
                     <h2>{viewHeading[0]}</h2>
                     <p>{viewHeading[1]}</p>
                 </div>

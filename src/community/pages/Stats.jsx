@@ -27,7 +27,6 @@ const Stats = () => {
     return (
         <main className={styles.page}>
             <header className={styles.head}>
-                <span>Live platform data</span>
                 <h1>MistWarp by the numbers</h1>
                 <p>A public look at what the community is building and playing.</p>
             </header>

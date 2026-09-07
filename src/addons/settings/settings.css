@@ -443,12 +443,12 @@ a:active, a:focus {
         margin: 15px 0;
         padding: 10px;
     }
-    
+
     .tag-button {
         padding: 4px 8px;
         font-size: 11px;
     }
-    
+
     .tag-list {
         gap: 6px;
     }

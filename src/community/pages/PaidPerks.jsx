@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {Check, Crown, ExternalLink, X} from 'lucide-react';
+import {Check, ExternalLink, X} from 'lucide-react';
 import api from '../api.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -79,7 +79,6 @@ const PaidPerks = () => {
     return (
         <main className={styles.page}>
             <header className={styles.hero}>
-                <span><Crown size={22} /> MistWarp perks</span>
                 <h1>More MistWarp with your Rotur plan</h1>
                 <p>MistWarp is run by Rotur. Supporting Rotur supports MistWarp and unlocks higher limits and creator perks here.</p>
                 <div className={styles.actions}>

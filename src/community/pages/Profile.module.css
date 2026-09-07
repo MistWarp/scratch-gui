@@ -878,7 +878,6 @@
 }
 
 .adminPanelHead {display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px;}
-.adminPanelHead span {color: var(--accent-strong); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;}
 .adminPanelHead h2 {margin: 2px 0 0; font-size: 18px;}
 .adminPanelHead > strong {padding: 5px 8px; border-radius: 7px; background: var(--bg-raised); font-size: 12px; text-transform: capitalize;}
 

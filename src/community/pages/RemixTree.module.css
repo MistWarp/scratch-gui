@@ -27,17 +27,6 @@
     padding: 18px 20px;
 }
 
-.eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--accent-strong);
-    font-size: 12px;
-    font-weight: 750;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-}
-
 .header h1 {
     margin: 6px 0 4px;
     color: var(--mw-text);

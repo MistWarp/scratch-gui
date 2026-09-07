@@ -908,8 +908,8 @@ const Profile = () => {
                         <section className={styles.adminPanel} aria-labelledby="profile-admin-heading">
                             <div className={styles.adminPanelHead}>
                                 <div>
-                                    <span>Admin only</span>
                                     <h2 id="profile-admin-heading">Moderate @{adminUser.username}</h2>
+                                    <p>Only admins can see these tools.</p>
                                 </div>
                                 <strong>{adminUser.banned ? 'Banned' : (adminUser.standing?.level || 'Good standing')}</strong>
                             </div>

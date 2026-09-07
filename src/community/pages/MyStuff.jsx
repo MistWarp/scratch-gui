@@ -68,12 +68,43 @@ const visibilityLabel = project => {
     return 'Draft';
 };
 
-const Overview = ({stats, account, quota}) => {
+const Overview = ({stats, account, quota, username, onNavigate}) => {
     const [buyBusy, setBuyBusy] = useState(false);
     const [buyError, setBuyError] = useState('');
+    const [recent, setRecent] = useState(null);
+    const [recentFailed, setRecentFailed] = useState(false);
     const buyInFlight = useRef(false);
-    const weekViews = historyRows(stats.viewHistory, 7).reduce((sum, row) => sum + row.value, 0);
+    const rows14 = historyRows(stats.viewHistory, 14);
+    const weekViews = rows14.slice(7).reduce((sum, row) => sum + row.value, 0);
+    const prevWeekViews = rows14.slice(0, 7).reduce((sum, row) => sum + row.value, 0);
+    const trend = prevWeekViews > 0 ?
+        Math.round(((weekViews - prevWeekViews) / prevWeekViews) * 100) :
+        (weekViews > 0 ? 100 : 0);
     const pct = quota ? (quota.used / quota.limit) * 100 : 0;
+    const go = section => {
+        if (onNavigate) onNavigate(section);
+    };
+
+    useEffect(() => {
+        if (!username) {
+            setRecent(null);
+            setRecentFailed(false);
+            return;
+        }
+        let stale = false;
+        setRecent(null);
+        setRecentFailed(false);
+        api.myProjectPage(username, {limit: 4})
+            .then(data => {
+                if (!stale) setRecent(data.projects || []);
+            })
+            .catch(() => {
+                if (!stale) setRecentFailed(true);
+            });
+        return () => {
+            stale = true;
+        };
+    }, [username]);
 
     const buyCredits = async () => {
         if (buyInFlight.current) return;
@@ -95,75 +126,166 @@ const Overview = ({stats, account, quota}) => {
         }
     };
     return (
-        <section className={styles.dashboard}>
-            <div className={styles.dashGrid}>
-                <div className={`${styles.dashTile} ${styles.tileMonth}`}>
-                    <span className={styles.dashIcon}><TrendingUp size={18} /></span>
-                    <span className={styles.dashNumber}>{fmt(weekViews)}</span>
-                    <span className={styles.dashLabel}>Views this week</span>
-                </div>
-                <div className={`${styles.dashTile} ${styles.tileViews}`}>
-                    <span className={styles.dashIcon}><Eye size={18} /></span>
-                    <span className={styles.dashNumber}>{fmt(stats.totalViews)}</span>
-                    <span className={styles.dashLabel}>Total views</span>
-                </div>
-                <div className={`${styles.dashTile} ${styles.tileHearts}`}>
-                    <span className={styles.dashIcon}><Heart size={18} /></span>
-                    <span className={styles.dashNumber}>{fmt(stats.totalHearts)}</span>
-                    <span className={styles.dashLabel}>Hearts</span>
-                </div>
-                {stats.totalRevenue > 0 ? (
-                    <div className={`${styles.dashTile} ${styles.tileEarned}`}>
-                        <span className={styles.dashIcon}><Coins size={18} /></span>
-                        <span className={styles.dashNumber}>{fmtCredits(stats.totalRevenue)}</span>
-                        <span className={styles.dashLabel}>Credits earned</span>
+        <section className={styles.overview}>
+            <div className={styles.ovMain}>
+                <div className={styles.ovCard}>
+                    <div className={styles.ovCardHead}>
+                        <h2>Performance</h2>
+                        {weekViews > 0 || prevWeekViews > 0 ? (
+                            <span className={trend < 0 ? styles.ovTrendDown : styles.ovTrendUp}>
+                                <TrendingUp size={14} />
+                                {prevWeekViews > 0 ?
+                                    `${trend >= 0 ? '+' : ''}${trend}% vs prior week` :
+                                    'New this week'}
+                            </span>
+                        ) : null}
                     </div>
-                ) : null}
+                    <div className={styles.ovStats}>
+                        <div className={styles.ovStat}>
+                            <Eye size={16} aria-hidden="true" />
+                            <span className={styles.ovStatNum}>{fmt(weekViews)}</span>
+                            <span className={styles.ovStatLabel}>Views this week</span>
+                        </div>
+                        <div className={styles.ovStat}>
+                            <TrendingUp size={16} aria-hidden="true" />
+                            <span className={styles.ovStatNum}>{fmt(stats.totalViews)}</span>
+                            <span className={styles.ovStatLabel}>Total views</span>
+                        </div>
+                        <div className={styles.ovStat}>
+                            <Heart size={16} aria-hidden="true" />
+                            <span className={styles.ovStatNum}>{fmt(stats.totalHearts)}</span>
+                            <span className={styles.ovStatLabel}>Hearts</span>
+                        </div>
+                    </div>
+                    <StatChart
+                        title=""
+                        rows={rows14}
+                        accent="#4C97FF"
+                        emptyText="No views yet. Share a project to get started."
+                    />
+                    <p className={styles.ovCaption}>Views over the last 2 weeks</p>
+                </div>
+                <div className={styles.ovCard}>
+                    <div className={styles.ovCardHead}>
+                        <h2>Recent projects</h2>
+                        {stats.projectCount > 0 ? (
+                            <span className={styles.ovCount}>
+                                {fmt(stats.projectCount)} total · {fmt(stats.sharedCount)} shared
+                            </span>
+                        ) : null}
+                    </div>
+                    {recentFailed ? (
+                        <p className={styles.ovEmpty}>Could not load recent projects.</p>
+                    ) : recent === null ? (
+                        <p className={styles.ovEmpty}>Loading projects…</p>
+                    ) : recent.length ? (
+                        <div className={styles.ovRecentList}>
+                            {recent.map(project => (
+                                <Link
+                                    key={project.id}
+                                    to={projectUrl(project)}
+                                    className={styles.ovRecentItem}
+                                >
+                                    <span className={styles.ovRecentThumb}>
+                                        <ProjectThumbnail project={project} lazy />
+                                    </span>
+                                    <span className={styles.ovRecentInfo}>
+                                        <strong className={styles.ovRecentTitle}>{project.title}</strong>
+                                        <span className={styles.ovRecentMeta}>
+                                            {visibilityLabel(project)} · {fmt(project.views || 0)} views ·{' '}
+                                            {fmt(project.loveCount || 0)} hearts
+                                        </span>
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className={styles.ovEmpty}>
+                            You have not created any projects yet.{' '}
+                            <a href={editorUrl()}>Start a new project</a>.
+                        </p>
+                    )}
+                    <div className={styles.ovCardActions}>
+                        <Button
+                            variant="secondary"
+                            className={styles.secondary}
+                            onClick={() => go('projects')}
+                        >
+                            <FolderOpen size={14} />
+                            View all projects
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <div className={styles.ovSide}>
+                <div className={styles.ovCard}>
+                    <h2>Wallet</h2>
+                    {account && account.balance !== null ? (
+                        <div className={styles.ovWalletTop}>
+                            <span className={styles.ovWalletBalance}>
+                                <Wallet size={16} aria-hidden="true" />
+                                {fmtCredits(account.balance)}
+                            </span>
+                            <span className={styles.ovStatLabel}>Balance</span>
+                            <Button
+                                variant="secondary"
+                                className={styles.dashBuy}
+                                onClick={buyCredits}
+                                busy={buyBusy}
+                                busyLabel="Opening…"
+                            >Buy credits</Button>
+                            {buyError ? <span className={styles.error}>{buyError}</span> : null}
+                        </div>
+                    ) : null}
+                    <div className={styles.ovWalletRows}>
+                        {stats.totalRevenue > 0 ? (
+                            <div className={styles.ovWalletRow}>
+                                <span><Coins size={15} aria-hidden="true" /> Credits earned</span>
+                                <strong>{fmtCredits(stats.totalRevenue)}</strong>
+                            </div>
+                        ) : null}
+                        {account && account.donationsReceived > 0 ? (
+                            <div className={styles.ovWalletRow}>
+                                <span><HeartHandshake size={15} aria-hidden="true" /> Donations received</span>
+                                <strong>{fmtCredits(account.donationsReceived)}</strong>
+                            </div>
+                        ) : null}
+                        {!(stats.totalRevenue > 0) &&
+                            !(account && account.donationsReceived > 0) &&
+                            !(account && account.balance !== null) ? (
+                                <p className={styles.ovEmpty}>No earnings yet. Share a paid project to earn credits.</p>
+                            ) : null}
+                    </div>
+                </div>
                 {quota ? (
-                    <div className={`${styles.dashTile} ${styles.tileQuota}`}>
-                        <span className={styles.dashIcon}><HardDrive size={18} /></span>
-                        <span className={styles.dashNumber}>{formatBytes(quota.used)}</span>
-                        <span className={styles.dashLabel}>of {formatBytes(quota.limit)} used</span>
+                    <div className={styles.ovCard}>
+                        <h2>Storage</h2>
+                        <div className={styles.ovStorageTop}>
+                            <span className={styles.ovStatNum}>{formatBytes(quota.used)}</span>
+                            <span className={styles.ovStatLabel}>of {formatBytes(quota.limit)} used</span>
+                        </div>
                         <div className={styles.quotaBarBg}>
                             <div
                                 className={styles.quotaBarFill}
                                 style={{width: `${Math.min(100, pct)}%`}}
                             />
                         </div>
-                        <span className={pct >= 80 ? styles.quotaWarn : styles.quotaPct}>
+                        <span className={pct >= 80 ? styles.quotaWarn : styles.ovStatLabel}>
                             {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}% full
                         </span>
-                    </div>
-                ) : null}
-                {account && account.balance !== null ? (
-                    <div className={`${styles.dashTile} ${styles.tileBalance}`}>
-                        <span className={styles.dashIcon}><Wallet size={18} /></span>
-                        <span className={styles.dashNumber}>{fmtCredits(account.balance)}</span>
-                        <span className={styles.dashLabel}>Balance</span>
-                        <Button
-                            variant="secondary"
-                            className={styles.dashBuy}
-                            onClick={buyCredits}
-                            busy={buyBusy}
-                            busyLabel="Opening…"
-                        >Buy credits</Button>
-                        {buyError ? <span className={styles.error}>{buyError}</span> : null}
-                    </div>
-                ) : null}
-                {account && account.donationsReceived > 0 ? (
-                    <div className={`${styles.dashTile} ${styles.tileDonations}`}>
-                        <span className={styles.dashIcon}><HeartHandshake size={18} /></span>
-                        <span className={styles.dashNumber}>{fmtCredits(account.donationsReceived)}</span>
-                        <span className={styles.dashLabel}>Donations received</span>
+                        <div className={styles.ovCardActions}>
+                            <Button
+                                variant="secondary"
+                                className={styles.secondary}
+                                onClick={() => go('uploads')}
+                            >
+                                <HardDrive size={14} />
+                                Manage uploads
+                            </Button>
+                        </div>
                     </div>
                 ) : null}
             </div>
-            <StatChart
-                title="Views over the last 2 weeks"
-                rows={historyRows(stats.viewHistory, 14)}
-                accent="#4C97FF"
-                emptyText="No views yet. Share a project to get started."
-            />
         </section>
     );
 };
@@ -1384,6 +1506,8 @@ const MyStuff = () => {
                                 stats={stats}
                                 account={account}
                                 quota={quota}
+                                username={username}
+                                onNavigate={setTab}
                             />
                         ) : statsFailed ? (
                             <div className={styles.inventoryEmpty} role="alert">

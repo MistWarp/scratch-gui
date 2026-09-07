@@ -9,14 +9,6 @@
     margin-bottom: 30px;
 }
 
-.head > span {
-    color: var(--accent-strong);
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-}
-
 .head h1 {
     margin: 8px 0;
     font-size: clamp(34px, 5vw, 52px);

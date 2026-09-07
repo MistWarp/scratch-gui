@@ -186,9 +186,8 @@ const RemixTree = () => {
         <main className={styles.page}>
             <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} /> Back to project</Link>
             <header className={styles.header}>
-                <div className={styles.eyebrow}><GitFork size={15} /> Remix tree</div>
                 <h1>{selected?.title || 'Project lineage'}</h1>
-                <p>Pick any project in the tree to follow that branch and read its Git history.</p>
+                <p>Pick any project in this remix tree to follow that branch and read its Git history.</p>
                 {path.length ? (
                     <nav className={styles.path} aria-label="Selected remix path">
                         {path.map((node, index) => (

@@ -65,7 +65,7 @@ const Collection = ({id, space, user, login, load}) => {
             <Link to="/spaces?kind=collection" className={styles.back}><ArrowLeft size={15} /> All collections</Link>
             <header className={styles.hero}>
                 <Library size={30} />
-                <div><span>Collection</span><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>Curated by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div></div>
+                <div><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>Curated by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div></div>
                 <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} busyLabel="Updating…" onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow'}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}</div>
             </header>
             <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" />

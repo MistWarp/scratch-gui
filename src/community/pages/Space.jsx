@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {ArrowLeft, CalendarDays, Layers3, Library, MessageCircle, Settings, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
+import {ArrowLeft, CalendarDays, Library, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -18,7 +18,6 @@ import useLatest from '../use-latest.js';
 import {formatDate, safeDate} from '../format.js';
 import styles from './Spaces.module.css';
 
-const KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library};
 const KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 const spaceLoadMessage = error => {
     if (error && error.status === 404) return 'Space not found.';
@@ -167,7 +166,6 @@ const Space = () => {
     if (space.kind === 'studio') return <Studio id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'collection') return <Collection id={id} space={space} user={user} login={login} load={load} />;
 
-    const Icon = KIND_ICONS[space.kind] || Layers3;
     const curators = space.managers || [];
     const canAdd = space.openSubmissions || space.canManage;
     const deadline = safeDate(space.endsAt);
@@ -186,12 +184,11 @@ const Space = () => {
             ) : null}
             <header className={styles.spaceHero}>
                 <div className={styles.spaceHeroMain}>
-                    <span className={styles.spaceType}><Icon size={16} /> {KIND_LABELS[space.kind] || space.kind}</span>
                     <h1>{space.title}</h1>
                     <p>{space.description || 'No description yet.'}</p>
                     <div className={styles.spaceOwner}>
                         <Avatar username={space.owner} size={30} />
-                        <span>Created by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
+                        <span>{KIND_LABELS[space.kind] || 'Space'} created by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
                     </div>
                 </div>
                 <div className={styles.spaceHeroActions}>
