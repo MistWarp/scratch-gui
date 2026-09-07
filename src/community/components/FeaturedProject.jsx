@@ -53,7 +53,7 @@ const FeaturedProject = ({project}) => {
                     <Avatar username={displayProject.owner} size={38} />
                 </Link>
                 <div className={styles.identity}>
-                    <Link to={projectUrl(displayProject.id)} className={styles.title}>
+                    <Link to={projectUrl(displayProject)} className={styles.title}>
                         {displayProject.title}
                     </Link>
                     <Link to={`/users/${displayProject.owner}`} className={styles.owner}>
@@ -61,7 +61,7 @@ const FeaturedProject = ({project}) => {
                     </Link>
                     <GroupTag username={displayProject.owner} compact />
                 </div>
-                <Link to={projectUrl(displayProject.id)} className={styles.openProject}>
+                <Link to={projectUrl(displayProject)} className={styles.openProject}>
                     <ExternalLink size={14} />
                     Project page
                 </Link>
@@ -102,7 +102,7 @@ const FeaturedProject = ({project}) => {
                         </span>
                     </button>
                 ) : (
-                    <Link to={projectUrl(displayProject.id)} className={styles.thumbnail}>
+                    <Link to={projectUrl(displayProject)} className={styles.thumbnail}>
                         <ProjectThumbnail
                             project={displayProject}
                             fallbackClassName={styles.thumbnailFallback}

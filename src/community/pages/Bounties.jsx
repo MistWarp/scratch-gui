@@ -81,7 +81,7 @@ const Bounties = () => {
                             <h2>{bounty.title}</h2>
                             {bounty.description ? <p>{bounty.description}</p> : <p className={styles.muted}>No extra details provided.</p>}
                             <footer>
-                                <div><span>On</span><Link to={projectUrl(project.id)}>{project.title}</Link><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span></div>
+                                <div><span>On</span><Link to={projectUrl(project)}>{project.title}</Link><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span></div>
                                 <Link className={styles.open} to={`/bounties/${encodeURIComponent(bounty.id)}`}>View bounty</Link>
                             </footer>
                         </article>

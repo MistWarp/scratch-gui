@@ -9,6 +9,7 @@ import {
     History, GitBranch, Package
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, themeCustomFor} from '../api';
+import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
 import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
@@ -196,7 +197,9 @@ const getCustomExtensions = async (urls, trustedExtensions) => {
 const analyzeBlocks = summary => ({total: Number(summary && summary.total) || 0});
 
 const Project = () => {
-    const {id} = useParams();
+    const {slug} = useParams();
+    const {projectId: resolvedId, resolving: resolvingVanity, resolveError: vanityError} = useResolvedProjectId();
+    const id = resolvedId || '';
     const {user, loading: userLoading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const realtimeViewer = useRef(viewerName);
@@ -269,11 +272,14 @@ const Project = () => {
     const [deletingProject, setDeletingProject] = useState(false);
     const themeMode = getProjectThemeMode();
     const projectBountyId = project ? bountyProjectId(project) : '';
+    // Stays on the /p/slug form while loading; canonical vanitySlug wins after load.
+    const baseProjectUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
 
     const beginLoad = useLatest();
     const beginHistoryLoad = useLatest();
 
     useEffect(() => {
+        if (!id) return () => {};
         const accessKey = new URLSearchParams(window.location.search).get('k') || '';
         return projectRealtime.subscribe(id, event => {
             if (event.type !== 'project_stats') return;
@@ -312,6 +318,7 @@ const Project = () => {
     }, [id]);
 
     const load = useCallback(() => {
+        if (!id) return Promise.resolve();
         const fresh = beginLoad();
         setError(null);
         setErrorLoadContext('');
@@ -329,7 +336,7 @@ const Project = () => {
     }, [actionContext, id, beginLoad]);
 
     const loadHistory = useCallback(() => {
-        if (!canViewProjectSource(project)) return Promise.resolve();
+        if (!id || !canViewProjectSource(project)) return Promise.resolve();
         const fresh = beginHistoryLoad();
         return api.commits(id)
             .then(fresh(setVersionHistory))
@@ -343,6 +350,7 @@ const Project = () => {
     }, [user]);
 
     useEffect(() => {
+        if (!id) return () => {};
         let current = true;
         setOpenPullCount(null);
         api.pulls(id).then(data => {
@@ -373,7 +381,7 @@ const Project = () => {
     }, [projectBountyId]);
 
     useEffect(() => {
-        if (userLoading) return;
+        if (userLoading || !id) return;
         beginHistoryLoad();
         setProject(null);
         setVersionHistory(null);
@@ -423,7 +431,7 @@ const Project = () => {
     }, [loadHistory, tab, versionControlTab, versionHistory, project]);
 
     useEffect(() => {
-        if (userLoading) return;
+        if (userLoading || !id) return;
         api.view(id).catch(() => {});
     }, [id, userLoading]);
 
@@ -1397,6 +1405,16 @@ const Project = () => {
         )
     }), [id]);
 
+    if (vanityError && !project) {
+        return (
+            <main className={styles.page}>
+                <div className={styles.status}>
+                    <p>{vanityError}</p>
+                    <Link className={styles.primary} to="/explore">Browse projects</Link>
+                </div>
+            </main>
+        );
+    }
     if (error && errorLoadContext === actionContext && projectLoadContext !== actionContext) {
         return (
             <main className={styles.page}>
@@ -1408,7 +1426,7 @@ const Project = () => {
         );
     }
     if (!project || projectLoadContext !== actionContext) {
-        return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
+        return <main className={styles.page}><p className={styles.status}>{resolvingVanity ? 'Finding project…' : 'Loading…'}</p></main>;
     }
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
@@ -2239,13 +2257,13 @@ const Project = () => {
                             />
                             <div className={styles.versionControlContent}>
                                 {versionControlTab === 'history' ? (
-                                    <HistoryList id={id} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
+                                    <HistoryList id={id} baseUrl={baseProjectUrl} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
                                 ) : null}
                                 {versionControlTab === 'branches' ? (
                                     <ProjectBranches id={id} canManage={project.isOwner} onChange={refreshProjectAndHistory} />
                                 ) : null}
                                 {versionControlTab === 'pulls' ? (
-                                    <PullList id={id} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
+                                    <PullList id={id} baseUrl={baseProjectUrl} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
                                 ) : null}
                                 {versionControlTab === 'releases' ? (
                                     <ReleaseList key={id} id={id} isOwner={project.isOwner} viewerName={viewerName} />
@@ -2276,6 +2294,7 @@ const Project = () => {
                             <ContributionPanel
                                 key={`${id}:${project.remixParent || ''}`}
                                 id={project.remixParent || id}
+                                baseUrl={project.remixParent ? projectUrl(project.remixParent) : baseProjectUrl}
                                 sourceProjectId={project.remixParent ? id : ''}
                                 preferredBountyId={preferredBountyId}
                                 onRemix={remix}
@@ -2288,7 +2307,7 @@ const Project = () => {
                 </section>
 
                 <aside className={styles.remixCol}>
-                    <RemixTree id={id} />
+                    <RemixTree id={id} baseUrl={baseProjectUrl} />
                 </aside>
             </div>
         </main>
@@ -2382,7 +2401,7 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
     );
 };
 
-const RemixTree = ({id}) => {
+const RemixTree = ({id, baseUrl}) => {
     const [tree, setTree] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -2407,12 +2426,12 @@ const RemixTree = ({id}) => {
                 <h2>Remix tree</h2>
                 <p>{nodes.length > 1 ? `${nodes.length} projects branch from the same original.` : 'See this project alongside its Git history.'}</p>
             </div>
-            <Link to={`${projectUrl(id)}/remixes`}>Explore tree <ChevronRight size={15} /></Link>
+            <Link to={`${baseUrl || projectUrl(id)}/remixes`}>Explore tree <ChevronRight size={15} /></Link>
         </section>
     );
 };
 
-const HistoryList = ({id, history, canRestore, onChange}) => {
+const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
     const [restoring, setRestoring] = useState(null);
     const [restoreError, setRestoreError] = useState(null);
     const [restoreCandidate, setRestoreCandidate] = useState(null);
@@ -2519,7 +2538,7 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
             <ul className={styles.commitList}>
                 {commits.map(commit => (
                     <li key={commit.sha}>
-                        <Link className={styles.commitLink} to={`${projectUrl(id)}/commits/${commit.sha}`}>
+                        <Link className={styles.commitLink} to={`${baseUrl || projectUrl(id)}/commits/${commit.sha}`}>
                             <code>{commit.sha.slice(0, 7)}</code>
                             <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
                         </Link>
@@ -2531,7 +2550,7 @@ const HistoryList = ({id, history, canRestore, onChange}) => {
     );
 };
 
-const PullList = ({id, onCount, onNew}) => {
+const PullList = ({id, baseUrl, onCount, onNew}) => {
     const [pulls, setPulls] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [state, setState] = useState('open');
@@ -2579,7 +2598,7 @@ const PullList = ({id, onCount, onNew}) => {
                     <article key={pull.index} id={`pull-${pull.index}`}>
                         <GitPullRequest className={pull.state === 'open' ? styles.pullOpen : styles.pullClosed} size={18} />
                         <div>
-                            <Link to={`${projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
+                            <Link to={`${baseUrl || projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
                             <span>#{pull.index} opened {timeAgo(pull.created)} by <UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
                         </div>
                         <span className={styles.pullComments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>
@@ -2593,6 +2612,7 @@ const PullList = ({id, onCount, onNew}) => {
 const OutgoingPullNotice = ({id, targetId}) => {
     const [pulls, setPulls] = useState(null);
     const [targetTitle, setTargetTitle] = useState('');
+    const [targetVanity, setTargetVanity] = useState('');
     useEffect(() => {
         if (!targetId) {
             setPulls([]);
@@ -2603,6 +2623,7 @@ const OutgoingPullNotice = ({id, targetId}) => {
             if (!active) return;
             const target = projectData.project || projectData;
             setTargetTitle(target.title || targetId);
+            setTargetVanity(target.vanitySlug || '');
             setPulls((data.pulls || []).filter(pull => pull.state === 'open' && pull.sourceProjectId === id));
         }).catch(() => {
             if (active) setPulls([]);
@@ -2616,7 +2637,7 @@ const OutgoingPullNotice = ({id, targetId}) => {
         <section className={styles.outgoingPulls}>
             <header><GitPullRequest size={16} /><strong>Open pull requests from this project</strong><span>{pulls.length}</span></header>
             {pulls.map(pull => (
-                <Link key={`${pull.targetProjectId}:${pull.index}`} to={`${projectUrl(pull.targetProjectId)}/pulls/${pull.index}`}>
+                <Link key={`${pull.targetProjectId}:${pull.index}`} to={`${projectUrl({id: pull.targetProjectId, vanitySlug: targetVanity})}/pulls/${pull.index}`}>
                     <span><strong>{pull.title}</strong><small>into {targetTitle || pull.targetProjectId}</small></span>
                     <span>#{pull.index} <ChevronRight size={14} /></span>
                 </Link>
@@ -2936,7 +2957,7 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
     );
 };
 
-const ContributionPanel = ({id, sourceProjectId, preferredBountyId, onRemix, user, viewerName, login}) => {
+const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onRemix, user, viewerName, login}) => {
     const actionContext = `${id}\u0000${sourceProjectId}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -3093,7 +3114,7 @@ const ContributionPanel = ({id, sourceProjectId, preferredBountyId, onRemix, use
                 </div>
             ) : null}
             {openPull ? (
-                <Link className={styles.openContribution} to={`${projectUrl(id)}/pulls/${openPull.index}`}>
+                <Link className={styles.openContribution} to={`${baseUrl || projectUrl(id)}/pulls/${openPull.index}`}>
                     <GitPullRequest size={17} />
                     <span><strong>{openPull.title}</strong><small>Pull request #{openPull.index} is open for this remix</small></span>
                     <ChevronRight size={16} />

@@ -2,7 +2,8 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import api, {projectUrl} from '../api.js';
+import api from '../api.js';
+import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
@@ -43,7 +44,8 @@ export const commitMutationSha = (result, fallback) => (
 );
 
 const Commit = () => {
-    const {id, sha} = useParams();
+    const {slug, sha} = useParams();
+    const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user} = useUser();
     const viewer = user?.username || '';
     const navigate = useNavigate();
@@ -63,6 +65,7 @@ const Commit = () => {
     contextRef.current = `${viewer}:${id}:${sha}`;
 
     const load = useCallback(async () => {
+        if (!id) return;
         const context = `${viewer}:${id}:${sha}`;
         setError('');
         setLoadProgress({progress: 8, label: 'Finding this commit'});
@@ -178,6 +181,8 @@ const Commit = () => {
         setSearchParams(next, {replace: true});
     };
 
+    const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
+
     const openManage = () => {
         setCollaboratorName('');
         setManageError('');
@@ -193,7 +198,7 @@ const Commit = () => {
             if (nextSha !== sha) {
                 const query = searchParams.toString();
                 setManageOpen(false);
-                navigate(`/project/${id}/commits/${encodeURIComponent(nextSha)}${query ? `?${query}` : ''}`, {
+                navigate(`${baseUrl}/commits/${encodeURIComponent(nextSha)}${query ? `?${query}` : ''}`, {
                     replace: true
                 });
                 return;
@@ -227,15 +232,33 @@ const Commit = () => {
         updateCoAuthors([...coAuthors, name]);
     };
 
+    if (resolveError) {
+        return (
+            <main className={styles.page}>
+                <div className={styles.state}><p>{resolveError}</p></div>
+            </main>
+        );
+    }
     if (error) {
         return (
             <main className={styles.page}>
-                <Link className={styles.back} to={`${projectUrl(id)}#history`}><ArrowLeft size={15} /> Back to project</Link>
+                <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} /> Back to project</Link>
                 <div className={styles.state}><p>{error}</p><Button onClick={load}>Try again</Button></div>
             </main>
         );
     }
     if (!project || !entry || loadedContext !== `${viewer}:${id}:${sha}`) {
+        if (resolving || !id) {
+            return (
+                <main className={styles.page}>
+                    <section className={styles.loadingCard} aria-live="polite" aria-busy="true">
+                        <div className={styles.loadingCopy}>
+                            <h1>Finding project…</h1>
+                        </div>
+                    </section>
+                </main>
+            );
+        }
         return (
             <main className={styles.page}>
                 <section className={styles.loadingCard} aria-live="polite" aria-busy="true">
@@ -260,7 +283,7 @@ const Commit = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={`${projectUrl(id)}#history`}><ArrowLeft size={15} /> {project.title}</Link>
+            <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} /> {project.title}</Link>
             <section className={styles.header}>
                 <div className={styles.title}>
                     <GitCommitHorizontal size={20} />

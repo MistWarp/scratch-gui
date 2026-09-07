@@ -56,9 +56,16 @@ const PlaytimeLibrary = ({
                 {libraryProjects.map((project, index) => (
                     <article className={styles.row} key={project.id}>
                         <span className={styles.rank}>{index + 1}</span>
-                        <Link to={projectUrl(project.id)}><ProjectThumbnail project={project} className={styles.thumb} fallbackClassName={styles.thumb} lazy /></Link>
+                        <Link to={projectUrl(project)}>
+                            <ProjectThumbnail
+                                project={project}
+                                className={styles.thumb}
+                                fallbackClassName={styles.thumb}
+                                lazy
+                            />
+                        </Link>
                         <span className={styles.details}>
-                            <Link to={projectUrl(project.id)}><strong>{project.title}</strong></Link>
+                            <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
                             <small>by <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a></small>
                         </span>
                         <span className={styles.playtime}>

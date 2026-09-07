@@ -21,13 +21,13 @@ const SharedProjectCard = ({project}) => {
         <article className={styles.card}>
             <Link
                 className={styles.preview}
-                to={projectUrl(project.id)}
+                to={projectUrl(project)}
                 aria-label={`View ${project.title}`}
             >
                 <ProjectThumbnail project={project} lazy />
             </Link>
             <div className={styles.details}>
-                <Link className={styles.title} to={projectUrl(project.id)}>{project.title}</Link>
+                <Link className={styles.title} to={projectUrl(project)}>{project.title}</Link>
                 <div className={styles.owner}>
                     {'Shared by '}<UserLink username={project.owner}>{project.owner}</UserLink>
                 </div>
@@ -36,7 +36,7 @@ const SharedProjectCard = ({project}) => {
                     <Button
                         as="a"
                         href={project.canSaveDirectly ?
-                            editorUrl({platformProject: project.id}) : projectUrl(project.id)}
+                            editorUrl({platformProject: project.id}) : projectUrl(project)}
                         variant={project.canSaveDirectly ? 'primary' : 'secondary'}
                         aria-label={`${project.canSaveDirectly ? 'Edit' : 'Open'} ${project.title}`}
                     >

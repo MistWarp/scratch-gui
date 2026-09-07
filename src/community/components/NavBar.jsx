@@ -6,7 +6,7 @@ import {
     Layers3, House, Crown
 } from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
-import api, {editorUrl} from '../api';
+import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur.js';
 import {fetchNotifications} from '../../lib/rotur/client.js';
 import logo from '../assets/mistwarp-logo.png';
@@ -53,7 +53,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                 {!searching && !searchFailed && searchReady && !people.length && !projects.length && !spaces.length ? <p className={styles.suggestionStatus}>No quick matches. Press Enter to search all projects.</p> : null}
                 {projects.map(project => (
                     <div key={project.id} className={styles.suggestion}>
-                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${project.title}`} onClick={() => onProject(project.id)} />
+                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${project.title}`} onClick={() => onProject(project)} />
                         <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                         <span>{project.title}</span>
                         <UserLink className={styles.suggestionMeta} username={project.owner}>by {project.owner}</UserLink>
@@ -300,10 +300,10 @@ const NavBar = () => {
         navigate(`/users/${name}`);
     };
 
-    const goToProject = id => {
+    const goToProject = project => {
         setSuggestionsOpen(false);
         setQuery('');
-        navigate(`/project/${id}`);
+        navigate(projectUrl(project));
     };
 
     const goToSpace = id => {

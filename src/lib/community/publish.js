@@ -394,7 +394,11 @@ const publishWorkspace = async ({
     setSaveFeedback(vm, 'cloud');
     trackDaily('project_saved', {kind: 'cloud'});
 
-    return {id: platformId, url: `/project/${platformId}`, shared, remoteWarnings};
+    const vanitySlug = platformProject && typeof platformProject.vanitySlug === 'string' ?
+        platformProject.vanitySlug.trim() : '';
+    const projectLink = /^[A-Za-z0-9-]{3,40}$/.test(vanitySlug) ?
+        `/p/${encodeURIComponent(vanitySlug)}` : `/project/${platformId}`;
+    return {id: platformId, url: projectLink, shared, remoteWarnings};
 };
 
 const publishToMistWarp = options => withProjectOperation(options.vm, () => publishWorkspace(options));

@@ -390,7 +390,7 @@ const ManageProject = () => {
         setStatus(null);
         try {
             const result = await api.createPreview(id, 24);
-            fresh(setPreview)(`${location.origin}${projectUrl(id)}?k=${encodeURIComponent(result.key)}`);
+            fresh(setPreview)(`${location.origin}${projectUrl({id, vanitySlug: form.vanitySlug || project.vanitySlug})}?k=${encodeURIComponent(result.key)}`);
         } catch (e) {
             fresh(setStatus)(e.message || 'Could not create a preview link.');
         } finally {
@@ -479,7 +479,7 @@ const ManageProject = () => {
                     My Stuff
                 </Link>
                 <Link
-                    to={projectUrl(id)}
+                    to={projectUrl(project)}
                     className={styles.viewLink}
                 >
                     <ExternalLink size={15} />
@@ -638,7 +638,7 @@ const ManageProject = () => {
                                     <label className={styles.field}>
                                         <span>Vanity URL</span>
                                         <div className={styles.vanityField}><span>/p/</span><input disabled={saving || !perks?.mistwarp?.vanityProjectUrls} maxLength={40} value={form.vanitySlug} placeholder="my-project" onChange={e => set('vanitySlug', e.target.value)} /></div>
-                                        <small>{perks?.mistwarp?.vanityProjectUrls ? `Your ${perks.tier} plan includes a vanity URL.` : 'Vanity project URLs are included with Rotur Pro.'}</small>
+                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>Open {`/p/${project.vanitySlug}`}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? `Your ${perks.tier} plan includes a vanity URL.` : 'Vanity project URLs are included with Rotur Pro.'}</small>
                                     </label>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}

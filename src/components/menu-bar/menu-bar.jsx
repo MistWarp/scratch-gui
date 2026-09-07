@@ -728,15 +728,24 @@ class MenuBar extends React.Component {
             initialTitle: this.props.projectTitle,
             action: getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged),
             onPublished: result => {
-                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared}});
+                this.setState({
+                    mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared, url: result.url}
+                });
                 this.props.onProjectUnchanged();
             }
         });
     }
     handleClickSeeMistWarpPage () {
         this.props.onRequestCloseFile();
-        if (this.state.mistwarpProject) {
-            window.location.href = `/project/${this.state.mistwarpProject.id}`;
+        const stored = this.state.mistwarpProject;
+        if (stored) {
+            if (stored.url) {
+                window.location.href = stored.url;
+                return;
+            }
+            const vanity = typeof stored.vanitySlug === 'string' ? stored.vanitySlug.trim() : '';
+            window.location.href = /^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
+                `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`;
         }
     }
 
