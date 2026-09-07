@@ -754,7 +754,11 @@ export default async function ({ addon, console, msg }) {
         }
       };
       const renameFolder = async () => {
-        let newName = prompt(msg("rename-folder-prompt") + ":", data.folder);
+        let newName = await addon.tab.prompt(
+          msg('rename-folder-prompt-title'),
+          msg('rename-folder-prompt') + ':',
+          data.folder
+        );
         // Prompt cancelled, do not rename
         if (newName === null) {
           return;
@@ -813,7 +817,11 @@ export default async function ({ addon, console, msg }) {
       };
 
       const createFolder = async () => {
-        const name = prompt(msg("name-prompt") + ":", getNameWithoutFolder(data.realName));
+        const name = await addon.tab.prompt(
+          msg('name-prompt-title'),
+          msg('name-prompt') + ':',
+          getNameWithoutFolder(data.realName)
+        );
         if (name === null) {
           return;
         }

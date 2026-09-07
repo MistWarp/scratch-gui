@@ -174,8 +174,18 @@ export default class DevTools {
                         callback: async () => {
                             const wksp = this.getWorkspace();
                             const v = wksp.getVariableById(this.selVarID);
-                            // prompt() returns Promise in desktop app
-                            const varName = await window.prompt(this.msg('replace', {name: v.name}));
+                            // window.prompt() returns Promise in desktop app and
+                            // throws in Electron ("prompt() is and will not be
+                            // supported") when no override is installed.
+                            let varName = null;
+                            try {
+                                varName = await window.prompt(this.msg('replace', {name: v.name}));
+                            } catch (e) {
+                                varName = await this.addon.tab.prompt(
+                                    this.msg('replace', {name: v.name}),
+                                    this.msg('replace', {name: v.name})
+                                );
+                            }
                             if (varName) {
                                 this.doReplaceVariable(this.selVarID, varName, v.type);
                             }

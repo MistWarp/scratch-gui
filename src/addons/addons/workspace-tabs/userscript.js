@@ -752,7 +752,7 @@ export default async function ({addon, console, msg}) {
     };
 
     // Function to add a new bookmark
-    const addTab = () => {
+    const addTab = async () => {
         if (workspaceTabs.length >= addon.settings.get('maxTabs')) {
             alert(`Maximum number of bookmarks reached (${addon.settings.get('maxTabs')})`);
             return;
@@ -762,13 +762,17 @@ export default async function ({addon, console, msg}) {
         if (!state) return;
 
         // Simple prompt for bookmark details
-        const name = prompt(msg('bookmark-name'), `Bookmark ${workspaceTabs.length + 1}`);
+        const name = await addon.tab.prompt(msg('add-bookmark'), msg('bookmark-name'), `Bookmark ${workspaceTabs.length + 1}`);
         if (name === null) return;
     
         let category = 'General';
         if (addon.settings.get('enableCategories')) {
             const categoryList = Array.from(categories).join(', ');
-            const categoryInput = prompt(msg('category', {categories: categoryList}), 'General');
+            const categoryInput = await addon.tab.prompt(
+                msg('add-bookmark'),
+                msg('category', {categories: categoryList}),
+                'General'
+            );
             if (categoryInput === null) return;
             category = categoryInput.trim() || 'General';
             categories.add(category);
@@ -804,12 +808,12 @@ export default async function ({addon, console, msg}) {
     };
 
     // Function to edit a bookmark name
-    const editTab = index => {
+    const editTab = async index => {
         if (index < 0 || index >= workspaceTabs.length) return;
     
         const bookmark = workspaceTabs[index];
         const currentName = bookmark.name;
-        const newName = prompt(msg('bookmark-name'), currentName);
+        const newName = await addon.tab.prompt(msg('edit-bookmark'), msg('bookmark-name'), currentName);
     
         if (newName !== null && newName.trim() !== '' && newName !== currentName) {
             bookmark.name = newName.trim();
@@ -817,7 +821,11 @@ export default async function ({addon, console, msg}) {
             if (addon.settings.get('enableCategories')) {
                 const categoryList = Array.from(categories).join(', ');
                 const currentCategory = bookmark.category || 'General';
-                const newCategory = prompt(msg('category', {categories: categoryList}), currentCategory);
+                const newCategory = await addon.tab.prompt(
+                    msg('edit-bookmark'),
+                    msg('category', {categories: categoryList}),
+                    currentCategory
+                );
         
                 if (newCategory !== null) {
                     const categoryName = newCategory.trim() || 'General';

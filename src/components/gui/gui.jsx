@@ -12,6 +12,7 @@ import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
 import Alerts from '../../containers/alerts.jsx';
+import UpdateToast from '../update-toast/update-toast.jsx';
 import NotificationsProvider from '../../lib/notifications-provider.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
@@ -1032,6 +1033,7 @@ const GUIComponent = props => {
                     {alertsVisible ? (
                         <Alerts className={styles.alertsContainer} />
                     ) : null}
+                    <UpdateToast />
                     {connectionModalVisible ? (
                         <ConnectionModal
                             vm={vm}
