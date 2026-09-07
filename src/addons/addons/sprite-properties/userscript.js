@@ -15,7 +15,7 @@ export default async function ({ addon, console, msg }) {
 
   // Toggle the properties panel when double clicking in the sprite grid
   document.addEventListener("click", (e) => {
-    if (e.detail === 2 && e.target.closest('[class^="sprite-selector_scroll-wrapper_"]')) {
+    if (e.detail === 2 && e.target.closest?.('[class^="sprite-selector_scroll-wrapper_"]')) {
       togglePropertiesPanel();
     }
   });
@@ -41,7 +41,7 @@ export default async function ({ addon, console, msg }) {
   document.body.addEventListener(
     "mouseleave",
     (e) => {
-      if (e.target.matches('[class*="sprite-selector_sprite-selector_"]')) {
+      if (e.target.matches?.('[class*="sprite-selector_sprite-selector_"]')) {
         if (!isDirectionPopoverOpen()) autoHidePanel();
       }
     },
@@ -81,6 +81,7 @@ export default async function ({ addon, console, msg }) {
   let closeButton;
 
   function injectInfoButton() {
+    if (!propertiesPanel?.parentNode) return;
     if (!infoButton) {
       infoButton = createButton(PROPS_INFO_BTN_CLASS, "/info.svg", msg("open-properties-panel-tooltip"));
     }
@@ -95,6 +96,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function injectCloseButton() {
+    if (!propertiesPanel) return;
     if (!closeButton) {
       closeButton = createButton(PROPS_CLOSE_BTN_CLASS, "/collapse.svg", msg("close-properties-panel-tooltip"));
     }
@@ -102,6 +104,7 @@ export default async function ({ addon, console, msg }) {
   }
 
   function updateWideLocaleMode() {
+    if (!propertiesPanel) return;
     // Certain "wide" languages such as Japanese use a different layout for the sprite info panel
     // Easiest way to detect this is with this selector that only exists when the sprite info panel
     // is using the layout with text above the input.
@@ -127,8 +130,11 @@ export default async function ({ addon, console, msg }) {
       reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
     });
 
-    const spriteSelector = propertiesPanel.parentNode;
+    const spriteSelector = propertiesPanel?.parentNode;
+    if (!spriteSelector) continue;
     const itemsWrapper = spriteSelector.querySelector('[class*="sprite-selector_items-wrapper_"]');
+    if (!itemsWrapper) continue;
+    observer.disconnect();
     observer.observe(itemsWrapper, {
       childList: true,
       subtree: true,
