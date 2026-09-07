@@ -62,13 +62,23 @@ export default async function ({ addon, console, msg }) {
         "scratch-gui/navigation/ACTIVATE_TAB",
       ],
     });
-    let button = menu.parentElement.previousElementSibling.previousElementSibling; //The base button that the popup menu is from
+    let container =
+      menu.closest('[class*="action-menu_menu-container"]') ||
+      menu.closest('[class*="menu-container"]');
+    let button =
+      (container && container.querySelector('[class*="action-menu_main-button"]')) ||
+      menu.parentElement?.previousElementSibling?.previousElementSibling ||
+      menu.parentElement?.previousElementSibling;
+    if (!button) {
+      continue;
+    }
 
-    let id = button.getAttribute("aria-label").replace(/\s+/g, "_");
+    let ariaLabel = button.getAttribute("aria-label");
+    let id = (ariaLabel || `menu-${Math.random().toString(36).slice(2)}`).replace(/\s+/g, "_");
 
     let isRight = //Is it on the right side of the screen?
-      button.parentElement.classList.contains(addon.tab.scratchClass("sprite-selector_add-button")) ||
-      button.parentElement.classList.contains(addon.tab.scratchClass("stage-selector_add-button"));
+      button.parentElement?.classList.contains(addon.tab.scratchClass("sprite-selector_add-button")) ||
+      button.parentElement?.classList.contains(addon.tab.scratchClass("stage-selector_add-button"));
 
     if (isRight) {
       id += "_right";
@@ -238,7 +248,9 @@ export default async function ({ addon, console, msg }) {
       );
     }
 
-    (el = document.getElementById(iD).nextElementSibling.querySelector("input")).files = new FileList(processed); //Convert processed image array to a FileList, which is not normally constructible.
+    const redirectTarget = document.getElementById(iD)?.nextElementSibling?.querySelector("input") || el;
+    redirectTarget.files = new FileList(processed); //Convert processed image array to a FileList, which is not normally constructible.
+    el = redirectTarget;
 
     el.dispatchEvent(new e.constructor(e.type, e)); //Start a new, duplicate, event, but allow scratch to receive it this time.
   }
