@@ -31,7 +31,11 @@ jest.mock('../../src/community/api.js', () => ({
         setLibraryProjectVisibility: jest.fn()
     },
     editorUrl: jest.fn(() => '/editor'),
-    projectUrl: jest.fn(id => `/projects/${id}`)
+    projectUrl: jest.fn(idOrProject => {
+        const project = idOrProject && typeof idOrProject === 'object' ? idOrProject : {id: idOrProject};
+        if (project.vanitySlug) return `/p/${project.vanitySlug}`;
+        return `/projects/${project.id}`;
+    })
 }));
 jest.mock('../../src/lib/rotur/client.js', () => ({
     getAccountSummary: jest.fn(() => Promise.resolve(null))

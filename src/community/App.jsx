@@ -45,7 +45,6 @@ const Themes = lazy(() => import('./pages/Themes.jsx'));
 const Theme = lazy(() => import('./pages/Theme.jsx'));
 const Groups = lazy(() => import('./pages/Groups.jsx'));
 const Group = lazy(() => import('./pages/Group.jsx'));
-const VanityProject = lazy(() => import('./pages/VanityProject.jsx'));
 
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
@@ -71,6 +70,7 @@ const ROUTE_TITLES = [
     ['/support', 'Support'],
     ['/status', 'Service status'],
     ['/users/', 'Profile'],
+    ['/p/', 'Project'],
     ['/project/', 'Project']
 ];
 
@@ -106,7 +106,11 @@ const App = () => {
                     <Route path="/themes/:id" element={<Theme />} />
                     <Route path="/groups" element={<Groups />} />
                     <Route path="/groups/:tag" element={<Group />} />
-                    <Route path="/p/:slug" element={<VanityProject />} />
+                    <Route path="/p/:slug" element={<Project />} />
+                    <Route path="/p/:slug/remixes" element={<RemixTree />} />
+                    <Route path="/p/:slug/pulls" element={<PullRequests />} />
+                    <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
+                    <Route path="/p/:slug/commits/:sha" element={<Commit />} />
                     <Route path="/project/:id" element={<Project />} />
                     <Route path="/project/:id/remixes" element={<RemixTree />} />
                     <Route path="/project/:id/pulls/:index" element={<PullRequest />} />

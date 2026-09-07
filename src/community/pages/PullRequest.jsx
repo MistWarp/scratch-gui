@@ -6,6 +6,7 @@ import {
     GitMerge, GitPullRequest, MessageSquare, Trash2
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
+import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import SpriteList from '../components/SpriteList.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -153,7 +154,8 @@ export const canClosePullRequest = (project, pull, user) => {
 };
 
 const PullRequest = () => {
-    const {id, index} = useParams();
+    const {index, slug} = useParams();
+    const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user, login} = useUser();
     const viewer = user?.username || '';
     const [project, setProject] = useState(null);
@@ -222,6 +224,7 @@ const PullRequest = () => {
     }, [id, index, loadedContext]);
 
     const load = useCallback(async () => {
+        if (!id) return;
         const context = `${viewer}:${id}:${index}`;
         setLoadingError('');
         try {
@@ -447,10 +450,22 @@ const PullRequest = () => {
         ...timeline.comments.map(comment => ({...comment, eventType: 'comment', date: comment.created}))
     ].sort((a, b) => Number(a.date) - Number(b.date)), [timeline]);
 
+    const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
+
+    if (resolving) {
+        return <main className={styles.page}><p className={styles.loadState}>Finding project…</p></main>;
+    }
+    if (resolveError) {
+        return (
+            <main className={styles.page}>
+                <div className={styles.loadState}><p>{resolveError}</p></div>
+            </main>
+        );
+    }
     if (loadingError) {
         return (
             <main className={styles.page}>
-                <Link className={styles.back} to={projectUrl(id)}><ArrowLeft size={15} /> Back to project</Link>
+                <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} /> Back to project</Link>
                 <div className={styles.loadState}><p>{loadingError}</p><Button onClick={load}>Try again</Button></div>
             </main>
         );
@@ -463,7 +478,7 @@ const PullRequest = () => {
     const changedFileCount = diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={`${projectUrl(id)}#pull-requests`}>
+            <Link className={styles.back} to={`${baseUrl}#pull-requests`}>
                 <ArrowLeft size={15} /> {project.title || 'Project'}
             </Link>
             <header className={styles.prHeader}>
@@ -479,7 +494,7 @@ const PullRequest = () => {
                         <code>{pull.sourceTitle || 'Fork'}/{pull.headBranch}</code>
                     </Link>
                     <ChevronRight size={13} />
-                    <Link to={projectUrl(pull.targetProjectId)}>
+                    <Link to={baseUrl}>
                         <code>{project.title || 'Project'}/{pull.baseBranch}</code>
                     </Link>
                 </div>

@@ -2,7 +2,8 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {GitPullRequest, MessageSquare, Plus, Search} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
-import api, {projectUrl} from '../api.js';
+import api from '../api.js';
+import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -11,7 +12,8 @@ import setPageMeta from '../page-meta.js';
 import styles from './PullRequests.module.css';
 
 const PullRequests = () => {
-    const {id} = useParams();
+    const {slug} = useParams();
+    const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const [project, setProject] = useState(null);
     const [pulls, setPulls] = useState(null);
     const [state, setState] = useState('open');
@@ -19,6 +21,7 @@ const PullRequests = () => {
     const [error, setError] = useState('');
 
     const load = useCallback(async () => {
+        if (!id) return;
         setError('');
         try {
             const [projectData, pullData] = await Promise.all([api.getProject(id), api.pulls(id)]);
@@ -42,17 +45,20 @@ const PullRequests = () => {
     }), [pulls, query, state]);
     const openCount = (pulls || []).filter(pull => pull.state === 'open').length;
     const closedCount = (pulls || []).length - openCount;
+    const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
     const newPull = () => {
-        window.location.href = `${projectUrl(id)}#contribute`;
+        window.location.href = `${baseUrl}#contribute`;
     };
 
+    if (resolving) return <main className={styles.page}><p className={styles.state}>Finding project…</p></main>;
+    if (resolveError) return <main className={styles.page}><div className={styles.state}><p>{resolveError}</p></div></main>;
     if (error) return <main className={styles.page}><div className={styles.state}><p>{error}</p><Button onClick={load}>Try again</Button></div></main>;
     if (!project || !pulls) return <main className={styles.page}><p className={styles.state}>Loading pull requests…</p></main>;
 
     return (
         <main className={styles.page}>
             <header className={styles.header}>
-                <div><Link to={projectUrl(id)}>{project.title}</Link><h1>Pull requests</h1></div>
+                <div><Link to={baseUrl}>{project.title}</Link><h1>Pull requests</h1></div>
                 <Button variant="primary" onClick={newPull}><Plus size={16} /> New pull request</Button>
             </header>
             <div className={styles.tools}>
@@ -67,7 +73,7 @@ const PullRequests = () => {
                     <article key={pull.index}>
                         <GitPullRequest className={pull.state === 'open' ? styles.openIcon : styles.closedIcon} size={18} />
                         <div>
-                            <Link to={`${projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
+                            <Link to={`${baseUrl}/pulls/${pull.index}`}>{pull.title}</Link>
                             <span>#{pull.index} opened {timeAgo(pull.created)} by <UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
                         </div>
                         <span className={styles.comments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>

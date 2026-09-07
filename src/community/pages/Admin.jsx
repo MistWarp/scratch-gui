@@ -910,7 +910,7 @@ const ProjectManager = () => {
                         >
                             <div className={styles.rowInfo}>
                                 <span className={styles.rowTitle}>
-                                    <Link to={projectUrl(project.id)}>{project.title || project.id}</Link>
+                                    <Link to={projectUrl(project)}>{project.title || project.id}</Link>
                                 </span>
                                 <span className={styles.rowMeta}>
                                     {`by @${project.owner} · ${project.shared ? 'Shared' : 'Unshared'}`}
@@ -1164,7 +1164,7 @@ const UserDetailCard = ({username, onBack}) => {
                             <div key={project.id} className={styles.row}>
                                 <div className={styles.rowInfo}>
                                     <span className={styles.rowTitle}>
-                                        <Link to={projectUrl(project.id)}>{project.title || project.id}</Link>
+                                        <Link to={projectUrl(project)}>{project.title || project.id}</Link>
                                     </span>
                                     <span className={styles.rowMeta}>
                                         {project.shared ? 'Shared' : 'Not shared'}

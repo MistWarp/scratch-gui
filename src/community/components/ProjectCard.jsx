@@ -13,7 +13,7 @@ const ProjectCard = ({project, showTrend = false}) => {
     const acceptedChanges = Number(project.acceptedChanges) || 0;
     return (
         <article className={styles.card}>
-            <Link className={styles.cardLink} to={projectUrl(project.id)} aria-label={`Open ${project.title}`} />
+            <Link className={styles.cardLink} to={projectUrl(project)} aria-label={`Open ${project.title}`} />
             <div className={styles.thumb}>
                 {price > 0 ? (
                     <span className={styles.priceBadge}>

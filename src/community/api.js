@@ -141,7 +141,25 @@ const embedUrl = (project, {
     return `/embed.html?${params.toString()}`;
 };
 
-const projectUrl = id => `/project/${id}`;
+const normalizeVanitySlug = slug => {
+    if (typeof slug !== 'string') return '';
+    const trimmed = slug.trim();
+    if (!trimmed) return '';
+    if (/^[A-Za-z0-9-]{3,40}$/.test(trimmed)) return trimmed;
+    return '';
+};
+
+const projectUrl = (idOrProject, maybeSlug) => {
+    let id = idOrProject;
+    let slug = maybeSlug;
+    if (idOrProject && typeof idOrProject === 'object') {
+        id = idOrProject.id ?? idOrProject.projectId ?? idOrProject.project_id;
+        slug = idOrProject.vanitySlug ?? idOrProject.slug ?? maybeSlug;
+    }
+    const vanity = normalizeVanitySlug(slug);
+    if (vanity) return `/p/${encodeURIComponent(vanity)}`;
+    return `/project/${id}`;
+};
 const projectAccessQuery = () => {
     const key = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('k');
     return key ? `?k=${encodeURIComponent(key)}` : '';

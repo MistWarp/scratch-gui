@@ -44,9 +44,11 @@ const MyStuffLibrary = ({
                     {projects.map(project => (
                         <article className={styles.row} key={project.id}>
                             <div className={styles.project}>
-                                <Link to={projectUrl(project.id)}><ProjectThumbnail project={project} className={styles.thumb} lazy /></Link>
+                                <Link to={projectUrl(project)}>
+                                    <ProjectThumbnail project={project} className={styles.thumb} lazy />
+                                </Link>
                                 <span className={styles.details}>
-                                    <Link to={projectUrl(project.id)}><strong>{project.title}</strong></Link>
+                                    <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
                                     <small>by <UserLink username={project.owner}>{project.owner}</UserLink></small>
                                 </span>
                             </div>

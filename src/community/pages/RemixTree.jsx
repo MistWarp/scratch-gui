@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {ArrowLeft, ChevronRight, GitBranch, GitCommitHorizontal, GitFork} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
 import api, {projectUrl} from '../api.js';
+import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -42,7 +43,7 @@ const RemixGraph = ({tree, selectedId}) => {
                         <Link
                             key={node.id}
                             className={isSelected ? styles.nodeSelected : styles.node}
-                            to={`${projectUrl(node.id)}/remixes`}
+                            to={`${projectUrl(node)}/remixes`}
                             aria-current={isSelected ? 'page' : null}
                             style={{left: entry.x, top: entry.y}}
                         >
@@ -67,7 +68,7 @@ const RemixGraph = ({tree, selectedId}) => {
     );
 };
 
-const CommitHistory = ({id, history, onRetry}) => {
+const CommitHistory = ({id, baseUrl, history, onRetry}) => {
     if (!history) {
         return <p className={styles.state}>Loading Git history…</p>;
     }
@@ -92,7 +93,7 @@ const CommitHistory = ({id, history, onRetry}) => {
         <ol className={styles.commitList}>
             {commits.map(commit => (
                 <li key={commit.sha}>
-                    <Link to={`${projectUrl(id)}/commits/${commit.sha}`}>
+                    <Link to={`${baseUrl}/commits/${commit.sha}`}>
                         <GitCommitHorizontal size={15} />
                         <span>{(commit.message || 'Untitled commit').split('\n')[0]}</span>
                         <code>{commit.sha.slice(0, 7)}</code>
@@ -104,7 +105,8 @@ const CommitHistory = ({id, history, onRetry}) => {
 };
 
 const RemixTree = () => {
-    const {id} = useParams();
+    const {slug} = useParams();
+    const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user} = useUser();
     const viewer = user?.username || '';
     const [tree, setTree] = useState(null);
@@ -115,6 +117,7 @@ const RemixTree = () => {
     const [historyAttempt, setHistoryAttempt] = useState(0);
 
     useEffect(() => {
+        if (!id) return () => {};
         let active = true;
         setTree(null);
         setTreeError(false);
@@ -131,6 +134,7 @@ const RemixTree = () => {
     }, [id, treeAttempt]);
 
     useEffect(() => {
+        if (!id) return () => {};
         let active = true;
         setHistory(null);
         api.getProject(id).then(data => {
@@ -160,14 +164,27 @@ const RemixTree = () => {
     const visibleHistory = historyContext === `${viewer}:${id}` ? history : null;
     const commitCount = visibleHistory?.graph?.nodes?.length || visibleHistory?.commits?.length || 0;
 
+    const baseUrl = projectBaseUrl({project: selected, projectId: id, vanitySlug: slug});
+
     useEffect(() => {
         if (selected) setPageMeta({title: `${selected.title || 'Project'} · Remix tree`});
         else setPageMeta({title: 'Remix tree'});
     }, [selected]);
 
+    if (resolving) {
+        return <main className={styles.page}><p className={styles.state}>Finding project…</p></main>;
+    }
+    if (resolveError || (!id && treeError)) {
+        return (
+            <main className={styles.page}>
+                <p className={styles.state}>{resolveError || 'Could not load this remix tree.'}</p>
+            </main>
+        );
+    }
+
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={projectUrl(id)}><ArrowLeft size={15} /> Back to project</Link>
+            <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} /> Back to project</Link>
             <header className={styles.header}>
                 <div className={styles.eyebrow}><GitFork size={15} /> Remix tree</div>
                 <h1>{selected?.title || 'Project lineage'}</h1>
@@ -178,7 +195,7 @@ const RemixTree = () => {
                             <React.Fragment key={node.id}>
                                 {index ? <ChevronRight size={14} aria-hidden="true" /> : null}
                                 <Link
-                                    to={`${projectUrl(node.id)}/remixes`}
+                                    to={`${projectUrl(node)}/remixes`}
                                     aria-current={String(node.id) === String(id) ? 'page' : null}
                                 >{node.title || 'Untitled project'}</Link>
                             </React.Fragment>
@@ -220,7 +237,7 @@ const RemixTree = () => {
                                     ) : null}
                                 </div>
                             </div>
-                            <Link className={styles.openProject} to={projectUrl(id)}>Open project</Link>
+                            <Link className={styles.openProject} to={baseUrl}>Open project</Link>
                         </div>
                         <dl className={styles.stats}>
                             <div>
@@ -242,6 +259,7 @@ const RemixTree = () => {
                         </div>
                         <CommitHistory
                             id={id}
+                            baseUrl={baseUrl}
                             history={visibleHistory}
                             onRetry={() => setHistoryAttempt(value => value + 1)}
                         />

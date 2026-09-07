@@ -1481,7 +1481,7 @@ const MyStuff = () => {
                                         className={styles.row}
                                     >
                                         <Link
-                                            to={projectUrl(project.id)}
+                                            to={projectUrl(project)}
                                             className={styles.thumb}
                                         >
                                             <ProjectThumbnail
@@ -1491,7 +1491,7 @@ const MyStuff = () => {
                                         </Link>
                                         <div className={styles.info}>
                                             <Link
-                                                to={projectUrl(project.id)}
+                                                to={projectUrl(project)}
                                                 className={styles.title}
                                             >{project.title}</Link>
                                             <span className={project.shared ? styles.shared : styles.draft}>
@@ -1588,7 +1588,7 @@ const MyStuff = () => {
                                                             <Pencil size={14} />
                                                             Open in editor
                                                         </a>
-                                                        <Link to={projectUrl(project.id)} onClick={close}>
+                                                        <Link to={projectUrl(project)} onClick={close}>
                                                             <ExternalLink size={14} />
                                                             Project page
                                                         </Link>

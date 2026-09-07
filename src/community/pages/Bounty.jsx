@@ -102,7 +102,7 @@ const Bounty = () => {
         <main className={styles.page}>
             <Link className={styles.back} to="/bounties"><ArrowLeft size={15} /> All bounties</Link>
             <header className={styles.hero}>
-                <div className={styles.heroMain}><span className={styles.icon}><Trophy size={22} /></span><div><div className={styles.reward}><Coins size={15} /> {bounty.amount} credits</div><h1>{bounty.title}</h1><p>On <Link to={projectUrl(project.id)}>{project.title}</Link> by <UserLink username={project.owner}>{project.owner}</UserLink></p></div></div>
+                <div className={styles.heroMain}><span className={styles.icon}><Trophy size={22} /></span><div><div className={styles.reward}><Coins size={15} /> {bounty.amount} credits</div><h1>{bounty.title}</h1><p>On <Link to={projectUrl(project)}>{project.title}</Link> by <UserLink username={project.owner}>{project.owner}</UserLink></p></div></div>
                 <div className={styles.heroActions}>
                     {user && user.username.toLowerCase() !== project.owner.toLowerCase() ? (
                         <Button
@@ -138,7 +138,7 @@ const Bounty = () => {
                 <aside className={styles.workers}>
                     <h2><Users size={17} /> Working on this <span>{activity.workers.length}</span></h2>
                     {activity.workers.length ? activity.workers.map(worker => <Link key={worker.username} to={`/users/${worker.username}`}><Avatar username={worker.username} size={30} /><span><strong>{worker.username}</strong><small>Joined {timeAgo(worker.created)}</small></span></Link>) : <p>Nobody has registered yet.</p>}
-                    <Link className={styles.projectLink} to={`${projectUrl(project.id)}#contribute`}>Open project contribution tools</Link>
+                    <Link className={styles.projectLink} to={`${projectUrl(project)}#contribute`}>Open project contribution tools</Link>
                 </aside>
             </div>
             {reporting ? <ReportModal {...reporting} onClose={() => setReporting(null)} /> : null}

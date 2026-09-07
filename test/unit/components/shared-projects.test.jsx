@@ -7,7 +7,11 @@ jest.mock('../../../src/community/api.js', () => ({
     __esModule: true,
     default: {request: jest.fn()},
     editorUrl: ({platformProject}) => `/editor#mw-${platformProject}`,
-    projectUrl: id => `/project/${id}`
+    projectUrl: idOrProject => {
+        const project = idOrProject && typeof idOrProject === 'object' ? idOrProject : {id: idOrProject};
+        if (project.vanitySlug) return `/p/${project.vanitySlug}`;
+        return `/project/${project.id}`;
+    }
 }));
 jest.mock('../../../src/community/components/UserLink.jsx', () => 'UserLink');
 
@@ -30,6 +34,13 @@ describe('shared project cards', () => {
         expect(card.find(Button).props()).toEqual(expect.objectContaining({
             href: '/project/p1', variant: 'secondary', 'aria-label': 'Open Team project'
         }));
+    });
+
+    test('prefers the vanity URL when the project has one', () => {
+        const card = shallow(
+            <SharedProjectCard project={{...project, myRole: 'tester', canSaveDirectly: false, vanitySlug: 'cool-thing'}} />
+        );
+        expect(card.find(Button).props()).toEqual(expect.objectContaining({href: '/p/cool-thing'}));
     });
 
     test('uses a neutral label for an unfamiliar access level', () => {
