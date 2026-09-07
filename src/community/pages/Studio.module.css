@@ -119,30 +119,9 @@
     min-width: 0;
 }
 
+/* Spacing around the shared UnderlineTabs; tab visuals live there. */
 .tabs {
-    display: flex;
-    gap: 24px;
     margin-bottom: 28px;
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-}
-
-.tabs button {
-    margin-bottom: -1px;
-    padding: 11px 0;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    color: var(--text-dim);
-    background: transparent;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.tabs .tabActive {
-    border-bottom-color: var(--accent);
-    color: var(--mw-text);
 }
 
 .projects > header,

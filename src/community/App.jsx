@@ -2,6 +2,7 @@ import React, {lazy, Suspense, useEffect} from 'react';
 import {Routes, Route, useLocation} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
+import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
 import BetaBanner from './components/BetaBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
@@ -85,6 +86,9 @@ const RouteMeta = () => {
 
 const App = () => {
     const {t} = useCommunityIntl();
+    useEffect(() => {
+        initSiteErrorReporting();
+    }, []);
     return (<UserProvider>
         <a className="mw-skip-link" href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />

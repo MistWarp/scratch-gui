@@ -10,7 +10,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import styles from './Challenge.module.css';
 
@@ -305,7 +305,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 <div className={currentPhase === 'submissions' ? styles.timelineActive : ''}><Trophy size={17} /><span>Submissions close</span><strong>{dateTime(space.endsAt)}</strong></div>
                 <div className={currentPhase === 'judging' || currentPhase === 'awaiting-results' ? styles.timelineActive : ''}><Gavel size={17} /><span>Judging ends</span><strong>{dateTime(space.judgingEndsAt)}</strong></div>
             </section>
-            <SectionTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} activeClassName={styles.tabActive} ariaLabel="Challenge sections" />
+            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Challenge sections" />
             {error ? <p className={styles.error}>{error}</p> : null}
             {tab === 'overview' ? (
                 <div className={styles.overview}>

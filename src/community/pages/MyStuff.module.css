@@ -548,29 +548,9 @@
     background: var(--bg-card);
 }
 
+/* Spacing around the shared UnderlineTabs; tab visuals live there. */
 .themeTabs {
-    display: flex;
-    gap: 18px;
     margin-bottom: 18px;
-    border-bottom: 1px solid var(--border);
-}
-
-.themeTab,
-.themeTabActive {
-    margin-bottom: -1px;
-    padding: 8px 0;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--text-dim);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.themeTabActive {
-    border-bottom-color: var(--accent);
-    color: var(--mw-text);
 }
 
 .localThemeGrid,

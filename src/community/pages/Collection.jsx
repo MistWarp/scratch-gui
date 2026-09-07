@@ -9,7 +9,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import styles from './Collection.module.css';
 
@@ -68,7 +68,7 @@ const Collection = ({id, space, user, login, load}) => {
                 <div><span>Collection</span><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>Curated by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div></div>
                 <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} busyLabel="Updating…" onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow'}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}</div>
             </header>
-            <SectionTabs items={tabs} value={view} onChange={setView} className={styles.tabs} activeClassName={styles.tabActive} ariaLabel="Collection sections" />
+            <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" />
             {error ? <p className={styles.error}>{error}</p> : null}
             {view === 'projects' ? <section className={styles.projects}><header><div><h2>In this collection</h2><p>A curated set of MistWarp projects.</p></div>{space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}</header>{space.projects.length ? <div className={styles.grid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.empty}><Library size={28} /><strong>This collection is empty</strong><span>The curator has not added any projects yet.</span></div>}</section> : null}
             {view === 'discussion' ? <section className={styles.discussion}><header><MessageCircle size={19} /><div><h2>Discussion</h2><p>Talk about the projects in this collection.</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`collection ${space.title}`} /></section> : null}

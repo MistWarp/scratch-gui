@@ -1,18 +1,23 @@
 .page {
-    max-width: 680px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 28px 22px 88px;
+    padding: 32px 24px 96px;
 }
 
 .page h1 {
-    margin: 0 0 20px;
-    font-size: 26px;
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
+/* Roomy vertical list: dividers only, no cards */
 .list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-soft);
 }
 
 .item,
@@ -21,25 +26,32 @@
     position: relative;
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    gap: 14px;
+    padding: 14px 12px 14px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: background 0.12s ease;
 }
 
 .item:hover,
 .itemUnread:hover,
 .followingPost:hover {
-    border-color: var(--accent-border);
-    transform: translateY(-1px);
+    border-color: var(--border-soft);
+    background: var(--bg-raised);
+    transform: none;
 }
 
+/* Unread: subtle tint + 2px left accent strip (inset so layout never shifts) */
 .itemUnread {
-    background: var(--accent-softer);
-    border-color: var(--accent-border);
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.itemUnread:hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-raised));
 }
 
 .followingPost {
@@ -49,19 +61,24 @@
 .postHead {
     display: flex;
     align-items: baseline;
-    gap: 6px;
+    gap: 8px;
     color: var(--text-dim);
+    font-size: 13.5px;
 }
 
 .postHead time {
     margin-left: auto;
     color: var(--text-faint);
     font-size: 12px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
 }
 
 .postContent {
     margin-top: 4px;
     color: var(--mw-text);
+    font-size: 13.5px;
+    line-height: 1.6;
     overflow-wrap: anywhere;
 }
 
@@ -72,7 +89,7 @@
 .postMeta {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     margin-top: 8px;
     color: var(--text-faint);
     font-size: 12px;
@@ -91,32 +108,50 @@
 }
 
 .avatarWrap {
-    position: relative;
     display: inline-block;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Fallback icon when there is no actor: flat tinted square, not a solid pill */
+.typeIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
 }
 
-.iconBadge {
-    position: absolute;
-    right: -4px;
-    bottom: -4px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border: 2px solid var(--bg-card);
+.main {
+    flex: 1;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.headline {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.title {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-dim);
+    word-break: break-word;
 }
 
 .sysAvatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
     flex-shrink: 0;
+    margin-top: 1px;
     background: var(--accent-soft);
     color: var(--accent-strong);
 }
@@ -124,14 +159,18 @@
 .text {
     flex: 1;
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 1.55;
     min-width: 0;
     padding-top: 1px;
 }
 
 .actor {
-    font-weight: 700;
-    color: var(--accent-strong);
+    font-weight: 600;
+    color: var(--mw-text);
+}
+
+.actor:hover {
+    text-decoration: underline;
 }
 
 .body {
@@ -154,33 +193,63 @@
     font-weight: 600;
 }
 
+/* Comment/message as plain muted text — no rounded box */
+.preview {
+    margin: 6px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preview p {
+    margin: 0;
+}
+
 .senderTitle {
     display: block;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--mw-text);
     margin-bottom: 2px;
 }
 
 .sourceTag {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 1px 8px;
+    display: inline;
+    margin-left: 6px;
+    padding: 0;
     font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-faint);
-    vertical-align: 1px;
+    vertical-align: baseline;
+}
+
+.sourceTag::before {
+    content: '· ';
 }
 
 .time {
     color: var(--text-faint);
     font-size: 12px;
     flex-shrink: 0;
-    margin-top: 4px;
+    margin-top: 3px;
+    margin-left: auto;
+    padding-left: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .status {
@@ -191,30 +260,21 @@
 
 @media (max-width: 620px) {
     .page {
-        padding: 20px 14px 64px;
+        padding: 24px 16px 72px;
     }
 
     .page h1 {
-        margin-bottom: 16px;
-        font-size: 24px;
+        margin-bottom: 6px;
+        font-size: 20px;
     }
 
     .item,
     .itemUnread,
     .followingPost {
-        display: grid;
-        grid-template-columns: 40px minmax(0, 1fr);
-        gap: 4px 12px;
-        padding: 12px;
-    }
-
-    .avatarWrap,
-    .sysAvatar {
-        grid-row: 1 / span 2;
+        padding: 12px 8px;
     }
 
     .time {
-        grid-column: 2;
-        margin-top: 0;
+        white-space: nowrap;
     }
 }

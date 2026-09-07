@@ -8,7 +8,7 @@ import {applyTheme, detectTheme, THEME_CHANGE_EVENT} from '../../lib/themes/them
 import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
 import Modal from './ui/Modal.jsx';
-import SectionTabs from './SectionTabs.jsx';
+import UnderlineTabs from './UnderlineTabs.jsx';
 import ThemeCard from './ThemeCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
 import styles from '../pages/MyStuff.module.css';
@@ -134,13 +134,11 @@ const MyStuffThemes = ({username}) => {
                     </Link>
                 </div>
             </header>
-            <SectionTabs
+            <UnderlineTabs
                 items={VIEWS}
                 value={view}
                 onChange={setView}
                 className={styles.themeTabs}
-                itemClassName={styles.themeTab}
-                activeClassName={styles.themeTabActive}
                 ariaLabel="Theme library sections"
             />
             {view === 'library' ? localThemes.length ? (

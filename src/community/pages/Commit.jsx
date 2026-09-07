@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
 import SpriteList from '../components/SpriteList.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
@@ -286,10 +287,16 @@ const Commit = () => {
                     <code>{entry.oid}</code>
                 </div>
             </section>
-            <nav className={styles.views} aria-label="Commit views">
-                <button type="button" className={!fileView ? styles.viewActive : ''} onClick={showDiff}>Changes <span>{files.length}</span></button>
-                <button type="button" className={fileView ? styles.viewActive : ''} onClick={() => showFiles(historicalPath)}>Files at this commit</button>
-            </nav>
+            <UnderlineTabs
+                items={[
+                    {key: 'changes', label: <>Changes <b>{files.length}</b></>},
+                    {key: 'files', label: 'Files at this commit'}
+                ]}
+                value={fileView ? 'files' : 'changes'}
+                onChange={key => (key === 'files' ? showFiles(historicalPath) : showDiff())}
+                className={styles.views}
+                ariaLabel="Commit views"
+            />
             {fileView ? (
                 <ProjectFiles
                     bounded
