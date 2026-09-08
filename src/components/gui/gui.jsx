@@ -269,21 +269,35 @@ const GUIComponent = props => {
         }
         const element = mobileStagePaneRef.current;
         if (!element) return;
+        let fitRaf = null;
         const fitStage = () => {
-            const style = window.getComputedStyle(element);
-            const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) +
-                (Number.parseFloat(style.paddingRight) || 0);
-            const availableWidth = Math.max(0, element.clientWidth - horizontalPadding);
-            setMobileStageContainerWidth(Math.min(FIXED_WIDTH + 2, availableWidth));
+            if (fitRaf) return;
+            fitRaf = requestAnimationFrame(() => {
+                fitRaf = null;
+                const style = window.getComputedStyle(element);
+                const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) +
+                    (Number.parseFloat(style.paddingRight) || 0);
+                const availableWidth = Math.max(0, element.clientWidth - horizontalPadding);
+                const nextWidth = Math.min(FIXED_WIDTH + 2, availableWidth);
+                setMobileStageContainerWidth(prev => (
+                    typeof prev === 'number' && Math.abs(prev - nextWidth) < 1 ? prev : nextWidth
+                ));
+            });
         };
         fitStage();
         if (typeof ResizeObserver === 'undefined') {
             window.addEventListener('resize', fitStage);
-            return () => window.removeEventListener('resize', fitStage);
+            return () => {
+                window.removeEventListener('resize', fitStage);
+                if (fitRaf) cancelAnimationFrame(fitRaf);
+            };
         }
         const observer = new ResizeObserver(fitStage);
         observer.observe(element);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            if (fitRaf) cancelAnimationFrame(fitRaf);
+        };
     }, [mobileEditorView]);
 
     const handleStagePanelResizeDoubleClick = useCallback(() => {

@@ -7,7 +7,13 @@ export default async function ({ addon, global, console }) {
   // whenever the addon modifies or stops modifying UI elements
   resizeWorkspace();
 
-  let resizeObserver = new ResizeObserver(resizeWorkspace);
+  let resizeObserver = new ResizeObserver(() => {
+    if (resizeObserver._raf) return;
+    resizeObserver._raf = requestAnimationFrame(() => {
+      resizeObserver._raf = null;
+      resizeWorkspace();
+    });
+  });
   (async () => {
     while (true) {
       let menuBar = await addon.tab.waitForElement('[class*="menu-bar_menu-bar"]', {

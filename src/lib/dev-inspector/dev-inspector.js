@@ -135,8 +135,12 @@ export function initDevInspector (vm, Blockly) {
     if (!editorContainer || typeof ResizeObserver === 'undefined') return;
     if (editorContainer._diResizeObs) return;
     const obs = new ResizeObserver(() => {
-      // Resize only - never update() without data
-      refreshJSONEditor(getEditor());
+      if (editorContainer._diResizeRaf) return;
+      editorContainer._diResizeRaf = requestAnimationFrame(() => {
+        editorContainer._diResizeRaf = null;
+        // Resize only - never update() without data
+        refreshJSONEditor(getEditor());
+      });
     });
     obs.observe(editorContainer);
     editorContainer._diResizeObs = obs;

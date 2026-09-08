@@ -37,10 +37,19 @@ const projectIdFromUrl = href => {
     }
 };
 
+const isBenignResizeObserverLoop = (message, stack) => {
+    // Chrome fires "ResizeObserver loop completed with undelivered notifications"
+    // as a window error when an observer callback affects layout in the same frame.
+    // It is benign and has no file/line (reported as editor:0:0). Never report it.
+    const text = `${String(message || '')}\n${String(stack || '')}`;
+    return text.includes('ResizeObserver loop') || text.includes('undelivered notifications');
+};
+
 export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = ''}) => {
     try {
         const text = String(message || '').trim();
         if (!text || sending) return;
+        if (isBenignResizeObserverLoop(text, stack)) return;
         const href = String(url || window.location.href || '').slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
