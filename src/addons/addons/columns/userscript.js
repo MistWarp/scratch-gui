@@ -9,7 +9,13 @@ export default async function ({ addon, msg, console }) {
     // Update flyout position when category menu height changes.
     if (this.HtmlDiv && !this.HtmlDiv._observer) {
       this.HtmlDiv._observer = new ResizeObserver(() => {
-        this.flyout_.position();
+        if (this.HtmlDiv._raf) return;
+        const flyout = this.flyout_;
+        const div = this.HtmlDiv;
+        div._raf = requestAnimationFrame(() => {
+          div._raf = null;
+          flyout.position();
+        });
       });
       this.HtmlDiv._observer.observe(this.HtmlDiv);
     }

@@ -35,6 +35,10 @@ class CustomProcedures extends React.Component {
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyDown);
+        if (this.resizeRaf) {
+            cancelAnimationFrame(this.resizeRaf);
+            this.resizeRaf = null;
+        }
         if (this.workspace) {
             this.workspace.dispose();
         }
@@ -103,9 +107,13 @@ class CustomProcedures extends React.Component {
 
         if (window.ResizeObserver) {
             this.resizeObserver = new ResizeObserver(() => {
-                if (!this.workspace) return;
-                this.workspace.resize();
-                this.recenterBlock();
+                if (this.resizeRaf) return;
+                this.resizeRaf = requestAnimationFrame(() => {
+                    this.resizeRaf = null;
+                    if (!this.workspace) return;
+                    this.workspace.resize();
+                    this.recenterBlock();
+                });
             });
             this.resizeObserver.observe(this.blocks);
         }

@@ -513,6 +513,10 @@ class MenuBar extends React.Component {
             this.menuResizeObserver.disconnect();
             this.menuResizeObserver = null;
         }
+        if (this.menuResizeRaf) {
+            cancelAnimationFrame(this.menuResizeRaf);
+            this.menuResizeRaf = null;
+        }
 
         if (this.props.vm && this.props.vm.runtime && this.workspaceBookmarksProjectListener) {
             this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
@@ -529,10 +533,15 @@ class MenuBar extends React.Component {
         const el = this.menuBarRef.current;
         if (!el || typeof ResizeObserver === 'undefined') return;
         this.menuResizeObserver = new ResizeObserver(() => {
-            const collapsed = el.getBoundingClientRect().width < COLLAPSE_MENU_WIDTH;
-            if (collapsed !== this.state.menuCollapsed) {
-                this.setState({menuCollapsed: collapsed, moreMenuOpen: false});
-            }
+            if (this.menuResizeRaf) return;
+            this.menuResizeRaf = requestAnimationFrame(() => {
+                this.menuResizeRaf = null;
+                if (this.unmounted) return;
+                const collapsed = el.getBoundingClientRect().width < COLLAPSE_MENU_WIDTH;
+                if (collapsed !== this.state.menuCollapsed) {
+                    this.setState({menuCollapsed: collapsed, moreMenuOpen: false});
+                }
+            });
         });
         this.menuResizeObserver.observe(el);
     }
