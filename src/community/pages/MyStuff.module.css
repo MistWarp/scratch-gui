@@ -92,7 +92,7 @@
     font-weight: 800;
     color: var(--accent);
     opacity: 0.5;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .info {
@@ -179,7 +179,7 @@
     font: inherit;
     font-size: 13px;
     padding: 8px 10px;
-    text-align: left;
+    text-align: start;
 }
 
 .actionMenu a:hover,
@@ -282,8 +282,8 @@
 }
 
 .quota {
-    margin-left: auto;
-    margin-right: 12px;
+    margin-inline-start: auto;
+    margin-inline-end: 12px;
     color: var(--text-dim);
     font-size: 13px;
     white-space: nowrap;
@@ -293,8 +293,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-left: auto;
-    margin-right: 12px;
+    margin-inline-start: auto;
+    margin-inline-end: 12px;
     min-width: 0;
 }
 
@@ -378,7 +378,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-right: 12px;
+    margin-inline-end: 12px;
     color: var(--accent-strong);
     font-size: 13px;
     white-space: nowrap;
@@ -1303,7 +1303,7 @@
 }
 
 .uploadResetError .secondary {
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 /* ---- Agreement tab ---- */

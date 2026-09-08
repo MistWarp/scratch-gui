@@ -7,36 +7,19 @@ import {SettingsModalComponent} from '../../../src/components/tw-settings-modal/
 import {ModalSidebarItem} from '../../../src/components/modal-sidebar/modal-sidebar.jsx';
 
 describe('settings navigation', () => {
-    test('theme sections are sidebar destinations', () => {
-        const modal = shallowWithIntl(
-            <SettingsModalComponent onClose={jest.fn()} />
-        );
+    test('Theme is one sidebar destination with tabs for its sections', () => {
+        const modal = shallowWithIntl(<SettingsModalComponent onClose={jest.fn()} />);
         const labels = modal.find(ModalSidebarItem).map(item => item.prop('label'));
-
-        expect(labels).toEqual(expect.arrayContaining([
-            'Appearance',
-            'Blocks',
-            'Wallpaper',
-            'Fonts',
-            'Editor',
-            'Menu bar',
-            'Loading screen'
-        ]));
-        expect(labels).not.toContain('Theme');
-    });
-
-    test('sidebar navigates between theme sections', () => {
-        const modal = shallowWithIntl(
-            <SettingsModalComponent onClose={jest.fn()} />
-        );
-        modal.find(ModalSidebarItem)
-            .filterWhere(item => item.prop('label') === 'Menu bar')
-            .simulate('click');
-        expect(modal.state('currentView')).toBe('menuBar');
-
-        modal.find(ModalSidebarItem)
-            .filterWhere(item => item.prop('label') === 'Blocks')
-            .simulate('click');
+        expect(labels).toContain('Theme');
+        expect(labels).not.toContain('Menu bar');
+        expect(labels).not.toContain('Fonts');
+        modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Theme').simulate('click');
+        expect(modal.state('currentView')).toBe('appearance');
+        const tabs = modal.find('button[role="tab"]');
+        expect(tabs).toHaveLength(6);
+        tabs.at(1).simulate('click');
         expect(modal.state('currentView')).toBe('blocks');
+        expect(modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Theme').prop('selected'))
+            .toBe(true);
     });
 });

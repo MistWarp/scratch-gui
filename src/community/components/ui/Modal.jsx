@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef} from 'react';
@@ -10,6 +11,7 @@ const focusableSelector = '[autofocus], input:not([disabled]), textarea:not([dis
     'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
 const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClose, onDismiss, title}) => {
+    const {text: communityText} = useCommunityText();
     const dismiss = onDismiss || onClose;
     const activeDismiss = dismissDisabled ? null : dismiss;
     const modalRef = useRef(null);
@@ -80,7 +82,7 @@ const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClo
                             className={styles.close}
                             onClick={onClose}
                             disabled={dismissDisabled}
-                            aria-label="Close"
+                            aria-label={communityText('Close')}
                             type="button"
                         >
                             <X size={18} />

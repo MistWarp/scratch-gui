@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useRef, useState} from 'react';
 import {Clock, Image, ListChecks, Plus, Send, X} from 'lucide-react';
@@ -19,6 +20,7 @@ const attachmentLimit = tier => {
 };
 
 const PostComposer = ({user, onPosted, profileOnly = false}) => {
+    const {text: communityText} = useCommunityText();
     const fileInput = useRef(null);
     const submitInFlight = useRef(false);
     const [content, setContent] = useState('');
@@ -134,8 +136,8 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 value={content}
                 maxLength={maxLength}
                 disabled={busy}
-                placeholder={profileOnly ? 'Post something to your profile' : 'Post something'}
-                aria-label="Post content"
+                placeholder={profileOnly ? communityText('Post something to your profile') : communityText('Post something')}
+                aria-label={communityText('Post content')}
                 onPaste={handlePaste}
                 onChange={event => setContent(event.target.value)}
             />
@@ -150,7 +152,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
             {uploading ? (
                 <div className={styles.upload}>
                     <span style={{width: `${progress}%`}} />
-                    <small>Uploading… {progress}%</small>
+                    <small>{communityText('Uploading… ')}{progress}%</small>
                 </div>
             ) : null}
             {attachments.length ? (
@@ -161,7 +163,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                             <button
                                 type="button"
                                 onClick={() => setAttachments(current => current.filter((_, item) => item !== index))}
-                                aria-label="Remove attachment"
+                                aria-label={communityText('Remove attachment')}
                             ><X size={14} /></button>
                         </div>
                     ))}
@@ -174,7 +176,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                             <input
                                 value={option}
                                 maxLength={80}
-                                placeholder={`Option ${index + 1}`}
+                                placeholder={communityText("Option {value1}", {value1: index + 1})}
                                 onChange={event => setPoll(current => current.map((value, item) => (
                                     item === index ? event.target.value : value
                                 )))}
@@ -183,25 +185,23 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                                 <button
                                     type="button"
                                     onClick={() => setPoll(current => current.filter((_, item) => item !== index))}
-                                    aria-label={`Remove option ${index + 1}`}
+                                    aria-label={communityText("Remove option {value1}", {value1: index + 1})}
                                 ><X size={14} /></button>
                             ) : null}
                         </div>
                     ))}
                     {poll.length < 6 ? (
                         <button type="button" onClick={() => setPoll(current => [...current, ''])}>
-                            <Plus size={14} /> Add option
-                        </button>
+                            <Plus size={14} />{communityText(' Add option')}</button>
                     ) : null}
                 </div>
             ) : null}
             {scheduledFor ? (
-                <label className={styles.schedule}><Clock size={14} /> Publish at
-                    <input
-                        type="datetime-local"
-                        value={scheduledFor}
-                        onChange={event => setScheduledFor(event.target.value)}
-                    />
+                <label className={styles.schedule}><Clock size={14} />{communityText(' Publish at')}<input
+                    type="datetime-local"
+                    value={scheduledFor}
+                    onChange={event => setScheduledFor(event.target.value)}
+                />
                 </label>
             ) : null}
             {gifPickerOpen ? <GifPicker onSelect={selectGif} onClose={() => setGifPickerOpen(false)} /> : null}
@@ -211,32 +211,31 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                         type="button"
                         disabled={uploading || attachments.length >= maxAttachments}
                         onClick={() => fileInput.current.click()}
-                        title="Attach images or video"
-                    ><Image size={16} /><span>Media</span></button>
+                        title={communityText('Attach images or video')}
+                    ><Image size={16} /><span>{communityText('Media')}</span></button>
                     <button
                         type="button"
                         className={gifPickerOpen ? styles.active : ''}
                         disabled={uploading || attachments.length >= maxAttachments}
                         onClick={() => setGifPickerOpen(value => !value)}
                         aria-expanded={gifPickerOpen}
-                    ><strong>GIF</strong></button>
+                    ><strong>{communityText('GIF')}</strong></button>
                     <button
                         type="button"
                         className={poll ? styles.active : ''}
                         onClick={() => setPoll(current => (current ? null : ['', '']))}
-                        title="Add a poll"
-                    ><ListChecks size={16} /><span>Poll</span></button>
+                        title={communityText('Add a poll')}
+                    ><ListChecks size={16} /><span>{communityText('Poll')}</span></button>
                     <button
                         type="button"
                         className={scheduledFor ? styles.active : ''}
                         onClick={() => setScheduledFor(current => (current ? '' : defaultSchedule()))}
-                        title="Schedule post"
-                    ><Clock size={16} /><span>Schedule</span></button>
+                        title={communityText('Schedule post')}
+                    ><Clock size={16} /><span>{communityText('Schedule')}</span></button>
                 </div>
                 <span className={content.length >= maxLength ? styles.over : ''}>{content.length}/{maxLength}</span>
                 <Button type="submit" variant="primary" busy={busy} disabled={!canPost}>
-                    <Send size={15} /> Post
-                </Button>
+                    <Send size={15} />{communityText(' Post')}</Button>
             </div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
         </form>

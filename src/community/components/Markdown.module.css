@@ -37,7 +37,7 @@
 
 .markdown ul,
 .markdown ol {
-    padding-left: 1.6em;
+    padding-inline-start: 1.6em;
 }
 
 .markdown li + li {
@@ -74,8 +74,8 @@
 }
 
 .markdown blockquote {
-    padding-left: 13px;
-    border-left: 3px solid var(--accent-border);
+    padding-inline-start: 13px;
+    border-inline-start: 3px solid var(--accent-border);
     color: var(--text-faint);
 }
 

@@ -2,15 +2,11 @@ import GUI from './containers/gui.jsx';
 import AppStateHOC from './lib/components/app-state-hoc.jsx';
 import GuiReducer, {guiInitialState, guiMiddleware, initEmbedded, initFullScreen, initPlayer} from './reducers/gui';
 import LocalesReducer, {localesInitialState, initLocale} from './reducers/locales';
-import * as ScratchPaint from 'scratch-paint';
-import {setScratchPaint} from './lib/tw-scratch-paint';
+import {ScratchPaintReducer} from './lib/tw-scratch-paint';
+import {prepareLocale, loadLocale} from './lib/editor-locales';
 import {setFullScreen, setPlayer} from './reducers/mode';
 import {remixProject} from './reducers/project-state';
 import {setAppElement} from 'react-modal';
-
-setScratchPaint(ScratchPaint);
-
-const {ScratchPaintReducer} = ScratchPaint;
 
 const guiReducers = {
     locales: LocalesReducer,
@@ -32,5 +28,7 @@ export {
     localesInitialState,
     remixProject,
     setFullScreen,
-    setPlayer
+    setPlayer,
+    prepareLocale,
+    loadLocale
 };

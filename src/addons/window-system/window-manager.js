@@ -201,7 +201,7 @@ class AddonWindow {
         this.maximizable = options.maximizable !== false;
         this.className = options.className || '';
         this.destroyOnMinimize = options.destroyOnMinimize || false;
-        this.alwaysOnTop = options.alwaysOnTop || false;
+        this.alwaysOnTop = options.alwaysOnTop || this.modal;
         
         this.isVisible = false;
         this.isMinimized = false;
@@ -759,6 +759,7 @@ class AddonWindow {
 
         this.zIndex = isOnTopTier ? ++nextOnTopZIndex : ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
+        if (this.backdrop) this.backdrop.style.zIndex = String(this.zIndex - 0.5);
     }
 
     fitToViewport () {
@@ -789,6 +790,54 @@ class AddonWindow {
         return this;
     }
     
+    showModalBackdrop () {
+        if (!this.modal || this.backdrop) return;
+        this.previouslyFocused = document.activeElement;
+        this.backdrop = document.createElement('div');
+        Object.assign(this.backdrop.style, {position: 'fixed',
+            inset: '0',
+            background: 'rgba(0,0,0,0.2)',
+            zIndex: String(this.zIndex - 0.5)});
+        this.element.parentNode.insertBefore(this.backdrop, this.element);
+        this.element.setAttribute('role', 'dialog');
+        this.element.setAttribute('aria-modal', 'true');
+        this.element.tabIndex = -1;
+        const isTopModal = () => !Array.from(activeWindows.values()).some(win =>
+            win !== this && win.modal && win.isVisible && win.zIndex > this.zIndex);
+        const focusable = () => Array.from(this.element.querySelectorAll(
+            'button, input, select, textarea, a[href], [tabindex="0"]'
+        )).filter(el => !el.disabled && el.getClientRects().length);
+        this.modalFocusHandler = event => {
+            if (!isTopModal() || this.element.contains(event.target)) return;
+            // Blockly and nested React dialogs mount their inputs in body portals.
+            if (event.target.closest('.blocklyWidgetDiv, .blocklyDropDownDiv, .ReactModalPortal')) return;
+            (focusable()[0] || this.element).focus();
+        };
+        this.modalKeyHandler = event => {
+            if (event.key !== 'Tab' || !isTopModal()) return;
+            const items = focusable();
+            const first = items[0] || this.element;
+            const last = items[items.length - 1] || this.element;
+            if (event.shiftKey ? document.activeElement === first || document.activeElement === this.element :
+                document.activeElement === last || document.activeElement === this.element) {
+                event.preventDefault();
+                (event.shiftKey ? last : first).focus();
+            }
+        };
+        document.addEventListener('focusin', this.modalFocusHandler);
+        document.addEventListener('keydown', this.modalKeyHandler);
+        (focusable()[0] || this.element).focus();
+    }
+
+    hideModalBackdrop () {
+        if (!this.backdrop) return;
+        this.backdrop.remove();
+        this.backdrop = null;
+        document.removeEventListener('focusin', this.modalFocusHandler);
+        document.removeEventListener('keydown', this.modalKeyHandler);
+        if (this.previouslyFocused && this.previouslyFocused.isConnected) this.previouslyFocused.focus();
+    }
+
     show () {
         activeWindows.set(this.id, this);
         this.fitToViewport();
@@ -799,6 +848,7 @@ class AddonWindow {
         this.element.style.display = 'flex';
         if (!wasVisible) {
             this.bringToFront();
+            this.showModalBackdrop();
         }
         return this;
     }
@@ -806,6 +856,7 @@ class AddonWindow {
     hide () {
         this.isVisible = false;
         this.element.style.display = 'none';
+        this.hideModalBackdrop();
         return this;
     }
     
@@ -970,7 +1021,7 @@ class NativeAddonWindow {
         this.modal = options.modal || false;
         this.closable = options.closable !== false;
         this.destroyOnMinimize = options.destroyOnMinimize || false;
-        this.alwaysOnTop = options.alwaysOnTop || false;
+        this.alwaysOnTop = options.alwaysOnTop || this.modal;
         this.className = options.className || '';
 
         this.isVisible = false;

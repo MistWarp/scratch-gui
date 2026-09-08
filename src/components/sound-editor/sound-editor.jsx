@@ -17,8 +17,8 @@ import styles from './sound-editor.css';
 
 import playIcon from './icon--play.svg';
 import stopIcon from './icon--stop.svg';
-import redoIcon from '!../../lib/tw-recolor/build!./icon--redo.svg';
-import undoIcon from '!../../lib/tw-recolor/build!./icon--undo.svg';
+import redoIcon from './icon--redo.svg?recolor';
+import undoIcon from './icon--undo.svg?recolor';
 import fasterIcon from './icon--faster.svg';
 import slowerIcon from './icon--slower.svg';
 import louderIcon from './icon--louder.svg';
@@ -30,10 +30,10 @@ import fadeOutIcon from './icon--fade-out.svg';
 import fadeInIcon from './icon--fade-in.svg';
 import muteIcon from './icon--mute.svg';
 
-import deleteIcon from '!../../lib/tw-recolor/build!./icon--delete.svg';
-import copyIcon from '!../../lib/tw-recolor/build!./icon--copy.svg';
-import pasteIcon from '!../../lib/tw-recolor/build!./icon--paste.svg';
-import copyToNewIcon from '!../../lib/tw-recolor/build!./icon--copy-to-new.svg';
+import deleteIcon from './icon--delete.svg?recolor';
+import copyIcon from './icon--copy.svg?recolor';
+import pasteIcon from './icon--paste.svg?recolor';
+import copyToNewIcon from './icon--copy-to-new.svg?recolor';
 
 const BufferedInput = BufferedInputHOC(Input);
 

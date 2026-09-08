@@ -10,7 +10,8 @@ while (appTarget.firstChild) {
 
 setAppElement(appTarget);
 
-const render = children => {
+const render = async (children, prepare) => {
+    if (prepare) await prepare();
     // Use ReactDOM.createRoot for better performance if available (React 18+)
     if (ReactDOM.createRoot) {
         const root = ReactDOM.createRoot(appTarget);

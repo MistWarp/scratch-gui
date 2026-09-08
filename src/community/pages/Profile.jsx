@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useLocation, useNavigate, useParams, Link} from 'react-router-dom';
@@ -118,6 +119,7 @@ const parseDonationAmount = value => {
 };
 
 const Profile = () => {
+    const {text: communityText} = useCommunityText();
     const {name} = useParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -425,13 +427,13 @@ const Profile = () => {
             <main className={styles.page}>
                 <div className={styles.status}>
                     <p>{error}</p>
-                    {error === 'Could not load this profile.' ? <Button onClick={load}>Try again</Button> : <Link to="/explore">Browse projects</Link>}
+                    {error === 'Could not load this profile.' ? <Button onClick={load}>{communityText('Try again')}</Button> : <Link to="/explore">{communityText('Browse projects')}</Link>}
                 </div>
             </main>
         );
     }
     if (!profile || profileLoadContext !== loadContext) {
-        return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
+        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
     }
 
     const projects = (mwUser && mwUser.projects) || [];
@@ -459,7 +461,7 @@ const Profile = () => {
             {blockConfirmOpen ? (
                 <Modal
                     icon={Ban}
-                    title={`Block ${profile.username || name}?`}
+                    title={communityText("Block {value1}?", {value1: profile.username || name})}
                     onClose={() => setBlockConfirmOpen(false)}
                     dismissDisabled={safetyBusy}
                     actions={(
@@ -468,21 +470,19 @@ const Profile = () => {
                                 variant="danger"
                                 className={styles.blockedButton}
                                 busy={safetyBusy}
-                                busyLabel="Blocking…"
+                                busyLabel={communityText('Blocking…')}
                                 onClick={() => toggleSafety('block', true)}
-                            >Block user</Button>
+                            >{communityText('Block user')}</Button>
                             <Button
                                 variant="secondary"
                                 className={styles.iconButton}
                                 disabled={safetyBusy}
                                 onClick={() => setBlockConfirmOpen(false)}
-                            >Cancel</Button>
+                            >{communityText('Cancel')}</Button>
                         </React.Fragment>
                     )}
                 >
-                    <p className={styles.modalText}>
-                        You will stop receiving MistWarp comments and notifications from each other.
-                    </p>
+                    <p className={styles.modalText}>{communityText('You will stop receiving MistWarp comments and notifications from each other.')}</p>
                     {actionError ? <p className={styles.actionError}>{actionError}</p> : null}
                 </Modal>
             ) : null}
@@ -504,20 +504,18 @@ const Profile = () => {
                     {actionError ? <p className={styles.status}>{actionError}</p> : null}
 
                     {!onMistWarp ? (
-                        <div className={styles.notOnMistwarp}>
-                            Not on MistWarp yet. This is <UserLink username={profile.username || name}>{profile.username || name}</UserLink>&apos;s Rotur profile.
-                        </div>
+                        <div className={styles.notOnMistwarp}>{communityText('Not on MistWarp yet. This is ')}<UserLink username={profile.username || name}>{profile.username || name}</UserLink>{communityText("'s Rotur profile.")}</div>
                     ) : null}
 
-                    <div className={styles.tabs} role="tablist" aria-label="Profile content">
+                    <div className={styles.tabs} role="tablist" aria-label={communityText('Profile content')}>
                         <button type="button" role="tab" aria-selected={activeTab === 'projects'} className={activeTab === 'projects' ? styles.tabActive : styles.tab} onClick={() => selectTab('projects')}>
-                            <FolderKanban size={15} /> Projects <span>{projectTotal}</span>
+                            <FolderKanban size={15} />{communityText(' Projects ')}<span>{projectTotal}</span>
                         </button>
                         <button type="button" role="tab" aria-selected={activeTab === 'posts'} className={activeTab === 'posts' ? styles.tabActive : styles.tab} onClick={() => selectTab('posts')}>
-                            <MessageSquare size={15} /> Posts <span>{profilePosts.length}</span>
+                            <MessageSquare size={15} />{communityText(' Posts ')}<span>{profilePosts.length}</span>
                         </button>
                         <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? styles.tabActive : styles.tab} onClick={() => selectTab('themes')}>
-                            <Palette size={15} /> Themes <span>{profileThemes?.length || 0}</span>
+                            <Palette size={15} />{communityText(' Themes ')}<span>{profileThemes?.length || 0}</span>
                         </button>
                     </div>
 
@@ -533,12 +531,11 @@ const Profile = () => {
                             {showRecentActivity ? (
                                 <section className={styles.section}>
                                     <div className={styles.sectionHead}>
-                                        <h2 className={styles.sectionTitle}>Recent activity</h2>
+                                        <h2 className={styles.sectionTitle}>{communityText('Recent activity')}</h2>
                                         <div className={styles.activityActions}>
-                                            {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>Only visible to you</span> : null}
+                                            {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>{communityText('Only visible to you')}</span> : null}
                                             <Link className={styles.libraryLink} to={`/users/${name}/library`}>
-                                                <Gamepad2 size={14} /> View game library
-                                            </Link>
+                                                <Gamepad2 size={14} />{communityText(' View game library')}</Link>
                                         </div>
                                     </div>
                                     {recentActivity.length ? (
@@ -547,7 +544,7 @@ const Profile = () => {
                                                 const projectId = item.projectId || item.id || item._id;
                                                 return (
                                                     <article className={styles.recentActivityItem} key={projectId}>
-                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={`Open ${item.title}`} />
+                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={communityText("Open {value1}", {value1: item.title})} />
                                                         <div className={styles.recentActivityThumb}>
                                                             <img src={item.thumbUrl} alt="" loading="lazy" />
                                                         </div>
@@ -556,7 +553,7 @@ const Profile = () => {
                                                                 className={styles.recentActivityTitle}
                                                                 title={item.title}
                                                             >{item.title}</div>
-                                                            <div className={styles.recentActivityOwner}>by <UserLink username={item.owner}>{item.owner}</UserLink></div>
+                                                            <div className={styles.recentActivityOwner}>{communityText('by ')}<UserLink username={item.owner}>{item.owner}</UserLink></div>
                                                             <div className={styles.recentActivityStats}>
                                                                 {item.duration > 0 ?
                                                                     <span>{formatPlaytime(item.duration, false)}</span> : null}
@@ -571,8 +568,8 @@ const Profile = () => {
                                     ) : (
                                         <p className={styles.sectionEmpty}>
                                             {mwUser.recentActivityVisible === false && !isSelf ?
-                                                'This user has chosen not to share what they play.' :
-                                                'Games added to the library will appear here after they are played.'}
+                                                communityText('This user has chosen not to share what they play.') :
+                                                communityText('Games added to the library will appear here after they are played.')}
                                         </p>
                                     )}
                                 </section>
@@ -580,7 +577,7 @@ const Profile = () => {
 
                             {otherProjects.length ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>Projects</h2>
+                                    <h2 className={styles.sectionTitle}>{communityText('Projects')}</h2>
                                     <div className={styles.grid}>
                                         {otherProjects.map(project => (
                                             <ProjectCard
@@ -594,9 +591,9 @@ const Profile = () => {
                                             <Button
                                                 variant="secondary"
                                                 busy={projectsBusy}
-                                                busyLabel="Loading…"
+                                                busyLabel={communityText('Loading…')}
                                                 onClick={loadMoreProjects}
-                                            >Load more projects</Button>
+                                            >{communityText('Load more projects')}</Button>
                                         </div>
                                     ) : null}
                                     {projectsError ? <p className={styles.sectionEmpty}>{projectsError}</p> : null}
@@ -605,7 +602,7 @@ const Profile = () => {
 
                             {user && user.isAdmin && unsharedProjects.length ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>Unshared projects (admin only)</h2>
+                                    <h2 className={styles.sectionTitle}>{communityText('Unshared projects (admin only)')}</h2>
                                     <div className={styles.grid}>
                                         {unsharedProjects.map(project => (
                                             <ProjectCard
@@ -619,9 +616,9 @@ const Profile = () => {
 
                             {onMistWarp ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>Recent reviews</h2>
-                                    {reviews === null ? <p className={styles.sectionEmpty}>Loading reviews…</p> : null}
-                                    {reviews && !reviews.length ? <p className={styles.sectionEmpty}>No reviews yet.</p> : null}
+                                    <h2 className={styles.sectionTitle}>{communityText('Recent reviews')}</h2>
+                                    {reviews === null ? <p className={styles.sectionEmpty}>{communityText('Loading reviews…')}</p> : null}
+                                    {reviews && !reviews.length ? <p className={styles.sectionEmpty}>{communityText('No reviews yet.')}</p> : null}
                                     {reviews && reviews.length ? (
                                         <div className={styles.reviewGrid}>
                                             {reviews.slice(0, 6).map(review => (
@@ -636,7 +633,7 @@ const Profile = () => {
                                                     </div>
                                                     <div
                                                         className={styles.reviewStars}
-                                                        aria-label={`${review.rating} out of 5 stars`}
+                                                        aria-label={communityText("{value1} out of 5 stars", {value1: review.rating})}
                                                     >
                                                         {[1, 2, 3, 4, 5].map(value => (
                                                             <Star
@@ -649,7 +646,7 @@ const Profile = () => {
                                                     {review.message ? (
                                                         <p><RichText text={review.message} /></p>
                                                     ) : (
-                                                        <p className={styles.reviewNoText}>No written review.</p>
+                                                        <p className={styles.reviewNoText}>{communityText('No written review.')}</p>
                                                     )}
                                                 </Link>
                                             ))}
@@ -660,16 +657,13 @@ const Profile = () => {
 
                             <section className={styles.section}>
                                 <div className={styles.sectionHead}>
-                                    <h2 className={styles.sectionTitle}>
-                                        Followers - {profile.followers || followers.length}
+                                    <h2 className={styles.sectionTitle}>{communityText('Followers - ')}{profile.followers || followers.length}
                                     </h2>
                                     {followers.length ? (
                                         <Link
                                             to={`/users/${name}/followers`}
                                             className={styles.seeAll}
-                                        >
-                                            See all
-                                            <ChevronRight size={14} />
+                                        >{communityText('See all')}<ChevronRight size={14} />
                                         </Link>
                                     ) : null}
                                 </div>
@@ -690,24 +684,24 @@ const Profile = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className={styles.sectionEmpty}>No followers yet.</p>
+                                    <p className={styles.sectionEmpty}>{communityText('No followers yet.')}</p>
                                 )}
                             </section>
 
                             {onMistWarp ? (
                                 <section className={styles.section} id="comments">
                                     <div className={styles.sectionHead}>
-                                        <h2 className={styles.sectionTitle}>Comments</h2>
+                                        <h2 className={styles.sectionTitle}>{communityText('Comments')}</h2>
                                         {isSelf ? (
                                             <Button
                                                 variant="secondary"
                                                 className={styles.commentsToggle}
                                                 onClick={toggleComments}
                                                 busy={commentsBusy}
-                                                busyLabel={commentsOff ? 'Turning on…' : 'Turning off…'}
+                                                busyLabel={commentsOff ? communityText('Turning on…') : communityText('Turning off…')}
                                             >
                                                 {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
-                                                {commentsOff ? 'Turn on comments' : 'Turn off comments'}
+                                                {commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
                                             </Button>
                                         ) : null}
                                     </div>
@@ -741,19 +735,19 @@ const Profile = () => {
 
                     {activeTab === 'themes' ? (
                         <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Published themes</h2>
+                            <h2 className={styles.sectionTitle}>{communityText('Published themes')}</h2>
                             {profileThemes === null ? (
-                                <p className={styles.sectionEmpty}>Loading themes…</p>
+                                <p className={styles.sectionEmpty}>{communityText('Loading themes…')}</p>
                             ) : profileThemesError ? (
                                 <div className={styles.sectionEmpty} role="alert">
-                                    <p>Could not load published themes.</p>
-                                    <Button variant="secondary" onClick={loadThemes}>Try again</Button>
+                                    <p>{communityText('Could not load published themes.')}</p>
+                                    <Button variant="secondary" onClick={loadThemes}>{communityText('Try again')}</Button>
                                 </div>
                             ) : profileThemes.length ? (
                                 <div className={styles.themeGrid}>
                                     {profileThemes.map(item => <ThemeCard key={item.id} theme={item} />)}
                                 </div>
-                            ) : <p className={styles.sectionEmpty}>No published themes yet.</p>}
+                            ) : <p className={styles.sectionEmpty}>{communityText('No published themes yet.')}</p>}
                         </section>
                     ) : null}
 
@@ -802,8 +796,8 @@ const Profile = () => {
                                 />
                             ) : null}
                             <div className={styles.profileStats}>
-                                <Link className={styles.profileStatLink} to={`/users/${name}/followers`}><strong>{profile.followers || 0}</strong><span>followers</span></Link>
-                                <Link className={styles.profileStatLink} to={`/users/${name}/following`}><strong>{profile.following || 0}</strong><span>following</span></Link>
+                                <Link className={styles.profileStatLink} to={`/users/${name}/followers`}><strong>{profile.followers || 0}</strong><span>{communityText('followers')}</span></Link>
+                                <Link className={styles.profileStatLink} to={`/users/${name}/following`}><strong>{profile.following || 0}</strong><span>{communityText('following')}</span></Link>
                             </div>
                             <div className={styles.actions}>
                                 {user && !isSelf ? (
@@ -813,21 +807,19 @@ const Profile = () => {
                                                 variant="primary"
                                                 className={profile.followed ? styles.followingButton : styles.followButton}
                                                 busy={followBusy}
-                                                busyLabel={profile.followed ? 'Unfollowing…' : 'Following…'}
+                                                busyLabel={profile.followed ? communityText('Unfollowing…') : communityText('Following…')}
                                                 onClick={toggleFollow}
                                             >
                                                 {profile.followed ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                                                {profile.followed ? 'Following' : 'Follow'}
+                                                {profile.followed ? communityText('Following') : communityText('Follow')}
                                             </Button>
                                             <Button
                                                 variant="primary"
                                                 className={styles.followButton}
-                                                title={`Send credits to ${profile.username || name}`}
+                                                title={communityText("Send credits to {value1}", {value1: profile.username || name})}
                                                 onClick={() => setDonating(true)}
                                             >
-                                                <Coins size={15} />
-                                                Donate
-                                            </Button>
+                                                <Coins size={15} />{communityText('Donate')}</Button>
                                         </div>
                                         <div className={styles.utilityActions}>
                                             {mwUser && mwUser.exists !== false ? (
@@ -838,7 +830,7 @@ const Profile = () => {
                                                     onClick={() => toggleSafety('mute')}
                                                 >
                                                     <VolumeX size={15} />
-                                                    {mwUser.viewerMuted ? 'Unmute' : 'Mute'}
+                                                    {mwUser.viewerMuted ? communityText('Unmute') : communityText('Mute')}
                                                 </Button>
                                             ) : null}
                                             {mwUser && mwUser.exists !== false ? (
@@ -849,7 +841,7 @@ const Profile = () => {
                                                     onClick={() => toggleSafety('block')}
                                                 >
                                                     <Ban size={15} />
-                                                    {mwUser.viewerBlocked ? 'Unblock' : 'Block'}
+                                                    {mwUser.viewerBlocked ? communityText('Unblock') : communityText('Block')}
                                                 </Button>
                                             ) : null}
                                             <Button
@@ -857,16 +849,12 @@ const Profile = () => {
                                                 className={styles.iconButton}
                                                 onClick={() => setReporting(true)}
                                             >
-                                                <Flag size={15} />
-                                                Report
-                                            </Button>
+                                                <Flag size={15} />{communityText('Report')}</Button>
                                         </div>
                                     </React.Fragment>
                                 ) : !user && !userLoading ? (
                                     <Button variant="primary" className={styles.followButton} onClick={login}>
-                                        <UserPlus size={16} />
-                                        Sign in to follow
-                                    </Button>
+                                        <UserPlus size={16} />{communityText('Sign in to follow')}</Button>
                                 ) : null}
                                 {isSelf ? (
                                     <a
@@ -875,26 +863,24 @@ const Profile = () => {
                                         target="_blank"
                                         rel="noreferrer"
                                     >
-                                        <Pencil size={15} />
-                                        Edit profile
-                                    </a>
+                                        <Pencil size={15} />{communityText('Edit profile')}</a>
                                 ) : null}
                             </div>
                             <div className={styles.railSection}>
-                                <h2>About me</h2>
+                                <h2>{communityText('About me')}</h2>
                                 <div className={styles.bio}>
-                                    {profile.bio ? <RichText text={profile.bio} /> : 'No bio yet.'}
+                                    {profile.bio ? <RichText text={profile.bio} /> : communityText('No bio yet.')}
                                 </div>
                             </div>
                             <div className={styles.accountMeta}>
                                 {year ? (
-                                    <span><Calendar size={14} />Joined {year}</span>
+                                    <span><Calendar size={14} />{communityText('Joined ')}{year}</span>
                                 ) : null}
-                                {typeof profile.index === 'number' ? <span>Account #{profile.index}</span> : null}
+                                {typeof profile.index === 'number' ? <span>{communityText('Account #')}{profile.index}</span> : null}
                             </div>
                             {activities.length ? (
                                 <div className={styles.railSection}>
-                                    <h2>Activity</h2>
+                                    <h2>{communityText('Activity')}</h2>
                                     <div className={styles.activityList}>
                                         {activities.slice(0, 3).map((activity, index) => (
                                             <ActivityCard key={activity.id || index} activity={activity} />
@@ -908,14 +894,14 @@ const Profile = () => {
                         <section className={styles.adminPanel} aria-labelledby="profile-admin-heading">
                             <div className={styles.adminPanelHead}>
                                 <div>
-                                    <h2 id="profile-admin-heading">Moderate @{adminUser.username}</h2>
-                                    <p>Only admins can see these tools.</p>
+                                    <h2 id="profile-admin-heading">{communityText('Moderate @')}{adminUser.username}</h2>
+                                    <p>{communityText('Only admins can see these tools.')}</p>
                                 </div>
-                                <strong>{adminUser.banned ? 'Banned' : (adminUser.standing?.level || 'Good standing')}</strong>
+                                <strong>{adminUser.banned ? communityText('Banned') : (adminUser.standing?.level || communityText('Good standing'))}</strong>
                             </div>
                             <div className={styles.adminFields}>
                                 <label>
-                                    <span>Account standing</span>
+                                    <span>{communityText('Account standing')}</span>
                                     <select value={adminLevel} onChange={event => setAdminLevel(event.target.value)}>
                                         {['good', 'warning', 'suspended', 'banned'].map(level => (
                                             <option key={level} value={level}>{level}</option>
@@ -923,7 +909,7 @@ const Profile = () => {
                                     </select>
                                 </label>
                                 <label className={styles.adminReason}>
-                                    <span>Reason shown to the user</span>
+                                    <span>{communityText('Reason shown to the user')}</span>
                                     <input value={adminReason} onChange={event => setAdminReason(event.target.value)} />
                                 </label>
                                 <Button
@@ -934,11 +920,11 @@ const Profile = () => {
                                         () => api.admin.setStanding(adminUser.username, adminLevel, adminReason.trim()),
                                         'Standing updated.'
                                     )}
-                                >Apply</Button>
+                                >{communityText('Apply')}</Button>
                             </div>
                             <div className={styles.adminFields}>
                                 <label className={styles.adminReason}>
-                                    <span>Private moderation message</span>
+                                    <span>{communityText('Private moderation message')}</span>
                                     <input value={adminMessage} onChange={event => setAdminMessage(event.target.value)} />
                                 </label>
                                 <Button
@@ -950,7 +936,7 @@ const Profile = () => {
                                         () => api.admin.messageUser(adminUser.username, adminMessage.trim()).then(() => setAdminMessage('')),
                                         'Message sent.'
                                     )}
-                                >Send message</Button>
+                                >{communityText('Send message')}</Button>
                             </div>
                             <div className={styles.adminActions}>
                                 <Button
@@ -961,7 +947,7 @@ const Profile = () => {
                                         () => api.admin.updateUserProfile(adminUser.username, {commentsOff: !adminUser.commentsOff}),
                                         adminUser.commentsOff ? 'Profile comments enabled.' : 'Profile comments disabled.'
                                     )}
-                                >{adminUser.commentsOff ? 'Enable comments' : 'Disable comments'}</Button>
+                                >{adminUser.commentsOff ? communityText('Enable comments') : communityText('Disable comments')}</Button>
                                 <Button
                                     variant={adminUser.banned ? 'secondary' : 'danger'}
                                     busy={adminBusy === 'ban'}
@@ -971,7 +957,7 @@ const Profile = () => {
                                             api.admin.ban(adminUser.username, adminReason.trim())),
                                         adminUser.banned ? 'User unbanned.' : 'User banned.'
                                     )}
-                                >{adminUser.banned ? 'Unban user' : 'Ban user'}</Button>
+                                >{adminUser.banned ? communityText('Unban user') : communityText('Ban user')}</Button>
                             </div>
                             {adminNote ? <p className={styles.adminNote}>{adminNote}</p> : null}
                         </section>
@@ -983,6 +969,7 @@ const Profile = () => {
 };
 
 export const DonateModal = ({recipient, onClose}) => {
+    const {text: communityText} = useCommunityText();
     const [amount, setAmount] = useState('');
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState(null);
@@ -1066,29 +1053,29 @@ export const DonateModal = ({recipient, onClose}) => {
             dismissDisabled={busy}
             icon={Coins}
             onClose={close}
-            title={`Donate to ${recipient}`}
+            title={communityText("Donate to {value1}", {value1: recipient})}
         >
             {sent ? (
                 <div className={styles.donateDone}>
                     <span className={styles.donateDoneIcon}><Coins size={28} /></span>
-                    <p>{`Sent ${sent} credits to ${recipient}.`}</p>
+                    <p>{communityText("Sent {value1} credits to {value2}.", {value1: sent, value2: recipient})}</p>
                     <Button
                         variant="primary"
                         className={styles.donateSend}
                         onClick={close}
-                    >Done</Button>
+                    >{communityText('Done')}</Button>
                 </div>
             ) : (
                 <form className={styles.donateBody} onSubmit={submit}>
                     <p className={styles.donateText}>
-                        {`Send Rotur credits straight to ${recipient}. This transfers directly from your account.`}
+                        {communityText("Send Rotur credits straight to {value1}. This transfers directly from your account.", {value1: recipient})}
                     </p>
                     <input
                         className={styles.donateInput}
                         type="number"
                         min="0.01"
                         step="0.01"
-                        placeholder="Amount in credits"
+                        placeholder={communityText('Amount in credits')}
                         value={amount}
                         disabled={busy}
                         required
@@ -1096,19 +1083,17 @@ export const DonateModal = ({recipient, onClose}) => {
                     />
                     {status ? <p className={styles.donateStatus}>{status}</p> : null}
                     {insufficient ? (
-                        <p className={styles.donateStatus}>
-                            Not enough credits in your balance. Top up through Stripe, then send again.
-                        </p>
+                        <p className={styles.donateStatus}>{communityText('Not enough credits in your balance. Top up through Stripe, then send again.')}</p>
                     ) : null}
                     <Button
                         variant="primary"
                         className={styles.donateSend}
                         type="submit"
                         busy={busy}
-                        busyLabel={insufficient ? 'Opening…' : 'Sending…'}
+                        busyLabel={insufficient ? communityText('Opening…') : communityText('Sending…')}
                     >
                         <Coins size={16} />
-                        {insufficient ? 'Buy credits' : 'Send credits'}
+                        {insufficient ? communityText('Buy credits') : communityText('Send credits')}
                     </Button>
                 </form>
             )}

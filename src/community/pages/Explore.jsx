@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {useSearchParams, Link} from 'react-router-dom';
@@ -63,6 +64,7 @@ const normalizeExploreParams = currentParams => {
 };
 
 const Explore = () => {
+    const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
     const [params, setParams] = useSearchParams();
@@ -175,7 +177,7 @@ const Explore = () => {
         <main className={styles.page}>
             <ExploreNav active="projects" />
             <div className={styles.head}>
-                <h1>{q ? `Results for "${q}"` : 'Explore'}</h1>
+                <h1>{q ? communityText("Results for \"{value1}\"", {value1: q}) : communityText('Explore')}</h1>
                 <SectionTabs
                     items={SORTS}
                     value={sort}
@@ -187,8 +189,8 @@ const Explore = () => {
                 />
             </div>
             <div className={styles.categories}>
-                <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>All</button>
-                <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>Looking for feedback</button>
+                <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>{communityText('All')}</button>
+                <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>{communityText('Looking for feedback')}</button>
                 {CATEGORIES.map(category => (
                     <button type="button" key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
                 ))}
@@ -209,9 +211,9 @@ const Explore = () => {
                                 <span className={styles.personName}>{person.username}</span>
                                 {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                                 <span className={styles.personMeta}>
-                                    {person.followers ?? 0} {person.followers === 1 ? 'follower' : 'followers'}
+                                    {person.followers ?? 0} {person.followers === 1 ? communityText('follower') : communityText('followers')}
                                     <br />
-                                    {person.projects} {person.projects === 1 ? 'project' : 'projects'}
+                                    {person.projects} {person.projects === 1 ? communityText('project') : communityText('projects')}
                                 </span>
                             </div>
                         </Link>
@@ -219,11 +221,10 @@ const Explore = () => {
                 </div>
             ) : null}
             {loading ? (
-                <p className={styles.status}>Loading…</p>
+                <p className={styles.status}>{communityText('Loading…')}</p>
             ) : failed ? (
-                <p className={styles.status}>
-                    Couldn&apos;t load.{' '}
-                    <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
+                <p className={styles.status}>{communityText("Couldn't load.")}{' '}
+                    <Button onClick={() => setAttempt(a => a + 1)}>{communityText('Try again')}</Button>
                 </p>
             ) : projects.length ? (
                 <div className={styles.grid}>
@@ -236,12 +237,12 @@ const Explore = () => {
                     ))}
                 </div>
             ) : (
-                <p className={styles.status}>No projects found.</p>
+                <p className={styles.status}>{communityText('No projects found.')}</p>
             )}
             {!loading && !failed && projects.length < total ? (
                 <div className={styles.more}>
-                    <Button busy={loadingMore} busyLabel="Loading…" onClick={loadMore}>
-                        {`Load more (${total - projects.length} left)`}
+                    <Button busy={loadingMore} busyLabel={communityText('Loading…')} onClick={loadMore}>
+                        {communityText("Load more ({value1} left)", {value1: total - projects.length})}
                     </Button>
                     {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                 </div>

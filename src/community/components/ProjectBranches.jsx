@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Check, GitBranch, GitMerge, Pencil, Plus, Trash2, X} from 'lucide-react';
@@ -38,6 +39,7 @@ export const materializeBranchMerge = async data => {
 };
 
 const ProjectBranches = ({id, canManage, onChange}) => {
+    const {text: communityText} = useCommunityText();
     const [data, setData] = useState(null);
     const [source, setSource] = useState('');
     const [target, setTarget] = useState('');
@@ -217,51 +219,50 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         binaryConflicts: current.binaryConflicts.map(file => (file.path === path ? {...file, choice} : file))
     }));
 
-    if (!data) return <div className={styles.state}>Loading branches…</div>;
+    if (!data) return <div className={styles.state}>{communityText('Loading branches…')}</div>;
 
     return (
         <div className={styles.panel}>
             <header className={styles.header}>
                 <div>
-                    <h2><GitBranch size={19} /> Branches</h2>
-                    <p>Each branch points to its latest saved project version.</p>
+                    <h2><GitBranch size={19} />{communityText(' Branches')}</h2>
+                    <p>{communityText('Each branch points to its latest saved project version.')}</p>
                 </div>
             </header>
 
             {canManage && branches.length ? (
                 <form className={styles.createBox} onSubmit={createBranch}>
                     <label>
-                        <span>New branch name</span>
+                        <span>{communityText('New branch name')}</span>
                         <input
                             type="text"
                             value={newBranch}
                             maxLength={100}
-                            placeholder="feature-name"
+                            placeholder={communityText('feature-name')}
                             disabled={Boolean(busy)}
                             onChange={event => setNewBranch(event.target.value)}
                         />
                     </label>
                     <label>
-                        <span>Start from</span>
+                        <span>{communityText('Start from')}</span>
                         <select value={newBranchFrom} disabled={Boolean(busy)} onChange={event => setNewBranchFrom(event.target.value)}>
                             {branches.map(branch => <option key={branch.name}>{branch.name}</option>)}
                         </select>
                     </label>
-                    <Button type="submit" variant="primary" busy={busy === 'create'} busyLabel="Creating…" disabled={!newBranch.trim() || !newBranchFrom || Boolean(busy)}>
-                        <Plus size={16} /> Create branch
-                    </Button>
+                    <Button type="submit" variant="primary" busy={busy === 'create'} busyLabel={communityText('Creating…')} disabled={!newBranch.trim() || !newBranchFrom || Boolean(busy)}>
+                        <Plus size={16} />{communityText(' Create branch')}</Button>
                 </form>
             ) : null}
 
             {canManage && branches.length > 1 ? (
                 <section className={styles.mergeBox}>
                     <div className={styles.mergeFields}>
-                        <label>Merge <select value={source} onChange={event => setSource(event.target.value)}>{availableSources.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
-                        <span>into</span>
-                        <label><span className={styles.srOnly}>Target branch</span><select value={target} onChange={event => setTarget(event.target.value)}>{branches.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
-                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel="Merging…" disabled={!source || !target || Boolean(busy)}><GitMerge size={16} /> Merge branches</Button>
+                        <label>{communityText('Merge ')}<select value={source} onChange={event => setSource(event.target.value)}>{availableSources.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
+                        <span>{communityText('into')}</span>
+                        <label><span className={styles.srOnly}>{communityText('Target branch')}</span><select value={target} onChange={event => setTarget(event.target.value)}>{branches.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
+                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel={communityText('Merging…')} disabled={!source || !target || Boolean(busy)}><GitMerge size={16} />{communityText(' Merge branches')}</Button>
                     </div>
-                    <p>The project switches to the target branch after the merge.</p>
+                    <p>{communityText('The project switches to the target branch after the merge.')}</p>
                 </section>
             ) : null}
 
@@ -270,19 +271,19 @@ const ProjectBranches = ({id, canManage, onChange}) => {
 
             {session ? (
                 <section className={styles.conflicts}>
-                    <h3>Resolve merge conflicts</h3>
-                    <p>Edit text conflicts and choose which branch to keep for assets.</p>
+                    <h3>{communityText('Resolve merge conflicts')}</h3>
+                    <p>{communityText('Edit text conflicts and choose which branch to keep for assets.')}</p>
                     {session.conflicts.map(file => (
                         <label key={file.path}><span>{file.path}</span><textarea value={file.content} disabled={busy} onChange={event => updateText(file.path, event.target.value)} /></label>
                     ))}
                     {session.binaryConflicts.map(file => (
                         <div className={styles.binaryConflict} key={file.path}>
                             <span>{file.path}</span>
-                            <button className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>Keep {session.data.targetBranch}</button>
-                            <button className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>Use {session.data.sourceBranch}</button>
+                            <button className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>{communityText('Keep ')}{session.data.targetBranch}</button>
+                            <button className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>{communityText('Use ')}{session.data.sourceBranch}</button>
                         </div>
                     ))}
-                    <Button variant="primary" busy={busy === 'merge'} busyLabel="Merging…" onClick={resolve}>Save resolutions and merge</Button>
+                    <Button variant="primary" busy={busy === 'merge'} busyLabel={communityText('Merging…')} onClick={resolve}>{communityText('Save resolutions and merge')}</Button>
                 </section>
             ) : null}
 
@@ -304,12 +305,12 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                                         type="text"
                                         value={renamedBranch}
                                         maxLength={100}
-                                        aria-label={`New name for ${branch.name}`}
+                                        aria-label={communityText("New name for {value1}", {value1: branch.name})}
                                         disabled={Boolean(busy)}
                                         onChange={event => setRenamedBranch(event.target.value)}
                                     />
-                                    <button type="submit" title="Save branch name" disabled={!renamedBranch.trim() || renamedBranch.trim() === branch.name || Boolean(busy)}><Check size={15} /></button>
-                                    <button type="button" title="Cancel rename" disabled={Boolean(busy)} onClick={() => setEditingBranch('')}><X size={15} /></button>
+                                    <button type="submit" title={communityText('Save branch name')} disabled={!renamedBranch.trim() || renamedBranch.trim() === branch.name || Boolean(busy)}><Check size={15} /></button>
+                                    <button type="button" title={communityText('Cancel rename')} disabled={Boolean(busy)} onClick={() => setEditingBranch('')}><X size={15} /></button>
                                 </form>
                             ) : <strong>{branch.name}</strong>}
                             {branch.message ? <span>{branch.message}</span> : null}
@@ -317,23 +318,21 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         <code>{branch.head.slice(0, 7)}</code>
                         {branch.date ? <time>{formatDate(branch.date)}</time> : null}
                         <span className={styles.status}>
-                            {branch.current ? <span className={styles.current}>Current</span> : null}
+                            {branch.current ? <span className={styles.current}>{communityText('Current')}</span> : null}
                         </span>
                         {canManage ? (
                             <div className={styles.actions}>
-                                <button type="button" title={`Rename ${branch.name}`} disabled={Boolean(busy)} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
+                                <button type="button" title={communityText("Rename {value1}", {value1: branch.name})} disabled={Boolean(busy)} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
                                 {!branch.current ? (
                                     deletingBranch === branch.name ? (
-                                        <span className={styles.deleteConfirm}>
-                                            Delete?
-                                            <button type="button" disabled={Boolean(busy)} onClick={() => deleteBranch(branch.name)}>Yes</button>
-                                            <button type="button" disabled={Boolean(busy)} onClick={() => setDeletingBranch('')}>No</button>
+                                        <span className={styles.deleteConfirm}>{communityText('Delete?')}<button type="button" disabled={Boolean(busy)} onClick={() => deleteBranch(branch.name)}>{communityText('Yes')}</button>
+                                            <button type="button" disabled={Boolean(busy)} onClick={() => setDeletingBranch('')}>{communityText('No')}</button>
                                         </span>
                                     ) : (
                                         <button
                                             type="button"
                                             className={styles.deleteButton}
-                                            title={`Delete ${branch.name}`}
+                                            title={communityText("Delete {value1}", {value1: branch.name})}
                                             disabled={Boolean(busy)}
                                             onClick={() => {
                                                 setEditingBranch('');
@@ -348,7 +347,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         ) : null}
                     </article>
                 ))}
-                {!branches.length ? <p className={styles.state}>This project does not have saved branch history yet.</p> : null}
+                {!branches.length ? <p className={styles.state}>{communityText('This project does not have saved branch history yet.')}</p> : null}
             </div>
         </div>
     );

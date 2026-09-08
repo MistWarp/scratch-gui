@@ -3,6 +3,7 @@ import './embed-storage-shim';
 import './import-first';
 
 import React from 'react';
+import {prepareLocale} from '../lib/editor-locales';
 import {compose} from 'redux';
 import AppStateHOC from '../lib/components/app-state-hoc.jsx';
 import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx';
@@ -127,7 +128,7 @@ render(<WrappedGUI
     onProjectLoaded={onProjectLoaded}
     routingStyle="none"
     theme={detectTheme()}
-/>);
+/>, prepareLocale);
 
 window.addEventListener('message', event => {
     if (!event.data || event.data.type !== 'mw:apply-theme') return;

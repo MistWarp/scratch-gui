@@ -1,4 +1,4 @@
-// Build/deploy identity baked in at webpack build time (see webpack.config.js
+// Build/deploy identity baked in at Vite build time (see vite.config.mjs
 // DefinePlugin: MW_BUILD_ID / MW_BUILD_TIME) compared against /version.json
 // written by scripts/write-version.mjs, so a long-lived tab can notice a new
 // deploy and prompt the user to reload.

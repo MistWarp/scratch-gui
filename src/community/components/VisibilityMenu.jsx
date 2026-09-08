@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import {Globe, Link as LinkIcon, Lock, ChevronDown, Check} from 'lucide-react';
 import {Dropdown, DropdownItem} from './ui/Dropdown.jsx';
@@ -10,6 +11,7 @@ const OPTIONS = [
 ];
 
 const VisibilityMenu = ({value, onChange, disabled = false}) => {
+    const {text: communityText} = useCommunityText();
     const current = OPTIONS.find(option => option.value === value) || OPTIONS[0];
     const CurrentIcon = current.icon;
     return (
@@ -21,7 +23,7 @@ const VisibilityMenu = ({value, onChange, disabled = false}) => {
                     className={styles.button}
                     onClick={toggle}
                     disabled={disabled}
-                    aria-label="Project visibility"
+                    aria-label={communityText('Project visibility')}
                     aria-expanded={open}
                     aria-haspopup="menu"
                 >
@@ -43,7 +45,7 @@ const VisibilityMenu = ({value, onChange, disabled = false}) => {
                         }}
                     >
                         <OptionIcon size={15} />
-                        {option.label}
+                        {communityText(option.label)}
                         {option.value === value ? (
                             <Check
                                 size={14}

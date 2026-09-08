@@ -1,3 +1,4 @@
+import debuggerStyles from '../debugger.module.css';
 import LogView from '../log-view.js';
 import Highlighter from '../../../lib/debugger/highlighter.js';
 import threadsIcon from '../icons/threads.svg';
@@ -18,7 +19,7 @@ const createThreadsTab = controller => {
 
     const logView = new LogView();
     logView.canAutoScrollToEnd = false;
-    logView.outerElement.classList.add('sa-debugger-threads');
+    logView.outerElement.classList.add(debuggerStyles['sa-debugger-threads']);
     logView.placeholderElement.textContent = 'No threads are running';
 
     const errorColor = getComputedStyle(document.documentElement)
@@ -34,30 +35,30 @@ const createThreadsTab = controller => {
 
     logView.generateRow = row => {
         const root = document.createElement('div');
-        root.className = 'sa-debugger-log';
+        root.className = debuggerStyles['sa-debugger-log'];
 
         const isHeader = row.type === 'thread-header';
         const indenter = document.createElement('div');
-        indenter.className = 'sa-debugger-thread-indent';
+        indenter.className = debuggerStyles['sa-debugger-thread-indent'];
         indenter.style.setProperty('--level', isHeader ? row.depth : row.depth + 1);
         root.appendChild(indenter);
 
         if (isHeader) {
-            root.classList.add('sa-debugger-thread-title');
+            root.classList.add(debuggerStyles['sa-debugger-thread-title']);
 
             if (row.depth > 0) {
                 const icon = document.createElement('div');
-                icon.className = 'sa-debugger-log-icon';
+                icon.className = debuggerStyles['sa-debugger-log-icon'];
                 root.appendChild(icon);
             }
 
             const name = document.createElement('div');
             name.textContent = row.targetName;
-            name.className = 'sa-debugger-thread-target-name';
+            name.className = debuggerStyles['sa-debugger-thread-target-name'];
             root.appendChild(name);
 
             const id = document.createElement('div');
-            id.className = 'sa-debugger-thread-id';
+            id.className = debuggerStyles['sa-debugger-thread-id'];
             id.textContent = `Thread ${row.id}`;
             root.appendChild(id);
         }
@@ -71,7 +72,7 @@ const createThreadsTab = controller => {
 
         if (row.type === 'compiled') {
             const el = document.createElement('div');
-            el.className = 'sa-debugger-thread-compiled';
+            el.className = debuggerStyles['sa-debugger-thread-compiled'];
             el.textContent = 'Compiled threads can\'t be stepped and have no stack information.';
             root.appendChild(el);
         }
@@ -84,7 +85,7 @@ const createThreadsTab = controller => {
     };
 
     logView.renderRow = (elements, row) => {
-        elements.root.classList.toggle('sa-debugger-thread-running', !!row.running);
+        elements.root.classList.toggle(debuggerStyles['sa-debugger-thread-running'], !!row.running);
     };
 
     const threadInfoCache = new WeakMap();

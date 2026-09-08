@@ -248,7 +248,7 @@
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .accountMeta {
@@ -502,7 +502,7 @@
     font-size: 12px;
     padding: 5px 10px;
     border-radius: 7px;
-    margin-left: 6px;
+    margin-inline-start: 6px;
     white-space: nowrap;
 }
 
@@ -598,7 +598,7 @@
 }
 
 .reviewHead span {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 11px;
     white-space: nowrap;
@@ -639,8 +639,8 @@
     }
 
     .page {
-        padding-right: 18px;
-        padding-left: 18px;
+        padding-inline-end: 18px;
+        padding-inline-start: 18px;
     }
 }
 
@@ -672,8 +672,8 @@
     }
 
     .profileBody {
-        padding-right: 20px;
-        padding-left: 20px;
+        padding-inline-end: 20px;
+        padding-inline-start: 20px;
     }
 
     .profileStats {
@@ -703,8 +703,8 @@
     }
 
     .profileBody {
-        padding-right: 14px;
-        padding-left: 14px;
+        padding-inline-end: 14px;
+        padding-inline-start: 14px;
     }
 
     .section {
@@ -721,8 +721,8 @@
 
     .followersRow {
         width: calc(100% + 14px);
-        margin-right: -14px;
-        padding-right: 14px;
+        margin-inline-end: -14px;
+        padding-inline-end: 14px;
         scroll-padding-right: 14px;
         scroll-snap-type: x proximity;
     }
@@ -756,8 +756,8 @@
 
 @media (max-width: 400px) {
     .page {
-        padding-right: 10px;
-        padding-left: 10px;
+        padding-inline-end: 10px;
+        padding-inline-start: 10px;
     }
 
     .profileStats {

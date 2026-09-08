@@ -143,7 +143,7 @@
     font-size: 14px;
     font-weight: 600;
     padding: 8px 12px;
-    text-align: left;
+    text-align: start;
 }
 
 .suggestionTarget {
@@ -170,7 +170,7 @@
 .suggestionMeta {
     position: relative;
     z-index: 2;
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 12px;
     font-weight: 500;
@@ -225,7 +225,7 @@ a.suggestionMeta:hover {
 .account {
     display: flex;
     align-items: stretch;
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 .iconLink {
@@ -284,7 +284,7 @@ a.suggestionMeta:hover {
 }
 
 .signIn {
-    margin-left: 8px;
+    margin-inline-start: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -326,7 +326,7 @@ a.suggestionMeta:hover {
 }
 
 .loginErrorClose {
-    margin-left: auto;
+    margin-inline-start: auto;
     border: none;
     background: none;
     color: inherit;
@@ -393,7 +393,7 @@ a.suggestionMeta:hover {
 
     .mobileSearch .searchInput {
         height: 40px;
-        padding-left: 38px;
+        padding-inline-start: 38px;
         border-color: var(--border-soft);
         color: var(--mw-text);
         background: var(--bg-raised);

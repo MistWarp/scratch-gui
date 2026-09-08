@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Coins, ShoppingBag} from 'lucide-react';
@@ -69,6 +70,7 @@ const isOwned = (product, vm, username) => {
 };
 
 const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBlockProject, onResult}) => {
+    const {text: communityText} = useCommunityText();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [buying, setBuying] = useState('');
@@ -163,7 +165,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
         <div className={scopeStyles.scope}>
             <Modal
                 icon={ShoppingBag}
-                title={productId ? 'Purchase game content' : 'Game shop'}
+                title={productId ? communityText('Purchase game content') : communityText('Game shop')}
                 onClose={close}
                 dismissDisabled={Boolean(buying)}
                 actions={onBlockProject ? (
@@ -171,17 +173,15 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                         variant="danger"
                         disabled={Boolean(buying)}
                         onClick={onBlockProject}
-                    >
-                        Block this project
-                    </Button>
+                    >{communityText('Block this project')}</Button>
                 ) : null}
             >
-                {loading ? <p>Loading shop…</p> : null}
-                {!loading && !list.length ? <p>This project does not have any matching products.</p> : null}
+                {loading ? <p>{communityText('Loading shop…')}</p> : null}
+                {!loading && !list.length ? <p>{communityText('This project does not have any matching products.')}</p> : null}
                 {!loading && productId && focused ? (
                     <p>
-                        {`Would you like to buy ${focused.name} for ${focused.price} credits?`}
-                        {isDraft ? ' (Test purchase — no credits charged.)' : null}
+                        {communityText("Would you like to buy {value1} for {value2} credits?", {value1: focused.name, value2: focused.price})}
+                        {isDraft ? communityText(' (Test purchase — no credits charged.)') : null}
                     </p>
                 ) : null}
                 {list.map(product => {
@@ -199,20 +199,18 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                                     <Button
                                         variant="primary"
                                         busy={buying === product.id}
-                                        busyLabel="Processing…"
+                                        busyLabel={communityText('Processing…')}
                                         disabled={Boolean(buying) || owned}
                                         onClick={() => purchase(product)}
                                     >
                                         <Coins size={15} />
-                                        {owned ? 'Already owned' : `Buy (${product.price} credits)`}
+                                        {owned ? communityText('Already owned') : communityText("Buy ({value1} credits)", {value1: product.price})}
                                     </Button>
                                     {productId ? (
                                         <Button
                                             disabled={Boolean(buying)}
                                             onClick={close}
-                                        >
-                                            Cancel
-                                        </Button>
+                                        >{communityText('Cancel')}</Button>
                                     ) : null}
                                 </div>
                             </div>

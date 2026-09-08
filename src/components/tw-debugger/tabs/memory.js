@@ -1,3 +1,4 @@
+import debuggerStyles from '../debugger.module.css';
 import Chart from '../../../addons/libraries/thirdparty/cs/chart.min.js';
 import {getSetting} from '../../../lib/debugger/settings.js';
 import memoryIcon from '../icons/memory.svg';
@@ -20,22 +21,22 @@ const createMemoryTab = controller => {
     const lineColor = accentColor;
 
     const content = document.createElement('div');
-    content.className = 'sa-memory-tab-content';
+    content.className = debuggerStyles['sa-memory-tab-content'];
 
     const createChart = ({title}) => {
         const card = document.createElement('div');
-        card.className = 'sa-debugger-chart-card';
+        card.className = debuggerStyles['sa-debugger-chart-card'];
         const header = document.createElement('div');
-        header.className = 'sa-debugger-chart-header';
+        header.className = debuggerStyles['sa-debugger-chart-header'];
         const titleElement = document.createElement('h2');
         titleElement.textContent = title;
         const valueElement = document.createElement('span');
-        valueElement.className = 'sa-debugger-chart-value';
+        valueElement.className = debuggerStyles['sa-debugger-chart-value'];
         header.append(titleElement, valueElement);
         const body = document.createElement('div');
-        body.className = 'sa-debugger-chart-body';
+        body.className = debuggerStyles['sa-debugger-chart-body'];
         const canvas = document.createElement('canvas');
-        canvas.className = 'sa-debugger-chart';
+        canvas.className = debuggerStyles['sa-debugger-chart'];
         body.appendChild(canvas);
         card.append(header, body);
         return {
@@ -61,13 +62,13 @@ const createMemoryTab = controller => {
 
     const createInfoCard = ({title, className = ''}) => {
         const card = document.createElement('div');
-        card.className = `sa-memory-info-card ${className}`;
+        card.className = `${debuggerStyles['sa-memory-info-card']} ${className}`;
         const titleElement = document.createElement('h3');
         titleElement.textContent = title;
-        titleElement.className = 'sa-memory-info-title';
+        titleElement.className = debuggerStyles['sa-memory-info-title'];
         const valueElement = document.createElement('div');
         valueElement.textContent = '0';
-        valueElement.className = 'sa-memory-info-value';
+        valueElement.className = debuggerStyles['sa-memory-info-value'];
         card.appendChild(titleElement);
         card.appendChild(valueElement);
         return {
@@ -92,13 +93,13 @@ const createMemoryTab = controller => {
     }]);
 
     const infoSection = document.createElement('div');
-    infoSection.className = 'sa-memory-info-section';
+    infoSection.className = debuggerStyles['sa-memory-info-section'];
 
-    const clonesCard = createInfoCard({title: 'Clones', className: 'sa-memory-clones'});
-    const variablesCard = createInfoCard({title: 'Variables', className: 'sa-memory-variables'});
+    const clonesCard = createInfoCard({title: 'Clones', className: debuggerStyles['sa-memory-clones']});
+    const variablesCard = createInfoCard({title: 'Variables', className: debuggerStyles['sa-memory-variables']});
     const variableDataCard = createInfoCard({title: 'Variable chars', className: 'sa-memory-variable-data'});
-    const listsCard = createInfoCard({title: 'Lists', className: 'sa-memory-lists'});
-    const listItemsCard = createInfoCard({title: 'List items', className: 'sa-memory-list-items'});
+    const listsCard = createInfoCard({title: 'Lists', className: debuggerStyles['sa-memory-lists']});
+    const listItemsCard = createInfoCard({title: 'List items', className: debuggerStyles['sa-memory-list-items']});
 
     infoSection.append(
         clonesCard.element,
@@ -143,10 +144,10 @@ const createMemoryTab = controller => {
     });
 
     const variablesHeader = document.createElement('h2');
-    variablesHeader.className = 'sa-memory-section-title';
+    variablesHeader.className = debuggerStyles['sa-memory-section-title'];
     variablesHeader.textContent = 'Variables';
     const variablesList = document.createElement('div');
-    variablesList.className = 'sa-memory-variables-list';
+    variablesList.className = debuggerStyles['sa-memory-variables-list'];
 
     content.append(
         infoSection,
@@ -195,22 +196,22 @@ const createMemoryTab = controller => {
                 if (variable.type !== '' && variable.type !== 'list') continue;
 
                 const row = document.createElement('div');
-                row.className = 'sa-memory-variable-row';
+                row.className = debuggerStyles['sa-memory-variable-row'];
 
                 const scope = document.createElement('span');
-                scope.className = 'sa-memory-variable-scope';
+                scope.className = debuggerStyles['sa-memory-variable-scope'];
                 scope.textContent = target.isStage ? 'Stage' : target.getName();
                 row.appendChild(scope);
 
                 const name = document.createElement('span');
-                name.className = 'sa-memory-variable-name';
+                name.className = debuggerStyles['sa-memory-variable-name'];
                 name.textContent = variable.name;
                 row.appendChild(name);
 
                 const value = document.createElement('span');
-                value.className = 'sa-memory-variable-value';
+                value.className = debuggerStyles['sa-memory-variable-value'];
                 if (variable.type === 'list') {
-                    row.classList.add('sa-memory-variable-list');
+                    row.classList.add(debuggerStyles['sa-memory-variable-list']);
                     const items = Array.isArray(variable.value) ? variable.value : [];
                     value.textContent = `[${items.length}] ${items.slice(0, 8).join(', ')}`;
                 } else {
@@ -226,7 +227,7 @@ const createMemoryTab = controller => {
         variablesList.textContent = '';
         if (count === 0) {
             const empty = document.createElement('div');
-            empty.className = 'sa-memory-variables-empty';
+            empty.className = debuggerStyles['sa-memory-variables-empty'];
             empty.textContent = 'No variables';
             variablesList.appendChild(empty);
         } else {
@@ -242,10 +243,10 @@ const createMemoryTab = controller => {
         listsCard.updateValue(stats.listCount);
         listItemsCard.updateValue(stats.listItems);
 
-        clonesCard.element.classList.toggle('sa-memory-warning', stats.cloneCount > 250);
-        clonesCard.element.classList.toggle('sa-memory-critical', stats.cloneCount >= 300);
-        listItemsCard.element.classList.toggle('sa-memory-warning', stats.listItems > 5000);
-        listItemsCard.element.classList.toggle('sa-memory-critical', stats.listItems > 10000);
+        clonesCard.element.classList.toggle(debuggerStyles['sa-memory-warning'], stats.cloneCount > 250);
+        clonesCard.element.classList.toggle(debuggerStyles['sa-memory-critical'], stats.cloneCount >= 300);
+        listItemsCard.element.classList.toggle(debuggerStyles['sa-memory-warning'], stats.listItems > 5000);
+        listItemsCard.element.classList.toggle(debuggerStyles['sa-memory-critical'], stats.listItems > 10000);
         return stats;
     };
 

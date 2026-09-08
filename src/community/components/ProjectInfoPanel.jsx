@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -31,6 +32,7 @@ const creditLink = credit => {
 const INFO_TABS = ['About', 'Details'];
 
 const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
+    const {text: communityText} = useCommunityText();
     const [tab, setTab] = useState('About');
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -135,38 +137,37 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                         setSaveError('');
                                         setTagsText([...tags, ...(event.target.checked ? ['feedback'] : [])].join(' '));
                                     }}
-                                />{' '}Looking for feedback
-                            </label>
-                            <p className={styles.fieldHint}>Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as &quot;Is the first level too difficult?&quot;</p>
+                                />{' '}{communityText('Looking for feedback')}</label>
+                            <p className={styles.fieldHint}>{communityText('Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as "Is the first level too difficult?"')}</p>
                         </section> : (project.tags || []).includes('feedback') ? <section>
-                            <h3>Looking for feedback</h3>
-                            <p className={styles.panelText}>Try the project and answer the creator&apos;s question in the comments.</p>
+                            <h3>{communityText('Looking for feedback')}</h3>
+                            <p className={styles.panelText}>{communityText("Try the project and answer the creator's question in the comments.")}</p>
                         </section> : null}
                         <section>
-                            <h3>Instructions</h3>
+                            <h3>{communityText('Instructions')}</h3>
                             {editing ? (
                                 <textarea
                                     className={styles.panelInput}
                                     value={instructions}
                                     disabled={saving}
                                     maxLength={5000}
-                                    placeholder="How do you play or use this project?"
+                                    placeholder={communityText('How do you play or use this project?')}
                                     onChange={e => setInstructions(e.target.value)}
                                 />
                             ) : project.instructions ? (
                                 <p className={styles.panelText}><RichText text={project.instructions} /></p>
-                            ) : <p className={styles.panelEmpty}>No instructions provided.</p>}
+                            ) : <p className={styles.panelEmpty}>{communityText('No instructions provided.')}</p>}
                         </section>
                         {(editing || project.notes) ? (
                             <section>
-                                <h3>Creator notes</h3>
+                                <h3>{communityText('Creator notes')}</h3>
                                 {editing ? (
                                     <textarea
                                         className={styles.panelInput}
                                         value={notes}
                                         disabled={saving}
                                         maxLength={5000}
-                                        placeholder="Development notes, known issues, or anything else worth sharing"
+                                        placeholder={communityText('Development notes, known issues, or anything else worth sharing')}
                                         onChange={e => setNotes(e.target.value)}
                                     />
                                 ) : <p className={styles.panelText}><RichText text={project.notes} /></p>}
@@ -178,20 +179,20 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                 {tab === 'Details' && (
                     <div className={styles.detailSections}>
                         <section>
-                            <h3>Team</h3>
+                            <h3>{communityText('Team')}</h3>
                             <div className={styles.teamPanel}>
                                 <div className={styles.teamSummary}>
                                     <Users size={17} />
                                     <strong>{project.collaboration?.teamSize || 1}</strong>
-                                    <span>{(project.collaboration?.teamSize || 1) === 1 ? 'person' : 'people'}</span>
+                                    <span>{(project.collaboration?.teamSize || 1) === 1 ? communityText('person') : communityText('people')}</span>
                                 </div>
                                 <ul className={styles.teamList}>
                                     <li>
-                                        <Link to={`/users/${project.owner}`}><Avatar username={project.owner} size={30} /><span><strong>{project.owner}</strong><small>Owner</small></span></Link>
+                                        <Link to={`/users/${project.owner}`}><Avatar username={project.owner} size={30} /><span><strong>{project.owner}</strong><small>{communityText('Owner')}</small></span></Link>
                                     </li>
                                     {(project.collaboration?.contributors || []).map(username => (
                                         <li key={username}>
-                                            <Link to={`/users/${username}`}><Avatar username={username} size={30} /><span><strong>{username}</strong><small>Contributor</small></span></Link>
+                                            <Link to={`/users/${username}`}><Avatar username={username} size={30} /><span><strong>{username}</strong><small>{communityText('Contributor')}</small></span></Link>
                                         </li>
                                     ))}
                                 </ul>
@@ -199,14 +200,14 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     <div className={styles.acceptedChanges}>
                                         <GitPullRequest size={16} />
                                         <strong>{project.collaboration.acceptedChanges}</strong>
-                                        <span>accepted {project.collaboration.acceptedChanges === 1 ? 'contribution' : 'contributions'}</span>
+                                        <span>{communityText('accepted ')}{project.collaboration.acceptedChanges === 1 ? communityText('contribution') : communityText('contributions')}</span>
                                     </div>
                                 ) : null}
                             </div>
                         </section>
 
                         {(editing || (project.credits && project.credits.length)) ? <section>
-                            <h3>Credits</h3>
+                            <h3>{communityText('Credits')}</h3>
                             {editing ? (
                                 <div className={styles.creditEditor}>
                                     {credits.map((c, i) => (
@@ -220,8 +221,8 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                                     value={c.who}
                                                     disabled={saving}
                                                     maxLength={60}
-                                                    placeholder="name or MistWarp username"
-                                                    aria-label="Name or MistWarp username"
+                                                    placeholder={communityText('name or MistWarp username')}
+                                                    aria-label={communityText('Name or MistWarp username')}
                                                     onChange={e => updateCredit(i, 'who', e.target.value)}
                                                 />
                                                 <input
@@ -229,8 +230,8 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                                     value={c.role}
                                                     disabled={saving}
                                                     maxLength={120}
-                                                    placeholder="what they did"
-                                                    aria-label="Contribution"
+                                                    placeholder={communityText('what they did')}
+                                                    aria-label={communityText('Contribution')}
                                                     onChange={e => updateCredit(i, 'role', e.target.value)}
                                                 />
                                                 <input
@@ -239,8 +240,8 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                                     value={c.url || ''}
                                                     disabled={saving}
                                                     maxLength={500}
-                                                    placeholder="external profile URL (optional)"
-                                                    aria-label="External profile URL"
+                                                    placeholder={communityText('external profile URL (optional)')}
+                                                    aria-label={communityText('External profile URL')}
                                                     onChange={e => updateCredit(i, 'url', e.target.value)}
                                                 />
                                             </div>
@@ -248,7 +249,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                                 className={styles.creditRemove}
                                                 disabled={saving}
                                                 onClick={() => removeCredit(i)}
-                                                label={`Remove credit for ${c.who || 'unnamed contributor'}`}
+                                                label={communityText("Remove credit for {value1}", {value1: c.who || 'unnamed contributor'})}
                                             >
                                                 <X size={14} />
                                             </IconButton>
@@ -260,9 +261,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                         disabled={saving}
                                         onClick={addCredit}
                                     >
-                                        <Plus size={14} />
-                                        Add credit
-                                    </Button>
+                                        <Plus size={14} />{communityText('Add credit')}</Button>
                                 </div>
                             ) : <ul className={styles.creditList}>
                                 {project.credits.map((c, i) => {
@@ -295,17 +294,17 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                         </section> : null}
 
                         {(editing || (project.tags && project.tags.length)) ? <section>
-                            <h3>Tags</h3>
+                            <h3>{communityText('Tags')}</h3>
                             {editing ? (
                                 <div className={styles.tagEditor}>
                                     <input
                                         className={styles.tagInput}
                                         value={tagsText}
                                         disabled={saving}
-                                        placeholder="platformer game pixel-art"
+                                        placeholder={communityText('platformer game pixel-art')}
                                         onChange={e => setTagsText(e.target.value)}
                                     />
-                                    <p className={styles.fieldHint}>Up to 10 tags.</p>
+                                    <p className={styles.fieldHint}>{communityText('Up to 10 tags.')}</p>
                                 </div>
                             ) : <div className={styles.tagRow}>
                                 {project.tags.map(tag => (
@@ -319,7 +318,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                         </section> : null}
 
                         <section>
-                            <h3>Controls</h3>
+                            <h3>{communityText('Controls')}</h3>
                             {editing ? (
                                 <div className={styles.controlEditor}>
                                     {CONTROL_TYPES.map(({key, label, detail, Icon}) => (
@@ -340,7 +339,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                 </div>
                             ) : Object.entries(project.compatibility || {}).some(([, supported]) => supported) ? (
                                 <ProjectCompatibility compatibility={project.compatibility} />
-                            ) : <p className={styles.panelEmpty}>No controls listed.</p>}
+                            ) : <p className={styles.panelEmpty}>{communityText('No controls listed.')}</p>}
                         </section>
                     </div>
                 )}
@@ -350,9 +349,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                         to={projectUrl(project.remixParent)}
                         className={styles.remixOf}
                     >
-                        <GitFork size={13} />
-                        Based on another project
-                    </Link>
+                        <GitFork size={13} />{communityText('Based on another project')}</Link>
                 ) : null}
                 {project.isOwner ? (
                     <div className={styles.panelBodyFooter}>
@@ -364,25 +361,19 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                     onClick={cancelEdit}
                                     disabled={saving}
                                 >
-                                    <X size={14} />
-                                    Cancel
-                                </Button>
+                                    <X size={14} />{communityText('Cancel')}</Button>
                                 <Button
                                     variant="primary"
                                     className={styles.panelSave}
                                     onClick={save}
                                     busy={saving}
-                                    busyLabel="Saving…"
+                                    busyLabel={communityText('Saving…')}
                                 >
-                                    <Check size={14} />
-                                    Save
-                                </Button>
+                                    <Check size={14} />{communityText('Save')}</Button>
                             </div>
                         ) : (
                             <Button variant="secondary" className={styles.panelContentAction} onClick={startEdit}>
-                                <Pencil size={14} />
-                                Edit details
-                            </Button>
+                                <Pencil size={14} />{communityText('Edit details')}</Button>
                         )}
                     </div>
                 ) : null}

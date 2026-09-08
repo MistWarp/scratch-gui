@@ -1,11 +1,15 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {useCommunityIntl} from '../i18n.jsx';
+import {locales} from '../locale';
 
 const SectionTabs = ({items, value, onChange, className, itemClassName, activeClassName, ariaLabel}) => {
+    const {text, locale} = useCommunityIntl();
+    const rtl = locales[locale]?.rtl;
     const moveFocus = (event, index) => {
         let nextIndex;
-        if (event.key === 'ArrowRight') nextIndex = (index + 1) % items.length;
-        else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + items.length) % items.length;
+        if (event.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) nextIndex = (index + 1) % items.length;
+        else if (event.key === (rtl ? 'ArrowRight' : 'ArrowLeft')) nextIndex = (index - 1 + items.length) % items.length;
         else if (event.key === 'Home') nextIndex = 0;
         else if (event.key === 'End') nextIndex = items.length - 1;
         else return;
@@ -16,7 +20,7 @@ const SectionTabs = ({items, value, onChange, className, itemClassName, activeCl
     };
 
     return (
-        <nav className={className} aria-label={ariaLabel} role="tablist">
+        <nav className={className} aria-label={text(ariaLabel)} role="tablist">
             {items.map((item, index) => {
                 const active = value === item.key;
                 const classes = [itemClassName, active ? activeClassName : ''].filter(Boolean).join(' ');
@@ -31,7 +35,7 @@ const SectionTabs = ({items, value, onChange, className, itemClassName, activeCl
                         onClick={() => onChange(item.key)}
                         onKeyDown={event => moveFocus(event, index)}
                     >
-                        {item.label}
+                        {typeof item.label === 'string' ? text(item.label) : item.label}
                     </button>
                 );
             })}

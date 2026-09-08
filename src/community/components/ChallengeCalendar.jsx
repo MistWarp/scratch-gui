@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -58,7 +60,7 @@ const buildChallengeCalendar = (source, now = Date.now()) => {
         const key = `${date.getFullYear()}-${date.getMonth()}`;
         const current = months[months.length - 1];
         if (current && current.key === key) current.span += 1;
-        else months.push({key, label: date.toLocaleDateString([], {month: 'long', year: 'numeric'}), span: 1});
+        else months.push({key, label: date.toLocaleDateString(getCommunityLocale(), {month: 'long', year: 'numeric'}), span: 1});
     });
     const laneEnds = [];
     const events = dated.map((space, index) => {
@@ -83,6 +85,7 @@ const buildChallengeCalendar = (source, now = Date.now()) => {
 };
 
 const ChallengeCalendar = ({spaces, className = ''}) => {
+    const {text: communityText} = useCommunityText();
     const [loadedSpaces, setLoadedSpaces] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -105,21 +108,21 @@ const ChallengeCalendar = ({spaces, className = ''}) => {
     const source = typeof spaces === 'undefined' ? loadedSpaces : spaces;
     const calendar = useMemo(() => buildChallengeCalendar(source), [source]);
 
-    if (loadError) return <div className={`${styles.empty}${className ? ` ${className}` : ''}`} role="alert">Could not load the challenge calendar. <button type="button" onClick={() => setAttempt(value => value + 1)}>Try again</button></div>;
-    if (calendar === null) return <div className={`${styles.skeleton}${className ? ` ${className}` : ''}`} role="status" aria-label="Loading challenge calendar" />;
-    if (calendar === false) return <p className={`${styles.empty}${className ? ` ${className}` : ''}`}>No challenges are scheduled.</p>;
+    if (loadError) return <div className={`${styles.empty}${className ? ` ${className}` : ''}`} role="alert">{communityText('Could not load the challenge calendar. ')}<button type="button" onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</button></div>;
+    if (calendar === null) return <div className={`${styles.skeleton}${className ? ` ${className}` : ''}`} role="status" aria-label={communityText('Loading challenge calendar')} />;
+    if (calendar === false) return <p className={`${styles.empty}${className ? ` ${className}` : ''}`}>{communityText('No challenges are scheduled.')}</p>;
     const todayOffset = calendar.today - calendar.rangeStart;
     return (
         <section className={`${styles.section}${className ? ` ${className}` : ''}`}>
-            <div className={styles.head}><div><h2>Challenge calendar</h2><p>See what is running now and what starts next.</p></div><Link to="/spaces?kind=challenge">All challenges</Link></div>
+            <div className={styles.head}><div><h2>{communityText('Challenge calendar')}</h2><p>{communityText('See what is running now and what starts next.')}</p></div><Link to="/spaces?kind=challenge">{communityText('All challenges')}</Link></div>
             <div className={styles.scroll}>
                 <div className={styles.calendar} style={{'--mw-calendar-days': calendar.days.length}}>
                     <div className={styles.months}>{calendar.months.map(month => <span key={month.key} style={{gridColumn: `span ${month.span}`}}>{month.label}</span>)}</div>
-                    <div className={styles.days}>{calendar.days.map(({day, date}) => <span key={day} className={day === calendar.today ? styles.today : ''}><strong>{date.toLocaleDateString([], {weekday: 'short'})}</strong>{date.getDate()}</span>)}</div>
+                    <div className={styles.days}>{calendar.days.map(({day, date}) => <span key={day} className={day === calendar.today ? styles.today : ''}><strong>{date.toLocaleDateString(getCommunityLocale(), {weekday: 'short'})}</strong>{date.getDate()}</span>)}</div>
                     <div className={styles.plot} style={{gridTemplateRows: `repeat(${calendar.lanes}, 34px)`}}>{todayOffset >= 0 && todayOffset < calendar.days.length ? <i className={styles.todayBand} style={{'--mw-today-offset': todayOffset}} /> : null}{calendar.events.map(event => {
                         const submissions = Number.isFinite(event.projectCount) ?
                             event.projectCount : (event.projects || []).length;
-                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={`${event.title}, ${formatDate(event.startsAt)} to ${formatDate(event.endsAt)}`}><strong>{event.title}</strong><span>{event.participantCount || 0} joined, {submissions} {submissions === 1 ? 'submission' : 'submissions'}</span></Link>;
+                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={communityText("{value1}, {value2} to {value3}", {value1: event.title, value2: formatDate(event.startsAt), value3: formatDate(event.endsAt)})}><strong>{event.title}</strong><span>{event.participantCount || 0}{communityText(' joined, ')}{submissions} {submissions === 1 ? communityText('submission') : communityText('submissions')}</span></Link>;
                     })}</div>
                 </div>
             </div>

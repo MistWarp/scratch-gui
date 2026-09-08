@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import {ShieldCheck} from 'lucide-react';
 import {describePermission, categoryLabel} from '../../lib/rotur/permission-descriptions.js';
@@ -18,27 +19,28 @@ const groupScopes = scopes => {
 // of the project iframe). The sandboxed project cannot read or dismiss this, so
 // it can request an action but never approve one on the user's behalf.
 const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, onShareAll, onShareNo}) => {
+    const {text: communityText} = useCommunityText();
     const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     if (type === 'share') {
         return (
             <Modal
                 icon={ShieldCheck}
-                title="Show activity on your profile?"
+                title={communityText('Show activity on your profile?')}
                 onDismiss={onShareNo}
                 actions={
                     <React.Fragment>
-                        <Button variant="danger" onClick={onBlock}>Block this project</Button>
-                        <Button onClick={onShareNo}>Not now</Button>
-                        <Button onClick={onShareAll}>Allow all</Button>
+                        <Button variant="danger" onClick={onBlock}>{communityText('Block this project')}</Button>
+                        <Button onClick={onShareNo}>{communityText('Not now')}</Button>
+                        <Button onClick={onShareAll}>{communityText('Allow all')}</Button>
                         <Button
                             variant="primary"
                             onClick={onShareThis}
-                        >Just this project</Button>
+                        >{communityText('Just this project')}</Button>
                     </React.Fragment>
                 }
             >
                 <p className={styles.lead}>
-                    {`"${data.name || 'This project'}" wants to show it on your Rotur profile`}
+                    {communityText("\"{value1}\" wants to show it on your Rotur profile", {value1: data.name || 'This project'})}
                     {data.username ? ` (@${data.username}).` : '.'}
                 </p>
             </Modal>
@@ -48,36 +50,36 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
     return (
         <Modal
             icon={ShieldCheck}
-            title={type === 'confirm' ? (payment ? 'Confirm payment' : 'Confirm account action') : 'Connect to Rotur'}
+            title={type === 'confirm' ? (payment ? communityText('Confirm payment') : communityText('Confirm account action')) : communityText('Connect to Rotur')}
             onDismiss={onDeny}
             actions={
                 <React.Fragment>
-                    <Button variant="danger" onClick={onBlock}>Block this project</Button>
+                    <Button variant="danger" onClick={onBlock}>{communityText('Block this project')}</Button>
                     <Button onClick={onDeny}>
-                        {type === 'confirm' ? 'Cancel' : 'Not now'}
+                        {type === 'confirm' ? communityText('Cancel') : communityText('Not now')}
                     </Button>
                     <Button
                         variant="primary"
                         onClick={onAllow}
                     >
-                        {payment ? 'Allow payment' : (type === 'confirm' ? 'Allow once' : 'Connect')}
+                        {payment ? communityText('Allow payment') : (type === 'confirm' ? communityText('Allow once') : communityText('Connect'))}
                     </Button>
                 </React.Fragment>
             }
         >
             {type === 'confirm' ? (
                 <p className={styles.lead}>
-                    {payment ? `Allow payment of ${data.confirmation.amount} credits to ` : 'Allow this project to '}
+                    {payment ? communityText("Allow payment of {value1} credits to ", {value1: data.confirmation.amount}) : communityText('Allow this project to ')}
                     <b>{payment ? `@${data.confirmation.recipient}` : data.label}</b>
-                    {payment ? '?' : (data.username ? ` as @${data.username}?` : '?')}
-                    {payment ? '' : ' This action will happen once. It does not give the project ongoing approval.'}
+                    {payment ? '?' : (data.username ? communityText(" as @{value1}?", {value1: data.username}) : '?')}
+                    {payment ? '' : communityText(' This action will happen once. It does not give the project ongoing approval.')}
                 </p>
             ) : (
                 <React.Fragment>
                     <p className={styles.lead}>
-                        {`"${data.name || 'This project'}" wants to use your Rotur account`}
+                        {communityText("\"{value1}\" wants to use your Rotur account", {value1: data.name || 'This project'})}
                         {data.username ? ` (@${data.username})` : ''}
-                        {' to:'}
+                        {communityText(' to:')}
                     </p>
                     {Object.keys(groups).map(label => (
                         <div
@@ -93,7 +95,7 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
                         </div>
                     ))}
                     {(data.scopes || []).length === 0 ? (
-                        <p className={styles.lead}>{'This only reads your public Rotur info.'}</p>
+                        <p className={styles.lead}>{communityText('This only reads your public Rotur info.')}</p>
                     ) : null}
                 </React.Fragment>
             )}

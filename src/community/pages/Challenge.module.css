@@ -116,7 +116,7 @@
     color: var(--text-faint);
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .countdown strong {
@@ -144,13 +144,13 @@
 .timeline > div {
     display: grid;
     padding: 13px 15px;
-    border-right: 1px solid var(--border);
+    border-inline-end: 1px solid var(--border);
     grid-template-columns: auto 1fr;
     gap: 2px 8px;
 }
 
 .timeline > div:last-child {
-    border-right: 0;
+    border-inline-end: 0;
 }
 
 .timeline svg {
@@ -162,7 +162,7 @@
     color: var(--text-faint);
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .timeline strong {
@@ -427,7 +427,7 @@
 }
 
 .scoreHeading span {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 9px;
 }
@@ -605,7 +605,7 @@
     }
 
     .timeline > div {
-        border-right: 0;
+        border-inline-end: 0;
         border-bottom: 1px solid var(--border);
     }
 }

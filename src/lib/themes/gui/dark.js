@@ -1,4 +1,4 @@
-import icon from '!!raw-loader!../icons/dark.svg';
+import icon from '../icons/dark.svg?raw';
 
 const name = 'Dark';
 

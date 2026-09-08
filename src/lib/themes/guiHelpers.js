@@ -8,7 +8,7 @@ import {
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
 import {ensureColorContrast, parseColor} from './color-contrast';
-import './global-styles.css';
+import themeStyles from './global-styles.module.css';
 
 const BLOCK_COLOR_NAMES = [
     // Corresponds to the name of the object in blockColors
@@ -291,6 +291,7 @@ const applyWallpaper = wallpaper => {
  */
 const applyGuiColors = theme => {
     const doc = document.documentElement;
+    doc.classList.add(themeStyles.theme);
 
     const defaultGuiColors = (Theme.defaults && Theme.defaults.light &&
                               typeof Theme.defaults.light.getGuiColors === 'function') ?

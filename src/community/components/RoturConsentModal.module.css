@@ -14,14 +14,14 @@
 .group-label {
     font-size: 12px;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.03em;
     color: var(--text-dim);
 }
 
 .scope-list {
     margin: 0;
-    padding-left: 18px;
+    padding-inline-start: 18px;
     display: flex;
     flex-direction: column;
     gap: 2px;

@@ -1,0 +1,922 @@
+/* Block Inspector - settings-window visual language.
+ * Sidebar comes from the shared modal-sidebar component
+ * (see modal-sidebar-vanilla.js); content rows copy
+ * tw-settings-modal/settings-modal.css. */
+
+/* ── Sidebar ──
+ * No local rules: the shared component owns layout, widths and
+ * responsive behaviour so every editor window matches. */
+
+.dev-inspector-hidden {
+  display: none !important;
+}
+
+.dev-inspector-container {
+  display: flex;
+  flex: 1 1 0%;
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ui-modal-background, #ffffff);
+  color: var(--text-primary, #575e75);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Main content ── */
+
+.dev-inspector-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.dev-inspector-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dev-inspector-panel-active {
+  display: flex;
+}
+
+/* JSON panels: toolbar (auto) + editor (fill rest) */
+.dev-inspector-panel-active[data-panel="block-json"],
+.dev-inspector-panel-active[data-panel="project-json"] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dev-inspector-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.5rem 2rem;
+  background: var(--ui-modal-background, #ffffff);
+}
+
+.dev-inspector-panel-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dev-inspector-panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+}
+
+/* ── Section headers (settings-modal .header: bold + dashed divider) ── */
+
+.dev-inspector-section-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  color: var(--text-primary, #575e75);
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.dev-inspector-section-title::after {
+  flex-grow: 1;
+  margin-left: 1rem;
+  content: '';
+  border-top: 1px dashed var(--ui-tertiary, #e9eef2);
+}
+
+.dev-inspector-section-sub {
+  margin: 0.35rem 0 0;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 68%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+/* ── Subsections: flat rows, no cards (settings-modal .setting) ── */
+
+.dev-inspector-block {
+  margin: 0.25rem 0;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.dev-inspector-block:last-child {
+  margin-bottom: 0.25rem;
+}
+
+.dev-inspector-block-label {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--text-primary, #575e75);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ── Property rows (settings-modal .setting rows) ── */
+
+.dev-inspector-props {
+  overflow: hidden;
+}
+
+.dev-inspector-prop {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 2.75rem;
+  margin: 0.25rem 0;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+.dev-inspector-prop:hover {
+  background: var(--badge-border, var(--ui-tertiary, #e9eef2));
+}
+
+.dev-inspector-prop:last-child {
+  border-bottom: none;
+}
+
+.dev-inspector-prop-key {
+  flex: 1;
+  min-width: 0;
+  margin-right: 1rem;
+  color: var(--text-primary, #575e75);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.dev-inspector-prop-val {
+  min-width: 0;
+  max-width: 60%;
+  color: var(--text-primary, #575e75);
+  font-size: 0.8125rem;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  line-height: 1.45;
+  text-align: right;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.dev-inspector-prop-val-plain {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.dev-inspector-muted {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 68%, transparent);
+}
+
+.dev-inspector-linkish {
+  color: var(--link-color, var(--looks-secondary, #855cd6));
+  cursor: default;
+}
+
+/* ── Path bar (flat, settings-modal chrome) ── */
+
+.dev-inspector-pathbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  background: var(--ui-modal-background, #ffffff);
+  min-height: 0;
+}
+
+.dev-inspector-path-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.dev-inspector-path-btn:hover:not(:disabled) {
+  background: var(--badge-border, var(--ui-tertiary, #e9eef2));
+}
+
+.dev-inspector-path-btn:focus-visible:not(:disabled) {
+  outline: 2px solid var(--looks-secondary, #855cd6);
+  outline-offset: 1px;
+}
+
+.dev-inspector-path-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.dev-inspector-path-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.dev-inspector-crumbs {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.dev-inspector-crumbs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dev-inspector-crumb {
+  display: inline-flex;
+  align-items: center;
+  max-width: 160px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link-color, var(--looks-secondary, #855cd6));
+  font: inherit;
+  font-size: 0.8125rem;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  text-decoration: underline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.dev-inspector-crumb:focus-visible {
+  outline: 2px solid var(--looks-secondary, #855cd6);
+  outline-offset: 2px;
+}
+
+.dev-inspector-crumb-current {
+  color: var(--text-primary, #575e75);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: default;
+}
+
+.dev-inspector-crumb-sep {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 55%, transparent);
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.dev-inspector-block-link {
+  appearance: none;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link-color, var(--looks-secondary, #855cd6));
+  font: inherit;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.dev-inspector-block-link:focus-visible {
+  outline: 2px solid var(--looks-secondary, #855cd6);
+  outline-offset: 2px;
+}
+
+.dev-inspector-block-link-id {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.dev-inspector-table tr.dev-inspector-row-link {
+  cursor: pointer;
+}
+
+.dev-inspector-table tr.dev-inspector-row-link:hover {
+  background: var(--ui-tertiary, #e9eef2);
+}
+
+.dev-inspector-tree {
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.dev-inspector-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0.25rem 0;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dev-inspector-tree-row:hover,
+.dev-inspector-tree-row:focus-within {
+  background: var(--badge-border, var(--ui-tertiary, #e9eef2));
+}
+
+.dev-inspector-tree-row-current {
+  background: var(--badge-background, var(--ui-secondary, #f9f9f9));
+  font-weight: 600;
+  cursor: default;
+}
+
+.dev-inspector-tree-indent {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 55%, transparent);
+  flex-shrink: 0;
+  white-space: pre;
+  user-select: none;
+}
+
+.dev-inspector-tree-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dev-inspector-tree-meta {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+/* ── Flags (settings-modal pills: 999px, tiny bold) ── */
+
+.dev-inspector-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dev-inspector-flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  color: color-mix(in srgb, var(--text-primary, #575e75) 70%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.dev-inspector-flag-on {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.2));
+  color: var(--looks-secondary, #855cd6);
+}
+
+/* ── Tables (settings-modal permissions-list) ── */
+
+.dev-inspector-table-wrap {
+  overflow: hidden;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+}
+
+.dev-inspector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.dev-inspector-table th,
+.dev-inspector-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dev-inspector-table th {
+  color: color-mix(in srgb, var(--text-primary, #575e75) 68%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dev-inspector-table td {
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #575e75);
+  overflow-wrap: anywhere;
+}
+
+.dev-inspector-table tr:last-child th,
+.dev-inspector-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dev-inspector-table tr.dev-inspector-row-current td {
+  font-weight: 600;
+}
+
+.dev-inspector-empty {
+  padding: 2rem 1rem;
+  border: 1px dashed var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 68%, transparent);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* ── Toolbars (settings-modal .button + .ct-button-secondary) ── */
+
+.dev-inspector-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  background: var(--ui-modal-background, #ffffff);
+}
+
+.dev-inspector-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+  border-radius: 4px;
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+  font: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.dev-inspector-toolbar button:hover {
+  border-color: var(--looks-secondary, #855cd6);
+}
+
+.dev-inspector-toolbar button:active,
+.dev-inspector-toolbar button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--looks-transparent, rgba(153, 102, 255, 0.35));
+}
+
+.dev-inspector-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dev-inspector-toolbar button.dev-inspector-btn-primary {
+  border: none;
+  background: var(--looks-secondary, #855cd6);
+  color: #fff;
+}
+
+.dev-inspector-toolbar button.dev-inspector-btn-danger {
+  border: none;
+  background: var(--red-primary, #e64a4a);
+  color: #fff;
+}
+
+/* ── JSON editors ── */
+/*
+ * Layout: flex column host so the editor fills the panel;
+ * keep library button metrics intact (see rules below).
+ */
+
+.dev-inspector-editor-wrap {
+  position: relative;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+}
+
+.dev-inspector-json-editor,
+.dev-inspector-project-editor {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+  background: var(--ui-primary, #ffffff);
+  box-sizing: border-box;
+}
+
+/* Fill host; flex column for menu / body / status only */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Keep library line-height so tree field floats size correctly */
+  line-height: 100%;
+}
+
+/* ── Menu bar only (direct child of .jsoneditor — not context menus) ── */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) {
+  position: relative;
+  flex: 0 0 35px;
+  width: 100%;
+  height: 35px !important;
+  min-height: 35px;
+  max-height: 35px;
+  padding: 2px !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 2;
+  /* Keep library blue so white sprite icons stay visible */
+  background-color: var(--ui-blue, #4c97ff) !important;
+  border-bottom: 1px solid var(--ui-blue, #4c97ff) !important;
+  color: #fff !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Restore library button metrics (global/theme CSS often collapses these) */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > button,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > button,
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button {
+  display: block !important;
+  float: left !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  margin: 2px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 2px !important;
+  background-color: transparent !important;
+  background-repeat: no-repeat !important;
+  color: #fff !important;
+  opacity: 0.9;
+  font-family: arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: normal !important;
+  line-height: 26px !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > button:hover,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > button:hover,
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button:hover,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  opacity: 1;
+}
+
+/* Mode switcher ("Tree ▾") needs width for its label */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) {
+  display: block;
+  float: left;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) > :global(.jsoneditor-modes) > button {
+  width: auto !important;
+  min-width: 60px !important;
+  padding: 0 8px !important;
+  background-image: none !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-align: center;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search) {
+  float: right;
+  margin: 2px 4px;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search) input,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search) input {
+  height: 22px !important;
+  margin: 2px 0 !important;
+  padding: 0 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search) input::placeholder,
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-search) input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Mode / node context dropdowns (must be opaque) ── */
+.dev-inspector-container :global(.jsoneditor-contextmenu),
+.dev-inspector-container :global(.jsoneditor-contextmenu-root) {
+  z-index: 20 !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) {
+  position: relative !important;
+  left: 0;
+  top: 0;
+  width: 140px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 4px 0 !important;
+  list-style: none !important;
+  flex: none !important;
+  overflow: visible !important;
+  border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15)) !important;
+  border-radius: 6px !important;
+  background: var(--ui-modal-background, var(--ui-primary, #ffffff)) !important;
+  background-color: var(--ui-modal-background, var(--ui-primary, #ffffff)) !important;
+  color: var(--text-primary, #575e75) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  opacity: 1 !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) li {
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) button {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 6px 12px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  box-sizing: border-box !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) button:hover,
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) button:focus {
+  background: var(--ui-tertiary, #e9eef2) !important;
+  border: none !important;
+  color: var(--text-primary, #575e75) !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) button:global(.jsoneditor-selected) {
+  background: var(--looks-transparent, rgba(153, 102, 255, 0.15)) !important;
+  color: var(--looks-secondary, #855cd6) !important;
+  font-weight: 600 !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) :global(.jsoneditor-text) {
+  color: inherit !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+}
+
+.dev-inspector-container :global(.jsoneditor-contextmenu) :global(.jsoneditor-menu) :global(.jsoneditor-icon) {
+  display: none; /* cleaner flat menu; labels are enough */
+}
+
+/* ── Navigation bar (tree path) ── */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-navigation-bar),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-navigation-bar) {
+  position: relative;
+  flex: 0 0 26px;
+  width: 100%;
+  height: 26px !important;
+  line-height: 26px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--ui-secondary, #f9f9f9) !important;
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12)) !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-treepath) a,
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-treepath) a {
+  color: var(--looks-secondary, #855cd6);
+}
+
+/*
+ * Outer body: fill remaining height only.
+ * Do NOT set display:flex here for tree mode — the library uses a table
+ * layout with float:left fields/values. Flex on outer broke the columns
+ * (narrow cells, character wrapping, icons detached from labels).
+ */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-outer),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-outer) {
+  position: relative !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: var(--ui-primary, #ffffff);
+  color: var(--text-primary, #575e75);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dev-inspector-container .dev-inspector-project-editor textarea:global(.jsoneditor-text),
+.dev-inspector-container .dev-inspector-json-editor textarea:global(.jsoneditor-text),
+.dev-inspector-container .dev-inspector-project-editor :global(.ace-jsoneditor),
+.dev-inspector-container .dev-inspector-json-editor :global(.ace-jsoneditor),
+.dev-inspector-container .dev-inspector-project-editor :global(.ace_editor),
+.dev-inspector-container .dev-inspector-json-editor :global(.ace_editor) {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  resize: none !important;
+  box-sizing: border-box !important;
+  background: var(--ui-primary, #ffffff) !important;
+  color: var(--text-primary, #575e75) !important;
+  font-family: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", monospace !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  tab-size: 4;
+}
+
+/* Ace gutter / content for code mode */
+.dev-inspector-container .dev-inspector-project-editor :global(.ace_editor),
+.dev-inspector-container .dev-inspector-json-editor :global(.ace_editor) {
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* ── Tree mode: leave table / field / button layout to jsoneditor.css ── */
+/* Only make the scroll container fill height. Never target table.jsoneditor-tree
+   with flex, or field/value floats will collapse into a tiny column. */
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor):global(.jsoneditor-mode-tree) > :global(.jsoneditor-outer) > :global(.jsoneditor-tree),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor):global(.jsoneditor-mode-tree) > :global(.jsoneditor-outer) > :global(.jsoneditor-tree) {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  overflow: auto !important;
+  background: var(--ui-primary, #ffffff) !important;
+}
+
+/* Theme colors only — do not change float, min-width, display, or sizing */
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-field),
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-value),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-field),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-value) {
+  color: var(--text-primary, #575e75);
+}
+
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-value):global(.jsoneditor-string),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-value):global(.jsoneditor-string) {
+  color: #006000;
+}
+
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-value):global(.jsoneditor-number),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-value):global(.jsoneditor-number) {
+  color: #ee422e;
+}
+
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-value):global(.jsoneditor-boolean),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-value):global(.jsoneditor-boolean) {
+  color: #ff8c00;
+}
+
+.dev-inspector-container .dev-inspector-project-editor :global(.jsoneditor-value):global(.jsoneditor-null),
+.dev-inspector-container .dev-inspector-json-editor :global(.jsoneditor-value):global(.jsoneditor-null) {
+  color: #004ed0;
+}
+
+/* ── Status bar ── */
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-statusbar),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-statusbar) {
+  position: relative;
+  flex: 0 0 26px;
+  width: 100%;
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 8px;
+  box-sizing: border-box;
+  background: var(--ui-secondary, #f9f9f9) !important;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12)) !important;
+  color: color-mix(in srgb, var(--text-primary, #575e75) 70%, transparent) !important;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+
+.dev-inspector-container .dev-inspector-project-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-separator),
+.dev-inspector-container .dev-inspector-json-editor > :global(.jsoneditor) > :global(.jsoneditor-menu) :global(.jsoneditor-separator) {
+  border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Narrow window ── */
+
+@media (max-width: 520px) {
+  .dev-inspector-prop {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .dev-inspector-prop-key {
+    margin-right: 0;
+  }
+
+  .dev-inspector-prop-val {
+    max-width: none;
+    text-align: left;
+  }
+
+  .dev-inspector-panel-scroll {
+    padding: 1rem;
+  }
+}

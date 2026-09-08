@@ -1,6 +1,7 @@
 jest.setTimeout(30000); // eslint-disable-line no-undef
 
 import bindAll from 'lodash.bindall';
+import path from 'path';
 import 'chromedriver'; // register path
 import webdriver from 'selenium-webdriver';
 
@@ -238,7 +239,10 @@ class SeleniumHelper {
             const WINDOW_WIDTH = 1024;
             const WINDOW_HEIGHT = 768;
             await this.driver
-                .get(`file://${uri}`);
+                .get(new URL(
+                    path.relative(path.resolve(__dirname, '../../build'), uri),
+                    `${process.env.TEST_BASE_URL || 'http://localhost:8601'}/`
+                ).href);
             await this.driver
                 .executeScript('window.onbeforeunload = undefined;');
             await this.driver.manage().window()

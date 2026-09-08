@@ -1,11 +1,15 @@
 import {lazy} from 'react';
 
 export const isChunkLoadError = error => Boolean(error && (
-    error.name === 'ChunkLoadError' || /Loading (?:CSS )?chunk [\w-]+ failed/i.test(error.message || '')
+    error.name === 'ChunkLoadError' ||
+    /Loading (?:CSS )?chunk [\w-]+ failed/i.test(error.message || '') ||
+    /Failed to fetch dynamically imported module/i.test(error.message || '') ||
+    /error loading dynamically imported module/i.test(error.message || '') ||
+    /Importing a module script failed|Unable to preload CSS/i.test(error.message || '')
 ));
 
-// Webpack removes failed chunk requests from its cache, so another import retries
-// the download. Only retry transport failures, never module execution errors.
+// Retry transport failures once. Execution errors must reach the error boundary.
+// A browser-cached failure or an asset removed by deployment can still need a reload.
 export const importWithRetry = async load => {
     try {
         return await load();

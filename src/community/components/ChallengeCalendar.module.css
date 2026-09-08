@@ -51,7 +51,7 @@
 
 .months span {
     padding: 7px 9px;
-    border-right: 1px solid var(--border-soft);
+    border-inline-end: 1px solid var(--border-soft);
     color: var(--text-dim);
     background: var(--bg-raised);
     font-size: 11px;
@@ -65,7 +65,7 @@
     gap: 4px;
     padding: 6px 0;
     border-top: 1px solid var(--border-soft);
-    border-right: 1px solid var(--border-soft);
+    border-inline-end: 1px solid var(--border-soft);
     color: var(--text-faint);
     font-size: 11px;
 }
@@ -94,8 +94,8 @@
     bottom: 0;
     left: calc(var(--mw-today-offset) * 68px);
     width: 68px;
-    border-right: 1px solid var(--accent-border);
-    border-left: 1px solid var(--accent-border);
+    border-inline-end: 1px solid var(--accent-border);
+    border-inline-start: 1px solid var(--accent-border);
     background: color-mix(in srgb, var(--accent) 6%, transparent);
     pointer-events: none;
 }
@@ -151,7 +151,7 @@
 }
 
 .empty button {
-    margin-left: 6px;
+    margin-inline-start: 6px;
     padding: 0;
     border: 0;
     color: var(--accent-strong);

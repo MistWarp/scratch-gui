@@ -32,7 +32,7 @@
 }
 
 .foot > span {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 11px;
 }
@@ -187,7 +187,7 @@
     }
 
     .foot > span {
-        margin-left: 0;
+        margin-inline-start: 0;
     }
 
     .tools span {

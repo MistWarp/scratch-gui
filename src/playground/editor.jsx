@@ -18,8 +18,9 @@ import './import-first';
 import './editor-dependencies';
 
 import React from 'react';
+import {prepareLocale} from '../lib/editor-locales';
 
 import Interface from './render-interface.jsx';
 import render from './app-target';
 
-render(<Interface />);
+render(<Interface />, prepareLocale);

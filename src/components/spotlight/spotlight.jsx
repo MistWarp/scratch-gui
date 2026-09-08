@@ -1,3 +1,4 @@
+import spotlightStyles from './spotlight.module.css';
 /* eslint-disable no-use-before-define, func-style, require-jsdoc, no-loop-func */
 import React, {useEffect, useMemo, useRef} from 'react';
 import PropTypes from 'prop-types';
@@ -40,7 +41,6 @@ import {
 
 import {loadAddonMessagesForLocale, formatAddonMessage} from '../find-bar/addon-i18n';
 
-import './spotlight.css';
 
 const PREVIEW_LIMIT = 32;
 const POPUP_SCALE = 48;
@@ -86,25 +86,25 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
             let searchFrame = null;
 
             const popupRoot = document.body.appendChild(document.createElement('div'));
-            popupRoot.classList.add('sa-mcp-root');
+            popupRoot.classList.add(spotlightStyles['sa-mcp-root']);
             popupRoot.dir = isRtl(localeRef.current) ? 'rtl' : 'ltr';
             popupRoot.style.display = 'none';
 
             const popupContainer = popupRoot.appendChild(document.createElement('div'));
-            popupContainer.classList.add('sa-mcp-container');
+            popupContainer.classList.add(spotlightStyles['sa-mcp-container']);
             popupContainer.classList.add('sa-mcp-container-collapsed');
             popupContainer.setAttribute('aria-label', 'Spotlight search');
             popupContainer.setAttribute('role', 'dialog');
 
             const popupInputContainer = popupContainer.appendChild(document.createElement('div'));
-            popupInputContainer.classList.add('sa-mcp-input-wrapper');
+            popupInputContainer.classList.add(spotlightStyles['sa-mcp-input-wrapper']);
 
             const popupSearchIcon = popupInputContainer.appendChild(document.createElement('span'));
-            popupSearchIcon.classList.add('sa-mcp-search-icon');
+            popupSearchIcon.classList.add(spotlightStyles['sa-mcp-search-icon']);
             ReactDOM.render(React.createElement(Search, {size: 20, strokeWidth: 2}), popupSearchIcon);
 
             const popupInputSuggestion = popupInputContainer.appendChild(document.createElement('input'));
-            popupInputSuggestion.classList.add('sa-mcp-input-suggestion');
+            popupInputSuggestion.classList.add(spotlightStyles['sa-mcp-input-suggestion']);
 
             const popupInput = popupInputContainer.appendChild(document.createElement('input'));
             popupInput.classList.add('sa-mcp-input');
@@ -114,14 +114,14 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
             popupInput.setAttribute('role', 'searchbox');
 
             const popupResultBox = popupContainer.appendChild(document.createElement('div'));
-            popupResultBox.classList.add('sa-mcp-result-box');
+            popupResultBox.classList.add(spotlightStyles['sa-mcp-result-box']);
             popupResultBox.style.display = 'none';
 
             const popupPreviewContainer = popupContainer.appendChild(document.createElement('div'));
-            popupPreviewContainer.classList.add('sa-mcp-preview-container');
+            popupPreviewContainer.classList.add(spotlightStyles['sa-mcp-preview-container']);
 
             const popupStatusBar = popupContainer.appendChild(document.createElement('div'));
-            popupStatusBar.classList.add('sa-mcp-status-bar');
+            popupStatusBar.classList.add(spotlightStyles['sa-mcp-status-bar']);
             popupStatusBar.setAttribute('aria-live', 'polite');
             const popupStatusText = popupStatusBar.appendChild(document.createElement('span'));
             popupStatusText.textContent = 'Type to search';
@@ -129,7 +129,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
             const popupPreviewBlocks = popupPreviewContainer.appendChild(
                 document.createElementNS('http://www.w3.org/2000/svg', 'svg')
             );
-            popupPreviewBlocks.classList.add('sa-mcp-preview-blocks');
+            popupPreviewBlocks.classList.add(spotlightStyles['sa-mcp-preview-blocks']);
 
             const querier = new WorkspaceQuerier();
 
@@ -286,7 +286,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
 
                 isCenteredMode = centered;
                 searchMode = centered ? 'everything' : 'blocks';
-                popupRoot.classList.toggle('sa-mcp-centered', centered);
+                popupRoot.classList.toggle(spotlightStyles['sa-mcp-centered'], centered);
                 popupContainer.setAttribute('aria-modal', `${centered}`);
 
                 previewScale = (window.innerWidth * 0.00005) + (POPUP_SCALE / 100);
@@ -443,16 +443,18 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                         popupResultBox.textContent = `= ${searchResult.mathResult}`;
                         popupResultBox.style.display = '';
                         popupResultBox.classList.add('sa-mcp-result-math');
-                        popupResultBox.classList.remove('sa-mcp-result-conversion');
+                        popupResultBox.classList.remove(spotlightStyles['sa-mcp-result-conversion']);
                     } else if (searchResult.conversionResult) {
                         const resultStr = searchResult.conversionResult.result.toFixed(4).replace(/\.?0+$/, '');
                         popupResultBox.textContent = `= ${resultStr} ${searchResult.conversionResult.toUnit}`;
                         popupResultBox.style.display = '';
-                        popupResultBox.classList.add('sa-mcp-result-conversion');
+                        popupResultBox.classList.add(spotlightStyles['sa-mcp-result-conversion']);
                         popupResultBox.classList.remove('sa-mcp-result-math');
                     } else {
                         popupResultBox.style.display = 'none';
-                        popupResultBox.classList.remove('sa-mcp-result-math', 'sa-mcp-result-conversion');
+                        popupResultBox.classList.remove(
+                            'sa-mcp-result-math', spotlightStyles['sa-mcp-result-conversion']
+                        );
                     }
 
                     const hasComputed = popupResultBox.style.display !== 'none';
@@ -506,14 +508,14 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                         y = 0;
                     }
 
-                    svgBackground.classList.add('sa-mcp-preview-block-bg');
+                    svgBackground.classList.add(spotlightStyles['sa-mcp-preview-block-bg']);
                     svgBackground.setAttribute('x', '8');
                     svgBackground.setAttribute('width', `${previewWidth - 16}`);
                     svgBackground.addEventListener('mousemove', mouseMoveListener);
                     svgBackground.addEventListener('mousedown', mouseDownListener);
                     svgBlock.addEventListener('mousemove', mouseMoveListener);
                     svgBlock.addEventListener('mousedown', mouseDownListener);
-                    svgBlock.classList.add('sa-mcp-preview-block');
+                    svgBlock.classList.add(spotlightStyles['sa-mcp-preview-block']);
 
                     const bgOffset = (result.isHeader || result.isSprite || result.isCostume ||
                         result.isSound || result.isCustomBlock || result.isAction) ? 0 : actualHeight / 10;
@@ -588,8 +590,8 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
 
                 const oldSelection = queryPreviews[selectedPreviewIdx];
                 if (oldSelection) {
-                    oldSelection.svgBackground.classList.remove('sa-mcp-preview-block-bg-selection');
-                    oldSelection.svgBlock.classList.remove('sa-mcp-preview-block-selection');
+                    oldSelection.svgBackground.classList.remove(spotlightStyles['sa-mcp-preview-block-bg-selection']);
+                    oldSelection.svgBlock.classList.remove(spotlightStyles['sa-mcp-preview-block-selection']);
                 }
 
                 if (queryPreviews.length === 0 && queryIllegalResult) {
@@ -609,8 +611,8 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 if (newSelection) {
                     selectedPreviewIdx = actualIdx;
 
-                    newSelection.svgBackground.classList.add('sa-mcp-preview-block-bg-selection');
-                    newSelection.svgBlock.classList.add('sa-mcp-preview-block-selection');
+                    newSelection.svgBackground.classList.add(spotlightStyles['sa-mcp-preview-block-bg-selection']);
+                    newSelection.svgBlock.classList.add(spotlightStyles['sa-mcp-preview-block-selection']);
 
                     newSelection.svgBackground.scrollIntoView({
                         block: 'nearest',

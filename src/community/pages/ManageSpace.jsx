@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
@@ -136,6 +137,7 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
 };
 
 const ManageSpace = () => {
+    const {text: communityText} = useCommunityText();
     const {id} = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -270,7 +272,7 @@ const ManageSpace = () => {
         const file = event.target.files && event.target.files[0];
         if (!file) return;
         if (file.size > 1024 * 1024) {
-            setError('Choose an image smaller than 1 MB.');
+            setError(communityText("Choose an image smaller than 1 MB."));
             input.value = '';
             return;
         }
@@ -304,7 +306,7 @@ const ManageSpace = () => {
     const save = async event => {
         event.preventDefault();
         if (active === 'schedule' && !scheduleIsValid(form)) {
-            setError('Submissions must open first, close later, and judging must end last.');
+            setError(communityText("Submissions must open first, close later, and judging must end last."));
             return;
         }
         const actionKey = beginAction('save');
@@ -532,12 +534,12 @@ const ManageSpace = () => {
     }, [active, space]);
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.status}>Loading management tools…</p></main>;
+        return <main className={styles.page}><p className={styles.status}>{communityText('Loading management tools…')}</p></main>;
     }
     if (!user) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>Sign in to manage this space. <Button onClick={login}>Sign in</Button></p>
+                <p className={styles.status}>{communityText('Sign in to manage this space. ')}<Button onClick={login}>{communityText('Sign in')}</Button></p>
             </main>
         );
     }
@@ -545,14 +547,14 @@ const ManageSpace = () => {
         return (
             <main className={styles.page}>
                 <p className={styles.status}>
-                    {(errorLoadContext === loadContext && error) || 'Loading management tools…'}{' '}
+                    {(errorLoadContext === loadContext && error) || communityText('Loading management tools…')}{' '}
                     {errorLoadContext === loadContext && error ? (
                         <Button
                             onClick={() => {
                                 setError('');
                                 load().catch(e => setError(e.message || 'You cannot manage this space.'));
                             }}
-                        >Try again</Button>
+                        >{communityText('Try again')}</Button>
                     ) : null}
                 </p>
             </main>
@@ -580,11 +582,11 @@ const ManageSpace = () => {
                                 setConfirmation(null);
                                 setConfirmationError('');
                             }}
-                        >Cancel</Button>
+                        >{communityText('Cancel')}</Button>
                         <Button
                             variant="danger"
                             busy={destructiveActionInFlight.current.has(loadContext)}
-                            busyLabel="Working…"
+                            busyLabel={communityText('Working…')}
                             onClick={confirmDestructiveAction}
                         >{confirmationDetails.action}</Button>
                     </>}
@@ -593,13 +595,13 @@ const ManageSpace = () => {
                     {confirmationError ? <p className={styles.error}>{confirmationError}</p> : null}
                 </Modal>
             ) : null}
-            <Link to={`/spaces/${id}`} className={styles.back}><ArrowLeft size={15} /> Back to {space.title}</Link>
+            <Link to={`/spaces/${id}`} className={styles.back}><ArrowLeft size={15} />{communityText(' Back to ')}{space.title}</Link>
             <header className={styles.manageHeader}>
-                <div><h1>Manage {space.title}</h1></div>
-                <Link to={`/spaces/${id}`}>View public page</Link>
+                <div><h1>{communityText('Manage ')}{space.title}</h1></div>
+                <Link to={`/spaces/${id}`}>{communityText('View public page')}</Link>
             </header>
             <div className={styles.manageLayout}>
-                <nav className={styles.manageNav} aria-label="Space settings">
+                <nav className={styles.manageNav} aria-label={communityText('Space settings')}>
                     {(space.kind === 'challenge' ? CHALLENGE_SECTIONS : SECTIONS).filter(section => section.key !== 'danger' || space.isOwner).map(({key, label, Icon}) => (
                         <button
                             key={key}
@@ -619,123 +621,123 @@ const ManageSpace = () => {
                     {status ? <p className={styles.success}><Check size={15} /> {status}</p> : null}
                     {active === 'general' ? (
                         <form className={styles.manageCard} onSubmit={save}>
-                            <header><h2>{space.kind === 'challenge' ? 'Challenge details' : 'General details'}</h2><p>{space.kind === 'challenge' ? 'Give participants the context they need before they enter.' : 'Change how this space appears and who can submit projects.'}</p></header>
+                            <header><h2>{space.kind === 'challenge' ? communityText('Challenge details') : communityText('General details')}</h2><p>{space.kind === 'challenge' ? communityText('Give participants the context they need before they enter.') : communityText('Change how this space appears and who can submit projects.')}</p></header>
                             <fieldset className={styles.manageFormFields} disabled={saving}>
-                                {space.kind === 'studio' ? <div className={styles.thumbnailEditor}>{space.thumbnailUrl ? <img src={space.thumbnailUrl} alt="" /> : <span><ImageIcon size={28} /> No thumbnail</span>}<label><strong>{thumbnailBusy ? 'Uploading…' : 'Choose image'}</strong><small>PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.</small><input type="file" accept="image/png,image/jpeg,image/webp" disabled={thumbnailBusy} onChange={uploadThumbnail} /></label></div> : null}
-                                <label><span>Name</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
-                                <label><span>Description</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
-                                <label><span>Owning group</span><input value={form.groupTag || ''} maxLength={32} placeholder="Optional Rotur group tag" onChange={event => updateForm('groupTag', event.target.value)} /><small>Enter a group tag to transfer this space into the group. Clear it to move the space back out.</small></label>
+                                {space.kind === 'studio' ? <div className={styles.thumbnailEditor}>{space.thumbnailUrl ? <img src={space.thumbnailUrl} alt="" /> : <span><ImageIcon size={28} />{communityText(' No thumbnail')}</span>}<label><strong>{thumbnailBusy ? communityText('Uploading…') : communityText('Choose image')}</strong><small>{communityText('PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.')}</small><input type="file" accept="image/png,image/jpeg,image/webp" disabled={thumbnailBusy} onChange={uploadThumbnail} /></label></div> : null}
+                                <label><span>{communityText('Name')}</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
+                                <label><span>{communityText('Description')}</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
+                                <label><span>{communityText('Owning group')}</span><input value={form.groupTag || ''} maxLength={32} placeholder={communityText('Optional Rotur group tag')} onChange={event => updateForm('groupTag', event.target.value)} /><small>{communityText('Enter a group tag to transfer this space into the group. Clear it to move the space back out.')}</small></label>
                                 <div className={styles.transferOwner}>
-                                    <span><strong>Transfer to another user</strong><small>The new owner receives this {space.kind}. Its group assignment is cleared.</small></span>
-                                    <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder="Rotur username" onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>Transfer</Button></div>
+                                    <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this ')}{space.kind}{communityText('. Its group assignment is cleared.')}</small></span>
+                                    <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>{communityText('Transfer')}</Button></div>
                                 </div>
-                                {space.kind === 'challenge' ? <><label><span>Theme</span><input value={form.theme || ''} maxLength={200} placeholder="Optional theme or prompt" onChange={event => updateForm('theme', event.target.value)} /></label><label><span>Rules</span><textarea value={form.rules || ''} maxLength={10000} placeholder="Eligibility, team rules, allowed tools, and anything that could disqualify an entry" onChange={event => updateForm('rules', event.target.value)} /></label></> : null}
+                                {space.kind === 'challenge' ? <><label><span>{communityText('Theme')}</span><input value={form.theme || ''} maxLength={200} placeholder={communityText('Optional theme or prompt')} onChange={event => updateForm('theme', event.target.value)} /></label><label><span>{communityText('Rules')}</span><textarea value={form.rules || ''} maxLength={10000} placeholder={communityText('Eligibility, team rules, allowed tools, and anything that could disqualify an entry')} onChange={event => updateForm('rules', event.target.value)} /></label></> : null}
                                 <div className={styles.formRow}>
-                                    <label><span>Visibility</span><select value={form.visibility} onChange={event => updateForm('visibility', event.target.value)}><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></label>
+                                    <label><span>{communityText('Visibility')}</span><select value={form.visibility} onChange={event => updateForm('visibility', event.target.value)}><option value="public">{communityText('Public')}</option><option value="unlisted">{communityText('Unlisted')}</option><option value="private">{communityText('Private')}</option></select></label>
                                     <SwitchRow
                                         className={styles.toggleSwitch}
                                         checked={Boolean(form.openSubmissions)}
-                                        description="Let people add their own shared or unlisted projects."
-                                        label="Open submissions"
+                                        description={communityText('Let people add their own shared or unlisted projects.')}
+                                        label={communityText('Open submissions')}
                                         onChange={value => updateForm('openSubmissions', value)}
                                     />
                                 </div>
-                                <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel="Saving…">Save changes</Button></div>
+                                <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save changes')}</Button></div>
                             </fieldset>
                         </form>
                     ) : null}
                     {active === 'schedule' && space.kind === 'challenge' ? (
                         <form className={styles.manageCard} onSubmit={save}>
-                            <header><h2>Schedule</h2><p>Each deadline changes what participants and judges can do.</p></header>
+                            <header><h2>{communityText('Schedule')}</h2><p>{communityText('Each deadline changes what participants and judges can do.')}</p></header>
                             <fieldset className={styles.manageFormFields} disabled={saving}>
                                 <div className={styles.scheduleFields}>
-                                    <label><span>Submissions open</span><input type="datetime-local" value={dateTimeInput(form.startsAt)} onChange={event => updateForm('startsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>People can start entering projects.</small></label>
-                                    <label><span>Submissions close</span><input type="datetime-local" value={dateTimeInput(form.endsAt)} onChange={event => updateForm('endsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>Entries lock and judging starts.</small></label>
-                                    <label><span>Judging ends</span><input type="datetime-local" value={dateTimeInput(form.judgingEndsAt)} onChange={event => updateForm('judgingEndsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>The host can publish the final results.</small></label>
+                                    <label><span>{communityText('Submissions open')}</span><input type="datetime-local" value={dateTimeInput(form.startsAt)} onChange={event => updateForm('startsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('People can start entering projects.')}</small></label>
+                                    <label><span>{communityText('Submissions close')}</span><input type="datetime-local" value={dateTimeInput(form.endsAt)} onChange={event => updateForm('endsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('Entries lock and judging starts.')}</small></label>
+                                    <label><span>{communityText('Judging ends')}</span><input type="datetime-local" value={dateTimeInput(form.judgingEndsAt)} onChange={event => updateForm('judgingEndsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('The host can publish the final results.')}</small></label>
                                 </div>
-                                <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel="Saving…">Save schedule</Button></div>
+                                <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save schedule')}</Button></div>
                             </fieldset>
                         </form>
                     ) : null}
                     {active === 'judging' && space.kind === 'challenge' ? (
                         <section className={styles.judgingStack}>
                             <form className={styles.manageCard} onSubmit={save}>
-                                <header><h2>Scoring criteria</h2><p>{criteriaLocked ? 'Scoring has started, so the criteria are locked.' : 'Judges score each entry from 1 to 10. Weights decide how much each criterion counts.'}</p></header>
+                                <header><h2>{communityText('Scoring criteria')}</h2><p>{criteriaLocked ? communityText('Scoring has started, so the criteria are locked.') : communityText('Judges score each entry from 1 to 10. Weights decide how much each criterion counts.')}</p></header>
                                 <fieldset className={styles.manageFormFields} disabled={saving}>
                                     <div className={styles.criteriaEditor}>
-                                        {(form.criteria || []).map((criterion, index) => <article key={criterion.id}><label><span>Name</span><input required disabled={criteriaLocked} maxLength={60} value={criterion.name} onChange={event => updateCriterion(index, 'name', event.target.value)} /></label><label><span>Description</span><input disabled={criteriaLocked} maxLength={300} value={criterion.description || ''} onChange={event => updateCriterion(index, 'description', event.target.value)} /></label><label className={styles.weightField}><span>Weight <strong>{criterion.weight}</strong></span><input type="range" disabled={criteriaLocked} min="1" max="5" step="1" value={criterion.weight} onChange={event => updateCriterion(index, 'weight', Number(event.target.value))} aria-label={`${criterion.name || 'Criterion'} weight, ${criterion.weight} of 5`} /></label><IconButton variant="danger" label={`Remove ${criterion.name || 'criterion'}`} onClick={() => removeCriterion(index)} disabled={criteriaLocked || form.criteria.length === 1}><X size={16} /></IconButton></article>)}
+                                        {(form.criteria || []).map((criterion, index) => <article key={criterion.id}><label><span>{communityText('Name')}</span><input required disabled={criteriaLocked} maxLength={60} value={criterion.name} onChange={event => updateCriterion(index, 'name', event.target.value)} /></label><label><span>{communityText('Description')}</span><input disabled={criteriaLocked} maxLength={300} value={criterion.description || ''} onChange={event => updateCriterion(index, 'description', event.target.value)} /></label><label className={styles.weightField}><span>{communityText('Weight ')}<strong>{criterion.weight}</strong></span><input type="range" disabled={criteriaLocked} min="1" max="5" step="1" value={criterion.weight} onChange={event => updateCriterion(index, 'weight', Number(event.target.value))} aria-label={communityText("{value1} weight, {value2} of 5", {value1: criterion.name || 'Criterion', value2: criterion.weight})} /></label><IconButton variant="danger" label={communityText("Remove {value1}", {value1: criterion.name || 'criterion'})} onClick={() => removeCriterion(index)} disabled={criteriaLocked || form.criteria.length === 1}><X size={16} /></IconButton></article>)}
                                     </div>
-                                    {!criteriaLocked && form.criteria.length < 8 ? <Button className={styles.addCriterion} onClick={addCriterion}><Plus size={15} /> Add criterion</Button> : null}
+                                    {!criteriaLocked && form.criteria.length < 8 ? <Button className={styles.addCriterion} onClick={addCriterion}><Plus size={15} />{communityText(' Add criterion')}</Button> : null}
                                     <SwitchRow
                                         checked={Boolean(form.communityVoting)}
-                                        description="Signed-in users can rate entries from 1 to 5 during judging. Audience ratings are shown separately and do not change the winner."
-                                        label="Audience ratings"
+                                        description={communityText('Signed-in users can rate entries from 1 to 5 during judging. Audience ratings are shown separately and do not change the winner.')}
+                                        label={communityText('Audience ratings')}
                                         onChange={value => updateForm('communityVoting', value)}
                                     />
-                                    <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel="Saving…">Save judging setup</Button></div>
+                                    <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save judging setup')}</Button></div>
                                 </fieldset>
                             </form>
                             <section className={styles.manageCard}>
-                                <header><h2>Judges</h2><p>Judges accept an invitation before they can score entries.</p></header>
+                                <header><h2>{communityText('Judges')}</h2><p>{communityText('Judges accept an invitation before they can score entries.')}</p></header>
                                 <div className={styles.curatorInvite}>
                                     <Search size={16} />
-                                    <input value={inviteQuery} disabled={Boolean(busyUser)} onChange={event => setInviteQuery(event.target.value)} placeholder="Search for a judge" />
-                                    {searching ? <span>Searching…</span> : null}
-                                    {inviteQuery.trim().length >= 2 && !searching ? <div className={styles.userSuggestions}>{suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).map(person => <Button key={person.username} busy={busyUser === person.username} busyLabel="Inviting…" onClick={() => inviteJudge(person.username)} disabled={Boolean(busyUser)}><Avatar username={person.username} size={32} /><span><strong>{person.username}</strong><small>MistWarp user</small></span><UserPlus size={16} /></Button>)}{!suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).length ? <p>No available users found.</p> : null}</div> : null}
+                                    <input value={inviteQuery} disabled={Boolean(busyUser)} onChange={event => setInviteQuery(event.target.value)} placeholder={communityText('Search for a judge')} />
+                                    {searching ? <span>{communityText('Searching…')}</span> : null}
+                                    {inviteQuery.trim().length >= 2 && !searching ? <div className={styles.userSuggestions}>{suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).map(person => <Button key={person.username} busy={busyUser === person.username} busyLabel={communityText('Inviting…')} onClick={() => inviteJudge(person.username)} disabled={Boolean(busyUser)}><Avatar username={person.username} size={32} /><span><strong>{person.username}</strong><small>{communityText('MistWarp user')}</small></span><UserPlus size={16} /></Button>)}{!suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).length ? <p>{communityText('No available users found.')}</p> : null}</div> : null}
                                 </div>
-                                <div className={styles.peopleList}>{(space.judges || []).map(username => <article key={username}><UserLink username={username}><Avatar username={username} size={38} /></UserLink><div><UserLink username={username}><strong>{username}</strong></UserLink><span>Judge</span></div><Button variant="danger" busy={busyUser === username} busyLabel="Removing…" onClick={() => removeJudge(username)} disabled={Boolean(busyUser)}><X size={15} /> Remove</Button></article>)}{!space.judges?.length ? <p className={styles.pickerEmpty}>No judges have accepted yet.</p> : null}</div>
-                                {(space.judgeInvites || []).length ? <><h3 className={styles.subheading}>Pending invitations</h3><div className={styles.peopleList}>{space.judgeInvites.map(invitation => <article key={invitation.username}><UserLink username={invitation.username}><Avatar username={invitation.username} size={38} /></UserLink><div><UserLink username={invitation.username}><strong>{invitation.username}</strong></UserLink><span>Invited</span></div></article>)}</div></> : null}
+                                <div className={styles.peopleList}>{(space.judges || []).map(username => <article key={username}><UserLink username={username}><Avatar username={username} size={38} /></UserLink><div><UserLink username={username}><strong>{username}</strong></UserLink><span>{communityText('Judge')}</span></div><Button variant="danger" busy={busyUser === username} busyLabel={communityText('Removing…')} onClick={() => removeJudge(username)} disabled={Boolean(busyUser)}><X size={15} />{communityText(' Remove')}</Button></article>)}{!space.judges?.length ? <p className={styles.pickerEmpty}>{communityText('No judges have accepted yet.')}</p> : null}</div>
+                                {(space.judgeInvites || []).length ? <><h3 className={styles.subheading}>{communityText('Pending invitations')}</h3><div className={styles.peopleList}>{space.judgeInvites.map(invitation => <article key={invitation.username}><UserLink username={invitation.username}><Avatar username={invitation.username} size={38} /></UserLink><div><UserLink username={invitation.username}><strong>{invitation.username}</strong></UserLink><span>{communityText('Invited')}</span></div></article>)}</div></> : null}
                             </section>
                             <section className={styles.manageCard}>
-                                <header><h2>Results</h2><p>Publishing reveals the ranked judge scores on the public challenge page.</p></header>
-                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? `Published ${formatDateTime(space.resultsPublishedAt, 'date unavailable')}` : `${space.projects.filter(project => project.judgeScoreCount > 0).length} of ${space.projects.length} entries scored`}</span>{!space.resultsPublishedAt ? <Button
-                                    variant="primary" busy={publishing} busyLabel="Publishing…" onClick={publishResults}
-                                >Publish results</Button> : <span className={styles.published}><Check size={15} /> Results are live</span>}</div>
+                                <header><h2>{communityText('Results')}</h2><p>{communityText('Publishing reveals the ranked judge scores on the public challenge page.')}</p></header>
+                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? communityText("Published {value1}", {value1: formatDateTime(space.resultsPublishedAt, 'date unavailable')}) : communityText("{value1} of {value2} entries scored", {value1: space.projects.filter(project => project.judgeScoreCount > 0).length, value2: space.projects.length})}</span>{!space.resultsPublishedAt ? <Button
+                                    variant="primary" busy={publishing} busyLabel={communityText('Publishing…')} onClick={publishResults}
+                                >{communityText('Publish results')}</Button> : <span className={styles.published}><Check size={15} />{communityText(' Results are live')}</span>}</div>
                             </section>
                         </section>
                     ) : null}
                     {active === 'curators' ? (
                         <section className={styles.manageCard}>
-                            <header><h2>Curators</h2><p>Curators can edit this space and organise its projects. Invitations must be accepted before access is granted.</p></header>
+                            <header><h2>{communityText('Curators')}</h2><p>{communityText('Curators can edit this space and organise its projects. Invitations must be accepted before access is granted.')}</p></header>
                             {space.isOwner ? (
                                 <div className={styles.curatorInvite}>
                                     <Search size={16} />
-                                    <input value={inviteQuery} disabled={Boolean(busyUser)} onChange={event => setInviteQuery(event.target.value)} placeholder="Search for someone to invite" />
-                                    {searching ? <span>Searching…</span> : null}
+                                    <input value={inviteQuery} disabled={Boolean(busyUser)} onChange={event => setInviteQuery(event.target.value)} placeholder={communityText('Search for someone to invite')} />
+                                    {searching ? <span>{communityText('Searching…')}</span> : null}
                                     {inviteQuery.trim().length >= 2 && !searching ? (
                                         <div className={styles.userSuggestions}>
                                             {suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).map(person => (
-                                                <Button key={person.username} busy={busyUser === person.username} busyLabel="Inviting…" onClick={() => invite(person.username)} disabled={Boolean(busyUser)}><Avatar username={person.username} size={32} /><span><strong>{person.username}</strong><small>{person.bio || 'MistWarp user'}</small></span><UserPlus size={16} /></Button>
+                                                <Button key={person.username} busy={busyUser === person.username} busyLabel={communityText('Inviting…')} onClick={() => invite(person.username)} disabled={Boolean(busyUser)}><Avatar username={person.username} size={32} /><span><strong>{person.username}</strong><small>{person.bio || communityText('MistWarp user')}</small></span><UserPlus size={16} /></Button>
                                             ))}
-                                            {!suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).length ? <p>No available users found.</p> : null}
+                                            {!suggestions.filter(person => !unavailableUsers.has(person.username.toLowerCase())).length ? <p>{communityText('No available users found.')}</p> : null}
                                         </div>
                                     ) : null}
                                 </div>
                             ) : null}
                             <div className={styles.peopleList}>
-                                <article><UserLink username={space.owner}><Avatar username={space.owner} size={38} /></UserLink><div><UserLink username={space.owner}><strong>{space.owner}</strong></UserLink><span>Owner</span></div></article>
-                                {(space.managers || []).map(username => <article key={username}><UserLink username={username}><Avatar username={username} size={38} /></UserLink><div><UserLink username={username}><strong>{username}</strong></UserLink><span>Curator</span></div>{space.isOwner ? <Button variant="danger" busy={busyUser === username} busyLabel="Removing…" onClick={() => removeCurator(username)} disabled={Boolean(busyUser)}><X size={15} /> Remove</Button> : null}</article>)}
+                                <article><UserLink username={space.owner}><Avatar username={space.owner} size={38} /></UserLink><div><UserLink username={space.owner}><strong>{space.owner}</strong></UserLink><span>{communityText('Owner')}</span></div></article>
+                                {(space.managers || []).map(username => <article key={username}><UserLink username={username}><Avatar username={username} size={38} /></UserLink><div><UserLink username={username}><strong>{username}</strong></UserLink><span>{communityText('Curator')}</span></div>{space.isOwner ? <Button variant="danger" busy={busyUser === username} busyLabel={communityText('Removing…')} onClick={() => removeCurator(username)} disabled={Boolean(busyUser)}><X size={15} />{communityText(' Remove')}</Button> : null}</article>)}
                             </div>
-                            {space.isOwner && (space.curatorInvites || []).length ? <><h3 className={styles.subheading}>Pending invitations</h3><div className={styles.peopleList}>{space.curatorInvites.map(pendingInvitation => <article key={pendingInvitation.username}><UserLink username={pendingInvitation.username}><Avatar username={pendingInvitation.username} size={38} /></UserLink><div><UserLink username={pendingInvitation.username}><strong>{pendingInvitation.username}</strong></UserLink><span>Invited</span></div><Button busy={busyUser === pendingInvitation.username} busyLabel="Cancelling…" onClick={() => cancelInvitation(pendingInvitation.username)} disabled={Boolean(busyUser)}><X size={15} /> Cancel</Button></article>)}</div></> : null}
+                            {space.isOwner && (space.curatorInvites || []).length ? <><h3 className={styles.subheading}>{communityText('Pending invitations')}</h3><div className={styles.peopleList}>{space.curatorInvites.map(pendingInvitation => <article key={pendingInvitation.username}><UserLink username={pendingInvitation.username}><Avatar username={pendingInvitation.username} size={38} /></UserLink><div><UserLink username={pendingInvitation.username}><strong>{pendingInvitation.username}</strong></UserLink><span>{communityText('Invited')}</span></div><Button busy={busyUser === pendingInvitation.username} busyLabel={communityText('Cancelling…')} onClick={() => cancelInvitation(pendingInvitation.username)} disabled={Boolean(busyUser)}><X size={15} />{communityText(' Cancel')}</Button></article>)}</div></> : null}
                         </section>
                     ) : null}
                     {active === 'projects' ? (
                         <section className={styles.manageCard}>
-                            <header className={styles.manageProjectsHeader}><div><h2>{space.kind === 'challenge' ? 'Submissions' : 'Projects'}</h2><p>{space.kind === 'challenge' ? 'Review entries or remove one that breaks the rules.' : 'Add, find, and remove projects from this space.'}</p></div><SpaceProjectPicker space={space} onAdded={load} /></header>
+                            <header className={styles.manageProjectsHeader}><div><h2>{space.kind === 'challenge' ? communityText('Submissions') : communityText('Projects')}</h2><p>{space.kind === 'challenge' ? communityText('Review entries or remove one that breaks the rules.') : communityText('Add, find, and remove projects from this space.')}</p></div><SpaceProjectPicker space={space} onAdded={load} /></header>
                             <div className={styles.manageProjectList}>
-                                {space.projects.map(project => <article key={project.id}><div><strong>{project.title}</strong><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span>{space.kind === 'challenge' && (project.scoreBreakdown || []).length ? <div className={styles.submissionFeedback}>{project.scoreBreakdown.map(score => <span key={score.judge}><UserLink username={score.judge}><strong>{score.judge}</strong></UserLink>{score.feedback || 'Score submitted'}</span>)}</div> : null}</div><Link to={`/project/${project.id}`}>View</Link><Button variant="danger" busy={busyProject === project.id} busyLabel="Removing…" disabled={Boolean(busyProject)} onClick={() => removeProject(project)}><Trash2 size={15} /> Remove</Button></article>)}
-                                {!space.projects.length ? <p className={styles.pickerEmpty}>No projects have been added yet.</p> : null}
+                                {space.projects.map(project => <article key={project.id}><div><strong>{project.title}</strong><span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span>{space.kind === 'challenge' && (project.scoreBreakdown || []).length ? <div className={styles.submissionFeedback}>{project.scoreBreakdown.map(score => <span key={score.judge}><UserLink username={score.judge}><strong>{score.judge}</strong></UserLink>{score.feedback || communityText('Score submitted')}</span>)}</div> : null}</div><Link to={`/project/${project.id}`}>{communityText('View')}</Link><Button variant="danger" busy={busyProject === project.id} busyLabel={communityText('Removing…')} disabled={Boolean(busyProject)} onClick={() => removeProject(project)}><Trash2 size={15} />{communityText(' Remove')}</Button></article>)}
+                                {!space.projects.length ? <p className={styles.pickerEmpty}>{communityText('No projects have been added yet.')}</p> : null}
                             </div>
                         </section>
                     ) : null}
                     {active === 'danger' && space.isOwner ? (
                         <section className={`${styles.manageCard} ${styles.dangerCard}`}>
-                            <header><h2>Delete space</h2><p>This permanently removes the space. Projects are not deleted.</p></header>
+                            <header><h2>{communityText('Delete space')}</h2><p>{communityText('This permanently removes the space. Projects are not deleted.')}</p></header>
                             <Button
                                 variant="danger"
                                 disabled={deleting}
                                 onClick={deleteSpace}
-                            ><Trash2 size={16} /> {deleting ? 'Deleting…' : 'Delete space'}</Button>
+                            ><Trash2 size={16} /> {deleting ? communityText('Deleting…') : communityText('Delete space')}</Button>
                         </section>
                     ) : null}
                 </div>

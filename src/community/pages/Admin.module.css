@@ -226,7 +226,7 @@
 
 .badge {
     display: inline-block;
-    margin-left: 8px;
+    margin-inline-start: 8px;
     padding: 1px 8px;
     font-size: 12px;
     font-weight: 600;
@@ -446,7 +446,7 @@
     color: var(--text-faint);
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-    text-align: right;
+    text-align: end;
     white-space: nowrap;
 }
 
@@ -667,13 +667,13 @@
 .data-table td {
     padding: 9px 10px;
     border-bottom: 1px solid var(--border);
-    text-align: right;
+    text-align: end;
     white-space: nowrap;
 }
 
 .data-table th:first-child,
 .data-table td:first-child {
-    text-align: left;
+    text-align: start;
 }
 
 .data-table thead th {
@@ -871,7 +871,7 @@
 
 .storageHeader h4 {margin: 0; color: var(--text-dim); font-size: 12px;}
 .storageHeader strong {display: block; margin-top: 2px; font-size: 20px;}
-.storageHeader > span:last-child {color: var(--text-faint); font-size: 12px; text-align: right;}
+.storageHeader > span:last-child {color: var(--text-faint); font-size: 12px; text-align: end;}
 
 .storageIcon {
     display: grid;

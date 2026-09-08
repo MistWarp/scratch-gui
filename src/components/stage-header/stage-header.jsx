@@ -13,10 +13,10 @@ import ScreenshotButton from '../mw-stage-controls/screenshot-button.jsx';
 import {getStageDimensions} from '../../lib/utils/screen';
 import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 
-import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
-import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
-import fullStageIcon from '!../../lib/tw-recolor/build!./icon--full-stage.svg';
-import hideStageIcon from '!../../lib/tw-recolor/build!./icon--hide-stage.svg';
+import largeStageIcon from './icon--large-stage.svg?recolor';
+import smallStageIcon from './icon--small-stage.svg?recolor';
+import fullStageIcon from './icon--full-stage.svg?recolor';
+import hideStageIcon from './icon--hide-stage.svg?recolor';
 import settingsIcon from './icon--settings.svg';
 
 import {

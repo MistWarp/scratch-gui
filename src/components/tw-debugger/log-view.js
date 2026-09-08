@@ -1,3 +1,4 @@
+import debuggerStyles from './debugger.module.css';
 const clamp = (i, min, max) => Math.max(min, Math.min(max, i));
 
 const appendSortedElement = (parent, newChild) => {
@@ -23,21 +24,21 @@ class LogView {
         this.rowHeight = 24;
 
         this.outerElement = document.createElement('div');
-        this.outerElement.className = 'sa-debugger-log-outer';
+        this.outerElement.className = debuggerStyles['sa-debugger-log-outer'];
 
         this.innerElement = document.createElement('div');
-        this.innerElement.className = 'sa-debugger-log-inner';
+        this.innerElement.className = debuggerStyles['sa-debugger-log-inner'];
         this.outerElement.appendChild(this.innerElement);
         this.innerElement.addEventListener('scroll', this._handleScroll.bind(this), {passive: true});
         this.innerElement.addEventListener('wheel', this._handleWheel.bind(this), {passive: true});
 
         this.endElement = document.createElement('div');
-        this.endElement.className = 'sa-debugger-log-end';
+        this.endElement.className = debuggerStyles['sa-debugger-log-end'];
         this.endElement.dataset.index = '-1';
         this.innerElement.appendChild(this.endElement);
 
         this.placeholderElement = document.createElement('div');
-        this.placeholderElement.className = 'sa-debugger-log-empty';
+        this.placeholderElement.className = debuggerStyles['sa-debugger-log-empty'];
 
         this.visible = false;
         this.isScrolledToEnd = true;

@@ -1,7 +1,7 @@
 import LightningFS from '@isomorphic-git/lightning-fs';
 import http from 'isomorphic-git/http/web';
 import git, {Errors} from 'isomorphic-git';
-import JSZip from 'jszip';
+import JSZip from '@turbowarp/jszip';
 
 
 import {
@@ -1479,15 +1479,6 @@ const normalizeWorktreePath = filepath => {
     return parts.join('/');
 };
 
-const listWorktreeFiles = async () => {
-    if (!(await repoExists())) return [];
-    const files = await listFilesRecursive(getFs().promises, REPO_DIR);
-    return files
-        .filter(file => !file.startsWith(`${REPO_DIR}/.git/`))
-        .map(file => file.slice(REPO_DIR.length + 1))
-        .sort();
-};
-
 const readWorktreeFile = async filepath => {
     const relative = normalizeWorktreePath(filepath);
     const data = await getFs().promises.readFile(pathJoin(REPO_DIR, relative));
@@ -1499,39 +1490,6 @@ const writeWorktreeFile = async (filepath, data) => {
     const destination = pathJoin(REPO_DIR, relative);
     await ensureParentDir(getFs().promises, destination);
     await getFs().promises.writeFile(destination, data);
-};
-
-const deleteWorktreeFile = async filepath => {
-    const relative = normalizeWorktreePath(filepath);
-    await removeRecursive(getFs().promises, pathJoin(REPO_DIR, relative));
-};
-
-const readHeadFile = async filepath => {
-    const relative = normalizeWorktreePath(filepath);
-    const fs = getFs();
-    try {
-        const oid = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
-        const {blob} = await git.readBlob({fs, dir: REPO_DIR, oid, filepath: relative});
-        return new TextDecoder().decode(blob instanceof Uint8Array ? blob : new Uint8Array(blob));
-    } catch (e) {
-        return null;
-    }
-};
-
-const prepareFractchWorkspace = async vm => {
-    await initRepo({vm});
-    await writeProjectToFractchTree({vm, fs: getFs().promises, dir: REPO_DIR});
-    return listWorktreeFiles();
-};
-
-const applyFractchWorkspace = async vm => {
-    if (!vm) throw new Error('VM not provided');
-    const bytes = await buildSb3FromFractchTree({fs: getFs().promises, dir: REPO_DIR});
-    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    await RestorePointAPI.createSafetyRestorePoint(vm, 'Before git restore');
-    vm.quit();
-    await vm.loadProject(buffer, {skipGitImport: true});
-    if (vm.renderer) vm.renderer.draw();
 };
 
 // Copy the entire LightningFS repo (fractch working tree + .git) into an sb3 zip
@@ -1696,13 +1654,8 @@ export {
     completeEditorMerge,
     abortEditorMerge,
     getPendingMerge,
-    listWorktreeFiles,
     readWorktreeFile,
-    readHeadFile,
     writeWorktreeFile,
-    deleteWorktreeFile,
-    prepareFractchWorkspace,
-    applyFractchWorkspace,
     readReadme,
     writeReadme,
     REPO_DIR,

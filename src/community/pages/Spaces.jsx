@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
@@ -77,6 +78,7 @@ const spaceCreatePayload = form => ({
 });
 
 const Spaces = () => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
     const navigate = useNavigate();
@@ -170,11 +172,11 @@ const Spaces = () => {
         }
         const payload = spaceCreatePayload(form);
         if (!payload.title) {
-            setError('Enter a name for this space.');
+            setError(communityText("Enter a name for this space."));
             return;
         }
         if (form.kind === 'challenge' && !challengeDatesValid(form.startsAt, form.endsAt)) {
-            setError('Submissions must close after they open.');
+            setError(communityText("Submissions must close after they open."));
             return;
         }
         const actionViewer = viewerName;
@@ -203,35 +205,33 @@ const Spaces = () => {
             <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
             <header className={styles.hero}>
                 <div>
-                    <h1>{kind === 'mine' ? 'Your spaces' : `${KIND_LABELS[kind]}s`}</h1>
-                    <p>{kind === 'mine' ? 'Spaces you own, curate, follow, or have been invited to.' : KIND_DESCRIPTIONS[kind]}</p>
+                    <h1>{kind === 'mine' ? communityText('Your spaces') : `${KIND_LABELS[kind]}s`}</h1>
+                    <p>{kind === 'mine' ? communityText('Spaces you own, curate, follow, or have been invited to.') : KIND_DESCRIPTIONS[kind]}</p>
                 </div>
                 <div className={styles.heroActions}>
-                    {kind !== 'mine' ? <Link className={styles.mineLink} to="/spaces?kind=mine">Your spaces</Link> : null}
+                    {kind !== 'mine' ? <Link className={styles.mineLink} to="/spaces?kind=mine">{communityText('Your spaces')}</Link> : null}
                     <Button
                         variant="primary"
                         disabled={createBusy}
                         onClick={() => (user ? setSearchParams(withSpaceCreate(searchParams, !creating)) : login())}
                     >
-                        <Plus size={16} />
-                        New space
-                    </Button>
+                        <Plus size={16} />{communityText('New space')}</Button>
                 </div>
             </header>
 
             {creating ? (
                 <form className={styles.form} onSubmit={create} aria-busy={createBusy}>
-                    <h2>Create a space</h2>
+                    <h2>{communityText('Create a space')}</h2>
                     <label>
-                        <span>Name</span>
+                        <span>{communityText('Name')}</span>
                         <input value={form.title} disabled={createBusy} maxLength={100} required onChange={event => updateForm('title', event.target.value)} />
                     </label>
                     <label>
-                        <span>What is it for?</span>
+                        <span>{communityText('What is it for?')}</span>
                         <textarea value={form.description} disabled={createBusy} maxLength={5000} onChange={event => updateForm('description', event.target.value)} />
                     </label>
                     <fieldset className={styles.typeChoices} disabled={createBusy}>
-                        <legend>Type</legend>
+                        <legend>{communityText('Type')}</legend>
                         <div>
                             {Object.keys(KIND_DESCRIPTIONS).map(key => {
                                 const Icon = KIND_ICONS[key];
@@ -246,27 +246,27 @@ const Spaces = () => {
                         </div>
                     </fieldset>
                     <label>
-                        <span>Visibility</span>
+                        <span>{communityText('Visibility')}</span>
                         <select value={form.visibility} disabled={createBusy} onChange={event => updateForm('visibility', event.target.value)}>
-                            <option value="public">Public</option>
-                            <option value="unlisted">Unlisted</option>
-                            <option value="private">Private</option>
+                            <option value="public">{communityText('Public')}</option>
+                            <option value="unlisted">{communityText('Unlisted')}</option>
+                            <option value="private">{communityText('Private')}</option>
                         </select>
                     </label>
                     <label>
-                        <span>Group owner <small>optional Rotur group tag</small></span>
-                        <input maxLength="32" value={form.groupTag} disabled={createBusy} placeholder="for example, mistwarp" onChange={event => updateForm('groupTag', event.target.value)} />
+                        <span>{communityText('Group owner ')}<small>{communityText('optional Rotur group tag')}</small></span>
+                        <input maxLength="32" value={form.groupTag} disabled={createBusy} placeholder={communityText('for example, mistwarp')} onChange={event => updateForm('groupTag', event.target.value)} />
                     </label>
                     {form.kind === 'challenge' ? (
                         <div className={styles.formRow}>
-                            <label><span>Submissions open</span><input type="datetime-local" disabled={createBusy} required value={form.startsAt} onChange={event => updateForm('startsAt', event.target.value)} /></label>
-                            <label><span>Submissions close</span><input type="datetime-local" disabled={createBusy} required value={form.endsAt} onChange={event => updateForm('endsAt', event.target.value)} /></label>
+                            <label><span>{communityText('Submissions open')}</span><input type="datetime-local" disabled={createBusy} required value={form.startsAt} onChange={event => updateForm('startsAt', event.target.value)} /></label>
+                            <label><span>{communityText('Submissions close')}</span><input type="datetime-local" disabled={createBusy} required value={form.endsAt} onChange={event => updateForm('endsAt', event.target.value)} /></label>
                         </div>
                     ) : null}
                     {error ? <p className={styles.error}>{error}</p> : null}
                     <div className={styles.actions}>
-                        <Button type="submit" busy={createBusy} busyLabel="Creating…">Create</Button>
-                        <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setSearchParams(withSpaceCreate(searchParams, false))}>Cancel</Button>
+                        <Button type="submit" busy={createBusy} busyLabel={communityText('Creating…')}>{communityText('Create')}</Button>
+                        <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setSearchParams(withSpaceCreate(searchParams, false))}>{communityText('Cancel')}</Button>
                     </div>
                 </form>
             ) : null}
@@ -282,15 +282,15 @@ const Spaces = () => {
                     }}
                 >
                     <Search size={16} />
-                    <input aria-label={kind === 'mine' ? 'Search your spaces' : 'Search spaces'} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'mine' ? 'Search your spaces' : 'Search spaces'} />
-                    <button type="submit">Search</button>
+                    <input aria-label={kind === 'mine' ? communityText('Search your spaces') : communityText('Search spaces')} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'mine' ? communityText('Search your spaces') : communityText('Search spaces')} />
+                    <button type="submit">{communityText('Search')}</button>
                 </form>
             </div>
 
-            {loading ? <p className={styles.status}>Loading spaces…</p> : null}
-            {failed ? <p className={styles.status}>Could not load spaces. <Button onClick={() => load(requestedQuery)}>Try again</Button></p> : null}
-            {!loading && !failed && kind === 'mine' && !user ? <p className={styles.status}>Sign in to see spaces you own, curate, follow, or have been invited to. <Button onClick={login}>Sign in</Button></p> : null}
-            {!loading && !failed && !(kind === 'mine' && !user) && !spaces.length ? <p className={styles.status}>No spaces here yet.</p> : null}
+            {loading ? <p className={styles.status}>{communityText('Loading spaces…')}</p> : null}
+            {failed ? <p className={styles.status}>{communityText('Could not load spaces. ')}<Button onClick={() => load(requestedQuery)}>{communityText('Try again')}</Button></p> : null}
+            {!loading && !failed && kind === 'mine' && !user ? <p className={styles.status}>{communityText('Sign in to see spaces you own, curate, follow, or have been invited to. ')}<Button onClick={login}>{communityText('Sign in')}</Button></p> : null}
+            {!loading && !failed && !(kind === 'mine' && !user) && !spaces.length ? <p className={styles.status}>{communityText('No spaces here yet.')}</p> : null}
             {!loading && !failed && kind === 'challenge' && spaces.length ? <ChallengeCalendar spaces={spaces} /> : null}
             <div className={styles.grid}>
                 {spaces.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
@@ -299,9 +299,9 @@ const Spaces = () => {
                 <div className={styles.more}>
                     <Button
                         busy={loadingMore}
-                        busyLabel="Loading…"
+                        busyLabel={communityText('Loading…')}
                         onClick={() => load(requestedQuery, spaces.length)}
-                    >{`Load more (${total - spaces.length} left)`}</Button>
+                    >{communityText("Load more ({value1} left)", {value1: total - spaces.length})}</Button>
                     {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                 </div>
             ) : null}

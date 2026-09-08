@@ -1,3 +1,4 @@
+import debuggerStyles from '../debugger.module.css';
 import Chart from '../../../addons/libraries/thirdparty/cs/chart.min.js';
 import {getSetting} from '../../../lib/debugger/settings.js';
 import performanceIcon from '../icons/performance.svg';
@@ -17,22 +18,22 @@ const createPerformanceTab = controller => {
     const lineColor = accentColor;
 
     const content = document.createElement('div');
-    content.className = 'sa-performance-tab-content';
+    content.className = debuggerStyles['sa-performance-tab-content'];
 
     const createChart = ({title}) => {
         const card = document.createElement('div');
-        card.className = 'sa-debugger-chart-card';
+        card.className = debuggerStyles['sa-debugger-chart-card'];
         const header = document.createElement('div');
-        header.className = 'sa-debugger-chart-header';
+        header.className = debuggerStyles['sa-debugger-chart-header'];
         const titleElement = document.createElement('h2');
         titleElement.textContent = title;
         const valueElement = document.createElement('span');
-        valueElement.className = 'sa-debugger-chart-value';
+        valueElement.className = debuggerStyles['sa-debugger-chart-value'];
         header.append(titleElement, valueElement);
         const body = document.createElement('div');
-        body.className = 'sa-debugger-chart-body';
+        body.className = debuggerStyles['sa-debugger-chart-body'];
         const canvas = document.createElement('canvas');
-        canvas.className = 'sa-debugger-chart';
+        canvas.className = debuggerStyles['sa-debugger-chart'];
         body.appendChild(canvas);
         card.append(header, body);
         return {

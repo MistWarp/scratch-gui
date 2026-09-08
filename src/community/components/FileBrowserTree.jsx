@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useState} from 'react';
 import {
@@ -79,6 +80,7 @@ TreeRows.propTypes = {
 };
 
 const FileBrowserTree = ({files, selectedPath, onSelect, showCount, showStats}) => {
+    const {text: communityText} = useCommunityText();
     const [query, setQuery] = useState('');
     const completeTree = useMemo(() => buildProjectFileTree(files), [files]);
     const [openFolders, setOpenFolders] = useState(() => new Set(initiallyOpenFolders(completeTree)));
@@ -111,14 +113,14 @@ const FileBrowserTree = ({files, selectedPath, onSelect, showCount, showStats}) 
         <aside className={styles.sidebar}>
             <label className={styles.search}>
                 <Search size={15} />
-                <input value={query} placeholder="Filter files" onChange={event => setQuery(event.target.value)} />
+                <input value={query} placeholder={communityText('Filter files')} onChange={event => setQuery(event.target.value)} />
             </label>
             {showCount ? (
                 <div className={styles.fileCount}>
-                    {filteredFiles.length} {filteredFiles.length === 1 ? 'file' : 'files'}
+                    {filteredFiles.length} {filteredFiles.length === 1 ? communityText('file') : communityText('files')}
                 </div>
             ) : null}
-            <nav aria-label="Project files">
+            <nav aria-label={communityText('Project files')}>
                 <TreeRows
                     node={tree}
                     openFolders={visibleFolders}

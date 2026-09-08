@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
@@ -11,9 +13,9 @@ const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
 const PRICES = {Free: 'Free', Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
 
 const MISTWARP_ROWS = [
-    ['Weekly uploads', 'weeklyUploadBytes', value => `${Math.round(value / 1048576).toLocaleString()} MB`],
-    ['Total project assets', 'maxProjectAssetsBytes', value => `${Math.round(value / 1048576).toLocaleString()} MB`],
-    ['Largest project asset', 'maxProjectAssetBytes', value => `${Math.round(value / 1048576).toLocaleString()} MB`],
+    ['Weekly uploads', 'weeklyUploadBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
+    ['Total project assets', 'maxProjectAssetsBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
+    ['Largest project asset', 'maxProjectAssetBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
     ['Deleted project recovery', 'recoveryDays', value => `${value} days`],
     ['Creator analytics history', 'analyticsDays', value => (value === 0 ? 'All time' : `${value} days`)],
     ['Advanced analytics and CSV exports', 'advancedAnalytics', String],
@@ -27,14 +29,16 @@ const MISTWARP_ROWS = [
 ];
 
 const Cell = ({value, format}) => {
-    if (typeof value === 'boolean') return (value ? <Check aria-label="Included" size={17} /> : <X aria-label="Not included" size={17} />);
+    const {text: communityText} = useCommunityText();
+    if (typeof value === 'boolean') return (value ? <Check aria-label={communityText('Included')} size={17} /> : <X aria-label={communityText('Not included')} size={17} />);
     return format ? format(value) : String(value);
 };
 
-const Comparison = ({plans, rows, source}) => (
-    <div className={styles.tableWrap}>
+const Comparison = ({plans, rows, source}) => {
+    const {text: communityText} = useCommunityText();
+    return (<div className={styles.tableWrap}>
         <table>
-            <thead><tr><th>Benefit</th>{TIERS.map(tier => <th key={tier}>{tier}</th>)}</tr></thead>
+            <thead><tr><th>{communityText('Benefit')}</th>{TIERS.map(tier => <th key={tier}>{tier}</th>)}</tr></thead>
             <tbody>{rows.map(([label, key, format]) => (
                 <tr key={key}>
                     <th>{label}</th>
@@ -45,8 +49,8 @@ const Comparison = ({plans, rows, source}) => (
                 </tr>
             ))}</tbody>
         </table>
-    </div>
-);
+    </div>);
+};
 
 Cell.propTypes = {
     value: PropTypes.oneOfType([PropTypes.bool, PropTypes.number, PropTypes.string]),
@@ -60,6 +64,7 @@ Comparison.propTypes = {
 };
 
 const PaidPerks = () => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
@@ -73,33 +78,33 @@ const PaidPerks = () => {
     }, [user?.username]);
 
     if (error) return <main className={styles.page}><p className={styles.status}>{error}</p></main>;
-    if (!data) return <main className={styles.page}><p className={styles.status}>Loading membership benefits…</p></main>;
+    if (!data) return <main className={styles.page}><p className={styles.status}>{communityText('Loading membership benefits…')}</p></main>;
 
     const currentTier = data.current?.tier || 'Free';
     return (
         <main className={styles.page}>
             <header className={styles.hero}>
-                <h1>More MistWarp with your Rotur plan</h1>
-                <p>MistWarp is run by Rotur. Supporting Rotur supports MistWarp and unlocks higher limits and creator perks here.</p>
+                <h1>{communityText('More MistWarp with your Rotur plan')}</h1>
+                <p>{communityText('MistWarp is run by Rotur. Supporting Rotur supports MistWarp and unlocks higher limits and creator perks here.')}</p>
                 <div className={styles.actions}>
-                    <Button variant="primary" onClick={() => window.open(data.roturMembershipUrl, '_blank', 'noopener,noreferrer')}>View membership on rotur.dev <ExternalLink size={15} /></Button>
-                    {!user ? <Button variant="secondary" onClick={login}>Sign in to check your plan</Button> : null}
+                    <Button variant="primary" onClick={() => window.open(data.roturMembershipUrl, '_blank', 'noopener,noreferrer')}>{communityText('View membership on rotur.dev ')}<ExternalLink size={15} /></Button>
+                    {!user ? <Button variant="secondary" onClick={login}>{communityText('Sign in to check your plan')}</Button> : null}
                 </div>
             </header>
 
-            <section className={styles.plans} aria-label="Rotur plans">
+            <section className={styles.plans} aria-label={communityText('Rotur plans')}>
                 {data.plans.map(plan => (
                     <article className={`${styles.plan} ${plan.tier === currentTier ? styles.current : ''}`} key={plan.tier}>
-                        <div><h2>{plan.tier}</h2>{plan.tier === currentTier ? <span>Current</span> : null}</div>
+                        <div><h2>{plan.tier}</h2>{plan.tier === currentTier ? <span>{communityText('Current')}</span> : null}</div>
                         <strong>{PRICES[plan.tier]}</strong>
-                        <p>{plan.mistwarp.weeklyUploadBytes / 1048576} MB weekly uploads · {plan.mistwarp.recoveryDays}-day recovery · {plan.mistwarp.collaborationLimit}-person rooms</p>
+                        <p>{plan.mistwarp.weeklyUploadBytes / 1048576}{communityText(' MB weekly uploads · ')}{plan.mistwarp.recoveryDays}{communityText('-day recovery · ')}{plan.mistwarp.collaborationLimit}{communityText('-person rooms')}</p>
                     </article>
                 ))}
             </section>
 
             <section className={styles.section}>
-                <h2>MistWarp benefits</h2>
-                <p>MistWarp owns and enforces these limits. They apply as soon as MistWarp verifies your Rotur tier.</p>
+                <h2>{communityText('MistWarp benefits')}</h2>
+                <p>{communityText('MistWarp owns and enforces these limits. They apply as soon as MistWarp verifies your Rotur tier.')}</p>
                 <Comparison plans={data.plans} rows={MISTWARP_ROWS} source="mistwarp" />
             </section>
 

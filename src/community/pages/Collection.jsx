@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -14,6 +15,7 @@ import Button from '../components/ui/Button.jsx';
 import styles from './Collection.module.css';
 
 const Collection = ({id, space, user, login, load}) => {
+    const {text: communityText} = useCommunityText();
     const [view, setView] = useState('projects');
     const [error, setError] = useState('');
     const [followBusy, setFollowBusy] = useState(false);
@@ -62,16 +64,16 @@ const Collection = ({id, space, user, login, load}) => {
 
     return (
         <main className={styles.page}>
-            <Link to="/spaces?kind=collection" className={styles.back}><ArrowLeft size={15} /> All collections</Link>
+            <Link to="/spaces?kind=collection" className={styles.back}><ArrowLeft size={15} />{communityText(' All collections')}</Link>
             <header className={styles.hero}>
                 <Library size={30} />
-                <div><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>Curated by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div></div>
-                <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} busyLabel="Updating…" onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? 'Following' : 'Follow'}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} /> Manage</Link> : null}</div>
+                <div><h1>{space.title}</h1><div className={styles.description}><RichText text={space.description || 'No description yet.'} /></div><div className={styles.owner}><Avatar username={space.owner} size={28} /><span>{communityText('Curated by ')}<Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div></div>
+                <div className={styles.actions}><Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} busyLabel={communityText('Updating…')} onClick={follow}>{space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.following ? communityText('Following') : communityText('Follow')}</Button>{space.canManage ? <Link to={`/spaces/${id}/manage`}><Settings size={16} />{communityText(' Manage')}</Link> : null}</div>
             </header>
             <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" />
             {error ? <p className={styles.error}>{error}</p> : null}
-            {view === 'projects' ? <section className={styles.projects}><header><div><h2>In this collection</h2><p>A curated set of MistWarp projects.</p></div>{space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}</header>{space.projects.length ? <div className={styles.grid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.empty}><Library size={28} /><strong>This collection is empty</strong><span>The curator has not added any projects yet.</span></div>}</section> : null}
-            {view === 'discussion' ? <section className={styles.discussion}><header><MessageCircle size={19} /><div><h2>Discussion</h2><p>Talk about the projects in this collection.</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`collection ${space.title}`} /></section> : null}
+            {view === 'projects' ? <section className={styles.projects}><header><div><h2>{communityText('In this collection')}</h2><p>{communityText('A curated set of MistWarp projects.')}</p></div>{space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}</header>{space.projects.length ? <div className={styles.grid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.empty}><Library size={28} /><strong>{communityText('This collection is empty')}</strong><span>{communityText('The curator has not added any projects yet.')}</span></div>}</section> : null}
+            {view === 'discussion' ? <section className={styles.discussion}><header><MessageCircle size={19} /><div><h2>{communityText('Discussion')}</h2><p>{communityText('Talk about the projects in this collection.')}</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`collection ${space.title}`} /></section> : null}
         </main>
     );
 };

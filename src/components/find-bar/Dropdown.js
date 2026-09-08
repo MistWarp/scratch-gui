@@ -1,3 +1,4 @@
+import findBarStyles from './find-bar.module.css';
 import BlockInstance from '../../lib/find-bar/BlockInstance';
 
 import Carousel from './Carousel';
@@ -24,7 +25,7 @@ export default class Dropdown {
 
     createDom () {
         this.el = document.createElement('ul');
-        this.el.className = 'sa-find-dropdown';
+        this.el.className = findBarStyles['sa-find-dropdown'];
         return this.el;
     }
 
@@ -60,6 +61,9 @@ export default class Dropdown {
             nxt = this.items[0];
             dir = 1;
         }
+        if (!nxt && dir > 0 && this.loadMore?.()) {
+            nxt = this.selected ? this.selected.nextSibling : this.items[0];
+        }
         while (nxt && nxt.style.display === 'none') {
             nxt = dir === -1 ? nxt.previousSibling : nxt.nextSibling;
         }
@@ -69,7 +73,7 @@ export default class Dropdown {
         }
     }
 
-    addItem (proc, messagesList, colours) {
+    addItem (proc, messagesList, colours, parent = this.el) {
         const item = document.createElement('li');
         item.innerText = proc.procCode;
         item.data = proc;
@@ -92,7 +96,7 @@ export default class Dropdown {
         };
 
         if (proc.cls === 'flag') {
-            item.className = 'sa-find-flag';
+            item.className = findBarStyles['sa-find-flag'];
         } else {
             let colorId = colorIds[proc.cls];
             if (!colorId) {
@@ -132,17 +136,17 @@ export default class Dropdown {
         });
 
         this.items.push(item);
-        this.el.appendChild(item);
+        parent.appendChild(item);
         return item;
     }
 
     onItemClick (item, instanceBlock) {
         if (this.selected && this.selected !== item) {
-            this.selected.classList.remove('sel');
+            this.selected.classList.remove(findBarStyles.sel);
             this.selected = null;
         }
         if (this.selected !== item) {
-            item.classList.add('sel');
+            item.classList.add(findBarStyles.sel);
             this.selected = item;
         }
 
@@ -306,6 +310,7 @@ export default class Dropdown {
     }
 
     empty () {
+        this.loadMore = null;
         for (const item of this.items) {
             if (this.el.contains(item)) {
                 this.el.removeChild(item);

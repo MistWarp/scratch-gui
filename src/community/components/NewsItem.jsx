@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useRef, useState} from 'react';
 import {Archive, ArchiveRestore, Trash2, ExternalLink, Eye, Heart, Pencil} from 'lucide-react';
 import {Link} from 'react-router-dom';
@@ -21,6 +23,7 @@ export const safeNewsLink = link => {
 };
 
 const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, showAnalytics = false}) => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
     const canManage = canDelete && !compact && Boolean(onEdit);
@@ -108,7 +111,7 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
         {confirmingDelete ? (
             <Modal
                 icon={Trash2}
-                title="Delete update?"
+                title={communityText('Delete update?')}
                 dismissDisabled={actionBusy === 'delete'}
                 onClose={() => {
                     setConfirmingDelete(false);
@@ -121,16 +124,16 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                             setConfirmingDelete(false);
                             setError('');
                         }}
-                    >Cancel</Button>
+                    >{communityText('Cancel')}</Button>
                     <Button
                         variant="danger"
                         busy={actionBusy === 'delete'}
-                        busyLabel="Deleting…"
+                        busyLabel={communityText('Deleting…')}
                         onClick={confirmRemove}
-                    >Delete update</Button>
+                    >{communityText('Delete update')}</Button>
                 </>}
             >
-                <p>This permanently deletes “{item.title}”.</p>
+                <p>{communityText('This permanently deletes “')}{item.title}”.</p>
                 {error ? <p className={styles.error}>{error}</p> : null}
             </Modal>
         ) : null}
@@ -139,14 +142,14 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                 <Title>{full ? item.title : <Link to={`/news/${item.id}`}>{item.title}</Link>}</Title>
                 {!full ? (
                     <span className={styles.date}>
-                        {item.updated ? `edited ${timeAgo(item.updated)}` : timeAgo(item.created)}
+                        {item.updated ? communityText("edited {value1}", {value1: timeAgo(item.updated)}) : timeAgo(item.created)}
                     </span>
                 ) : null}
                 {canManage && onEdit ? (
                     <IconButton
                         variant="secondary"
                         className={styles.edit}
-                        label={`Edit ${item.title}`}
+                        label={communityText("Edit {value1}", {value1: item.title})}
                         disabled={Boolean(actionBusy)}
                         onClick={() => onEdit(item)}
                     >
@@ -168,7 +171,7 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                     <IconButton
                         variant="secondary"
                         className={styles.delete}
-                        label={`Delete ${item.title}`}
+                        label={communityText("Delete {value1}", {value1: item.title})}
                         disabled={Boolean(actionBusy)}
                         onClick={remove}
                     >
@@ -185,20 +188,19 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
             {full ? (
                 <p className={styles.byline}>
                     {item.author ? (
-                        <>By <UserLink username={item.author}>{item.author}</UserLink>{' '}</>
-                    ) : null}
-                    on {formatDate(item.created)}
-                    {item.updated ? ` · Updated ${formatDate(item.updated)}` : ''}
+                        <>{communityText('By ')}<UserLink username={item.author}>{item.author}</UserLink>{' '}</>
+                    ) : null}{communityText('on ')}{formatDate(item.created)}
+                    {item.updated ? communityText(" · Updated {value1}", {value1: formatDate(item.updated)}) : ''}
                 </p>
             ) : null}
             <Markdown className={styles.body}>{item.body}</Markdown>
             {showAnalytics ? (
-                <div className={styles.analytics} aria-label="Post analytics">
-                    <span><Eye size={14} /> {(item.views || 0).toLocaleString()} views</span>
-                    <span><Heart size={14} /> {(item.reactionCounts?.heart || 0).toLocaleString()} likes</span>
-                    <span>{(item.reactionCounts?.brokenheart || 0).toLocaleString()} dislikes</span>
+                <div className={styles.analytics} aria-label={communityText('Post analytics')}>
+                    <span><Eye size={14} /> {(item.views || 0).toLocaleString(getCommunityLocale())}{communityText(' views')}</span>
+                    <span><Heart size={14} /> {(item.reactionCounts?.heart || 0).toLocaleString(getCommunityLocale())}{communityText(' likes')}</span>
+                    <span>{(item.reactionCounts?.brokenheart || 0).toLocaleString(getCommunityLocale())}{communityText(' dislikes')}</span>
                     {item.viewHistory ? (
-                        <span>{Object.keys(item.viewHistory).length} active days</span>
+                        <span>{Object.keys(item.viewHistory).length}{communityText(' active days')}</span>
                     ) : null}
                 </div>
             ) : null}
@@ -216,11 +218,11 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                             >
                                 <i style={{width: `${percent}%`}} />
                                 <span>{option.text}</span>
-                                <strong>{option.votes} {option.votes === 1 ? 'vote' : 'votes'} · {percent}%</strong>
+                                <strong>{option.votes} {option.votes === 1 ? communityText('vote') : communityText('votes')} · {percent}%</strong>
                             </button>
                         );
                     })}
-                    <span className={styles.pollTotal}>{pollTotal} total {pollTotal === 1 ? 'vote' : 'votes'}</span>
+                    <span className={styles.pollTotal}>{pollTotal}{communityText(' total ')}{pollTotal === 1 ? communityText('vote') : communityText('votes')}</span>
                 </div>
             ) : null}
             {!compact && linkUrl ? externalLink ? (
@@ -242,7 +244,7 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                     disabled={Boolean(actionBusy)}
                     disabledTitle={!user ? 'Sign in to react' : 'Saving…'}
                 />
-                {item.archived ? <span className={`${styles.category} ${styles.footerCategory}`}>Archived</span> : null}
+                {item.archived ? <span className={`${styles.category} ${styles.footerCategory}`}>{communityText('Archived')}</span> : null}
                 {category === 'update' ? null : (
                     <span className={`${styles.category} ${styles[`category${categoryLabel}`] || ''} ${styles.footerCategory}`}>
                         {categoryLabel}
@@ -251,8 +253,8 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
             </div>
             {canManage && item.reactionUsers ? (
                 <div className={styles.reactionUsers}>
-                    <span>Liked by {(item.reactionUsers.heart || []).join(', ') || 'nobody'}</span>
-                    <span>Disliked by {(item.reactionUsers.brokenheart || []).join(', ') || 'nobody'}</span>
+                    <span>{communityText('Liked by ')}{(item.reactionUsers.heart || []).join(', ') || communityText('nobody')}</span>
+                    <span>{communityText('Disliked by ')}{(item.reactionUsers.brokenheart || []).join(', ') || communityText('nobody')}</span>
                 </div>
             ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}

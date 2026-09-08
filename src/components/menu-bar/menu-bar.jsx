@@ -1,3 +1,4 @@
+import blockCountStyles from './block-count.module.css';
 import {withProjectReplacement} from '../../lib/project-replacement.js';
 import {isProjectOperationActive} from '../../lib/project-operation.js';
 /* eslint-disable react/no-unused-prop-types */
@@ -162,7 +163,6 @@ import {
 } from '../../lib/mw/workspace-bookmarks.js';
 
 import styles from './menu-bar.css';
-import '!!style-loader!css-loader!./block-count.css';
 
 // import helpIcon from '../../lib/assets/icon--tutorials.svg';
 // import mystuffIcon from './icon--mystuff.png';
@@ -2257,7 +2257,7 @@ class MenuBar extends React.Component {
                     {!this.props.isPlayerOnly && (
                         <button
                             type="button"
-                            className="sa-block-count-display"
+                            className={blockCountStyles['sa-block-count-display']}
                             data-mw-item="block-count"
                             ref={this.blockCountRef}
                         />
@@ -2480,8 +2480,6 @@ MenuBar.propTypes = {
     confirmReadyToReplaceProject: PropTypes.func,
     currentLocale: PropTypes.string.isRequired,
     editMenuOpen: PropTypes.bool,
-    fractchMode: PropTypes.bool,
-    onToggleFractchMode: PropTypes.func,
     editorMenuOpen: PropTypes.bool,
     enableCommunity: PropTypes.bool,
     fileMenuOpen: PropTypes.bool,

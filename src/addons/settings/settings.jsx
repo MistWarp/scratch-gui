@@ -37,7 +37,7 @@ import styles from './settings.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
 import {applyGuiColors} from '../../lib/themes/guiHelpers.js';
 import {APP_NAME, FEEDBACK_URL} from '../../lib/constants/brand.js';
-import '../../lib/normalize.css';
+import normalizeStyles from '../../lib/normalize.module.css';
 
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
@@ -45,9 +45,14 @@ import '../../lib/normalize.css';
 /* eslint-disable react/jsx-no-bind */
 
 const locale = detectLocale(Object.keys(messagesByLocale));
+document.documentElement.classList.add(normalizeStyles.root);
 document.documentElement.lang = locale;
 
-const addonTranslations = messagesByLocale[locale] ? messagesByLocale[locale]() : {};
+let addonTranslations = {};
+const addonTranslationsPromise = messagesByLocale[locale] ?
+    messagesByLocale[locale]().then(module => {
+        addonTranslations = module.default;
+    }) : Promise.resolve();
 
 const settingsTranslations = settingsTranslationsEnglish;
 if (locale !== 'en') {
@@ -1015,6 +1020,10 @@ class AddonSettingsComponent extends React.Component {
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleSettingStoreChanged);
         document.body.addEventListener('keydown', this.handleKeyDown);
+        addonTranslationsPromise.then(
+            () => this.setState({translationsLoaded: true}),
+            error => console.error('Unable to load add-on translations', error)
+        );
     }
     componentDidUpdate (prevProps, prevState) {
         if (this.state.search !== prevState.search) {

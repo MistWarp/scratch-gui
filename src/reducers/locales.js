@@ -1,16 +1,33 @@
 import {addLocaleData} from 'react-intl';
 
 import {localeData, isRtl} from '@turbowarp/scratch-l10n';
-import editorMessages from '@turbowarp/scratch-l10n/locales/editor-msgs';
-import addAdditionalTranslations from '../lib/tw-translations/index.js';
+import {messages as editorMessages, loadLocale, isLocaleLoaded} from '../lib/editor-locales';
 
 import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';
 
-addAdditionalTranslations(editorMessages);
 addLocaleData(localeData);
 
 const UPDATE_LOCALES = 'scratch-gui/locales/UPDATE_LOCALES';
 const SELECT_LOCALE = 'scratch-gui/locales/SELECT_LOCALE';
+
+const localeMiddleware = () => next => {
+    let selection = 0;
+    return action => {
+        if (action.type !== SELECT_LOCALE) return next(action);
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = action.locale;
+            document.documentElement.dir = isRtl(action.locale) ? 'rtl' : 'ltr';
+        }
+        const current = ++selection;
+        if (isLocaleLoaded(action.locale)) return next(action);
+        return loadLocale(action.locale).then(() => {
+            if (current === selection) return next(action);
+        })
+            .catch(error => {
+                console.warn('Could not change editor language', error);
+            });
+    };
+};
 
 const initialState = {
     isRtl: false,
@@ -79,5 +96,6 @@ export {
     initialState as localesInitialState,
     initLocale,
     selectLocale,
-    setLocales
+    setLocales,
+    localeMiddleware
 };

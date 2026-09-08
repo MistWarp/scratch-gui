@@ -1,3 +1,4 @@
+import spotlightStyles from '../../components/spotlight/spotlight.module.css';
 const assetUrlCache = new WeakMap();
 
 const getAssetUrl = asset => {
@@ -8,28 +9,28 @@ const getAssetUrl = asset => {
 
 const createPreviewItem = (name, type, detail, imageUrl) => {
     const container = document.createElement('div');
-    container.classList.add('sa-mcp-asset-item');
+    container.classList.add(spotlightStyles['sa-mcp-asset-item']);
 
     if (imageUrl) {
         const image = container.appendChild(document.createElement('img'));
-        image.classList.add('sa-mcp-asset-image');
+        image.classList.add(spotlightStyles['sa-mcp-asset-image']);
         image.alt = '';
         image.src = imageUrl;
     }
 
     const copy = container.appendChild(document.createElement('div'));
-    copy.classList.add('sa-mcp-asset-copy');
+    copy.classList.add(spotlightStyles['sa-mcp-asset-copy']);
     const title = copy.appendChild(document.createElement('span'));
-    title.classList.add('sa-mcp-asset-name');
+    title.classList.add(spotlightStyles['sa-mcp-asset-name']);
     title.textContent = name;
     if (detail) {
         const subtitle = copy.appendChild(document.createElement('span'));
-        subtitle.classList.add('sa-mcp-asset-detail');
+        subtitle.classList.add(spotlightStyles['sa-mcp-asset-detail']);
         subtitle.textContent = detail;
     }
 
     const typeLabel = container.appendChild(document.createElement('span'));
-    typeLabel.classList.add('sa-mcp-asset-type');
+    typeLabel.classList.add(spotlightStyles['sa-mcp-asset-type']);
     typeLabel.textContent = type;
     return container;
 };
@@ -64,7 +65,7 @@ const createCustomBlockPreviewItem = customBlockData => createPreviewItem(
 
 const createSectionHeader = headerText => {
     const container = document.createElement('div');
-    container.classList.add('sa-mcp-section-header');
+    container.classList.add(spotlightStyles['sa-mcp-section-header']);
     container.textContent = headerText;
     return container;
 };

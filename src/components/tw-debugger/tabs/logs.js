@@ -1,3 +1,4 @@
+import debuggerStyles from '../debugger.module.css';
 import LogView from '../log-view.js';
 import logsIcon from '../icons/logs.svg';
 import deleteIcon from '../icons/delete.svg';
@@ -52,7 +53,7 @@ const createLogsTab = controller => {
         logView.rows = controller.rows.filter(matches);
         logView.oldLength = -1;
         logView.rowToMetadata.clear();
-        logView.innerElement.querySelectorAll('.sa-debugger-log').forEach(el => el.remove());
+        logView.innerElement.querySelectorAll(`.${debuggerStyles['sa-debugger-log']}`).forEach(el => el.remove());
         logView.queueUpdateContent();
     };
 
@@ -66,19 +67,19 @@ const createLogsTab = controller => {
 
     logView.generateRow = row => {
         const root = document.createElement('div');
-        root.className = 'sa-debugger-log';
+        root.className = debuggerStyles['sa-debugger-log'];
         if (row.internal) {
-            root.classList.add('sa-debugger-log-internal');
+            root.classList.add(debuggerStyles['sa-debugger-log-internal']);
         }
         root.dataset.type = row.type;
 
         const time = document.createElement('span');
-        time.className = 'sa-debugger-log-time';
+        time.className = debuggerStyles['sa-debugger-log-time'];
         time.textContent = formatTime(row.timestamp);
         root.appendChild(time);
 
         const icon = document.createElement('div');
-        icon.className = 'sa-debugger-log-icon';
+        icon.className = debuggerStyles['sa-debugger-log-icon'];
         root.appendChild(icon);
 
         if (row.preview && row.blockId && row.targetInfo) {
@@ -93,9 +94,9 @@ const createLogsTab = controller => {
         }
 
         const text = document.createElement('div');
-        text.className = 'sa-debugger-log-text';
+        text.className = debuggerStyles['sa-debugger-log-text'];
         if (String(row.text).length === 0) {
-            text.classList.add('sa-debugger-log-text-empty');
+            text.classList.add(debuggerStyles['sa-debugger-log-text-empty']);
             text.textContent = 'empty string';
         } else {
             text.textContent = row.text;
@@ -111,11 +112,11 @@ const createLogsTab = controller => {
     };
 
     const filterBar = document.createElement('div');
-    filterBar.className = 'sa-debugger-filter-bar';
+    filterBar.className = debuggerStyles['sa-debugger-filter-bar'];
 
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.className = 'sa-debugger-search';
+    searchInput.className = debuggerStyles['sa-debugger-search'];
     searchInput.placeholder = 'Search logs';
     searchInput.addEventListener('input', () => {
         filters.search = searchInput.value.trim().toLowerCase();
@@ -124,14 +125,16 @@ const createLogsTab = controller => {
     filterBar.appendChild(searchInput);
 
     const severityGroup = document.createElement('div');
-    severityGroup.className = 'sa-debugger-severity-group';
+    severityGroup.className = debuggerStyles['sa-debugger-severity-group'];
     for (const severity of SEVERITIES) {
         const toggle = document.createElement('button');
-        toggle.className = `sa-debugger-severity sa-debugger-severity-${severity} sa-debugger-severity-active`;
+        toggle.className = [debuggerStyles['sa-debugger-severity'],
+            debuggerStyles[`sa-debugger-severity-${severity}`],
+            debuggerStyles['sa-debugger-severity-active']].join(' ');
         toggle.textContent = severity;
         toggle.addEventListener('click', () => {
             filters.severity[severity] = !filters.severity[severity];
-            toggle.classList.toggle('sa-debugger-severity-active', filters.severity[severity]);
+            toggle.classList.toggle(debuggerStyles['sa-debugger-severity-active'], filters.severity[severity]);
             rebuild();
         });
         severityGroup.appendChild(toggle);
@@ -139,7 +142,7 @@ const createLogsTab = controller => {
     filterBar.appendChild(severityGroup);
 
     const spriteSelect = document.createElement('select');
-    spriteSelect.className = 'sa-debugger-sprite-select';
+    spriteSelect.className = debuggerStyles['sa-debugger-sprite-select'];
     const refreshSprites = () => {
         const current = filters.sprite;
         const names = new Set();
@@ -169,7 +172,7 @@ const createLogsTab = controller => {
     filterBar.appendChild(spriteSelect);
 
     const content = document.createElement('div');
-    content.className = 'sa-debugger-logs-content';
+    content.className = debuggerStyles['sa-debugger-logs-content'];
     content.appendChild(filterBar);
     content.appendChild(logView.outerElement);
 

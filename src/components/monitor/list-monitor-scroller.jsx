@@ -5,7 +5,7 @@ import bindAll from 'lodash.bindall';
 import {FormattedMessage} from 'react-intl';
 
 import styles from './monitor.css';
-import {List} from 'react-virtualized';
+import List from 'react-virtualized/dist/commonjs/List';
 
 class ListMonitorScroller extends React.Component {
     constructor (props) {

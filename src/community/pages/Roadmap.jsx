@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
@@ -61,6 +62,7 @@ export const roadmapPayload = form => ({
 });
 
 const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) => {
+    const {text: communityText} = useCommunityText();
     const [discussionOpen, setDiscussionOpen] = useState(() =>
         new URLSearchParams(window.location.search).get('idea') === String(idea._id));
     const [detailsOpen, setDetailsOpen] = useState(false);
@@ -84,17 +86,17 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) =
                 disabled={busy}
                 disabledTitle="Saving…"
                 showCounts={false}
-                between={<span className={styles.score}><strong>{idea.score || 0}</strong><small>score</small></span>}
+                between={<span className={styles.score}><strong>{idea.score || 0}</strong><small>{communityText('score')}</small></span>}
             />
             <div className={styles.ideaBody}>
                 <div className={styles.ideaTop}>
                     <div className={styles.labels}>
-                        <span className={idea.kind === 'bug' ? styles.bugLabel : styles.ideaLabel}>{idea.kind === 'bug' ? <Bug size={11} /> : null}{idea.kind === 'bug' ? 'Bug' : 'Idea'}</span>
-                        <span title="Area">{idea.category}</span>
+                        <span className={idea.kind === 'bug' ? styles.bugLabel : styles.ideaLabel}>{idea.kind === 'bug' ? <Bug size={11} /> : null}{idea.kind === 'bug' ? communityText('Bug') : communityText('Idea')}</span>
+                        <span title={communityText('Area')}>{idea.category}</span>
                     </div>
                     {user && user.isAdmin ? (
                         <div className={styles.adminActions}>
-                            <select aria-label="Suggestion status" value={idea.status} disabled={busy} onChange={event => onStatus(idea, event.target.value)}>
+                            <select aria-label={communityText('Suggestion status')} value={idea.status} disabled={busy} onChange={event => onStatus(idea, event.target.value)}>
                                 {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                             </select>
                         </div>
@@ -109,7 +111,7 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) =
                         aria-expanded={detailsOpen}
                         onClick={() => setDetailsOpen(value => !value)}
                     >
-                        {detailsOpen ? 'Show less' : 'Show full details'}
+                        {detailsOpen ? communityText('Show less') : communityText('Show full details')}
                     </button>
                 ) : null}
                 <div className={styles.ideaFooter}>
@@ -124,13 +126,13 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) =
                         aria-expanded={discussionOpen}
                     >
                         <MessageCircle size={15} />
-                        {idea.commentCount || 0} {(idea.commentCount || 0) === 1 ? 'comment' : 'comments'}
-                        <span>{discussionOpen ? 'Hide' : 'Discuss'}</span>
+                        {idea.commentCount || 0} {(idea.commentCount || 0) === 1 ? communityText('comment') : communityText('comments')}
+                        <span>{discussionOpen ? communityText('Hide') : communityText('Discuss')}</span>
                     </Button>
                 </div>
                 {discussionOpen ? (
                     <div className={styles.discussion}>
-                        {!user ? <Button variant="primary" className={styles.signIn} onClick={login}>Sign in to join the discussion</Button> : null}
+                        {!user ? <Button variant="primary" className={styles.signIn} onClick={login}>{communityText('Sign in to join the discussion')}</Button> : null}
                         <CommentThread source={source} canModerate={Boolean(user && (user.isAdmin || user.username.toLowerCase() === idea.author.toLowerCase()))} reportContext={`roadmap suggestion ${idea.title}`} onCountChange={delta => onCommentCount(idea._id, delta)} />
                     </div>
                 ) : null}
@@ -140,6 +142,7 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy}) =
 };
 
 const Roadmap = () => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
     const [params, setParams] = useSearchParams();
@@ -229,7 +232,7 @@ const Roadmap = () => {
         }
         const payload = roadmapPayload(form);
         if (!payload.title || !payload.description) {
-            setError('Add a title and description before posting.');
+            setError(communityText("Add a title and description before posting."));
             return;
         }
         const actionViewer = viewerName;
@@ -311,53 +314,53 @@ const Roadmap = () => {
         <main className={styles.page}>
             <header className={styles.head}>
                 <div>
-                    <h1>Roadmap</h1>
-                    <p>See what is being considered, what is underway, and what has shipped. Vote or add context to help the team decide what comes next.</p>
+                    <h1>{communityText('Roadmap')}</h1>
+                    <p>{communityText('See what is being considered, what is underway, and what has shipped. Vote or add context to help the team decide what comes next.')}</p>
                 </div>
-                <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} /> Add an entry</Button>
+                <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText(' Add an entry')}</Button>
             </header>
             {creating ? (
                 <form className={styles.form} onSubmit={create}>
-                    <label>Type<select
+                    <label>{communityText('Type')}<select
                         value={form.kind}
                         disabled={createBusy}
                         onChange={event => {
                             updateForm('kind', event.target.value);
                             setParams(withRoadmapParam(params, 'new', event.target.value), {replace: true});
                         }}
-                    ><option value="idea">Idea</option><option value="bug">Bug report</option></select></label>
-                    <label>Title<input value={form.title} disabled={createBusy} required maxLength={120} placeholder="A clear summary" onChange={event => updateForm('title', event.target.value)} /></label>
-                    <label>Description<textarea value={form.description} disabled={createBusy} required maxLength={3000} placeholder={form.kind === 'bug' ? 'What happened, what did you expect, and how can someone reproduce it?' : 'What should change, and who would it help?'} onChange={event => updateForm('description', event.target.value)} /></label>
-                    <label>Area<select value={form.category} disabled={createBusy} onChange={event => updateForm('category', event.target.value)}>
-                        <option>Community</option><option>Editor</option><option>Collaboration</option><option>Extensions</option><option>Mobile</option><option>Other</option>
+                    ><option value="idea">{communityText('Idea')}</option><option value="bug">{communityText('Bug report')}</option></select></label>
+                    <label>{communityText('Title')}<input value={form.title} disabled={createBusy} required maxLength={120} placeholder={communityText('A clear summary')} onChange={event => updateForm('title', event.target.value)} /></label>
+                    <label>{communityText('Description')}<textarea value={form.description} disabled={createBusy} required maxLength={3000} placeholder={form.kind === 'bug' ? communityText('What happened, what did you expect, and how can someone reproduce it?') : communityText('What should change, and who would it help?')} onChange={event => updateForm('description', event.target.value)} /></label>
+                    <label>{communityText('Area')}<select value={form.category} disabled={createBusy} onChange={event => updateForm('category', event.target.value)}>
+                        <option>{communityText('Community')}</option><option>{communityText('Editor')}</option><option>{communityText('Collaboration')}</option><option>{communityText('Extensions')}</option><option>{communityText('Mobile')}</option><option>{communityText('Other')}</option>
                     </select></label>
                     <div className={styles.formActions}>
-                        <Button type="submit" busy={createBusy} busyLabel="Posting…">{form.kind === 'bug' ? 'Report bug' : 'Post idea'}</Button>
-                        <Button variant="secondary" disabled={createBusy} onClick={closeComposer}>Cancel</Button>
+                        <Button type="submit" busy={createBusy} busyLabel={communityText('Posting…')}>{form.kind === 'bug' ? communityText('Report bug') : communityText('Post idea')}</Button>
+                        <Button variant="secondary" disabled={createBusy} onClick={closeComposer}>{communityText('Cancel')}</Button>
                     </div>
                 </form>
             ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}
             {ideas && ideas.length ? (
                 <div className={styles.filters}>
-                    <div className={styles.searchFilter}><Search size={16} /><input aria-label="Search roadmap" value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder="Search ideas and bugs" /></div>
-                    <select aria-label="Filter by type" value={kindFilter} onChange={event => setFilter('kind', event.target.value)}><option value="">Ideas and bugs</option><option value="idea">Ideas</option><option value="bug">Bugs</option></select>
-                    <select aria-label="Filter by area" value={categoryFilter} onChange={event => setFilter('area', event.target.value)}><option value="">Any area</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select>
-                    <select aria-label="Filter by submitter" value={sourceFilter} onChange={event => setFilter('source', event.target.value)}><option value="">Anyone</option><option value="community">Community</option><option value="mistwarp">MistWarp</option></select>
+                    <div className={styles.searchFilter}><Search size={16} /><input aria-label={communityText('Search roadmap')} value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder={communityText('Search ideas and bugs')} /></div>
+                    <select aria-label={communityText('Filter by type')} value={kindFilter} onChange={event => setFilter('kind', event.target.value)}><option value="">{communityText('Ideas and bugs')}</option><option value="idea">{communityText('Ideas')}</option><option value="bug">{communityText('Bugs')}</option></select>
+                    <select aria-label={communityText('Filter by area')} value={categoryFilter} onChange={event => setFilter('area', event.target.value)}><option value="">{communityText('Any area')}</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select>
+                    <select aria-label={communityText('Filter by submitter')} value={sourceFilter} onChange={event => setFilter('source', event.target.value)}><option value="">{communityText('Anyone')}</option><option value="community">{communityText('Community')}</option><option value="mistwarp">{communityText('MistWarp')}</option></select>
                     <div className={styles.filterSummary}>
-                        <span>{visibleIdeas.length} {visibleIdeas.length === 1 ? 'result' : 'results'}</span>
-                        {filtering ? <button type="button" onClick={clearFilters}>Clear filters</button> : null}
+                        <span>{visibleIdeas.length} {visibleIdeas.length === 1 ? communityText('result') : communityText('results')}</span>
+                        {filtering ? <button type="button" onClick={clearFilters}>{communityText('Clear filters')}</button> : null}
                     </div>
                 </div>
             ) : null}
-            {!ideas && !loadError ? <p className={styles.empty}>Loading suggestions…</p> : null}
-            {loadError ? <p className={styles.empty}>Could not load suggestions. <button type="button" onClick={load}>Try again</button></p> : null}
-            {ideas && !ideas.length ? <p className={styles.empty}>No suggestions yet. Add the first one.</p> : null}
-            {ideas && ideas.length && !visibleIdeas.length ? <p className={styles.empty}>No suggestions match those filters.</p> : null}
+            {!ideas && !loadError ? <p className={styles.empty}>{communityText('Loading suggestions…')}</p> : null}
+            {loadError ? <p className={styles.empty}>{communityText('Could not load suggestions. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
+            {ideas && !ideas.length ? <p className={styles.empty}>{communityText('No suggestions yet. Add the first one.')}</p> : null}
+            {ideas && ideas.length && !visibleIdeas.length ? <p className={styles.empty}>{communityText('No suggestions match those filters.')}</p> : null}
             {visibleIdeas.length ? (
                 <div className={styles.roadmapLayout}>
-                    <nav className={styles.stageNav} aria-label="Roadmap stages">
-                        <p>Stages</p>
+                    <nav className={styles.stageNav} aria-label={communityText('Roadmap stages')}>
+                        <p>{communityText('Stages')}</p>
                         {STAGES.map(stage => {
                             const StageIcon = stage.icon;
                             return (
@@ -386,7 +389,7 @@ const Roadmap = () => {
                                         <div className={styles.list}>{stageIdeas.map(idea => (
                                             <IdeaCard key={idea._id} idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} busy={busyIdea === idea._id} />
                                         ))}</div>
-                                    ) : <p className={styles.stageEmpty}>{filtering ? 'No matching entries in this stage.' : 'Nothing is in this stage yet.'}</p>}
+                                    ) : <p className={styles.stageEmpty}>{filtering ? communityText('No matching entries in this stage.') : communityText('Nothing is in this stage yet.')}</p>}
                                 </section>
                             );
                         })}

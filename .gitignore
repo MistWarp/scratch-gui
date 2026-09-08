@@ -29,3 +29,6 @@ npm-*
 .secrets
 
 .env
+
+# Local agent session exports
+/session-ses_*.md

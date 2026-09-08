@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
@@ -8,6 +9,7 @@ import setPageMeta from '../page-meta.js';
 import styles from './NewsPost.module.css';
 
 const NewsPost = () => {
+    const {text: communityText} = useCommunityText();
     const {id} = useParams();
     const [item, setItem] = useState(null);
     const [error, setError] = useState('');
@@ -27,9 +29,9 @@ const NewsPost = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to="/news"><ArrowLeft size={15} /> All news</Link>
-            {error ? <div className={styles.state}><p>{error}</p><Button onClick={load}>Try again</Button></div> : null}
-            {!error && !item ? <p className={styles.state}>Loading post…</p> : null}
+            <Link className={styles.back} to="/news"><ArrowLeft size={15} />{communityText(' All news')}</Link>
+            {error ? <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div> : null}
+            {!error && !item ? <p className={styles.state}>{communityText('Loading post…')}</p> : null}
             {item ? <NewsItem full item={item} onChanged={load} /> : null}
         </main>
     );

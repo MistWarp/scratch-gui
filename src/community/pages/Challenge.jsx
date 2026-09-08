@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -30,7 +32,7 @@ const timestamp = value => {
 
 const dateTime = value => {
     const parsed = timestamp(value);
-    return parsed ? new Date(parsed).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : 'Not set';
+    return parsed ? new Date(parsed).toLocaleString(getCommunityLocale(), {dateStyle: 'medium', timeStyle: 'short'}) : 'Not set';
 };
 
 export const challengePhase = (space, now) => {
@@ -66,6 +68,7 @@ const remaining = (value, now) => {
 };
 
 const ScoreForm = ({challengeId, project, criteria, onSaved}) => {
+    const {text: communityText} = useCommunityText();
     const prior = project.myScore || {};
     const priorRatings = new Map((prior.ratings || []).map(rating => [rating.criterionId, rating.value]));
     const [ratings, setRatings] = useState(() => Object.fromEntries(criteria.map(criterion => [criterion.id, priorRatings.get(criterion.id) || 5])));
@@ -117,7 +120,7 @@ const ScoreForm = ({challengeId, project, criteria, onSaved}) => {
 
     return (
         <form className={styles.scoreForm} onSubmit={save}>
-            <div className={styles.scoreHeading}><Gavel size={16} /><strong>Your score</strong>{prior.edited ? <span>Last saved {dateTime(prior.edited)}</span> : null}</div>
+            <div className={styles.scoreHeading}><Gavel size={16} /><strong>{communityText('Your score')}</strong>{prior.edited ? <span>{communityText('Last saved ')}{dateTime(prior.edited)}</span> : null}</div>
             {criteria.map(criterion => (
                 <label key={criterion.id} className={styles.scoreCriterion}>
                     <span><strong>{criterion.name}</strong><small>{criterion.description}</small></span>
@@ -125,14 +128,15 @@ const ScoreForm = ({challengeId, project, criteria, onSaved}) => {
                     <em>/ 10</em>
                 </label>
             ))}
-            <label className={styles.feedbackField}><span>Private feedback for the host</span><textarea disabled={saving} maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="Notes on this entry" /></label>
-            {!criteria.length ? <p>No judging criteria are configured.</p> : null}
-            <div className={styles.scoreActions}><Button variant="primary" type="submit" busy={saving} busyLabel="Saving…" disabled={!ratingsReady}>Save score</Button>{message ? <span>{message}</span> : null}</div>
+            <label className={styles.feedbackField}><span>{communityText('Private feedback for the host')}</span><textarea disabled={saving} maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder={communityText('Notes on this entry')} /></label>
+            {!criteria.length ? <p>{communityText('No judging criteria are configured.')}</p> : null}
+            <div className={styles.scoreActions}><Button variant="primary" type="submit" busy={saving} busyLabel={communityText('Saving…')} disabled={!ratingsReady}>{communityText('Save score')}</Button>{message ? <span>{message}</span> : null}</div>
         </form>
     );
 };
 
 const Entry = ({challengeId, project, challenge, user, login, load, showScore = false}) => {
+    const {text: communityText} = useCommunityText();
     const canVote = !showScore && challenge.phase === 'judging' && challenge.communityVoting;
     const [voting, setVoting] = useState(false);
     const [voteError, setVoteError] = useState('');
@@ -174,15 +178,15 @@ const Entry = ({challengeId, project, challenge, user, login, load, showScore = 
             <ProjectCard project={project} />
             {challenge.phase === 'results' ? (
                 <div className={styles.entryResults}>
-                    <span><strong>{challengeScore(project.judgeScore)}</strong> judges</span>
-                    {challenge.communityVoting ? <span><strong>{challengeScore(project.audienceScore)}</strong> audience</span> : null}
+                    <span><strong>{challengeScore(project.judgeScore)}</strong>{communityText(' judges')}</span>
+                    {challenge.communityVoting ? <span><strong>{challengeScore(project.audienceScore)}</strong>{communityText(' audience')}</span> : null}
                 </div>
             ) : null}
             {canVote ? (
                 <div className={styles.audienceVote}>
-                    <span>Audience rating</span>
-                    <div>{[1, 2, 3, 4, 5].map(value => <button key={value} type="button" disabled={voting} className={value <= project.myVote ? styles.starActive : ''} onClick={() => vote(value)} aria-label={`Rate ${value} out of 5`}><Star size={17} fill={value <= project.myVote ? 'currentColor' : 'none'} /></button>)}</div>
-                    <small>{project.audienceVoteCount || 0} ratings</small>
+                    <span>{communityText('Audience rating')}</span>
+                    <div>{[1, 2, 3, 4, 5].map(value => <button key={value} type="button" disabled={voting} className={value <= project.myVote ? styles.starActive : ''} onClick={() => vote(value)} aria-label={communityText("Rate {value1} out of 5", {value1: value})}><Star size={17} fill={value <= project.myVote ? 'currentColor' : 'none'} /></button>)}</div>
+                    <small>{project.audienceVoteCount || 0}{communityText(' ratings')}</small>
                     {voteError ? <small role="alert">{voteError}</small> : null}
                 </div>
             ) : null}
@@ -192,6 +196,7 @@ const Entry = ({challengeId, project, challenge, user, login, load, showScore = 
 };
 
 const Challenge = ({id, space, user, login, load}) => {
+    const {text: communityText} = useCommunityText();
     const [tab, setTab] = useState(space.phase === 'results' ? 'results' : 'overview');
     const [error, setError] = useState('');
     const [actionBusy, setActionBusy] = useState('');
@@ -285,61 +290,61 @@ const Challenge = ({id, space, user, login, load}) => {
 
     return (
         <main className={styles.page}>
-            <Link to="/spaces?kind=challenge" className={styles.back}><ArrowLeft size={15} /> All challenges</Link>
-            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong><UserLink username={space.owner}>{space.owner}</UserLink> invited you to judge this challenge.</strong><span>Judges score every submission against the published criteria.</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel="Responding…" disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>Accept</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>Decline</Button></section> : null}
+            <Link to="/spaces?kind=challenge" className={styles.back}><ArrowLeft size={15} />{communityText(' All challenges')}</Link>
+            {space.judgeInvited ? <section className={styles.invite}><Gavel size={21} /><div><strong><UserLink username={space.owner}>{space.owner}</UserLink>{communityText(' invited you to judge this challenge.')}</strong><span>{communityText('Judges score every submission against the published criteria.')}</span></div><Button variant="primary" busy={actionBusy === 'invite'} busyLabel={communityText('Responding…')} disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>{communityText('Accept')}</Button><Button disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(false)}>{communityText('Decline')}</Button></section> : null}
             <header className={styles.hero}>
                 <div className={styles.heroMain}>
                     <h1>{space.title}</h1>
                     <p>{phase.label}. {phase.detail}</p>
-                    <p>{space.description || 'The host has not added a description yet.'}</p>
-                    <div className={styles.host}><Avatar username={space.owner} size={30} /><span>Hosted by <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
+                    <p>{space.description || communityText('The host has not added a description yet.')}</p>
+                    <div className={styles.host}><Avatar username={space.owner} size={30} /><span>{communityText('Hosted by ')}<Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
                 </div>
                 <div className={styles.heroSide}>
-                    {deadline && currentPhase !== 'results' && currentPhase !== 'awaiting-results' ? <div className={styles.countdown}><Clock3 size={18} /><span>{currentPhase === 'upcoming' ? 'Starts in' : currentPhase === 'submissions' ? 'Ends in' : 'Judging ends in'}</span><strong>{remaining(deadline, now)}</strong></div> : null}
-                    {(currentPhase === 'upcoming' || currentPhase === 'submissions') ? <Button variant={space.joined ? 'secondary' : 'primary'} busy={actionBusy === 'join'} busyLabel="Updating…" disabled={Boolean(actionBusy)} onClick={toggleJoined}>{space.joined ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.joined ? 'Leave challenge' : 'Join challenge'}</Button> : null}
-                    {space.canManage ? <Link className={styles.manage} to={`/spaces/${id}/manage`}><Settings size={16} /> Manage challenge</Link> : null}
+                    {deadline && currentPhase !== 'results' && currentPhase !== 'awaiting-results' ? <div className={styles.countdown}><Clock3 size={18} /><span>{currentPhase === 'upcoming' ? communityText('Starts in') : currentPhase === 'submissions' ? communityText('Ends in') : communityText('Judging ends in')}</span><strong>{remaining(deadline, now)}</strong></div> : null}
+                    {(currentPhase === 'upcoming' || currentPhase === 'submissions') ? <Button variant={space.joined ? 'secondary' : 'primary'} busy={actionBusy === 'join'} busyLabel={communityText('Updating…')} disabled={Boolean(actionBusy)} onClick={toggleJoined}>{space.joined ? <UserMinus size={16} /> : <UserPlus size={16} />}{space.joined ? communityText('Leave challenge') : communityText('Join challenge')}</Button> : null}
+                    {space.canManage ? <Link className={styles.manage} to={`/spaces/${id}/manage`}><Settings size={16} />{communityText(' Manage challenge')}</Link> : null}
                 </div>
             </header>
             <section className={styles.timeline}>
-                <div className={currentPhase === 'upcoming' ? styles.timelineActive : ''}><CalendarDays size={17} /><span>Submissions open</span><strong>{dateTime(space.startsAt)}</strong></div>
-                <div className={currentPhase === 'submissions' ? styles.timelineActive : ''}><Trophy size={17} /><span>Submissions close</span><strong>{dateTime(space.endsAt)}</strong></div>
-                <div className={currentPhase === 'judging' || currentPhase === 'awaiting-results' ? styles.timelineActive : ''}><Gavel size={17} /><span>Judging ends</span><strong>{dateTime(space.judgingEndsAt)}</strong></div>
+                <div className={currentPhase === 'upcoming' ? styles.timelineActive : ''}><CalendarDays size={17} /><span>{communityText('Submissions open')}</span><strong>{dateTime(space.startsAt)}</strong></div>
+                <div className={currentPhase === 'submissions' ? styles.timelineActive : ''}><Trophy size={17} /><span>{communityText('Submissions close')}</span><strong>{dateTime(space.endsAt)}</strong></div>
+                <div className={currentPhase === 'judging' || currentPhase === 'awaiting-results' ? styles.timelineActive : ''}><Gavel size={17} /><span>{communityText('Judging ends')}</span><strong>{dateTime(space.judgingEndsAt)}</strong></div>
             </section>
             <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Challenge sections" />
             {error ? <p className={styles.error}>{error}</p> : null}
             {tab === 'overview' ? (
                 <div className={styles.overview}>
                     <div className={styles.mainColumn}>
-                        {space.theme ? <section className={styles.theme}><strong>Challenge theme: {space.theme}</strong></section> : null}
-                        <section className={styles.panel}><h2>About this challenge</h2><div className={styles.longText}><RichText text={space.description} /></div></section>
-                        <section className={styles.panel}><h2>Rules</h2><div className={styles.longText}><RichText text={space.rules || 'The host has not added rules yet.'} /></div></section>
+                        {space.theme ? <section className={styles.theme}><strong>{communityText('Challenge theme: ')}{space.theme}</strong></section> : null}
+                        <section className={styles.panel}><h2>{communityText('About this challenge')}</h2><div className={styles.longText}><RichText text={space.description} /></div></section>
+                        <section className={styles.panel}><h2>{communityText('Rules')}</h2><div className={styles.longText}><RichText text={space.rules || 'The host has not added rules yet.'} /></div></section>
                     </div>
                     <aside className={styles.sidebar}>
-                        <section className={styles.panel}><h2>Judging criteria</h2><div className={styles.criteria}>{(space.criteria || []).map(criterion => <article key={criterion.id}><div><strong>{criterion.name}</strong><span>Weight {criterion.weight} of 5</span></div><p>{criterion.description}</p></article>)}</div></section>
-                        <section className={styles.panel}><h2>Judges</h2><div className={styles.people}>{(space.judges || []).map(name => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={30} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>)}{!space.judges?.length ? <p>No judges announced yet.</p> : null}</div></section>
-                        <section className={styles.facts}><div><strong>{space.participantCount || 0}</strong><span>joined</span></div><div><strong>{space.projects.length}</strong><span>submissions</span></div><div><strong>{space.judgeCount || 0}</strong><span>judges</span></div><div><strong>{space.communityVoting ? 'On' : 'Off'}</strong><span>audience voting</span></div></section>
+                        <section className={styles.panel}><h2>{communityText('Judging criteria')}</h2><div className={styles.criteria}>{(space.criteria || []).map(criterion => <article key={criterion.id}><div><strong>{criterion.name}</strong><span>{communityText('Weight ')}{criterion.weight}{communityText(' of 5')}</span></div><p>{criterion.description}</p></article>)}</div></section>
+                        <section className={styles.panel}><h2>{communityText('Judges')}</h2><div className={styles.people}>{(space.judges || []).map(name => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={30} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>)}{!space.judges?.length ? <p>{communityText('No judges announced yet.')}</p> : null}</div></section>
+                        <section className={styles.facts}><div><strong>{space.participantCount || 0}</strong><span>{communityText('joined')}</span></div><div><strong>{space.projects.length}</strong><span>{communityText('submissions')}</span></div><div><strong>{space.judgeCount || 0}</strong><span>{communityText('judges')}</span></div><div><strong>{space.communityVoting ? communityText('On') : communityText('Off')}</strong><span>{communityText('audience voting')}</span></div></section>
                     </aside>
                 </div>
             ) : null}
             {tab === 'submissions' ? (
                 <section className={styles.submissions}>
-                    <header><div><h2>Submissions</h2><p>{currentPhase === 'submissions' ? 'Enter a shared or unlisted project before submissions close.' : 'Submissions are locked for this challenge.'}</p></div>{currentPhase === 'submissions' && (space.openSubmissions || space.canManage) ? <SpaceProjectPicker space={liveSpace} onAdded={load} /> : null}</header>
-                    {space.projects.length ? <div className={styles.entryGrid}>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} />)}</div> : <div className={styles.empty}><Trophy size={28} /><strong>No submissions yet</strong><span>The first entry will appear here.</span></div>}
+                    <header><div><h2>{communityText('Submissions')}</h2><p>{currentPhase === 'submissions' ? communityText('Enter a shared or unlisted project before submissions close.') : communityText('Submissions are locked for this challenge.')}</p></div>{currentPhase === 'submissions' && (space.openSubmissions || space.canManage) ? <SpaceProjectPicker space={liveSpace} onAdded={load} /> : null}</header>
+                    {space.projects.length ? <div className={styles.entryGrid}>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} />)}</div> : <div className={styles.empty}><Trophy size={28} /><strong>{communityText('No submissions yet')}</strong><span>{communityText('The first entry will appear here.')}</span></div>}
                 </section>
             ) : null}
             {tab === 'results' ? (
                 <section className={styles.results}>
-                    <header><Medal size={24} /><div><h2>Final results</h2><p>Ranked by the judges using the criteria shown on the overview.</p></div></header>
-                    {space.projects.length ? <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '—'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span></div><strong>{challengeScore(project.judgeScore)}<small>/ 10</small></strong></article>)}</div> : <div className={styles.empty}><Medal size={28} /><strong>No results</strong><span>This challenge did not receive any submissions.</span></div>}
+                    <header><Medal size={24} /><div><h2>{communityText('Final results')}</h2><p>{communityText('Ranked by the judges using the criteria shown on the overview.')}</p></div></header>
+                    {space.projects.length ? <div className={styles.resultList}>{space.projects.map(project => <article key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '—'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span></div><strong>{challengeScore(project.judgeScore)}<small>/ 10</small></strong></article>)}</div> : <div className={styles.empty}><Medal size={28} /><strong>{communityText('No results')}</strong><span>{communityText('This challenge did not receive any submissions.')}</span></div>}
                 </section>
             ) : null}
             {tab === 'judging' ? (
                 <section className={styles.submissions}>
-                    <header><div><h2>Judge entries</h2><p>{space.projects.filter(project => project.myScore?.edited).length} of {space.projects.length} entries scored by you.</p></div></header>
-                    {space.projects.length ? <div className={styles.entryGrid}>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} showScore />)}</div> : <div className={styles.empty}><Gavel size={28} /><strong>No entries to judge</strong><span>Submissions will appear here after the deadline.</span></div>}
+                    <header><div><h2>{communityText('Judge entries')}</h2><p>{space.projects.filter(project => project.myScore?.edited).length}{communityText(' of ')}{space.projects.length}{communityText(' entries scored by you.')}</p></div></header>
+                    {space.projects.length ? <div className={styles.entryGrid}>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} showScore />)}</div> : <div className={styles.empty}><Gavel size={28} /><strong>{communityText('No entries to judge')}</strong><span>{communityText('Submissions will appear here after the deadline.')}</span></div>}
                 </section>
             ) : null}
-            {tab === 'community' ? <section className={styles.comments}><header><MessageCircle size={20} /><div><h2>Community</h2><p>Questions, progress updates, and discussion about the challenge.</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} /></section> : null}
+            {tab === 'community' ? <section className={styles.comments}><header><MessageCircle size={20} /><div><h2>{communityText('Community')}</h2><p>{communityText('Questions, progress updates, and discussion about the challenge.')}</p></div></header><CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} /></section> : null}
         </main>
     );
 };

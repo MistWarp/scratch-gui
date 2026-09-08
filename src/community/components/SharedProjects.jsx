@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
@@ -16,20 +17,21 @@ const ACCESS = {
 };
 
 const SharedProjectCard = ({project}) => {
+    const {text: communityText} = useCommunityText();
     const [role, description] = ACCESS[project.myRole] || ['Shared access', 'Open this project to see your access.'];
     return (
         <article className={styles.card}>
             <Link
                 className={styles.preview}
                 to={projectUrl(project)}
-                aria-label={`View ${project.title}`}
+                aria-label={communityText("View {value1}", {value1: project.title})}
             >
                 <ProjectThumbnail project={project} lazy />
             </Link>
             <div className={styles.details}>
                 <Link className={styles.title} to={projectUrl(project)}>{project.title}</Link>
                 <div className={styles.owner}>
-                    {'Shared by '}<UserLink username={project.owner}>{project.owner}</UserLink>
+                    {communityText('Shared by ')}<UserLink username={project.owner}>{project.owner}</UserLink>
                 </div>
                 <div className={styles.footer}>
                     <span className={styles.role} title={description}>{role}</span>
@@ -41,7 +43,7 @@ const SharedProjectCard = ({project}) => {
                         aria-label={`${project.canSaveDirectly ? 'Edit' : 'Open'} ${project.title}`}
                     >
                         {project.canSaveDirectly ? <Pencil size={14} /> : <ArrowUpRight size={14} />}
-                        {project.canSaveDirectly ? 'Edit project' : 'Open project'}
+                        {project.canSaveDirectly ? communityText('Edit project') : communityText('Open project')}
                     </Button>
                 </div>
             </div>
@@ -52,6 +54,7 @@ const SharedProjectCard = ({project}) => {
 SharedProjectCard.propTypes = {project: PropTypes.object.isRequired};
 
 const SharedProjects = () => {
+    const {text: communityText} = useCommunityText();
     const [projects, setProjects] = useState(null);
     const [error, setError] = useState('');
     const [attempt, setAttempt] = useState(0);
@@ -73,8 +76,8 @@ const SharedProjects = () => {
         <section className={styles.section}>
             <header className={styles.header}>
                 <div>
-                    <h1>{'Shared with you'}</h1>
-                    <p>{'Pick up where your team left off.'}</p>
+                    <h1>{communityText('Shared with you')}</h1>
+                    <p>{communityText('Pick up where your team left off.')}</p>
                 </div>
                 {projects && projects.length ? <span className={styles.count}>
                     {`${projects.length} ${projects.length === 1 ? 'project' : 'projects'}`}
@@ -83,9 +86,9 @@ const SharedProjects = () => {
             {error ? <div className={styles.empty} role="alert">
                 <p>{error}</p>
                 {/* eslint-disable-next-line react/jsx-no-bind */}
-                <Button onClick={() => setAttempt(value => value + 1)}>{'Try again'}</Button>
+                <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
             </div> : !projects ? (
-                <p className={styles.loading} role="status">{'Loading shared projects…'}</p>
+                <p className={styles.loading} role="status">{communityText('Loading shared projects…')}</p>
             ) : projects.length ? (
                 <div className={styles.grid}>
                     {projects.map(project => (
@@ -94,8 +97,8 @@ const SharedProjects = () => {
                 </div>
             ) : <div className={styles.empty}>
                 <Users size={28} aria-hidden="true" />
-                <h2>{'No shared projects yet'}</h2>
-                <p>{'Projects will appear here when someone adds you to their team.'}</p>
+                <h2>{communityText('No shared projects yet')}</h2>
+                <p>{communityText('Projects will appear here when someone adds you to their team.')}</p>
             </div>}
         </section>
     );

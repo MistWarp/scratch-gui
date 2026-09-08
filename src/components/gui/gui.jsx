@@ -10,6 +10,7 @@ import VM from 'scratch-vm';
 
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
+import LoadingSpinner from '../tw-loading-spinner/spinner.jsx';
 import Box from '../box/box.jsx';
 import Alerts from '../../containers/alerts.jsx';
 import UpdateToast from '../update-toast/update-toast.jsx';
@@ -32,7 +33,6 @@ import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../.
 import {resolveStageSize} from '../../lib/utils/screen';
 import listenForStagePanelDrag from '../../lib/utils/stage-panel-drag.js';
 import {getFindBarApi} from '../../lib/find-bar/api';
-import {setFractchModeOpener} from '../../lib/git/fractch-mode';
 import {Theme} from '../../lib/themes';
 
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
@@ -119,7 +119,6 @@ const getCachedBorderWidth = element => {
 
 const GUIComponent = props => {
     const {
-        FractchWorkspace,
         Blocks,
         CostumeTab,
         SoundTab,
@@ -157,27 +156,6 @@ const GUIComponent = props => {
         MWGameItemsModal,
         loadExtensionLibrary
     } = getGuiComponents();
-    const [fractchMode, setFractchMode] = useState(false);
-    const [fractchExitRequested, setFractchExitRequested] = useState(false);
-    const handleToggleFractchMode = useCallback(() => {
-        if (props.activeTabIndex !== BLOCKS_TAB_INDEX) props.onActivateTab(BLOCKS_TAB_INDEX);
-        if (fractchMode) {
-            setFractchExitRequested(true);
-        } else {
-            setFractchMode(true);
-        }
-    }, [fractchMode, props.activeTabIndex, props.onActivateTab]);
-    const handleExitFractchMode = useCallback(() => {
-        setFractchExitRequested(false);
-        setFractchMode(false);
-    }, []);
-    useEffect(() => {
-        setFractchModeOpener(() => {
-            props.onActivateTab(BLOCKS_TAB_INDEX);
-            setFractchMode(true);
-        });
-        return () => setFractchModeOpener(null);
-    }, [props.onActivateTab]);
     useEffect(() => {
         if (props.isPlayerOnly) return;
 
@@ -1074,8 +1052,6 @@ const GUIComponent = props => {
                     ) : null}
                     <MenuBar
                         accountNavOpen={accountNavOpen}
-                        fractchMode={fractchMode}
-                        onToggleFractchMode={handleToggleFractchMode}
                         authorId={authorId}
                         authorThumbnailUrl={authorThumbnailUrl}
                         authorUsername={authorUsername}
@@ -1288,72 +1264,65 @@ const GUIComponent = props => {
                                         </Tab>
                                     </TabList>
                                     <TabPanel className={tabClassNames.tabPanel}>
-                                        {fractchMode ? (
-                                            <React.Suspense fallback={<Loader />}>
-                                                <FractchWorkspace
-                                                    exitRequested={fractchExitRequested}
+                                        <React.Fragment>
+                                            <Box className={styles.blocksWrapper}>
+                                                <Blocks
+                                                    key={`${blocksId}/${theme.getBlocksThemeId()}`}
+                                                    canUseCloud={canUseCloud}
+                                                    grow={1}
+                                                    isVisible={blocksTabVisible}
+                                                    options={{
+                                                        media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                                    }}
+                                                    stageSize={stageSize}
+                                                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                                                     theme={theme}
                                                     vm={vm}
-                                                    onExit={handleExitFractchMode}
                                                 />
-                                            </React.Suspense>
-                                        ) : (
-                                            <React.Fragment>
-                                                <Box className={styles.blocksWrapper}>
-                                                    <Blocks
-                                                        key={`${blocksId}/${theme.getBlocksThemeId()}`}
-                                                        canUseCloud={canUseCloud}
-                                                        grow={1}
-                                                        isVisible={blocksTabVisible}
-                                                        options={{
-                                                            media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
-                                                        }}
-                                                        stageSize={stageSize}
-                                                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                                                        theme={theme}
-                                                        vm={vm}
+                                            </Box>
+                                            <Box className={styles.paletteFooter}>
+                                                <button
+                                                    type="button"
+                                                    className={classNames(
+                                                        styles.paletteButton,
+                                                        styles.paletteSearchButton
+                                                    )}
+                                                    title={intl.formatMessage(messages.findBlocks)}
+                                                    onClick={handleOpenSearch}
+                                                >
+                                                    <Search
+                                                        className={styles.paletteButtonIcon}
+                                                        size={22}
                                                     />
-                                                </Box>
-                                                <Box className={styles.paletteFooter}>
-                                                    <button
-                                                        type="button"
-                                                        className={classNames(
-                                                            styles.paletteButton,
-                                                            styles.paletteSearchButton
-                                                        )}
-                                                        title={intl.formatMessage(messages.findBlocks)}
-                                                        onClick={handleOpenSearch}
-                                                    >
-                                                        <Search
-                                                            className={styles.paletteButtonIcon}
-                                                            size={22}
-                                                        />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.paletteButton}
-                                                        title={intl.formatMessage(messages.addExtension)}
-                                                        onClick={onExtensionButtonClick}
-                                                    >
-                                                        <ExtensionIcon
-                                                            className={styles.extensionButtonIcon}
-                                                            draggable={false}
-                                                        />
-                                                    </button>
-                                                </Box>
-                                                <Box className={styles.watermark}>
-                                                    <Watermark />
-                                                </Box>
-                                            </React.Fragment>
-                                        )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.paletteButton}
+                                                    title={intl.formatMessage(messages.addExtension)}
+                                                    onClick={onExtensionButtonClick}
+                                                >
+                                                    <ExtensionIcon
+                                                        className={styles.extensionButtonIcon}
+                                                        draggable={false}
+                                                    />
+                                                </button>
+                                            </Box>
+                                            <Box className={styles.watermark}>
+                                                <Watermark />
+                                            </Box>
+                                        </React.Fragment>
                                     </TabPanel>
                                     <TabPanel className={tabClassNames.tabPanel}>
-                                        {costumesTabVisible ? <CostumeTab
-                                            vm={vm}
-                                        /> : null}
+                                        <React.Suspense fallback={<LoadingSpinner />}>
+                                            {costumesTabVisible ? <CostumeTab
+                                                vm={vm}
+                                            /> : null}
+                                        </React.Suspense>
                                     </TabPanel>
                                     <TabPanel className={tabClassNames.tabPanel}>
-                                        {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                        <React.Suspense fallback={<LoadingSpinner />}>
+                                            {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                        </React.Suspense>
                                     </TabPanel>
                                 </Tabs>
                                 {isNarrowLayout && isStageHidden && mobileEditorView === 'sprites' ? (
@@ -1384,7 +1353,7 @@ const GUIComponent = props => {
                                         <MobileStageControls vm={vm} />
                                     </Box>
                                 ) : null}
-                                {backpackVisible && !fractchMode && (
+                                {backpackVisible && (
                                     !isNarrowLayout || !isStageHidden || mobileEditorView === 'editor'
                                 ) && !(isNarrowLayout && isStageHidden &&
                                     activeTabIndex === COSTUMES_TAB_INDEX) && (

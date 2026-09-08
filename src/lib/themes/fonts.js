@@ -67,8 +67,8 @@ const applyThemeFonts = async fonts => {
         '.scratch-render-overlays *',
         '.xterm',
         '.xterm *',
-        '.monaco-editor',
-        '.monaco-editor *'
+        'code', 'code *', 'pre', 'pre *', 'kbd', 'kbd *', 'samp', 'samp *',
+        '.monospace', '.monospace *', '[class*="icon-font"]'
     ].map(selector => `:not(${selector})`).join('');
 
     // Create style element
@@ -80,25 +80,6 @@ const applyThemeFonts = async fonts => {
             font-family: var(--theme-font, ${fontFamily}) !important;
         }
 
-        /* Ensure key UI elements inherit correctly */
-        body, html,
-        .gui, 
-        .blocklySvg,
-        [class*="gui_"],
-        [class*="menu-bar_"],
-        [class*="settings-menu_"],
-        [class*="blocklyText"],
-        .blocklyText,
-        .blocklyHtmlInput,
-        button, input, textarea, select,
-        .menu-bar, .menu-item {
-            font-family: inherit !important;
-        }
-        
-        /* SVG text elements in Blockly */
-        text, tspan {
-            font-family: ${fontFamily} !important;
-        }
     `;
 
     setCurrentFontStyleEl(newFontStyleElement);

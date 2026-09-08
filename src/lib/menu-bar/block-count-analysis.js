@@ -1,3 +1,4 @@
+import blockCountStyles from '../../components/menu-bar/block-count.module.css';
 import WindowManager from '../../addons/window-system/window-manager.js';
 import Utils from '../find-bar/Utils.js';
 
@@ -224,17 +225,17 @@ export default function (options) {
     };
 
     const metricCard = (label, value, hint) => {
-        const card = element('div', 'sa-complexity-metric');
+        const card = element('div', blockCountStyles['sa-complexity-metric']);
         card.append(
-            element('span', 'sa-complexity-metric-value', value),
-            element('span', 'sa-complexity-metric-label', label)
+            element('span', blockCountStyles['sa-complexity-metric-value'], value),
+            element('span', blockCountStyles['sa-complexity-metric-label'], label)
         );
-        if (hint) card.appendChild(element('span', 'sa-complexity-metric-hint', hint));
+        if (hint) card.appendChild(element('span', blockCountStyles['sa-complexity-metric-hint'], hint));
         return card;
     };
 
     const createSection = title => {
-        const section = element('section', 'sa-complexity-section');
+        const section = element('section', blockCountStyles['sa-complexity-section']);
         section.appendChild(element('h2', null, title));
         return section;
     };
@@ -260,16 +261,16 @@ export default function (options) {
         const level = levelFor(metrics.complexityScore);
         analysisRoot.replaceChildren();
 
-        const summary = element('header', `sa-complexity-summary sa-complexity-${level.id}`);
-        const score = element('div', 'sa-complexity-score');
+        const summary = element('header', `${blockCountStyles['sa-complexity-summary']} sa-complexity-${level.id}`);
+        const score = element('div', blockCountStyles['sa-complexity-score']);
         score.title = msg('score-help');
         score.append(
             element('strong', null, metrics.complexityScore),
             element('span', null, msg('out-of-100'))
         );
-        const summaryText = element('div', 'sa-complexity-summary-text');
+        const summaryText = element('div', blockCountStyles['sa-complexity-summary-text']);
         summaryText.append(
-            element('span', 'sa-complexity-eyebrow', msg('complexity-score')),
+            element('span', blockCountStyles['sa-complexity-eyebrow'], msg('complexity-score')),
             element('h1', null, msg('level-summary', {level: level.label})),
             element('p', null, msg('project-summary', {
                 blocks: metrics.blockCount,
@@ -277,14 +278,14 @@ export default function (options) {
                 scripts: metrics.scriptCount
             }))
         );
-        const refresh = element('button', 'sa-complexity-refresh', msg('refresh'));
+        const refresh = element('button', blockCountStyles['sa-complexity-refresh'], msg('refresh'));
         refresh.type = 'button';
         refresh.addEventListener('click', renderAnalysis);
         summary.append(score, summaryText, refresh);
         analysisRoot.appendChild(summary);
 
         const overview = createSection(msg('overview'));
-        const grid = element('div', 'sa-complexity-metrics');
+        const grid = element('div', blockCountStyles['sa-complexity-metrics']);
         grid.append(
             metricCard(msg('total-blocks'), metrics.blockCount),
             metricCard(msg('total-scripts'), metrics.scriptCount, msg('longest-value', {count: metrics.longestScript})),
@@ -298,9 +299,9 @@ export default function (options) {
         overview.appendChild(grid);
         analysisRoot.appendChild(overview);
 
-        const insights = element('div', 'sa-complexity-two-column');
+        const insights = element('div', blockCountStyles['sa-complexity-two-column']);
         const flow = createSection(msg('code-shape'));
-        const flowGrid = element('div', 'sa-complexity-shape');
+        const flowGrid = element('div', blockCountStyles['sa-complexity-shape']);
         flowGrid.append(
             metricCard(msg('conditional-blocks'), metrics.conditionalCount),
             metricCard(msg('loop-blocks'), metrics.loopCount),
@@ -311,30 +312,30 @@ export default function (options) {
         flow.appendChild(flowGrid);
 
         const distribution = createSection(msg('block-distribution'));
-        const distributionList = element('div', 'sa-complexity-bars');
+        const distributionList = element('div', blockCountStyles['sa-complexity-bars']);
         const largestCategory = metrics.categories.length ? metrics.categories[0][1] : 1;
         for (const [category, count] of metrics.categories.slice(0, 6)) {
-            const row = element('div', 'sa-complexity-bar-row');
+            const row = element('div', blockCountStyles['sa-complexity-bar-row']);
             const label = element('span', null, categoryLabel(category));
-            const track = element('div', 'sa-complexity-bar-track');
-            const fill = element('div', 'sa-complexity-bar-fill');
+            const track = element('div', blockCountStyles['sa-complexity-bar-track']);
+            const fill = element('div', blockCountStyles['sa-complexity-bar-fill']);
             fill.style.width = `${(count / largestCategory) * 100}%`;
             track.appendChild(fill);
             row.append(label, track, element('strong', null, count));
             distributionList.appendChild(row);
         }
         if (!metrics.categories.length) {
-            distributionList.appendChild(element('p', 'sa-complexity-empty', msg('empty-project')));
+            distributionList.appendChild(element('p', blockCountStyles['sa-complexity-empty'], msg('empty-project')));
         }
         distribution.appendChild(distributionList);
         insights.append(flow, distribution);
         analysisRoot.appendChild(insights);
 
         const recommendations = createSection(msg('recommendations'));
-        const recommendationList = element('div', 'sa-complexity-recommendations');
+        const recommendationList = element('div', blockCountStyles['sa-complexity-recommendations']);
         if (metrics.recommendations.length) {
             for (const recommendation of metrics.recommendations) {
-                const item = element('div', 'sa-complexity-recommendation');
+                const item = element('div', blockCountStyles['sa-complexity-recommendation']);
                 item.append(
                     element('strong', null, msg(`recommend-${recommendation.id}-title`)),
                     element('span', null, msg(`recommend-${recommendation.id}-detail`, {
@@ -344,7 +345,7 @@ export default function (options) {
                 recommendationList.appendChild(item);
             }
         } else {
-            const item = element('div', 'sa-complexity-recommendation sa-complexity-balanced');
+            const item = element('div', `${blockCountStyles['sa-complexity-recommendation']} sa-complexity-balanced`);
             item.append(element('strong', null, msg('balanced-title')), element('span', null, msg('balanced-detail')));
             recommendationList.appendChild(item);
         }
@@ -352,30 +353,32 @@ export default function (options) {
         analysisRoot.appendChild(recommendations);
 
         const hotspots = createSection(msg('hotspots'));
-        hotspots.appendChild(element('p', 'sa-complexity-section-help', msg('hotspots-help')));
-        const hotspotList = element('div', 'sa-complexity-table');
+        hotspots.appendChild(element('p', blockCountStyles['sa-complexity-section-help'], msg('hotspots-help')));
+        const hotspotList = element('div', blockCountStyles['sa-complexity-table']);
         for (const script of metrics.scripts.slice(0, 8)) {
-            const row = element('button', 'sa-complexity-table-row');
+            const row = element('button', blockCountStyles['sa-complexity-table-row']);
             row.type = 'button';
-            const identity = element('span', 'sa-complexity-script');
+            const identity = element('span', blockCountStyles['sa-complexity-script']);
             identity.append(element('strong', null, script.targetName), element('small', null, script.label));
             row.append(
                 identity,
                 element('span', null, msg('blocks-value', {count: script.length})),
                 element('span', null, msg('depth-value', {count: script.maxDepth})),
-                element('span', 'sa-complexity-open', msg('show-script'))
+                element('span', blockCountStyles['sa-complexity-open'], msg('show-script'))
             );
             row.addEventListener('click', () => showScript(script));
             hotspotList.appendChild(row);
         }
-        if (!metrics.scripts.length) hotspotList.appendChild(element('p', 'sa-complexity-empty', msg('no-scripts')));
+        if (!metrics.scripts.length) {
+            hotspotList.appendChild(element('p', blockCountStyles['sa-complexity-empty'], msg('no-scripts')));
+        }
         hotspots.appendChild(hotspotList);
         analysisRoot.appendChild(hotspots);
 
         const bySprite = createSection(msg('by-sprite'));
-        const targetList = element('div', 'sa-complexity-table');
+        const targetList = element('div', blockCountStyles['sa-complexity-table']);
         for (const target of metrics.targets) {
-            const row = element('div', 'sa-complexity-table-row sa-complexity-target-row');
+            const row = element('div', `${blockCountStyles['sa-complexity-table-row']} sa-complexity-target-row`);
             row.append(
                 element('strong', null, target.name),
                 element('span', null, msg('blocks-value', {count: target.blocks})),
@@ -395,7 +398,7 @@ export default function (options) {
             return;
         }
 
-        analysisRoot = element('main', 'sa-complexity');
+        analysisRoot = element('main', blockCountStyles['sa-complexity']);
         analysisWindow = WindowManager.createWindow({
             id: 'project-complexity',
             title: msg('complexity-title'),
@@ -405,7 +408,7 @@ export default function (options) {
             minHeight: 420,
             maxWidth: 1100,
             maxHeight: 900,
-            className: 'sa-block-count-window',
+            className: blockCountStyles['sa-block-count-window'],
             onClose: () => {
                 analysisWindow = null;
                 analysisRoot = null;

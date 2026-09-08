@@ -19,7 +19,7 @@
 }
 
 .summary span {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 12px;
 }
@@ -146,6 +146,6 @@
     .playtime {
         width: 100%;
         align-items: flex-start;
-        padding-left: 94px;
+        padding-inline-start: 94px;
     }
 }

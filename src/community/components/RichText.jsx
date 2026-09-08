@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api, {projectUrl} from '../api';
@@ -110,8 +111,9 @@ export const markdownLink = value => {
 };
 
 const InternalLink = ({route, label}) => {
+    const {text: communityText} = useCommunityText();
     if (label) return <Link className={styles.internalLink} to={route}>{label}</Link>;
-    if (route === '/') return <Link className={styles.internalLink} to="/">MistWarp</Link>;
+    if (route === '/') return <Link className={styles.internalLink} to="/">{communityText('MistWarp')}</Link>;
     const project = route.match(/^\/project\/([A-Za-z0-9]+)\/?$/);
     if (project) return <ProjectLink id={project[1]} />;
     const space = route.match(/^\/spaces\/([A-Za-z0-9_-]+)\/?$/);

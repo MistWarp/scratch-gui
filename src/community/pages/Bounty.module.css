@@ -154,7 +154,7 @@
 
 .message header button {
     display: grid;
-    margin-left: auto;
+    margin-inline-start: auto;
     padding: 5px;
     border: 0;
     background: none;
@@ -201,7 +201,7 @@
 }
 
 .composer footer span:first-child {
-    margin-right: auto;
+    margin-inline-end: auto;
 }
 
 .workers {

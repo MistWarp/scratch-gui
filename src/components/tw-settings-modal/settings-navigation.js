@@ -1,18 +1,12 @@
 import {
-    AppWindow,
-    Blocks,
     Bug,
     GitBranch,
     Globe,
     History,
-    Image,
     Keyboard,
     Monitor,
-    PanelTop,
     Palette,
-    Pencil,
     Settings,
-    Type,
     Variable,
     Zap
 } from 'lucide-react';
@@ -49,41 +43,8 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
             items: [
                 {
                     id: 'appearance',
-                    label: intl.formatMessage({id: 'mw.settings.themeAppearance', defaultMessage: 'Appearance'}),
+                    label: intl.formatMessage({id: 'mw.settings.theme', defaultMessage: 'Theme'}),
                     icon: Palette
-                },
-                {
-                    id: 'blocks',
-                    label: intl.formatMessage({id: 'mw.settings.themeBlocks', defaultMessage: 'Blocks'}),
-                    icon: Blocks
-                },
-                {
-                    id: 'wallpaper',
-                    label: intl.formatMessage({id: 'mw.settings.themeWallpaper', defaultMessage: 'Wallpaper'}),
-                    icon: Image
-                },
-                {
-                    id: 'fonts',
-                    label: intl.formatMessage({id: 'mw.settings.themeFonts', defaultMessage: 'Fonts'}),
-                    icon: Type
-                },
-                {
-                    id: 'editor',
-                    label: intl.formatMessage({id: 'mw.settings.themeEditor', defaultMessage: 'Editor'}),
-                    icon: Pencil
-                },
-                {
-                    id: 'menuBar',
-                    label: intl.formatMessage({id: 'mw.settings.themeMenuBar', defaultMessage: 'Menu bar'}),
-                    icon: PanelTop
-                },
-                {
-                    id: 'loadingScreen',
-                    label: intl.formatMessage({
-                        id: 'mw.settings.themeLoadingScreen',
-                        defaultMessage: 'Loading screen'
-                    }),
-                    icon: AppWindow
                 }
             ]
         },

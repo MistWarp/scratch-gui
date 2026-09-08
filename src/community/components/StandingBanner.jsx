@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import {ShieldAlert, ExternalLink} from 'lucide-react';
@@ -10,6 +11,7 @@ const MESSAGES = {
 };
 
 const StandingBanner = () => {
+    const {text: communityText} = useCommunityText();
     const {user, banMessage, dismissBan, signInError, dismissSignInError} = useUser();
     if (banMessage) {
         return (
@@ -25,14 +27,13 @@ const StandingBanner = () => {
                     rel="noreferrer"
                     className={styles.link}
                     style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-                >
-                    View on rotur.dev <ExternalLink size={12} />
+                >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
                 </a>
                 <button
                     type="button"
                     className={styles.link}
                     onClick={dismissBan}
-                >Dismiss</button>
+                >{communityText('Dismiss')}</button>
             </div>
         );
     }
@@ -47,10 +48,9 @@ const StandingBanner = () => {
                     rel="noreferrer"
                     className={styles.link}
                     style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-                >
-                    View on rotur.dev <ExternalLink size={12} />
+                >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
                 </a>
-                <button type="button" className={styles.link} onClick={dismissSignInError}>Dismiss</button>
+                <button type="button" className={styles.link} onClick={dismissSignInError}>{communityText('Dismiss')}</button>
             </div>
         );
     }
@@ -74,13 +74,12 @@ const StandingBanner = () => {
                 rel="noreferrer"
                 className={styles.link}
                 style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-            >
-                View on rotur.dev <ExternalLink size={12} />
+            >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
             </a>
             <Link
                 to="/notifications"
                 className={styles.link}
-            >See details</Link>
+            >{communityText('See details')}</Link>
         </div>
     );
 };

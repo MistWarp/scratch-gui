@@ -76,7 +76,7 @@
 .details {
     display: grid;
     min-width: 0;
-    margin-left: 12px;
+    margin-inline-start: 12px;
 }
 
 .details strong,
@@ -174,7 +174,7 @@
     .playtime {
         grid-column: 1;
         justify-items: start;
-        padding-left: 94px;
+        padding-inline-start: 94px;
     }
 
     .public,
@@ -195,6 +195,6 @@
     }
 
     .playtime {
-        padding-left: 80px;
+        padding-inline-start: 80px;
     }
 }

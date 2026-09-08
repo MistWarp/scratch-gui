@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,8 +14,9 @@ const ITEMS = [
     {key: 'themes', label: 'Themes', to: '/themes'}
 ];
 
-const ExploreNav = ({active}) => (
-    <nav className={styles.nav} aria-label="Explore sections">
+const ExploreNav = ({active}) => {
+    const {text: communityText} = useCommunityText();
+    return (<nav className={styles.nav} aria-label={communityText('Explore sections')}>
         {ITEMS.map(item => (
             <Link
                 aria-current={active === item.key ? 'page' : null}
@@ -22,11 +24,11 @@ const ExploreNav = ({active}) => (
                 key={item.key}
                 to={item.to}
             >
-                {item.label}
+                {communityText(item.label)}
             </Link>
         ))}
-    </nav>
-);
+    </nav>);
+};
 
 ExploreNav.propTypes = {active: PropTypes.oneOf(ITEMS.map(item => item.key)).isRequired};
 

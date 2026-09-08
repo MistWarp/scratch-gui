@@ -1,6 +1,6 @@
-import './public-path';
 import '../lib/utils/tw-polyfill';
-import '../lib/normalize.css';
+import normalizeStyles from '../lib/normalize.module.css';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 
+document.documentElement.classList.add(normalizeStyles.root);
 initSiteErrorReporting();

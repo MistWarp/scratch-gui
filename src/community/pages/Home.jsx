@@ -37,16 +37,18 @@ const describeActivity = item => {
     }
 };
 
-const SectionHead = ({icon: Icon, title, link, linkLabel}) => (
-    <div className={styles.sectionHead}>
+const SectionHead = ({icon: Icon, title, link, linkLabel}) => {
+    const {text: communityText} = useCommunityIntl();
+    return (<div className={styles.sectionHead}>
         <h2><Icon size={19} />{title}</h2>
-        {link ? <Link to={link}>{linkLabel || 'See all'}</Link> : null}
-    </div>
-);
+        {link ? <Link to={link}>{linkLabel || communityText('See all')}</Link> : null}
+    </div>);
+};
 
 const PanelLoading = () => <div className={styles.feedScroll}>{[0, 1].map(i => <div key={i} className={styles.skeleton} />)}</div>;
 
 const NewsSection = () => {
+    const {text: communityText} = useCommunityIntl();
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -64,16 +66,17 @@ const NewsSection = () => {
     }, [attempt]);
     return (
         <section className={styles.feedBox}>
-            <SectionHead icon={Megaphone} title="News" link="/news" linkLabel="All updates" />
+            <SectionHead icon={Megaphone} title={communityText('News')} link="/news" linkLabel={communityText('All updates')} />
             {!items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>Couldn&apos;t load news. <Button onClick={load}>Try again</Button></div> : null}
-            {items && !items.length ? <div className={styles.empty}>No updates yet.</div> : null}
+            {failed ? <div className={styles.empty}>{communityText("Couldn't load news. ")}<Button onClick={load}>{communityText('Try again')}</Button></div> : null}
+            {items && !items.length ? <div className={styles.empty}>{communityText('No updates yet.')}</div> : null}
             {items && items.length ? <div className={`${styles.newsList} ${styles.feedScroll}`}>{items.map(item => <NewsItem compact key={item.id} item={item} onChanged={load} />)}</div> : null}
         </section>
     );
 };
 
 const FriendsSection = ({user, login}) => {
+    const {text: communityText} = useCommunityIntl();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
@@ -105,11 +108,11 @@ const FriendsSection = ({user, login}) => {
     }, [attempt, viewerName]);
     return (
         <section className={styles.feedBox}>
-            <SectionHead icon={Users} title="From people you follow" />
-            {!user ? <div className={styles.empty}>Sign in to see projects, reviews, and activity from people you follow. <button type="button" onClick={login}>Sign in with Rotur</button></div> : null}
+            <SectionHead icon={Users} title={communityText('From people you follow')} />
+            {!user ? <div className={styles.empty}>{communityText('Sign in to see projects, reviews, and activity from people you follow. ')}<button type="button" onClick={login}>{communityText('Sign in with Rotur')}</button></div> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>Couldn&apos;t load activity. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
-            {items && !items.length && user ? <div className={styles.empty}>No recent activity yet. <Link to="/explore">Find a project you like and follow its creator.</Link></div> : null}
+            {failed ? <div className={styles.empty}>{communityText("Couldn't load activity. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
+            {items && !items.length && user ? <div className={styles.empty}>{communityText('No recent activity yet. ')}<Link to="/explore">{communityText('Find a project you like and follow its creator.')}</Link></div> : null}
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
                     {items.slice(0, 4).map((item, index) => {
@@ -126,8 +129,7 @@ const FriendsSection = ({user, login}) => {
                                         {isPost ? item.user : item.actor}
                                     </Link>{' '}
                                     {isPost ? (
-                                        <Link to={postUrl(item.id)}>
-                                            posted: {item.content || 'View post'}
+                                        <Link to={postUrl(item.id)}>{communityText('posted: ')}{item.content || communityText('View post')}
                                         </Link>
                                     ) : item.projectId ? (
                                         <Link to={projectUrl(item.projectId)}>{describeActivity(item)}</Link>
@@ -144,6 +146,7 @@ const FriendsSection = ({user, login}) => {
 };
 
 const RoadmapSection = ({viewerName}) => {
+    const {text: communityText} = useCommunityIntl();
     const [ideas, setIdeas] = useState(null);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -161,16 +164,16 @@ const RoadmapSection = ({viewerName}) => {
     const activeIdeas = ideas ? ideas.filter(idea => roadmapStatusMatches(idea.status, '')) : null;
     return (
         <section className={styles.feedBox}>
-            <SectionHead icon={Lightbulb} title="Roadmap" link="/roadmap" linkLabel="Suggest and vote" />
+            <SectionHead icon={Lightbulb} title={communityText('Roadmap')} link="/roadmap" linkLabel={communityText('Suggest and vote')} />
             {!ideas && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>Couldn&apos;t load roadmap suggestions. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
-            {ideas && !ideas.length ? <div className={styles.empty}>No suggestions yet. <Link to="/roadmap">Add the first one</Link></div> : null}
-            {ideas && ideas.length && !activeIdeas.length ? <div className={styles.empty}>No active suggestions. <Link to="/roadmap">View the roadmap</Link></div> : null}
+            {failed ? <div className={styles.empty}>{communityText("Couldn't load roadmap suggestions. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
+            {ideas && !ideas.length ? <div className={styles.empty}>{communityText('No suggestions yet. ')}<Link to="/roadmap">{communityText('Add the first one')}</Link></div> : null}
+            {ideas && ideas.length && !activeIdeas.length ? <div className={styles.empty}>{communityText('No active suggestions. ')}<Link to="/roadmap">{communityText('View the roadmap')}</Link></div> : null}
             {activeIdeas && activeIdeas.length ? (
                 <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
                     {activeIdeas.slice(0, 4).map(idea => (
                         <article key={idea._id} className={styles.roadmapItem}>
-                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={`Open ${idea.title}`} />
+                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={communityText("Open {value1}", {value1: idea.title})} />
                             <ReactionButtons
                                 variant="vertical"
                                 heartKey="like"
@@ -183,7 +186,7 @@ const RoadmapSection = ({viewerName}) => {
                             />
                             <div className={styles.roadmapBody}>
                                 <div className={styles.roadmapLabels}>
-                                    {idea.kind === 'bug' ? <span><Bug size={10} /> Bug</span> : null}
+                                    {idea.kind === 'bug' ? <span><Bug size={10} />{communityText(' Bug')}</span> : null}
                                     <span>{idea.category}</span>
                                     <span className={styles[`roadmapStatus${idea.status}`]}>{ROADMAP_STATUS_LABELS[idea.status] || idea.status}</span>
                                 </div>
@@ -253,6 +256,7 @@ const notificationLink = item => {
 };
 
 const NotificationsSection = ({user, login}) => {
+    const {text: communityText} = useCommunityIntl();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
     const [failed, setFailed] = useState(false);
@@ -282,15 +286,14 @@ const NotificationsSection = ({user, login}) => {
         .filter(item => preferences[categoryForNotification(item.type)] !== false);
     return (
         <section className={styles.feedBox}>
-            <SectionHead icon={Bell} title="Recent notifications" link={user ? '/notifications' : null} linkLabel="See all" />
-            {!user ? <div className={styles.empty}>Sign in to see your notifications. <button type="button" onClick={login}>Sign in with Rotur</button></div> : null}
+            <SectionHead icon={Bell} title={communityText('Recent notifications')} link={user ? '/notifications' : null} linkLabel={communityText('See all')} />
+            {!user ? <div className={styles.empty}>{communityText('Sign in to see your notifications. ')}<button type="button" onClick={login}>{communityText('Sign in with Rotur')}</button></div> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>Couldn&apos;t load notifications. <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : null}
-            {items && !items.length && user ? <div className={styles.empty}>Nothing new yet.</div> : null}
+            {failed ? <div className={styles.empty}>{communityText("Couldn't load notifications. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
+            {items && !items.length && user ? <div className={styles.empty}>{communityText('Nothing new yet.')}</div> : null}
             {items && items.length && !visibleItems.length ? (
-                <div className={styles.empty}>
-                    Your notification preferences hide all recent activity.{' '}
-                    <Link to="/settings?section=notifications">Change preferences</Link>
+                <div className={styles.empty}>{communityText('Your notification preferences hide all recent activity.')}{' '}
+                    <Link to="/settings?section=notifications">{communityText('Change preferences')}</Link>
                 </div>
             ) : null}
             {visibleItems.length ? (
@@ -319,6 +322,7 @@ const NotificationsSection = ({user, login}) => {
 };
 
 const Home = () => {
+    const {text: communityText} = useCommunityIntl();
     const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
@@ -330,22 +334,22 @@ const Home = () => {
     }, []);
     return (
         <main className={styles.page}>
-            {loading ? <p role="status">Loading your workspace…</p> : user ?
+            {loading ? <p role="status">{communityText('Loading your workspace…')}</p> : user ?
                 <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : (
                     <section className={styles.hero}>
                         <div className={styles.heroText}>
                             <h1>{t('home.title')}</h1>
                             <p>{t('home.lead')}</p>
                             <div className={styles.heroActions}>
-                                <a className={styles.primaryButton} href="#starters">Try a starter</a>
+                                <a className={styles.primaryButton} href="#starters">{communityText('Try a starter')}</a>
                                 <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link>
                             </div>
                         </div>
-                        <div className={styles.heroDemo} aria-label="Build together, keep your progress">
-                            <span>Make your first version</span>
-                            <span>Invite someone to improve it</span>
-                            <span>Keep earlier versions to return to</span>
-                            <a href={editorUrl({starter: 'clicker'})}>Start with a working clicker →</a>
+                        <div className={styles.heroDemo} aria-label={communityText('Build together, keep your progress')}>
+                            <span>{communityText('Make your first version')}</span>
+                            <span>{communityText('Invite someone to improve it')}</span>
+                            <span>{communityText('Keep earlier versions to return to')}</span>
+                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker →')}</a>
                         </div>
                     </section>
                 )}
@@ -357,7 +361,7 @@ const Home = () => {
             </div> : null}
             <ActiveChallenge />
             <ProjectFeedRow
-                title="Looking for feedback"
+                title={communityText('Looking for feedback')}
                 icon={MessageCircle}
                 sort="recent"
                 tag="feedback"
@@ -365,14 +369,14 @@ const Home = () => {
                 hideEmpty
             />
             <ProjectFeedRow
-                title="Trending"
+                title={communityText('Trending')}
                 icon={Sparkles}
                 sort="trending"
                 link="/explore?sort=trending"
             />
 
             <ProjectFeedRow
-                title="Freshly shared"
+                title={communityText('Freshly shared')}
                 icon={Clock}
                 sort="recent"
                 link="/explore?sort=recent"
@@ -415,15 +419,16 @@ const ProjectFeedRow = ({title, icon, sort, link, tag = '', hideEmpty = false}) 
     );
 };
 
-const ProjectRow = ({title, icon: Icon, projects, link, onRetry}) => (
-    <section className={styles.projectSection}>
+const ProjectRow = ({title, icon: Icon, projects, link, onRetry}) => {
+    const {text: communityText} = useCommunityIntl();
+    return (<section className={styles.projectSection}>
         <SectionHead icon={Icon} title={title} link={link} />
         {projects === null ? <div className={styles.projectGrid}>{[0, 1, 2, 3].map(i => <div key={i} className={styles.projectSkeleton} />)}</div> : null}
-        {projects === false ? <div className={styles.empty}>Couldn&apos;t load projects. <Button onClick={onRetry}>Try again</Button></div> : null}
-        {Array.isArray(projects) && !projects.length ? <div className={styles.empty}>No shared projects yet.</div> : null}
+        {projects === false ? <div className={styles.empty}>{communityText("Couldn't load projects. ")}<Button onClick={onRetry}>{communityText('Try again')}</Button></div> : null}
+        {Array.isArray(projects) && !projects.length ? <div className={styles.empty}>{communityText('No shared projects yet.')}</div> : null}
         {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
-    </section>
-);
+    </section>);
+};
 
 export {FriendsSection, NewsSection, NotificationsSection, ProjectFeedRow, RoadmapSection};
 export default Home;

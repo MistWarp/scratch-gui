@@ -105,7 +105,7 @@
     background: var(--bg-raised);
     color: var(--mw-text);
     padding: 10px 11px;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
 }
 

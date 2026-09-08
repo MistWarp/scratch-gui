@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -21,6 +22,7 @@ import styles from './SocialPost.module.css';
 const count = value => (Array.isArray(value) ? value.length : Number(value) || 0);
 
 const Poll = ({postId, poll, onChange}) => {
+    const {text: communityText} = useCommunityText();
     const [busy, setBusy] = useState(false);
     const voted = Number.isInteger(poll.voted) ? poll.voted : null;
     const total = Number(poll.total) || 0;
@@ -50,7 +52,7 @@ const Poll = ({postId, poll, onChange}) => {
                     </button>
                 );
             })}
-            <small>{total} {total === 1 ? 'vote' : 'votes'}</small>
+            <small>{total} {total === 1 ? communityText('vote') : communityText('votes')}</small>
         </div>
     );
 };
@@ -62,6 +64,7 @@ Poll.propTypes = {
 };
 
 const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const navigate = useNavigate();
     const [post, setPost] = useState(initialPost);
@@ -175,7 +178,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
             await navigator.clipboard.writeText(`${window.location.origin}${postUrl(post.id)}`);
             setNotice('Link copied.');
         } catch (_) {
-            setError('Could not copy the link.');
+            setError(communityText("Could not copy the link."));
         }
     };
 
@@ -184,10 +187,10 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
             {confirmDelete ? (
                 <Modal
                     icon={Trash2}
-                    title="Delete post?"
+                    title={communityText('Delete post?')}
                     onClose={() => setConfirmDelete(false)}
                     actions={<>
-                        <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                        <Button onClick={() => setConfirmDelete(false)}>{communityText('Cancel')}</Button>
                         <Button
                             variant="danger" busy={busy === 'delete'} onClick={() => run('delete', async () => {
                                 await rotur.deletePost(post.id);
@@ -195,17 +198,17 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                                 if (onDelete) onDelete(post.id);
                                 else navigate(`/users/${post.user}`);
                             })}
-                        >Delete post</Button>
+                        >{communityText('Delete post')}</Button>
                     </>}
-                ><p>This permanently deletes the post.</p></Modal>
+                ><p>{communityText('This permanently deletes the post.')}</p></Modal>
             ) : null}
             {reportTarget ? (
                 <Modal
                     icon={Flag}
-                    title={`Report ${reportTarget.type}`}
+                    title={communityText("Report {value1}", {value1: reportTarget.type})}
                     onClose={() => setReportTarget(null)}
                     actions={<>
-                        <Button onClick={() => setReportTarget(null)}>Cancel</Button>
+                        <Button onClick={() => setReportTarget(null)}>{communityText('Cancel')}</Button>
                         <Button
                             variant="danger" disabled={!reportReason.trim()} busy={busy === 'report'} onClick={() => (
                                 run('report', async () => {
@@ -219,14 +222,14 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                                     setNotice('Report submitted.');
                                 })
                             )}
-                        >Submit report</Button>
+                        >{communityText('Submit report')}</Button>
                     </>}
                 >
                     <textarea
                         className={styles.reportInput}
                         value={reportReason}
                         maxLength={1000}
-                        placeholder={`What is wrong with this ${reportTarget.type}?`}
+                        placeholder={communityText("What is wrong with this {value1}?", {value1: reportTarget.type})}
                         onChange={event => setReportReason(event.target.value)}
                     />
                 </Modal>
@@ -235,9 +238,9 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
             <div className={styles.body}>
                 <header>
                     <UserLink username={post.user}><strong>{post.user}</strong></UserLink>
-                    {post.pinned ? <span className={styles.tag}><Pin size={11} /> Pinned</span> : null}
+                    {post.pinned ? <span className={styles.tag}><Pin size={11} />{communityText(' Pinned')}</span> : null}
                     <time>{timeAgo(post.timestamp)}</time>
-                    {post.edited_at ? <span className={styles.edited}>edited</span> : null}
+                    {post.edited_at ? <span className={styles.edited}>{communityText('edited')}</span> : null}
                 </header>
                 {editing ? (
                     <form className={styles.editForm} onSubmit={saveEdit}>
@@ -247,8 +250,8 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                             onChange={event => setEditText(event.target.value)}
                         />
                         <div>
-                            <Button onClick={() => setEditing(false)}>Cancel</Button>
-                            <Button type="submit" variant="primary" busy={busy === 'edit'}>Save</Button>
+                            <Button onClick={() => setEditing(false)}>{communityText('Cancel')}</Button>
+                            <Button type="submit" variant="primary" busy={busy === 'edit'}>{communityText('Save')}</Button>
                         </div>
                     </form>
                 ) : <div className={styles.content}><RichText text={post.content || ''} /></div>}
@@ -264,7 +267,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                     <div className={styles.quoted}><SocialPost initialPost={post.original_post} /></div>
                 ) : null}
                 <div className={styles.via}>
-                    {post.os ? `Posted from ${post.os}` : null}
+                    {post.os ? communityText("Posted from {value1}", {value1: post.os}) : null}
                     {post.views ? (
                         `${post.os ? ' · ' : ''}${post.views} ${post.views === 1 ? 'view' : 'views'}`
                     ) : null}
@@ -273,7 +276,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                     <Button
                         onClick={toggleLike}
                         disabled={Boolean(busy)}
-                        aria-label={liked ? 'Unlike post' : 'Like post'}
+                        aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
                     >
                         <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> {count(likes)}
                     </Button>
@@ -285,16 +288,16 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                             await rotur.repost(post.id);
                             setNotice('Reposted to your profile.');
                         })}
-                    ><Repeat2 size={16} /> {detail ? 'Repost' : null}</Button> : null}
+                    ><Repeat2 size={16} /> {detail ? communityText('Repost') : null}</Button> : null}
                     <Button disabled={Boolean(busy)} onClick={toggleSaved}>
                         <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-                        {detail ? (saved ? 'Saved' : 'Save') : null}
+                        {detail ? (saved ? communityText('Saved') : communityText('Save')) : null}
                     </Button>
-                    {detail ? <Button onClick={copyLink}><Copy size={16} /> Copy link</Button> : null}
+                    {detail ? <Button onClick={copyLink}><Copy size={16} />{communityText(' Copy link')}</Button> : null}
                 </div>
                 <div className={styles.manage}>
                     {mine && !post.is_repost ? (
-                        <Button onClick={() => setEditing(true)}><Edit3 size={15} /> Edit</Button>
+                        <Button onClick={() => setEditing(true)}><Edit3 size={15} />{communityText(' Edit')}</Button>
                     ) : null}
                     {mine ? <Button
                         onClick={() => run('pin', async () => {
@@ -302,16 +305,14 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                             else await rotur.pinPost(post.id);
                             update({...post, pinned: !post.pinned});
                         })}
-                    ><Pin size={15} /> {post.pinned ? 'Unpin' : 'Pin'}</Button> : null}
+                    ><Pin size={15} /> {post.pinned ? communityText('Unpin') : communityText('Pin')}</Button> : null}
                     {mine ? (
                         <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-                            <Trash2 size={15} /> Delete
-                        </Button>
+                            <Trash2 size={15} />{communityText(' Delete')}</Button>
                     ) : null}
                     {!mine ? (
                         <Button onClick={() => setReportTarget({type: 'post', id: post.id})}>
-                            <Flag size={15} /> Report
-                        </Button>
+                            <Flag size={15} />{communityText(' Report')}</Button>
                     ) : null}
                     {!mine && user ? <Button
                         onClick={() => run('block', async () => {
@@ -321,7 +322,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                             setNotice(blocked ? `Unblocked ${post.user}.` : `Blocked ${post.user}.`);
                         })}
                     >
-                        <ShieldOff size={15} /> {blocked ? 'Unblock' : 'Block'} {post.user}
+                        <ShieldOff size={15} /> {blocked ? communityText('Unblock') : communityText('Block')} {post.user}
                     </Button> : null}
                 </div>
                 {error ? <p className={styles.error} role="alert">{error}</p> : null}
@@ -334,7 +335,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                                 <input
                                     value={reply}
                                     maxLength={1000}
-                                    placeholder="Post your reply"
+                                    placeholder={communityText('Post your reply')}
                                     onChange={event => setReply(event.target.value)}
                                 />
                                 <Button
@@ -342,9 +343,9 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                                     variant="primary"
                                     busy={busy === 'reply'}
                                     disabled={!reply.trim()}
-                                >Reply</Button>
+                                >{communityText('Reply')}</Button>
                             </form>
-                        ) : <Button onClick={login}>Sign in to reply</Button>}
+                        ) : <Button onClick={login}>{communityText('Sign in to reply')}</Button>}
                         {replies.map(item => (
                             <div className={styles.reply} key={item.id}>
                                 <UserLink username={item.user}>
@@ -360,13 +361,13 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                                 {user && item.user.toLowerCase() !== user.username.toLowerCase() ? (
                                     <button
                                         type="button"
-                                        aria-label="Report reply"
+                                        aria-label={communityText('Report reply')}
                                         onClick={() => setReportTarget({type: 'reply', id: item.id})}
                                     ><Flag size={14} /></button>
                                 ) : null}
                             </div>
                         ))}
-                        {!replies.length ? <p className={styles.empty}>No replies yet.</p> : null}
+                        {!replies.length ? <p className={styles.empty}>{communityText('No replies yet.')}</p> : null}
                     </div>
                 ) : null}
             </div>

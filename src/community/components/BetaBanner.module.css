@@ -30,7 +30,7 @@
     border: none;
     color: var(--text-dim);
     padding: 2px;
-    margin-left: 6px;
+    margin-inline-start: 6px;
 }
 
 .dismiss:hover {

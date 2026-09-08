@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Code2, Eye, FileCode2, FileQuestion} from 'lucide-react';
@@ -260,6 +261,7 @@ const formatSize = value => {
 };
 
 const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) => {
+    const {text: communityText} = useCommunityText();
     const [snapshot, setSnapshot] = useState(null);
     const [error, setError] = useState('');
     const [selectedPath, setSelectedPath] = useState('');
@@ -345,11 +347,11 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
     };
 
     if (!canViewProjectSource(project)) {
-        return <div className={styles.state}>You do not have permission to view files for this project.</div>;
+        return <div className={styles.state}>{communityText('You do not have permission to view files for this project.')}</div>;
     }
     if (error) return <div className={styles.state}>{error}</div>;
-    if (!snapshot) return <div className={styles.state}>Loading project files…</div>;
-    if (!files.length) return <div className={styles.state}>This project has no files.</div>;
+    if (!snapshot) return <div className={styles.state}>{communityText('Loading project files…')}</div>;
+    if (!files.length) return <div className={styles.state}>{communityText('This project has no files.')}</div>;
 
     return (
         <section className={`${styles.browser} ${bounded ? styles.browserBounded : ''}`}>
@@ -368,23 +370,23 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                                         type="button"
                                         className={viewMode === 'preview' ? styles.viewModeActive : styles.viewMode}
                                         onClick={() => setViewMode('preview')}
-                                    ><Eye size={13} /> Preview</button>
+                                    ><Eye size={13} />{communityText(' Preview')}</button>
                                     <button
                                         type="button"
                                         className={viewMode === 'code' ? styles.viewModeActive : styles.viewMode}
                                         onClick={() => setViewMode('code')}
-                                    ><Code2 size={13} /> Source</button>
+                                    ><Code2 size={13} />{communityText(' Source')}</button>
                                 </div>
                             ) : null}
                         </header>
                         {contentLoading ? (
-                            <div className={styles.state}>Loading file…</div>
+                            <div className={styles.state}>{communityText('Loading file…')}</div>
                         ) : contentError ? (
                             <div className={styles.state}>{contentError}</div>
                         ) : selected.media && viewMode === 'preview' && mediaUrl ? (
                             <div className={styles.mediaPreview}>
                                 {selected.mediaType.startsWith('image/') ? (
-                                    <img src={mediaUrl} alt={`Preview of ${selected.path}`} />
+                                    <img src={mediaUrl} alt={communityText("Preview of {value1}", {value1: selected.path})} />
                                 ) : selected.mediaType.startsWith('audio/') ? (
                                     <audio controls src={mediaUrl}><track kind="captions" /></audio>
                                 ) : (
@@ -394,15 +396,15 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                         ) : selected.binary ? (
                             <div className={styles.binaryState}>
                                 <FileQuestion size={30} />
-                                <strong>Binary file</strong>
+                                <strong>{communityText('Binary file')}</strong>
                                 <span>
                                     {selected.mediaType && !selected.media ?
-                                        `${formatSize(selected.size)} · This file is too large to preview.` :
-                                        `${formatSize(selected.size)} · Preview is not available.`}
+                                        communityText("{value1} · This file is too large to preview.", {value1: formatSize(selected.size)}) :
+                                        communityText("{value1} · Preview is not available.", {value1: formatSize(selected.size)})}
                                 </span>
                             </div>
                         ) : (
-                            <div className={styles.code} role="region" aria-label={`${selected.path} contents`}>
+                            <div className={styles.code} role="region" aria-label={communityText("{value1} contents", {value1: selected.path})}>
                                 {lines.map((line, index) => (
                                     <div className={styles.codeLine} key={index}>
                                         <span>{index + 1}</span><code>{line.length ? line.map((token, tokenIndex) => (
@@ -416,7 +418,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                             </div>
                         )}
                     </React.Fragment>
-                ) : <div className={styles.state}>Select a file to read it.</div>}
+                ) : <div className={styles.state}>{communityText('Select a file to read it.')}</div>}
             </article>
         </section>
     );

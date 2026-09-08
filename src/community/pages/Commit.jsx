@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
@@ -44,6 +45,7 @@ export const commitMutationSha = (result, fallback) => (
 );
 
 const Commit = () => {
+    const {text: communityText} = useCommunityText();
     const {slug, sha} = useParams();
     const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user} = useUser();
@@ -242,8 +244,8 @@ const Commit = () => {
     if (error) {
         return (
             <main className={styles.page}>
-                <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} /> Back to project</Link>
-                <div className={styles.state}><p>{error}</p><Button onClick={load}>Try again</Button></div>
+                <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} />{communityText(' Back to project')}</Link>
+                <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div>
             </main>
         );
     }
@@ -253,7 +255,7 @@ const Commit = () => {
                 <main className={styles.page}>
                     <section className={styles.loadingCard} aria-live="polite" aria-busy="true">
                         <div className={styles.loadingCopy}>
-                            <h1>Finding project…</h1>
+                            <h1>{communityText('Finding project…')}</h1>
                         </div>
                     </section>
                 </main>
@@ -268,7 +270,7 @@ const Commit = () => {
                     <div
                         className={styles.loadingTrack}
                         role="progressbar"
-                        aria-label="Commit loading progress"
+                        aria-label={communityText('Commit loading progress')}
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow={loadProgress.progress}
@@ -287,24 +289,22 @@ const Commit = () => {
             <section className={styles.header}>
                 <div className={styles.title}>
                     <GitCommitHorizontal size={20} />
-                    <h1>{entry.message || 'Untitled commit'}</h1>
+                    <h1>{entry.message || communityText('Untitled commit')}</h1>
                     {canManageCommit(project) ? (
                         <Button className={styles.manageButton} onClick={openManage}>
-                            <Settings2 size={14} /> Manage
-                        </Button>
+                            <Settings2 size={14} />{communityText(' Manage')}</Button>
                     ) : null}
                 </div>
                 <div className={styles.meta}>
                     <UserLink username={entry.authorName}><Avatar username={entry.authorName} size={26} /></UserLink>
                     <UserLink username={entry.authorName}><strong>{entry.authorName}</strong></UserLink>
-                    <span>committed {formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))}</span>
+                    <span>{communityText('committed ')}{formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))}</span>
                     {normalizeCommitCoAuthors(entry).length ? (
-                        <span className={styles.credited}>
-                            co-authored by {normalizeCommitCoAuthors(entry).map((username, index) => (
-                                <React.Fragment key={username}>
-                                    {index ? ', ' : ''}<UserLink username={username}>{username}</UserLink>
-                                </React.Fragment>
-                            ))}
+                        <span className={styles.credited}>{communityText('co-authored by ')}{normalizeCommitCoAuthors(entry).map((username, index) => (
+                            <React.Fragment key={username}>
+                                {index ? ', ' : ''}<UserLink username={username}>{username}</UserLink>
+                            </React.Fragment>
+                        ))}
                         </span>
                     ) : null}
                     <code>{entry.oid}</code>
@@ -312,7 +312,7 @@ const Commit = () => {
             </section>
             <UnderlineTabs
                 items={[
-                    {key: 'changes', label: <>Changes <b>{files.length}</b></>},
+                    {key: 'changes', label: <>{communityText('Changes ')}<b>{files.length}</b></>},
                     {key: 'files', label: 'Files at this commit'}
                 ]}
                 value={fileView ? 'files' : 'changes'}
@@ -338,18 +338,18 @@ const Commit = () => {
                     />
                     <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
                 </div>
-            ) : <p className={styles.rootCommit}>No files changed in this commit.</p>}
+            ) : <p className={styles.rootCommit}>{communityText('No files changed in this commit.')}</p>}
             {manageOpen ? (
                 <Modal
                     className={styles.manageModal}
-                    title="Commit co-authors"
+                    title={communityText('Commit co-authors')}
                     icon={Settings2}
                     dismissDisabled={Boolean(manageBusy)}
                     onClose={() => setManageOpen(false)}
                 >
                     <section className={styles.manageSection}>
                         <div className={styles.manageSectionHead}>
-                            <div><strong>Co-authors</strong><span>People credited alongside the commit author.</span></div>
+                            <div><strong>{communityText('Co-authors')}</strong><span>{communityText('People credited alongside the commit author.')}</span></div>
                         </div>
                         {normalizeCommitCoAuthors(entry).length ? (
                             <ul className={styles.coAuthors}>
@@ -359,7 +359,7 @@ const Commit = () => {
                                         <UserLink username={username}>{username}</UserLink>
                                         <button
                                             type="button"
-                                            aria-label={`Remove ${username}`}
+                                            aria-label={communityText("Remove {value1}", {value1: username})}
                                             disabled={Boolean(manageBusy)}
                                             onClick={() => updateCoAuthors(
                                                 normalizeCommitCoAuthors(entry).filter(item => item !== username)
@@ -368,11 +368,11 @@ const Commit = () => {
                                     </li>
                                 ))}
                             </ul>
-                        ) : <p className={styles.noCoAuthors}>No co-authors attached.</p>}
+                        ) : <p className={styles.noCoAuthors}>{communityText('No co-authors attached.')}</p>}
                         <form className={styles.addCollaborator} onSubmit={addCollaborator}>
                             <input
-                                aria-label="Rotur username"
-                                placeholder="Rotur username"
+                                aria-label={communityText('Rotur username')}
+                                placeholder={communityText('Rotur username')}
                                 value={collaboratorName}
                                 disabled={Boolean(manageBusy)}
                                 onChange={event => setCollaboratorName(event.target.value)}
@@ -380,9 +380,9 @@ const Commit = () => {
                             <Button
                                 type="submit"
                                 busy={manageBusy === 'coAuthors'}
-                                busyLabel="Saving…"
+                                busyLabel={communityText('Saving…')}
                                 disabled={Boolean(manageBusy) || !collaboratorName.trim()}
-                            ><Plus size={15} /> Add</Button>
+                            ><Plus size={15} />{communityText(' Add')}</Button>
                         </form>
                     </section>
                     {manageError ? <p className={styles.manageError}>{manageError}</p> : null}

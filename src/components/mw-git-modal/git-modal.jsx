@@ -782,18 +782,6 @@ class GitModalComponent extends React.Component {
                                     id="mw.git.branches.apply"
                                 />
                             </button>
-                            <button
-                                type="button"
-                                className={styles.button}
-                                disabled={this.props.busy}
-                                onClick={this.props.onResolveInEditor}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Resolve in editor"
-                                    description="Button that opens conflicts in the Fractch code editor"
-                                    id="mw.git.branches.resolveInEditor"
-                                />
-                            </button>
                         </Box>
                     )}
                 </Box>
@@ -1521,7 +1509,6 @@ GitModalComponent.propTypes = {
     commitMessage: PropTypes.string,
     newBranchName: PropTypes.string,
     mergeSourceBranch: PropTypes.string,
-    onResolveInEditor: PropTypes.func,
     mergeConflicts: PropTypes.arrayOf(PropTypes.string),
     mergeResolutions: PropTypes.object,
     canUndoCommit: PropTypes.bool,

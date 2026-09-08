@@ -1,5 +1,6 @@
 import log from '../lib/utils/log';
-import serviceWorker from '!!file-loader?name=sw.js!./service-worker.js';
+
+const serviceWorker = `${process.env.ROOT}sw.js`;
 
 let loaded = false;
 const actuallyLoadServiceWorker = () => {

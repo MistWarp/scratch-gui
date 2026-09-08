@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {parseFractch} from 'fractch/browser';
@@ -46,8 +47,9 @@ const firstImageAsset = (spriteName, files) => {
     return match ? match.path : '';
 };
 
-const SpriteRow = ({sprite, thumb, active, onSelect}) => (
-    <button
+const SpriteRow = ({sprite, thumb, active, onSelect}) => {
+    const {text: communityText} = useCommunityText();
+    return (<button
         type="button"
         className={active ? styles.rowActive : styles.row}
         aria-pressed={active}
@@ -60,12 +62,13 @@ const SpriteRow = ({sprite, thumb, active, onSelect}) => (
         )}
         <span className={styles.rowText}>
             <strong>{spriteLabel(sprite.name)}</strong>
-            <span>{sprite.files.length} changed file{sprite.files.length === 1 ? '' : 's'}</span>
+            <span>{sprite.files.length}{communityText(' changed file')}{sprite.files.length === 1 ? '' : communityText('s')}</span>
         </span>
-    </button>
-);
+    </button>);
+};
 
 const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect}) => {
+    const {text: communityText} = useCommunityText();
     const sprites = groupFilesBySprite(files).filter(sprite => sprite.name && sprite.name !== 'Stage');
     const [thumbs, setThumbs] = useState({});
     const urlsRef = useRef([]);
@@ -112,7 +115,7 @@ const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect}) => {
 
     if (!sprites.length) return null;
     return (
-        <aside className={styles.sidebar} aria-label="Changed sprites">
+        <aside className={styles.sidebar} aria-label={communityText('Changed sprites')}>
             {sprites.map(sprite => (
                 <SpriteRow
                     key={sprite.name || 'other'}

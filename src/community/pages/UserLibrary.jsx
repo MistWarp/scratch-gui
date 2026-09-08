@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {ArrowLeft, Gamepad2} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
@@ -8,6 +9,7 @@ import setPageMeta from '../page-meta.js';
 import styles from './UserLibrary.module.css';
 
 const UserLibrary = () => {
+    const {text: communityText} = useCommunityText();
     const {name} = useParams();
     const {user} = useUser();
     const self = Boolean(user && user.username.toLowerCase() === name.toLowerCase());
@@ -71,12 +73,12 @@ const UserLibrary = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={`/users/${name}`}><ArrowLeft size={15} /> Back to profile</Link>
+            <Link className={styles.back} to={`/users/${name}`}><ArrowLeft size={15} />{communityText(' Back to profile')}</Link>
             <header className={styles.head}>
                 <span className={styles.icon}><Gamepad2 size={24} /></span>
                 <div>
-                    <h1>{self ? 'Your game library' : `${name}'s game library`}</h1>
-                    <p>Games ranked by total playtime.</p>
+                    <h1>{self ? communityText('Your game library') : communityText("{value1}'s game library", {value1: name})}</h1>
+                    <p>{communityText('Games ranked by total playtime.')}</p>
                 </div>
             </header>
             <PlaytimeLibrary

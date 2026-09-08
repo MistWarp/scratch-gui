@@ -401,11 +401,13 @@ class Blocks extends React.Component {
             window.cancelAnimationFrame(this.workspaceVisibilityRaf);
             this.workspaceVisibilityRaf = window.requestAnimationFrame(() => {
                 this.workspaceVisibilityRaf = null;
-                if (this.workspace && !this.unmounted) {
+                if (this.workspace && !this.unmounted && this.props.isVisible) {
                     if (!localeChanged) {
                         this.workspace.refreshToolboxSelection_();
                     }
-                    this.workspace.resize();
+                    // Hidden tab panels can leave the SVG at zero size. Resize
+                    // the drawing surface as well as Blockly's internal layout.
+                    this.ScratchBlocks.svgResize(this.workspace);
                 }
             });
         } else {

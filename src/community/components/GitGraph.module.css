@@ -110,7 +110,7 @@
     position: relative;
     z-index: 2;
     pointer-events: auto;
-    margin-left: auto;
+    margin-inline-start: auto;
     padding: 2px 8px;
     border: 1px solid var(--border);
     border-radius: 999px;

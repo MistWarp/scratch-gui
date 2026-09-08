@@ -90,9 +90,9 @@
     .modal {
         max-width: none;
         max-height: calc(100dvh - 12px);
-        border-right: 0;
+        border-inline-end: 0;
         border-bottom: 0;
-        border-left: 0;
+        border-inline-start: 0;
         border-radius: 18px 18px 0 0;
     }
 

@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Blocks, Eye, EyeOff, Image, Layers, Move, Puzzle, Variable, Volume2} from 'lucide-react';
 import {classifyAssetFile, formatAssetSize} from '../asset-media.js';
@@ -100,8 +101,9 @@ const DiffLine = ({line}) => {
     );
 };
 
-export const OpenFileButton = ({file, onOpenFile}) => (
-    onOpenFile && file.status !== 'Deleted' ? (
+export const OpenFileButton = ({file, onOpenFile}) => {
+    const {text: communityText} = useCommunityText();
+    return (onOpenFile && file.status !== 'Deleted' ? (
         <button
             type="button"
             className={styles.openFile}
@@ -110,9 +112,9 @@ export const OpenFileButton = ({file, onOpenFile}) => (
                 event.stopPropagation();
                 onOpenFile(file.path);
             }}
-        >Open file</button>
-    ) : null
-);
+        >{communityText('Open file')}</button>
+    ) : null);
+};
 
 const FileSummary = ({file, additions, deletions, onOpenFile}) => (
     <React.Fragment>
@@ -132,14 +134,15 @@ const FileSummary = ({file, additions, deletions, onOpenFile}) => (
 );
 
 const AssetPane = ({label, side, onRetry}) => {
+    const {text: communityText} = useCommunityText();
     let body = null;
     if (side.status === 'loading') {
-        body = <p className={styles.assetState}>Loading {label.toLowerCase()} version…</p>;
+        body = <p className={styles.assetState}>{communityText('Loading ')}{label.toLowerCase()}{communityText(' version…')}</p>;
     } else if (side.status === 'error') {
         body = (
             <p className={styles.assetState}>
-                {side.message || 'Could not load this preview.'}
-                <button type="button" onClick={onRetry}>Try again</button>
+                {side.message || communityText('Could not load this preview.')}
+                <button type="button" onClick={onRetry}>{communityText('Try again')}</button>
             </p>
         );
     } else if (side.status === 'empty') {
@@ -147,7 +150,7 @@ const AssetPane = ({label, side, onRetry}) => {
     } else if (side.mediaType.startsWith('image/')) {
         body = (
             <div className={styles.assetPreview}>
-                <img src={side.url} alt={`${label} version preview`} />
+                <img src={side.url} alt={communityText("{value1} version preview", {value1: label})} />
             </div>
         );
     } else if (side.mediaType.startsWith('audio/')) {
@@ -163,7 +166,7 @@ const AssetPane = ({label, side, onRetry}) => {
             </div>
         );
     } else {
-        body = <p className={styles.assetState}>Preview is not available for this file.</p>;
+        body = <p className={styles.assetState}>{communityText('Preview is not available for this file.')}</p>;
     }
     return (
         <div className={styles.assetPane}>
@@ -259,6 +262,7 @@ const sideForStatus = (side, status) => {
 };
 
 export const AssetCompare = ({file, loadAsset}) => {
+    const {text: communityText} = useCommunityText();
     const [sides, setSides] = useState(() => ({
         old: sideForStatus('old', file.status),
         new: sideForStatus('new', file.status)
@@ -325,8 +329,8 @@ export const AssetCompare = ({file, loadAsset}) => {
     const retry = () => setAttempt(value => value + 1);
     return (
         <div className={styles.assetCompare}>
-            <AssetPane label="Before" side={sides.old} onRetry={retry} />
-            <AssetPane label="After" side={sides.new} onRetry={retry} />
+            <AssetPane label={communityText('Before')} side={sides.old} onRetry={retry} />
+            <AssetPane label={communityText('After')} side={sides.new} onRetry={retry} />
         </div>
     );
 };
@@ -364,6 +368,7 @@ const useExtensionMetas = summaries => {
 };
 
 const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null, fileTexts = {}}) => {
+    const {text: communityText} = useCommunityText();
     const files = useMemo(() => parseDiff(diff), [diff]);
     const [activeTab, setActiveTab] = useState(() => defaultTabForFiles(files));
     useEffect(() => {
@@ -407,10 +412,10 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
     }, [spriteFiles, fileTexts]);
 
     if (diff === null || typeof diff === 'undefined') {
-        return <p className={styles.empty}>Loading diff…</p>;
+        return <p className={styles.empty}>{communityText('Loading diff…')}</p>;
     }
     if (!diff || diff === 'No textual changes.') {
-        return <p className={styles.empty}>No changes.</p>;
+        return <p className={styles.empty}>{communityText('No changes.')}</p>;
     }
     if (!files.length) {
         return <p className={styles.empty}>{diff}</p>;
@@ -452,8 +457,8 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
         <div className={styles.diff}>
             <header className={styles.overview}>
                 <div className={styles.overviewTop}>
-                    <strong>{spriteFiles.length} {spriteFiles.length === 1 ? 'file' : 'files'} changed</strong>
-                    <div className={styles.diffTabs} role="tablist" aria-label="Change categories">
+                    <strong>{spriteFiles.length} {spriteFiles.length === 1 ? communityText('file') : communityText('files')}{communityText(' changed')}</strong>
+                    <div className={styles.diffTabs} role="tablist" aria-label={communityText('Change categories')}>
                         {CATEGORIES.map(category => (
                             <button
                                 key={category.key}
@@ -480,7 +485,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                         <section className={styles.spriteGroup} key={group.name || 'other'}>
                             <header className={styles.spriteHeading}>
                                 <strong>{spriteLabel(group.name)}</strong>
-                                <span>{group.files.length} changed file{group.files.length === 1 ? '' : 's'}</span>
+                                <span>{group.files.length}{communityText(' changed file')}{group.files.length === 1 ? '' : communityText('s')}</span>
                             </header>
                             {tabSummary ? (
                                 <SummarySections
@@ -490,7 +495,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                 />
                             ) : null}
                             {activeTab === 'code' && (blockScripts[group.name] || []).length ? (
-                                <section className={styles.blocksSection} aria-label="Changed scripts as blocks">
+                                <section className={styles.blocksSection} aria-label={communityText('Changed scripts as blocks')}>
                                     {blockScripts[group.name].slice(0, MAX_BLOCK_SCRIPTS).map(script => (
                                         <div className={styles.blockScript} key={script.key}>
                                             <span className={styles.blockDesc}>{script.desc}</span>
@@ -532,7 +537,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                             <div className={styles.fileHeader}>
                                                 <span className={styles.binaryDot} aria-hidden="true" />
                                                 <span className={styles.path}>{file.path}</span>
-                                                <span className={styles.status}>Asset changed</span>
+                                                <span className={styles.status}>{communityText('Asset changed')}</span>
                                                 <OpenFileButton file={file} onOpenFile={onOpenFile} />
                                             </div>
                                         </section>
@@ -562,7 +567,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                         <div className={styles.lines}>
                                             {filtered.lines.length ? filtered.lines.map((line, lineIndex) => (
                                                 <DiffLine key={lineIndex} line={line} />
-                                            )) : <p className={styles.noLines}>No line changes to show.</p>}
+                                            )) : <p className={styles.noLines}>{communityText('No line changes to show.')}</p>}
                                         </div>
                                     </details>
                                 );

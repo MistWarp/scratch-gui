@@ -5,7 +5,7 @@ const labels = defineMessages({
     'view': {defaultMessage: 'Settings', id: 'mw.settings.menuBar.item.settings'},
     'bookmarks': {defaultMessage: 'Bookmarks', id: 'mw.settings.menuBar.item.bookmarks'},
     'edit': {defaultMessage: 'Edit', id: 'mw.settings.menuBar.item.edit'},
-    'tools': {defaultMessage: 'Tools', id: 'mw.settings.menuBar.item.tools'},
+    'tools': {defaultMessage: 'Project', id: 'mw.settings.menuBar.item.project'},
     'mode': {defaultMessage: 'Mode', id: 'mw.settings.menuBar.item.mode'},
     'block-count': {defaultMessage: 'Block count', id: 'mw.settings.menuBar.item.blockCount'},
     'save-status': {defaultMessage: 'Save status', id: 'mw.settings.menuBar.item.saveStatus'},

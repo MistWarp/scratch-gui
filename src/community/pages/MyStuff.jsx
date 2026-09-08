@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
@@ -27,7 +29,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import useLatest from '../use-latest.js';
 import styles from './MyStuff.module.css';
 
-const fmt = value => (Number(value) || 0).toLocaleString();
+const fmt = value => (Number(value) || 0).toLocaleString(getCommunityLocale());
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const uploadErrorTarget = (agreementAccepted, error) => {
@@ -69,6 +71,7 @@ const visibilityLabel = project => {
 };
 
 const Overview = ({stats, account, quota, username, onNavigate}) => {
+    const {text: communityText} = useCommunityText();
     const [buyBusy, setBuyBusy] = useState(false);
     const [buyError, setBuyError] = useState('');
     const [recent, setRecent] = useState(null);
@@ -130,13 +133,13 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
             <div className={styles.ovMain}>
                 <div className={styles.ovCard}>
                     <div className={styles.ovCardHead}>
-                        <h2>Performance</h2>
+                        <h2>{communityText('Performance')}</h2>
                         {weekViews > 0 || prevWeekViews > 0 ? (
                             <span className={trend < 0 ? styles.ovTrendDown : styles.ovTrendUp}>
                                 <TrendingUp size={14} />
                                 {prevWeekViews > 0 ?
-                                    `${trend >= 0 ? '+' : ''}${trend}% vs prior week` :
-                                    'New this week'}
+                                    communityText("{value1}{value2}% vs prior week", {value1: trend >= 0 ? '+' : '', value2: trend}) :
+                                    communityText('New this week')}
                             </span>
                         ) : null}
                     </div>
@@ -144,17 +147,17 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                         <div className={styles.ovStat}>
                             <Eye size={16} aria-hidden="true" />
                             <span className={styles.ovStatNum}>{fmt(weekViews)}</span>
-                            <span className={styles.ovStatLabel}>Views this week</span>
+                            <span className={styles.ovStatLabel}>{communityText('Views this week')}</span>
                         </div>
                         <div className={styles.ovStat}>
                             <TrendingUp size={16} aria-hidden="true" />
                             <span className={styles.ovStatNum}>{fmt(stats.totalViews)}</span>
-                            <span className={styles.ovStatLabel}>Total views</span>
+                            <span className={styles.ovStatLabel}>{communityText('Total views')}</span>
                         </div>
                         <div className={styles.ovStat}>
                             <Heart size={16} aria-hidden="true" />
                             <span className={styles.ovStatNum}>{fmt(stats.totalHearts)}</span>
-                            <span className={styles.ovStatLabel}>Hearts</span>
+                            <span className={styles.ovStatLabel}>{communityText('Hearts')}</span>
                         </div>
                     </div>
                     <StatChart
@@ -163,21 +166,20 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                         accent="#4C97FF"
                         emptyText="No views yet. Share a project to get started."
                     />
-                    <p className={styles.ovCaption}>Views over the last 2 weeks</p>
+                    <p className={styles.ovCaption}>{communityText('Views over the last 2 weeks')}</p>
                 </div>
                 <div className={styles.ovCard}>
                     <div className={styles.ovCardHead}>
-                        <h2>Recent projects</h2>
+                        <h2>{communityText('Recent projects')}</h2>
                         {stats.projectCount > 0 ? (
                             <span className={styles.ovCount}>
-                                {fmt(stats.projectCount)} total · {fmt(stats.sharedCount)} shared
-                            </span>
+                                {fmt(stats.projectCount)}{communityText(' total · ')}{fmt(stats.sharedCount)}{communityText(' shared')}</span>
                         ) : null}
                     </div>
                     {recentFailed ? (
-                        <p className={styles.ovEmpty}>Could not load recent projects.</p>
+                        <p className={styles.ovEmpty}>{communityText('Could not load recent projects.')}</p>
                     ) : recent === null ? (
-                        <p className={styles.ovEmpty}>Loading projects…</p>
+                        <p className={styles.ovEmpty}>{communityText('Loading projects…')}</p>
                     ) : recent.length ? (
                         <div className={styles.ovRecentList}>
                             {recent.map(project => (
@@ -192,17 +194,15 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                                     <span className={styles.ovRecentInfo}>
                                         <strong className={styles.ovRecentTitle}>{project.title}</strong>
                                         <span className={styles.ovRecentMeta}>
-                                            {visibilityLabel(project)} · {fmt(project.views || 0)} views ·{' '}
-                                            {fmt(project.loveCount || 0)} hearts
-                                        </span>
+                                            {visibilityLabel(project)} · {fmt(project.views || 0)}{communityText(' views ·')}{' '}
+                                            {fmt(project.loveCount || 0)}{communityText(' hearts')}</span>
                                     </span>
                                 </Link>
                             ))}
                         </div>
                     ) : (
-                        <p className={styles.ovEmpty}>
-                            You have not created any projects yet.{' '}
-                            <a href={editorUrl()}>Start a new project</a>.
+                        <p className={styles.ovEmpty}>{communityText('You have not created any projects yet.')}{' '}
+                            <a href={editorUrl()}>{communityText('Start a new project')}</a>.
                         </p>
                     )}
                     <div className={styles.ovCardActions}>
@@ -211,58 +211,56 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                             className={styles.secondary}
                             onClick={() => go('projects')}
                         >
-                            <FolderOpen size={14} />
-                            View all projects
-                        </Button>
+                            <FolderOpen size={14} />{communityText('View all projects')}</Button>
                     </div>
                 </div>
             </div>
             <div className={styles.ovSide}>
                 <div className={styles.ovCard}>
-                    <h2>Wallet</h2>
+                    <h2>{communityText('Wallet')}</h2>
                     {account && account.balance !== null ? (
                         <div className={styles.ovWalletTop}>
                             <span className={styles.ovWalletBalance}>
                                 <Wallet size={16} aria-hidden="true" />
                                 {fmtCredits(account.balance)}
                             </span>
-                            <span className={styles.ovStatLabel}>Balance</span>
+                            <span className={styles.ovStatLabel}>{communityText('Balance')}</span>
                             <Button
                                 variant="secondary"
                                 className={styles.dashBuy}
                                 onClick={buyCredits}
                                 busy={buyBusy}
-                                busyLabel="Opening…"
-                            >Buy credits</Button>
+                                busyLabel={communityText('Opening…')}
+                            >{communityText('Buy credits')}</Button>
                             {buyError ? <span className={styles.error}>{buyError}</span> : null}
                         </div>
                     ) : null}
                     <div className={styles.ovWalletRows}>
                         {stats.totalRevenue > 0 ? (
                             <div className={styles.ovWalletRow}>
-                                <span><Coins size={15} aria-hidden="true" /> Credits earned</span>
+                                <span><Coins size={15} aria-hidden="true" />{communityText(' Credits earned')}</span>
                                 <strong>{fmtCredits(stats.totalRevenue)}</strong>
                             </div>
                         ) : null}
                         {account && account.donationsReceived > 0 ? (
                             <div className={styles.ovWalletRow}>
-                                <span><HeartHandshake size={15} aria-hidden="true" /> Donations received</span>
+                                <span><HeartHandshake size={15} aria-hidden="true" />{communityText(' Donations received')}</span>
                                 <strong>{fmtCredits(account.donationsReceived)}</strong>
                             </div>
                         ) : null}
                         {!(stats.totalRevenue > 0) &&
                             !(account && account.donationsReceived > 0) &&
                             !(account && account.balance !== null) ? (
-                                <p className={styles.ovEmpty}>No earnings yet. Share a paid project to earn credits.</p>
+                                <p className={styles.ovEmpty}>{communityText('No earnings yet. Share a paid project to earn credits.')}</p>
                             ) : null}
                     </div>
                 </div>
                 {quota ? (
                     <div className={styles.ovCard}>
-                        <h2>Storage</h2>
+                        <h2>{communityText('Storage')}</h2>
                         <div className={styles.ovStorageTop}>
                             <span className={styles.ovStatNum}>{formatBytes(quota.used)}</span>
-                            <span className={styles.ovStatLabel}>of {formatBytes(quota.limit)} used</span>
+                            <span className={styles.ovStatLabel}>{communityText('of ')}{formatBytes(quota.limit)}{communityText(' used')}</span>
                         </div>
                         <div className={styles.quotaBarBg}>
                             <div
@@ -271,17 +269,14 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                             />
                         </div>
                         <span className={pct >= 80 ? styles.quotaWarn : styles.ovStatLabel}>
-                            {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}% full
-                        </span>
+                            {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}{communityText('% full')}</span>
                         <div className={styles.ovCardActions}>
                             <Button
                                 variant="secondary"
                                 className={styles.secondary}
                                 onClick={() => go('uploads')}
                             >
-                                <HardDrive size={14} />
-                                Manage uploads
-                            </Button>
+                                <HardDrive size={14} />{communityText('Manage uploads')}</Button>
                         </div>
                     </div>
                 ) : null}
@@ -290,22 +285,23 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
     );
 };
 
-const Inventory = ({items, error, onRetry}) => (
-    <section className={styles.inventory}>
+const Inventory = ({items, error, onRetry}) => {
+    const {text: communityText} = useCommunityText();
+    return (<section className={styles.inventory}>
         <header className={styles.inventoryHeader}>
             <div>
-                <h1>Inventory</h1>
-                <p>Items collected across MistWarp games.</p>
+                <h1>{communityText('Inventory')}</h1>
+                <p>{communityText('Items collected across MistWarp games.')}</p>
             </div>
-            <span>{items ? `${items.length} item ${items.length === 1 ? 'type' : 'types'}` : ''}</span>
+            <span>{items ? communityText("{value1} item {value2}", {value1: items.length, value2: items.length === 1 ? 'type' : 'types'}) : ''}</span>
         </header>
         {error ? (
             <div className={styles.inventoryEmpty}>
-                <strong>Could not load your inventory.</strong>
-                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+                <strong>{communityText('Could not load your inventory.')}</strong>
+                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
             </div>
         ) : items === null ? (
-            <p className={styles.status}>Loading inventory…</p>
+            <p className={styles.status}>{communityText('Loading inventory…')}</p>
         ) : items.length ? (
             <div className={styles.inventoryGrid}>
                 {items.map(item => (
@@ -313,7 +309,7 @@ const Inventory = ({items, error, onRetry}) => (
                         key={item.id}
                         to={projectUrl(item.originProjectId)}
                         className={styles.inventoryItem}
-                        aria-label={`${item.name}, from ${item.originProjectTitle}, quantity ${item.quantity}`}
+                        aria-label={communityText("{value1}, from {value2}, quantity {value3}", {value1: item.name, value2: item.originProjectTitle, value3: item.quantity})}
                     >
                         {item.visual && item.visual.url ? (
                             <img src={item.visual.url} alt="" loading="lazy" />
@@ -323,7 +319,7 @@ const Inventory = ({items, error, onRetry}) => (
                         <span className={styles.inventoryQuantity}>×{item.quantity}</span>
                         <span className={styles.inventoryDetails}>
                             <strong>{item.name}</strong>
-                            <small>From {item.originProjectTitle}</small>
+                            <small>{communityText('From ')}{item.originProjectTitle}</small>
                         </span>
                     </Link>
                 ))}
@@ -331,14 +327,15 @@ const Inventory = ({items, error, onRetry}) => (
         ) : (
             <div className={styles.inventoryEmpty}>
                 <Package size={36} />
-                <strong>Your inventory is empty.</strong>
-                <span>Items you collect in MistWarp games will appear here.</span>
+                <strong>{communityText('Your inventory is empty.')}</strong>
+                <span>{communityText('Items you collect in MistWarp games will appear here.')}</span>
             </div>
         )}
-    </section>
-);
+    </section>);
+};
 
 const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
+    const {text: communityText} = useCommunityText();
     const [showConfirm, setShowConfirm] = useState(false);
     const [amount, setAmount] = useState(20);
     const [resetting, setResetting] = useState(false);
@@ -401,13 +398,13 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
     if (error) {
         return (
             <div className={styles.inventoryEmpty} role="alert">
-                <strong>Could not load upload usage.</strong>
-                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+                <strong>{communityText('Could not load upload usage.')}</strong>
+                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
             </div>
         );
     }
     if (!quota) {
-        return <p className={styles.status}>Loading upload info…</p>;
+        return <p className={styles.status}>{communityText('Loading upload info…')}</p>;
     }
 
     const summaryStats = [
@@ -420,11 +417,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
     return (
         <section className={styles.uploads}>
             {perks ? (
-                <p className={styles.perkNote}>
-                    Your {perks.tier} Rotur plan gives you {formatBytes(perks.mistwarp.weeklyUploadBytes)} of weekly uploads,
-                    {' '}{formatBytes(perks.mistwarp.maxProjectAssetsBytes)} of assets per project, and
-                    {' '}{formatBytes(perks.mistwarp.maxProjectAssetBytes)} per asset.
-                </p>
+                <p className={styles.perkNote}>{communityText('Your ')}{perks.tier}{communityText(' Rotur plan gives you ')}{formatBytes(perks.mistwarp.weeklyUploadBytes)}{communityText(' of weekly uploads,')}{' '}{formatBytes(perks.mistwarp.maxProjectAssetsBytes)}{communityText(' of assets per project, and')}{' '}{formatBytes(perks.mistwarp.maxProjectAssetBytes)}{communityText(' per asset.')}</p>
             ) : null}
             <div className={styles.uploadSummary}>
                 {summaryStats.map(s => (
@@ -437,9 +430,8 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
 
             <div className={styles.uploadBarSection}>
                 <div className={styles.uploadBarLabel}>
-                    {Math.round(pct)}% full
-                    {pct >= 80 ? (
-                        <span className={styles.uploadWarn}> <AlertTriangle size={14} /> Nearly full</span>
+                    {Math.round(pct)}{communityText('% full')}{pct >= 80 ? (
+                        <span className={styles.uploadWarn}> <AlertTriangle size={14} />{communityText(' Nearly full')}</span>
                     ) : null}
                 </div>
                 <div className={styles.uploadBarBg}>
@@ -451,7 +443,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
             </div>
 
             <StatChart
-                title="Daily upload volume"
+                title={communityText('Daily upload volume')}
                 rows={historyRows(dailyMap, 14)}
                 format={formatBytes}
                 accent="#4C97FF"
@@ -459,15 +451,14 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
             />
 
             <div className={styles.uploadReset}>
-                <h3 className={styles.uploadChartTitle}>Reset upload quota</h3>
-                <p className={styles.uploadResetDesc}>
-                    Reset your weekly upload usage back to zero. This costs{' '}
-                    <strong>{amount || 20} credits</strong>.
+                <h3 className={styles.uploadChartTitle}>{communityText('Reset upload quota')}</h3>
+                <p className={styles.uploadResetDesc}>{communityText('Reset your weekly upload usage back to zero. This costs')}{' '}
+                    <strong>{amount || 20}{communityText(' credits')}</strong>.
                 </p>
 
                 {resetDone ? (
                     <div className={styles.uploadResetDone}>
-                        <p><CheckCircle size={16} /> Quota reset successfully! Your upload usage is now 0.</p>
+                        <p><CheckCircle size={16} />{communityText(' Quota reset successfully! Your upload usage is now 0.')}</p>
                     </div>
                 ) : resetError && !showConfirm ? (
                     <div className={styles.uploadResetError}>
@@ -476,7 +467,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
                             variant="secondary"
                             className={styles.secondary}
                             onClick={() => setResetError('')}
-                        >Dismiss</Button>
+                        >{communityText('Dismiss')}</Button>
                     </div>
                 ) : (
                     <Button
@@ -484,17 +475,15 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
                         className={styles.uploadResetBtn}
                         onClick={handleReset}
                         busy={resetting}
-                        busyLabel="Starting…"
+                        busyLabel={communityText('Starting…')}
                     >
-                        <RefreshCw size={16} />
-                        Reset quota
-                    </Button>
+                        <RefreshCw size={16} />{communityText('Reset quota')}</Button>
                 )}
             </div>
 
             {showConfirm ? (
                 <Modal
-                    title="Reset upload quota?"
+                    title={communityText('Reset upload quota?')}
                     onClose={dismiss}
                     dismissDisabled={resetting}
                     actions={(
@@ -504,24 +493,21 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
                                 className={styles.secondary}
                                 onClick={dismiss}
                                 disabled={resetting}
-                            >Cancel</Button>
+                            >{communityText('Cancel')}</Button>
                             <Button
                                 variant="primary"
                                 className={styles.uploadResetBtn}
                                 onClick={confirmReset}
                                 busy={resetting}
-                                busyLabel="Resetting…"
+                                busyLabel={communityText('Resetting…')}
                             >
-                                {`Spend ${amount} credits`}
+                                {communityText("Spend {value1} credits", {value1: amount})}
                             </Button>
                         </React.Fragment>
                     )}
                 >
-                    <p className={styles.confirmText}>
-                        This will cost <strong>{amount} credits</strong>
-                        {payTo ? <> sent to <code>{payTo}</code></> : ''}.
-                        Your upload usage will be reset to zero. Continue?
-                    </p>
+                    <p className={styles.confirmText}>{communityText('This will cost ')}<strong>{amount}{communityText(' credits')}</strong>
+                        {payTo ? <>{communityText(' sent to ')}<code>{payTo}</code></> : ''}{communityText('. Your upload usage will be reset to zero. Continue?')}</p>
                     {resetError ? <p className={styles.error} role="alert">{resetError}</p> : null}
                 </Modal>
             ) : null}
@@ -530,6 +516,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
 };
 
 const AgreementTab = () => {
+    const {text: communityText} = useCommunityText();
     const [agreement, setAgreement] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -570,25 +557,24 @@ const AgreementTab = () => {
 
     if (loadError) {
         return (
-            <p className={styles.status}>
-                Could not load the agreement.{' '}
+            <p className={styles.status}>{communityText('Could not load the agreement.')}{' '}
                 <button
                     type="button"
                     className={styles.secondary}
                     onClick={() => setAttempt(value => value + 1)}
-                >Try again</button>
+                >{communityText('Try again')}</button>
             </p>
         );
     }
 
     if (!agreement) {
-        return <p className={styles.status}>Loading agreement…</p>;
+        return <p className={styles.status}>{communityText('Loading agreement…')}</p>;
     }
 
     if (!agreement.text && agreement.version === 0) {
         return (
             <section>
-                <p className={styles.status}>No agreement has been set yet.</p>
+                <p className={styles.status}>{communityText('No agreement has been set yet.')}</p>
             </section>
         );
     }
@@ -603,23 +589,21 @@ const AgreementTab = () => {
             <div className={styles.agreementFooter}>
                 {alreadyAccepted ? (
                     <p className={styles.agreementAccepted}>
-                        <CheckCircle size={16} /> You have accepted version {agreement.version} (updated{' '}
+                        <CheckCircle size={16} />{communityText(' You have accepted version ')}{agreement.version}{communityText(' (updated')}{' '}
                         {formatDate(agreement.updatedAt, 'date unavailable')}).
                     </p>
                 ) : (
                     <>
-                        <p className={styles.agreementPrompt}>
-                            To continue using the platform, please accept this agreement.
-                        </p>
+                        <p className={styles.agreementPrompt}>{communityText('To continue using the platform, please accept this agreement.')}</p>
                         {error ? <p className={styles.error}>{error}</p> : null}
                         <Button
                             variant="primary"
                             className={styles.agreementAcceptBtn}
                             onClick={handleAccept}
                             busy={busy}
-                            busyLabel="Accepting…"
+                            busyLabel={communityText('Accepting…')}
                         >
-                            {`Accept v${agreement.version}`}
+                            {communityText("Accept v{value1}", {value1: agreement.version})}
                         </Button>
                     </>
                 )}
@@ -658,6 +642,7 @@ const normalizeMyStuffParams = params => {
 };
 
 const MyStuff = () => {
+    const {text: communityText} = useCommunityText();
     const {user, loading, login} = useUser();
     const [searchParams, setSearchParams] = useSearchParams();
     const tab = getMyStuffSection(searchParams.get('section'));
@@ -1353,12 +1338,12 @@ const MyStuff = () => {
     }, [trashBusy]);
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
+        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
     }
     if (!user) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>Sign in to see your projects. <Button onClick={login}>Sign in</Button></p>
+                <p className={styles.status}>{communityText('Sign in to see your projects. ')}<Button onClick={login}>{communityText('Sign in')}</Button></p>
             </main>
         );
     }
@@ -1366,7 +1351,7 @@ const MyStuff = () => {
     return (
         <main className={styles.page}>
             <div className={styles.head}>
-                <h1>My stuff</h1>
+                <h1>{communityText('My stuff')}</h1>
                 <div className={styles.headActions}>
                     <input
                         ref={uploadInput}
@@ -1379,16 +1364,12 @@ const MyStuff = () => {
                         variant="primary"
                         className={styles.uploadButton}
                         busy={uploading}
-                        busyLabel={uploadStatus || 'Uploading…'}
+                        busyLabel={uploadStatus || communityText('Uploading…')}
                         onClick={() => uploadInput.current && uploadInput.current.click()}
                     >
-                        <Upload size={16} />
-                        Upload .sb3
-                    </Button>
+                        <Upload size={16} />{communityText('Upload .sb3')}</Button>
                     <Button as="a" variant="primary" href={editorUrl()}>
-                        <Plus size={16} />
-                        New project
-                    </Button>
+                        <Plus size={16} />{communityText('New project')}</Button>
                 </div>
             </div>
 
@@ -1396,19 +1377,17 @@ const MyStuff = () => {
 
             {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                 <p className={styles.quotaWarning}>
-                    <AlertTriangle size={14} /> You&apos;ve used {formatBytes(quota.used)} of
-                    your {formatBytes(quota.limit)} upload quota
-                    ({Math.round((quota.used / quota.limit) * 100)}%).{' '}
+                    <AlertTriangle size={14} />{communityText(" You've used ")}{formatBytes(quota.used)}{communityText(' of your ')}{formatBytes(quota.limit)}{communityText(' upload quota (')}{Math.round((quota.used / quota.limit) * 100)}%).{' '}
                     {quota.used >= quota.limit ?
-                        'You cannot upload new projects until usage drops.' :
-                        'Consider managing your projects to free up space.'}
+                        communityText('You cannot upload new projects until usage drops.') :
+                        communityText('Consider managing your projects to free up space.')}
                 </p>
             ) : null}
 
             {showAgreeModal && agreeData ? (
                 <Modal
                     className={styles.agreeModal}
-                    title={`Upload agreement v${agreeData.version}`}
+                    title={communityText("Upload agreement v{value1}", {value1: agreeData.version})}
                     onClose={cancelAgreeModal}
                     dismissDisabled={agreeBusy}
                     actions={(
@@ -1418,15 +1397,15 @@ const MyStuff = () => {
                                 className={styles.secondary}
                                 onClick={cancelAgreeModal}
                                 disabled={agreeBusy}
-                            >Cancel</Button>
+                            >{communityText('Cancel')}</Button>
                             <Button
                                 variant="primary"
                                 className={styles.agreementAcceptBtn}
                                 onClick={confirmAgreeAndUpload}
                                 busy={agreeBusy}
-                                busyLabel="Accepting…"
+                                busyLabel={communityText('Accepting…')}
                             >
-                                {`Accept v${agreeData.version} & upload`}
+                                {communityText("Accept v{value1} & upload", {value1: agreeData.version})}
                             </Button>
                         </React.Fragment>
                     )}
@@ -1435,15 +1414,13 @@ const MyStuff = () => {
                         <Markdown className={styles.agreementText}>{agreeData.text}</Markdown>
                     </div>
                     {agreeError ? <p className={styles.error}>{agreeError}</p> : null}
-                    <p className={styles.agreementPrompt}>
-                        You must accept this agreement before you can upload projects.
-                    </p>
+                    <p className={styles.agreementPrompt}>{communityText('You must accept this agreement before you can upload projects.')}</p>
                 </Modal>
             ) : null}
 
             {deleteConfirmProject ? (
                 <Modal
-                    title="Delete project?"
+                    title={communityText('Delete project?')}
                     onClose={dismissDeleteConfirm}
                     dismissDisabled={Boolean(deleteBusy)}
                     actions={(
@@ -1453,20 +1430,19 @@ const MyStuff = () => {
                                 className={styles.secondary}
                                 disabled={Boolean(deleteBusy)}
                                 onClick={dismissDeleteConfirm}
-                            >Cancel</Button>
+                            >{communityText('Cancel')}</Button>
                             <Button
                                 variant="danger"
                                 className={`${styles.secondary} ${styles.danger}`}
                                 busy={Boolean(deleteBusy)}
-                                busyLabel="Deleting…"
+                                busyLabel={communityText('Deleting…')}
                                 onClick={() => deleteProject(deleteConfirmProject.id)}
-                            >Delete project</Button>
+                            >{communityText('Delete project')}</Button>
                         </React.Fragment>
                     )}
                 >
                     <p className={styles.confirmText}>
-                        <strong>{deleteConfirmProject.title}</strong> will move to Trash. You can restore it until its recovery period ends.
-                    </p>
+                        <strong>{deleteConfirmProject.title}</strong>{communityText(' will move to Trash. You can restore it until its recovery period ends.')}</p>
                     {deleteError ? <p className={styles.error} role="alert">{deleteError}</p> : null}
                 </Modal>
             ) : null}
@@ -1480,8 +1456,8 @@ const MyStuff = () => {
                     dismissDisabled={Boolean(purgeBusy)}
                     actions={(
                         <React.Fragment>
-                            <Button variant="secondary" disabled={Boolean(purgeBusy)} onClick={dismissPurgeConfirm}>Cancel</Button>
-                            <Button variant="danger" busy={Boolean(purgeBusy)} busyLabel="Deleting…" onClick={() => purgeTrashedProject(purgeConfirmProject)}>
+                            <Button variant="secondary" disabled={Boolean(purgeBusy)} onClick={dismissPurgeConfirm}>{communityText('Cancel')}</Button>
+                            <Button variant="danger" busy={Boolean(purgeBusy)} busyLabel={communityText('Deleting…')} onClick={() => purgeTrashedProject(purgeConfirmProject)}>
                                 {purgeDetails.action}
                             </Button>
                         </React.Fragment>
@@ -1511,11 +1487,11 @@ const MyStuff = () => {
                             />
                         ) : statsFailed ? (
                             <div className={styles.inventoryEmpty} role="alert">
-                                <strong>Could not load your overview.</strong>
-                                <Button variant="secondary" onClick={loadStats}>Try again</Button>
+                                <strong>{communityText('Could not load your overview.')}</strong>
+                                <Button variant="secondary" onClick={loadStats}>{communityText('Try again')}</Button>
                             </div>
                         ) : (
-                            <p className={styles.status}>Loading…</p>
+                            <p className={styles.status}>{communityText('Loading…')}</p>
                         )
                     ) : tab === 'shared' ? (
                         <SharedProjects key={username} />
@@ -1551,19 +1527,19 @@ const MyStuff = () => {
                     ) : tab === 'trash' ? (
                         trashFailed ? (
                             <div className={styles.inventoryEmpty} role="alert">
-                                <strong>Could not load Trash.</strong>
-                                <Button variant="secondary" onClick={loadTrash}>Try again</Button>
+                                <strong>{communityText('Could not load Trash.')}</strong>
+                                <Button variant="secondary" onClick={loadTrash}>{communityText('Try again')}</Button>
                             </div>
-                        ) : trashedProjects === null ? <p className={styles.status}>Loading Trash…</p> :
+                        ) : trashedProjects === null ? <p className={styles.status}>{communityText('Loading Trash…')}</p> :
                             trashedProjects.length ? <div className={styles.list}>{trashedProjects.map(project => (
                                 <div className={styles.row} key={project.id}>
                                     <div className={styles.thumb}><ProjectThumbnail project={project} lazy /></div>
                                     <div className={styles.info}>
                                         <strong className={styles.title}>{project.title}</strong>
-                                        <span className={styles.rowStats}>Deletes forever {formatDate(project.purgeAt, 'date unavailable')}</span>
+                                        <span className={styles.rowStats}>{communityText('Deletes forever ')}{formatDate(project.purgeAt, 'date unavailable')}</span>
                                     </div>
                                     <div className={styles.rowActions}>
-                                        <Button variant="primary" busy={trashBusy === `restore:${project.id}`} disabled={Boolean(trashBusy)} onClick={() => restoreTrashedProject(project.id)}><RotateCcw size={14} /> Restore</Button>
+                                        <Button variant="primary" busy={trashBusy === `restore:${project.id}`} disabled={Boolean(trashBusy)} onClick={() => restoreTrashedProject(project.id)}><RotateCcw size={14} />{communityText(' Restore')}</Button>
                                         <Button
                                             variant="danger"
                                             disabled={Boolean(trashBusy)}
@@ -1571,10 +1547,10 @@ const MyStuff = () => {
                                                 setPurgeError('');
                                                 setPurgeConfirmProject(project);
                                             }}
-                                        ><Trash2 size={14} /> Delete forever</Button>
+                                        ><Trash2 size={14} />{communityText(' Delete forever')}</Button>
                                     </div>
                                 </div>
-                            ))}</div> : <p className={styles.status}>Trash is empty.</p>
+                            ))}</div> : <p className={styles.status}>{communityText('Trash is empty.')}</p>
                     ) : tab === 'collections' || tab === 'spaces' ? (
                         <MyStuffSpaces
                             key={tab}
@@ -1584,16 +1560,15 @@ const MyStuff = () => {
                             onRetry={retryDirectories}
                         />
                     ) : failed ? (
-                        <p className={styles.status}>
-                            Couldn&apos;t load.{' '}
+                        <p className={styles.status}>{communityText("Couldn't load.")}{' '}
                             <button
                                 type="button"
                                 className={styles.secondary}
                                 onClick={load}
-                            >Try again</button>
+                            >{communityText('Try again')}</button>
                         </p>
                     ) : projects === null ? (
-                        <p className={styles.status}>Loading…</p>
+                        <p className={styles.status}>{communityText('Loading…')}</p>
                     ) : projects.length ? (
                         <div className={styles.list}>
                             {projects.map(project => {
@@ -1642,7 +1617,7 @@ const MyStuff = () => {
                                                 ) : null}
                                                 {project.revenue ? (
                                                     <span className={styles.rowStat}>
-                                                        {`${Math.round(project.revenue * 100) / 100} earned`}
+                                                        {communityText("{value1} earned", {value1: Math.round(project.revenue * 100) / 100})}
                                                     </span>
                                                 ) : null}
                                                 {project.sizeBytes ? (
@@ -1659,32 +1634,26 @@ const MyStuff = () => {
                                                     variant="secondary"
                                                     className={styles.secondary}
                                                     disabled
-                                                    title="Paid project remixes stay private and can only be contributed back"
-                                                >
-                                                    Contribution only
-                                                </Button>
+                                                    title={communityText('Paid project remixes stay private and can only be contributed back')}
+                                                >{communityText('Contribution only')}</Button>
                                             ) : project.shared ? (
                                                 <Button
                                                     variant="secondary"
                                                     className={styles.secondary}
                                                     disabled={Boolean(projectAction)}
                                                     busy={visibilityBusy}
-                                                    busyLabel="Updating…"
+                                                    busyLabel={communityText('Updating…')}
                                                     onClick={() => unpublish(project.id)}
-                                                >
-                                                    Unshare
-                                                </Button>
+                                                >{communityText('Unshare')}</Button>
                                             ) : (
                                                 <Button
                                                     variant="secondary"
                                                     className={styles.secondary}
                                                     disabled={Boolean(projectAction)}
                                                     busy={visibilityBusy}
-                                                    busyLabel="Updating…"
+                                                    busyLabel={communityText('Updating…')}
                                                     onClick={() => publish(project.id)}
-                                                >
-                                                    Share
-                                                </Button>
+                                                >{communityText('Share')}</Button>
                                             )}
                                             <Dropdown
                                                 className={styles.actionMenuWrap}
@@ -1693,7 +1662,7 @@ const MyStuff = () => {
                                                     <IconButton
                                                         variant="secondary"
                                                         className={styles.moreButton}
-                                                        label={`Actions for ${project.title}`}
+                                                        label={communityText("Actions for {value1}", {value1: project.title})}
                                                         aria-expanded={open}
                                                         aria-haspopup="menu"
                                                         disabled={Boolean(projectAction)}
@@ -1709,18 +1678,12 @@ const MyStuff = () => {
                                                             href={editorUrl({platformProject: project.id})}
                                                             onClick={close}
                                                         >
-                                                            <Pencil size={14} />
-                                                            Open in editor
-                                                        </a>
+                                                            <Pencil size={14} />{communityText('Open in editor')}</a>
                                                         <Link to={projectUrl(project)} onClick={close}>
-                                                            <ExternalLink size={14} />
-                                                            Project page
-                                                        </Link>
+                                                            <ExternalLink size={14} />{communityText('Project page')}</Link>
                                                         <div className={styles.menuSeparator} role="separator" />
                                                         <Link to={`/mystuff/project/${project.id}`} onClick={close}>
-                                                            <SlidersHorizontal size={14} />
-                                                            Manage &amp; analytics
-                                                        </Link>
+                                                            <SlidersHorizontal size={14} />{communityText('Manage & analytics')}</Link>
                                                         <button
                                                             type="button"
                                                             onClick={() => {
@@ -1728,9 +1691,7 @@ const MyStuff = () => {
                                                                 setCollectionProject(project);
                                                             }}
                                                         >
-                                                            <Library size={14} />
-                                                            Save to collection
-                                                        </button>
+                                                            <Library size={14} />{communityText('Save to collection')}</button>
                                                         {project.shared ? (
                                                             <button
                                                                 type="button"
@@ -1745,7 +1706,7 @@ const MyStuff = () => {
                                                                     fill={featured ? 'currentColor' : 'none'}
                                                                 />
                                                                 {featured ?
-                                                                    'Remove profile feature' : 'Feature on profile'}
+                                                                    communityText('Remove profile feature') : communityText('Feature on profile')}
                                                             </button>
                                                         ) : null}
                                                         <div className={styles.menuSeparator} role="separator" />
@@ -1759,9 +1720,7 @@ const MyStuff = () => {
                                                                 setDeleteConfirmProject(project);
                                                             }}
                                                         >
-                                                            <Trash2 size={14} />
-                                                            Delete
-                                                        </button>
+                                                            <Trash2 size={14} />{communityText('Delete')}</button>
                                                     </React.Fragment>
                                                 )}
                                             </Dropdown>
@@ -1774,17 +1733,17 @@ const MyStuff = () => {
                                     <Button
                                         variant="secondary"
                                         busy={projectsMoreBusy}
-                                        busyLabel="Loading…"
+                                        busyLabel={communityText('Loading…')}
                                         onClick={loadMoreProjects}
-                                    >Load more projects</Button>
+                                    >{communityText('Load more projects')}</Button>
                                 </div>
                             ) : null}
                             {projectsMoreFailed ? (
-                                <p className={styles.moreError}>Could not load more projects. Try again.</p>
+                                <p className={styles.moreError}>{communityText('Could not load more projects. Try again.')}</p>
                             ) : null}
                         </div>
                     ) : (
-                        <p className={styles.status}>You have not created any projects yet.</p>
+                        <p className={styles.status}>{communityText('You have not created any projects yet.')}</p>
                     )}
                 </div>
             </div>

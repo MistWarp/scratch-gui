@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import PropTypes from 'prop-types';
 import {Archive, ArchiveRestore, Eye, Heart, Pencil, Plus} from 'lucide-react';
@@ -25,6 +27,7 @@ const newsLinkReady = (label, url) => {
 };
 
 const News = ({manager = false}) => {
+    const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
@@ -105,11 +108,11 @@ const News = ({manager = false}) => {
         const options = pollOptions.map(option => option.trim()).filter(Boolean);
         if (!title.trim() || !body.trim() || submitInFlight.current) return;
         if (!newsPollReady(category, pollOptions)) {
-            setError('Add at least two poll options.');
+            setError(communityText("Add at least two poll options."));
             return;
         }
         if (!newsLinkReady(linkLabel, linkUrl)) {
-            setError('Add both a button label and a valid https:// or internal / link.');
+            setError(communityText("Add both a button label and a valid https:// or internal / link."));
             return;
         }
         submitInFlight.current = true;
@@ -147,7 +150,7 @@ const News = ({manager = false}) => {
     if (manager && (!user || !user.isAdmin)) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>You do not have access to news management.</p>
+                <p className={styles.status}>{communityText('You do not have access to news management.')}</p>
             </main>
         );
     }
@@ -156,19 +159,18 @@ const News = ({manager = false}) => {
         <main className={`${styles.page} ${manager ? styles.manager : styles.blog}`}>
             <header className={styles.pageHead}>
                 <div>
-                    <h1>{manager ? 'Manage news' : 'News'}</h1>
-                    <p>{manager ? 'Write, update, and review the performance of MistWarp posts.' :
-                        'Product updates, releases, and notes from MistWarp.'}</p>
+                    <h1>{manager ? communityText('Manage news') : communityText('News')}</h1>
+                    <p>{manager ? communityText('Write, update, and review the performance of MistWarp posts.') :
+                        communityText('Product updates, releases, and notes from MistWarp.')}</p>
                 </div>
                 <div className={styles.headActions}>
                     {manager ? (
                         <Button variant="primary" onClick={startPost}>
-                            <Plus size={15} /> New post
-                        </Button>
+                            <Plus size={15} />{communityText(' New post')}</Button>
                     ) : null}
                     {user && user.isAdmin ? (
                         <Link className={styles.manageLink} to={manager ? '/news' : '/news/manage'}>
-                            {manager ? 'View blog' : 'Manage posts'}
+                            {manager ? communityText('View blog') : communityText('Manage posts')}
                         </Link>
                     ) : null}
                 </div>
@@ -180,34 +182,34 @@ const News = ({manager = false}) => {
                     onSubmit={submit}
                 >
                     <div className={styles.composerHead}>
-                        <strong>{editingId ? 'Edit blog post' : 'New blog post'}</strong>
+                        <strong>{editingId ? communityText('Edit blog post') : communityText('New blog post')}</strong>
                         <div>
                             <button
                                 type="button"
                                 className={!preview ? styles.modeActive : ''}
                                 onClick={() => setPreview(false)}
-                            >Write</button>
+                            >{communityText('Write')}</button>
                             <button
                                 type="button"
                                 className={preview ? styles.modeActive : ''}
                                 onClick={() => setPreview(true)}
-                            >Preview</button>
+                            >{communityText('Preview')}</button>
                         </div>
                     </div>
                     <input
                         className={styles.titleInput}
-                        placeholder="Update title"
+                        placeholder={communityText('Update title')}
                         value={title}
                         disabled={busy}
                         maxLength={120}
                         onChange={e => setTitle(e.target.value)}
                     />
                     {preview ? (
-                        <Markdown className={styles.preview}>{body || '*Nothing to preview yet.*'}</Markdown>
+                        <Markdown className={styles.preview}>{body || communityText('*Nothing to preview yet.*')}</Markdown>
                     ) : (
                         <textarea
                             className={styles.bodyInput}
-                            placeholder="Write in Markdown…"
+                            placeholder={communityText('Write in Markdown…')}
                             value={body}
                             disabled={busy}
                             maxLength={20000}
@@ -216,49 +218,49 @@ const News = ({manager = false}) => {
                     )}
                     <div className={styles.composerRow}>
                         <label>
-                            <span>Post type</span>
+                            <span>{communityText('Post type')}</span>
                             <select
                                 value={category}
                                 disabled={busy}
                                 onChange={event => setCategory(event.target.value)}
                             >
-                                <option value="update">Update</option>
-                                <option value="release">Release</option>
-                                <option value="event">Event</option>
-                                <option value="poll">Poll</option>
-                                <option value="general">General</option>
+                                <option value="update">{communityText('Update')}</option>
+                                <option value="release">{communityText('Release')}</option>
+                                <option value="event">{communityText('Event')}</option>
+                                <option value="poll">{communityText('Poll')}</option>
+                                <option value="general">{communityText('General')}</option>
                             </select>
                         </label>
                         <label>
-                            <span>Button label</span>
+                            <span>{communityText('Button label')}</span>
                             <input
                                 value={linkLabel}
                                 disabled={busy}
                                 maxLength={60}
-                                placeholder="Read more"
+                                placeholder={communityText('Read more')}
                                 onChange={event => setLinkLabel(event.target.value)}
                             />
                         </label>
                         <label>
-                            <span>Button link</span>
+                            <span>{communityText('Button link')}</span>
                             <input
                                 value={linkUrl}
                                 disabled={busy}
                                 maxLength={500}
-                                placeholder="https:// or /project/..."
+                                placeholder={communityText('https:// or /project/...')}
                                 onChange={event => setLinkUrl(event.target.value)}
                             />
                         </label>
                     </div>
                     {category === 'poll' ? (
                         <fieldset className={styles.pollEditor} disabled={busy}>
-                            <legend>Poll options</legend>
+                            <legend>{communityText('Poll options')}</legend>
                             {pollOptions.map((option, index) => (
                                 <div key={index}>
                                     <input
                                         value={option}
                                         maxLength={120}
-                                        placeholder={`Option ${index + 1}`}
+                                        placeholder={communityText("Option {value1}", {value1: index + 1})}
                                         onChange={event => setPollOptions(current => current.map(
                                             (value, optionIndex) => (optionIndex === index ? event.target.value : value)
                                         ))}
@@ -269,7 +271,7 @@ const News = ({manager = false}) => {
                                             onClick={() => setPollOptions(current => current.filter(
                                                 (value, optionIndex) => optionIndex !== index
                                             ))}
-                                        >Remove</button>
+                                        >{communityText('Remove')}</button>
                                     ) : null}
                                 </div>
                             ))}
@@ -277,34 +279,31 @@ const News = ({manager = false}) => {
                                 <button
                                     type="button"
                                     onClick={() => setPollOptions(current => [...current, ''])}
-                                >Add option</button>
+                                >{communityText('Add option')}</button>
                             ) : null}
                         </fieldset>
                     ) : null}
                     {error ? <div className={styles.error}>{error}</div> : null}
                     <div className={styles.composerActions}>
-                        <Button type="button" onClick={resetComposer} disabled={busy}>
-                            Cancel
-                        </Button>
+                        <Button type="button" onClick={resetComposer} disabled={busy}>{communityText('Cancel')}</Button>
                         <Button
                             variant="primary"
                             className={styles.submit}
                             type="submit"
                             disabled={busy || !title.trim() || !body.trim()}
                             busy={busy}
-                            busyLabel={editingId ? 'Saving…' : 'Posting…'}
-                        >{editingId ? 'Save changes' : 'Publish post'}</Button>
+                            busyLabel={editingId ? communityText('Saving…') : communityText('Posting…')}
+                        >{editingId ? communityText('Save changes') : communityText('Publish post')}</Button>
                     </div>
                 </form>
             ) : null}
 
             {loadFailed ? (
-                <p className={styles.status}>
-                    Couldn&apos;t load.{' '}
-                    <Button onClick={() => load(true)}>Try again</Button>
+                <p className={styles.status}>{communityText("Couldn't load.")}{' '}
+                    <Button onClick={() => load(true)}>{communityText('Try again')}</Button>
                 </p>
             ) : items === null ? (
-                <p className={styles.status}>Loading…</p>
+                <p className={styles.status}>{communityText('Loading…')}</p>
             ) : visibleItems.length ? (
                 <>
                     {manager ? (
@@ -313,14 +312,12 @@ const News = ({manager = false}) => {
                                 type="checkbox"
                                 checked={showArchived}
                                 onChange={event => setShowArchived(event.target.checked)}
-                            />
-                            Show archived posts
-                        </label>
+                            />{communityText('Show archived posts')}</label>
                     ) : null}
                     {manager ? (
-                        <div className={styles.managerTable} role="table" aria-label="News posts">
+                        <div className={styles.managerTable} role="table" aria-label={communityText('News posts')}>
                             <div className={styles.managerTableHead} role="row">
-                                <span>Post</span><span>Published</span><span>Performance</span><span>Actions</span>
+                                <span>{communityText('Post')}</span><span>{communityText('Published')}</span><span>{communityText('Performance')}</span><span>{communityText('Actions')}</span>
                             </div>
                             {visibleItems.map(item => (
                                 <div className={styles.managerRow} role="row" key={item.id}>
@@ -329,20 +326,20 @@ const News = ({manager = false}) => {
                                         <UserLink username={item.author}>
                                             <Avatar username={item.author} size={21} /> {item.author}
                                         </UserLink>
-                                        {item.archived ? <span className={styles.archivedBadge}>Archived</span> : null}
+                                        {item.archived ? <span className={styles.archivedBadge}>{communityText('Archived')}</span> : null}
                                     </div>
                                     <span className={styles.managerDate} role="cell">
                                         {formatDate(item.created)}
                                     </span>
                                     <div className={styles.managerPerformance} role="cell">
-                                        <span><Eye size={14} />{(item.views || 0).toLocaleString()}</span>
+                                        <span><Eye size={14} />{(item.views || 0).toLocaleString(getCommunityLocale())}</span>
                                         <span>
                                             <Heart size={14} />
-                                            {(item.reactionCounts?.heart || 0).toLocaleString()}
+                                            {(item.reactionCounts?.heart || 0).toLocaleString(getCommunityLocale())}
                                         </span>
                                     </div>
                                     <div className={styles.managerActions} role="cell">
-                                        <IconButton label={`Edit ${item.title}`} onClick={() => edit(item)}>
+                                        <IconButton label={communityText("Edit {value1}", {value1: item.title})} onClick={() => edit(item)}>
                                             <Pencil size={15} />
                                         </IconButton>
                                         <IconButton
@@ -369,7 +366,7 @@ const News = ({manager = false}) => {
                     )}
                 </>
             ) : (
-                <p className={styles.status}>No updates posted yet.</p>
+                <p className={styles.status}>{communityText('No updates posted yet.')}</p>
             )}
         </main>
     );

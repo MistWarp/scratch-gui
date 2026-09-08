@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {BookmarkMinus, Clock3, Eye, EyeOff, MoreHorizontal} from 'lucide-react';
@@ -24,19 +26,20 @@ const lastPlayedLabel = project => {
 const MyStuffLibrary = ({
     projects, total, loading, error, moreBusy, hasMore, actionBusy, actionError,
     onRetry, onLoadMore, onChangeVisibility, onRemove
-}) => (
-    <section className={styles.library}>
+}) => {
+    const {text: communityText} = useCommunityText();
+    return (<section className={styles.library}>
         <header className={styles.header}>
             <div>
-                <h1>Library</h1>
-                <p>Games you saved, with your playtime and public profile controls.</p>
+                <h1>{communityText('Library')}</h1>
+                <p>{communityText('Games you saved, with your playtime and public profile controls.')}</p>
             </div>
-            {!loading && !error ? <span>{total.toLocaleString()} {total === 1 ? 'game' : 'games'}</span> : null}
+            {!loading && !error ? <span>{total.toLocaleString(getCommunityLocale())} {total === 1 ? communityText('game') : communityText('games')}</span> : null}
         </header>
-        {loading ? <p className={styles.status}>Loading your library…</p> : error ? (
+        {loading ? <p className={styles.status}>{communityText('Loading your library…')}</p> : error ? (
             <div className={styles.status} role="alert">
-                <strong>Could not load your library.</strong>
-                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+                <strong>{communityText('Could not load your library.')}</strong>
+                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
             </div>
         ) : projects.length ? (
             <React.Fragment>
@@ -49,7 +52,7 @@ const MyStuffLibrary = ({
                                 </Link>
                                 <span className={styles.details}>
                                     <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
-                                    <small>by <UserLink username={project.owner}>{project.owner}</UserLink></small>
+                                    <small>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></small>
                                 </span>
                             </div>
                             <span className={styles.playtime}>
@@ -58,14 +61,14 @@ const MyStuffLibrary = ({
                             </span>
                             <span className={project.libraryPublic === false ? styles.hidden : styles.public}>
                                 {project.libraryPublic === false ? <EyeOff size={14} /> : <Eye size={14} />}
-                                {project.libraryPublic === false ? 'Hidden' : 'Public'}
+                                {project.libraryPublic === false ? communityText('Hidden') : communityText('Public')}
                             </span>
                             <Dropdown
                                 renderTrigger={({open, toggle}) => (
                                     <button
                                         type="button"
                                         className={styles.menuButton}
-                                        aria-label={`Library options for ${project.title}`}
+                                        aria-label={communityText("Library options for {value1}", {value1: project.title})}
                                         aria-expanded={open}
                                         aria-haspopup="menu"
                                         onClick={toggle}
@@ -83,7 +86,7 @@ const MyStuffLibrary = ({
                                         >
                                             {project.libraryPublic === false ? <Eye size={15} /> : <EyeOff size={15} />}
                                             {project.libraryPublic === false ?
-                                                'Show in public library' : 'Hide from public library'}
+                                                communityText('Show in public library') : communityText('Hide from public library')}
                                         </DropdownItem>
                                         <DropdownItem
                                             danger
@@ -92,7 +95,7 @@ const MyStuffLibrary = ({
                                                 close(false);
                                                 onRemove(project);
                                             }}
-                                        ><BookmarkMinus size={15} /> Remove from library</DropdownItem>
+                                        ><BookmarkMinus size={15} />{communityText(' Remove from library')}</DropdownItem>
                                     </React.Fragment>
                                 )}
                             </Dropdown>
@@ -102,20 +105,18 @@ const MyStuffLibrary = ({
                 {actionError ? <p className={styles.error} role="alert">{actionError}</p> : null}
                 {hasMore ? (
                     <div className={styles.more}>
-                        <Button variant="secondary" busy={moreBusy} busyLabel="Loading…" onClick={onLoadMore}>
-                            Load more games
-                        </Button>
+                        <Button variant="secondary" busy={moreBusy} busyLabel={communityText('Loading…')} onClick={onLoadMore}>{communityText('Load more games')}</Button>
                     </div>
                 ) : null}
             </React.Fragment>
         ) : (
             <div className={styles.status}>
-                <strong>Your library is empty.</strong>
-                <span>Use &quot;Save to library&quot; on a project to add it here.</span>
+                <strong>{communityText('Your library is empty.')}</strong>
+                <span>{communityText('Use "Save to library" on a project to add it here.')}</span>
             </div>
         )}
-    </section>
-);
+    </section>);
+};
 
 MyStuffLibrary.propTypes = {
     projects: PropTypes.arrayOf(PropTypes.object),
