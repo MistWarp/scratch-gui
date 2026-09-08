@@ -21,9 +21,9 @@ Run `pnpm run link` after installing when you need the sibling MistWarp packages
 
 ## Builds
 
-`pnpm run build` uses Vite to create the site in `build/`. Use `pnpm run build:all` to also build the GUI library in `dist/`, or `pnpm run build:library` for just the library. Use `pnpm run preview` to serve the production site on port 8601. Production pages use JavaScript modules and must be served over HTTP.
+`pnpm run build` uses Vite to create the site in `build/`. Site builds and deployments compile all selected pages in one pass, sharing JavaScript and CSS between the editor, player, and community. Use `pnpm run build:all` to also build the GUI library in `dist/`, or `pnpm run build:library` for just the library. Use `pnpm run preview` to serve the production site on port 8601. Production pages use JavaScript modules and must be served over HTTP.
 
-- `pnpm run build:editor` builds the editor and its index page.
+- `pnpm run build:editor` builds the editor as one JavaScript bundle and creates its index page.
 - `pnpm run build:community` builds the community index page.
 - `MW_COMMUNITY=true pnpm run build` includes the community, editor, player, fullscreen, embed, addon settings, and credits pages.
 - `pnpm run build:library` builds the library alone. It exports ES modules in `dist/scratch-gui.mjs` and UMD in `dist/scratch-gui.js`. Load `dist/scratch-gui.css` alongside the library. React and ReactDOM are external dependencies.
