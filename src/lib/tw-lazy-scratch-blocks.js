@@ -1,6 +1,7 @@
 import {blockMessages} from '../generated/editor-locales/index.js';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
+import BundledScratchBlocks from 'scratch-blocks';
 
 let _ScratchBlocks = null;
 
@@ -115,8 +116,7 @@ const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
     }
-    return import(/* webpackChunkName: "sb" */ 'scratch-blocks')
-        .then(m => set(m.default));
+    return Promise.resolve(set(BundledScratchBlocks));
 };
 
 export default {

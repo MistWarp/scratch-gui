@@ -21,7 +21,7 @@ const areArraysEqual = (a, b) => {
     if (a.length !== b.length) {
         return false;
     }
-    for (let i = 0; i < a.length; a++) {
+    for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) {
             return false;
         }
@@ -148,7 +148,23 @@ const create = (moduleId, styleText) => {
     return allSheets.get(moduleId);
 };
 
+// Vite's ?inline returns CSS text. webpack's css-loader returns module tuples.
+// Strings are iterable too, so handle them before checking for module lists.
+const addResource = (resource, resourceId, addonId, precedence, condition) => {
+    if (!resource) return;
+    if (typeof resource === 'string') {
+        create(resourceId, resource).addDependent(addonId, precedence, condition);
+    } else if (typeof resource[Symbol.iterator] === 'function') {
+        for (const [moduleId, cssText] of resource) {
+            create(moduleId, cssText).addDependent(addonId, precedence, condition);
+        }
+    } else if (typeof resource.toString === 'function') {
+        create(resourceId, resource.toString()).addDependent(addonId, precedence, condition);
+    }
+};
+
 export {
+    addResource,
     create,
     updateAll
 };

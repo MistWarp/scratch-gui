@@ -5,7 +5,7 @@ const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
 const AVATARS = 'https://avatars.rotur.dev';
 const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
-const STATIC_FILE_PATH = /^\/(?:js|static\/assets)\//;
+const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',

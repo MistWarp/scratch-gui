@@ -29,6 +29,7 @@ import * as textColorHelpers from './libraries/common/cs/text-color.esm.js';
 import * as conditionalStyles from './conditional-style';
 import getPrecedence from './addon-precedence';
 import reduxInstance from './redux';
+import createRecolorableImage from './recolorable-image';
 
 /* eslint-disable no-console */
 
@@ -125,15 +126,15 @@ const getLocale = () => {
     }
     return locale.split('-')[0];
 };
-const language = getLocale();
-
+let language;
 const getTranslations = async () => {
+    language = getLocale();
     if (Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
         const localeMessages = await l10nEntries[language]();
-        Object.assign(addonMessages, localeMessages);
+        Object.assign(addonMessages, localeMessages.default || localeMessages);
     }
 };
-const addonMessagesPromise = getTranslations();
+let addonMessagesPromise;
 
 const untilInEditor = () => {
     if (
@@ -187,7 +188,6 @@ reduxInstance.addEventListener('statechanged', e => {
         updateClasses();
     }
 });
-updateClasses();
 
 const getInternalKey = element => Object.keys(element).find(key => key.startsWith('__reactInternalInstance$'));
 
@@ -674,35 +674,7 @@ class Tab extends EventTargetShim {
     }
 
     recolorable () {
-        // this is some pretty awful code that makes a *lot* of assumptions about how addons work
-
-        const image = document.createElement('img');
-
-        let svg = '';
-        const updateRealSrc = () => {
-            const newSrc = svg.replace(/#855cd6/gi, window.Recolor.primary);
-            const nativeSrcSetter = Object.getOwnPropertyDescriptor(window.HTMLImageElement.prototype, 'src').set;
-            nativeSrcSetter.call(image, `data:image/svg+xml;,${encodeURIComponent(newSrc)}`);
-        };
-
-        Object.defineProperty(image, 'src', {
-            get: () => {
-                // return the 'original' source, roughly
-                if (!svg) return '';
-                return `data:image/svg+xml;,${encodeURIComponent(svg)}`;
-            },
-            set: newSrc => {
-                // we assume it is a base64-encoded data: URI that is supported by atob()
-                const base64 = newSrc.split(';base64,')[1];
-                svg = atob(base64);
-                updateRealSrc();
-            }
-        });
-
-        // this leaks memory if an addon creates these disposably
-        AddonHooks.recolorCallbacks.push(updateRealSrc);
-
-        return image;
+        return createRecolorableImage(() => window.Recolor.primary, AddonHooks.recolorCallbacks);
     }
 }
 
@@ -930,18 +902,10 @@ class AddonRunner {
                     SettingsStore.evaluateCondition(this.id, userstyle.if)
                 );
 
-                const cssResource = this.resources[userstyle.url];
-                if (cssResource && typeof cssResource[Symbol.iterator] === 'function') {
-                    for (const [moduleId, cssText] of cssResource) {
-                        const sheet = conditionalStyles.create(moduleId, cssText);
-                        sheet.addDependent(this.id, userstylePrecedence, userstyleCondition);
-                    }
-                } else if (cssResource && typeof cssResource === 'object' && cssResource.toString) {
-                    // Fallback for css-loader that returns a string or has a toString method
-                    const cssText = cssResource.toString();
-                    const sheet = conditionalStyles.create(userstyle.url, cssText);
-                    sheet.addDependent(this.id, userstylePrecedence, userstyleCondition);
-                }
+                conditionalStyles.addResource(
+                    this.resources[userstyle.url], `${this.id}/${userstyle.url}`,
+                    this.id, userstylePrecedence, userstyleCondition
+                );
             }
 
         }
@@ -991,9 +955,21 @@ SettingsStore.addEventListener('addon-changed', e => {
     }
 });
 
-for (const id of Object.keys(addons)) {
-    if (!SettingsStore.getAddonEnabled(id)) {
-        continue;
+let started = false;
+/** Start addons once the editor's Redux store is available. */
+export default function runAddons () {
+    if (started) return;
+    if (!AddonHooks.appStateStore) {
+        AddonHooks.appStateStoreCallbacks.push(runAddons);
+        return;
     }
-    runAddon(id);
+    started = true;
+    addonMessagesPromise = getTranslations();
+    updateClasses();
+    for (const id of Object.keys(addons)) {
+        if (!SettingsStore.getAddonEnabled(id)) {
+            continue;
+        }
+        runAddon(id);
+    }
 }

@@ -20,7 +20,7 @@
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
     "setup": "pnpm install",
     "reinstall": "pnpm install --force && pnpm run link",
-    "deploy": "pnpm run clean:deploy && BUILD_DIR=deploy-build node scripts/build.mjs --site-only && touch deploy-build/.nojekyll && cp -r functions deploy-build/functions && node scripts/validate-deploy.mjs deploy-build && gh-pages -t -d deploy-build -m \"Build for $(git log --pretty=format:%H -n1)\"",
+    "deploy": "BUILD_DIR=deploy-build node scripts/build.mjs --site-only && touch deploy-build/.nojekyll && cp -r functions deploy-build/functions && node scripts/validate-deploy.mjs deploy-build && gh-pages -t -d deploy-build -m \"Build for $(git log --pretty=format:%H -n1)\"",
     "clean:deploy": "node -e \"fs.rmSync('deploy-build', {recursive: true, force: true}); fs.mkdirSync('deploy-build', {recursive: true});\"",
     "prepublish": "node scripts/prepublish.mjs",
     "prune": "./prune-gh-pages.sh",

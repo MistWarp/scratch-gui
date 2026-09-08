@@ -1,5 +1,7 @@
 node_modules/*
 build/*
+deploy-build/*
+build-eager-check/*
 dist/*
 test/*
 src/examples/*

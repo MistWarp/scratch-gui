@@ -165,7 +165,9 @@ const pageDefinitions = {
 const pagesAndAssets = (env, root, library, generatedInputs) => {
     const routeRoot = root || '/';
     const selected = Object.entries(pageDefinitions).filter(([name]) =>
-        (!env.ONLY_ENTRY || name === env.ONLY_ENTRY) && (name !== 'community' || env.MW_COMMUNITY === 'true'));
+        (!env.ONLY_ENTRY || name === env.ONLY_ENTRY) &&
+        !(env.MW_SKIP_EDITOR === 'true' && name === 'editor') &&
+        (name !== 'community' || env.MW_COMMUNITY === 'true'));
     if (!library && selected.length === 0) throw new Error(`No entry selected: ${env.ONLY_ENTRY}`);
     const pages = new Map(selected.map(([name, [filename, template, entry]]) => [filename, {name, template, entry}]));
     if (pages.has('editor.html') && !pages.has('index.html') && env.MW_COMMUNITY !== 'true') {
@@ -246,8 +248,12 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             }
         },
         config: () => (library ? {} : {
-            build: {rollupOptions: {input: [...pages.keys()].map(absolute)}},
-            optimizeDeps: {entries: [...pages.values()].map(page => `src/playground/${page.entry}`)}
+            build: {rollupOptions: {input: (env.ONLY_ENTRY === 'editor' ?
+                ['editor.html'] : [...pages.keys()]).map(absolute)}},
+            optimizeDeps: {entries: [
+                ...[...pages.values()].map(page => `src/playground/${page.entry}`),
+                '!deploy-build/**'
+            ]}
         }),
         resolveId: id => (pages.has(path.relative(directory, id)) ? id : null),
         load: id => (pages.has(path.relative(directory, id)) ? render(path.relative(directory, id)) : null),
@@ -272,6 +278,12 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             });
         },
         generateBundle (options, bundle) {
+            if (!library && env.ONLY_ENTRY === 'editor') {
+                const chunks = Object.values(bundle).filter(item => item.type === 'chunk');
+                if (chunks.length !== 1 || chunks[0].imports.length || chunks[0].dynamicImports.length) {
+                    this.error('The editor must be emitted as one JavaScript bundle without runtime imports.');
+                }
+            }
             if (env.MW_BUILD_STATS === 'true') {
                 this.emitFile({type: 'asset',
                     fileName: 'stats.json',
@@ -288,6 +300,11 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
         },
         writeBundle (options) {
             const out = options.dir;
+            if (!library && env.ONLY_ENTRY === 'editor' && pages.has('index.html')) {
+                fs.copyFileSync(path.join(out, 'editor.html'), path.join(out, 'index.html'));
+            }
+            // The first site pass already copied shared files into this output.
+            if (env.MW_KEEP_BUILD === 'true') return;
             for (const [from, to] of copies) fs.cpSync(absolute(from), path.join(out, to), {recursive: true});
             if (!library && fs.existsSync(absolute('../docs/build'))) {
                 fs.cpSync(absolute('../docs/build'), path.join(out, 'docs'), {recursive: true});
@@ -344,7 +361,9 @@ export default defineConfig(({mode}) => {
                 return `${path.basename(original, '.css')}_${name}_${hash}`;
             }},
         postcss: {plugins: [postcssImport(), postcssVars(), autoprefixer()]}},
-        server: {host: '0.0.0.0', port: Number(env.PORT || 8601), cors: true, fs: {allow: [path.dirname(directory)]}},
+        server: {host: '0.0.0.0', port: Number(env.PORT || 8601), cors: true,
+            watch: {ignored: ['**/deploy-build/**']},
+            fs: {allow: [path.dirname(directory)]}},
         preview: {port: Number(env.PORT || 8601)},
         optimizeDeps: {
             include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime',
@@ -362,7 +381,9 @@ export default defineConfig(({mode}) => {
         worker: {format: 'iife', plugins: () => [scratchCompatibility(), nodePolyfills()]},
         build: {
             outDir: library ? 'dist' : env.BUILD_DIR || 'build',
-            emptyOutDir: true,
+            emptyOutDir: env.MW_KEEP_BUILD !== 'true',
+            copyPublicDir: env.MW_KEEP_BUILD !== 'true',
+            reportCompressedSize: env.MW_BUILD_STATS === 'true',
             sourcemap: Boolean(env.SOURCEMAP && env.SOURCEMAP !== 'false'),
             assetsInlineLimit: 2048,
             commonjsOptions: {
@@ -373,6 +394,16 @@ export default defineConfig(({mode}) => {
                     /\?(raw|worker)$/.test(id) || id.startsWith('\0mw-') ? 'preferred' : false
                 )
             },
+            ...(!library && env.ONLY_ENTRY === 'editor' ? {
+                cssCodeSplit: false,
+                rollupOptions: {output: {inlineDynamicImports: true}}
+            } : !library ? {
+                // Shared translations belong in their own chunk on the other pages,
+                // not in an arbitrarily named UI component such as "checkbox".
+                rollupOptions: {output: {manualChunks: id => (
+                    id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
+                )}}
+            } : {}),
             ...(library ? {lib: {entry: absolute('src/index.js'),
                 name: 'GUI',
                 formats: ['es', 'umd'],
