@@ -1,0 +1,1 @@
+import{m as a}from"./library-BM-Kzynx.js";const l=[{tag:"animals",intlLabel:a.animals},{tag:"people",intlLabel:a.people},{tag:"fantasy",intlLabel:a.fantasy},{tag:"dance",intlLabel:a.dance},{tag:"music",intlLabel:a.music},{tag:"sports",intlLabel:a.sports},{tag:"food",intlLabel:a.food},{tag:"fashion",intlLabel:a.fashion},{tag:"letters",intlLabel:a.letters}];export{l as s};

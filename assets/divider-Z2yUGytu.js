@@ -1,0 +1,1 @@
+import{c as e}from"./normalize.module-Cz_xOu3L.js";import{P as i,R as r}from"./app-target-CM2jOmMJ.js";const a="divider_divider_yK758",d={divider:a},t=({className:s})=>r.createElement("div",{className:e(d.divider,s)});t.propTypes={className:i.string};export{t as D};
