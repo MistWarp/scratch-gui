@@ -121,7 +121,6 @@ const base = {
                 /node_modules[\\/]fractch[\\/]src/,
                 /node_modules[\\/]scratchblocks[\\/]build/,
                 /node_modules[\\/]isomorphic-git/,
-                /node_modules[\\/]monaco-editor/,
                 /node_modules[\\/]rotur-sdk/,
                 /node_modules[\\/]fake-indexeddb/
             ],
