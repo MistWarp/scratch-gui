@@ -1,1 +1,0 @@
-function s(t,e,o){const i=o.Events.isEnabled();if(o.Events.disable(),e){t.editingTarget&&t.emitWorkspaceUpdate();const l=e.getFlyout();if(l){const n=l.getWorkspace();window.Blockly.Xml.clearWorkspaceAndLoadFromXml(window.Blockly.Xml.workspaceToDom(n),n),e.getToolbox().refreshSelection(),e.toolboxRefreshEnabled_=!0}}i&&o.Events.enable()}export{s as u};

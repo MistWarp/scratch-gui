@@ -1,1 +1,0 @@
-async function i({addon:s,console:r}){const e=s.tab.traps.vm,n=()=>{if(s.self.disabled)return;const o=["music","pen","text2speech","translate"];for(let t of o)s.settings.get(t)&&!e.extensionManager.isExtensionLoaded(t)&&e.extensionManager.loadExtensionIdSync(t)};e.editingTarget?n():e.runtime.once("PROJECT_LOADED",n)}const c={"userscript.js":i};export{c as resources};
