@@ -399,7 +399,7 @@ export default class FindBarController {
     // DOM rows each time the user types or focuses the search field.
     renderResults (results, focusID, instanceBlock) {
         this.dropdown.empty();
-        if (this.moreResults) this.moreResults.remove();
+        if (this.moreResultsRow) this.moreResultsRow.remove();
         let offset = 0;
         const appendPage = () => {
             const fragment = document.createDocumentFragment();
@@ -422,15 +422,19 @@ export default class FindBarController {
             }
             this.dropdown.el.appendChild(fragment);
             if (focusedItem) this.dropdown.onItemClick(focusedItem, instanceBlock);
-            this.moreResults.hidden = offset >= results.length;
+            this.moreResultsRow.hidden = offset >= results.length;
             this.moreResults.textContent = `Show more results (${offset} of ${results.length})`;
+            this.dropdown.el.appendChild(this.moreResultsRow);
         };
+
+        this.moreResultsRow = document.createElement('li');
+        this.moreResultsRow.className = findBarStyles['sa-find-more-results-row'];
         this.moreResults = document.createElement('button');
         this.moreResults.type = 'button';
-        this.moreResults.className = 'sa-find-more-results';
+        this.moreResults.className = findBarStyles['sa-find-more-results'];
         this.moreResults.addEventListener('mousedown', event => event.preventDefault());
         this.moreResults.addEventListener('click', appendPage);
-        this.dropdownOut.appendChild(this.moreResults);
+        this.moreResultsRow.appendChild(this.moreResults);
         this.dropdown.loadMore = () => {
             if (offset >= results.length) return false;
             appendPage();
@@ -440,7 +444,7 @@ export default class FindBarController {
     }
 
     showCodeResults (results) {
-        if (this.moreResults) this.moreResults.remove();
+        if (this.moreResultsRow) this.moreResultsRow.remove();
         this.dropdown.empty();
         this.codeResults = results;
         this.codeIndex = 0;
