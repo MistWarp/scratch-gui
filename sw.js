@@ -1,6 +1,6 @@
 // Enhanced service worker for improved caching and performance
-const CACHE_NAME = 'mistwarp-cache-v1';
-const RUNTIME_CACHE = 'mistwarp-runtime';
+const CACHE_NAME = 'mistwarp-cache-v2';
+const RUNTIME_CACHE = 'mistwarp-runtime-v2';
 
 // Assets to cache immediately
 const PRECACHE_URLS = [
