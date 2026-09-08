@@ -1,0 +1,1 @@
+import{c as e}from"./index-CKySVYNd.js";import{P as i,R as r}from"./app-target-CiBs6_l8.js";const a="divider_divider_yK758",d={divider:a},t=({className:s})=>r.createElement("div",{className:e(d.divider,s)});t.propTypes={className:i.string};export{t as D};

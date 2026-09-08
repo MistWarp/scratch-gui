@@ -1,0 +1,1 @@
+import{e as r}from"./app-target-CiBs6_l8.js";const n=()=>{const e=r.useRef(0);return r.useEffect(()=>()=>{e.current+=1},[]),r.useCallback(()=>{const t=++e.current;return s=>(...u)=>{if(t===e.current)return s(...u)}},[])};export{n as u};

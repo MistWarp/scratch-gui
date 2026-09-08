@@ -1,1 +1,0 @@
-import{e as n}from"./app-target-DUJH1SYE.js";const r=e=>{n.useEffect(()=>{if(!e)return()=>{};const o=t=>{t.key==="Escape"&&e()};return window.addEventListener("keydown",o),()=>window.removeEventListener("keydown",o)},[e])};export{r as u};

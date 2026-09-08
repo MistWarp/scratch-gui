@@ -1,1 +1,0 @@
-import{c as e}from"./index-Brtndpys.js";import{P as i,R as r}from"./app-target-DUJH1SYE.js";const a="divider_divider_yK758",d={divider:a},t=({className:s})=>r.createElement("div",{className:e(d.divider,s)});t.propTypes={className:i.string};export{t as D};
