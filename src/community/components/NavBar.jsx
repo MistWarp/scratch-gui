@@ -95,6 +95,7 @@ const NavBar = () => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [unread, setUnread] = useState(0);
     const [openReports, setOpenReports] = useState(0);
+    const [openErrors, setOpenErrors] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const desktopSearchRef = useRef(null);
@@ -137,6 +138,7 @@ const NavBar = () => {
         if (!user) {
             setUnread(0);
             setOpenReports(0);
+            setOpenErrors(0);
             return;
         }
         let stale = false;
@@ -151,6 +153,11 @@ const NavBar = () => {
                 api.admin.reports()
                     .then(data => {
                         if (!stale) setOpenReports((data.reports || []).filter(r => !r.resolved).length);
+                    })
+                    .catch(() => {});
+                api.admin.siteErrors('open')
+                    .then(data => {
+                        if (!stale) setOpenErrors(Number(data.openCount || 0));
                     })
                     .catch(() => {});
             }
@@ -171,6 +178,7 @@ const NavBar = () => {
         window.addEventListener('mw:notifications-push', onPush);
         window.addEventListener('mw:notifications-removed', onRemoved);
         window.addEventListener('mw:reports-updated', refresh);
+        window.addEventListener('mw:errors-updated', refresh);
         document.addEventListener('visibilitychange', refresh);
         return () => {
             stale = true;
@@ -179,6 +187,7 @@ const NavBar = () => {
             window.removeEventListener('mw:notifications-push', onPush);
             window.removeEventListener('mw:notifications-removed', onRemoved);
             window.removeEventListener('mw:reports-updated', refresh);
+            window.removeEventListener('mw:errors-updated', refresh);
             document.removeEventListener('visibilitychange', refresh);
         };
     }, [user]);
@@ -407,6 +416,7 @@ const NavBar = () => {
                                 username={user.username}
                                 isAdmin={user.isAdmin}
                                 openReports={openReports}
+                                openErrors={openErrors}
                                 menuOpen={accountOpen}
                                 showEditorItems={false}
                                 onOpenMenu={() => setAccountOpen(true)}

@@ -602,6 +602,10 @@ const StatsOverview = ({view}) => {
                             prominent icon={Flag} label="Open reports" value={num(stats.openReports)}
                             detail={stats.openReports ? 'Needs review' : 'Queue is clear'}
                         />
+                        <StatTile
+                            prominent icon={AlertTriangle} label="Open errors" value={num(stats.openErrors)}
+                            detail={stats.openErrors ? 'Needs review' : 'Queue is clear'}
+                        />
                     </div>
                 </section>
 
@@ -1804,6 +1808,7 @@ const ErrorManager = () => {
                         Number(current.openCount || 0) + 1
                 };
             });
+            window.dispatchEvent(new Event('mw:errors-updated'));
         } catch (e) {
             setError(e.message || 'Could not update that error.');
         } finally {
@@ -1824,6 +1829,7 @@ const ErrorManager = () => {
                 };
             });
             if (expanded === id) setExpanded(null);
+            window.dispatchEvent(new Event('mw:errors-updated'));
         } catch (e) {
             setError(e.message || 'Could not delete that error.');
         } finally {
@@ -1968,6 +1974,7 @@ const ErrorManager = () => {
 const Admin = () => {
     const {user, loading} = useUser();
     const [reports, setReports] = useState(null);
+    const [openErrors, setOpenErrors] = useState(0);
     const [bans, setBans] = useState([]);
     const [admins, setAdmins] = useState([]);
     const [error, setError] = useState('');
@@ -1984,6 +1991,9 @@ const Admin = () => {
         api.admin.reports()
             .then(fresh(data => setReports((data.reports || []).filter(report => !report.resolved))))
             .catch(fresh(e => setError(e.message || 'Could not load reports.')));
+        api.admin.siteErrors('open')
+            .then(fresh(data => setOpenErrors(Number(data.openCount || 0))))
+            .catch(() => {});
         api.admin.bans()
             .then(fresh(data => setBans(data.bans || [])))
             .catch(() => {});
@@ -1995,6 +2005,11 @@ const Admin = () => {
     useEffect(() => {
         if (user && user.isAdmin) load();
     }, [user, load]);
+
+    useEffect(() => {
+        window.addEventListener('mw:errors-updated', load);
+        return () => window.removeEventListener('mw:errors-updated', load);
+    }, [load]);
 
     const act = async (id, action, reason) => {
         const actionKey = `report:${id}`;
@@ -2162,9 +2177,12 @@ const Admin = () => {
     }
 
     const openCount = reports ? reports.length : 0;
-    const sidebarSections = SECTIONS.map(section => (
-        section.key === 'reports' && openCount ? {...section, badge: openCount > 99 ? '99+' : openCount} : section
-    ));
+    const badgeFor = count => (count > 0 ? {badge: count > 99 ? '99+' : count} : null);
+    const sidebarSections = SECTIONS.map(section => {
+        if (section.key === 'reports' && openCount) return {...section, ...badgeFor(openCount)};
+        if (section.key === 'errors' && openErrors) return {...section, ...badgeFor(openErrors)};
+        return section;
+    });
 
     return (
         <main className={styles.page}>
