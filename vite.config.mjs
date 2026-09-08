@@ -166,7 +166,6 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
     const routeRoot = root || '/';
     const selected = Object.entries(pageDefinitions).filter(([name]) =>
         (!env.ONLY_ENTRY || name === env.ONLY_ENTRY) &&
-        !(env.MW_SKIP_EDITOR === 'true' && name === 'editor') &&
         (name !== 'community' || env.MW_COMMUNITY === 'true'));
     if (!library && selected.length === 0) throw new Error(`No entry selected: ${env.ONLY_ENTRY}`);
     const pages = new Map(selected.map(([name, [filename, template, entry]]) => [filename, {name, template, entry}]));
@@ -303,8 +302,6 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             if (!library && env.ONLY_ENTRY === 'editor' && pages.has('index.html')) {
                 fs.copyFileSync(path.join(out, 'editor.html'), path.join(out, 'index.html'));
             }
-            // The first site pass already copied shared files into this output.
-            if (env.MW_KEEP_BUILD === 'true') return;
             for (const [from, to] of copies) fs.cpSync(absolute(from), path.join(out, to), {recursive: true});
             if (!library && fs.existsSync(absolute('../docs/build'))) {
                 fs.cpSync(absolute('../docs/build'), path.join(out, 'docs'), {recursive: true});
@@ -381,8 +378,7 @@ export default defineConfig(({mode}) => {
         worker: {format: 'iife', plugins: () => [scratchCompatibility(), nodePolyfills()]},
         build: {
             outDir: library ? 'dist' : env.BUILD_DIR || 'build',
-            emptyOutDir: env.MW_KEEP_BUILD !== 'true',
-            copyPublicDir: env.MW_KEEP_BUILD !== 'true',
+            emptyOutDir: true,
             reportCompressedSize: env.MW_BUILD_STATS === 'true',
             sourcemap: Boolean(env.SOURCEMAP && env.SOURCEMAP !== 'false'),
             assetsInlineLimit: 2048,
@@ -398,7 +394,7 @@ export default defineConfig(({mode}) => {
                 cssCodeSplit: false,
                 rollupOptions: {output: {inlineDynamicImports: true}}
             } : !library ? {
-                // Shared translations belong in their own chunk on the other pages,
+                // Shared translations belong in their own chunk on site builds,
                 // not in an arbitrarily named UI component such as "checkbox".
                 rollupOptions: {output: {manualChunks: id => (
                     id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
