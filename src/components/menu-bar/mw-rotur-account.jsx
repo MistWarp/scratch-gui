@@ -31,6 +31,11 @@ const logout = onLogout => {
     if (api && api.logout) api.logout();
 };
 
+const getAdminLabel = (openReports, openErrors) => {
+    const total = Number(openReports || 0) + Number(openErrors || 0);
+    return total > 0 ? `Admin (${total})` : 'Admin';
+};
+
 const RoturAccount = props => {
     const handleSwitchAccount = React.useCallback(() => {
         const authUrl = buildAuthUrl();
@@ -119,7 +124,7 @@ const RoturAccount = props => {
                         {props.isAdmin ? (
                             <MenuItemContainer onClick={go('/admin')}>
                                 <ShieldCheck />
-                                <span>{props.openReports > 0 ? `Admin (${props.openReports})` : 'Admin'}</span>
+                                <span>{getAdminLabel(props.openReports, props.openErrors)}</span>
                             </MenuItemContainer>
                         ) : null}
                     </React.Fragment>
@@ -168,6 +173,7 @@ RoturAccount.propTypes = {
     onOpenLogin: PropTypes.func.isRequired,
     onOpenMenu: PropTypes.func.isRequired,
     openReports: PropTypes.number,
+    openErrors: PropTypes.number,
     showEditorItems: PropTypes.bool,
     username: PropTypes.string
 };
@@ -175,6 +181,7 @@ RoturAccount.propTypes = {
 RoturAccount.defaultProps = {
     isAdmin: false,
     openReports: 0,
+    openErrors: 0,
     showEditorItems: true
 };
 
