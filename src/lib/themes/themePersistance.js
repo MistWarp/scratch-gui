@@ -1,4 +1,6 @@
-import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
+import {
+    BLOCKS_CUSTOM, BLOCKS_HIGH_CONTRAST, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT
+} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
 import {captureStoredAppearance, mergeStoredAppearance, applyAppearance} from './appearance.js';
@@ -21,7 +23,8 @@ const systemPreferencesTheme = () => {
     const defaultsAvailable = Theme && Theme.defaults && Theme.defaults.light;
     if (defaultsAvailable) {
         if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-            return Theme.defaults.highContrast;
+            const base = PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches ? Theme.defaults.dark : Theme.defaults.light;
+            return base.set('blocks', BLOCKS_HIGH_CONTRAST);
         }
         if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
             return Theme.defaults.dark;
@@ -31,7 +34,8 @@ const systemPreferencesTheme = () => {
 
     // Fallback: construct a minimal Theme if Theme.defaults isn't initialized yet
     if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
+        const gui = PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches ? 'dark' : GUI_DEFAULT;
+        return new Theme(ACCENT_DEFAULT, gui, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT);
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
         return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);

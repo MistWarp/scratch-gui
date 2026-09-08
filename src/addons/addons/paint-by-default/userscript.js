@@ -101,13 +101,15 @@ export default async function ({ addon, console }) {
       if (!mainButton) {
         return;
       }
-      e.stopPropagation();
       const moreButtonsElement = mainButton.parentElement.querySelector('[class*="action-menu_more-buttons_"]');
+      if (!moreButtonsElement) return;
       const moreButtons = moreButtonsElement.children;
       const { index } = getButtonToClick(mainButton);
       // better-img-uploads can add a button at the start, so search "from the end" for compatibility
       const buttonToClick = moreButtons[moreButtons.length - (4 - index)];
-      const elementToClick = buttonToClick.querySelector("button");
+      const elementToClick = buttonToClick?.querySelector("button");
+      if (!elementToClick) return;
+      e.stopPropagation();
       elementToClick.click();
     },
     {
@@ -122,12 +124,14 @@ export default async function ({ addon, console }) {
         return;
       }
       const tooltipElement = mainButton.parentElement.querySelector(".__react_component_tooltip");
+      if (!tooltipElement) return;
       const { tooltip } = getButtonToClick(mainButton);
       const translatedTooltip = addon.tab.redux.state.locales.messages[tooltip];
       const needToFixTooltipText = translatedTooltip && tooltipElement.textContent !== translatedTooltip;
       if (needToFixTooltipText) {
         tooltipElement.textContent = translatedTooltip;
         setTimeout(() => {
+          if (!mainButton.isConnected || !tooltipElement.isConnected) return;
           tooltipElement.textContent = translatedTooltip;
           mainButton.dispatchEvent(new Event("mouseenter"));
         });

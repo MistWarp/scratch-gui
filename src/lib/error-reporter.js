@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import {request} from './community/api.js';
+import {BUILD_ID} from './build-version.js';
 
 let installed = false;
 let sending = false;
@@ -31,7 +32,8 @@ const shouldSend = signature => {
 const projectIdFromUrl = href => {
     try {
         const match = String(href || '').match(/\/project\/([A-Za-z0-9_-]{1,80})/);
-        return match ? match[1] : '';
+        const hashMatch = String(href || '').match(/#mw-([A-Za-z0-9_-]{1,80})/);
+        return match ? match[1] : hashMatch ? hashMatch[1] : '';
     } catch (e) {
         return '';
     }
@@ -62,7 +64,8 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
             url: href,
             projectId: String(projectId || projectIdFromUrl(href) || '').slice(0, 120),
             viewport: viewport(),
-            componentStack: String(componentStack || '').slice(0, 10000)
+            componentStack: String(componentStack || '').slice(0, 10000),
+            appVersion: BUILD_ID
         };
         request('/errors', {method: 'POST', body: payload, timeoutMs: 8000, cache: false})
             .catch(() => {})

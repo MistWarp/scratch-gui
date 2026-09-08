@@ -91,6 +91,7 @@ const base = {
     },
     output: {
         library: 'GUI',
+        crossOriginLoading: 'anonymous',
         filename: process.env.NODE_ENV === 'production' ?
             `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js',
         chunkFilename: process.env.NODE_ENV === 'production' ?

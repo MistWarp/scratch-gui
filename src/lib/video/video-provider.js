@@ -97,7 +97,7 @@ class VideoProvider {
      */
     _teardown () {
         // we might be asked to re-enable before _teardown is called, just ignore it.
-        if (this.enabled === false) {
+        if (this.enabled === false && this._singleSetup) {
             const disableTrack = requestDisableVideo();
             this._singleSetup = null;
             // by clearing refs to video and track, we should lose our hold over the camera
@@ -211,6 +211,8 @@ class VideoProvider {
         })
             .then(stream => {
                 this._video = document.createElement('video');
+                this._video.muted = true;
+                this._video.playsInline = true;
 
                 // Use the new srcObject API, falling back to createObjectURL
                 try {
@@ -223,12 +225,12 @@ class VideoProvider {
                 // hide the video tag and instead render a sample of the stream into
                 // the webgl rendered Scratch canvas, another hint like this one is
                 // needed.
-                this._video.play(); // Needed for Safari/Firefox, Chrome auto-plays.
                 this._track = stream.getTracks()[0];
-                return this;
+                return Promise.resolve(this._video.play()).then(() => this);
             })
             .catch(error => {
-                this._singleSetup = null;
+                this.enabled = false;
+                this._teardown();
                 this.onError(error);
             });
 

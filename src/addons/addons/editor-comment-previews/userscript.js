@@ -36,9 +36,10 @@ export default async function ({ addon, console }) {
   previewOuter.appendChild(previewInner);
   document.body.appendChild(previewOuter);
 
-  const getBlock = (id) => vm.editingTarget.blocks.getBlock(id) || vm.runtime.flyoutBlocks.getBlock(id);
-  const getComment = (block) => block && block.comment && vm.editingTarget.comments[block.comment];
+  const getBlock = (id) => vm.editingTarget?.blocks.getBlock(id) || vm.runtime.flyoutBlocks.getBlock(id);
+  const getComment = (block) => block && block.comment && vm.editingTarget?.comments[block.comment];
   const getProcedureDefinitionBlock = (procCode) => {
+    if (!vm.editingTarget) return null;
     const procedurePrototype = Object.values(vm.editingTarget.blocks._blocks).find(
       (i) => i.opcode === "procedures_prototype" && i.mutation.proccode === procCode
     );
@@ -77,6 +78,10 @@ export default async function ({ addon, console }) {
       return;
     }
     clearTimeout(showTimeout);
+    if (!vm.editingTarget) {
+      hidePreview();
+      return;
+    }
     if (doNotShowUntilMoveMouse) {
       return;
     }

@@ -1,4 +1,6 @@
-import React, {lazy, Suspense, useEffect} from 'react';
+import React, {Suspense, useEffect} from 'react';
+import lazy from '../lib/lazy-with-retry.js';
+import ErrorBoundary from '../containers/error-boundary.jsx';
 import {Routes, Route, useLocation} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
@@ -98,53 +100,55 @@ const App = () => {
         <StandingBanner />
         <UpdateToast />
         <div className="mw-app-content" id="mw-main-content" tabIndex="-1">
-            <Suspense fallback={<p className="mw-route-loading" role="status">Loading page…</p>}>
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/explore" element={<Explore />} />
-                    <Route path="/bounties/:id" element={<Bounty />} />
-                    <Route path="/bounties" element={<Bounties />} />
-                    <Route path="/themes" element={<Themes />} />
-                    <Route path="/themes/:id" element={<Theme />} />
-                    <Route path="/groups" element={<Groups />} />
-                    <Route path="/groups/:tag" element={<Group />} />
-                    <Route path="/p/:slug" element={<Project />} />
-                    <Route path="/p/:slug/remixes" element={<RemixTree />} />
-                    <Route path="/p/:slug/pulls" element={<PullRequests />} />
-                    <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
-                    <Route path="/p/:slug/commits/:sha" element={<Commit />} />
-                    <Route path="/project/:id" element={<Project />} />
-                    <Route path="/project/:id/remixes" element={<RemixTree />} />
-                    <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
-                    <Route path="/project/:id/pulls" element={<PullRequests />} />
-                    <Route path="/project/:id/commits/:sha" element={<Commit />} />
-                    <Route path="/users/:name" element={<Profile />} />
-                    <Route path="/users/:name/library" element={<UserLibrary />} />
-                    <Route path="/users/:name/followers" element={<Followers />} />
-                    <Route path="/users/:name/following" element={<Followers mode="following" />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/mystuff" element={<MyStuff />} />
-                    <Route path="/mystuff/project/:id" element={<ManageProject />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/posts/:id" element={<Post />} />
-                    <Route path="/news" element={<News />} />
-                    <Route path="/news/manage" element={<News manager />} />
-                    <Route path="/news/:id" element={<NewsPost />} />
-                    <Route path="/stats" element={<Stats />} />
-                    <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/spaces" element={<Spaces />} />
-                    <Route path="/spaces/:id" element={<Space />} />
-                    <Route path="/spaces/:id/manage" element={<ManageSpace />} />
-                    <Route path="/roadmap" element={<Roadmap />} />
-                    <Route path="/trust" element={<Trust />} />
-                    <Route path="/support" element={<Support />} />
-                    <Route path="/status" element={<Status />} />
-                    <Route path="/perks" element={<PaidPerks />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="*" element={<NotFound />} />
-                </Routes>
-            </Suspense>
+            <ErrorBoundary action="community-route">
+                <Suspense fallback={<p className="mw-route-loading" role="status">Loading page…</p>}>
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/explore" element={<Explore />} />
+                        <Route path="/bounties/:id" element={<Bounty />} />
+                        <Route path="/bounties" element={<Bounties />} />
+                        <Route path="/themes" element={<Themes />} />
+                        <Route path="/themes/:id" element={<Theme />} />
+                        <Route path="/groups" element={<Groups />} />
+                        <Route path="/groups/:tag" element={<Group />} />
+                        <Route path="/p/:slug" element={<Project />} />
+                        <Route path="/p/:slug/remixes" element={<RemixTree />} />
+                        <Route path="/p/:slug/pulls" element={<PullRequests />} />
+                        <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
+                        <Route path="/p/:slug/commits/:sha" element={<Commit />} />
+                        <Route path="/project/:id" element={<Project />} />
+                        <Route path="/project/:id/remixes" element={<RemixTree />} />
+                        <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
+                        <Route path="/project/:id/pulls" element={<PullRequests />} />
+                        <Route path="/project/:id/commits/:sha" element={<Commit />} />
+                        <Route path="/users/:name" element={<Profile />} />
+                        <Route path="/users/:name/library" element={<UserLibrary />} />
+                        <Route path="/users/:name/followers" element={<Followers />} />
+                        <Route path="/users/:name/following" element={<Followers mode="following" />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/mystuff" element={<MyStuff />} />
+                        <Route path="/mystuff/project/:id" element={<ManageProject />} />
+                        <Route path="/wallet" element={<Wallet />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/posts/:id" element={<Post />} />
+                        <Route path="/news" element={<News />} />
+                        <Route path="/news/manage" element={<News manager />} />
+                        <Route path="/news/:id" element={<NewsPost />} />
+                        <Route path="/stats" element={<Stats />} />
+                        <Route path="/leaderboard" element={<Leaderboard />} />
+                        <Route path="/spaces" element={<Spaces />} />
+                        <Route path="/spaces/:id" element={<Space />} />
+                        <Route path="/spaces/:id/manage" element={<ManageSpace />} />
+                        <Route path="/roadmap" element={<Roadmap />} />
+                        <Route path="/trust" element={<Trust />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/status" element={<Status />} />
+                        <Route path="/perks" element={<PaidPerks />} />
+                        <Route path="/admin" element={<Admin />} />
+                        <Route path="*" element={<NotFound />} />
+                    </Routes>
+                </Suspense>
+            </ErrorBoundary>
         </div>
         <Footer />
     </UserProvider>);
