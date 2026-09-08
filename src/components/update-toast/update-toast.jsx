@@ -43,8 +43,25 @@ class UpdateToast extends React.Component {
             // version.json missing or unreachable: stay silent, retry next interval.
         }
     }
-    handleReload () {
-        window.location.reload();
+    async handleReload () {
+        const root = process.env.ROOT || '/';
+        try {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration(root);
+                if (registration) await registration.unregister();
+            }
+            if ('caches' in window) {
+                const cacheNames = await window.caches.keys();
+                await Promise.all(cacheNames
+                    .filter(name => name.startsWith('mistwarp-cache-') || name.startsWith('mistwarp-runtime'))
+                    .map(name => window.caches.delete(name)));
+            }
+        } catch (e) {
+            // A cache cleanup failure should not prevent the update attempt.
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.set('mw-update', this.state.deployedId);
+        window.location.replace(url.toString());
     }
     render () {
         if (!this.state.deployedId) return null;
