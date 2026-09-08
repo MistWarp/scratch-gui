@@ -1,0 +1,1 @@
+import{l as t,a as l}from"./module-CIAGhTbL.js";async function r({addon:e,console:a}){const s=()=>{l(!e.self.disabled)};e.self.addEventListener("disabled",s),e.self.addEventListener("reenabled",s),s(),t(e)}const n={"userscript.js":r};export{n as resources};

@@ -1,0 +1,1 @@
+async function c({addon:o,console:e}){const s=await o.tab.traps.getBlockly(),t=s.BlockSvg.prototype.bumpNeighbours_;s.BlockSvg.prototype.bumpNeighbours_=function(){o.self.disabled&&t.call(this)}}const r={"userscript.js":c};export{r as resources};

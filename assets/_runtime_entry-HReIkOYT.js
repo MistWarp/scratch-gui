@@ -1,0 +1,1 @@
+import{l as t,s as r}from"./module-CIAGhTbL.js";async function i({addon:e,console:n}){const s=()=>{r(!e.self.disabled,e.settings.get("invertDrag"))};e.self.addEventListener("disabled",s),e.self.addEventListener("reenabled",s),e.settings.addEventListener("change",s),s(),t(e)}const l={"userscript.js":i};export{l as resources};

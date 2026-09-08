@@ -1,0 +1,1 @@
+const i=e=>e?typeof e.canViewSource=="boolean"?e.canViewSource:typeof e.canSeeInside=="boolean"?e.canSeeInside:(e.myRole?e.myRole==="owner":e.isOwner===!0)||(Number(e.price||0)<=0||e.bought===!0)&&e.seeInside!==!1&&!e.locked:!1;export{i as c};

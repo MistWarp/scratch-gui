@@ -1,0 +1,1 @@
+let e=!1;const a={paintSkew:null,paintSnap:null};function s(o,t){if(e)return;e=!0;const p=t.prototype.onMouseDrag;t.prototype.onMouseDrag=function(n){if(!this.active)return;const i=()=>{a.paintSnap?a.paintSnap.call(this,n):p.call(this,n)};a.paintSkew?a.paintSkew.call(this,n,i):i()}}export{a,s as i};

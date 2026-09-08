@@ -1,1 +1,25 @@
-!function(e){"use strict";setInterval(()=>{e.vm.runtime.startHats("everysecondexample_everySecond")},1e3),e.extensions.register(new class{getInfo(){return{id:"everysecondexample",name:"Every Second",blocks:[{opcode:"everySecond",blockType:e.BlockType.HAT,text:"every second",isEdgeActivated:!1}]}}})}(Scratch);
+(function(Scratch) {
+  'use strict';
+  class EverySecond {
+    getInfo() {
+      return {
+        id: 'everysecondexample',
+        name: 'Every Second',
+        blocks: [
+          {
+            opcode: 'everySecond',
+            blockType: Scratch.BlockType.HAT,
+            text: 'every second',
+            isEdgeActivated: false
+          }
+        ]
+      };
+    }
+  }
+  // highlight-start
+  setInterval(() => {
+    const startedThreads = Scratch.vm.runtime.startHats('everysecondexample_everySecond');
+  }, 1000);
+  // highlight-end
+  Scratch.extensions.register(new EverySecond());
+}(Scratch));

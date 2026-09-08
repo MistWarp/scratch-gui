@@ -1,1 +1,55 @@
-!function(e){"use strict";if(!e.extensions.unsandboxed)throw new Error("This example must run unsandboxed");document.addEventListener("keydown",s=>{e.vm.runtime.startHats("restartexampleunsandboxed_whenPressed",{KEY:s.key})}),e.extensions.register(new class{getInfo(){return{id:"restartexampleunsandboxed",name:"Restart Threads Example",blocks:[{blockType:e.BlockType.EVENT,opcode:"whenPressed",text:"when [KEY] key pressed",isEdgeActivated:!1,shouldRestartExistingThreads:!0,arguments:{KEY:{type:e.ArgumentType.STRING,menu:"key"}}}],menus:{key:{acceptReporters:!1,items:[{text:"space",value:" "},"a","b","c"]}}}}})}(Scratch);
+(function(Scratch) {
+  'use strict';
+
+  if (!Scratch.extensions.unsandboxed) {
+    throw new Error('This example must run unsandboxed');
+  }
+
+  class WhenKeyPressed {
+    getInfo() {
+      return {
+        id: 'restartexampleunsandboxed',
+        name: 'Restart Threads Example',
+        blocks: [
+          {
+            blockType: Scratch.BlockType.EVENT,
+            opcode: 'whenPressed',
+            text: 'when [KEY] key pressed',
+            isEdgeActivated: false,
+            // highlight-next-line
+            shouldRestartExistingThreads: true,
+            arguments: {
+              KEY: {
+                type: Scratch.ArgumentType.STRING,
+                menu: 'key'
+              }
+            }
+          }
+        ],
+        menus: {
+          key: {
+            acceptReporters: false,
+            items: [
+              {
+                text: 'space',
+                value: ' '
+              },
+              'a',
+              'b',
+              'c',
+              // ...
+            ]
+          }
+        }
+      };
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    Scratch.vm.runtime.startHats('restartexampleunsandboxed_whenPressed', {
+      KEY: e.key
+    });
+  });
+
+  Scratch.extensions.register(new WhenKeyPressed());
+})(Scratch);

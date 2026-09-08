@@ -1,0 +1,1 @@
+async function r({addon:t,msg:c,console:i}){const o=await t.tab.traps.getBlockly(),s=o.FieldNumber.prototype.showEditor_;o.FieldNumber.prototype.showEditor_=function(...e){return t.self.disabled||(this.useTouchInteraction_=!0),s.apply(this,e)}}const n={"userscript.js":r};export{n as resources};

@@ -1,0 +1,1 @@
+async function o({addon:i,msg:f,console:u}){const a=await i.tab.traps.getBlockly(),n=a.Variables.createVariable;a.Variables.createVariable=function(t,e,c){if(!i.self.disabled){const r=e;e=s=>{if(s){const l=t.isFlyout?t:t.getFlyout();l.setCheckboxState&&l.setCheckboxState(s,!1)}r&&r(s)}}return n.call(this,t,e,c)}}const b={"userscript.js":o};export{b as resources};
