@@ -31,7 +31,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => Promise.all(
-            cacheNames.forEach(cacheName => {
+            cacheNames.map(cacheName => {
                 if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
                     console.log('Deleting old cache:', cacheName);
                     return caches.delete(cacheName);
@@ -115,7 +115,11 @@ self.addEventListener('fetch', event => {
     if (url.pathname.endsWith('/version.json')) return;
 
     // Handle different types of requests with appropriate strategies
-    if (request.destination === 'script' || request.destination === 'style') {
+    if (request.mode === 'navigate') {
+        // A stale page can reference chunks removed by a newer deployment.
+        // Refresh the HTML online, retaining cached pages for offline use.
+        event.respondWith(networkFirst(request));
+    } else if (request.destination === 'script' || request.destination === 'style') {
         // Cache first for JS/CSS files
         event.respondWith(cacheFirst(request));
     } else if (request.destination === 'image') {
