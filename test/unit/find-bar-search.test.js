@@ -11,7 +11,7 @@ const makeController = blocks => {
         getTargetForStage: () => target, getBlocksJSON: () => []
     }};
     const result = new FindBarController({ScratchBlocks: {Msg: {}}, vm,
-        utils: {getEditingTarget: () => target}, msg: x => x, msgAny: x => x,
+        utils: {getEditingTarget: () => target, scrollBlockIntoView: jest.fn()}, msg: x => x, msgAny: x => x,
         activeTabIndexRef: {current: 0}, isPlayerOnlyRef: {current: false}});
     result.findInput = document.createElement('input');
     result.dropdownOut = document.createElement('div');
@@ -35,9 +35,17 @@ test('large searches filter data before rendering and retain all result pages', 
     controller.findInput.value = 'token';
     controller.inputChange({skipDebounce: true});
     expect(controller.dropdown.items).toHaveLength(100);
-    expect(controller.dropdown.el.children).toHaveLength(100);
+    expect(controller.dropdown.el.children).toHaveLength(101);
+    expect(controller.dropdown.el.lastElementChild).toBe(controller.moreResultsRow);
+    expect(controller.moreResults.parentElement).toBe(controller.moreResultsRow);
     controller.moreResults.click();
     expect(controller.dropdown.items).toHaveLength(200);
+    expect(controller.dropdown.el.lastElementChild).toBe(controller.moreResultsRow);
+    controller.dropdown.onItemClick(controller.dropdown.items[199]);
+    window.HTMLElement.prototype.scrollIntoView = jest.fn();
+    controller.dropdown.navigateFilter(1);
+    expect(controller.dropdown.items).toHaveLength(300);
+    expect(controller.dropdown.selected).toBe(controller.dropdown.items[200]);
     controller.findInput.value = 'token 4999';
     controller.inputChange({skipDebounce: true});
     expect(controller.dropdown.items).toHaveLength(1);

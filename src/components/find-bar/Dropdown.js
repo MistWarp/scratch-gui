@@ -61,10 +61,13 @@ export default class Dropdown {
             nxt = this.items[0];
             dir = 1;
         }
+        if (dir > 0 && nxt && !this.items.includes(nxt) && this.loadMore?.()) {
+            nxt = this.selected ? this.selected.nextSibling : this.items[0];
+        }
         if (!nxt && dir > 0 && this.loadMore?.()) {
             nxt = this.selected ? this.selected.nextSibling : this.items[0];
         }
-        while (nxt && nxt.style.display === 'none') {
+        while (nxt && (nxt.style.display === 'none' || !this.items.includes(nxt))) {
             nxt = dir === -1 ? nxt.previousSibling : nxt.nextSibling;
         }
         if (nxt) {

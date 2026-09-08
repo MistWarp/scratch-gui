@@ -906,14 +906,14 @@ const GUIComponent = props => {
         if (isStageHidden) {
             return {
                 minWidth: MIN_EDITOR_PANE_WIDTH + 16,
-                minHeight: 640 + Math.max(0, customStageSize.height - 360)
+                minHeight: 640
             };
         }
         return {
             minWidth: MIN_EDITOR_PANE_WIDTH + MIN_STAGE_PANEL_WIDTH + STAGE_RESIZER_WIDTH + 16,
-            minHeight: 640 + Math.max(0, customStageSize.height - 360)
+            minHeight: 640
         };
-    }, [customStageSize.height, isStageHidden, isNarrowLayout]);
+    }, [isStageHidden, isNarrowLayout]);
 
     const stagePanelStyle = useMemo(() => {
         if (isStageHidden) {

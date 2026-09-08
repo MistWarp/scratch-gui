@@ -249,6 +249,44 @@
     content: "\25CF ";
 }
 
+.sa-find-dropdown > .sa-find-more-results-row {
+    padding: 0.35rem;
+    border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    background: var(--ui-secondary, #f2f2f2);
+}
+
+.sa-find-dropdown > .sa-find-more-results-row[hidden] {
+    display: none;
+}
+
+.sa-find-dropdown > .sa-find-more-results-row::before {
+    content: none;
+}
+
+.sa-find-more-results {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--looks-secondary, #4c97ff);
+    border-radius: 0.4rem;
+    background: var(--ui-primary, #ffffff);
+    color: var(--looks-secondary, #4c97ff);
+    font: inherit;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sa-find-more-results:hover,
+.sa-find-more-results:focus-visible {
+    background: var(--looks-secondary, #4c97ff);
+    color: var(--ui-white, #ffffff);
+    outline: 2px solid var(--looks-transparent, rgba(76, 151, 255, 0.25));
+    outline-offset: 1px;
+}
+
 .sa-find-icon {
     position: absolute;
     left: 10px;
