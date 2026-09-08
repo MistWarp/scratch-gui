@@ -74,6 +74,7 @@ export const writeEditorLocales = directory => {
         if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== content) fs.writeFileSync(target, content);
     };
     const loaders = [];
+    const imports = [];
     for (const [locale, dictionary] of Object.entries(messages)) {
         if (!/^[a-zA-Z0-9-]+$/.test(locale)) throw new Error(`Invalid locale: ${locale}`);
         if (locale === 'en') Object.assign(dictionary, defaults);
@@ -82,10 +83,15 @@ export const writeEditorLocales = directory => {
         Object.assign(dictionary, additions[locale.toLowerCase()] || {});
         if (locale === 'es-419') Object.assign(dictionary, additions.es || {});
         write(`${locale}.json`, JSON.stringify({messages: dictionary, blocks: readBlockMessages(locale)}));
-        if (locale !== 'en') loaders.push(`${JSON.stringify(locale)}: () => import('./${locale}.json')`);
+        if (locale !== 'en') {
+            const name = `locale${imports.length}`;
+            imports.push(`import ${name} from './${locale}.json';`);
+            loaders.push(`${JSON.stringify(locale)}: () => Promise.resolve({default: ${name}})`);
+        }
     }
     const placeholders = Object.fromEntries(Object.keys(messages).map(locale => [locale, {}]));
     write('index.js', `import english from './en.json';\n` +
+        `${imports.join('\n')}\n` +
         `export const messages = ${JSON.stringify(placeholders)};\n` +
         `messages.en = english.messages;\n` +
         `export const blockMessages = ${JSON.stringify(placeholders)};\n` +

@@ -71,7 +71,7 @@ class GeneratedImports {
         this.namespaces = new Map();
     }
 
-    add (src, namespace) {
+    add (src, namespace, moduleNamespace = false) {
         // On Windows, convert \ to / in paths.
         src = src.replace(/\\/g, '/');
 
@@ -86,7 +86,7 @@ class GeneratedImports {
             importName += `${count}`;
         }
 
-        this.source += `import ${importName} from ${JSON.stringify(src)};\n`;
+        this.source += `import ${moduleNamespace ? '* as ' : ''}${importName} from ${JSON.stringify(src)};\n`;
         return importName;
     }
 
@@ -400,10 +400,10 @@ const generateEntries = (items, callback) => {
     let exportSection = 'export default {\n';
     const importSection = new GeneratedImports();
     for (const i of items) {
-        const {src, name, type} = callback(i);
+        const {src, type} = callback(i);
         if (type === 'lazy-import') {
-            // eslint-disable-next-line max-len
-            exportSection += `  ${JSON.stringify(i)}: () => import(/* webpackChunkName: ${JSON.stringify(name)} */ ${JSON.stringify(src)}),\n`;
+            const importName = importSection.add(src, i, true);
+            exportSection += `  ${JSON.stringify(i)}: () => Promise.resolve(${importName}),\n`;
         } else if (type === 'lazy-require') {
             exportSection += `  ${JSON.stringify(i)}: () => require(${JSON.stringify(src)}),\n`;
         } else if (type === 'eager-import') {

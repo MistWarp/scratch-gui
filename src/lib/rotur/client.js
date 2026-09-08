@@ -1,3 +1,6 @@
+import * as bundledModule0 from "../../community/api.js";
+import * as bundledModule1 from "../../community/api.js";
+
 import {Rotur, resolvePermissions} from 'rotur-sdk';
 import {loadSession} from '../community/api.js';
 import {
@@ -564,7 +567,7 @@ const fetchNotifications = afterDays => {
         let localLoaded = false;
         if (loadSession()) {
             try {
-                const {default: communityApi} = await import('../../community/api.js');
+                const {default: communityApi} = await Promise.resolve(bundledModule0);
                 const data = await communityApi.notifications();
                 local = data.notifications || [];
                 localLoaded = true;
@@ -630,7 +633,7 @@ const markNotificationsRead = async () => {
         return false;
     }
     try {
-        const {default: communityApi} = await import('../../community/api.js');
+        const {default: communityApi} = await Promise.resolve(bundledModule1);
         const results = await Promise.allSettled([
             rotur.notifications.markRead(),
             communityApi.loadSession() ? communityApi.readNotifications() : Promise.resolve()

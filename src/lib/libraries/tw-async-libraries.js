@@ -1,3 +1,8 @@
+import * as bundledModule0 from "./backdrops.json";
+import * as bundledModule1 from "./costumes.json";
+import * as bundledModule2 from "./sounds.json";
+import * as bundledModule3 from "./sprites.json";
+
 const libraryData = {};
 
 const asyncLibrary = (name, callback) => {
@@ -12,19 +17,19 @@ const asyncLibrary = (name, callback) => {
 
 export const getBackdropLibrary = asyncLibrary(
     'backdrops',
-    () => import(/* webpackChunkName: "library-backdrops" */ './backdrops.json')
+    () => Promise.resolve(bundledModule0)
 );
 export const getCostumeLibrary = asyncLibrary(
     'costumes',
-    () => import(/* webpackChunkName: "library-costumes" */ './costumes.json')
+    () => Promise.resolve(bundledModule1)
 );
 export const getSoundLibrary = asyncLibrary(
     'sounds',
-    () => import(/* webpackChunkName: "library-sounds" */ './sounds.json')
+    () => Promise.resolve(bundledModule2)
 );
 export const getSpriteLibrary = asyncLibrary(
     'sprites',
-    () => import(/* webpackChunkName: "library-sprites" */ './sprites.json')
+    () => Promise.resolve(bundledModule3)
 );
 
 export const setLibraryData = data => {

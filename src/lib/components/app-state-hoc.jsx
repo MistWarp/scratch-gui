@@ -95,6 +95,9 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
             );
             window.ReduxStore = this.store;
             AddonHooks.appStateStore = this.store;
+            for (const callback of AddonHooks.appStateStoreCallbacks.splice(0)) {
+                queueMicrotask(callback);
+            }
         }
         componentDidUpdate (prevProps) {
             if (localesOnly) return;

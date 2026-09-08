@@ -153,21 +153,8 @@ const GUIComponent = props => {
         MWHelpModal,
         MWProjectThemeModal,
         MWProductsModal,
-        MWGameItemsModal,
-        loadExtensionLibrary
+        MWGameItemsModal
     } = getGuiComponents();
-    useEffect(() => {
-        if (props.isPlayerOnly) return;
-
-        const preload = () => loadExtensionLibrary();
-        if (window.requestIdleCallback) {
-            const idleCallback = window.requestIdleCallback(preload);
-            return () => window.cancelIdleCallback(idleCallback);
-        }
-
-        const timeout = window.setTimeout(preload, 0);
-        return () => window.clearTimeout(timeout);
-    }, [props.isPlayerOnly, loadExtensionLibrary]);
     const handleEnableProcedureReturns = useCallback(() => {
         try {
             const workspace = AddonHooks.blocklyWorkspace;

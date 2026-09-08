@@ -1,3 +1,7 @@
+import * as bundledModule0 from "jsoneditor/dist/jsoneditor-minimalist.min.js";
+import * as bundledModule1 from "jsoneditor/dist/jsoneditor.css?global";
+import * as bundledModule2 from "./dev-inspector.module.css";
+
 import WindowManager from '../../addons/window-system/window-manager.js';
 import AddonHooks from '../../addons/hooks.js';
 import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
@@ -7,9 +11,9 @@ let jsonEditorLoader;
 const loadJSONEditor = () => {
     if (!jsonEditorLoader) {
         jsonEditorLoader = Promise.all([
-            import('jsoneditor/dist/jsoneditor-minimalist.min.js'),
-            import('jsoneditor/dist/jsoneditor.css?global'),
-            import('./dev-inspector.module.css')
+            Promise.resolve(bundledModule0),
+            Promise.resolve(bundledModule1),
+            Promise.resolve(bundledModule2)
         ]).then(([module, , stylesheet]) => {
             inspectorStyles = stylesheet.default;
             return module.default || module;

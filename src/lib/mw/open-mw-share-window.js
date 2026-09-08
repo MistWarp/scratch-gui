@@ -1,3 +1,5 @@
+import * as bundledModule0 from "../../components/mw-share-modal/share-window.jsx";
+
 /* eslint-disable react/jsx-filename-extension, react/jsx-no-literals */
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -48,14 +50,10 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
 
     shareWindow.setContent(container);
 
-    // Split ShareWindow (+ git/diff/sable deps) out of the editor initial
-    // bundle. Window opens immediately with a loader, content hydrates async.
+    // Keep the window opening lifecycle asynchronous with the bundled dialog.
     ReactDOM.render(<div style={{padding: 16}}>Loading…</div>, container);
-    import(
-        /* webpackChunkName: "mw-share-window" */
-        '../../components/mw-share-modal/share-window.jsx'
-    ).then(({default: ShareWindow}) => {
-        // Window may have closed while chunk loaded.
+    Promise.resolve(bundledModule0).then(({default: ShareWindow}) => {
+        // The window may have closed before the callback runs.
         if (!shareWindow || !container) return;
         ReactDOM.render(
             React.createElement(ShareWindow, {
