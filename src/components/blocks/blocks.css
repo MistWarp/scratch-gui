@@ -144,3 +144,27 @@
         padding-bottom: 6.8rem;
     }
 }
+
+.script-load-progress {
+    position: absolute;
+    top: 0.75rem;
+    inset-inline-end: 0.75rem;
+    z-index: $z-index-grab-handles;
+    max-width: calc(100% - 1.5rem);
+    padding: 0.65rem 0.85rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-primary;
+    color: $text-primary;
+    box-shadow: 0 2px 8px $ui-black-transparent;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+
+.script-load-progress progress {
+    display: block;
+    width: 100%;
+    height: 0.4rem;
+    margin: 0.5rem 0;
+    accent-color: $motion-primary;
+}

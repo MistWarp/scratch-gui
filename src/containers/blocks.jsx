@@ -154,6 +154,7 @@ class Blocks extends React.Component {
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
         this.state = {
+            scriptLoadProgress: null,
             prompt: null,
             flyoutWidth: null,
             paletteResizeEnabled: !SettingsStore.getAddonEnabled('hide-flyout')
@@ -306,6 +307,7 @@ class Blocks extends React.Component {
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
+            this.state.scriptLoadProgress !== nextState.scriptLoadProgress ||
             this.state.prompt !== nextState.prompt ||
             this.state.flyoutWidth !== nextState.flyoutWidth ||
             this.state.paletteResizeEnabled !== nextState.paletteResizeEnabled ||
@@ -1105,6 +1107,11 @@ class Blocks extends React.Component {
         this.ScratchBlocks.Events.disable();
         try {
             this.deferredWorkspaceLoad = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
+                onProgress: progress => {
+                    if (!this.unmounted) {
+                        this.setState({scriptLoadProgress: progress.phase === 'idle' ? null : progress});
+                    }
+                },
                 onDone: () => {
                     this.deferredWorkspaceLoad = null;
                 }
@@ -1123,6 +1130,7 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
+            if (!this.unmounted) this.setState({scriptLoadProgress: {phase: 'error'}});
         } finally {
             this.ScratchBlocks.Events.enable();
         }
@@ -1243,6 +1251,7 @@ class Blocks extends React.Component {
         this.blocks = blocks;
     }
     cancelDeferredWorkspaceLoad () {
+        if (!this.unmounted) this.setState({scriptLoadProgress: null});
         this.deferredWorkspaceLoad = null;
         if (this.workspace && this.workspace.cancelDeferredRender) {
             this.workspace.cancelDeferredRender();
@@ -1399,6 +1408,7 @@ class Blocks extends React.Component {
         return (
             <React.Fragment>
                 <DroppableBlocks
+                    scriptLoadProgress={this.state.scriptLoadProgress}
                     componentRef={this.setBlocks}
                     onDrop={this.handleDrop}
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
