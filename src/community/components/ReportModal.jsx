@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useState, useEffect, useRef} from 'react';
 import {Flag} from 'lucide-react';
 import api from '../api';
@@ -23,6 +24,7 @@ const NOUNS = {
 };
 
 const ReportModal = ({type, target, context, targetUser, onClose}) => {
+    const {text: communityText} = useCommunityText();
     const [category, setCategory] = useState(REASONS[0]);
     const [details, setDetails] = useState('');
     const [busy, setBusy] = useState(false);
@@ -65,31 +67,31 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
     return (
         <Modal
             icon={Flag}
-            title={`Report this ${NOUNS[type] || 'content'}`}
+            title={communityText("Report this {value1}", {value1: NOUNS[type] || 'content'})}
             onClose={onClose}
             dismissDisabled={busy}
             actions={sent ? (
                 <Button
                     variant="primary"
                     onClick={onClose}
-                >Done</Button>
+                >{communityText('Done')}</Button>
             ) : (
                 <React.Fragment>
-                    <Button onClick={onClose} disabled={busy}>Cancel</Button>
+                    <Button onClick={onClose} disabled={busy}>{communityText('Cancel')}</Button>
                     <Button
                         variant="primary"
                         busy={busy}
-                        busyLabel="Sending…"
+                        busyLabel={communityText('Sending…')}
                         onClick={submit}
-                    >Send report</Button>
+                    >{communityText('Send report')}</Button>
                 </React.Fragment>
             )}
         >
             {sent ? (
-                <p className={styles.sent}>Thanks. Your report was sent to the moderators.</p>
+                <p className={styles.sent}>{communityText('Thanks. Your report was sent to the moderators.')}</p>
             ) : (
                 <React.Fragment>
-                    <label className={styles.label}>What is wrong?</label>
+                    <label className={styles.label}>{communityText('What is wrong?')}</label>
                     <select
                         ref={firstRef}
                         className={styles.select}
@@ -104,13 +106,13 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                             >{reason}</option>
                         ))}
                     </select>
-                    <label className={styles.label}>Details (optional)</label>
+                    <label className={styles.label}>{communityText('Details (optional)')}</label>
                     <textarea
                         className={styles.textarea}
                         value={details}
                         disabled={busy}
                         maxLength={1000}
-                        placeholder="Add anything that helps a moderator understand the problem."
+                        placeholder={communityText('Add anything that helps a moderator understand the problem.')}
                         onChange={e => setDetails(e.target.value)}
                     />
                     {error ? <div className={styles.error}>{error}</div> : null}

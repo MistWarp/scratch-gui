@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Bookmark, Clock3, Layers3, Library, Trophy} from 'lucide-react';
@@ -17,6 +18,7 @@ const spaceFollowerCount = space => (
 );
 
 const SpaceCard = ({space, to, onClick}) => {
+    const {text: communityText} = useCommunityText();
     const Icon = KIND_ICONS[space.kind] || Layers3;
     const projects = space.projects || [];
     const thumbnailUrl = space.thumbnailUrl || (projects.find(project => project.thumbUrl) || {}).thumbUrl;
@@ -30,24 +32,23 @@ const SpaceCard = ({space, to, onClick}) => {
     const componentProps = to ? {to} : {type: 'button', onClick};
     return (
         <article className={styles.card}>
-            <Component className={styles.cardLink} aria-label={`Open ${space.title}`} {...componentProps} />
+            <Component className={styles.cardLink} aria-label={communityText("Open {value1}", {value1: space.title})} {...componentProps} />
             {thumbnailUrl ? <img className={styles.thumbnail} src={thumbnailUrl} alt="" loading="lazy" /> : null}
             <div className={styles.heading}>
                 <span className={styles.icon}><Icon size={17} /></span>
                 <span className={styles.kind}>{KIND_LABELS[space.kind] || space.kind}</span>
             </div>
             <h3>{space.title}</h3>
-            <p>{space.description || 'No description yet.'}</p>
+            <p>{space.description || communityText('No description yet.')}</p>
             {space.owner ? (
-                <span className={styles.owner}>
-                    by <UserLink username={space.owner}>{space.owner}</UserLink><GroupTag username={space.owner} compact linked={false} />
+                <span className={styles.owner}>{communityText('by ')}<UserLink username={space.owner}>{space.owner}</UserLink><GroupTag username={space.owner} compact linked={false} />
                 </span>
             ) : null}
             <div className={styles.meta}>
                 <span>{projectCount} {projectLabel}</span>
-                {space.kind === 'challenge' ? <span>{space.participantCount || 0} joined</span> : null}
+                {space.kind === 'challenge' ? <span>{space.participantCount || 0}{communityText(' joined')}</span> : null}
                 {space.kind !== 'library' ? (
-                    <span>{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</span>
+                    <span>{followerCount} {followerCount === 1 ? communityText('follower') : communityText('followers')}</span>
                 ) : null}
                 {space.kind !== 'challenge' && Number.isFinite(space.totalPlaytimeMs) ? (
                     <span className={styles.playtime}>
@@ -55,7 +56,7 @@ const SpaceCard = ({space, to, onClick}) => {
                     </span>
                 ) : null}
                 {space.kind === 'challenge' && deadline && deadline.getTime() > Date.now() ? (
-                    <span>Ends {formatDate(deadline)}</span>
+                    <span>{communityText('Ends ')}{formatDate(deadline)}</span>
                 ) : null}
             </div>
         </article>

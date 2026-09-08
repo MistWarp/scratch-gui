@@ -1,3 +1,16 @@
+// Keep generic store and legacy migration coverage independent of retired UI addons.
+jest.mock('../../../src/addons/generated/addon-manifests', () => ({
+    __esModule: true,
+    default: {
+        ...jest.requireActual('../../../src/addons/generated/addon-manifests').default,
+        'cat-blocks': {enabledByDefault: false},
+        'clones': {enabledByDefault: false},
+        'mute-project': {enabledByDefault: true},
+        'remove-curved-stage-border': {enabledByDefault: false},
+        'tw-remove-backpack': {enabledByDefault: false}
+    }
+}));
+
 import SettingStore from '../../../src/addons/settings-store';
 import upstreamMeta from '../../../src/addons/generated/upstream-meta.json';
 
@@ -213,12 +226,10 @@ test('reset all addons', () => {
     store.addEventListener('setting-changed', fn);
     store.resetAllAddons();
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(fn.mock.calls[0][0].detail.addonId).toBe('cat-blocks');
-    expect(fn.mock.calls[0][0].detail.settingId).toBe('enabled');
-    expect(fn.mock.calls[0][0].detail.value).toBe(false);
-    expect(fn.mock.calls[1][0].detail.addonId).toBe('onion-skinning');
-    expect(fn.mock.calls[1][0].detail.settingId).toBe('default');
-    expect(fn.mock.calls[1][0].detail.value).toBe(false);
+    expect(fn.mock.calls.map(call => call[0].detail)).toEqual(expect.arrayContaining([
+        {addonId: 'cat-blocks', settingId: 'enabled', value: false, reloadRequired: true},
+        {addonId: 'onion-skinning', settingId: 'default', value: false, reloadRequired: true}
+    ]));
 });
 
 test('apply preset', () => {

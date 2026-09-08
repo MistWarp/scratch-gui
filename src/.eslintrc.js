@@ -53,9 +53,7 @@ module.exports = {
             version: '16.2' // Prevent 16.3 lifecycle method errors
         },
         'import/resolver': {
-            webpack: {
-                config: path.resolve(__dirname, '../webpack.config.js')
-            }
+            [path.resolve(__dirname, '../scripts/eslint-resolver.cjs')]: {}
         }
     }
 };

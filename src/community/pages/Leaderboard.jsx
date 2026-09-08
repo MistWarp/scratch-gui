@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {Users, Trophy, Heart, Play} from 'lucide-react';
@@ -44,31 +46,30 @@ export const normalizeLeaderboardParams = currentParams => {
 };
 
 const Stat = ({board, person}) => {
+    const {text: communityText} = useCommunityText();
     if (board === 'loves') {
         return (
             <span className={styles.stat}>
                 <Heart size={16} />
-                {(person.loves || 0).toLocaleString()} loves
-            </span>
+                {(person.loves || 0).toLocaleString(getCommunityLocale())}{communityText(' loves')}</span>
         );
     }
     if (board === 'views') {
         return (
             <span className={styles.stat}>
                 <Play size={16} />
-                {(person.views || 0).toLocaleString()} views
-            </span>
+                {(person.views || 0).toLocaleString(getCommunityLocale())}{communityText(' views')}</span>
         );
     }
     return (
         <span className={styles.stat}>
             <Users size={16} />
-            {(person.follower_count || 0).toLocaleString()} followers
-        </span>
+            {(person.follower_count || 0).toLocaleString(getCommunityLocale())}{communityText(' followers')}</span>
     );
 };
 
 const Leaderboard = () => {
+    const {text: communityText} = useCommunityText();
     const [searchParams, setSearchParams] = useSearchParams();
     const board = leaderboardBoard(searchParams.get('board'));
     const [users, setUsers] = useState(null);
@@ -93,7 +94,7 @@ const Leaderboard = () => {
             .then(fresh(setUsers))
             .catch(fresh(() => {
                 setUsers([]);
-                setError('Could not load the leaderboard.');
+                setError(communityText("Could not load the leaderboard."));
             }));
     }, [attempt, board, beginLoad]);
 
@@ -118,14 +119,14 @@ const Leaderboard = () => {
                 ariaLabel="Leaderboard type"
             />
             {users === null ? (
-                <p className={styles.status}>Loading…</p>
+                <p className={styles.status}>{communityText('Loading…')}</p>
             ) : error ? (
                 <div className={styles.status}>
                     <p>{error}</p>
-                    <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button>
+                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                 </div>
             ) : !users.length ? (
-                <p className={styles.status}>No one on this leaderboard yet.</p>
+                <p className={styles.status}>{communityText('No one on this leaderboard yet.')}</p>
             ) : (
                 <ol className={styles.list}>
                     {users.map((person, position) => (
@@ -145,11 +146,11 @@ const Leaderboard = () => {
                                     <strong>{person.username}</strong>
                                     {board === 'followers' ? (
                                         <span>{typeof person.index === 'number' ?
-                                            `Account #${person.index}` : 'Account number unavailable'}</span>
+                                            communityText("Account #{value1}", {value1: person.index}) : communityText('Account number unavailable')}</span>
                                     ) : (
                                         <span>
-                                            {`${person.projects || 0} shared `}
-                                            {person.projects === 1 ? 'project' : 'projects'}
+                                            {communityText("{value1} shared ", {value1: person.projects || 0})}
+                                            {person.projects === 1 ? communityText('project') : communityText('projects')}
                                         </span>
                                     )}
                                     {board === 'followers' && person.status ? (

@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {FlaskConical, X} from 'lucide-react';
@@ -14,6 +15,7 @@ const wasDismissed = () => {
 };
 
 const BetaBanner = () => {
+    const {text: communityText} = useCommunityText();
     const [dismissed, setDismissed] = useState(wasDismissed);
     if (dismissed) {
         return null;
@@ -32,14 +34,13 @@ const BetaBanner = () => {
                 size={15}
                 className={styles.icon}
             />
-            <span className={styles.text}>
-                The new MistWarp is a beta. Expect bugs, and please report them on{' '}
-                <Link to="/roadmap?new=bug">the bug tracker</Link>.
+            <span className={styles.text}>{communityText('The new MistWarp is a beta. Expect bugs, and please report them on')}{' '}
+                <Link to="/roadmap?new=bug">{communityText('the bug tracker')}</Link>.
             </span>
             <button
                 type="button"
                 className={styles.dismiss}
-                aria-label="Dismiss"
+                aria-label={communityText('Dismiss')}
                 onClick={dismiss}
             >
                 <X size={15} />

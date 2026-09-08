@@ -1,4 +1,4 @@
-import icon from '!!raw-loader!../icons/light.svg';
+import icon from '../icons/light.svg?raw';
 
 const name = 'Light';
 

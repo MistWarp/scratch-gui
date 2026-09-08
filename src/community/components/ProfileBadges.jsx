@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -44,6 +45,7 @@ export const badgeTooltipPosition = (badgeRect, viewportWidth) => {
 };
 
 const BadgeDetail = ({badge, position}) => {
+    const {text: communityText} = useCommunityText();
     const percent = badgePercent(badge);
     const hasProgress = badge.evolving && Number.isFinite(badge.progress);
     return (
@@ -59,14 +61,14 @@ const BadgeDetail = ({badge, position}) => {
         >
             <span className={styles.tooltipHead}>
                 <strong>{badge.name}</strong>
-                {badge.evolving ? <span>Level {badge.level || 1}</span> : null}
+                {badge.evolving ? <span>{communityText('Level ')}{badge.level || 1}</span> : null}
             </span>
             {badge.issuer ? <span className={styles.issuer}>{badge.issuer}</span> : null}
             {badge.description ? <span className={styles.description}>{badge.description}</span> : null}
             {hasProgress ? (
                 <span className={styles.progress}>
                     <span className={styles.progressLabel}>
-                        <span>Progress</span>
+                        <span>{communityText('Progress')}</span>
                         <strong>{badge.progress}{badge.next_threshold ? ` / ${badge.next_threshold}` : ''}</strong>
                     </span>
                     {badge.next_threshold ? (
@@ -93,6 +95,7 @@ const visibleBadges = badges => badges.filter(badge => !badge.hidden);
 const movableIds = badges => badges.filter(badge => !badge.pinned && badge.id).map(badge => badge.id);
 
 const BadgeEditor = ({onClose, onVisibleChange}) => {
+    const {text: communityText} = useCommunityText();
     const [badges, setBadges] = useState([]);
     const [preferences, setPreferences] = useState({hidden_badges: [], badge_order: []});
     const [loading, setLoading] = useState(true);
@@ -190,20 +193,20 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
     };
 
     return (
-        <Modal title="Edit badges" onClose={onClose} dismissDisabled={saving}>
+        <Modal title={communityText('Edit badges')} onClose={onClose} dismissDisabled={saving}>
             <div className={styles.editorIntro}>
-                <p>Drag badges into the order you want. Hidden badges stay here but disappear from your profile.</p>
-                {saving ? <span>Saving…</span> : null}
+                <p>{communityText('Drag badges into the order you want. Hidden badges stay here but disappear from your profile.')}</p>
+                {saving ? <span>{communityText('Saving…')}</span> : null}
             </div>
-            {loading ? <p className={styles.editorState}>Loading badges…</p> : null}
+            {loading ? <p className={styles.editorState}>{communityText('Loading badges…')}</p> : null}
             {error ? (
                 <div className={styles.editorError} role="alert">
                     <span>{error}</span>
-                    <Button onClick={load}>Try again</Button>
+                    <Button onClick={load}>{communityText('Try again')}</Button>
                 </div>
             ) : null}
             {!loading && !error && !badges.length ? (
-                <p className={styles.editorState}>You do not have any badges yet.</p>
+                <p className={styles.editorState}>{communityText('You do not have any badges yet.')}</p>
             ) : null}
             {!loading && badges.length ? (
                 <div className={styles.editorList}>
@@ -230,13 +233,13 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
                             onDragEnd={() => setDraggedId('')}
                         >
                             {badge.pinned ? (
-                                <span className={styles.lock} title="Always first"><Lock size={16} /></span>
+                                <span className={styles.lock} title={communityText('Always first')}><Lock size={16} /></span>
                             ) : (
                                 <button
                                     type="button"
                                     className={styles.grip}
-                                    aria-label={`Reorder ${badge.name}`}
-                                    title="Drag to reorder. Use the arrow keys to move."
+                                    aria-label={communityText("Reorder {value1}", {value1: badge.name})}
+                                    title={communityText('Drag to reorder. Use the arrow keys to move.')}
                                     disabled={saving}
                                     onKeyDown={event => {
                                         if (event.key === 'ArrowUp') {
@@ -265,7 +268,7 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
                                 type="button"
                                 className={styles.visibility}
                                 aria-label={badge.pinned ?
-                                    `${badge.name} is always visible` :
+                                    communityText("{value1} is always visible", {value1: badge.name}) :
                                     `${badge.hidden ? 'Show' : 'Hide'} ${badge.name}`
                                 }
                                 disabled={badge.pinned || saving}
@@ -285,6 +288,7 @@ BadgeEditor.propTypes = {
 };
 
 const ProfileBadges = ({badges, editable, onChange}) => {
+    const {text: communityText} = useCommunityText();
     const [editing, setEditing] = useState(false);
     const [activeTooltip, setActiveTooltip] = useState(null);
 
@@ -350,8 +354,8 @@ const ProfileBadges = ({badges, editable, onChange}) => {
                         type="button"
                         className={styles.edit}
                         onClick={() => setEditing(true)}
-                        aria-label="Edit badge order and visibility"
-                        title="Edit badges"
+                        aria-label={communityText('Edit badge order and visibility')}
+                        title={communityText('Edit badges')}
                     ><Pencil size={14} /></button>
                 ) : null}
             </div>

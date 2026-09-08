@@ -1,3 +1,4 @@
+import findBarStyles from './find-bar.module.css';
 import BlockItem from '../../lib/find-bar/BlockItem';
 import {getCodeSearch, setFindBarApi} from '../../lib/find-bar/api';
 
@@ -31,7 +32,10 @@ export default class FindBarController {
         this.currentResultIndex = -1;
 
         this.isRegexMode = false;
-        this.isCaseSensitive = localStorage.getItem('sa-find-case-sensitive') === '1';
+        this.isCaseSensitive = false;
+        try {
+            this.isCaseSensitive = localStorage.getItem('sa-find-case-sensitive') === '1';
+        } catch (e) { /* Storage can be unavailable in embedded editors. */ }
 
         this.findBarOuter = null;
         this.findWrapper = null;
@@ -47,12 +51,14 @@ export default class FindBarController {
         document.addEventListener('keydown', this._onDocumentKeyDown, true);
 
         this._onDocumentPointerDown = e => {
-            if (!this.findBarOuter || !this.findBarOuter.classList.contains('mw-find-expanded')) return;
+            if (!this.findBarOuter || !this.findBarOuter.classList.contains(findBarStyles['mw-find-expanded'])) return;
             if (this.findBarOuter.contains(e.target)) return;
             this.collapseMobileSearch();
         };
         document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
 
+        this._searchEntries = null;
+        this.prevValue = null;
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
         this._cachedScratchSounds = null;
@@ -71,6 +77,8 @@ export default class FindBarController {
     }
 
     _invalidateCache () {
+        this._searchEntries = null;
+        this.prevValue = null;
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
         this._cachedScratchSounds = null;
@@ -80,19 +88,19 @@ export default class FindBarController {
         if (this.findBarOuter) return;
 
         this.findBarContainer = document.createElement('li');
-        this.findBarContainer.className = 'mw-native-find-bar-container';
+        this.findBarContainer.className = findBarStyles['mw-native-find-bar-container'];
         this.findBarContainer.setAttribute('role', 'presentation');
         root.appendChild(this.findBarContainer);
 
         this.findBarOuter = document.createElement('div');
-        this.findBarOuter.className = 'sa-find-bar mw-native-find-bar';
+        this.findBarOuter.className = `${findBarStyles['sa-find-bar']} ${findBarStyles['mw-native-find-bar']}`;
         this.findBarContainer.appendChild(this.findBarOuter);
 
         this.findWrapper = this.findBarOuter.appendChild(document.createElement('span'));
-        this.findWrapper.className = 'sa-find-wrapper';
+        this.findWrapper.className = findBarStyles['sa-find-wrapper'];
 
         this.searchIcon = this.findWrapper.appendChild(document.createElement('span'));
-        this.searchIcon.className = 'sa-find-icon';
+        this.searchIcon.className = findBarStyles['sa-find-icon'];
         this.searchIcon.setAttribute('aria-hidden', 'true');
         this.searchIcon.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
@@ -102,22 +110,22 @@ export default class FindBarController {
         `;
 
         this.searchIcon.addEventListener('click', () => {
-            if (this.findBarOuter.classList.contains('mw-find-expanded')) {
+            if (this.findBarOuter.classList.contains(findBarStyles['mw-find-expanded'])) {
                 this.collapseMobileSearch();
             } else {
-                this.findBarOuter.classList.add('mw-find-expanded');
+                this.findBarOuter.classList.add(findBarStyles['mw-find-expanded']);
                 if (this.findInput) this.findInput.focus();
             }
         });
 
         this.dropdownOut = this.findWrapper.appendChild(document.createElement('label'));
-        this.dropdownOut.className = 'sa-find-dropdown-out';
+        this.dropdownOut.className = findBarStyles['sa-find-dropdown-out'];
 
         const inputWrap = this.dropdownOut.appendChild(document.createElement('span'));
         inputWrap.className = 'sa-find-input-wrap';
 
         this.findInput = inputWrap.appendChild(document.createElement('input'));
-        this.findInput.className = `${this.inputClassName} sa-find-input`;
+        this.findInput.className = `${this.inputClassName} ${findBarStyles['sa-find-input']}`;
         this.findInput.id = 'sa-find-input';
         this.findInput.type = 'search';
         this.findInput.placeholder = this.msg('find-placeholder');
@@ -126,10 +134,11 @@ export default class FindBarController {
         this.dropdownOut.appendChild(this.dropdown.createDom());
 
         this.searchControls = this.findBarOuter.appendChild(document.createElement('div'));
-        this.searchControls.className = 'sa-hidden-modifiers';
+        this.searchControls.className = findBarStyles['sa-hidden-modifiers'];
 
         this.caseToggle = this.searchControls.appendChild(document.createElement('button'));
-        this.caseToggle.className = `sa-find-toggle${this.isCaseSensitive ? ' sa-find-toggle-active' : ''}`;
+        this.caseToggle.className = findBarStyles['sa-find-toggle'];
+        this.caseToggle.classList.toggle(findBarStyles['sa-find-toggle-active'], this.isCaseSensitive);
         this.caseToggle.textContent = 'Aa';
         this.caseToggle.title = this.msg('case-sensitive');
         this.caseToggle.type = 'button';
@@ -140,7 +149,8 @@ export default class FindBarController {
         });
 
         this.regexToggle = this.searchControls.appendChild(document.createElement('button'));
-        this.regexToggle.className = `sa-find-toggle${this.isRegexMode ? ' sa-find-toggle-active' : ''}`;
+        this.regexToggle.className = findBarStyles['sa-find-toggle'];
+        this.regexToggle.classList.toggle(findBarStyles['sa-find-toggle-active'], this.isRegexMode);
         this.regexToggle.textContent = '.*';
         this.regexToggle.title = this.msg('regex-mode');
         this.regexToggle.type = 'button';
@@ -149,9 +159,6 @@ export default class FindBarController {
             this.toggleRegexMode();
             this.findInput.focus();
         });
-
-        this.searchStats = this.findWrapper.appendChild(document.createElement('span'));
-        this.searchStats.className = 'sa-find-stats';
 
         this.bindEvents();
         this.tabChanged();
@@ -166,6 +173,7 @@ export default class FindBarController {
         setFindBarApi(null);
         document.removeEventListener('keydown', this._onDocumentKeyDown, true);
         document.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
+        this.codeSearchToken++;
         this.vm.removeListener('PROJECT_CHANGED', this._invalidateOnVmChange);
         this.vm.removeListener('workspaceUpdate', this._invalidateOnVmChange);
         if (this._debounceTimer) {
@@ -198,12 +206,15 @@ export default class FindBarController {
         });
 
         this.findInput.addEventListener('blur', () => {
+            clearTimeout(this._debounceTimer);
+            this.codeSearchToken++;
+            this.prevValue = null;
             setTimeout(() => this.updateModifierVisibility(), 0);
             this.hideDropDown();
         });
 
         this.findInput.addEventListener('keydown', e => this.inputKeyDown(e));
-        this.findInput.addEventListener('keyup', () => this.inputChange());
+        this.findInput.addEventListener('input', () => this.inputChange());
 
         this.findBarOuter.addEventListener('mousedown', e => {
             if (e.target === this.caseToggle || e.target === this.regexToggle) {
@@ -215,14 +226,16 @@ export default class FindBarController {
     updateModifierVisibility () {
         const inputFocused = document.activeElement === this.findInput;
         if (inputFocused) {
-            this.searchControls.classList.add('sa-find-controls');
+            this.searchControls.classList.add(findBarStyles['sa-find-controls']);
         } else {
-            this.searchControls.classList.remove('sa-find-controls');
+            this.searchControls.classList.remove(findBarStyles['sa-find-controls']);
         }
     }
 
     tabChanged () {
         if (!this.findBarOuter) return;
+        this._invalidateCache();
+        this.hideDropDown();
         const tab = this.activeTabIndexRef.current;
         const visible = tab === 0 || tab === 1 || tab === 2;
         this.findBarOuter.hidden = !visible;
@@ -318,6 +331,8 @@ export default class FindBarController {
     }
 
     inputChange (options = {}) {
+        clearTimeout(this._debounceTimer);
+        const token = ++this.codeSearchToken;
         const codeSearch = getCodeSearch();
         if (codeSearch) {
             const query = this.findInput.value;
@@ -326,14 +341,17 @@ export default class FindBarController {
                 this.showCodeResults([]);
                 return;
             }
-            const token = ++this.codeSearchToken;
             codeSearch.searchAll(query, this.isCaseSensitive).then(results => {
                 if (token === this.codeSearchToken) this.showCodeResults(results);
-            });
+            })
+                .catch(() => {
+                    if (token === this.codeSearchToken) this.showCodeResults([]);
+                });
             return;
         }
 
         if (!this.findInput.value) {
+            this.prevValue = null;
             this.showAllItems();
             return;
         }
@@ -356,62 +374,73 @@ export default class FindBarController {
     }
 
     _performSearch (searchVal, originalVal) {
-        this.prevValue = searchVal;
         this.showDropDown();
-
+        this.prevValue = searchVal;
         const regex = this.getSearchRegex(originalVal);
-
-        const listLI = this.dropdown.items;
-
-        for (const li of listLI) {
-            const procCode = li.data.procCode;
-            const opcode = li.data.opcode;
-            const displayName = li.displayName || procCode;
-            const match = this.findMatch({displayName, procCode, opcode, searchNeedle: searchVal, regex});
-
-            if (match) {
-                li.style.display = 'block';
-
-                this.clearChildren(li);
-
-                if (match.matchInOpcode && opcode) {
-                    li.appendChild(document.createTextNode(displayName));
-                    li.appendChild(document.createTextNode(' ('));
-
-                    const opcodeSpan = document.createElement('span');
-                    opcodeSpan.className = 'sa-find-opcode';
-
-                    this.appendHighlightedText(opcodeSpan, opcode, match.matchIndex, match.matchLength);
-
-                    li.appendChild(opcodeSpan);
-                    li.appendChild(document.createTextNode(')'));
-                } else {
-                    this.appendHighlightedText(li, displayName, match.matchIndex, match.matchLength);
-                }
-            } else {
-                li.style.display = 'none';
-            }
+        const results = [];
+        for (const entry of this._searchEntries || []) {
+            const {proc, displayName} = entry;
+            const match = this.findMatch({displayName,
+                procCode: proc.procCode,
+                opcode: proc.opcode,
+                searchNeedle: searchVal,
+                regex});
+            if (match) results.push({...entry, match});
         }
+        this.renderResults(results);
     }
 
     showAllItems () {
         this.showDropDown();
-        const listLI = this.dropdown.items;
+        this.renderResults((this._searchEntries || []).filter(entry => !entry.proc.isTextInputEntry));
+    }
 
-        for (const li of listLI) {
-            if (li.data && li.data.isTextInputEntry) {
-                li.style.display = 'none';
-                continue;
+    // Match data first. A large project must not create thousands of hidden
+    // DOM rows each time the user types or focuses the search field.
+    renderResults (results, focusID, instanceBlock) {
+        this.dropdown.empty();
+        if (this.moreResults) this.moreResults.remove();
+        let offset = 0;
+        const appendPage = () => {
+            const fragment = document.createDocumentFragment();
+            let focusedItem;
+            const end = Math.min(offset + 100, results.length);
+            while (offset < end) {
+                const {proc, displayName, match} = results[offset++];
+                const item = this.dropdown.addItem(proc, this._messagesList, this._colours, fragment);
+                item.textContent = '';
+                if (match && match.matchInOpcode && proc.opcode) {
+                    item.appendChild(document.createTextNode(`${displayName} (`));
+                    this.appendHighlightedText(item, proc.opcode, match.matchIndex, match.matchLength);
+                    item.appendChild(document.createTextNode(')'));
+                } else if (match) {
+                    this.appendHighlightedText(item, displayName, match.matchIndex, match.matchLength);
+                } else {
+                    item.textContent = displayName;
+                }
+                if (focusID && proc.matchesID(focusID)) focusedItem = item;
             }
-            li.style.display = 'block';
-
-            const displayName = li.displayName;
-            this.clearChildren(li);
-            li.appendChild(document.createTextNode(displayName));
-        }
+            this.dropdown.el.appendChild(fragment);
+            if (focusedItem) this.dropdown.onItemClick(focusedItem, instanceBlock);
+            this.moreResults.hidden = offset >= results.length;
+            this.moreResults.textContent = `Show more results (${offset} of ${results.length})`;
+        };
+        this.moreResults = document.createElement('button');
+        this.moreResults.type = 'button';
+        this.moreResults.className = 'sa-find-more-results';
+        this.moreResults.addEventListener('mousedown', event => event.preventDefault());
+        this.moreResults.addEventListener('click', appendPage);
+        this.dropdownOut.appendChild(this.moreResults);
+        this.dropdown.loadMore = () => {
+            if (offset >= results.length) return false;
+            appendPage();
+            return true;
+        };
+        appendPage();
     }
 
     showCodeResults (results) {
+        if (this.moreResults) this.moreResults.remove();
         this.dropdown.empty();
         this.codeResults = results;
         this.codeIndex = 0;
@@ -421,14 +450,14 @@ export default class FindBarController {
         }
         for (const result of results) {
             const item = document.createElement('li');
-            item.className = 'sa-find-code-result';
+            item.className = findBarStyles['sa-find-code-result'];
 
             const where = document.createElement('span');
-            where.className = 'sa-find-code-where';
+            where.className = findBarStyles['sa-find-code-where'];
             where.textContent = `${result.filepath}:${result.line}`;
 
             const preview = document.createElement('span');
-            preview.className = 'sa-find-code-preview';
+            preview.className = findBarStyles['sa-find-code-preview'];
             preview.textContent = result.preview;
 
             item.appendChild(where);
@@ -452,7 +481,7 @@ export default class FindBarController {
         if (!items.length) return;
         const wrapped = ((index % items.length) + items.length) % items.length;
         this.codeIndex = wrapped;
-        items.forEach((item, i) => item.classList.toggle('sel', i === wrapped));
+        items.forEach((item, i) => item.classList.toggle(findBarStyles.sel, i === wrapped));
         items[wrapped].scrollIntoView({block: 'nearest'});
     }
 
@@ -514,32 +543,34 @@ export default class FindBarController {
 
     collapseMobileSearch () {
         if (!this.findBarOuter) return;
-        this.findBarOuter.classList.remove('mw-find-expanded');
+        this.findBarOuter.classList.remove(findBarStyles['mw-find-expanded']);
     }
 
     expandMobileSearch () {
         if (!this.findBarOuter) return;
-        this.findBarOuter.classList.add('mw-find-expanded');
+        this.findBarOuter.classList.add(findBarStyles['mw-find-expanded']);
         if (this.findInput) this.findInput.focus();
     }
 
     toggleCaseSensitive () {
         this.isCaseSensitive = !this.isCaseSensitive;
-        localStorage.setItem('sa-find-case-sensitive', this.isCaseSensitive ? '1' : '0');
-        this.caseToggle.classList.toggle('sa-find-toggle-active', this.isCaseSensitive);
+        try {
+            localStorage.setItem('sa-find-case-sensitive', this.isCaseSensitive ? '1' : '0');
+        } catch (e) { /* Keep the preference for this session. */ }
+        this.caseToggle.classList.toggle(findBarStyles['sa-find-toggle-active'], this.isCaseSensitive);
         this.prevValue = null;
         this.inputChange();
     }
 
     toggleRegexMode () {
         this.isRegexMode = !this.isRegexMode;
-        this.regexToggle.classList.toggle('sa-find-toggle-active', this.isRegexMode);
+        this.regexToggle.classList.toggle(findBarStyles['sa-find-toggle-active'], this.isRegexMode);
         this.prevValue = null;
         this.inputChange();
     }
 
     navigateResults (direction) {
-        const visibleItems = this.dropdown.items.filter(item => item.style.display !== 'none');
+        let visibleItems = this.dropdown.items.filter(item => item.style.display !== 'none');
         if (visibleItems.length === 0) return;
 
         let currentIndex = visibleItems.indexOf(this.dropdown.selected);
@@ -547,6 +578,9 @@ export default class FindBarController {
             currentIndex = direction > 0 ? -1 : 0;
         }
 
+        if (direction > 0 && currentIndex === visibleItems.length - 1 && this.dropdown.loadMore?.()) {
+            visibleItems = this.dropdown.items;
+        }
         const newIndex = (currentIndex + direction + visibleItems.length) % visibleItems.length;
         this.dropdown.onItemClick(visibleItems[newIndex]);
         visibleItems[newIndex].scrollIntoView({block: 'nearest'});
@@ -593,14 +627,18 @@ export default class FindBarController {
     }
 
     showDropDown (focusID, instanceBlock) {
-        const hasValue = this.findInput.value && this.dropdown.items.length > 0;
-        if (!focusID && this.dropdownOut.classList.contains('visible') && hasValue) {
+        if (getCodeSearch()) {
+            this.dropdownOut.classList.add(findBarStyles.visible);
+            return;
+        }
+        const hasValue = this._searchEntries !== null;
+        if (!focusID && this.dropdownOut.classList.contains(findBarStyles.visible) && hasValue) {
             return;
         }
 
-        this.prevValue = focusID ? '' : null;
+        this.prevValue = null;
 
-        this.dropdownOut.classList.add('visible');
+        this.dropdownOut.classList.add(findBarStyles.visible);
 
         let scratchBlocks;
         const tabIndex = this.activeTabIndexRef.current;
@@ -635,22 +673,15 @@ export default class FindBarController {
             break;
         }
 
-        this.dropdown.empty();
-
         const blockJson = this.vm.runtime.getBlocksJSON();
-        const colours = getColours(blockJson);
-        const messagesList = getMessages(this.ScratchBlocks, blockJson);
-
-        for (const proc of scratchBlocks) {
-            const item = this.dropdown.addItem(proc, messagesList, colours);
-
-            if (focusID) {
-                if (proc.matchesID(focusID)) {
-                    this.dropdown.onItemClick(item, instanceBlock);
-                } else {
-                    item.style.display = 'none';
-                }
-            }
+        this._colours = getColours(blockJson);
+        this._messagesList = getMessages(this.ScratchBlocks, blockJson);
+        this._searchEntries = scratchBlocks.map(proc => ({proc,
+            displayName: String(this._messagesList[0][proc.procCode.toUpperCase()] ||
+                this._messagesList[1][proc.procCode.toUpperCase()] || proc.procCode).replace(/%\d+/g, '()')}));
+        if (focusID) {
+            this.renderResults(this._searchEntries.filter(entry => entry.proc.matchesID(focusID)),
+                focusID, instanceBlock);
         }
 
         this.utils.offsetX = this.dropdownOut.getBoundingClientRect().width + 32;
@@ -658,12 +689,12 @@ export default class FindBarController {
     }
 
     hideDropDown () {
-        this.dropdownOut.classList.remove('visible');
+        this.dropdownOut.classList.remove(findBarStyles.visible);
     }
 
     getScratchBlocks () {
         const myBlocks = [];
-        const myBlocksByProcCode = {};
+        const myBlocksByProcCode = Object.create(null);
 
         const target = this.utils.getEditingTarget();
         const vmBlocks = target && target.blocks && target.blocks._blocks;

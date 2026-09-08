@@ -1,4 +1,5 @@
 import {applyMiddleware, compose, combineReducers} from 'redux';
+import {localeMiddleware} from './locales';
 import alertsReducer, {alertsInitialState} from './alerts';
 import assetDragReducer, {assetDragInitialState} from './asset-drag';
 import cardsReducer, {cardsInitialState} from './cards';
@@ -39,7 +40,7 @@ import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
 
-const guiMiddleware = compose(applyMiddleware(throttle(300, {leading: true, trailing: true})));
+const guiMiddleware = compose(applyMiddleware(localeMiddleware, throttle(300, {leading: true, trailing: true})));
 
 const guiInitialState = {
     alerts: alertsInitialState,

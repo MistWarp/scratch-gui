@@ -254,7 +254,7 @@
     background: var(--bg-raised);
     font-size: 11px;
     font-weight: 800;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .managerRow {
@@ -325,7 +325,7 @@
     background: var(--bg-raised);
     font-size: 9px;
     font-weight: 800;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 @media (max-width: 820px) {

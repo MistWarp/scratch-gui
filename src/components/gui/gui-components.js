@@ -3,7 +3,6 @@ import React from 'react';
 const loadExtensionLibrary = () => import('../../containers/extension-library.jsx');
 
 let components = {
-    FractchWorkspace: React.lazy(() => import('../mw-fractch-workspace/fractch-workspace.jsx')),
     Blocks: React.lazy(() => import('../../containers/blocks.jsx')),
     CostumeTab: React.lazy(() => import('../../containers/costume-tab.jsx')),
     SoundTab: React.lazy(() => import('../../containers/sound-tab.jsx')),
@@ -45,7 +44,7 @@ let components = {
 const getGuiComponents = () => components;
 
 const setGuiComponents = eagerComponents => {
-    components = eagerComponents;
+    components = {...components, ...eagerComponents};
 };
 
 export {

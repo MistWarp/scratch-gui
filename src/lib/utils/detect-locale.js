@@ -1,55 +1,24 @@
-/**
- * @fileoverview
- * Utility function to detect locale from the browser setting or paramenter on the URL.
- */
+import matchLocale from './match-locale';
 
-
-// tw: read language from localStorage
 export const LANGUAGE_KEY = 'tw:language';
 
-/**
- * look for language setting in the browser. Check against supported locales.
- * If there's a parameter in the URL, override the browser setting
- * @param {Array.string} supportedLocales An array of supported locale codes.
- * @return {string} the preferred locale
- */
 const detectLocale = supportedLocales => {
-    // tw: read language from localStorage
+    const query = new URLSearchParams(location.search);
+    for (const value of [...query.getAll('locale'), ...query.getAll('lang')]) {
+        const match = matchLocale(value, supportedLocales);
+        if (match) return match;
+    }
     try {
-        const storedLanguage = localStorage.getItem(LANGUAGE_KEY);
-        if (storedLanguage && supportedLocales.includes(storedLanguage)) {
-            return storedLanguage;
-        }
-    } catch (e) { /* ignore */ }
-
-    let locale = 'en'; // default
-    let browserLocale = window.navigator.userLanguage || window.navigator.language;
-    browserLocale = browserLocale.toLowerCase();
-    // try to set locale from browserLocale
-    if (supportedLocales.includes(browserLocale)) {
-        locale = browserLocale;
-    } else {
-        browserLocale = browserLocale.split('-')[0];
-        if (supportedLocales.includes(browserLocale)) {
-            locale = browserLocale;
-        }
+        const match = matchLocale(localStorage.getItem(LANGUAGE_KEY), supportedLocales);
+        if (match) return match;
+    } catch (e) { /* Browser language still works when storage is unavailable. */ }
+    const browser = window.navigator;
+    // navigator.language is the primary choice. The remaining preferences provide fallbacks.
+    for (const language of [browser.userLanguage || browser.language, ...(browser.languages || [])]) {
+        const match = matchLocale(language, supportedLocales);
+        if (match) return match;
     }
-
-    const queryParams = new URLSearchParams(location.search);
-    // Flatten potential arrays and remove falsy values
-    const potentialLocales = [...queryParams.getAll('locale'), ...queryParams.getAll('lang')].filter(l => l);
-    if (!potentialLocales.length) {
-        return locale;
-    }
-
-    const urlLocale = potentialLocales[0].toLowerCase();
-    if (supportedLocales.includes(urlLocale)) {
-        return urlLocale;
-    }
-
-    return locale;
+    return 'en';
 };
 
-export {
-    detectLocale
-};
+export {detectLocale};

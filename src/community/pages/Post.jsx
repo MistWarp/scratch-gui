@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -8,6 +9,7 @@ import SocialPost from '../components/SocialPost.jsx';
 import styles from './Post.module.css';
 
 const Post = () => {
+    const {text: communityText} = useCommunityText();
     const {id} = useParams();
     const navigate = useNavigate();
     const {user} = useUser();
@@ -41,14 +43,14 @@ const Post = () => {
     return (
         <main className={styles.page}>
             <header className={styles.heading}>
-                <button type="button" onClick={() => navigate(-1)} aria-label="Go back"><ArrowLeft size={18} /></button>
-                <h1>Post</h1>
+                <button type="button" onClick={() => navigate(-1)} aria-label={communityText('Go back')}><ArrowLeft size={18} /></button>
+                <h1>{communityText('Post')}</h1>
             </header>
-            {!post && !error ? <p className={styles.status}>Loading post…</p> : null}
+            {!post && !error ? <p className={styles.status}>{communityText('Loading post…')}</p> : null}
             {error ? (
                 <div className={styles.status} role="alert">
                     <p>{error}</p>
-                    <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button>
+                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                 </div>
             ) : null}
             {post ? <SocialPost initialPost={post} detail onChange={setPost} /> : null}

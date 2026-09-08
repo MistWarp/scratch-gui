@@ -69,7 +69,6 @@
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
     opacity: 0.7;
     color: $text-primary;
 }

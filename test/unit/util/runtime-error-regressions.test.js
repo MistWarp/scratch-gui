@@ -1,4 +1,4 @@
-import {importWithRetry} from '../../../src/lib/lazy-with-retry';
+import {importWithRetry, isChunkLoadError} from '../../../src/lib/lazy-with-retry';
 import VideoProvider from '../../../src/lib/video/video-provider';
 import {requestVideoStream, requestDisableVideo} from '../../../src/lib/video/camera';
 
@@ -72,4 +72,14 @@ test('disabling during blocked playback releases the shared camera only once', a
     await Promise.resolve();
     expect(requestDisableVideo).toHaveBeenCalledTimes(1);
     play.mockRestore();
+});
+
+
+test.each([
+    'Failed to fetch dynamically imported module: https://example.test/assets/Home.js',
+    'error loading dynamically imported module',
+    'Importing a module script failed.',
+    'Unable to preload CSS for /assets/Home.css'
+])('recognizes Vite transport errors: %s', message => {
+    expect(isChunkLoadError(new TypeError(message))).toBe(true);
 });

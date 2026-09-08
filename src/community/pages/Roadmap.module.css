@@ -288,7 +288,7 @@
 }
 
 .discussionButton span {
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
 
 .ideaFooter {
@@ -406,7 +406,7 @@
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .08em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .stageNav a {

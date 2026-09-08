@@ -16,7 +16,7 @@
     letter-spacing: .035em;
     line-height: 1;
     text-decoration: none;
-    text-transform: uppercase;
+    text-transform: none;
     cursor: pointer;
 }
 

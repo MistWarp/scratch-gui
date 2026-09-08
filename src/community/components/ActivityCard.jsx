@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useState} from 'react';
 import {Clock, Gamepad2, Headphones, Radio} from 'lucide-react';
 import styles from './ActivityCard.module.css';
@@ -14,6 +15,7 @@ const formatTime = milliseconds => {
 };
 
 const ActivityCard = ({activity}) => {
+    const {text: communityText} = useCommunityText();
     const timestamps = activity.timestamps || {};
     const media = activity.media || {};
     const assets = activity.assets || {};
@@ -72,7 +74,7 @@ const ActivityCard = ({activity}) => {
                 <div className={styles.details}>
                     {details ? <strong>{details}</strong> : null}
                     {status && status !== details ? <span>{status}</span> : null}
-                    {media.album ? <span>On {media.album}</span> : null}
+                    {media.album ? <span>{communityText('On ')}{media.album}</span> : null}
                     {timing ? (
                         <div className={styles.timing}>
                             {!timing.total ? <Clock size={12} /> : null}

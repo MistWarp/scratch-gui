@@ -1,3 +1,4 @@
+import tokenStyles from './styles/tokens.module.css';
 import React, {Suspense, useEffect} from 'react';
 import lazy from '../lib/lazy-with-retry.js';
 import ErrorBoundary from '../containers/error-boundary.jsx';
@@ -78,30 +79,32 @@ const ROUTE_TITLES = [
 ];
 
 const RouteMeta = () => {
+    const {text} = useCommunityIntl();
     const {pathname} = useLocation();
     useEffect(() => {
         const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix));
-        setPageMeta({title: match ? match[1] : null});
+        setPageMeta({title: match ? text(match[1]) : null});
         window.scrollTo(0, 0);
-    }, [pathname]);
+    }, [pathname, text]);
     return null;
 };
 
 const App = () => {
+    const {text: communityText} = useCommunityIntl();
     const {t} = useCommunityIntl();
     useEffect(() => {
         initSiteErrorReporting();
     }, []);
     return (<UserProvider>
-        <a className="mw-skip-link" href="#mw-main-content">{t('a11y.skip')}</a>
+        <a className={tokenStyles['mw-skip-link']} href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />
         <NavBar />
         <BetaBanner />
         <StandingBanner />
         <UpdateToast />
-        <div className="mw-app-content" id="mw-main-content" tabIndex="-1">
+        <div className={tokenStyles['mw-app-content']} id="mw-main-content" tabIndex="-1">
             <ErrorBoundary action="community-route">
-                <Suspense fallback={<p className="mw-route-loading" role="status">Loading page…</p>}>
+                <Suspense fallback={<p className={tokenStyles['mw-route-loading']} role="status">{communityText('Loading page…')}</p>}>
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />

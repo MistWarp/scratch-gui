@@ -12,6 +12,7 @@ const setLanguage = language => {
 
 describe('detectLocale', () => {
     beforeEach(() => {
+        localStorage.clear();
         setSearch('?name=val');
         setLanguage('en-US');
     });
@@ -60,4 +61,12 @@ describe('detectLocale', () => {
         setSearch('?locale=de&locale=en');
         expect(detectLocale(supportedLocales)).toEqual('de');
     });
+});
+
+
+test('URL overrides the stored editor language', () => {
+    localStorage.setItem('tw:language', 'de');
+    setSearch('?lang=pt_BR');
+    expect(detectLocale(supportedLocales)).toBe('pt-br');
+    localStorage.clear();
 });

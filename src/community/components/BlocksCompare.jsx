@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import styles from './DiffView.module.css';
@@ -65,6 +66,7 @@ const renderScript = (container, source, scratchblocks) => {
 };
 
 const BlocksCompare = ({source}) => {
+    const {text: communityText} = useCommunityText();
     const ref = useRef(null);
     const [failed, setFailed] = useState(false);
 
@@ -88,8 +90,8 @@ const BlocksCompare = ({source}) => {
         };
     }, [source]);
 
-    if (failed) return <p className={styles.assetState}>Could not render blocks.</p>;
-    return <div ref={ref} className={styles.blocksPreview} aria-label="Block changes" />;
+    if (failed) return <p className={styles.assetState}>{communityText('Could not render blocks.')}</p>;
+    return <div ref={ref} className={styles.blocksPreview} aria-label={communityText('Block changes')} />;
 };
 
 BlocksCompare.propTypes = {

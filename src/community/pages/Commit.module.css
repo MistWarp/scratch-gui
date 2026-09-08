@@ -46,7 +46,7 @@
 
 .manageButton {
     min-height: 32px;
-    margin-left: auto;
+    margin-inline-start: auto;
     padding: 6px 10px;
     font-size: 12px;
 }
@@ -63,7 +63,7 @@
 }
 
 .meta code {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-dim);
     font-size: 11px;
 }
@@ -119,13 +119,13 @@
     color: var(--text-dim);
     font: inherit;
     font-size: 11.5px;
-    text-align: left;
+    text-align: start;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .files button span {
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 .files .active {
@@ -340,7 +340,7 @@
     }
 
     .manageButton {
-        margin-left: 29px;
+        margin-inline-start: 29px;
     }
 
     .addCollaborator {

@@ -87,7 +87,7 @@
 }
 
 .sidebar nav > .treeList {
-    padding-left: 0;
+    padding-inline-start: 0;
 }
 
 .folderRow,
@@ -105,7 +105,7 @@
     background: none;
     font: inherit;
     font-size: 12px;
-    text-align: left;
+    text-align: start;
 }
 
 .folderRow span,
@@ -131,7 +131,7 @@
 
 .fileRow,
 .fileRowActive {
-    padding-left: 26px;
+    padding-inline-start: 26px;
 }
 
 .fileRowActive {
@@ -167,7 +167,7 @@
 }
 
 .viewer > header span {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-dim);
 }
 
@@ -179,9 +179,9 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    margin-left: 4px;
-    padding-left: 8px;
-    border-left: 1px solid var(--border-soft);
+    margin-inline-start: 4px;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--border-soft);
 }
 
 .viewMode,
@@ -253,10 +253,10 @@
     position: sticky;
     left: 0;
     padding: 0 11px 0 6px;
-    border-right: 1px solid var(--border-soft);
+    border-inline-end: 1px solid var(--border-soft);
     color: var(--text-faint);
     background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-raised));
-    text-align: right;
+    text-align: end;
     user-select: none;
 }
 

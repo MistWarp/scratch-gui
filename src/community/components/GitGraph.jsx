@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {safeDate} from '../format.js';
@@ -41,6 +43,7 @@ const point = node => ({
 });
 
 const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectId = ''}) => {
+    const {text: communityText} = useCommunityText();
     const layout = useMemo(() => layoutGraph(graph, currentBranch), [graph, currentBranch]);
     if (!layout.rows.length) return null;
     const height = layout.rows.length * ROW_HEIGHT;
@@ -91,7 +94,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                     className={styles.commitHitArea}
                                     to={commitUrl}
                                     aria-current={node.sha === currentHead ? 'page' : null}
-                                    aria-label={`View commit ${(node.message || node.sha).split('\n')[0]}`}
+                                    aria-label={communityText("View commit {value1}", {value1: (node.message || node.sha).split('\n')[0]})}
                                 />
                             ) : null}
                             <div className={styles.subject}>
@@ -109,7 +112,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                 ) : null}
                                 {nodeDate ? (
                                     <time dateTime={nodeDate.toISOString()}>
-                                        {nodeDate.toLocaleString()}
+                                        {nodeDate.toLocaleString(getCommunityLocale())}
                                     </time>
                                 ) : null}
                                 {onRestore && node.sha !== currentHead ? (
@@ -119,7 +122,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                         disabled={restoring === node.sha}
                                         onClick={() => onRestore(node)}
                                     >
-                                        {restoring === node.sha ? 'Restoring…' : 'Restore this version'}
+                                        {restoring === node.sha ? communityText('Restoring…') : communityText('Restore this version')}
                                     </button>
                                 ) : null}
                             </div>

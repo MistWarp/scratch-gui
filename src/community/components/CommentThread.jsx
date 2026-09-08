@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
@@ -87,6 +89,7 @@ const CommentRow = ({
     canEdit, canPin, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, pinning,
     isReply, id
 }) => {
+    const {text: communityText} = useCommunityText();
     const hasMenu = canEdit || canPin || canReport || canDelete;
     const donationTier = commentDonationTier(donationAmount(comment));
     return (
@@ -117,26 +120,25 @@ const CommentRow = ({
                         <span className={styles.playtime}>{formatPlaytime(comment.playtimeMs)}</span>
                     ) : null}
                     {donationAmount(comment) > 0 ? (
-                        <span className={styles.donation} title="Donation attached to this comment">
-                            <Coins size={11} /> {donationAmount(comment).toLocaleString()} credits
-                        </span>
+                        <span className={styles.donation} title={communityText('Donation attached to this comment')}>
+                            <Coins size={11} /> {donationAmount(comment).toLocaleString(getCommunityLocale())}{communityText(' credits')}</span>
                     ) : null}
                     {comment.created ? (
                         <span className={styles.time}>{timeAgo(comment.created)}</span>
                     ) : null}
                     {comment.edited ? (
-                        <span className={styles.edited} title="Edited" aria-label="Edited">✎</span>
+                        <span className={styles.edited} title={communityText('Edited')} aria-label={communityText('Edited')}>✎</span>
                     ) : null}
                     {comment.pinned ? (
-                        <span className={styles.pinned} title="Pinned comment"><Pin size={11} /> Pinned</span>
+                        <span className={styles.pinned} title={communityText('Pinned comment')}><Pin size={11} />{communityText(' Pinned')}</span>
                     ) : null}
                     <span className={styles.headSpacer} />
                     {canReply ? (
                         <button
                             type="button"
                             className={styles.iconAction}
-                            aria-label="Reply"
-                            title="Reply"
+                            aria-label={communityText('Reply')}
+                            title={communityText('Reply')}
                             onClick={onReply}
                         >
                             <Reply size={14} />
@@ -148,8 +150,8 @@ const CommentRow = ({
                                 <button
                                     type="button"
                                     className={styles.iconAction}
-                                    aria-label="Comment actions"
-                                    title="Comment actions"
+                                    aria-label={communityText('Comment actions')}
+                                    title={communityText('Comment actions')}
                                     onClick={toggle}
                                 >
                                     <MoreHorizontal size={15} />
@@ -162,23 +164,23 @@ const CommentRow = ({
                                         onClick={() => {
                                             close(); onEdit();
                                         }}
-                                    ><Pencil size={14} /> Edit comment</DropdownItem> : null}
+                                    ><Pencil size={14} />{communityText(' Edit comment')}</DropdownItem> : null}
                                     {canPin ? <DropdownItem
                                         disabled={pinning}
                                         onClick={() => {
                                             close(); onPin();
                                         }}
-                                    ><Pin size={14} /> {comment.pinned ? 'Unpin' : 'Pin to top'}</DropdownItem> : null}
+                                    ><Pin size={14} /> {comment.pinned ? communityText('Unpin') : communityText('Pin to top')}</DropdownItem> : null}
                                     {canReport ? <DropdownItem
                                         onClick={() => {
                                             close(); onReport();
                                         }}
-                                    ><Flag size={14} /> Report comment</DropdownItem> : null}
+                                    ><Flag size={14} />{communityText(' Report comment')}</DropdownItem> : null}
                                     {canDelete ? <DropdownItem
                                         danger disabled={deleting} onClick={() => {
                                             close(); onDelete();
                                         }}
-                                    ><Trash2 size={14} /> Delete comment</DropdownItem> : null}
+                                    ><Trash2 size={14} />{communityText(' Delete comment')}</DropdownItem> : null}
                                 </>
                             )}
                         </Dropdown>
@@ -199,13 +201,13 @@ const CommentRow = ({
                                 className={styles.cancel}
                                 disabled={editBusy}
                                 onClick={onCancelEdit}
-                            >Cancel</button>
+                            >{communityText('Cancel')}</button>
                             <button
                                 type="button"
                                 className={styles.post}
                                 disabled={editBusy || !editText.trim()}
                                 onClick={onSaveEdit}
-                            >{editBusy ? 'Saving…' : 'Save'}</button>
+                            >{editBusy ? communityText('Saving…') : communityText('Save')}</button>
                         </div>
                     </div>
                 ) : <p className={styles.text}><RichText text={comment.content} /></p>}
@@ -228,6 +230,7 @@ const InlineComposer = ({
     user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small, kind, onKindChange,
     composerAction, donation, onDonationChange, donationRecipient
 }) => {
+    const {text: communityText} = useCommunityText();
     const previewTier = !small ? commentDonationTier(parseCommentDonation(donation)) : '';
     return (
         <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
@@ -261,7 +264,7 @@ const InlineComposer = ({
                     ) : null}
                     {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
                     {!small && onDonationChange ? (
-                        <label className={styles.donationField} title={`Donate credits to ${donationRecipient}`}>
+                        <label className={styles.donationField} title={communityText("Donate credits to {value1}", {value1: donationRecipient})}>
                             <Coins size={14} />
                             <input
                                 type="number"
@@ -270,8 +273,8 @@ const InlineComposer = ({
                                 step="0.01"
                                 value={donation}
                                 disabled={busy}
-                                placeholder="Donation"
-                                aria-label={`Donation to ${donationRecipient} in credits`}
+                                placeholder={communityText('Donation')}
+                                aria-label={communityText("Donation to {value1} in credits", {value1: donationRecipient})}
                                 onChange={event => onDonationChange(event.target.value)}
                             />
                         </label>
@@ -283,14 +286,14 @@ const InlineComposer = ({
                                 className={styles.cancel}
                                 disabled={busy}
                                 onClick={onCancel}
-                            >Cancel</button>
+                            >{communityText('Cancel')}</button>
                         ) : null}
                         <button
                             type="button"
                             className={styles.post}
                             disabled={busy || !value.trim()}
                             onClick={onSubmit}
-                        >{small ? 'Reply' : 'Post'}</button>
+                        >{small ? communityText('Reply') : communityText('Post')}</button>
                     </div>
                 </div>
             </div>
@@ -302,6 +305,7 @@ const CommentThread = ({
     source, canModerate, canPin = false, disabled, disabledReason, reportContext, projectComments = false,
     composerAction, onCountChange = null, donationRecipient = ''
 }) => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
     const [comments, setComments] = useState([]);
@@ -558,7 +562,7 @@ const CommentThread = ({
         if (!text.trim()) return;
         const attachedDonation = parent ? 0 : parseCommentDonation(donation);
         if (attachedDonation === null) {
-            setError('Enter a donation between 0.01 and 100000 credits.');
+            setError(communityText("Enter a donation between 0.01 and 100000 credits."));
             return;
         }
         const actionSource = source;
@@ -764,7 +768,7 @@ const CommentThread = ({
                     {composerAction ? (
                         <div className={styles.disabledComposerAction}>{composerAction}</div>
                     ) : null}
-                    <p className={styles.signedOut}>{disabledReason || 'Comments are turned off.'}</p>
+                    <p className={styles.signedOut}>{disabledReason || communityText('Comments are turned off.')}</p>
                 </>
             ) : user ? (
                 <InlineComposer
@@ -772,7 +776,7 @@ const CommentThread = ({
                     value={content}
                     onChange={setContent}
                     onSubmit={() => submit(content, null, kind)}
-                    placeholder="Add a comment"
+                    placeholder={communityText('Add a comment')}
                     busy={busy}
                     error={replyTo === null ? error : null}
                     kind={projectComments ? kind : null}
@@ -784,8 +788,7 @@ const CommentThread = ({
                     donationRecipient={donationRecipient}
                 />
             ) : (
-                <p className={styles.signedOut}>
-                    Sign in to comment. <button type="button" onClick={login}>Sign in</button>
+                <p className={styles.signedOut}>{communityText('Sign in to comment. ')}<button type="button" onClick={login}>{communityText('Sign in')}</button>
                 </p>
             )}
 
@@ -796,8 +799,8 @@ const CommentThread = ({
                         <input
                             type="search"
                             value={search}
-                            placeholder="Search comments"
-                            aria-label="Search comments"
+                            placeholder={communityText('Search comments')}
+                            aria-label={communityText('Search comments')}
                             onChange={event => {
                                 setSearch(event.target.value);
                                 setRootLimit(ROOT_PAGE);
@@ -919,17 +922,14 @@ const CommentThread = ({
                                                     type="button"
                                                     className={styles.showMore}
                                                     onClick={() => showMoreReplies(comment.id)}
-                                                >
-                                                    Show {hidden} more {hidden === 1 ? 'reply' : 'replies'}
+                                                >{communityText('Show ')}{hidden}{communityText(' more ')}{hidden === 1 ? communityText('reply') : communityText('replies')}
                                                 </button>
                                             ) : all.length > INITIAL_LIMIT ? (
                                                 <button
                                                     type="button"
                                                     className={styles.showMore}
                                                     onClick={() => hideReplies(comment.id)}
-                                                >
-                                                    Hide replies
-                                                </button>
+                                                >{communityText('Hide replies')}</button>
                                             ) : null}
                                         </>
                                     );
@@ -942,7 +942,7 @@ const CommentThread = ({
                                         onChange={setReplyText}
                                         onSubmit={() => submit(replyText, comment.id)}
                                         onCancel={() => setReplyTo(null)}
-                                        placeholder={`Reply to ${comment.author}`}
+                                        placeholder={communityText("Reply to {value1}", {value1: comment.author})}
                                         busy={busy}
                                         error={error}
                                     />
@@ -955,9 +955,7 @@ const CommentThread = ({
                             type="button"
                             className={`${styles.showMore} ${styles.rootMore}`}
                             onClick={() => setRootLimit(limit => limit + ROOT_PAGE)}
-                        >
-                            Show {Math.min(ROOT_PAGE, filteredRoots.length - visibleRoots.length)} more comments
-                        </button>
+                        >{communityText('Show ')}{Math.min(ROOT_PAGE, filteredRoots.length - visibleRoots.length)}{communityText(' more comments')}</button>
                     ) : nextOffset < totalRoots ? (
                         <button
                             type="button"
@@ -965,20 +963,19 @@ const CommentThread = ({
                             disabled={loadingMore}
                             onClick={loadMore}
                         >
-                            {loadingMore ? 'Loading…' :
-                                `Show ${Math.min(ROOT_PAGE, totalRoots - nextOffset)} more comments`}
+                            {loadingMore ? communityText('Loading…') :
+                                communityText("Show {value1} more comments", {value1: Math.min(ROOT_PAGE, totalRoots - nextOffset)})}
                         </button>
                     ) : null}
-                    {moreFailed ? <p className={styles.moreError}>Could not load more comments. Try again.</p> : null}
+                    {moreFailed ? <p className={styles.moreError}>{communityText('Could not load more comments. Try again.')}</p> : null}
                 </>
             ) : (
                 <p className={styles.empty}>
-                    {loadingComments ? 'Loading comments…' : loadFailed ? (
-                        <>
-                            Comments could not be loaded right now.{' '}
-                            <button type="button" className={styles.showMore} onClick={load}>Try again</button>
+                    {loadingComments ? communityText('Loading comments…') : loadFailed ? (
+                        <>{communityText('Comments could not be loaded right now.')}{' '}
+                            <button type="button" className={styles.showMore} onClick={load}>{communityText('Try again')}</button>
                         </>
-                    ) : comments.length ? 'No comments match those filters.' : 'No comments yet.'}
+                    ) : comments.length ? communityText('No comments match those filters.') : communityText('No comments yet.')}
                 </p>
             )}
             {reportId ? (
@@ -993,7 +990,7 @@ const CommentThread = ({
             {deleteComment ? (
                 <Modal
                     icon={Trash2}
-                    title="Delete comment?"
+                    title={communityText('Delete comment?')}
                     onClose={() => setDeleteId(null)}
                     dismissDisabled={removingId !== null}
                     actions={(
@@ -1003,19 +1000,17 @@ const CommentThread = ({
                                 className={styles.cancel}
                                 disabled={removingId !== null}
                                 onClick={() => setDeleteId(null)}
-                            >Cancel</button>
+                            >{communityText('Cancel')}</button>
                             <button
                                 type="button"
                                 className={styles.deleteConfirm}
                                 disabled={removingId !== null}
                                 onClick={() => remove(deleteComment.id)}
-                            >{removingId !== null ? 'Deleting…' : 'Delete comment'}</button>
+                            >{removingId !== null ? communityText('Deleting…') : communityText('Delete comment')}</button>
                         </React.Fragment>
                     )}
                 >
-                    <p className={styles.modalText}>
-                        This comment will be deleted permanently.
-                        {deleteComment.parent ? '' : ' Its replies will also be removed.'}
+                    <p className={styles.modalText}>{communityText('This comment will be deleted permanently.')}{deleteComment.parent ? '' : communityText(' Its replies will also be removed.')}
                     </p>
                     <p className={styles.commentPreview}>{deleteComment.content}</p>
                     {error ? <p className={styles.error}>{error}</p> : null}

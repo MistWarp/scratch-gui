@@ -1,9 +1,11 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 
 const videoUrl = url => /\.(?:mp4|webm)(?:[?#].*)?$/i.test(url);
 
 const PostAttachment = ({url, className, onPreviewChange}) => {
+    const {text: communityText} = useCommunityText();
     const [kind, setKind] = useState(videoUrl(url) ? 'video' : 'image');
     const [failed, setFailed] = useState(false);
     const previewChangeRef = useRef(onPreviewChange);
@@ -12,7 +14,7 @@ const PostAttachment = ({url, className, onPreviewChange}) => {
         if (previewChangeRef.current) previewChangeRef.current();
     }, [failed, kind]);
     if (failed) {
-        return <a className={className} href={url} target="_blank" rel="noreferrer">Open attachment</a>;
+        return <a className={className} href={url} target="_blank" rel="noreferrer">{communityText('Open attachment')}</a>;
     }
     if (kind === 'video') {
         return (
@@ -30,7 +32,7 @@ const PostAttachment = ({url, className, onPreviewChange}) => {
         <a className={className} href={url} target="_blank" rel="noreferrer">
             <img
                 src={url}
-                alt="Post attachment"
+                alt={communityText('Post attachment')}
                 loading="lazy"
                 onLoad={onPreviewChange}
                 onError={() => setKind('video')}

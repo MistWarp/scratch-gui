@@ -1,4 +1,5 @@
 import Utils from '../find-bar/Utils.js';
+import debuggerStyles from '../../components/tw-debugger/debugger.module.css';
 
 const COLOR_CLASSES = [
     'motion',
@@ -79,7 +80,7 @@ const createBlockHelpers = vm => {
 
     const createBlockLink = (targetInfo, blockId) => {
         const link = document.createElement('a');
-        link.className = 'sa-debugger-log-link';
+        link.className = debuggerStyles['sa-debugger-log-link'];
 
         const {exists, name, originalId} = targetInfo;
         link.textContent = name;
@@ -90,7 +91,7 @@ const createBlockHelpers = vm => {
                 goToBlock(blockId);
             });
         } else {
-            link.classList.add('sa-debugger-log-link-unknown');
+            link.classList.add(debuggerStyles['sa-debugger-log-link-unknown']);
         }
 
         return link;
@@ -231,7 +232,7 @@ const createBlockHelpers = vm => {
         }
 
         const element = document.createElement('span');
-        element.className = 'sa-debugger-block-preview sa-block-color';
+        element.className = `${debuggerStyles['sa-debugger-block-preview']} sa-block-color`;
         element.textContent = text;
         element.dataset.shape = shape;
 

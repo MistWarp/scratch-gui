@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Check, Library, Plus} from 'lucide-react';
@@ -8,6 +9,7 @@ import Button from './ui/Button.jsx';
 import styles from './CollectionSaveModal.module.css';
 
 const CollectionSaveModal = ({project, onClose}) => {
+    const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
     const actionContext = `${viewerName}\u0000${project.id}`;
@@ -130,23 +132,21 @@ const CollectionSaveModal = ({project, onClose}) => {
     return (
         <Modal
             icon={Library}
-            title="Save to a collection"
+            title={communityText('Save to a collection')}
             onClose={onClose}
             dismissDisabled={Boolean(busy)}
         >
             {!canSave ? (
-                <p className={styles.notice}>
-                    Share this project or make it unlisted before adding it to a collection.
-                </p>
+                <p className={styles.notice}>{communityText('Share this project or make it unlisted before adding it to a collection.')}</p>
             ) : null}
             <form className={styles.create} onSubmit={create}>
                 <label>
-                    <span>New collection</span>
+                    <span>{communityText('New collection')}</span>
                     <input
                         value={title}
                         disabled={Boolean(busy)}
                         maxLength={100}
-                        placeholder="Collection name"
+                        placeholder={communityText('Collection name')}
                         onChange={event => setTitle(event.target.value)}
                     />
                 </label>
@@ -155,32 +155,32 @@ const CollectionSaveModal = ({project, onClose}) => {
                         value={visibility}
                         disabled={Boolean(busy)}
                         onChange={event => setVisibility(event.target.value)}
-                        aria-label="Collection visibility"
+                        aria-label={communityText('Collection visibility')}
                     >
-                        <option value="public">Public</option>
-                        <option value="unlisted">Unlisted</option>
-                        <option value="private">Private</option>
+                        <option value="public">{communityText('Public')}</option>
+                        <option value="unlisted">{communityText('Unlisted')}</option>
+                        <option value="private">{communityText('Private')}</option>
                     </select>
                     <Button
                         variant="primary"
                         type="submit"
                         disabled={!title.trim() || Boolean(busy)}
                         busy={busy === 'new'}
-                        busyLabel="Creating…"
+                        busyLabel={communityText('Creating…')}
                     >
                         <Plus size={15} />
-                        {canSave ? 'Create and save' : 'Create collection'}
+                        {canSave ? communityText('Create and save') : communityText('Create collection')}
                     </Button>
                 </div>
             </form>
             <div className={styles.divider} />
             <div className={styles.heading}>
-                <strong>Your collections</strong>
+                <strong>{communityText('Your collections')}</strong>
                 <span>{collections ? collections.length : ''}</span>
             </div>
-            {collections === null && !error ? <p className={styles.empty}>Loading collections…</p> : null}
+            {collections === null && !error ? <p className={styles.empty}>{communityText('Loading collections…')}</p> : null}
             {collections && !collections.length ? (
-                <p className={styles.empty}>You do not have any collections yet.</p>
+                <p className={styles.empty}>{communityText('You do not have any collections yet.')}</p>
             ) : null}
             {collections && collections.length ? (
                 <div className={styles.list}>
@@ -200,7 +200,7 @@ const CollectionSaveModal = ({project, onClose}) => {
                                 </span>
                                 <span className={styles.saveState}>
                                     {busy === collection._id ?
-                                        'Saving…' : saved ? <><Check size={15} /> Saved</> : 'Save'}
+                                        communityText('Saving…') : saved ? <><Check size={15} />{communityText(' Saved')}</> : communityText('Save')}
                                 </span>
                             </button>
                         );
@@ -216,9 +216,7 @@ const CollectionSaveModal = ({project, onClose}) => {
                             <Button
                                 variant="secondary"
                                 onClick={() => setLoadAttempt(attempt => attempt + 1)}
-                            >
-                                Try again
-                            </Button>
+                            >{communityText('Try again')}</Button>
                         </>
                     ) : null}
                 </p>

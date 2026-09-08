@@ -24,8 +24,9 @@ import styles from './NavBar.module.css';
 
 const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 
-const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, placeholderLabel, searchLabel, suggestionId}) => (
-    <form
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, placeholderLabel, searchLabel, suggestionId}) => {
+    const {text: communityText} = useCommunityIntl();
+    return (<form
         className={`${styles.search} ${className}`}
         onSubmit={onSubmit}
         onKeyDown={onKeyDown}
@@ -48,15 +49,15 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
         />
         {open && query.trim().length >= 2 && (people.length || projects.length || spaces.length || searching || searchReady) ? (
             <div className={styles.suggestions} id={suggestionId} role="listbox">
-                {searching ? <p className={styles.suggestionStatus}>Searching…</p> : null}
-                {!searching && searchFailed ? <p className={styles.suggestionStatus}>Could not load quick results. Press Enter to search.</p> : null}
-                {!searching && !searchFailed && searchReady && !people.length && !projects.length && !spaces.length ? <p className={styles.suggestionStatus}>No quick matches. Press Enter to search all projects.</p> : null}
+                {searching ? <p className={styles.suggestionStatus}>{communityText('Searching…')}</p> : null}
+                {!searching && searchFailed ? <p className={styles.suggestionStatus}>{communityText('Could not load quick results. Press Enter to search.')}</p> : null}
+                {!searching && !searchFailed && searchReady && !people.length && !projects.length && !spaces.length ? <p className={styles.suggestionStatus}>{communityText('No quick matches. Press Enter to search all projects.')}</p> : null}
                 {projects.map(project => (
                     <div key={project.id} className={styles.suggestion}>
-                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${project.title}`} onClick={() => onProject(project)} />
+                        <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: project.title})} onClick={() => onProject(project)} />
                         <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                         <span>{project.title}</span>
-                        <UserLink className={styles.suggestionMeta} username={project.owner}>by {project.owner}</UserLink>
+                        <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
                     </div>
                 ))}
                 {people.map(person => (
@@ -64,23 +65,24 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                         <Avatar username={person.username} size={26} />
                         <span>{person.username}</span>
                         {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
-                        <span className={styles.suggestionMeta}>{person.followers ?? 0} followers · {person.projects} projects</span>
+                        <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
                     </button>
                 ))}
                 {spaces.map(space => (
                     <div key={space._id} className={styles.suggestion}>
-                        <button type="button" className={styles.suggestionTarget} aria-label={`Open ${space.title}`} onClick={() => onSpace(space._id)} />
+                        <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: space.title})} onClick={() => onSpace(space._id)} />
                         <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
                         <span>{space.title}</span>
-                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || 'Space'} · by <UserLink username={space.owner}>{space.owner}</UserLink></span>
+                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
                     </div>
                 ))}
             </div>
         ) : null}
-    </form>
-);
+    </form>);
+};
 
 const NavBar = () => {
+    const {text: communityText} = useCommunityIntl();
     const {user, loading, loginOrThrow, logout} = useUser();
     const {t} = useCommunityIntl();
     const [signingIn, setSigningIn] = useState(false);
@@ -331,14 +333,14 @@ const NavBar = () => {
                 <Link
                     to="/"
                     className={styles.brand}
-                    aria-label="MistWarp"
+                    aria-label={communityText('MistWarp')}
                 >
                     <img
                         className={styles.logo}
                         src={logo}
                         alt=""
                     />
-                    <span className={styles.wordmark}>MistWarp</span>
+                    <span className={styles.wordmark}>{communityText('MistWarp')}</span>
                 </Link>
 
                 <nav className={styles.links} aria-label={t('nav.main')}>
@@ -386,8 +388,8 @@ const NavBar = () => {
                     <Link
                         to="/perks"
                         className={styles.iconLink}
-                        title="Perks"
-                        aria-label="Membership perks"
+                        title={communityText('Perks')}
+                        aria-label={communityText('Membership perks')}
                     >
                         <Crown size={19} />
                     </Link>
@@ -396,8 +398,8 @@ const NavBar = () => {
                             <Link
                                 to="/notifications"
                                 className={`${styles.iconLink} ${styles.bellLink}`}
-                                title="Notifications"
-                                aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+                                title={communityText('Notifications')}
+                                aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
                             >
                                 <Bell size={19} />
                                 {unread > 0 ? (
@@ -407,8 +409,8 @@ const NavBar = () => {
                             <Link
                                 to="/mystuff"
                                 className={styles.iconLink}
-                                title="My stuff"
-                                aria-label="My stuff"
+                                title={communityText('My stuff')}
+                                aria-label={communityText('My stuff')}
                             >
                                 <FolderOpen size={19} />
                             </Link>
@@ -431,11 +433,11 @@ const NavBar = () => {
                             className={styles.signIn}
                             onClick={doLogin}
                             busy={signingIn}
-                            busyLabel="Signing in…"
-                            title={signingIn ? 'Signing in' : 'Sign in'}
+                            busyLabel={communityText('Signing in…')}
+                            title={signingIn ? communityText('Signing in') : communityText('Sign in')}
                         >
                             <LogIn size={19} />
-                            <span className={styles.signInLabel}>Sign in</span>
+                            <span className={styles.signInLabel}>{communityText('Sign in')}</span>
                         </Button>
                     )}
                 </div>
@@ -466,22 +468,22 @@ const NavBar = () => {
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
             />
-            <nav className={styles.mobileDock} aria-label="Mobile navigation">
-                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label="Home" title="Home">
+            <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')}>
+                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')} title={communityText('Home')}>
                     <House size={25} />
                 </Link>
-                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label="Explore" title="Explore">
+                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
                     <Compass size={25} />
                 </Link>
-                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label="Create" title="Create">
+                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={communityText('Create')} title={communityText('Create')}>
                     <span className={styles.mobileCreateIcon}><Plus size={28} /></span>
                 </a>
                 <Link
                     to="/notifications"
                     className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
                     aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
-                    aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
-                    title="Notifications"
+                    aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
+                    title={communityText('Notifications')}
                 >
                     <Bell size={25} />
                     {unread > 0 ? (
@@ -489,11 +491,11 @@ const NavBar = () => {
                     ) : null}
                 </Link>
                 {user ? (
-                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label="My stuff" title="My stuff">
+                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label={communityText('My stuff')} title={communityText('My stuff')}>
                         <FolderOpen size={25} />
                     </Link>
                 ) : (
-                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-label={signingIn ? 'Signing in' : 'Sign in'} title={signingIn ? 'Signing in' : 'Sign in'}>
+                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-label={signingIn ? communityText('Signing in') : communityText('Sign in')} title={signingIn ? communityText('Signing in') : communityText('Sign in')}>
                         <LogIn size={25} />
                     </button>
                 )}

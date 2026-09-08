@@ -96,8 +96,8 @@
 }
 
 .heroDemo span {
-    padding-left: 14px;
-    border-left: 3px solid var(--accent);
+    padding-inline-start: 14px;
+    border-inline-start: 3px solid var(--accent);
     line-height: 1.5;
 }
 
@@ -176,7 +176,7 @@
 }
 
 .empty button {
-    margin-left: 6px;
+    margin-inline-start: 6px;
     border: none;
     color: var(--accent-strong);
     background: none;
@@ -226,7 +226,7 @@
 }
 
 .activityTime {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 12px;
     flex-shrink: 0;
@@ -372,7 +372,7 @@
 }
 
 .roadmapMeta .roadmapComments {
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 .roadmapAuthor {
@@ -414,7 +414,7 @@
 }
 
 .notificationTop time {
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 11px;
     white-space: nowrap;

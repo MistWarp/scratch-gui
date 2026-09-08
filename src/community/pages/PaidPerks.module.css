@@ -120,7 +120,7 @@
 }
 
 .tableWrap th:first-child {
-    text-align: left;
+    text-align: start;
 }
 
 .tableWrap thead th {

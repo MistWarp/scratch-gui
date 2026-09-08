@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Coins, Search} from 'lucide-react';
@@ -23,6 +24,7 @@ export const mapWithConcurrency = async (items, limit, mapper) => {
 };
 
 const Bounties = () => {
+    const {text: communityText} = useCommunityText();
     const [entries, setEntries] = useState(null);
     const [query, setQuery] = useState('');
     const [error, setError] = useState('');
@@ -68,26 +70,26 @@ const Bounties = () => {
         <main className={styles.page}>
             <ExploreNav active="bounties" />
             <header className={styles.header}>
-                <div><h1>Project bounties</h1><p>Funded improvements open across public MistWarp projects.</p></div>
-                <label><Search size={16} /><input value={query} placeholder="Search bounties" onChange={event => setQuery(event.target.value)} /></label>
+                <div><h1>{communityText('Project bounties')}</h1><p>{communityText('Funded improvements open across public MistWarp projects.')}</p></div>
+                <label><Search size={16} /><input value={query} placeholder={communityText('Search bounties')} onChange={event => setQuery(event.target.value)} /></label>
             </header>
-            {entries === null ? <p className={styles.state}>Loading bounties…</p> : error ? (
-                <div className={styles.state}><p>{error}</p><Button onClick={load}>Try again</Button></div>
+            {entries === null ? <p className={styles.state}>{communityText('Loading bounties…')}</p> : error ? (
+                <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div>
             ) : visible.length ? (
                 <section className={styles.grid}>
                     {visible.map(({bounty, project}) => (
                         <article key={bounty.id}>
-                            <div className={styles.reward}><Coins size={16} /><strong>{bounty.amount}</strong> credits</div>
+                            <div className={styles.reward}><Coins size={16} /><strong>{bounty.amount}</strong>{communityText(' credits')}</div>
                             <h2>{bounty.title}</h2>
-                            {bounty.description ? <p>{bounty.description}</p> : <p className={styles.muted}>No extra details provided.</p>}
+                            {bounty.description ? <p>{bounty.description}</p> : <p className={styles.muted}>{communityText('No extra details provided.')}</p>}
                             <footer>
-                                <div><span>On</span><Link to={projectUrl(project)}>{project.title}</Link><span>by <UserLink username={project.owner}>{project.owner}</UserLink></span></div>
-                                <Link className={styles.open} to={`/bounties/${encodeURIComponent(bounty.id)}`}>View bounty</Link>
+                                <div><span>{communityText('On')}</span><Link to={projectUrl(project)}>{project.title}</Link><span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>
+                                <Link className={styles.open} to={`/bounties/${encodeURIComponent(bounty.id)}`}>{communityText('View bounty')}</Link>
                             </footer>
                         </article>
                     ))}
                 </section>
-            ) : <p className={styles.state}>{query ? 'No bounties match your search.' : 'No public project bounties are open right now.'}</p>}
+            ) : <p className={styles.state}>{query ? communityText('No bounties match your search.') : communityText('No public project bounties are open right now.')}</p>}
         </main>
     );
 };

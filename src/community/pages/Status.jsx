@@ -1,3 +1,4 @@
+import {getCommunityLocale} from '../locale.js';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -12,6 +13,7 @@ const STATUS_BASE = process.env.MW_STATUS_URL || '';
 export const statusDate = value => safeDate(value);
 
 const Status = () => {
+    const {text: communityText} = useCommunityIntl();
     const {t} = useCommunityIntl();
     const [status, setStatus] = useState(null);
     const [history, setHistory] = useState([]);
@@ -67,18 +69,18 @@ const Status = () => {
                 {failed ? <p className={styles.error} role="alert">{t('status.failed')}</p> : null}
                 {(status?.services || []).map(service => (
                     <div className={styles.statusRow} key={service.service}>
-                        <span><strong>{service.name}</strong><small>{service.latencyMs} ms · {historyFailed ? 'History unavailable' : `${t('status.history')} ${uptimeByService[service.service]?.toFixed(2) || '0.00'}%`}</small></span>
+                        <span><strong>{service.name}</strong><small>{service.latencyMs}{communityText(' ms · ')}{historyFailed ? communityText('History unavailable') : `${t('status.history')} ${uptimeByService[service.service]?.toFixed(2) || '0.00'}%`}</small></span>
                         <span className={statusClass(service.status)}>{label(service.status)}</span>
                     </div>
                 ))}
-                <div className={styles.actions}><Button onClick={check} busy={loading} busyLabel="Checking…">{t('status.retry')}</Button>{statusDate(status?.generatedAt) ? <time dateTime={statusDate(status.generatedAt).toISOString()}>Updated {statusDate(status.generatedAt).toLocaleString()}</time> : null}</div>
+                <div className={styles.actions}><Button onClick={check} busy={loading} busyLabel={communityText('Checking…')}>{t('status.retry')}</Button>{statusDate(status?.generatedAt) ? <time dateTime={statusDate(status.generatedAt).toISOString()}>{communityText('Updated ')}{statusDate(status.generatedAt).toLocaleString(getCommunityLocale())}</time> : null}</div>
             </section>
             <section className={styles.section}>
                 <h2>{t('status.incidents')}</h2>
                 {status && !status.incidents?.length ? <p>{t('status.noIncidents')}</p> : null}
-                {(status?.incidents || []).map(incident => <article className={styles.incident} key={incident.id}><div><strong>{incident.title}</strong><span className={statusClass(incident.status === 'resolved' ? 'operational' : 'unavailable')}>{incident.status}</span></div><p>{incident.body}</p>{statusDate(incident.createdAt) ? <time dateTime={statusDate(incident.createdAt).toISOString()}>{statusDate(incident.createdAt).toLocaleString()}</time> : null}</article>)}
+                {(status?.incidents || []).map(incident => <article className={styles.incident} key={incident.id}><div><strong>{incident.title}</strong><span className={statusClass(incident.status === 'resolved' ? 'operational' : 'unavailable')}>{incident.status}</span></div><p>{incident.body}</p>{statusDate(incident.createdAt) ? <time dateTime={statusDate(incident.createdAt).toISOString()}>{statusDate(incident.createdAt).toLocaleString(getCommunityLocale())}</time> : null}</article>)}
             </section>
-            <section className={styles.section}><h2>Still having trouble?</h2><p>This monitor cannot detect browser-specific problems. If a problem continues, use the <Link to="/support">support page</Link>.</p></section>
+            <section className={styles.section}><h2>{communityText('Still having trouble?')}</h2><p>{communityText('This monitor cannot detect browser-specific problems. If a problem continues, use the ')}<Link to="/support">{communityText('support page')}</Link>.</p></section>
         </main>
     );
 };

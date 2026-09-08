@@ -76,7 +76,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-left: auto;
+    margin-inline-start: auto;
     flex-shrink: 0;
     padding: 10px 16px;
     border-radius: 12px;

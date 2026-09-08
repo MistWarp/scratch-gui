@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import {Smartphone, Keyboard, Gamepad2} from 'lucide-react';
 import styles from './ProjectCompatibility.module.css';
@@ -11,12 +12,13 @@ export const CONTROL_TYPES = [
 const supportedControls = compatibility => CONTROL_TYPES.filter(control => compatibility && compatibility[control.key]);
 
 const ProjectCompatibility = ({compatibility, compact = false}) => {
+    const {text: communityText} = useCommunityText();
     const controls = supportedControls(compatibility);
     if (!controls.length) return null;
 
     if (compact) {
         return (
-            <div className={styles.compact} aria-label="Supported controls">
+            <div className={styles.compact} aria-label={communityText('Supported controls')}>
                 {controls.map(({key, label, detail, Icon}) => (
                     <span key={key} className={styles.compactIcon} title={`${label}: ${detail}`}>
                         <Icon size={16} />

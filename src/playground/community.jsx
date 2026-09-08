@@ -8,7 +8,9 @@ import {CommunityIntlProvider} from '../community/i18n.jsx';
 import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance.js';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import render from './app-target.js';
-import '!!style-loader!css-loader!../community/styles/tokens.css';
+import tokenStyles from '../community/styles/tokens.module.css';
+
+document.documentElement.classList.add(tokenStyles.root);
 
 // The dev server rewrites /<id>/embed to the embed player, but in production
 // that path falls through to this community bundle. Bounce it to the embed
@@ -35,7 +37,20 @@ if (embedMatch) {
     location.replace(`/embed${location.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`);
 } else {
     applyThemeVisuals(detectTheme());
-    onSystemPreferenceChange(() => applyThemeVisuals(detectTheme()));
+    const previewURL = new URLSearchParams(location.search).get('theme');
+    if (previewURL) {
+        Promise.resolve().then(async () => {
+            const url = new URL(previewURL);
+            if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Unsupported theme URL');
+            const response = await fetch(url, {credentials: 'omit'});
+            if (!response.ok) throw new Error(`Theme download failed (${response.status})`);
+            const data = await response.json();
+            applyThemeVisuals(CustomTheme.import(data.inlineCustomTheme || (data.themes && data.themes[0]) || data));
+        })
+            .catch(error => console.warn('Could not preview theme:', error));
+    } else {
+        onSystemPreferenceChange(() => applyThemeVisuals(detectTheme()));
+    }
 
     render(
         <CommunityIntlProvider>

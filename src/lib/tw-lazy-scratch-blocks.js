@@ -1,3 +1,4 @@
+import {blockMessages} from '../generated/editor-locales/index.js';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
 
@@ -15,6 +16,9 @@ const get = () => {
 const set = ScratchBlocks => {
     if (_ScratchBlocks) return _ScratchBlocks;
     _ScratchBlocks = ScratchBlocks;
+    if (_ScratchBlocks.ScratchMsgs) {
+        Object.assign(_ScratchBlocks.ScratchMsgs.locales, blockMessages);
+    }
 
     try {
         const operatorUtils = _ScratchBlocks.ScratchBlocks && _ScratchBlocks.ScratchBlocks.OperatorUtils;

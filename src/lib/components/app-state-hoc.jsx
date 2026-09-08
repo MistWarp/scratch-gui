@@ -1,11 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Provider} from 'react-redux';
-import {createStore, combineReducers, compose} from 'redux';
+import {createStore, combineReducers, compose, applyMiddleware} from 'redux';
 import ConnectedIntlProvider from '../connected-intl-provider.jsx';
 import AddonHooks from '../../addons/hooks.js';
+import * as guiRedux from '../../reducers/gui.js';
+import {ScratchPaintReducer} from '../tw-scratch-paint.js';
 
-import localesReducer, {initLocale, localesInitialState} from '../../reducers/locales.js';
+import localesReducer, {initLocale, localesInitialState, localeMiddleware} from '../../reducers/locales.js';
 
 import {setPlayer, setFullScreen} from '../../reducers/mode.js';
 
@@ -36,16 +38,15 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
             if (locale !== 'en') {
                 initializedLocales = initLocale(initializedLocales, locale);
             }
+            document.documentElement.lang = initializedLocales.locale;
+            document.documentElement.dir = initializedLocales.isRtl ? 'rtl' : 'ltr';
             if (localesOnly) {
                 // Used for instantiating minimal state for the unsupported
                 // browser modal
                 reducers = {locales: localesReducer};
                 initialState = {locales: initializedLocales};
-                enhancer = composeEnhancers();
+                enhancer = composeEnhancers(applyMiddleware(localeMiddleware));
             } else {
-                // You are right, this is gross. But it's necessary to avoid
-                // importing unneeded code that will crash unsupported browsers.
-                const guiRedux = require('../../reducers/gui.js');
                 const guiReducer = guiRedux.default;
                 const {
                     guiInitialState,
@@ -55,7 +56,6 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
                     initEmbedded,
                     initTelemetryModal
                 } = guiRedux;
-                const {ScratchPaintReducer} = require('../tw-scratch-paint.js');
 
                 let initializedGui = guiInitialState;
                 if (props.isFullScreen || props.isPlayerOnly) {

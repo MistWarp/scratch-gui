@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {useParams, Link} from 'react-router-dom';
@@ -10,6 +11,7 @@ import useLatest from '../use-latest.js';
 import styles from './Followers.module.css';
 
 const Followers = ({mode}) => {
+    const {text: communityText} = useCommunityText();
     const {name} = useParams();
     const [followers, setFollowers] = useState(null);
     const [error, setError] = useState('');
@@ -42,14 +44,14 @@ const Followers = ({mode}) => {
                 <ArrowLeft size={14} />
                 {name}
             </Link>
-            <h1>{name}&apos;s {label}</h1>
+            <h1>{name}{communityText("'s ")}{label}</h1>
             {error ? (
                 <p className={styles.status}>
                     {error}{' '}
-                    <Button onClick={() => setAttempt(value => value + 1)}>Try again</Button>
+                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                 </p>
             ) : followers === null ? (
-                <p className={styles.status}>Loading…</p>
+                <p className={styles.status}>{communityText('Loading…')}</p>
             ) : followers.length ? (
                 <div className={styles.grid}>
                     {followers.map(follower => (

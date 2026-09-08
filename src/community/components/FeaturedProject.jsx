@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {ExternalLink, Heart, Play} from 'lucide-react';
 import {Link} from 'react-router-dom';
@@ -8,6 +9,7 @@ import styles from './FeaturedProject.module.css';
 import GroupTag from './GroupTag.jsx';
 
 const FeaturedProject = ({project}) => {
+    const {text: communityText} = useCommunityText();
     const [details, setDetails] = useState(null);
     const [requestedProjectId, setRequestedProjectId] = useState(null);
     const [stageRatio, setStageRatio] = useState(0.75);
@@ -56,15 +58,12 @@ const FeaturedProject = ({project}) => {
                     <Link to={projectUrl(displayProject)} className={styles.title}>
                         {displayProject.title}
                     </Link>
-                    <Link to={`/users/${displayProject.owner}`} className={styles.owner}>
-                        by {displayProject.owner}
+                    <Link to={`/users/${displayProject.owner}`} className={styles.owner}>{communityText('by ')}{displayProject.owner}
                     </Link>
                     <GroupTag username={displayProject.owner} compact />
                 </div>
                 <Link to={projectUrl(displayProject)} className={styles.openProject}>
-                    <ExternalLink size={14} />
-                    Project page
-                </Link>
+                    <ExternalLink size={14} />{communityText('Project page')}</Link>
             </div>
             <div
                 className={styles.stageWrap}
@@ -85,7 +84,7 @@ const FeaturedProject = ({project}) => {
                     <button
                         type="button"
                         className={styles.thumbnail}
-                        aria-label={`Play ${displayProject.title}`}
+                        aria-label={communityText("Play {value1}", {value1: displayProject.title})}
                         disabled={playRequested}
                         onClick={() => setRequestedProjectId(project.id)}
                     >
@@ -98,7 +97,7 @@ const FeaturedProject = ({project}) => {
                             <span className={styles.playIcon}>
                                 <Play size={24} fill="currentColor" />
                             </span>
-                            {playRequested ? 'Loading project…' : 'Play project'}
+                            {playRequested ? communityText('Loading project…') : communityText('Play project')}
                         </span>
                     </button>
                 ) : (

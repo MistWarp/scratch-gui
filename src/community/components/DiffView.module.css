@@ -76,7 +76,7 @@
 .fileStats {
     display: inline-flex;
     gap: 8px;
-    margin-left: auto;
+    margin-inline-start: auto;
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
     font-size: 12px;
 }
@@ -131,7 +131,7 @@
     width: 7px;
     height: 7px;
     flex: 0 0 auto;
-    border-right: 1.5px solid var(--text-dim);
+    border-inline-end: 1.5px solid var(--text-dim);
     border-bottom: 1.5px solid var(--text-dim);
     transform: rotate(-45deg);
     transition: transform 120ms ease;
@@ -213,17 +213,17 @@
 
 .marker {
     padding: 1px 6px;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-inline-end: 1px solid rgba(255, 255, 255, 0.06);
     color: #777e8d;
-    text-align: right;
+    text-align: end;
     user-select: none;
 }
 
 .lineNumber {
     padding: 1px 7px;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-inline-end: 1px solid rgba(255, 255, 255, 0.06);
     color: #6f7684;
-    text-align: right;
+    text-align: end;
     user-select: none;
 }
 
@@ -295,7 +295,7 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .assetSize {
@@ -423,7 +423,7 @@
 .blocksCanvas svg {
     position: relative;
     z-index: 1;
-    margin-left: 26px;
+    margin-inline-start: 26px;
 }
 
 .blockChangeStripe {
@@ -433,8 +433,8 @@
     left: 0;
     display: flex;
     align-items: center;
-    padding-left: 8px;
-    border-left: 3px solid;
+    padding-inline-start: 8px;
+    border-inline-start: 3px solid;
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
     font-size: 12px;
     font-weight: 700;
@@ -512,7 +512,7 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .summary ul {

@@ -1,3 +1,4 @@
+import windowStyles from './windowed-modal.module.css';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -7,7 +8,6 @@ import {FormattedMessage, IntlProvider} from 'react-intl';
 
 import WindowManager from '../addons/window-system/window-manager';
 import Box from '../components/box/box.jsx';
-import './windowed-modal.css';
 
 class WindowedModal extends React.Component {
     constructor (props) {
@@ -16,7 +16,6 @@ class WindowedModal extends React.Component {
             'addEventListeners',
             'removeEventListeners',
             'handlePopState',
-            'pushHistory',
             'handleWindowClose',
             'handleWindowMinimize',
             'handleWindowMove',
@@ -36,9 +35,7 @@ class WindowedModal extends React.Component {
             return;
         }
         this.createWindow();
-        // Add a history event only if it's not currently for our modal. This
-        // avoids polluting the history with many entries. We only need one.
-        this.pushHistory(this.id, (history.state === null || history.state !== this.id));
+
 
         if (this.window) {
             this.window.show();
@@ -53,7 +50,6 @@ class WindowedModal extends React.Component {
             if (this.props.visible && !this.window) {
                 // Modal should be visible but window doesn't exist - create it
                 this.createWindow();
-                this.pushHistory(this.id, (history.state === null || history.state !== this.id));
             } else if (!this.props.visible && this.window) {
                 // Modal should be hidden but window exists - hide it
                 this.window.hide();
@@ -211,7 +207,7 @@ class WindowedModal extends React.Component {
 
         // Create content container with modal styling
         this.contentContainer = document.createElement('div');
-        this.contentContainer.className = 'modal-window-content windowed-modal-content';
+        this.contentContainer.className = `modal-window-content ${windowStyles['windowed-modal-content']}`;
         this.contentContainer.style.cssText = `
             height: 100%;
             max-height: 100%;
@@ -315,7 +311,7 @@ class WindowedModal extends React.Component {
             React.createElement(
                 'div',
                 {
-                    className: 'windowed-modal-body',
+                    className: windowStyles['windowed-modal-body'],
                     style: {
                         flex: 1,
                         overflow: 'hidden',
@@ -389,11 +385,6 @@ class WindowedModal extends React.Component {
     
     get id () {
         return `modal-${this.props.id}`;
-    }
-    
-    pushHistory (state, push) {
-        if (push) return history.pushState(state, this.id, null);
-        history.replaceState(state, this.id, null);
     }
     
     render () {

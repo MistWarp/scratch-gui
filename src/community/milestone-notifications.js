@@ -1,3 +1,4 @@
+import {getCommunityLocale} from './locale.js';
 const MILESTONES = new Set([5, 25, 50, 100, 500, 1000]);
 const KINDS = new Set([
     'project', 'comment', 'roadmap post', 'studio', 'challenge', 'news post', 'post', 'theme', 'collection'
@@ -9,9 +10,9 @@ export const isMilestoneNotification = item =>
 export const milestoneText = item => {
     const count = Number(item.milestone);
     if (!MILESTONES.has(count)) return item.body || 'You reached a new milestone';
-    if (item.type === 'follower_milestone') return `You reached ${count.toLocaleString('en-US')} followers`;
+    if (item.type === 'follower_milestone') return `You reached ${count.toLocaleString(getCommunityLocale())} followers`;
     const kind = KINDS.has(item.contentKind) ? item.contentKind : 'post';
-    return `Your ${kind} got ${count.toLocaleString('en-US')} likes`;
+    return `Your ${kind} got ${count.toLocaleString(getCommunityLocale())} likes`;
 };
 
 export const milestoneLink = item => {

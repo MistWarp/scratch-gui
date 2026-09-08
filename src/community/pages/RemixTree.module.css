@@ -190,7 +190,7 @@
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    margin-left: auto;
+    margin-inline-start: auto;
     color: var(--text-faint);
     font-size: 10px;
 }
@@ -368,7 +368,7 @@
 
 @media (max-width: 540px) {
     .stats {
-        padding-left: 20px;
+        padding-inline-start: 20px;
     }
 
     .projectHeading {

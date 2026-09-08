@@ -1,9 +1,9 @@
-import bookmarkIconSvg from '!!raw-loader!./bookmark.svg';
-import folderDownIconSvg from '!!raw-loader!./folder-down.svg';
-import folderUpIconSvg from '!!raw-loader!./folder-up.svg';
-import binIconSvg from '!!raw-loader!./bin.svg';
+import bookmarkIconSvg from './bookmark.svg?raw';
+import folderDownIconSvg from './folder-down.svg?raw';
+import folderUpIconSvg from './folder-up.svg?raw';
+import binIconSvg from './bin.svg?raw';
 
-import dropdownCaretSvg from '!!raw-loader!../../../components/menu-bar/dropdown-caret.svg';
+import dropdownCaretSvg from '../../../components/menu-bar/dropdown-caret.svg?raw';
 
 const newSvg = (src, width, height) => {
     const img = document.createElement('svg');

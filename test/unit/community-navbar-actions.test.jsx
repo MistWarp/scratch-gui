@@ -38,7 +38,7 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 }));
 jest.mock('../../src/community/faviconBadge.js', () => jest.fn());
 jest.mock('../../src/community/i18n.jsx', () => ({
-    useCommunityIntl: () => ({t: key => key})
+    useCommunityIntl: () => ({t: key => key, text: key => key})
 }));
 
 const renderNav = () => mount(

@@ -4,7 +4,7 @@ This repository contains the browser editor used by [MistWarp](https://mistwarp.
 
 ## Requirements
 
-- Node.js 20
+- Node.js 20.19 or later
 - pnpm 10.28.2, pinned in `package.json`
 - The sibling `scratch-vm`, `scratch-blocks`, `scratch-render`, and `scratch-paint` repositories when changing linked editor packages
 
@@ -15,9 +15,27 @@ pnpm install --frozen-lockfile
 pnpm start
 ```
 
-Open <http://localhost:8601/editor.html>. The development server rebuilds changed files automatically.
+Open <http://localhost:8601/editor.html>. Vite serves the editor and updates changed React components and styles automatically.
 
 Run `pnpm run link` after installing when you need the sibling MistWarp packages. `pnpm run reinstall` refreshes dependencies without deleting the lockfile.
+
+## Builds
+
+`pnpm run build` uses Vite to create the site in `build/`. Use `pnpm run build:all` to also build the GUI library in `dist/`, or `pnpm run build:library` for just the library. Use `pnpm run preview` to serve the production site on port 8601. Production pages use JavaScript modules and must be served over HTTP.
+
+- `pnpm run build:editor` builds the editor and its index page.
+- `pnpm run build:community` builds the community index page.
+- `MW_COMMUNITY=true pnpm run build` includes the community, editor, player, fullscreen, embed, addon settings, and credits pages.
+- `pnpm run build:library` builds the library alone. It exports ES modules in `dist/scratch-gui.mjs` and UMD in `dist/scratch-gui.js`. Load `dist/scratch-gui.css` alongside the library. React and ReactDOM are external dependencies.
+- `pnpm run build:stats` writes module and asset sizes to `stats.json` in each output directory.
+
+`ROOT` sets the site base URL and must end in `/`. `BUILD_DIR` changes the site output directory, `PORT` changes the server port, and `ONLY_ENTRY` selects an entry by name. `ROUTING_STYLE`, `STATIC_PATH`, `EXTRA_META`, `ENABLE_SERVICE_WORKER`, and the `MW_*` build values remain supported. Environment values come from Vite's `.env` files and the shell. Only the browser values listed in `vite.config.mjs` are exposed to client code.
+
+The [Vite configuration](./vite.config.mjs) preserves the existing CSS module imports and handles the loader requests still shipped by the linked Scratch packages. GUI assets use Vite queries such as `?raw`, `?url`, `?inline`, and `?worker`; `?base64`, `?arraybuffer`, and `?recolor` cover the editor's embedded assets.
+
+Startup loads the block editor first and loads paint, asset catalogues, optional dialogs, and non-English translations on demand. Scratch Blocks is built from its generated Closure sources, so Vite can minify it without a nested development bundle. `pnpm run build:report` measures the initial JavaScript dependency graph in `build/editor.html`, including raw and gzip sizes.
+
+When embedding the library with a non-English initial locale, await the exported `prepareLocale()` before rendering, or `loadLocale(locale)` when selecting the initial locale explicitly. Locale changes through the supplied Redux middleware load their dictionaries automatically.
 
 ## Checks
 
@@ -37,7 +55,7 @@ The unit command covers every file under `test/unit`. Pull requests run the full
 - `src/components/tw-settings-modal` owns Settings pages and their navigation.
 - `src/components/menu-bar` and `src/lib/mw-menu-bar-layout.js` own menu-bar rendering and saved layout.
 - `src/containers` connects presentational components to the VM and Redux.
-- `test/unit` tests component and library behavior. `test/integration` contains browser workflows against a built editor.
+- `test/unit` tests component and library behavior. `test/integration` contains browser workflows against a built editor. `pnpm run test:integration` starts a local Vite preview server for those tests.
 
 Keep settings destinations broad. Put related controls in tabs inside a page instead of adding another sidebar item.
 
@@ -332,3 +350,7 @@ Here's what will happen in the project state machine:
 ## Donate
 We provide [Scratch](https://scratch.mit.edu) free of charge, and want to keep it that way! Please consider making a [donation](https://www.scratchfoundation.org/donate) to support our continued engineering, design, community, and resource development efforts. Donations of any size are appreciated. Thank you!
 -->
+
+## Community translations
+
+See [TRANSLATING.md](TRANSLATING.md) for catalogs, extraction, validation, and coverage. The community shares the editor language list and preference.

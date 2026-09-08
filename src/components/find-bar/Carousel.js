@@ -1,3 +1,4 @@
+import findBarStyles from './find-bar.module.css';
 export default class Carousel {
     constructor (utils) {
         this.utils = utils;
@@ -34,10 +35,10 @@ export default class Carousel {
 
     createDom () {
         this.el = document.createElement('span');
-        this.el.className = 'sa-find-carousel';
+        this.el.className = findBarStyles['sa-find-carousel'];
 
         const leftControl = this.el.appendChild(document.createElement('span'));
-        leftControl.className = 'sa-find-carousel-control';
+        leftControl.className = findBarStyles['sa-find-carousel-control'];
         leftControl.textContent = '◀';
         leftControl.addEventListener('mousedown', e => this.navLeft(e));
 
@@ -45,7 +46,7 @@ export default class Carousel {
         this.count.innerText = this.blocks.length > 0 ? `${this.idx + 1} / ${this.blocks.length}` : '0';
 
         const rightControl = this.el.appendChild(document.createElement('span'));
-        rightControl.className = 'sa-find-carousel-control';
+        rightControl.className = findBarStyles['sa-find-carousel-control'];
         rightControl.textContent = '▶';
         rightControl.addEventListener('mousedown', e => this.navRight(e));
 

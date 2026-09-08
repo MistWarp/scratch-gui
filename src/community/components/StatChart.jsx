@@ -1,9 +1,11 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import styles from './StatChart.module.css';
 
 const dayLabel = dayIndex => {
     try {
-        return new Date(Number(dayIndex) * 86400000).toLocaleDateString([], {month: 'short', day: 'numeric'});
+        return new Date(Number(dayIndex) * 86400000).toLocaleDateString(getCommunityLocale(), {month: 'short', day: 'numeric'});
     } catch (e) {
         return '';
     }
@@ -34,10 +36,11 @@ const plotWidth = width - plot.left - plot.right;
 const plotHeight = height - plot.top - plot.bottom;
 
 const StatChart = ({title, rows, accent = 'var(--accent)', format, emptyText = 'No activity yet.', bare = false}) => {
+    const {text: communityText} = useCommunityText();
     const points = rows || [];
     const max = points.reduce((m, row) => Math.max(m, Number(row.value) || 0), 0);
     const total = points.reduce((sum, row) => sum + (Number(row.value) || 0), 0);
-    const formatValue = format || (value => value.toLocaleString());
+    const formatValue = format || (value => value.toLocaleString(getCommunityLocale()));
     if (!total) {
         return (
             <div className={bare ? styles.bare : styles.card}>
@@ -71,7 +74,7 @@ const StatChart = ({title, rows, accent = 'var(--accent)', format, emptyText = '
                 className={styles.plot}
                 viewBox={`0 0 ${width} ${height}`}
                 role="img"
-                aria-label={title ? `${title} by date` : 'Activity by date'}
+                aria-label={title ? communityText("{value1} by date", {value1: title}) : communityText('Activity by date')}
             >
                 {[0, 0.5, 1].map(ratio => {
                     const gy = plot.top + plotHeight - (ratio * plotHeight);

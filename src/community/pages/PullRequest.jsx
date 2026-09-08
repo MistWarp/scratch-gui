@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
@@ -154,6 +155,7 @@ export const canClosePullRequest = (project, pull, user) => {
 };
 
 const PullRequest = () => {
+    const {text: communityText} = useCommunityText();
     const {index, slug} = useParams();
     const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user, login} = useUser();
@@ -453,7 +455,7 @@ const PullRequest = () => {
     const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
 
     if (resolving) {
-        return <main className={styles.page}><p className={styles.loadState}>Finding project…</p></main>;
+        return <main className={styles.page}><p className={styles.loadState}>{communityText('Finding project…')}</p></main>;
     }
     if (resolveError) {
         return (
@@ -465,12 +467,12 @@ const PullRequest = () => {
     if (loadingError) {
         return (
             <main className={styles.page}>
-                <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} /> Back to project</Link>
-                <div className={styles.loadState}><p>{loadingError}</p><Button onClick={load}>Try again</Button></div>
+                <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} />{communityText(' Back to project')}</Link>
+                <div className={styles.loadState}><p>{loadingError}</p><Button onClick={load}>{communityText('Try again')}</Button></div>
             </main>
         );
     }
-    if (!pull || !project || loadedContext !== `${viewer}:${id}:${index}`) return <main className={styles.page}><p className={styles.loadState}>Loading pull request…</p></main>;
+    if (!pull || !project || loadedContext !== `${viewer}:${id}:${index}`) return <main className={styles.page}><p className={styles.loadState}>{communityText('Loading pull request…')}</p></main>;
 
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
@@ -479,32 +481,32 @@ const PullRequest = () => {
     return (
         <main className={styles.page}>
             <Link className={styles.back} to={`${baseUrl}#pull-requests`}>
-                <ArrowLeft size={15} /> {project.title || 'Project'}
+                <ArrowLeft size={15} /> {project.title || communityText('Project')}
             </Link>
             <header className={styles.prHeader}>
                 <h1>{pull.title} <span>#{pull.index}</span></h1>
                 <div className={styles.prMeta}>
                     <span className={open ? styles.openBadge : styles.closedBadge}>
                         {open ? <GitPullRequest size={15} /> : <Check size={15} />}
-                        {open ? 'Open' : pull.merged ? 'Merged' : 'Closed'}
+                        {open ? communityText('Open') : pull.merged ? communityText('Merged') : communityText('Closed')}
                     </span>
                     <Link to={`/users/${pull.user}`}><Avatar username={pull.user} size={24} />{pull.user}</Link>
-                    <span>wants to merge from</span>
+                    <span>{communityText('wants to merge from')}</span>
                     <Link to={projectUrl(pull.sourceProjectId)}>
-                        <code>{pull.sourceTitle || 'Fork'}/{pull.headBranch}</code>
+                        <code>{pull.sourceTitle || communityText('Fork')}/{pull.headBranch}</code>
                     </Link>
                     <ChevronRight size={13} />
                     <Link to={baseUrl}>
-                        <code>{project.title || 'Project'}/{pull.baseBranch}</code>
+                        <code>{project.title || communityText('Project')}/{pull.baseBranch}</code>
                     </Link>
                 </div>
             </header>
 
             <SectionTabs
                 items={[
-                    {key: 'conversation', label: <><MessageSquare size={15} /> Conversation <span>{timeline.comments.length + 1}</span></>},
-                    {key: 'commits', label: <><GitCommitHorizontal size={15} /> Commits <span>{timeline.commits.length}</span></>},
-                    {key: 'files', label: <><FileCode2 size={15} /> Files changed <span>{changedFileCount}</span></>}
+                    {key: 'conversation', label: <><MessageSquare size={15} />{communityText(' Conversation ')}<span>{timeline.comments.length + 1}</span></>},
+                    {key: 'commits', label: <><GitCommitHorizontal size={15} />{communityText(' Commits ')}<span>{timeline.commits.length}</span></>},
+                    {key: 'files', label: <><FileCode2 size={15} />{communityText(' Files changed ')}<span>{changedFileCount}</span></>}
                 ]}
                 value={tab}
                 onChange={setTab}
@@ -520,17 +522,17 @@ const PullRequest = () => {
                         <div className={styles.eventFeed}>
                             <article className={styles.description}>
                                 <MessageSquare className={styles.commentMarker} size={14} />
-                                <header><UserLink username={pull.user}><Avatar username={pull.user} size={28} /></UserLink><UserLink username={pull.user}><strong>{pull.user}</strong></UserLink> opened this pull request</header>
-                                <div>{pull.body ? <RichText text={pull.body} /> : <p>No description was provided.</p>}</div>
+                                <header><UserLink username={pull.user}><Avatar username={pull.user} size={28} /></UserLink><UserLink username={pull.user}><strong>{pull.user}</strong></UserLink>{communityText(' opened this pull request')}</header>
+                                <div>{pull.body ? <RichText text={pull.body} /> : <p>{communityText('No description was provided.')}</p>}</div>
                             </article>
                             {conversationEvents.map((event, eventIndex) => (event.eventType === 'comment' ? (
                                 <article className={styles.commentCard} key={`comment-${event.id}`} id={`comment-id-${event.id}`}>
                                     <MessageSquare className={styles.commentMarker} size={14} />
                                     <header>
                                         <Link to={`/users/${event.author}`}><Avatar username={event.author} size={28} /><strong>{event.author}</strong></Link>
-                                        <span>commented {timeAgo(event.created)}</span>
+                                        <span>{communityText('commented ')}{timeAgo(event.created)}</span>
                                         {user && (user.isAdmin || project.isOwner || user.username.toLowerCase() === event.author.toLowerCase()) ? (
-                                            <button type="button" title="Delete comment" disabled={commentBusy} onClick={() => deleteComment(event)}><Trash2 size={14} /></button>
+                                            <button type="button" title={communityText('Delete comment')} disabled={commentBusy} onClick={() => deleteComment(event)}><Trash2 size={14} /></button>
                                         ) : null}
                                     </header>
                                     <div><RichText text={event.content} /></div>
@@ -539,8 +541,8 @@ const PullRequest = () => {
                                 <div className={styles.commitEvent} key={`${event.eventType}-${event.sha}-${eventIndex}`}>
                                     <GitCommitHorizontal size={16} />
                                     <UserLink username={event.author}><Avatar username={event.author} size={24} /></UserLink>
-                                    <span><UserLink username={event.author}><strong>{event.author}</strong></UserLink> committed {event.eventType === 'target-commit' ? `to ${pull.baseBranch}` : `on ${pull.headBranch}`}</span>
-                                    <code>{event.message || 'Untitled commit'}</code>
+                                    <span><UserLink username={event.author}><strong>{event.author}</strong></UserLink>{communityText(' committed ')}{event.eventType === 'target-commit' ? communityText("to {value1}", {value1: pull.baseBranch}) : communityText("on {value1}", {value1: pull.headBranch})}</span>
+                                    <code>{event.message || communityText('Untitled commit')}</code>
                                     <small>
                                         <Link to={`/project/${event.eventType === 'target-commit' ? id : pull.sourceProjectId}/commits/${event.sha}`}>
                                             {String(event.sha || '').slice(0, 7)}
@@ -553,26 +555,26 @@ const PullRequest = () => {
                             <form className={styles.commentForm} onSubmit={submitComment}>
                                 <Avatar username={user.username} size={34} />
                                 <div>
-                                    <textarea value={commentText} maxLength={500} placeholder="Leave a comment" disabled={commentBusy} onChange={event => setCommentText(event.target.value)} />
+                                    <textarea value={commentText} maxLength={500} placeholder={communityText('Leave a comment')} disabled={commentBusy} onChange={event => setCommentText(event.target.value)} />
                                     <footer>
                                         {commentError ? <span className={styles.error}>{commentError}</span> : <span>{commentText.length}/500</span>}
-                                        <Button type="submit" variant="primary" disabled={!commentText.trim()} busy={commentBusy} busyLabel="Posting…">Comment</Button>
+                                        <Button type="submit" variant="primary" disabled={!commentText.trim()} busy={commentBusy} busyLabel={communityText('Posting…')}>{communityText('Comment')}</Button>
                                     </footer>
                                 </div>
                             </form>
                         ) : (
-                            <div className={styles.signInComment}><Button onClick={login}>Sign in to comment</Button></div>
+                            <div className={styles.signInComment}><Button onClick={login}>{communityText('Sign in to comment')}</Button></div>
                         )}
                     </section>
                     <aside className={styles.mergeBox}>
                         <div className={open ? styles.mergeStatusOpen : styles.mergeStatusClosed}>
                             {open ? <GitMerge size={20} /> : <Check size={20} />}
-                            <div><strong>{open ? 'Ready for review' : 'Pull request closed'}</strong><span>{open ? 'Review the files before merging.' : 'No more changes can be merged.'}</span></div>
+                            <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                         </div>
                         {mergeError ? <p className={styles.error}>{mergeError}</p> : null}
                         {open && canMerge ? (
-                            <Button variant="primary" onClick={merge} busy={merging} busyLabel="Merging…">Merge pull request</Button>
-                        ) : open ? <p className={styles.note}>Only project owners and maintainers can merge this pull request.</p> : null}
+                            <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
+                        ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
                         {open && canClose ? (
                             <Button
                                 variant="secondary"
@@ -581,20 +583,20 @@ const PullRequest = () => {
                                     setCloseError('');
                                     setCloseConfirmOpen(true);
                                 }}
-                            >Close pull request</Button>
+                            >{communityText('Close pull request')}</Button>
                         ) : null}
                     </aside>
                 </div>
             ) : tab === 'commits' ? (
                 <section className={styles.commitsPanel}>
-                    <header><GitCommitHorizontal size={17} /><strong>Commits on {formatDate(timeline.commits[0]?.date, 'this pull request')}</strong></header>
+                    <header><GitCommitHorizontal size={17} /><strong>{communityText('Commits on ')}{formatDate(timeline.commits[0]?.date, 'this pull request')}</strong></header>
                     {timeline.commits.length ? timeline.commits.map(commit => (
                         <article className={styles.commitRow} key={commit.sha}>
                             <UserLink username={commit.author}><Avatar username={commit.author} size={26} /></UserLink>
-                            <div><Link to={`/project/${pull.sourceProjectId}/commits/${commit.sha}`}><strong>{commit.message || 'Untitled commit'}</strong></Link><span><UserLink username={commit.author}>{commit.author}</UserLink> committed {timeAgo(commit.date)}</span></div>
+                            <div><Link to={`/project/${pull.sourceProjectId}/commits/${commit.sha}`}><strong>{commit.message || communityText('Untitled commit')}</strong></Link><span><UserLink username={commit.author}>{commit.author}</UserLink>{communityText(' committed ')}{timeAgo(commit.date)}</span></div>
                             <code>{String(commit.sha || '').slice(0, 7)}</code>
                         </article>
-                    )) : <p className={styles.emptyCommits}>No commits found after the fork point.</p>}
+                    )) : <p className={styles.emptyCommits}>{communityText('No commits found after the fork point.')}</p>}
                 </section>
             ) : (
                 <div className={styles.filesLayout}>
@@ -606,8 +608,8 @@ const PullRequest = () => {
                         onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
                     />
                     <section className={styles.diffColumn}>
-                        {diffError ? <div className={styles.diffFailure}><p>{diffError}</p><Button onClick={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>Try again</Button></div> : diff === null ? (
-                            <div className={styles.loadState}>Loading file changes…</div>
+                        {diffError ? <div className={styles.diffFailure}><p>{diffError}</p><Button onClick={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>{communityText('Try again')}</Button></div> : diff === null ? (
+                            <div className={styles.loadState}>{communityText('Loading file changes…')}</div>
                         ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                     </section>
                 </div>
@@ -615,8 +617,8 @@ const PullRequest = () => {
 
             {mergeSession ? (
                 <section className={styles.conflicts}>
-                    <h2>Resolve merge conflicts</h2>
-                    <p>Edit each text file, then choose which version to keep for every asset.</p>
+                    <h2>{communityText('Resolve merge conflicts')}</h2>
+                    <p>{communityText('Edit each text file, then choose which version to keep for every asset.')}</p>
                     {mergeSession.conflicts.map(file => (
                         <label key={file.path}>
                             <span>{file.path}</span>
@@ -630,27 +632,27 @@ const PullRequest = () => {
                     {mergeSession.binaryConflicts.map(file => (
                         <div className={styles.binaryConflict} key={file.path}>
                             <span>{file.path}</span>
-                            <button className={file.choice === 'ours' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'ours')}>Keep current project</button>
-                            <button className={file.choice === 'theirs' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'theirs')}>Use pull request</button>
+                            <button className={file.choice === 'ours' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'ours')}>{communityText('Keep current project')}</button>
+                            <button className={file.choice === 'theirs' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'theirs')}>{communityText('Use pull request')}</button>
                         </div>
                     ))}
-                    <Button variant="primary" onClick={resolveConflicts} busy={merging} busyLabel="Merging…">Save resolutions and merge</Button>
+                    <Button variant="primary" onClick={resolveConflicts} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Save resolutions and merge')}</Button>
                 </section>
             ) : null}
             {closeConfirmOpen ? (
                 <Modal
                     icon={GitPullRequest}
-                    title="Close pull request?"
+                    title={communityText('Close pull request?')}
                     onClose={() => setCloseConfirmOpen(false)}
                     dismissDisabled={closing}
                     actions={(
                         <React.Fragment>
-                            <Button variant="danger" busy={closing} busyLabel="Closing…" onClick={closePull}>Close pull request</Button>
-                            <Button variant="secondary" disabled={closing} onClick={() => setCloseConfirmOpen(false)}>Cancel</Button>
+                            <Button variant="danger" busy={closing} busyLabel={communityText('Closing…')} onClick={closePull}>{communityText('Close pull request')}</Button>
+                            <Button variant="secondary" disabled={closing} onClick={() => setCloseConfirmOpen(false)}>{communityText('Cancel')}</Button>
                         </React.Fragment>
                     )}
                 >
-                    <p>This closes the pull request without merging its changes.</p>
+                    <p>{communityText('This closes the pull request without merging its changes.')}</p>
                     {closeError ? <p className={styles.error}>{closeError}</p> : null}
                 </Modal>
             ) : null}

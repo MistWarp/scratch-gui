@@ -1,7 +1,19 @@
+import {getCommunityLocale, formatCommunityMessage} from './locale';
+
 const timeAgo = ms => {
     const timestamp = Number(ms);
     if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
     const mins = Math.floor((Date.now() - timestamp) / 60000);
+    const locale = getCommunityLocale();
+    if (locale !== 'en' && typeof Intl.RelativeTimeFormat === 'function') {
+        const seconds = Math.floor((timestamp - Date.now()) / 1000);
+        const [size, unit] = Math.abs(seconds) < 60 ? [1, 'second'] :
+            Math.abs(seconds) < 3600 ? [60, 'minute'] :
+                Math.abs(seconds) < 86400 ? [3600, 'hour'] :
+                    Math.abs(seconds) < 31536000 ? [86400, 'day'] : [31536000, 'year'];
+        return new Intl.RelativeTimeFormat(locale, {numeric: 'auto', style: 'short'})
+            .format(Math.trunc(seconds / size), unit);
+    }
     if (mins < 1) return 'just now';
     if (mins < 60) return `${mins}m`;
     const hours = Math.floor(mins / 60);
@@ -31,13 +43,13 @@ const safeDate = value => {
 const formatDate = (value, fallback = '') => {
     const date = safeDate(value);
     if (!date) return fallback;
-    return date.toLocaleDateString([], {year: 'numeric', month: 'short', day: 'numeric'});
+    return date.toLocaleDateString(getCommunityLocale(), {year: 'numeric', month: 'short', day: 'numeric'});
 };
 
 const formatDateTime = (value, fallback = '') => {
     const date = safeDate(value);
     if (!date) return fallback;
-    return date.toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'});
+    return date.toLocaleString(getCommunityLocale(), {dateStyle: 'medium', timeStyle: 'short'});
 };
 
 const formatPlaytime = (value, includeLabel = true) => {
@@ -52,7 +64,19 @@ const formatPlaytime = (value, includeLabel = true) => {
         const remainder = minutes % 60;
         duration = remainder ? `${hours}h ${remainder}m` : `${hours}h`;
     }
-    return includeLabel ? `${duration} played` : duration;
+    const locale = getCommunityLocale();
+    if (locale !== 'en') {
+        const unit = (amount, name) => new Intl.NumberFormat(locale, {
+            style: 'unit', unit: name, unitDisplay: 'narrow'
+        }).format(amount);
+        if (hasPlaytime && minutes === 0) duration = `<${unit(1, 'minute')}`;
+        else if (minutes < 60) duration = unit(minutes, 'minute');
+        else {
+            const hours = unit(Math.floor(minutes / 60), 'hour');
+            duration = minutes % 60 ? `${hours} ${unit(minutes % 60, 'minute')}` : hours;
+        }
+    }
+    return includeLabel ? formatCommunityMessage('{duration} played', {duration}) : duration;
 };
 
 export {timeAgo, sameUser, formatBytes, formatDate, formatDateTime, formatPlaytime, safeDate};

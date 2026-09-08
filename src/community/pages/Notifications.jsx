@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
@@ -349,6 +350,7 @@ GenericNotification.propTypes = {
 };
 
 const FollowingPost = ({post}) => {
+    const {text: communityText} = useCommunityText();
     const likes = Array.isArray(post.likes) ? post.likes.length : Number(post.likes) || 0;
     const replies = Array.isArray(post.replies) ? post.replies.length : Number(post.replies) || 0;
     return (
@@ -359,14 +361,14 @@ const FollowingPost = ({post}) => {
             <div className={styles.text}>
                 <div className={styles.postHead}>
                     <Link to={`/users/${post.user}`} className={styles.actor}>{post.user}</Link>
-                    <span>posted</span>
+                    <span>{communityText('posted')}</span>
                     <time>{timeAgo(post.timestamp)}</time>
                 </div>
                 <div className={styles.postContent}><RichText text={post.content} /></div>
                 <div className={styles.postMeta}>
                     <span><Heart size={13} /> {likes}</span>
                     <span><MessageCircle size={13} /> {replies}</span>
-                    <Link to={postUrl(post.id)}>Open post <ExternalLink size={12} /></Link>
+                    <Link to={postUrl(post.id)}>{communityText('Open post ')}<ExternalLink size={12} /></Link>
                 </div>
             </div>
         </div>
@@ -458,6 +460,7 @@ NotificationRow.propTypes = {
 };
 
 const Notifications = ({hideHeading}) => {
+    const {text: communityText} = useCommunityText();
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
@@ -530,13 +533,12 @@ const Notifications = ({hideHeading}) => {
     }, [attempt, viewerName]);
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.status}>Loading…</p></main>;
+        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
     }
     if (!user) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>
-                    Sign in to see your notifications. <Button onClick={login}>Sign in</Button>
+                <p className={styles.status}>{communityText('Sign in to see your notifications. ')}<Button onClick={login}>{communityText('Sign in')}</Button>
                 </p>
             </main>
         );
@@ -548,15 +550,15 @@ const Notifications = ({hideHeading}) => {
 
     return (
         <main className={styles.page}>
-            {hideHeading ? null : <h1>Notifications</h1>}
+            {hideHeading ? null : <h1>{communityText('Notifications')}</h1>}
             {failed ? (
                 <p className={styles.status}>
-                    {!timelineLoaded ? 'Couldn\'t load activity.' : 'Some activity may be missing.'}{' '}
-                    <Button onClick={() => setAttempt(a => a + 1)}>Try again</Button>
+                    {!timelineLoaded ? communityText("Couldn't load activity.") : communityText('Some activity may be missing.')}{' '}
+                    <Button onClick={() => setAttempt(a => a + 1)}>{communityText('Try again')}</Button>
                 </p>
             ) : null}
             {!timelineLoaded ? (!failed ? (
-                <p className={styles.status}>Loading…</p>
+                <p className={styles.status}>{communityText('Loading…')}</p>
             ) : null) : timeline.length ? (
                 <div className={styles.list}>
                     {timeline.map(n => {
@@ -575,14 +577,11 @@ const Notifications = ({hideHeading}) => {
                     })}
                 </div>
             ) : items.length ? (
-                <p className={styles.status}>
-                    Your notification preferences hide all current activity.{' '}
-                    <Link to="/settings?section=notifications">Change preferences</Link>
+                <p className={styles.status}>{communityText('Your notification preferences hide all current activity.')}{' '}
+                    <Link to="/settings?section=notifications">{communityText('Change preferences')}</Link>
                 </p>
             ) : (
-                <p className={styles.status}>
-                    Nothing yet. Notifications and posts from people you follow show up here.
-                </p>
+                <p className={styles.status}>{communityText('Nothing yet. Notifications and posts from people you follow show up here.')}</p>
             )}
         </main>
     );

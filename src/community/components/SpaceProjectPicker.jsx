@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
@@ -17,6 +18,7 @@ const projectIdsForSpace = space => new Set([
 ]);
 
 const SpaceProjectPicker = ({space, onAdded}) => {
+    const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const [open, setOpen] = useState(false);
     const [tab, setTab] = useState('mine');
@@ -153,27 +155,27 @@ const SpaceProjectPicker = ({space, onAdded}) => {
     const projects = tab === 'mine' ? (mine || []) : results;
 
     if (!open) {
-        return <Button onClick={show}><Plus size={16} /> Add projects</Button>;
+        return <Button onClick={show}><Plus size={16} />{communityText(' Add projects')}</Button>;
     }
 
     return (
         <section className={styles.projectPicker}>
             <header>
                 <div>
-                    <h2>Add projects</h2>
-                    <p>Choose one of your shared or unlisted projects, or search public projects.</p>
+                    <h2>{communityText('Add projects')}</h2>
+                    <p>{communityText('Choose one of your shared or unlisted projects, or search public projects.')}</p>
                 </div>
                 <IconButton
                     variant="secondary"
                     className={styles.iconButton}
                     disabled={Boolean(adding)}
                     onClick={() => setOpen(false)}
-                    label="Close project picker"
+                    label={communityText('Close project picker')}
                 ><X size={18} /></IconButton>
             </header>
             <div className={styles.pickerTabs}>
-                <button type="button" className={tab === 'mine' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('mine')}>Your projects</button>
-                {space.canManage ? <button type="button" className={tab === 'search' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('search')}>Search</button> : null}
+                <button type="button" className={tab === 'mine' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('mine')}>{communityText('Your projects')}</button>
+                {space.canManage ? <button type="button" className={tab === 'search' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('search')}>{communityText('Search')}</button> : null}
             </div>
             {tab === 'search' ? (
                 <form className={styles.projectSearch} onSubmit={search}>
@@ -182,16 +184,16 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                         value={query}
                         disabled={searching}
                         onChange={event => setQuery(event.target.value)}
-                        placeholder="Search by title, creator, or tag"
+                        placeholder={communityText('Search by title, creator, or tag')}
                     />
-                    <Button type="submit" variant="secondary" busy={searching} busyLabel="Searching…">Search</Button>
+                    <Button type="submit" variant="secondary" busy={searching} busyLabel={communityText('Searching…')}>{communityText('Search')}</Button>
                 </form>
             ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}
-            {tab === 'mine' && mine === null && !mineError ? <p className={styles.pickerEmpty}>Loading your projects…</p> : null}
-            {tab === 'mine' && mineError ? <p className={styles.pickerEmpty}>{mineError} <button type="button" onClick={() => setMineAttempt(attempt => attempt + 1)}>Try again</button></p> : null}
-            {tab === 'search' && !results.length && !searching ? <p className={styles.pickerEmpty}>Search for a public project to add.</p> : null}
-            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? <p className={styles.pickerEmpty}>You do not have any shared or unlisted projects yet.</p> : null}
+            {tab === 'mine' && mine === null && !mineError ? <p className={styles.pickerEmpty}>{communityText('Loading your projects…')}</p> : null}
+            {tab === 'mine' && mineError ? <p className={styles.pickerEmpty}>{mineError} <button type="button" onClick={() => setMineAttempt(attempt => attempt + 1)}>{communityText('Try again')}</button></p> : null}
+            {tab === 'search' && !results.length && !searching ? <p className={styles.pickerEmpty}>{communityText('Search for a public project to add.')}</p> : null}
+            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? <p className={styles.pickerEmpty}>{communityText('You do not have any shared or unlisted projects yet.')}</p> : null}
             <div className={styles.pickerResults}>
                 {projects.map(project => {
                     const added = existingIds.has(project.id);
@@ -200,28 +202,26 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                             <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
                             <div>
                                 <strong>{project.title}</strong>
-                                <span>by <UserLink username={project.owner}>{project.owner}</UserLink></span>
-                                {project.visibility === 'unlisted' ? <small>Unlisted</small> : null}
+                                <span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span>
+                                {project.visibility === 'unlisted' ? <small>{communityText('Unlisted')}</small> : null}
                             </div>
                             <Button
                                 variant="secondary"
                                 disabled={added || Boolean(adding)}
                                 busy={adding === project.id}
-                                busyLabel="Adding…"
+                                busyLabel={communityText('Adding…')}
                                 onClick={() => add(project)}
                             >
-                                {added ? <><Check size={14} /> Added</> : <><Plus size={14} /> Add</>}
+                                {added ? <><Check size={14} />{communityText(' Added')}</> : <><Plus size={14} />{communityText(' Add')}</>}
                             </Button>
                         </article>
                     );
                 })}
             </div>
             {tab === 'mine' && mineOffset < mineTotal ? (
-                <Button variant="secondary" busy={mineMoreBusy} busyLabel="Loading…" onClick={loadMoreMine}>
-                    Load more projects
-                </Button>
+                <Button variant="secondary" busy={mineMoreBusy} busyLabel={communityText('Loading…')} onClick={loadMoreMine}>{communityText('Load more projects')}</Button>
             ) : null}
-            {tab === 'mine' && mineMoreError ? <p className={styles.pickerEmpty}>Could not load more projects. Try again.</p> : null}
+            {tab === 'mine' && mineMoreError ? <p className={styles.pickerEmpty}>{communityText('Could not load more projects. Try again.')}</p> : null}
         </section>
     );
 };

@@ -1,6 +1,11 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {AutoSizer, CellMeasurer, CellMeasurerCache, List, WindowScroller} from 'react-virtualized';
+import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
+import {CellMeasurer, CellMeasurerCache} from 'react-virtualized/dist/commonjs/CellMeasurer';
+import List from 'react-virtualized/dist/commonjs/List';
+import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
 import {Link} from 'react-router-dom';
 import {ExternalLink, Heart, MessageCircle, Pin, Trash2} from 'lucide-react';
 import api from '../api.js';
@@ -81,6 +86,7 @@ VirtualPostList.propTypes = {
 };
 
 const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) => {
+    const {text: communityText} = useCommunityText();
     const [deleting, setDeleting] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState('');
     const [liking, setLiking] = useState('');
@@ -149,12 +155,12 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                         <UserLink username={post.user || username}><strong>{post.user || username}</strong></UserLink>
                         <GroupTag username={post.user || username} compact />
                         {post.pinned ? (
-                            <span className={styles.pinned}><Pin size={11} /> Pinned</span>
+                            <span className={styles.pinned}><Pin size={11} />{communityText(' Pinned')}</span>
                         ) : null}
                         {when ? (
                             <time
                                 dateTime={new Date(when).toISOString()}
-                                title={new Date(when).toLocaleString()}
+                                title={new Date(when).toLocaleString(getCommunityLocale())}
                             >{timeAgo(when)}</time>
                         ) : null}
                         {editable ? (
@@ -166,7 +172,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                                     setError('');
                                     setConfirmingDelete(post.id);
                                 }}
-                                aria-label="Delete post"
+                                aria-label={communityText('Delete post')}
                             ><Trash2 size={15} /></button>
                         ) : null}
                     </header>
@@ -183,15 +189,15 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                             type="button"
                             className={liked ? styles.liked : ''}
                             disabled={liking === post.id}
-                            aria-label={liked ? 'Unlike post' : 'Like post'}
+                            aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
                             onClick={() => toggleLike(post)}
                         >
                             <Heart size={15} fill={liked ? 'currentColor' : 'none'} /> {postMetricCount(post.likes)}
                         </button>
-                        <span aria-label={`${postMetricCount(post.replies)} replies`}>
+                        <span aria-label={communityText("{value1} replies", {value1: postMetricCount(post.replies)})}>
                             <MessageCircle size={15} /> {postMetricCount(post.replies)}
                         </span>
-                        <Link to={pouncePostUrl(post.id)}>Open post <ExternalLink size={13} /></Link>
+                        <Link to={pouncePostUrl(post.id)}>{communityText('Open post ')}<ExternalLink size={13} /></Link>
                     </footer>
                 </div>
             </article>
@@ -202,7 +208,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
             {confirmingDelete ? (
                 <Modal
                     icon={Trash2}
-                    title="Delete profile post?"
+                    title={communityText('Delete profile post?')}
                     dismissDisabled={deleting === confirmingDelete}
                     onClose={() => {
                         setConfirmingDelete('');
@@ -216,17 +222,17 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                                     setConfirmingDelete('');
                                     setError('');
                                 }}
-                            >Cancel</Button>
+                            >{communityText('Cancel')}</Button>
                             <Button
                                 variant="danger"
                                 busy={deleting === confirmingDelete}
-                                busyLabel="Deleting…"
+                                busyLabel={communityText('Deleting…')}
                                 onClick={() => remove(confirmingDelete)}
-                            >Delete post</Button>
+                            >{communityText('Delete post')}</Button>
                         </React.Fragment>
                     )}
                 >
-                    <p>This permanently deletes the post from your Rotur profile.</p>
+                    <p>{communityText('This permanently deletes the post from your Rotur profile.')}</p>
                     {error ? <p className={styles.error} role="alert">{error}</p> : null}
                 </Modal>
             ) : null}
@@ -240,7 +246,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             {!sorted.length ? (
                 <p className={styles.empty}>
-                    {editable ? 'You have not posted anything yet.' : `${username} has not posted anything yet.`}
+                    {editable ? communityText('You have not posted anything yet.') : communityText("{value1} has not posted anything yet.", {value1: username})}
                 </p>
             ) : null}
             <div className={styles.list}>

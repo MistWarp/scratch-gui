@@ -255,12 +255,12 @@ const generateRuntimeEntry = (id, manifest, assets) => {
 
     for (const userstyle of manifest.userstyles || []) {
         const src = userstyle.url;
-        const importName = importSection.add(`!css-loader!./${src}`, 'css');
+        const importName = importSection.add(`./${src}?inline`, 'css');
         exportSection += `  ${JSON.stringify(src)}: ${importName},\n`;
     }
 
     for (const assetName of assets) {
-        const importName = importSection.add(`!url-loader!./${assetName}`, 'asset');
+        const importName = importSection.add(`./${assetName}?url`, 'asset');
         exportSection += `  ${JSON.stringify(assetName)}: ${importName},\n`;
     }
 
@@ -432,8 +432,9 @@ const generateL10nEntries = locales => generateEntries(
 const generateL10nSettingsEntries = locales => generateEntries(
     locales.filter(i => i !== 'en'),
     locale => ({
+        name: `addon-l10n-settings-${locale}`,
         src: `../addons-l10n-settings/${locale}.json`,
-        type: 'lazy-require'
+        type: 'lazy-import'
     })
 );
 

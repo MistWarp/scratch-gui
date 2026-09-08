@@ -10,3 +10,6 @@ src/addons/libraries
 src/addons/api-libraries
 src/addons/generated
 src/addons/ScratchAddons
+
+# Generated Vite locale and Closure modules
+src/generated

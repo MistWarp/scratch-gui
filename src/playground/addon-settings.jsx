@@ -15,6 +15,7 @@
  */
 
 import React from 'react';
+import {prepareLocale} from '../lib/editor-locales';
 import downloadBlob from '../lib/utils/download-blob.js';
 import Settings from '../addons/settings/settings.jsx';
 import render from './app-target';
@@ -28,4 +29,4 @@ render((
     <Settings
         onExportSettings={onExportSettings}
     />
-));
+), prepareLocale);

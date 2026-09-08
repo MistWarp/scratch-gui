@@ -1,115 +1,135 @@
-/* eslint-disable max-len */
-import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
-import {IntlProvider} from 'react-intl';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {addLocaleData, IntlProvider} from 'react-intl';
+import {localeData} from '@turbowarp/scratch-l10n';
+import IntlMessageFormat from 'intl-messageformat';
+import english from '../generated/community-locales/fallbacks.json';
+import {loaders} from '../generated/community-locales';
+import {
+    LANGUAGE_KEY, LEGACY_LANGUAGE_KEY, locales, matchLocale, readPreference, resolveLocale,
+    setCommunityLocale, setCommunityFormatter
+} from './locale';
 
-const LOCALE_KEY = 'mw:community-locale';
+addLocaleData(localeData);
 export const LOCALES = [
     {value: 'auto', label: 'Use browser language'},
-    {value: 'en', label: 'English'},
-    {value: 'es', label: 'Español'}
+    ...Object.entries(locales).map(([value, info]) => ({value, label: info.name}))
 ];
 
-const messages = {
-    en: {
-        'a11y.skip': 'Skip to content',
-        'nav.main': 'Main navigation',
-        'nav.create': 'Create',
-        'nav.explore': 'Explore',
-        'nav.spaces': 'Spaces',
-        'nav.search': 'Search projects, people, and spaces',
-        'home.title': 'Build something you want to come back to.',
-        'home.lead': 'Make games and animations with blocks. Build together, share your work, and restore earlier versions whenever you need them.',
-        'home.start': 'Start creating',
-        'home.explore': 'Explore projects',
-        'home.signin': 'Sign in with Rotur',
-        'home.github': 'Follow on GitHub',
-        'status.title': 'Service status',
-        'status.lead': 'Checks run outside the main MistWarp deployment every five minutes.',
-        'status.retry': 'Check again',
-        'status.loading': 'Loading independent status data…',
-        'status.failed': 'Independent status data is unavailable.',
-        'status.operational': 'Operational',
-        'status.degraded': 'Degraded',
-        'status.unavailable': 'Unavailable',
-        'status.unknown': 'No data',
-        'status.incidents': 'Incident history',
-        'status.noIncidents': 'No incidents have been reported.',
-        'status.history': 'Seven-day uptime',
-        'settings.language': 'Language',
-        'settings.languageHelp': 'Changes the language used by the MistWarp community site. More pages will move into this translation system as their copy changes.',
-        'settings.analytics': 'Anonymous product analytics',
-        'settings.analyticsHelp': 'Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details.'
-    },
-    es: {
-        'a11y.skip': 'Saltar al contenido',
-        'nav.main': 'Navegación principal',
-        'nav.create': 'Crear',
-        'nav.explore': 'Explorar',
-        'nav.spaces': 'Espacios',
-        'nav.search': 'Buscar proyectos, personas y espacios',
-        'home.title': 'Crea algo que quieras seguir mejorando.',
-        'home.lead': 'Crea juegos y animaciones con bloques. Colabora, comparte tu trabajo y recupera versiones anteriores cuando las necesites.',
-        'home.start': 'Empezar a crear',
-        'home.explore': 'Explorar proyectos',
-        'home.signin': 'Iniciar sesión con Rotur',
-        'home.github': 'Seguir en GitHub',
-        'status.title': 'Estado del servicio',
-        'status.lead': 'Las comprobaciones se ejecutan fuera del despliegue principal de MistWarp cada cinco minutos.',
-        'status.retry': 'Comprobar de nuevo',
-        'status.loading': 'Cargando datos de estado independientes…',
-        'status.failed': 'Los datos de estado independientes no están disponibles.',
-        'status.operational': 'Operativo',
-        'status.degraded': 'Rendimiento reducido',
-        'status.unavailable': 'No disponible',
-        'status.unknown': 'Sin datos',
-        'status.incidents': 'Historial de incidentes',
-        'status.noIncidents': 'No se han comunicado incidentes.',
-        'status.history': 'Disponibilidad de siete días',
-        'settings.language': 'Idioma',
-        'settings.languageHelp': 'Cambia el idioma del sitio de la comunidad de MistWarp. Más páginas usarán este sistema a medida que cambie su texto.',
-        'settings.analytics': 'Análisis anónimo del producto',
-        'settings.analyticsHelp': 'Registra hitos de creación y regreso durante 31 días. MistWarp no envía nombres de usuario, identificadores de proyecto, URLs, direcciones IP ni datos del navegador.'
+const loaded = new Map([['en', english]]);
+const pending = new Map();
+export const loadCommunityLocale = locale => {
+    if (loaded.has(locale)) return Promise.resolve(loaded.get(locale));
+    if (!loaders[locale]) return Promise.resolve(english);
+    if (!pending.has(locale)) {
+        pending.set(locale, loaders[locale]().then(module => {
+            loaded.set(locale, module.default);
+            pending.delete(locale);
+            return module.default;
+        }).catch(error => {
+            pending.delete(locale);
+            throw error;
+        }));
     }
+    return pending.get(locale);
 };
 
-const getPreference = () => {
-    try {
-        return localStorage.getItem(LOCALE_KEY) || 'auto';
-    } catch (e) {
-        return 'auto';
-    }
+export const createTranslator = (locale, messages) => {
+    const formats = new Map();
+    return (key, values) => {
+        const fallback = Object.prototype.hasOwnProperty.call(english, key) ? english[key] : key;
+        const message = (Object.prototype.hasOwnProperty.call(messages, key) && messages[key]) || fallback;
+        if (!values) return message;
+        try {
+            if (!formats.has(key)) formats.set(key, new IntlMessageFormat(message, locale));
+            return formats.get(key).format(values);
+        } catch (e) {
+            try {
+                return new IntlMessageFormat(fallback, 'en').format(values);
+            } catch (ignored) {
+                return fallback;
+            }
+        }
+    };
 };
-
-const resolveLocale = preference => {
-    if (preference !== 'auto') return messages[preference] ? preference : 'en';
-    const browserLocale = typeof navigator === 'undefined' ? 'en' : navigator.language.toLowerCase().split('-')[0];
-    return messages[browserLocale] ? browserLocale : 'en';
-};
-
-const CommunityI18nContext = createContext({locale: 'en', preference: 'auto', setPreference: () => {}, t: key => messages.en[key] || key});
+const defaultTranslate = createTranslator('en', english);
+const CommunityI18nContext = createContext({
+    locale: 'en', preference: 'auto', setPreference: () => {}, t: defaultTranslate, text: defaultTranslate
+});
 
 export const CommunityIntlProvider = ({children}) => {
-    const [preference, setPreferenceState] = useState(getPreference);
-    const locale = resolveLocale(preference);
-    const setPreference = value => {
-        const next = LOCALES.some(option => option.value === value) ? value : 'auto';
-        try {
-            localStorage.setItem(LOCALE_KEY, next);
-        } catch (e) {
-            // keep the in-memory setting when storage is unavailable
-        }
-        setPreferenceState(next);
-    };
+    const [preference, setPreferenceState] = useState(readPreference);
+    const [search, setSearch] = useState(() => window.location.search);
+    const query = new URLSearchParams(search);
+    const urlPreference = matchLocale(query.get('locale') || query.get('lang'));
+    const requested = resolveLocale(preference, search, navigator.languages || [navigator.language]);
+    const [active, setActive] = useState(() => ({locale: 'en', messages: english}));
+    const [loadError, setLoadError] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
-        document.documentElement.lang = locale;
-    }, [locale]);
-    const value = useMemo(() => ({
-        locale,
-        preference,
-        setPreference,
-        t: key => messages[locale][key] || messages.en[key] || key
-    }), [locale, preference]);
-    return <CommunityI18nContext.Provider value={value}><IntlProvider locale={locale} messages={messages[locale]}>{children}</IntlProvider></CommunityI18nContext.Provider>;
+        let current = true;
+        setLoadError(false);
+        loadCommunityLocale(requested).then(messages => {
+            if (!current) return;
+            setCommunityLocale(requested);
+            setCommunityFormatter(createTranslator(requested, messages));
+            setActive({locale: requested, messages});
+        }).catch(() => {
+            if (current) setLoadError(true);
+        });
+        return () => {
+            current = false;
+        };
+    }, [requested, attempt]);
+    const setPreference = useCallback(value => {
+        const next = value === 'auto' ? 'auto' : matchLocale(value) || 'auto';
+        try {
+            localStorage.setItem(LANGUAGE_KEY, next);
+            localStorage.removeItem(LEGACY_LANGUAGE_KEY);
+        } catch (e) { /* Keep the in-memory choice when storage is unavailable. */ }
+        // An explicit choice replaces an earlier link's language override.
+        const url = new URL(window.location.href);
+        url.searchParams.delete('locale');
+        url.searchParams.delete('lang');
+        window.history.replaceState(window.history.state, '', url.href);
+        setSearch(url.search);
+        setPreferenceState(next);
+    }, []);
+    useEffect(() => {
+        const sync = event => {
+            if (!event || event.key === LANGUAGE_KEY || event.key === null) setPreferenceState(readPreference());
+        };
+        const onNavigate = () => setSearch(window.location.search);
+        window.addEventListener('storage', sync);
+        window.addEventListener('popstate', onNavigate);
+        return () => {
+            window.removeEventListener('storage', sync);
+            window.removeEventListener('popstate', onNavigate);
+        };
+    }, []);
+    useEffect(() => {
+        document.documentElement.lang = active.locale;
+        document.documentElement.dir = locales[active.locale]?.rtl ? 'rtl' : 'ltr';
+    }, [active.locale]);
+    const value = useMemo(() => {
+        const translate = createTranslator(active.locale, active.messages);
+        return {
+            locale: active.locale,
+            preference: urlPreference || preference,
+            setPreference,
+            t: translate,
+            text: translate,
+            loading: requested !== active.locale && !loadError,
+            loadError,
+            retry: () => setAttempt(n => n + 1)
+        };
+    }, [active, preference, urlPreference, setPreference, requested, loadError]);
+    return (
+        <CommunityI18nContext.Provider value={value}>
+            <IntlProvider locale={active.locale} messages={{...english, ...active.messages}}>
+                {children}
+            </IntlProvider>
+        </CommunityI18nContext.Provider>
+    );
 };
 
 export const useCommunityIntl = () => useContext(CommunityI18nContext);

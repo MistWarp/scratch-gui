@@ -1,3 +1,4 @@
+import debuggerStyles from './debugger.module.css';
 import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
@@ -11,7 +12,6 @@ import createMemoryTab from './tabs/memory.js';
 import playIcon from './icons/play.svg';
 import stepIcon from './icons/step.svg';
 
-import '!!style-loader!css-loader!./debugger.css';
 
 const INITIAL_WIDTH = 640;
 const INITIAL_HEIGHT = 460;
@@ -140,7 +140,7 @@ export class Debugger extends React.Component {
             <AddonWindow
                 id="debugger"
                 title="Debugger"
-                className="sa-debugger-window"
+                className={debuggerStyles['sa-debugger-window']}
                 width={INITIAL_WIDTH}
                 height={INITIAL_HEIGHT}
                 minWidth={400}
@@ -149,7 +149,7 @@ export class Debugger extends React.Component {
                 onMinimize={this.props.onClose}
             >
                 <div
-                    className="mw-debugger-tabs"
+                    className={debuggerStyles['mw-debugger-tabs']}
                     role="tablist"
                 >
                     {this.tabs.map(tab => (
@@ -162,14 +162,14 @@ export class Debugger extends React.Component {
                             tabIndex={tab.id === this.state.activeTabId ? 0 : -1}
                             className={
                                 tab.id === this.state.activeTabId ?
-                                    'mw-debugger-tab mw-debugger-tab-active' :
-                                    'mw-debugger-tab'
+                                    `${debuggerStyles['mw-debugger-tab']} ${debuggerStyles['mw-debugger-tab-active']}` :
+                                    debuggerStyles['mw-debugger-tab']
                             }
                             onClick={this.handleTabClick}
                             onKeyDown={this.handleTabKeyDown}
                         >
                             <span
-                                className="mw-debugger-tab-icon"
+                                className={debuggerStyles['mw-debugger-tab-icon']}
                                 style={{maskImage: `url(${tab.icon})`, WebkitMaskImage: `url(${tab.icon})`}}
                             />
                             {tab.label}
@@ -177,21 +177,22 @@ export class Debugger extends React.Component {
                     ))}
                 </div>
 
-                <div className="mw-debugger-toolbar">
+                <div className={debuggerStyles['mw-debugger-toolbar']}>
                     {paused && (
-                        <div className="mw-debugger-paused">
-                            <span className="mw-debugger-paused-dot" />
+                        <div className={debuggerStyles['mw-debugger-paused']}>
+                            <span className={debuggerStyles['mw-debugger-paused-dot']} />
                             {'Paused'}
                         </div>
                     )}
                     {paused && (
                         <button
                             type="button"
-                            className="mw-debugger-toolbar-btn mw-debugger-resume"
+                            className={[debuggerStyles['mw-debugger-toolbar-btn'],
+                                debuggerStyles['mw-debugger-resume']].join(' ')}
                             onClick={this.handleResume}
                         >
                             <span
-                                className="mw-debugger-toolbar-icon"
+                                className={debuggerStyles['mw-debugger-toolbar-icon']}
                                 style={{maskImage: `url(${playIcon})`, WebkitMaskImage: `url(${playIcon})`}}
                             />
                             {'Resume'}
@@ -200,28 +201,28 @@ export class Debugger extends React.Component {
                     {paused && (
                         <button
                             type="button"
-                            className="mw-debugger-toolbar-btn"
+                            className={debuggerStyles['mw-debugger-toolbar-btn']}
                             onClick={this.handleStep}
                         >
                             <span
-                                className="mw-debugger-toolbar-icon"
+                                className={debuggerStyles['mw-debugger-toolbar-icon']}
                                 style={{maskImage: `url(${stepIcon})`, WebkitMaskImage: `url(${stepIcon})`}}
                             />
                             {'Step'}
                         </button>
                     )}
-                    <div className="mw-debugger-toolbar-spacer" />
+                    <div className={debuggerStyles['mw-debugger-toolbar-spacer']} />
                     {activeTab.buttons.map((button, index) => (
                         <button
                             type="button"
                             key={index}
-                            className="mw-debugger-toolbar-btn"
+                            className={debuggerStyles['mw-debugger-toolbar-btn']}
                             data-index={index}
                             onClick={this.handleToolbarButtonClick}
                         >
                             {button.icon && (
                                 <span
-                                    className="mw-debugger-toolbar-icon"
+                                    className={debuggerStyles['mw-debugger-toolbar-icon']}
                                     style={{
                                         maskImage: `url(${button.icon})`,
                                         WebkitMaskImage: `url(${button.icon})`
@@ -234,7 +235,7 @@ export class Debugger extends React.Component {
                 </div>
 
                 <div
-                    className="mw-debugger-body"
+                    className={debuggerStyles['mw-debugger-body']}
                     ref={this.setContentRef}
                 />
             </AddonWindow>

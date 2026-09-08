@@ -1,9 +1,22 @@
 import WindowManager from '../../addons/window-system/window-manager.js';
 import AddonHooks from '../../addons/hooks.js';
 import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
-import JSONEditor from 'jsoneditor';
-import '!!style-loader!css-loader!jsoneditor/dist/jsoneditor.css';
-import '!!style-loader!css-loader!./dev-inspector.css';
+
+let inspectorStyles;
+let jsonEditorLoader;
+const loadJSONEditor = () => {
+    if (!jsonEditorLoader) {
+        jsonEditorLoader = Promise.all([
+            import('jsoneditor/dist/jsoneditor-minimalist.min.js'),
+            import('jsoneditor/dist/jsoneditor.css?global'),
+            import('./dev-inspector.module.css')
+        ]).then(([module, , stylesheet]) => {
+            inspectorStyles = stylesheet.default;
+            return module.default || module;
+        });
+    }
+    return jsonEditorLoader;
+};
 
 let initialized = false;
 
@@ -19,6 +32,7 @@ export function initDevInspector (vm, Blockly) {
     if (!vm || !Blockly) return;
 
   let inspectorWindow = null;
+  let JSONEditor = null;
   let projectJSONCache = null;
   let projectJSONCacheString = null;
   let projectJSONEditor = null;
@@ -105,9 +119,10 @@ export function initDevInspector (vm, Blockly) {
 
   const createTextJSONEditor = editorContainer => {
     const editor = new JSONEditor(editorContainer, {
-      // Tree = expand/collapse graph; code = raw JSON with highlighting
+      // The minimalist build supports the editable tree and plain text modes
+      // without bundling Ace, AJV, or the color picker.
       mode: 'tree',
-      modes: ['tree', 'code'],
+      modes: ['tree', 'text'],
       // Wider indent in code/text output (default is 2)
       indentation: 4,
       search: true,
@@ -556,9 +571,9 @@ export function initDevInspector (vm, Blockly) {
     const label = opts.label || type || id;
     const idPart = opts.hideId
       ? ''
-      : ` <span class="dev-inspector-block-link-id">(${escapeHtml(shortId(id))})</span>`;
+      : ` <span class="${inspectorStyles['dev-inspector-block-link-id']}">(${escapeHtml(shortId(id))})</span>`;
     return (
-      `<button type="button" class="dev-inspector-block-link" data-block-id="${escapeHtml(id)}" ` +
+      `<button type="button" class="${inspectorStyles['dev-inspector-block-link']}" data-block-id="${escapeHtml(id)}" ` +
       `title="Inspect ${escapeHtml(type || '')} ${escapeHtml(id)}">` +
       `${escapeHtml(label)}${idPart}</button>`
     );
@@ -566,19 +581,19 @@ export function initDevInspector (vm, Blockly) {
 
   const propRow = (key, value, opts = {}) => {
     const valClass = opts.plain
-      ? 'dev-inspector-prop-val dev-inspector-prop-val-plain'
-      : 'dev-inspector-prop-val';
+      ? `${inspectorStyles['dev-inspector-prop-val']} ${inspectorStyles['dev-inspector-prop-val-plain']}`
+      : inspectorStyles['dev-inspector-prop-val'];
     let display;
     if (value == null || value === '') {
-      display = `<span class="dev-inspector-muted">-</span>`;
+      display = `<span class="${inspectorStyles['dev-inspector-muted']}">-</span>`;
     } else if (opts.html) {
       display = value;
     } else {
       display = escapeHtml(formatValue(value));
     }
     return `
-      <div class="dev-inspector-prop">
-        <div class="dev-inspector-prop-key">${escapeHtml(key)}</div>
+      <div class="${inspectorStyles['dev-inspector-prop']}">
+        <div class="${inspectorStyles['dev-inspector-prop-key']}">${escapeHtml(key)}</div>
         <div class="${valClass}">${display}</div>
       </div>
     `;
@@ -587,9 +602,9 @@ export function initDevInspector (vm, Blockly) {
   const propsTable = rows => {
     // rows: [{key, value, plain?, html?}]
     if (!rows || !rows.length) {
-      return `<div class="dev-inspector-empty">No data</div>`;
+      return `<div class="${inspectorStyles['dev-inspector-empty']}">No data</div>`;
     }
-    return `<div class="dev-inspector-props">${rows.map(r => propRow(r.key, r.value, r)).join('')}</div>`;
+    return `<div class="${inspectorStyles['dev-inspector-props']}">${rows.map(r => propRow(r.key, r.value, r)).join('')}</div>`;
   };
 
   const flagsHtml = flags => {
@@ -605,9 +620,9 @@ export function initDevInspector (vm, Blockly) {
       ['insertion', flags.insertionMarker]
     ];
     return `
-      <div class="dev-inspector-flags">
+      <div class="${inspectorStyles['dev-inspector-flags']}">
         ${entries.map(([name, on]) =>
-    `<span class="dev-inspector-flag${on ? ' dev-inspector-flag-on' : ''}">${escapeHtml(name)}</span>`
+    `<span class="${inspectorStyles['dev-inspector-flag']}${on ? ` ${inspectorStyles['dev-inspector-flag-on']}` : ''}">${escapeHtml(name)}</span>`
   ).join('')}
       </div>
     `;
@@ -649,30 +664,30 @@ export function initDevInspector (vm, Blockly) {
     }
 
     if (rows.length <= 1 && !info.children.length) {
-      return `<div class="dev-inspector-empty">No linked blocks to browse</div>`;
+      return `<div class="${inspectorStyles['dev-inspector-empty']}">No linked blocks to browse</div>`;
     }
 
     return `
-      <div class="dev-inspector-tree" role="tree">
+      <div class="${inspectorStyles['dev-inspector-tree']}" role="tree">
         ${rows.map(r => {
     const indent = r.depth > 0 ? `${'  '.repeat(r.depth - 1)}└ ` : '';
     const meta = r.role === 'parent' ? 'up' : r.role === 'child' ? 'in' : 'here';
     if (r.current) {
       return `
-            <div class="dev-inspector-tree-row dev-inspector-tree-row-current" role="treeitem" aria-current="true">
-              <span class="dev-inspector-tree-indent">${escapeHtml(indent)}</span>
-              <span class="dev-inspector-tree-label">${escapeHtml(r.type)}</span>
-              <span class="dev-inspector-tree-meta">${meta}</span>
+            <div class="${inspectorStyles['dev-inspector-tree-row']} ${inspectorStyles['dev-inspector-tree-row-current']}" role="treeitem" aria-current="true">
+              <span class="${inspectorStyles['dev-inspector-tree-indent']}">${escapeHtml(indent)}</span>
+              <span class="${inspectorStyles['dev-inspector-tree-label']}">${escapeHtml(r.type)}</span>
+              <span class="${inspectorStyles['dev-inspector-tree-meta']}">${meta}</span>
             </div>
           `;
     }
     return `
-          <button type="button" class="dev-inspector-tree-row" role="treeitem"
+          <button type="button" class="${inspectorStyles['dev-inspector-tree-row']}" role="treeitem"
             data-block-id="${escapeHtml(r.id)}"
             title="Inspect ${escapeHtml(r.type)}">
-            <span class="dev-inspector-tree-indent">${escapeHtml(indent)}</span>
-            <span class="dev-inspector-tree-label">${escapeHtml(r.type)}</span>
-            <span class="dev-inspector-tree-meta">${meta}</span>
+            <span class="${inspectorStyles['dev-inspector-tree-indent']}">${escapeHtml(indent)}</span>
+            <span class="${inspectorStyles['dev-inspector-tree-label']}">${escapeHtml(r.type)}</span>
+            <span class="${inspectorStyles['dev-inspector-tree-meta']}">${meta}</span>
           </button>
         `;
   }).join('')}
@@ -682,13 +697,13 @@ export function initDevInspector (vm, Blockly) {
 
   const renderOverview = info => {
     const el = document.createElement('div');
-    el.className = 'dev-inspector-panel-scroll';
+    el.className = inspectorStyles['dev-inspector-panel-scroll'];
     el.innerHTML = `
-      <h2 class="dev-inspector-section-title">Overview</h2>
-      <p class="dev-inspector-section-sub">${escapeHtml(info.opcode)}${info.procedureName ? ` · ${escapeHtml(info.procedureName)}` : ''}</p>
+      <h2 class="${inspectorStyles['dev-inspector-section-title']}">Overview</h2>
+      <p class="${inspectorStyles['dev-inspector-section-sub']}">${escapeHtml(info.opcode)}${info.procedureName ? ` · ${escapeHtml(info.procedureName)}` : ''}</p>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Identity</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Identity</div>
         ${propsTable([
     {key: 'Opcode', value: info.opcode},
     {key: 'Type', value: info.type},
@@ -699,8 +714,8 @@ export function initDevInspector (vm, Blockly) {
   ])}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Location</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Location</div>
         ${propsTable([
     {key: 'Target', value: info.targetName, plain: true},
     {key: 'Target ID', value: info.targetId},
@@ -710,27 +725,27 @@ export function initDevInspector (vm, Blockly) {
   ])}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Browse</div>
-        <p class="dev-inspector-section-sub" style="margin:0 0 8px">Click a block to inspect it (parent / children).</p>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Browse</div>
+        <p class="${inspectorStyles['dev-inspector-section-sub']}" style="margin:0 0 8px">Click a block to inspect it (parent / children).</p>
         ${renderLocalTree(info)}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Flags</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Flags</div>
         ${flagsHtml(info.flags)}
       </div>
 
       ${info.comment ? `
-        <div class="dev-inspector-block">
-          <div class="dev-inspector-block-label">Comment</div>
+        <div class="${inspectorStyles['dev-inspector-block']}">
+          <div class="${inspectorStyles['dev-inspector-block-label']}">Comment</div>
           ${propsTable([{key: 'Text', value: info.comment, plain: true}])}
         </div>
       ` : ''}
 
       ${info.mutation ? `
-        <div class="dev-inspector-block">
-          <div class="dev-inspector-block-label">Mutation</div>
+        <div class="${inspectorStyles['dev-inspector-block']}">
+          <div class="${inspectorStyles['dev-inspector-block-label']}">Mutation</div>
           ${propsTable([{
     key: 'Data',
     value: typeof info.mutation === 'string' ? info.mutation : JSON.stringify(info.mutation)
@@ -743,7 +758,7 @@ export function initDevInspector (vm, Blockly) {
 
   const renderConnections = info => {
     const el = document.createElement('div');
-    el.className = 'dev-inspector-panel-scroll';
+    el.className = inspectorStyles['dev-inspector-panel-scroll'];
 
     const outputConn = info.connections.output;
     const connRows = [
@@ -765,15 +780,15 @@ export function initDevInspector (vm, Blockly) {
 
     let childrenHtml;
     if (!info.children.length) {
-      childrenHtml = `<div class="dev-inspector-empty">No child blocks</div>`;
+      childrenHtml = `<div class="${inspectorStyles['dev-inspector-empty']}">No child blocks</div>`;
     } else {
       childrenHtml = `
-        <div class="dev-inspector-table-wrap">
-          <table class="dev-inspector-table">
+        <div class="${inspectorStyles['dev-inspector-table-wrap']}">
+          <table class="${inspectorStyles['dev-inspector-table']}">
             <thead><tr><th>#</th><th>Type</th><th>ID</th></tr></thead>
             <tbody>
               ${info.children.map((c, i) => `
-                <tr class="dev-inspector-row-link" data-block-id="${escapeHtml(c.id)}" title="Inspect ${escapeHtml(c.type)}">
+                <tr class="${inspectorStyles['dev-inspector-row-link']}" data-block-id="${escapeHtml(c.id)}" title="Inspect ${escapeHtml(c.type)}">
                   <td>${i}</td>
                   <td>${blockLink(c.id, c.type, {hideId: true})}</td>
                   <td>${escapeHtml(c.id)}</td>
@@ -786,21 +801,21 @@ export function initDevInspector (vm, Blockly) {
     }
 
     el.innerHTML = `
-      <h2 class="dev-inspector-section-title">Connections</h2>
-      <p class="dev-inspector-section-sub">Click any linked block to inspect it.</p>
+      <h2 class="${inspectorStyles['dev-inspector-section-title']}">Connections</h2>
+      <p class="${inspectorStyles['dev-inspector-section-sub']}">Click any linked block to inspect it.</p>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Tree</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Tree</div>
         ${renderLocalTree(info)}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Linked blocks</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Linked blocks</div>
         ${propsTable(connRows)}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Children (${info.children.length})</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Children (${info.children.length})</div>
         ${childrenHtml}
       </div>
     `;
@@ -809,15 +824,15 @@ export function initDevInspector (vm, Blockly) {
 
   const renderInputs = info => {
     const el = document.createElement('div');
-    el.className = 'dev-inspector-panel-scroll';
+    el.className = inspectorStyles['dev-inspector-panel-scroll'];
 
     let fieldsHtml;
     if (!info.fields.length) {
-      fieldsHtml = `<div class="dev-inspector-empty">No fields</div>`;
+      fieldsHtml = `<div class="${inspectorStyles['dev-inspector-empty']}">No fields</div>`;
     } else {
       fieldsHtml = `
-        <div class="dev-inspector-table-wrap">
-          <table class="dev-inspector-table">
+        <div class="${inspectorStyles['dev-inspector-table-wrap']}">
+          <table class="${inspectorStyles['dev-inspector-table']}">
             <thead><tr><th>Name</th><th>Value</th><th>Text</th><th>Type</th></tr></thead>
             <tbody>
               ${info.fields.map(f => `
@@ -836,17 +851,17 @@ export function initDevInspector (vm, Blockly) {
 
     let inputsHtml;
     if (!info.inputs.length) {
-      inputsHtml = `<div class="dev-inspector-empty">No inputs</div>`;
+      inputsHtml = `<div class="${inspectorStyles['dev-inspector-empty']}">No inputs</div>`;
     } else {
       inputsHtml = `
-        <div class="dev-inspector-table-wrap">
-          <table class="dev-inspector-table">
+        <div class="${inspectorStyles['dev-inspector-table-wrap']}">
+          <table class="${inspectorStyles['dev-inspector-table']}">
             <thead><tr><th>Name</th><th>Kind</th><th>Connected</th><th>Target / value</th></tr></thead>
             <tbody>
               ${info.inputs.map(inp => {
-    let target = '<span class="dev-inspector-muted">-</span>';
+    let target = `<span class="${inspectorStyles['dev-inspector-muted']}">-</span>`;
     const rowAttrs = inp.connected && inp.targetId
-      ? ` class="dev-inspector-row-link" data-block-id="${escapeHtml(inp.targetId)}" title="Inspect ${escapeHtml(inp.targetType || '')}"`
+      ? ` class="${inspectorStyles['dev-inspector-row-link']}" data-block-id="${escapeHtml(inp.targetId)}" title="Inspect ${escapeHtml(inp.targetType || '')}"`
       : '';
     if (inp.connected && inp.targetId) {
       const valueHint = inp.shadowValue != null
@@ -875,15 +890,15 @@ export function initDevInspector (vm, Blockly) {
       const vmFieldEntries = Object.entries(info.scratchData.fields || {});
       const vmInputEntries = Object.entries(info.scratchData.inputs || {});
       vmHtml = `
-        <div class="dev-inspector-block">
-          <div class="dev-inspector-block-label">VM fields</div>
+        <div class="${inspectorStyles['dev-inspector-block']}">
+          <div class="${inspectorStyles['dev-inspector-block-label']}">VM fields</div>
           ${vmFieldEntries.length ? propsTable(vmFieldEntries.map(([k, v]) => ({
     key: k,
     value: v && typeof v === 'object' && 'value' in v ? v.value : v
-  }))) : `<div class="dev-inspector-empty">None</div>`}
+  }))) : `<div class="${inspectorStyles['dev-inspector-empty']}">None</div>`}
         </div>
-        <div class="dev-inspector-block">
-          <div class="dev-inspector-block-label">VM inputs</div>
+        <div class="${inspectorStyles['dev-inspector-block']}">
+          <div class="${inspectorStyles['dev-inspector-block-label']}">VM inputs</div>
           ${vmInputEntries.length ? propsTable(vmInputEntries.map(([k, v]) => {
     if (!v) return {key: k, value: '-'};
     const parts = [];
@@ -894,22 +909,22 @@ export function initDevInspector (vm, Blockly) {
       value: parts.length ? parts.join(' ') : '-',
       html: true
     };
-  })) : `<div class="dev-inspector-empty">None</div>`}
+  })) : `<div class="${inspectorStyles['dev-inspector-empty']}">None</div>`}
         </div>
       `;
     }
 
     el.innerHTML = `
-      <h2 class="dev-inspector-section-title">Inputs &amp; fields</h2>
-      <p class="dev-inspector-section-sub">Click a connected block to inspect it.</p>
+      <h2 class="${inspectorStyles['dev-inspector-section-title']}">Inputs &amp; fields</h2>
+      <p class="${inspectorStyles['dev-inspector-section-sub']}">Click a connected block to inspect it.</p>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Fields (${info.fields.length})</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Fields (${info.fields.length})</div>
         ${fieldsHtml}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Inputs (${info.inputs.length})</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Inputs (${info.inputs.length})</div>
         ${inputsHtml}
       </div>
 
@@ -920,20 +935,20 @@ export function initDevInspector (vm, Blockly) {
 
   const renderStack = info => {
     const el = document.createElement('div');
-    el.className = 'dev-inspector-panel-scroll';
+    el.className = inspectorStyles['dev-inspector-panel-scroll'];
 
     const stack = info.stack;
     let stackHtml;
     if (!stack.blocks.length) {
-      stackHtml = `<div class="dev-inspector-empty">Empty stack</div>`;
+      stackHtml = `<div class="${inspectorStyles['dev-inspector-empty']}">Empty stack</div>`;
     } else {
       stackHtml = `
-        <div class="dev-inspector-table-wrap">
-          <table class="dev-inspector-table">
+        <div class="${inspectorStyles['dev-inspector-table-wrap']}">
+          <table class="${inspectorStyles['dev-inspector-table']}">
             <thead><tr><th>#</th><th>Type</th><th>ID</th></tr></thead>
             <tbody>
               ${stack.blocks.map(b => `
-                <tr class="${b.isCurrent ? 'dev-inspector-row-current' : 'dev-inspector-row-link'}"
+                <tr class="${b.isCurrent ? inspectorStyles['dev-inspector-row-current'] : inspectorStyles['dev-inspector-row-link']}"
                   ${b.isCurrent ? '' : `data-block-id="${escapeHtml(b.id)}" title="Inspect ${escapeHtml(b.type)}"`}>
                   <td>${b.index}</td>
                   <td>${b.isCurrent
@@ -950,11 +965,11 @@ export function initDevInspector (vm, Blockly) {
 
     let threadsHtml;
     if (!info.threads.length) {
-      threadsHtml = `<div class="dev-inspector-empty">No running threads reference this block</div>`;
+      threadsHtml = `<div class="${inspectorStyles['dev-inspector-empty']}">No running threads reference this block</div>`;
     } else {
       threadsHtml = `
-        <div class="dev-inspector-table-wrap">
-          <table class="dev-inspector-table">
+        <div class="${inspectorStyles['dev-inspector-table-wrap']}">
+          <table class="${inspectorStyles['dev-inspector-table']}">
             <thead><tr><th>Target</th><th>Status</th><th>Stack depth</th><th>Top block</th><th>Flags</th></tr></thead>
             <tbody>
               ${info.threads.map(t => `
@@ -976,11 +991,11 @@ export function initDevInspector (vm, Blockly) {
     }
 
     el.innerHTML = `
-      <h2 class="dev-inspector-section-title">Stack</h2>
-      <p class="dev-inspector-section-sub">Linear stack from the root hat/top block through next-links.</p>
+      <h2 class="${inspectorStyles['dev-inspector-section-title']}">Stack</h2>
+      <p class="${inspectorStyles['dev-inspector-section-sub']}">Linear stack from the root hat/top block through next-links.</p>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Summary</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Summary</div>
         ${propsTable([
     {key: 'Root', value: blockLink(stack.rootId, stack.rootType), html: true},
     {key: 'Length', value: String(stack.length), plain: true},
@@ -989,14 +1004,14 @@ export function initDevInspector (vm, Blockly) {
   ])}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Stack outline</div>
-        <p class="dev-inspector-section-sub" style="margin:0 0 8px">Click a row to jump to that block in the stack.</p>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Stack outline</div>
+        <p class="${inspectorStyles['dev-inspector-section-sub']}" style="margin:0 0 8px">Click a row to jump to that block in the stack.</p>
         ${stackHtml}
       </div>
 
-      <div class="dev-inspector-block">
-        <div class="dev-inspector-block-label">Running threads (${info.threads.length})</div>
+      <div class="${inspectorStyles['dev-inspector-block']}">
+        <div class="${inspectorStyles['dev-inspector-block-label']}">Running threads (${info.threads.length})</div>
         ${threadsHtml}
       </div>
     `;
@@ -1007,43 +1022,43 @@ export function initDevInspector (vm, Blockly) {
 
   function createInspectorContent () {
     const container = document.createElement('div');
-    container.className = 'dev-inspector-container';
+    container.className = inspectorStyles['dev-inspector-container'];
     // Ensure we fill the window content flex area (jsoneditor needs real height)
     container.style.flex = '1 1 0%';
     container.style.minHeight = '0';
     container.style.height = '100%';
     container.innerHTML = `
       <aside class="dev-inspector-sidebar-mount"></aside>
-      <div class="dev-inspector-main">
-        <div class="dev-inspector-pathbar">
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-back" title="Back" aria-label="Back" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-forward" title="Forward" aria-label="Forward" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
-          <button type="button" class="dev-inspector-path-btn dev-inspector-nav-up" title="Parent block" aria-label="Parent block" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
-          <div class="dev-inspector-crumbs" aria-label="Navigation path"></div>
+      <div class="${inspectorStyles['dev-inspector-main']}">
+        <div class="${inspectorStyles['dev-inspector-pathbar']}">
+          <button type="button" class="${inspectorStyles['dev-inspector-path-btn']} dev-inspector-nav-back" title="Back" aria-label="Back" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <button type="button" class="${inspectorStyles['dev-inspector-path-btn']} dev-inspector-nav-forward" title="Forward" aria-label="Forward" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+          <button type="button" class="${inspectorStyles['dev-inspector-path-btn']} dev-inspector-nav-up" title="Parent block" aria-label="Parent block" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+          <div class="${inspectorStyles['dev-inspector-crumbs']}" aria-label="Navigation path"></div>
         </div>
-        <div class="dev-inspector-panel dev-inspector-panel-active" data-panel="overview"></div>
-        <div class="dev-inspector-panel" data-panel="connections"></div>
-        <div class="dev-inspector-panel" data-panel="inputs"></div>
-        <div class="dev-inspector-panel" data-panel="stack"></div>
-        <div class="dev-inspector-panel" data-panel="block-json">
-          <div class="dev-inspector-toolbar">
+        <div class="${inspectorStyles['dev-inspector-panel']} ${inspectorStyles['dev-inspector-panel-active']}" data-panel="overview"></div>
+        <div class="${inspectorStyles['dev-inspector-panel']}" data-panel="connections"></div>
+        <div class="${inspectorStyles['dev-inspector-panel']}" data-panel="inputs"></div>
+        <div class="${inspectorStyles['dev-inspector-panel']}" data-panel="stack"></div>
+        <div class="${inspectorStyles['dev-inspector-panel']}" data-panel="block-json">
+          <div class="${inspectorStyles['dev-inspector-toolbar']}">
             <button type="button" class="dev-inspector-copy">Copy</button>
             <button type="button" class="dev-inspector-download">Download</button>
-            <button type="button" class="dev-inspector-save dev-inspector-btn-primary">Save &amp; reload</button>
+            <button type="button" class="dev-inspector-save ${inspectorStyles['dev-inspector-btn-primary']}">Save &amp; reload</button>
           </div>
-          <div class="dev-inspector-editor-wrap">
-            <div class="dev-inspector-json-editor"></div>
+          <div class="${inspectorStyles['dev-inspector-editor-wrap']}">
+            <div class="${inspectorStyles['dev-inspector-json-editor']}"></div>
           </div>
         </div>
-        <div class="dev-inspector-panel" data-panel="project-json">
-          <div class="dev-inspector-toolbar">
+        <div class="${inspectorStyles['dev-inspector-panel']}" data-panel="project-json">
+          <div class="${inspectorStyles['dev-inspector-toolbar']}">
             <button type="button" class="dev-inspector-project-refresh">Refresh</button>
             <button type="button" class="dev-inspector-project-copy">Copy</button>
             <button type="button" class="dev-inspector-project-download">Download</button>
-            <button type="button" class="dev-inspector-project-reload dev-inspector-btn-danger">Reload project</button>
+            <button type="button" class="dev-inspector-project-reload ${inspectorStyles['dev-inspector-btn-danger']}">Reload project</button>
           </div>
-          <div class="dev-inspector-editor-wrap">
-            <div class="dev-inspector-project-editor"></div>
+          <div class="${inspectorStyles['dev-inspector-editor-wrap']}">
+            <div class="${inspectorStyles['dev-inspector-project-editor']}"></div>
           </div>
         </div>
       </div>
@@ -1076,9 +1091,9 @@ export function initDevInspector (vm, Blockly) {
     });
     container.querySelector('.dev-inspector-sidebar-mount').replaceWith(sidebar.element);
 
-    const panels = container.querySelectorAll('.dev-inspector-panel');
-    const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
-    const projectEditorContainer = container.querySelector('.dev-inspector-project-editor');
+    const panels = container.querySelectorAll(`.${inspectorStyles['dev-inspector-panel']}`);
+    const blockEditorContainer = container.querySelector(`.${inspectorStyles['dev-inspector-json-editor']}`);
+    const projectEditorContainer = container.querySelector(`.${inspectorStyles['dev-inspector-project-editor']}`);
     const copyBtn = container.querySelector('.dev-inspector-copy');
     const downloadBtn = container.querySelector('.dev-inspector-download');
     const saveBtn = container.querySelector('.dev-inspector-save');
@@ -1121,7 +1136,7 @@ export function initDevInspector (vm, Blockly) {
       activePanel = panelId;
       sidebar.setSelected(panelId);
       panels.forEach(panel => {
-        panel.classList.toggle('dev-inspector-panel-active', panel.dataset.panel === panelId);
+        panel.classList.toggle(inspectorStyles['dev-inspector-panel-active'], panel.dataset.panel === panelId);
       });
 
       // Wait for layout so jsoneditor gets a non-zero clientHeight
@@ -1332,7 +1347,7 @@ export function initDevInspector (vm, Blockly) {
     const backBtn = container.querySelector('.dev-inspector-nav-back');
     const forwardBtn = container.querySelector('.dev-inspector-nav-forward');
     const upBtn = container.querySelector('.dev-inspector-nav-up');
-    const crumbs = container.querySelector('.dev-inspector-crumbs');
+    const crumbs = container.querySelector(`.${inspectorStyles['dev-inspector-crumbs']}`);
     if (!crumbs) return;
 
     if (backBtn) backBtn.disabled = navIndex <= 0;
@@ -1359,17 +1374,17 @@ export function initDevInspector (vm, Blockly) {
     }
 
     if (!structural.length) {
-      crumbs.innerHTML = `<span class="dev-inspector-muted">No block selected</span>`;
+      crumbs.innerHTML = `<span class="${inspectorStyles['dev-inspector-muted']}">No block selected</span>`;
       return;
     }
 
     crumbs.innerHTML = structural.map((entry, i) => {
       const isLast = i === structural.length - 1;
-      const sep = i > 0 ? `<span class="dev-inspector-crumb-sep">/</span>` : '';
+      const sep = i > 0 ? `<span class="${inspectorStyles['dev-inspector-crumb-sep']}">/</span>` : '';
       if (isLast) {
-        return `${sep}<span class="dev-inspector-crumb dev-inspector-crumb-current" title="${escapeHtml(entry.id)}">${escapeHtml(entry.type || shortId(entry.id))}</span>`;
+        return `${sep}<span class="${inspectorStyles['dev-inspector-crumb']} ${inspectorStyles['dev-inspector-crumb-current']}" title="${escapeHtml(entry.id)}">${escapeHtml(entry.type || shortId(entry.id))}</span>`;
       }
-      return `${sep}<button type="button" class="dev-inspector-crumb" data-block-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.id)}">${escapeHtml(entry.type || shortId(entry.id))}</button>`;
+      return `${sep}<button type="button" class="${inspectorStyles['dev-inspector-crumb']}" data-block-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.id)}">${escapeHtml(entry.type || shortId(entry.id))}</button>`;
     }).join('');
   }
 
@@ -1420,7 +1435,7 @@ export function initDevInspector (vm, Blockly) {
   }
 
   function initBlockJSON (container) {
-    const blockEditorContainer = container.querySelector('.dev-inspector-json-editor');
+    const blockEditorContainer = container.querySelector(`.${inspectorStyles['dev-inspector-json-editor']}`);
     if (!blockEditorContainer) return;
 
     // Recreate if a prior instance was built while the host had no size
@@ -1445,10 +1460,10 @@ export function initDevInspector (vm, Blockly) {
   }
 
   function fillInfoPanels (container, info) {
-    const overview = container.querySelector('.dev-inspector-panel[data-panel="overview"]');
-    const connections = container.querySelector('.dev-inspector-panel[data-panel="connections"]');
-    const inputs = container.querySelector('.dev-inspector-panel[data-panel="inputs"]');
-    const stack = container.querySelector('.dev-inspector-panel[data-panel="stack"]');
+    const overview = container.querySelector(`.${inspectorStyles['dev-inspector-panel']}[data-panel="overview"]`);
+    const connections = container.querySelector(`.${inspectorStyles['dev-inspector-panel']}[data-panel="connections"]`);
+    const inputs = container.querySelector(`.${inspectorStyles['dev-inspector-panel']}[data-panel="inputs"]`);
+    const stack = container.querySelector(`.${inspectorStyles['dev-inspector-panel']}[data-panel="stack"]`);
 
     overview.innerHTML = '';
     connections.innerHTML = '';
@@ -1465,9 +1480,10 @@ export function initDevInspector (vm, Blockly) {
     }
   }
 
-  function showInspector (block, opts = {}) {
+  async function showInspector (block, opts = {}) {
     const blockInfo = getBlockInfo(block);
     if (!blockInfo) return;
+    if (!JSONEditor) JSONEditor = await loadJSONEditor();
     currentBlockInfo = blockInfo;
 
     // Fresh open from context menu: reset history to this block
@@ -1525,7 +1541,7 @@ export function initDevInspector (vm, Blockly) {
       inspectorWindow.show();
     }
 
-    const container = inspectorWindow.element.querySelector('.dev-inspector-container');
+    const container = inspectorWindow.element.querySelector(`.${inspectorStyles['dev-inspector-container']}`);
     fillInfoPanels(container, blockInfo);
 
     if (typeof inspectorWindow.setTitle === 'function') {

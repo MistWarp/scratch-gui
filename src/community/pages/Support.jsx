@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
@@ -36,6 +37,7 @@ const resetSupportForm = (form, user) => ({
 });
 
 const Support = () => {
+    const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const [params, setParams] = useSearchParams();
     const requestedTopic = TOPICS.includes(params.get('topic')) ? params.get('topic') : 'account';
@@ -70,7 +72,7 @@ const Support = () => {
         const context = requestContextRef.current;
         const payload = supportPayload(form, user);
         if (!payload.username || !payload.subject || !payload.message) {
-            setError('Complete every field before sending your request.');
+            setError(communityText("Complete every field before sending your request."));
             return;
         }
         if (submitLocks.current.has(context)) return;
@@ -90,34 +92,34 @@ const Support = () => {
     return (
         <main className={styles.page}>
             <header className={styles.head}>
-                <h1>Support</h1>
-                <p>Contact MistWarp about accounts, safety, legal questions, or moderation decisions.</p>
+                <h1>{communityText('Support')}</h1>
+                <p>{communityText('Contact MistWarp about accounts, safety, legal questions, or moderation decisions.')}</p>
             </header>
             <section className={styles.section}>
-                <h2>Found a product bug?</h2>
-                <p>Post it on the <Link to="/roadmap?new=bug">Roadmap bug tracker</Link>. Other users can confirm it, add context, and follow its status.</p>
+                <h2>{communityText('Found a product bug?')}</h2>
+                <p>{communityText('Post it on the ')}<Link to="/roadmap?new=bug">{communityText('Roadmap bug tracker')}</Link>{communityText('. Other users can confirm it, add context, and follow its status.')}</p>
             </section>
             <section className={styles.section}>
-                <h2>Send a private request</h2>
+                <h2>{communityText('Send a private request')}</h2>
                 {sent ? (
                     <div className={styles.success}>
-                        <p>Your request was sent to the MistWarp moderators.</p>
+                        <p>{communityText('Your request was sent to the MistWarp moderators.')}</p>
                         <Button
                             variant="secondary"
                             onClick={() => {
                                 setForm(current => resetSupportForm(current, user));
                                 setSent(false);
                             }}
-                        >Send another request</Button>
+                        >{communityText('Send another request')}</Button>
                     </div>
                 ) : (
                     <form className={styles.form} onSubmit={submit}>
-                        <label>Topic<select value={form.type} disabled={busy} onChange={event => setParams(withSupportTopic(params, event.target.value))}><option value="account">Account help</option><option value="safety">Safety concern</option><option value="legal">Legal or copyright</option><option value="appeal">Moderation appeal</option></select></label>
-                        <label>Rotur username<input value={user ? user.username : form.username} disabled={Boolean(user) || busy} required maxLength={80} onChange={event => update('username', event.target.value)} /></label>
-                        <label>Subject<input value={form.subject} disabled={busy} required maxLength={120} onChange={event => update('subject', event.target.value)} /></label>
-                        <label>Message<textarea value={form.message} disabled={busy} required maxLength={3000} onChange={event => update('message', event.target.value)} /></label>
+                        <label>{communityText('Topic')}<select value={form.type} disabled={busy} onChange={event => setParams(withSupportTopic(params, event.target.value))}><option value="account">{communityText('Account help')}</option><option value="safety">{communityText('Safety concern')}</option><option value="legal">{communityText('Legal or copyright')}</option><option value="appeal">{communityText('Moderation appeal')}</option></select></label>
+                        <label>{communityText('Rotur username')}<input value={user ? user.username : form.username} disabled={Boolean(user) || busy} required maxLength={80} onChange={event => update('username', event.target.value)} /></label>
+                        <label>{communityText('Subject')}<input value={form.subject} disabled={busy} required maxLength={120} onChange={event => update('subject', event.target.value)} /></label>
+                        <label>{communityText('Message')}<textarea value={form.message} disabled={busy} required maxLength={3000} onChange={event => update('message', event.target.value)} /></label>
                         {error ? <p className={styles.error}>{error}</p> : null}
-                        <div className={styles.actions}><Button variant="primary" type="submit" busy={busy} busyLabel="Sending…">Send request</Button></div>
+                        <div className={styles.actions}><Button variant="primary" type="submit" busy={busy} busyLabel={communityText('Sending…')}>{communityText('Send request')}</Button></div>
                     </form>
                 )}
             </section>

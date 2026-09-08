@@ -1,19 +1,19 @@
 /* eslint-disable import/no-commonjs */
 
-const SansSerif = require('!!base64-loader!./NotoSans-Medium.woff2');
-const Serif = require('!!base64-loader!./SourceSerifPro-Regular.woff2');
-const Handwriting = require('!!base64-loader!./handlee-regular.woff2');
-const Marker = require('!!base64-loader!./Knewave.woff2');
-const Curly = require('!!base64-loader!./Griffy-Regular.woff2');
-const Pixel = require('!!base64-loader!./Grand9K-Pixel.woff2');
-const Scratch = require('!!base64-loader!./ScratchSavers_b2.woff2');
-const Playful = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/BadComic-Regular.ttf');
-const Bubbly = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/QTKooper.otf');
-const BitsAndBytes = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/freecam-v2.ttf');
-const Technological = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/MonospaceBold.ttf');
-const Arcade = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/PressStart2P.ttf');
-const Archivo = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Regular.ttf');
-const ArchivoBlack = require('!!base64-loader!scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Black.ttf');
+const SansSerif = require('./NotoSans-Medium.woff2?base64');
+const Serif = require('./SourceSerifPro-Regular.woff2?base64');
+const Handwriting = require('./handlee-regular.woff2?base64');
+const Marker = require('./Knewave.woff2?base64');
+const Curly = require('./Griffy-Regular.woff2?base64');
+const Pixel = require('./Grand9K-Pixel.woff2?base64');
+const Scratch = require('./ScratchSavers_b2.woff2?base64');
+const Playful = require('scratch-paint/node_modules/scratch-render-fonts/src/BadComic-Regular.ttf?base64');
+const Bubbly = require('scratch-paint/node_modules/scratch-render-fonts/src/QTKooper.otf?base64');
+const BitsAndBytes = require('scratch-paint/node_modules/scratch-render-fonts/src/freecam-v2.ttf?base64');
+const Technological = require('scratch-paint/node_modules/scratch-render-fonts/src/MonospaceBold.ttf?base64');
+const Arcade = require('scratch-paint/node_modules/scratch-render-fonts/src/PressStart2P.ttf?base64');
+const Archivo = require('scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Regular.ttf?base64');
+const ArchivoBlack = require('scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Black.ttf?base64');
 
 const fontSource = {
     'Sans Serif': {data: SansSerif, mime: 'font/woff2'},
@@ -73,7 +73,7 @@ const loadFonts = () => {
 
 const getFonts = () => fontData;
 
-// We have to use legacy module.exports as some parts of Scratch expect require('scratch-render-font') to be a function
+// Scratch's SVG renderer expects require('scratch-render-fonts') to be callable.
 module.exports = getFonts;
 module.exports.loadFonts = loadFonts;
 module.exports.FONTS = fontData;

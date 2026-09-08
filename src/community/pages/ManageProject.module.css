@@ -61,7 +61,7 @@
     font-size: 32px;
     font-weight: 700;
     color: var(--accent-strong);
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .heroText {
@@ -798,7 +798,7 @@
 }
 
 .vanityField > span {
-    padding-left: 11px;
+    padding-inline-start: 11px;
     color: var(--ui-secondary-text);
 }
 

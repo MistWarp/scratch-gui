@@ -120,8 +120,8 @@
 }
 
 .commentGroupPinned {
-    border-left: 3px solid var(--accent);
-    padding-left: 12px;
+    border-inline-start: 3px solid var(--accent);
+    padding-inline-start: 12px;
     background: color-mix(in srgb, var(--accent) 5%, transparent);
     border-radius: 0 10px 10px 0;
 }
@@ -188,7 +188,7 @@
 
 .reactions {
     margin-top: 4px;
-    margin-left: -8px;
+    margin-inline-start: -8px;
 }
 
 .text {
@@ -200,18 +200,18 @@
 }
 
 .replies {
-    margin-left: 46px;
+    margin-inline-start: 46px;
     margin-top: 8px;
-    padding-left: 14px;
-    border-left: 1px solid var(--border-soft);
+    padding-inline-start: 14px;
+    border-inline-start: 1px solid var(--border-soft);
     display: flex;
     flex-direction: column;
 }
 
 @media (max-width: 620px) {
     .replies {
-        margin-left: 18px;
-        padding-left: 10px;
+        margin-inline-start: 18px;
+        padding-inline-start: 10px;
     }
 
     .bubbleHead {
@@ -292,7 +292,7 @@
 
 .kindMenu {
     width: 150px;
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 .kindMenu button,
@@ -465,7 +465,7 @@
 .showMore {
     align-self: flex-start;
     margin-top: 6px;
-    margin-left: 38px;
+    margin-inline-start: 38px;
     border: none;
     background: none;
     color: var(--accent-strong);
@@ -496,7 +496,7 @@
 @media (max-width: 620px) {
     .commentTools {
         grid-template-columns: 1fr;
-        margin-left: 0;
+        margin-inline-start: 0;
     }
 
     .filterMenu {

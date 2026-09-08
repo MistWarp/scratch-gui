@@ -1,3 +1,4 @@
+import findBarStyles from './find-bar.module.css';
 import {useEffect, useMemo, useRef} from 'react';
 import PropTypes from 'prop-types';
 
@@ -10,7 +11,6 @@ import FindBarController from './FindBarController';
 
 import inputStyles from '../forms/input.css';
 
-import './find-bar.css';
 
 /**
  * The find bar component
@@ -73,7 +73,7 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
 
                 const patched = function () {
                     /* eslint-disable no-invalid-this */
-                    if (document.querySelector('.mw-native-find-bar')) {
+                    if (document.querySelector(`.${findBarStyles['mw-native-find-bar']}`)) {
                         if ((this.mostRecentEvent_.button === 1 ||
                         this.mostRecentEvent_.shiftKey) &&
                         findBar.findInput) {
@@ -136,7 +136,7 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
                 ).catch(() => null);
                 if (!root || didUnmount) return;
 
-                if (root.querySelector('.mw-native-find-bar')) {
+                if (root.querySelector(`.${findBarStyles['mw-native-find-bar']}`)) {
                     findBar.tabChanged();
                     return;
                 }
@@ -149,7 +149,7 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
 
             const observer = new MutationObserver(() => {
                 if (didUnmount) return;
-                if (!document.querySelector('ul[class*=gui_tab-list_] .mw-native-find-bar')) {
+                if (!document.querySelector(`ul[class*=gui_tab-list_] .${findBarStyles['mw-native-find-bar']}`)) {
                     ensureInjected();
                 }
             });
@@ -177,7 +177,7 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
     }, [vm, state]);
 
     useEffect(() => {
-        const el = document.querySelector('.mw-native-find-bar');
+        const el = document.querySelector(`.${findBarStyles['mw-native-find-bar']}`);
         if (el) {
             const visible = activeTabIndex === 0 ||
                             activeTabIndex === 1 ||

@@ -1,9 +1,11 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import api, {editorUrl} from '../api';
 import styles from '../pages/Project.module.css';
 
 const LiveProjectSession = ({project}) => {
+    const {text: communityText} = useCommunityText();
     const [session, setSession] = useState(null);
     const [editors, setEditors] = useState([]);
     const [unavailable, setUnavailable] = useState(false);
@@ -42,7 +44,7 @@ const LiveProjectSession = ({project}) => {
     }, [project.id, project.myRole]);
     if (unavailable) {
         return (<div className={styles.visibilityNotice} role="status">
-            {'Could not check who is online. Retrying…'}
+            {communityText('Could not check who is online. Retrying…')}
         </div>);
     }
     if (!session && !editors.length) return null;
@@ -50,14 +52,14 @@ const LiveProjectSession = ({project}) => {
     const names = editors.map(editor => `${editor.username} on ${editor.branch}`).join(', ');
     return (
         <div className={styles.visibilityNotice}>
-            <span>{session?.public ? `${session.host} has opened a live session on ${session.branch}.` :
-                `${names || session.host} working on this project.`}</span>
+            <span>{session?.public ? communityText("{value1} has opened a live session on {value2}.", {value1: session.host, value2: session.branch}) :
+                communityText("{value1} working on this project.", {value1: names || session.host})}</span>
             <a href={editorUrl({platformProject: project.id}).replace('#', '?collaborate=1#')}>
-                {session?.public ? 'View live session' : 'Open collaboration options'}
+                {session?.public ? communityText('View live session') : communityText('Open collaboration options')}
             </a>
             {otherBranches.length > 0 && <a
                 href={editorUrl({platformProject: project.id}).replace('#', '?branches=1#')}
-            >{'Open branches…'}</a>}
+            >{communityText('Open branches…')}</a>}
         </div>
     );
 };

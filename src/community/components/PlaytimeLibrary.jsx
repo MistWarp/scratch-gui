@@ -1,3 +1,5 @@
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Clock3, Gamepad2} from 'lucide-react';
@@ -18,12 +20,13 @@ const lastPlayed = value => {
 const PlaytimeLibrary = ({
     projects, total, visible, self, loading, error, moreBusy, hasMore, onRetry, onLoadMore
 }) => {
-    if (loading) return <p className={styles.status}>Loading game library…</p>;
+    const {text: communityText} = useCommunityText();
+    if (loading) return <p className={styles.status}>{communityText('Loading game library…')}</p>;
     if (error) {
         return (
             <div className={styles.empty} role="alert">
-                <strong>Could not load this game library.</strong>
-                <Button variant="secondary" onClick={onRetry}>Try again</Button>
+                <strong>{communityText('Could not load this game library.')}</strong>
+                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
             </div>
         );
     }
@@ -31,8 +34,8 @@ const PlaytimeLibrary = ({
         return (
             <div className={styles.empty}>
                 <Gamepad2 size={36} />
-                <strong>This game library is private.</strong>
-                <span>This user has chosen not to share what they play.</span>
+                <strong>{communityText('This game library is private.')}</strong>
+                <span>{communityText('This user has chosen not to share what they play.')}</span>
             </div>
         );
     }
@@ -41,16 +44,15 @@ const PlaytimeLibrary = ({
         return (
             <div className={styles.empty}>
                 <Gamepad2 size={36} />
-                <strong>No library games with playtime yet.</strong>
-                <span>Games must be added to the library before their playtime appears here.</span>
+                <strong>{communityText('No library games with playtime yet.')}</strong>
+                <span>{communityText('Games must be added to the library before their playtime appears here.')}</span>
             </div>
         );
     }
     return (
         <React.Fragment>
             <div className={styles.summary}>
-                <strong>{total.toLocaleString()}</strong> {total === 1 ? 'library game' : 'library games'} played
-                {!visible && self ? <span>Only visible to you</span> : null}
+                <strong>{total.toLocaleString(getCommunityLocale())}</strong> {total === 1 ? communityText('library game') : communityText('library games')}{communityText(' played')}{!visible && self ? <span>{communityText('Only visible to you')}</span> : null}
             </div>
             <div className={styles.list}>
                 {libraryProjects.map((project, index) => (
@@ -66,7 +68,7 @@ const PlaytimeLibrary = ({
                         </Link>
                         <span className={styles.details}>
                             <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
-                            <small>by <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a></small>
+                            <small>{communityText('by ')}<a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a></small>
                         </span>
                         <span className={styles.playtime}>
                             <strong><Clock3 size={15} /> {formatPlaytime(project.duration, false)}</strong>
@@ -77,9 +79,7 @@ const PlaytimeLibrary = ({
             </div>
             {hasMore ? (
                 <div className={styles.more}>
-                    <Button variant="secondary" busy={moreBusy} busyLabel="Loading…" onClick={onLoadMore}>
-                        Load more games
-                    </Button>
+                    <Button variant="secondary" busy={moreBusy} busyLabel={communityText('Loading…')} onClick={onLoadMore}>{communityText('Load more games')}</Button>
                 </div>
             ) : null}
         </React.Fragment>

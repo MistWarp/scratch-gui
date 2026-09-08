@@ -14,6 +14,7 @@ class LanguageSelector extends React.Component {
             'handleChange'
         ]);
         document.documentElement.lang = props.currentLocale;
+        document.documentElement.dir = props.isRtl ? 'rtl' : 'ltr';
     }
     handleChange (e) {
         const newLocale = e.target.value;
@@ -43,6 +44,7 @@ class LanguageSelector extends React.Component {
 LanguageSelector.propTypes = {
     children: PropTypes.node,
     currentLocale: PropTypes.string.isRequired,
+    isRtl: PropTypes.bool.isRequired,
     // Only checking key presence for messagesByLocale, no need to be more specific than object
     messagesByLocale: PropTypes.object, // eslint-disable-line react/forbid-prop-types
     onChangeLanguage: PropTypes.func.isRequired
@@ -50,6 +52,7 @@ LanguageSelector.propTypes = {
 
 const mapStateToProps = state => ({
     currentLocale: state.locales.locale,
+    isRtl: state.locales.isRtl,
     messagesByLocale: state.locales.messagesByLocale
 });
 

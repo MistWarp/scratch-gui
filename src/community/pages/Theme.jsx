@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable react/jsx-no-bind, max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {BookmarkPlus, Check, Download, Heart, Palette, Pencil, Trash2} from 'lucide-react';
@@ -40,6 +41,7 @@ const nextThemeRating = (current, result) => {
 };
 
 const Theme = () => {
+    const {text: communityText} = useCommunityText();
     const {id} = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -184,7 +186,7 @@ const Theme = () => {
     return (
         <main className={styles.page}>
             <ExploreNav active="themes" />
-            {loading ? <p className={styles.status}>Loading theme…</p> : error && !theme ? <div className={styles.status}><p>{error}</p><Link to={returnContext.to}>{returnContext.label}</Link></div> : theme ? (
+            {loading ? <p className={styles.status}>{communityText('Loading theme…')}</p> : error && !theme ? <div className={styles.status}><p>{error}</p><Link to={returnContext.to}>{returnContext.label}</Link></div> : theme ? (
                 <React.Fragment>
                     <Link className={styles.back} to={returnContext.to}>← {returnContext.label}</Link>
                     <div className={styles.layout}>
@@ -193,63 +195,63 @@ const Theme = () => {
                                 ref={previewFrame}
                                 className={styles.previewFrame}
                                 src="/?mw_theme_preview=1"
-                                title={`${theme.name} theme preview`}
+                                title={communityText("{value1} theme preview", {value1: theme.name})}
                                 onLoad={sendThemeToPreview}
                                 sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                             />
                         </section>
                         <aside className={styles.info}>
                             <h1>{theme.name}</h1>
-                            <Link className={styles.creator} to={`/users/${encodeURIComponent(theme.owner)}`}><Avatar size={32} username={theme.owner} /><span>by <strong>{theme.owner}</strong></span></Link>
-                            <p className={styles.description}>{theme.description || 'No description provided.'}</p>
-                            <div className={styles.stats}><span><Heart size={15} /> {theme.likes || 0} likes</span><span><Download size={15} /> {theme.downloads || 0} downloads</span></div>
+                            <Link className={styles.creator} to={`/users/${encodeURIComponent(theme.owner)}`}><Avatar size={32} username={theme.owner} /><span>{communityText('by ')}<strong>{theme.owner}</strong></span></Link>
+                            <p className={styles.description}>{theme.description || communityText('No description provided.')}</p>
+                            <div className={styles.stats}><span><Heart size={15} /> {theme.likes || 0}{communityText(' likes')}</span><span><Download size={15} /> {theme.downloads || 0}{communityText(' downloads')}</span></div>
                             {error && !deleteOpen && !editOpen ? <p className={styles.error} role="alert">{error}</p> : null}
                             {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
                             <div className={styles.actions}>
-                                <Button busy={busyAction === 'apply'} busyLabel="Applying…" disabled={busy} variant="primary" onClick={apply}><Palette size={16} /> Apply theme</Button>
-                                <Button busy={busyAction === 'save'} busyLabel="Saving…" disabled={busy || saved} variant="secondary" onClick={save}>{saved ? <Check size={16} /> : <BookmarkPlus size={16} />} {saved ? 'Saved to My Stuff' : 'Save to My Stuff'}</Button>
-                                {user ? <Button busy={busyAction === 'like'} busyLabel="Updating…" disabled={busy} variant="secondary" onClick={like}><Heart fill={theme.liked ? 'currentColor' : 'none'} size={16} /> {theme.liked ? 'Unlike' : 'Like'}</Button> : null}
-                                {theme.isOwner ? <Button disabled={busy} variant="secondary" onClick={openEdit}><Pencil size={16} /> Edit details</Button> : null}
-                                {theme.isOwner ? <Button disabled={busy} variant="danger" onClick={openDelete}><Trash2 size={16} /> Delete</Button> : null}
+                                <Button busy={busyAction === 'apply'} busyLabel={communityText('Applying…')} disabled={busy} variant="primary" onClick={apply}><Palette size={16} />{communityText(' Apply theme')}</Button>
+                                <Button busy={busyAction === 'save'} busyLabel={communityText('Saving…')} disabled={busy || saved} variant="secondary" onClick={save}>{saved ? <Check size={16} /> : <BookmarkPlus size={16} />} {saved ? communityText('Saved to My Stuff') : communityText('Save to My Stuff')}</Button>
+                                {user ? <Button busy={busyAction === 'like'} busyLabel={communityText('Updating…')} disabled={busy} variant="secondary" onClick={like}><Heart fill={theme.liked ? 'currentColor' : 'none'} size={16} /> {theme.liked ? communityText('Unlike') : communityText('Like')}</Button> : null}
+                                {theme.isOwner ? <Button disabled={busy} variant="secondary" onClick={openEdit}><Pencil size={16} />{communityText(' Edit details')}</Button> : null}
+                                {theme.isOwner ? <Button disabled={busy} variant="danger" onClick={openDelete}><Trash2 size={16} />{communityText(' Delete')}</Button> : null}
                             </div>
-                            <p className={styles.help}>Saved themes are available in <Link to="/mystuff?section=themes">My Stuff</Link>. You can switch themes at any time.</p>
+                            <p className={styles.help}>{communityText('Saved themes are available in ')}<Link to="/mystuff?section=themes">{communityText('My Stuff')}</Link>{communityText('. You can switch themes at any time.')}</p>
                         </aside>
                     </div>
                     {deleteOpen ? (
                         <Modal
-                            title="Delete theme?"
+                            title={communityText('Delete theme?')}
                             icon={Trash2}
                             dismissDisabled={busy}
                             onClose={closeDelete}
                             onDismiss={closeDelete}
                             actions={(
                                 <React.Fragment>
-                                    <Button disabled={busy} variant="secondary" onClick={closeDelete}>Cancel</Button>
-                                    <Button busy={busyAction === 'delete'} busyLabel="Deleting…" disabled={busy} variant="danger" onClick={remove}>Delete theme</Button>
+                                    <Button disabled={busy} variant="secondary" onClick={closeDelete}>{communityText('Cancel')}</Button>
+                                    <Button busy={busyAction === 'delete'} busyLabel={communityText('Deleting…')} disabled={busy} variant="danger" onClick={remove}>{communityText('Delete theme')}</Button>
                                 </React.Fragment>
                             )}
                         >
-                            <p>{`"${theme.name}" will be removed from WarpTheme. This cannot be undone.`}</p>
+                            <p>{communityText("\"{value1}\" will be removed from WarpTheme. This cannot be undone.", {value1: theme.name})}</p>
                             {error ? <p className={styles.error} role="alert">{error}</p> : null}
                         </Modal>
                     ) : null}
                     {editOpen ? (
                         <Modal
-                            title="Edit theme details"
+                            title={communityText('Edit theme details')}
                             icon={Pencil}
                             dismissDisabled={busy}
                             onClose={closeEdit}
                             onDismiss={closeEdit}
                             actions={(
                                 <React.Fragment>
-                                    <Button disabled={busy} variant="secondary" onClick={closeEdit}>Cancel</Button>
-                                    <Button busy={busyAction === 'edit'} busyLabel="Saving…" disabled={busy || !editName.trim()} variant="primary" onClick={updateDetails}>Save changes</Button>
+                                    <Button disabled={busy} variant="secondary" onClick={closeEdit}>{communityText('Cancel')}</Button>
+                                    <Button busy={busyAction === 'edit'} busyLabel={communityText('Saving…')} disabled={busy || !editName.trim()} variant="primary" onClick={updateDetails}>{communityText('Save changes')}</Button>
                                 </React.Fragment>
                             )}
                         >
                             <div className={styles.editFields}>
-                                <label>Name<input maxLength="100" value={editName} onChange={event => setEditName(event.target.value)} /></label>
-                                <label>Description<textarea maxLength="500" value={editDescription} onChange={event => setEditDescription(event.target.value)} /></label>
+                                <label>{communityText('Name')}<input maxLength="100" value={editName} onChange={event => setEditName(event.target.value)} /></label>
+                                <label>{communityText('Description')}<textarea maxLength="500" value={editDescription} onChange={event => setEditDescription(event.target.value)} /></label>
                             </div>
                             {error ? <p className={styles.error} role="alert">{error}</p> : null}
                         </Modal>

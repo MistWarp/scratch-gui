@@ -1,3 +1,4 @@
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {Search, X} from 'lucide-react';
@@ -5,6 +6,7 @@ import {findGifs, gifUrl} from '../gifs.js';
 import styles from './GifPicker.module.css';
 
 const GifPicker = ({onClose, onSelect}) => {
+    const {text: communityText} = useCommunityText();
     const [query, setQuery] = useState('');
     const [gifs, setGifs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ const GifPicker = ({onClose, onSelect}) => {
     }, [query]);
 
     return (
-        <section className={styles.picker} aria-label="Choose a GIF">
+        <section className={styles.picker} aria-label={communityText('Choose a GIF')}>
             <div className={styles.head}>
                 <label className={styles.search}>
                     <Search size={16} />
@@ -43,17 +45,17 @@ const GifPicker = ({onClose, onSelect}) => {
                         ref={inputRef}
                         type="search"
                         value={query}
-                        placeholder="Search GIFs"
-                        aria-label="Search GIFs"
+                        placeholder={communityText('Search GIFs')}
+                        aria-label={communityText('Search GIFs')}
                         onChange={event => setQuery(event.target.value)}
                     />
                 </label>
-                <button type="button" onClick={onClose} aria-label="Close GIF picker"><X size={16} /></button>
+                <button type="button" onClick={onClose} aria-label={communityText('Close GIF picker')}><X size={16} /></button>
             </div>
-            <div className={styles.label}>{query.trim() ? 'Results' : 'Popular GIFs'}</div>
-            {loading && !gifs.length ? <div className={styles.status}>Loading GIFs…</div> : null}
+            <div className={styles.label}>{query.trim() ? communityText('Results') : communityText('Popular GIFs')}</div>
+            {loading && !gifs.length ? <div className={styles.status}>{communityText('Loading GIFs…')}</div> : null}
             {error ? <div className={styles.error} role="alert">{error}</div> : null}
-            {!loading && !error && !gifs.length ? <div className={styles.status}>No GIFs found.</div> : null}
+            {!loading && !error && !gifs.length ? <div className={styles.status}>{communityText('No GIFs found.')}</div> : null}
             {gifs.length ? (
                 <div className={styles.grid}>
                     {gifs.map(gif => {
@@ -62,18 +64,16 @@ const GifPicker = ({onClose, onSelect}) => {
                             <button
                                 type="button"
                                 key={gif.id}
-                                title={gif.title || 'GIF'}
+                                title={gif.title || communityText('GIF')}
                                 onClick={() => onSelect(url)}
                             >
-                                <img src={url} alt={gif.title || 'GIF'} loading="lazy" />
+                                <img src={url} alt={gif.title || communityText('GIF')} loading="lazy" />
                             </button>
                         );
                     })}
                 </div>
             ) : null}
-            <a className={styles.credit} href="https://gifs.originchats.com" target="_blank" rel="noreferrer">
-                GIFs from originChats
-            </a>
+            <a className={styles.credit} href="https://gifs.originchats.com" target="_blank" rel="noreferrer">{communityText('GIFs from originChats')}</a>
         </section>
     );
 };

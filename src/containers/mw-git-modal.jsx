@@ -11,7 +11,6 @@ import {closeGitModal, openSimpleDialog} from '../reducers/modals.js';
 
 import downloadBlob from '../lib/utils/download-blob.js';
 import log from '../lib/utils/log.js';
-import {openFractchMode} from '../lib/git/fractch-mode.js';
 import RestorePointAPI from '../lib/api/restore-points.js';
 
 import {
@@ -29,7 +28,6 @@ import {
     commitProject,
     mergeBranchesPreview,
     mergeBranchesApply,
-    startEditorMerge,
     restoreProjectFromCurrentRef,
     getRemotes,
     addRemote,
@@ -243,7 +241,6 @@ export class TWGitModal extends React.Component {
             'handleGitProgress',
             'handleChangeMergeSourceBranch',
             'handlePreviewMerge',
-            'handleResolveInEditor',
             'handleSetMergeResolution',
             'handleApplyMerge',
             'handleDiffChangedFile',
@@ -313,12 +310,6 @@ export class TWGitModal extends React.Component {
                 'Delete branch',
                 'Commits found only on this branch may become inaccessible. Download an MWP first to keep its history.'
             ],
-            handleResolveInEditor: [
-                'Prepare a merge in the editor',
-                'Back up and prepare merge',
-                'This replaces the working files with the merge result. Uncommitted edits are not ' +
-                    'included in the merge.'
-            ],
             handleApplyMerge: [
                 'Apply this merge',
                 'Back up and apply merge',
@@ -347,14 +338,14 @@ export class TWGitModal extends React.Component {
                         onOk: () => resolve(true),
                         onCancel: () => resolve(false)
                     }));
-                    if (!accepted) return false;
+                    if (!accepted || !this._isMounted) return false;
                     await withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before history change',
                         () => perform(...args));
                     if (method === 'handleClone' || method === 'handleRoturClone') detachWorkspace(this.props.vm);
                     else this.props.vm._mwPendingDiskOverwrite = true;
                     return true;
                 } catch (error) {
-                    this.setState({error: error.message});
+                    this.setStateIfMounted({error: error.message});
                     return false;
                 } finally {
                     this.confirmingAction = false;
@@ -364,6 +355,7 @@ export class TWGitModal extends React.Component {
     }
 
     componentDidMount () {
+        this._isMounted = true;
         this._unsubscribeHistory = subscribeProjectHistory(this.handleHistoryState);
         const historyState = getProjectHistoryState();
         if (historyState.phase === 'ready') {
@@ -379,6 +371,7 @@ export class TWGitModal extends React.Component {
     }
 
     componentWillUnmount () {
+        this._isMounted = false;
         if (this._unsubscribeHistory) this._unsubscribeHistory();
         if (this.props.vm && typeof this.props.vm.off === 'function') {
             this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
@@ -389,11 +382,15 @@ export class TWGitModal extends React.Component {
         }
     }
 
+    setStateIfMounted (state, callback) {
+        if (this._isMounted) this.setState(state, callback);
+    }
+
     handleHistoryState (historyState) {
         if (historyState.phase === 'loading') {
-            this.setState({busy: true, busyMessage: 'Loading project history…', error: null});
+            this.setStateIfMounted({busy: true, busyMessage: 'Loading project history…', error: null});
         } else if (historyState.phase === 'ready') {
-            this.setState(current => ({
+            this.setStateIfMounted(current => ({
                 ...stateFromHistory(historyState.data, current),
                 busy: false,
                 busyMessage: null,
@@ -402,7 +399,7 @@ export class TWGitModal extends React.Component {
                     `Project history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
             }));
         } else if (historyState.phase === 'error') {
-            this.setState({
+            this.setStateIfMounted({
                 busy: false,
                 busyMessage: null,
                 error: historyState.error && historyState.error.message ?
@@ -449,7 +446,7 @@ export class TWGitModal extends React.Component {
                     prev[i].filepath !== c.filepath ||
                     prev[i].description !== c.description);
             if (changed) {
-                this.setState({changes});
+                this.setStateIfMounted({changes});
             }
             // Keep an open working-tree diff in sync with live edits, swapping the
             // content in place (no loading flash) and only when it actually changed.
@@ -459,7 +456,7 @@ export class TWGitModal extends React.Component {
                     const sig = diffSignature(diff);
                     if (sig !== this._openDiffSig) {
                         this._openDiffSig = sig;
-                        this.setState({diffData: diff});
+                        this.setStateIfMounted({diffData: diff});
                     }
                 } catch (e) {
                     // ignore: the manual diff path still works
@@ -488,21 +485,21 @@ export class TWGitModal extends React.Component {
             message = `${message} (${completed})`;
         }
 
-        this.setState({
+        this.setStateIfMounted({
             busyMessage: message,
             busyProgress: ratio
         });
     }
 
     async refresh () {
-        this.setState({busy: true, busyMessage: 'Refreshing…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Refreshing…', busyProgress: null, error: null});
         try {
             const data = await preloadProjectHistory(this.props.vm, {force: true});
-            this.setState(current => stateFromHistory(data, current));
+            this.setStateIfMounted(current => stateFromHistory(data, current));
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -511,7 +508,7 @@ export class TWGitModal extends React.Component {
     }
 
     async handleInit () {
-        this.setState({busy: true, busyMessage: 'Initializing repository…', busyProgress: 0, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Initializing repository…', busyProgress: 0, error: null});
         try {
             await this.waitForPollIdle();
             await initRepo({
@@ -521,30 +518,30 @@ export class TWGitModal extends React.Component {
             });
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     handleChangeCloneUrl (e) {
-        this.setState({cloneUrl: e.target.value, cloneConfirm: false});
+        this.setStateIfMounted({cloneUrl: e.target.value, cloneConfirm: false});
     }
 
     handleCancelClone () {
-        this.setState({cloneConfirm: false});
+        this.setStateIfMounted({cloneConfirm: false});
     }
 
     async handleClone () {
         const url = (this.state.cloneUrl || '').trim();
         if (!url) {
-            this.setState({error: 'Enter a git URL to clone'});
+            this.setStateIfMounted({error: 'Enter a git URL to clone'});
             return;
         }
-        this.setState({cloneConfirm: false});
+        this.setStateIfMounted({cloneConfirm: false});
         const token = this.state.remoteToken;
         const username = (this.state.authorName || '').trim();
-        this.setState({busy: true, busyMessage: 'Cloning…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Cloning…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             const cloneOpts = {url, onProgress: this.handleGitProgress};
@@ -558,10 +555,10 @@ export class TWGitModal extends React.Component {
             await cloneRepo(cloneOpts);
             await this.loadProjectFromClonedRepo();
 
-            this.setState({cloneUrl: ''});
+            this.setStateIfMounted({cloneUrl: ''});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -572,11 +569,11 @@ export class TWGitModal extends React.Component {
     async handleCommit () {
         const message = this.state.commitMessage.trim();
         if (!message) {
-            this.setState({error: 'Commit message is required'});
+            this.setStateIfMounted({error: 'Commit message is required'});
             return;
         }
 
-        this.setState({busy: true, busyMessage: 'Committing…', busyProgress: 0, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Committing…', busyProgress: 0, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
@@ -589,31 +586,31 @@ export class TWGitModal extends React.Component {
                 },
                 onProgress: this.handleGitProgress
             });
-            this.setState({commitMessage: '', diffData: null, diffFilepath: null});
+            this.setStateIfMounted({commitMessage: '', diffData: null, diffFilepath: null});
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleUndoCommit () {
         if (!this.state.initialized) return;
         if (!this.state.currentBranch) {
-            this.setState({error: 'Cannot undo commit while detached. Check out a branch first.'});
+            this.setStateIfMounted({error: 'Cannot undo commit while detached. Check out a branch first.'});
             return;
         }
 
         if (!Array.isArray(this.state.commits) || this.state.commits.length < 2) {
-            this.setState({error: 'No previous commit to undo to.'});
+            this.setStateIfMounted({error: 'No previous commit to undo to.'});
             return;
         }
 
         const head = this.state.commits[0];
         const previous = this.state.commits[1];
 
-        this.setState({busy: true, busyMessage: 'Undoing commit…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Undoing commit…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
@@ -636,28 +633,28 @@ export class TWGitModal extends React.Component {
 
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleCreateBranch () {
         const ref = this.state.newBranchName.trim();
         if (!ref) {
-            this.setState({error: 'Branch name is required'});
+            this.setStateIfMounted({error: 'Branch name is required'});
             return;
         }
 
-        this.setState({busy: true, busyMessage: 'Creating branch…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Creating branch…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
             await createBranch({ref, vm: this.props.vm, checkout: true});
-            this.setState({newBranchName: ''});
+            this.setStateIfMounted({newBranchName: ''});
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -665,14 +662,14 @@ export class TWGitModal extends React.Component {
         const ref = e && e.target ? e.target.value : null;
         if (!ref) return;
 
-        this.setState({busy: true, busyMessage: 'Checking out branch…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Checking out branch…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
             await checkoutBranchAndRestore({vm: this.props.vm, ref});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -680,14 +677,14 @@ export class TWGitModal extends React.Component {
         const oid = e && e.currentTarget ? e.currentTarget.dataset.oid : null;
         if (!oid) return;
 
-        this.setState({busy: true, busyMessage: 'Restoring commit…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Restoring commit…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
             await checkoutCommitAndRestore({vm: this.props.vm, oid});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -695,7 +692,7 @@ export class TWGitModal extends React.Component {
         const oid = e && e.currentTarget ? e.currentTarget.dataset.oid : null;
         if (!oid) return;
 
-        this.setState({busy: true, busyMessage: 'Preparing download…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Preparing download…', busyProgress: null, error: null});
         try {
             await this.ensureLocalHistory();
             const sb3ArrayBuffer = await readSnapshotAtCommit(oid);
@@ -706,21 +703,21 @@ export class TWGitModal extends React.Component {
             const short = oid.slice(0, 7);
             downloadBlob(`commit-${short}.sb3`, new Blob([sb3ArrayBuffer], {type: 'application/x.scratch.sb3'}));
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleDeleteRepo () {
-        this.setState({busy: true, busyMessage: 'Deleting repository…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Deleting repository…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await deleteRepo();
-            this.setState({diffData: null, diffFilepath: null, selectedCommitOid: null, commitFiles: []});
+            this.setStateIfMounted({diffData: null, diffFilepath: null, selectedCommitOid: null, commitFiles: []});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -733,13 +730,13 @@ export class TWGitModal extends React.Component {
         }
         if (!ref) return;
 
-        this.setState({busy: true, busyMessage: 'Deleting branch…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Deleting branch…', busyProgress: null, error: null});
         try {
             await this.ensureLocalHistory();
             await deleteBranch(ref);
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -774,24 +771,24 @@ export class TWGitModal extends React.Component {
         // Clicking the already-open file toggles its diff closed instead of
         // recomputing (which caused a brief flicker).
         if (this.state.diffContext === 'working' && this.state.diffFilepath === filepath && !this.state.diffLoading) {
-            this.setState({diffData: null, diffFilepath: null});
+            this.setStateIfMounted({diffData: null, diffFilepath: null});
             this._openDiffSig = null;
             return;
         }
-        this.setState({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'working'});
+        this.setStateIfMounted({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'working'});
         try {
             await this.ensureLocalHistory();
             const diff = await this.computeWorkingDiff(filepath);
             this._openDiffSig = diffSignature(diff);
-            this.setState({diffData: diff, diffLoading: false});
+            this.setStateIfMounted({diffData: diff, diffLoading: false});
         } catch (err) {
-            this.setState({diffLoading: false, error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({diffLoading: false, error: err && err.message ? err.message : String(err)});
         }
     }
 
     async handleSelectCommit (oid) {
         if (!oid) return;
-        this.setState({selectedCommitOid: oid, diffData: null, diffFilepath: null, diffContext: 'commit'});
+        this.setStateIfMounted({selectedCommitOid: oid, diffData: null, diffFilepath: null, diffContext: 'commit'});
         try {
             await this.ensureLocalHistory();
             const fs = getFs();
@@ -801,9 +798,9 @@ export class TWGitModal extends React.Component {
             if (parent) {
                 files = await getChangedFilesBetweenCommits({fs, dir: REPO_DIR, oidA: parent, oidB: oid});
             }
-            this.setState({commitFiles: files});
+            this.setStateIfMounted({commitFiles: files});
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         }
     }
 
@@ -811,10 +808,10 @@ export class TWGitModal extends React.Component {
         const oid = this.state.selectedCommitOid;
         if (!oid || !filepath || !isDiffable(filepath)) return;
         if (this.state.diffContext === 'commit' && this.state.diffFilepath === filepath && !this.state.diffLoading) {
-            this.setState({diffData: null, diffFilepath: null});
+            this.setStateIfMounted({diffData: null, diffFilepath: null});
             return;
         }
-        this.setState({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'commit'});
+        this.setStateIfMounted({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'commit'});
         try {
             await this.ensureLocalHistory();
             const fs = getFs();
@@ -825,42 +822,42 @@ export class TWGitModal extends React.Component {
                 await getFileContentAtCommit({fs, dir: REPO_DIR, oid: parent, filepath}) :
                 {text: ''};
             const diff = await computeLineDiff(oldRes.text || '', newRes.text || '');
-            this.setState({diffData: diff, diffLoading: false});
+            this.setStateIfMounted({diffData: diff, diffLoading: false});
         } catch (err) {
-            this.setState({diffLoading: false, error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({diffLoading: false, error: err && err.message ? err.message : String(err)});
         }
     }
 
     handleClearDiff () {
-        this.setState({diffData: null, diffFilepath: null});
+        this.setStateIfMounted({diffData: null, diffFilepath: null});
     }
 
     handleChangeNewRemoteName (e) {
-        this.setState({newRemoteName: e.target.value});
+        this.setStateIfMounted({newRemoteName: e.target.value});
     }
 
     handleChangeNewRemoteUrl (e) {
-        this.setState({newRemoteUrl: e.target.value});
+        this.setStateIfMounted({newRemoteUrl: e.target.value});
     }
 
     handleChangePushRemote (e) {
-        this.setState({pushRemote: e.target.value});
+        this.setStateIfMounted({pushRemote: e.target.value});
     }
 
     handleChangePushBranch (e) {
-        this.setState({pushBranch: e.target.value});
+        this.setStateIfMounted({pushBranch: e.target.value});
     }
 
     handleChangeRemoteToken (e) {
         const token = e.target.value;
-        this.setState({remoteToken: token});
+        this.setStateIfMounted({remoteToken: token});
         writeLocal(TOKEN_KEY, token);
     }
 
     async handleAddRemote () {
         const url = this.state.newRemoteUrl.trim();
         if (!url) {
-            this.setState({error: 'Enter a repository URL'});
+            this.setStateIfMounted({error: 'Enter a repository URL'});
             return;
         }
         const existing = new Set((this.state.remotes || []).map(remote => remote.name));
@@ -870,16 +867,16 @@ export class TWGitModal extends React.Component {
             name = `connected-${suffix}`;
             suffix++;
         }
-        this.setState({busy: true, busyMessage: 'Adding remote…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Adding remote…', busyProgress: null, error: null});
         try {
             await this.ensureLocalHistory();
             await addRemote({vm: this.props.vm, name, url});
-            this.setState({newRemoteUrl: ''});
+            this.setStateIfMounted({newRemoteUrl: ''});
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -891,15 +888,15 @@ export class TWGitModal extends React.Component {
             name = eOrName.currentTarget.dataset.name || null;
         }
         if (!name) return;
-        this.setState({busy: true, busyMessage: 'Removing remote…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Removing remote…', busyProgress: null, error: null});
         try {
             await this.ensureLocalHistory();
             await removeRemote({vm: this.props.vm, name});
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -908,14 +905,17 @@ export class TWGitModal extends React.Component {
         const branch = this.state.pushBranch || this.state.currentBranch;
         const selected = (this.state.remotes || []).find(item => item.name === remote);
         if (!remote) {
-            this.setState({error: 'Select a remote to push to'});
+            this.setStateIfMounted({error: 'Select a remote to push to'});
             return;
         }
         if (!branch) {
-            this.setState({error: 'Select a branch to push'});
+            this.setStateIfMounted({error: 'Select a branch to push'});
             return;
         }
-        this.setState({busy: true, busyMessage: `Pushing ${branch} to ${remote}…`, busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true,
+            busyMessage: `Pushing ${branch} to ${remote}…`,
+            busyProgress: null,
+            error: null});
         try {
             await this.ensureLocalHistory();
             await push({
@@ -926,41 +926,41 @@ export class TWGitModal extends React.Component {
                 onProgress: this.handleGitProgress,
                 onAuth: authForRemoteUrl(selected ? selected.url : '')
             });
-            this.setState({error: null, busyMessage: 'Pushed'});
+            this.setStateIfMounted({error: null, busyMessage: 'Pushed'});
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     handleChangeReadme (e) {
-        this.setState({readmeContent: e.target.value, readmeDirty: true});
+        this.setStateIfMounted({readmeContent: e.target.value, readmeDirty: true});
     }
 
     async handleSaveReadme () {
-        this.setState({busy: true, busyMessage: 'Saving README…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Saving README…', busyProgress: null, error: null});
         try {
             await this.ensureLocalHistory();
             await writeReadme(this.state.readmeContent);
-            this.setState({readmeDirty: false});
+            this.setStateIfMounted({readmeDirty: false});
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     handleChangeDefaultBranch (e) {
         const value = e.target.value;
-        this.setState({defaultBranch: value});
+        this.setStateIfMounted({defaultBranch: value});
         writeLocal(DEFAULT_BRANCH_KEY, value);
     }
 
     handleToggleAutoCommit () {
         const next = !this.state.autoCommit;
-        this.setState({autoCommit: next});
+        this.setStateIfMounted({autoCommit: next});
         writeLocal(AUTO_COMMIT_KEY, next ? 'true' : 'false');
     }
 
@@ -970,23 +970,23 @@ export class TWGitModal extends React.Component {
     }
 
     handleChangeCommitMessage (e) {
-        this.setState({commitMessage: e.target.value});
+        this.setStateIfMounted({commitMessage: e.target.value});
     }
 
     handleChangeAuthorName (e) {
-        this.setState({authorName: e.target.value});
+        this.setStateIfMounted({authorName: e.target.value});
     }
 
     handleChangeAuthorEmail (e) {
-        this.setState({authorEmail: e.target.value});
+        this.setStateIfMounted({authorEmail: e.target.value});
     }
 
     handleChangeNewBranchName (e) {
-        this.setState({newBranchName: e.target.value});
+        this.setStateIfMounted({newBranchName: e.target.value});
     }
 
     handleChangeMergeSourceBranch (e) {
-        this.setState({mergeSourceBranch: e.target.value});
+        this.setStateIfMounted({mergeSourceBranch: e.target.value});
     }
 
     async handlePreviewMerge () {
@@ -994,10 +994,10 @@ export class TWGitModal extends React.Component {
         const theirs = this.state.mergeSourceBranch;
         if (!ours || !theirs) return;
         if (ours === theirs) {
-            this.setState({error: 'Select a different branch to merge.'});
+            this.setStateIfMounted({error: 'Select a different branch to merge.'});
             return;
         }
-        this.setState({
+        this.setStateIfMounted({
             busy: true,
             busyMessage: 'Analyzing merge…',
             busyProgress: null,
@@ -1009,58 +1009,25 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             const preview = await mergeBranchesPreview({ours, theirs});
             const conflicts = Array.isArray(preview.conflicts) ? preview.conflicts : [];
-            this.setState({mergeConflicts: conflicts});
+            this.setStateIfMounted({mergeConflicts: conflicts});
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     handleSetMergeResolution (path, choice) {
         if (!path) return;
         const c = choice === 'theirs' ? 'theirs' : 'ours';
-        this.setState(prev => ({mergeResolutions: {...prev.mergeResolutions, [path]: c}}));
-    }
-
-    async handleResolveInEditor () {
-        const ours = this.state.currentBranch;
-        const theirs = this.state.mergeSourceBranch;
-        if (!ours || !theirs) return;
-        this.setState({busy: true, busyMessage: 'Preparing merge…', busyProgress: null, error: null});
-        try {
-            await this.waitForPollIdle();
-            await this.ensureLocalHistory();
-            const {conflicts, merged} = await startEditorMerge({
-                ours,
-                theirs,
-                author: {
-                    name: this.state.authorName || 'User',
-                    email: this.state.authorEmail || 'user@example.com'
-                }
-            });
-            if (merged) {
-                await restoreProjectFromCurrentRef(this.props.vm);
-                this.setState({mergeConflicts: [], mergeResolutions: {}, mergeSourceBranch: ''});
-                await this.refresh();
-                return;
-            }
-            if (conflicts.length === 0) {
-                this.setState({error: 'Only binary files conflict here; pick a side for each file instead.'});
-                return;
-            }
-            this.props.onClose();
-            openFractchMode();
-        } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
-        }
+        this.setStateIfMounted(prev => ({mergeResolutions: {...prev.mergeResolutions, [path]: c}}));
     }
 
     async handleApplyMerge () {
         const ours = this.state.currentBranch;
         const theirs = this.state.mergeSourceBranch;
         if (!ours || !theirs) return;
-        this.setState({busy: true, busyMessage: 'Merging…', busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: 'Merging…', busyProgress: null, error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
@@ -1074,17 +1041,17 @@ export class TWGitModal extends React.Component {
                 }
             });
             await restoreProjectFromCurrentRef(this.props.vm);
-            this.setState({mergeConflicts: [], mergeResolutions: {}, mergeSourceBranch: ''});
+            this.setStateIfMounted({mergeConflicts: [], mergeResolutions: {}, mergeSourceBranch: ''});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleRoturLogin () {
         const api = getRoturSessionApi();
         if (!api || typeof api.login !== 'function') {
-            this.setState({error: 'Rotur session is not ready yet. Try again in a moment.'});
+            this.setStateIfMounted({error: 'Rotur session is not ready yet. Try again in a moment.'});
             return;
         }
         try {
@@ -1093,18 +1060,18 @@ export class TWGitModal extends React.Component {
                 await this.handleLoadRoturRepos();
             }
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         }
     }
 
     async handleLoadRoturRepos () {
         if (this.state.roturReposLoading) return;
-        this.setState({roturReposLoading: true, error: null});
+        this.setStateIfMounted({roturReposLoading: true, error: null});
         try {
             const repos = await listRoturRepos();
-            this.setState({roturRepos: repos, roturReposLoaded: true, roturReposLoading: false});
+            this.setStateIfMounted({roturRepos: repos, roturReposLoaded: true, roturReposLoading: false});
         } catch (err) {
-            this.setState({
+            this.setStateIfMounted({
                 roturReposLoading: false,
                 error: err && err.message ? err.message : String(err)
             });
@@ -1112,24 +1079,24 @@ export class TWGitModal extends React.Component {
     }
 
     handleChangeRoturNewRepoName (e) {
-        this.setState({roturNewRepoName: e.target.value});
+        this.setStateIfMounted({roturNewRepoName: e.target.value});
     }
 
     handleChangeRoturNewRepoDesc (e) {
-        this.setState({roturNewRepoDesc: e.target.value});
+        this.setStateIfMounted({roturNewRepoDesc: e.target.value});
     }
 
     handleToggleRoturNewRepoPrivate () {
-        this.setState(prev => ({roturNewRepoPrivate: !prev.roturNewRepoPrivate}));
+        this.setStateIfMounted(prev => ({roturNewRepoPrivate: !prev.roturNewRepoPrivate}));
     }
 
     async handleCreateRoturRepo () {
         const name = this.state.roturNewRepoName.trim();
         if (!name) {
-            this.setState({error: 'Repository name is required'});
+            this.setStateIfMounted({error: 'Repository name is required'});
             return;
         }
-        this.setState({busy: true, busyMessage: `Creating ${name}…`, busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true, busyMessage: `Creating ${name}…`, busyProgress: null, error: null});
         try {
             await createRoturRepo({
                 name,
@@ -1137,18 +1104,21 @@ export class TWGitModal extends React.Component {
                 isPrivate: this.state.roturNewRepoPrivate,
                 defaultBranch: this.state.defaultBranch || 'main'
             });
-            this.setState({roturNewRepoName: '', roturNewRepoDesc: '', roturNewRepoPrivate: false});
+            this.setStateIfMounted({roturNewRepoName: '', roturNewRepoDesc: '', roturNewRepoPrivate: false});
             await this.handleLoadRoturRepos();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleRoturPush (repo) {
         if (!repo || !repo.owner || !repo.name) return;
-        this.setState({busy: true, busyMessage: `Pushing to ${repo.fullName}…`, busyProgress: null, error: null});
+        this.setStateIfMounted({busy: true,
+            busyMessage: `Pushing to ${repo.fullName}…`,
+            busyProgress: null,
+            error: null});
         try {
             await this.waitForPollIdle();
             await this.ensureLocalHistory();
@@ -1188,15 +1158,15 @@ export class TWGitModal extends React.Component {
             await this.handleLoadRoturRepos();
             await this.refresh();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     async handleRoturClone (repo) {
         if (!repo || !repo.cloneUrl) return;
-        this.setState({
+        this.setStateIfMounted({
             roturCloneConfirm: null,
             busy: true,
             busyMessage: `Cloning ${repo.fullName}…`,
@@ -1211,21 +1181,21 @@ export class TWGitModal extends React.Component {
                 onProgress: this.handleGitProgress
             });
             await this.loadProjectFromClonedRepo();
-            this.setState({roturCloneOther: ''});
+            this.setStateIfMounted({roturCloneOther: ''});
             await this.refresh();
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
     handleChangeRoturCloneOther (e) {
-        this.setState({roturCloneOther: e.target.value, roturCloneConfirm: null});
+        this.setStateIfMounted({roturCloneOther: e.target.value, roturCloneConfirm: null});
     }
 
     async handleRoturCloneOther () {
         const parsed = parseRoturRepoUrl(this.state.roturCloneOther.trim());
         if (!parsed) {
-            this.setState({error: 'Enter a repo as owner/name or a git.rotur.dev URL'});
+            this.setStateIfMounted({error: 'Enter a repo as owner/name or a git.rotur.dev URL'});
             return;
         }
         await this.handleRoturClone({
@@ -1237,10 +1207,10 @@ export class TWGitModal extends React.Component {
     async handleRoturDelete (repo) {
         if (!repo || !repo.owner || !repo.name) return;
         if (this.state.roturDeleteConfirm !== repo.fullName) {
-            this.setState({roturDeleteConfirm: repo.fullName, error: null});
+            this.setStateIfMounted({roturDeleteConfirm: repo.fullName, error: null});
             return;
         }
-        this.setState({
+        this.setStateIfMounted({
             roturDeleteConfirm: null,
             busy: true,
             busyMessage: `Deleting ${repo.fullName}…`,
@@ -1251,9 +1221,9 @@ export class TWGitModal extends React.Component {
             await deleteRoturRepoApi(repo.owner, repo.name);
             await this.handleLoadRoturRepos();
         } catch (err) {
-            this.setState({error: err && err.message ? err.message : String(err)});
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
         } finally {
-            this.setState({busy: false, busyMessage: null, busyProgress: null});
+            this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
         }
     }
 
@@ -1335,7 +1305,6 @@ export class TWGitModal extends React.Component {
                 onDeleteBranch={this.handleDeleteBranch}
                 onChangeMergeSourceBranch={this.handleChangeMergeSourceBranch}
                 onPreviewMerge={this.handlePreviewMerge}
-                onResolveInEditor={this.handleResolveInEditor}
                 onSetMergeResolution={this.handleSetMergeResolution}
                 onApplyMerge={this.handleApplyMerge}
                 onDiffChangedFile={this.handleDiffChangedFile}

@@ -30,7 +30,8 @@ import styles from './Settings.module.css';
 import {getNotificationPreferences, setNotificationPreferences} from '../notification-preferences';
 import api from '../api';
 import {analyticsEnabled, setAnalyticsEnabled} from '../analytics.js';
-import {LOCALES, useCommunityIntl} from '../i18n.jsx';
+import {useCommunityIntl} from '../i18n.jsx';
+import LanguagePicker from '../components/LanguagePicker.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {
     getSmartFeaturesBalance,
@@ -148,11 +149,12 @@ const settingsParamsForSection = (params, section) => {
 const settingsLoadState = (loading, error) => (loading ? 'loading' : (error ? 'error' : 'ready'));
 
 const Settings = () => {
+    const {text: communityText} = useCommunityIntl();
     const {user, login, loginOrThrow, logout} = useUser();
     const viewerName = (user && user.username) || '';
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const {preference: localePreference, setPreference: setLocalePreference, t} = useCommunityIntl();
+    const {t} = useCommunityIntl();
     const [theme, setTheme] = useState(detectTheme());
     const [username, setUsername] = useState(getUsernameOverride() || '');
     const [accentMenuBar, setAccentMenuBarState] = useState(getAccentMenuBar());
@@ -551,10 +553,8 @@ const Settings = () => {
     };
     return (
         <main className={styles.page}>
-            <h1>Settings</h1>
-            <p className={styles.lead}>
-                These settings apply across all of MistWarp, including the editor and site.
-            </p>
+            <h1>{communityText('Settings')}</h1>
+            <p className={styles.lead}>{communityText('These settings apply across all of MistWarp, including the editor and site.')}</p>
 
             <div className={styles.layout}>
                 <Sidebar
@@ -571,15 +571,15 @@ const Settings = () => {
                             {themeTab === 'appearance' ? <div className={styles.themeContent}>
                                 <ThemeAccentPanel theme={theme} onChangeTheme={applyAndPersist} />
                                 <div className={styles.appearanceSection}>
-                                    <h2>Menu bar</h2>
+                                    <h2>{communityText('Menu bar')}</h2>
                                     <div className={styles.settingRows}>
                                         <SwitchRow
                                             checked={accentMenuBar}
-                                            label="Accent-colored menu bar"
+                                            label={communityText('Accent-colored menu bar')}
                                             onChange={changeAccentMenuBar}
                                         />
                                         <label className={styles.settingRow}>
-                                            <span>Menu bar text</span>
+                                            <span>{communityText('Menu bar text')}</span>
                                             <select className={styles.select} value={menuBarText} onChange={event => changeMenuBarText(event.target.value)}>
                                                 {MENU_BAR_TEXT_OPTIONS.map(option => <option key={option} value={option}>{option[0].toUpperCase() + option.slice(1)}</option>)}
                                             </select>
@@ -588,17 +588,17 @@ const Settings = () => {
                                 </div>
                             </div> : null}
                             {themeTab === 'projects' ? <div className={styles.themeContent}>
-                                <h2>Project themes</h2>
-                                <p className={styles.lead}>Some projects come with their own MistWarp theme. Choose when the player should switch to it.</p>
+                                <h2>{communityText('Project themes')}</h2>
+                                <p className={styles.lead}>{communityText('Some projects come with their own MistWarp theme. Choose when the player should switch to it.')}</p>
                                 <label className={styles.field}>
-                                    <span>Apply project themes for</span>
+                                    <span>{communityText('Apply project themes for')}</span>
                                     <select className={styles.input} value={projectThemeMode} onChange={event => changeProjectThemeMode(event.target.value)}>
-                                        {PROJECT_THEME_MODES.map(mode => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
+                                        {PROJECT_THEME_MODES.map(mode => <option key={mode.value} value={mode.value}>{communityText(mode.label)}</option>)}
                                     </select>
                                 </label>
                             </div> : null}
                             {themeTab === 'custom' ? <div className={styles.themeContent}>
-                                <h2>Custom themes</h2>
+                                <h2>{communityText('Custom themes')}</h2>
                                 <CustomThemesPage
                                     initialTab={searchParams.get('themeAction') || 'library'}
                                     theme={theme}
@@ -612,21 +612,21 @@ const Settings = () => {
 
                     {activeSection === 'presence' ? (
                         <section className={styles.card}>
-                            <h2>Presence</h2>
+                            <h2>{communityText('Presence')}</h2>
                             {user && !presenceOk ? (
                                 <div className={styles.risk}>
-                                    {'Your current Rotur login is missing the '}
-                                    <strong>{'account:profile'}</strong>
-                                    {' permission, so your editor activity cannot be shared. '}
-                                    {'Log in again to grant it.'}
+                                    {communityText('Your current Rotur login is missing the ')}
+                                    <strong>{communityText('account:profile')}</strong>
+                                    {communityText(' permission, so your editor activity cannot be shared. ')}
+                                    {communityText('Log in again to grant it.')}
                                     <div>
                                         <Button
                                             className={styles.riskAction}
                                             busy={presenceBusy}
-                                            busyLabel="Logging in…"
+                                            busyLabel={communityText('Logging in…')}
                                             onClick={reloginForPresence}
                                         >
-                                            {'Log in again'}
+                                            {communityText('Log in again')}
                                         </Button>
                                     </div>
                                 </div>
@@ -641,21 +641,20 @@ const Settings = () => {
                                     />
                                 ))}
                                 <label className={styles.settingRow}>
-                                    <span>Let projects show activity on your profile</span>
+                                    <span>{communityText('Let projects show activity on your profile')}</span>
                                     <select
                                         className={styles.select}
                                         value={presence.activitySharing}
                                         onChange={event => changeActivitySharing(event.target.value)}
                                     >
                                         {ACTIVITY_SHARING_OPTIONS.map(option => (
-                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                            <option key={option.value} value={option.value}>{communityText(option.label)}</option>
                                         ))}
                                     </select>
                                 </label>
                             </div>
                             {activityGrantCount > 0 ? (
-                                <Button onClick={resetActivityGrants}>
-                                    Reset per-project choices ({activityGrantCount})
+                                <Button onClick={resetActivityGrants}>{communityText('Reset per-project choices (')}{activityGrantCount})
                                 </Button>
                             ) : null}
                         </section>
@@ -663,8 +662,8 @@ const Settings = () => {
 
                     {activeSection === 'notifications' ? (
                         <section className={styles.card}>
-                            <h2>Notifications</h2>
-                            <p className={styles.lead}>Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.</p>
+                            <h2>{communityText('Notifications')}</h2>
+                            <p className={styles.lead}>{communityText('Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.')}</p>
                             <div className={styles.settingRows}>
                                 {NOTIFICATION_SETTINGS.map(([key, label]) => (
                                     <SwitchRow
@@ -680,33 +679,31 @@ const Settings = () => {
 
                     {activeSection === 'smart' ? (
                         <section className={styles.card}>
-                            <h2>Smart features</h2>
-                            <p className={styles.lead}>Optional commit naming powered by Sable. It sends the changed Fractch diff only after you click Generate name, and may use some of your Sable Credit.</p>
+                            <h2>{communityText('Smart features')}</h2>
+                            <p className={styles.lead}>{communityText('Optional commit naming powered by Sable. It sends the changed Fractch diff only after you click Generate name, and may use some of your Sable Credit.')}</p>
                             {!user ? (
-                                <Button onClick={login}>Sign in with Rotur</Button>
+                                <Button onClick={login}>{communityText('Sign in with Rotur')}</Button>
                             ) : (
                                 <React.Fragment>
                                     <div className={styles.dataAction}>
                                         <div>
-                                            <h3>Balance</h3>
+                                            <h3>{communityText('Balance')}</h3>
                                             <p>
-                                                <span>{smartBalance === -1 ? 'Unlimited Sable Credit' :
-                                                    (smartBalance === null ? 'Loading Sable Credit…' : `${smartBalance} SC available`)}</span>
-                                                {smartRc === null ? null : <span>{` · ${smartRc} RC in Rotur`}</span>}
+                                                <span>{smartBalance === -1 ? communityText('Unlimited Sable Credit') :
+                                                    (smartBalance === null ? communityText('Loading Sable Credit…') : communityText("{value1} SC available", {value1: smartBalance}))}</span>
+                                                {smartRc === null ? null : <span>{communityText(" · {value1} RC in Rotur", {value1: smartRc})}</span>}
                                             </p>
                                         </div>
                                         <Button
                                             busy={smartBusy === 'topup'}
-                                            busyLabel="Adding…"
+                                            busyLabel={communityText('Adding…')}
                                             disabled={Boolean(smartBusy) || smartBalance === -1 ||
                                                 (typeof smartRc === 'number' && smartRc < 10)}
                                             onClick={topUpSmartBalance}
-                                        >
-                                            Add 10 RC
-                                        </Button>
+                                        >{communityText('Add 10 RC')}</Button>
                                     </div>
-                                    <p className={styles.note}>Adding funds moves 10 RC into Sable Credit. Sable deducts the exact model cost when it generates a commit name.</p>
-                                    <p className={styles.note}>Sable never reads ahead or drafts while you type.</p>
+                                    <p className={styles.note}>{communityText('Adding funds moves 10 RC into Sable Credit. Sable deducts the exact model cost when it generates a commit name.')}</p>
+                                    <p className={styles.note}>{communityText('Sable never reads ahead or drafts while you type.')}</p>
                                 </React.Fragment>
                             )}
                             {smartStatus ? <p className={styles.note} aria-live="polite">{smartStatus}</p> : null}
@@ -715,15 +712,15 @@ const Settings = () => {
 
                     {activeSection === 'privacy' ? (
                         <section className={styles.card}>
-                            <h2>Privacy</h2>
-                            <p className={styles.lead}>Choose which MistWarp activity appears publicly on your profile.</p>
-                            {!user ? <p className={styles.note}>Sign in to manage profile privacy.</p> : (
+                            <h2>{communityText('Privacy')}</h2>
+                            <p className={styles.lead}>{communityText('Choose which MistWarp activity appears publicly on your profile.')}</p>
+                            {!user ? <p className={styles.note}>{communityText('Sign in to manage profile privacy.')}</p> : (
                                 <div className={styles.settingRows}>
                                     <SwitchRow
                                         checked={showRecentActivity}
                                         disabled={privacyBusy}
-                                        label="Show game activity and library"
-                                        description="Display playtime for games you have added to your public library."
+                                        label={communityText('Show game activity and library')}
+                                        description={communityText('Display playtime for games you have added to your public library.')}
                                         onChange={changeRecentActivityPrivacy}
                                     />
                                 </div>
@@ -732,7 +729,7 @@ const Settings = () => {
                                 <p className={styles.note} aria-live="polite">
                                     {privacyStatus}{' '}
                                     {privacyLoadError ? (
-                                        <Button onClick={() => setPrivacyAttempt(value => value + 1)}>Try again</Button>
+                                        <Button onClick={() => setPrivacyAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                                     ) : null}
                                 </p>
                             ) : null}
@@ -741,108 +738,93 @@ const Settings = () => {
 
                     {activeSection === 'identity' ? (
                         <section className={styles.card}>
-                            <h2>Identity</h2>
-                            <p className={styles.lead}>Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.</p>
+                            <h2>{communityText('Identity')}</h2>
+                            <p className={styles.lead}>{communityText('Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.')}</p>
                             <label
                                 className={styles.field}
                                 htmlFor="username-override"
                             >
-                                <span>Project username</span>
+                                <span>{communityText('Project username')}</span>
                                 <input
                                     id="username-override"
                                     className={styles.input}
                                     type="text"
                                     value={username}
                                     onChange={event => changeUsername(event.target.value)}
-                                    placeholder="Use account username"
+                                    placeholder={communityText('Use account username')}
                                 />
-                                <small>Changes the value reported by the username block in projects. Leave this blank to use your Rotur username.</small>
+                                <small>{communityText('Changes the value reported by the username block in projects. Leave this blank to use your Rotur username.')}</small>
                             </label>
-                            <label className={styles.field} htmlFor="community-locale">
-                                <span>{t('settings.language')}</span>
-                                <select id="community-locale" className={styles.input} value={localePreference} onChange={event => setLocalePreference(event.target.value)}>
-                                    {LOCALES.map(locale => <option value={locale.value} key={locale.value}>{locale.label}</option>)}
-                                </select>
-                                <small>{t('settings.languageHelp')}</small>
-                            </label>
+                            <LanguagePicker id="settings-community-language" />
+                            <small>{t('settings.languageHelp')}</small>
                         </section>
                     ) : null}
 
                     {activeSection === 'safety' ? (
                         <section className={styles.card}>
-                            <h2>Safety</h2>
-                            <p className={styles.lead}>Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.</p>
-                            {!user ? <p className={styles.note}>Sign in to manage blocked and muted users.</p> : null}
+                            <h2>{communityText('Safety')}</h2>
+                            <p className={styles.lead}>{communityText('Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.')}</p>
+                            {!user ? <p className={styles.note}>{communityText('Sign in to manage blocked and muted users.')}</p> : null}
                             {safetyError ? (
                                 <p className={styles.error}>
                                     {safetyError}{' '}
-                                    <Button onClick={() => setSafetyAttempt(value => value + 1)}>Try again</Button>
+                                    <Button onClick={() => setSafetyAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                                 </p>
                             ) : null}
                             {user && !safetyError ? <div className={styles.safetyGroups}>
                                 <div>
-                                    <h3>Blocked users</h3>
+                                    <h3>{communityText('Blocked users')}</h3>
                                     {safety.blocked.length ? safety.blocked.map(name => (
                                         <div className={styles.safetyRow} key={name}>
                                             <Link to={`/users/${name}`}>@{name}</Link>
                                             <Button
                                                 busy={safetyBusy === `blocked:${name}`}
-                                                busyLabel="Removing…"
+                                                busyLabel={communityText('Removing…')}
                                                 disabled={Boolean(safetyBusy)}
                                                 onClick={() => removeSafetyEntry('blocked', name)}
-                                            >
-                                                Unblock
-                                            </Button>
+                                            >{communityText('Unblock')}</Button>
                                         </div>
-                                    )) : <p className={styles.note}>You have not blocked anyone.</p>}
+                                    )) : <p className={styles.note}>{communityText('You have not blocked anyone.')}</p>}
                                 </div>
                                 <div>
-                                    <h3>Muted users</h3>
+                                    <h3>{communityText('Muted users')}</h3>
                                     {safety.muted.length ? safety.muted.map(name => (
                                         <div className={styles.safetyRow} key={name}>
                                             <Link to={`/users/${name}`}>@{name}</Link>
                                             <Button
                                                 busy={safetyBusy === `muted:${name}`}
-                                                busyLabel="Removing…"
+                                                busyLabel={communityText('Removing…')}
                                                 disabled={Boolean(safetyBusy)}
                                                 onClick={() => removeSafetyEntry('muted', name)}
-                                            >
-                                                Unmute
-                                            </Button>
+                                            >{communityText('Unmute')}</Button>
                                         </div>
-                                    )) : <p className={styles.note}>You have not muted anyone.</p>}
+                                    )) : <p className={styles.note}>{communityText('You have not muted anyone.')}</p>}
                                 </div>
                             </div> : null}
                             <div className={styles.safetySection}>
-                                <h3>Project permissions</h3>
-                                <p className={styles.lead}>
-                                    Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.
-                                </p>
+                                <h3>{communityText('Project permissions')}</h3>
+                                <p className={styles.lead}>{communityText('Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.')}</p>
                                 {Object.entries(blockedProjectPrompts).length > 0 ? (
                                     <div>
                                         {Object.entries(blockedProjectPrompts).map(([key, value]) => (
                                             <div className={styles.safetyRow} key={key}>
                                                 <span>{formatProjectName(key, value)}</span>
-                                                <Button onClick={() => handleUnblockProjectPrompt(key)}>
-                                                    Allow prompts again
-                                                </Button>
+                                                <Button onClick={() => handleUnblockProjectPrompt(key)}>{communityText('Allow prompts again')}</Button>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className={styles.note}>
-                                        No projects are blocked from asking for permission.
-                                    </p>
+                                    <p className={styles.note}>{communityText('No projects are blocked from asking for permission.')}</p>
                                 )}
                             </div>
-                            <p className={styles.note}>For immediate safety concerns, <Link to="/support?topic=safety">contact MistWarp support</Link>.</p>
+                            <p className={styles.note}>{communityText('For immediate safety concerns, ')}<Link to="/support?topic=safety">{communityText('contact MistWarp support')}</Link>.</p>
                         </section>
                     ) : null}
 
                     {activeSection === 'data' ? (
                         <section className={styles.card}>
-                            <h2>Your MistWarp data</h2>
-                            <p className={styles.lead}>These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.</p>
+                            <h2>{communityText('Your MistWarp data')}</h2>
+                            <p className={styles.lead}>{communityText('These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.')}</p>
                             <SectionTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} itemClassName={styles.themeTab} activeClassName={styles.themeTabActive} ariaLabel="Data sections" />
                             {dataTab === 'account' ? <React.Fragment>
                                 <div className={styles.dataAction}>
@@ -857,37 +839,30 @@ const Settings = () => {
                                     />
                                 </div>
                                 {!user ? (
-                                    <Button className={styles.riskAction} onClick={login}>Sign in with Rotur</Button>
+                                    <Button className={styles.riskAction} onClick={login}>{communityText('Sign in with Rotur')}</Button>
                                 ) : (
                                     <React.Fragment>
                                         <div className={styles.dataAction}>
                                             <div>
-                                                <h3>Download your data</h3>
-                                                <p>Get a JSON copy of your MistWarp profile, project metadata, comments,
-                                                    activity, settings, notifications, and safety list.</p>
+                                                <h3>{communityText('Download your data')}</h3>
+                                                <p>{communityText('Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.')}</p>
                                             </div>
                                             <Button
                                                 busy={dataBusy === 'export'}
-                                                busyLabel="Preparing…"
+                                                busyLabel={communityText('Preparing…')}
                                                 disabled={Boolean(dataBusy)}
                                                 onClick={downloadData}
-                                            >
-                                                Download
-                                            </Button>
+                                            >{communityText('Download')}</Button>
                                         </div>
                                         <div className={styles.dangerZone}>
-                                            <h3>Delete your MistWarp data</h3>
-                                            <p>This deletes your MistWarp projects and profile data, anonymizes your public
-                                                comments, and signs you out. Your Rotur account remains active, and signing
-                                                in later creates a fresh MistWarp profile.</p>
-                                            <label className={styles.field}>
-                                                Type <strong>{user.username}</strong> to confirm
-                                                <input
-                                                    className={styles.input}
-                                                    disabled={Boolean(dataBusy)}
-                                                    value={deleteConfirmation}
-                                                    onChange={event => setDeleteConfirmation(event.target.value)}
-                                                />
+                                            <h3>{communityText('Delete your MistWarp data')}</h3>
+                                            <p>{communityText('This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.')}</p>
+                                            <label className={styles.field}>{communityText('Type ')}<strong>{user.username}</strong>{communityText(' to confirm')}<input
+                                                className={styles.input}
+                                                disabled={Boolean(dataBusy)}
+                                                value={deleteConfirmation}
+                                                onChange={event => setDeleteConfirmation(event.target.value)}
+                                            />
                                             </label>
                                             <Button
                                                 variant="danger"
@@ -895,52 +870,50 @@ const Settings = () => {
                                                 disabled={Boolean(dataBusy) ||
                                                 !matchesDeleteConfirmation(deleteConfirmation, user.username)}
                                                 onClick={openDeleteModal}
-                                            >
-                                                Delete MistWarp data
-                                            </Button>
+                                            >{communityText('Delete MistWarp data')}</Button>
                                         </div>
                                     </React.Fragment>
                                 )}
                                 {dataStatus && !deleteModalOpen ? <p className={styles.note} aria-live="polite">{dataStatus}</p> : null}
-                                <p className={styles.note}>Read the <Link to="/trust">privacy and community terms</Link>, or <a href="https://rotur.dev/me" target="_blank" rel="noreferrer">manage your Rotur account</a>.</p>
+                                <p className={styles.note}>{communityText('Read the ')}<Link to="/trust">{communityText('privacy and community terms')}</Link>{communityText(', or ')}<a href="https://rotur.dev/me" target="_blank" rel="noreferrer">{communityText('manage your Rotur account')}</a>.</p>
                             </React.Fragment> : null}
                             {dataTab === 'games' ? <React.Fragment>
                                 {!user ? (
-                                    <Button className={styles.riskAction} onClick={login}>Sign in with Rotur</Button>
+                                    <Button className={styles.riskAction} onClick={login}>{communityText('Sign in with Rotur')}</Button>
                                 ) : gameDataState === 'loading' ? (
-                                    <p className={styles.note}>Loading game data…</p>
+                                    <p className={styles.note}>{communityText('Loading game data…')}</p>
                                 ) : gameDataState === 'error' ? (
                                     <p className={styles.note} aria-live="polite">
                                         {gameDataError}{' '}
-                                        <Button onClick={() => setGameDataAttempt(value => value + 1)}>Try again</Button>
+                                        <Button onClick={() => setGameDataAttempt(value => value + 1)}>{communityText('Try again')}</Button>
                                     </p>
                                 ) : (
                                     <React.Fragment>
-                                        <h3>Project saves</h3>
+                                        <h3>{communityText('Project saves')}</h3>
                                         {gameSaves.length ? gameSaves.map(save => (
                                             <div className={styles.dataAction} key={save.projectId}>
                                                 <div>
                                                     <h3>{save.title}</h3>
-                                                    <p>{save.owner ? `by @${save.owner} · ` : ''}{save.bytes} bytes · revision {save.revision}</p>
+                                                    <p>{save.owner ? communityText("by @{value1} · ", {value1: save.owner}) : ''}{save.bytes}{communityText(' bytes · revision ')}{save.revision}</p>
                                                 </div>
                                                 <Button
                                                     variant="danger"
                                                     disabled={Boolean(dataBusy)}
                                                     onClick={() => setSaveToDelete(save)}
-                                                >Delete save</Button>
+                                                >{communityText('Delete save')}</Button>
                                             </div>
-                                        )) : <p className={styles.note}>You do not have any project save data yet.</p>}
-                                        <h3>Portable items</h3>
-                                        <p className={styles.note}>Games see only items they define or explicitly allow from other projects.</p>
+                                        )) : <p className={styles.note}>{communityText('You do not have any project save data yet.')}</p>}
+                                        <h3>{communityText('Portable items')}</h3>
+                                        <p className={styles.note}>{communityText('Games see only items they define or explicitly allow from other projects.')}</p>
                                         {portableItems.length ? portableItems.map(item => (
                                             <div className={styles.dataAction} key={item.id}>
                                                 <div>
                                                     <h3>{item.name}</h3>
-                                                    <p>{item.id} · quantity {item.quantity} · from {item.originProjectTitle}</p>
+                                                    <p>{item.id}{communityText(' · quantity ')}{item.quantity}{communityText(' · from ')}{item.originProjectTitle}</p>
                                                 </div>
                                                 {item.visual && item.visual.url ? <img alt="" src={item.visual.url} width="56" height="56" style={{objectFit: 'contain', borderRadius: 8}} /> : null}
                                             </div>
-                                        )) : <p className={styles.note}>You do not own any portable game items yet.</p>}
+                                        )) : <p className={styles.note}>{communityText('You do not own any portable game items yet.')}</p>}
                                     </React.Fragment>
                                 )}
                             </React.Fragment> : null}
@@ -948,16 +921,14 @@ const Settings = () => {
                     ) : null}
 
                     {!user ? (
-                        <p className={styles.note}>
-                            Sign in to sync your settings across devices through your Rotur account.
-                        </p>
+                        <p className={styles.note}>{communityText('Sign in to sync your settings across devices through your Rotur account.')}</p>
                     ) : null}
                 </div>
             </div>
             {deleteModalOpen && user ? (
                 <Modal
                     icon={Trash2}
-                    title="Delete MistWarp data?"
+                    title={communityText('Delete MistWarp data?')}
                     onClose={closeDeleteModal}
                     dismissDisabled={dataBusy === 'delete'}
                     actions={(
@@ -966,31 +937,25 @@ const Settings = () => {
                                 variant="danger"
                                 className={styles.deleteButton}
                                 busy={dataBusy === 'delete'}
-                                busyLabel="Deleting…"
+                                busyLabel={communityText('Deleting…')}
                                 onClick={deleteData}
-                            >
-                                Delete permanently
-                            </Button>
+                            >{communityText('Delete permanently')}</Button>
                             <Button
                                 disabled={dataBusy === 'delete'}
                                 onClick={closeDeleteModal}
-                            >
-                                Cancel
-                            </Button>
+                            >{communityText('Cancel')}</Button>
                         </React.Fragment>
                     )}
                 >
-                    <p className={styles.modalText}>
-                        MistWarp will delete projects and profile data for <strong>{user.username}</strong>.
-                        {' '}Public comments and other shared history will be anonymized. This cannot be undone.
-                    </p>
+                    <p className={styles.modalText}>{communityText('MistWarp will delete projects and profile data for ')}<strong>{user.username}</strong>.
+                        {' '}{communityText('Public comments and other shared history will be anonymized. This cannot be undone.')}</p>
                     {dataStatus ? <p className={styles.note} aria-live="polite">{dataStatus}</p> : null}
                 </Modal>
             ) : null}
             {saveToDelete ? (
                 <Modal
                     icon={Trash2}
-                    title="Delete game save?"
+                    title={communityText('Delete game save?')}
                     onClose={() => setSaveToDelete(null)}
                     dismissDisabled={dataBusy === `game-delete:${saveToDelete.projectId}`}
                     actions={(
@@ -998,14 +963,14 @@ const Settings = () => {
                             <Button
                                 variant="danger"
                                 busy={dataBusy === `game-delete:${saveToDelete.projectId}`}
-                                busyLabel="Deleting…"
+                                busyLabel={communityText('Deleting…')}
                                 onClick={deleteGameSave}
-                            >Delete save</Button>
-                            <Button disabled={Boolean(dataBusy)} onClick={() => setSaveToDelete(null)}>Cancel</Button>
+                            >{communityText('Delete save')}</Button>
+                            <Button disabled={Boolean(dataBusy)} onClick={() => setSaveToDelete(null)}>{communityText('Cancel')}</Button>
                         </React.Fragment>
                     )}
                 >
-                    <p className={styles.modalText}>Delete your production save for <strong>{saveToDelete.title}</strong>? The project will start you with a new save next time.</p>
+                    <p className={styles.modalText}>{communityText('Delete your production save for ')}<strong>{saveToDelete.title}</strong>{communityText('? The project will start you with a new save next time.')}</p>
                 </Modal>
             ) : null}
         </main>

@@ -36,7 +36,7 @@
     background: transparent;
     color: var(--mw-text);
     padding: 8px 10px;
-    text-align: left;
+    text-align: start;
     font: inherit;
     font-size: 14px;
     cursor: pointer;

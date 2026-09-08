@@ -231,7 +231,9 @@ test('MistWarp project identity keeps ownership and sharing state', () => {
         id: 'project-1',
         isOwner: false,
         shared: true,
-        trustedExtensions: []
+        trustedExtensions: [],
+        canSaveDirectly: false,
+        saveBase: null
     });
 });
 
