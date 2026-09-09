@@ -87,6 +87,13 @@
     flex-shrink: 0;
 }
 
+.error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
 .resetInfo {
     display: flex;
     flex-direction: column;

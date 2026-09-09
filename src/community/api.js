@@ -342,7 +342,8 @@ const api = {
         resolveSiteError: (id, resolved = true) =>
             request('/admin/errors/resolve', {method: 'POST', body: {id, resolved}}),
         deleteSiteError: id =>
-            request('/admin/errors/delete', {method: 'POST', body: {id}})
+            request('/admin/errors/delete', {method: 'POST', body: {id}}),
+        deleteAllSiteErrors: () => request('/admin/errors/delete-all', {method: 'POST'})
     },
     news: () => request('/news'),
     newsItem: id => request(`/news/${encodeURIComponent(id)}`),
