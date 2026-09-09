@@ -594,8 +594,9 @@ export default class FindBarController {
         if (this.isPlayerOnlyRef.current || !this.findBarOuter) return;
 
         const ctrlKey = e.ctrlKey || e.metaKey;
+        const key = typeof e.key === 'string' ? e.key : '';
 
-        if (e.key.toLowerCase() === 'f' && ctrlKey && !e.shiftKey) {
+        if (key.toLowerCase() === 'f' && ctrlKey && !e.shiftKey) {
             this.findInput.focus();
             this.findInput.select();
             e.cancelBubble = true;
@@ -603,7 +604,7 @@ export default class FindBarController {
             return true;
         }
 
-        if (e.key === 'ArrowLeft' && ctrlKey) {
+        if (key === 'ArrowLeft' && ctrlKey) {
             if (document.activeElement && document.activeElement.tagName === 'INPUT') {
                 return;
             }
@@ -616,7 +617,7 @@ export default class FindBarController {
             }
         }
 
-        if (e.key === 'ArrowRight' && ctrlKey) {
+        if (key === 'ArrowRight' && ctrlKey) {
             if (document.activeElement && document.activeElement.tagName === 'INPUT') {
                 return;
             }

@@ -85,3 +85,9 @@ test('block names cannot collide with inherited object properties', () => {
     controller = makeController({a: {id: 'a', opcode: 'constructor', inputs: {}, fields: {}}});
     expect(controller.getScratchBlocks()[0].labelID).toBe('a');
 });
+
+test('keyboard events without a key do not crash the find bar', () => {
+    controller = makeController({});
+    controller.findBarOuter = document.createElement('div');
+    expect(() => controller.eventKeyDown({ctrlKey: false, metaKey: false})).not.toThrow();
+});
