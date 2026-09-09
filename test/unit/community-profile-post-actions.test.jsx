@@ -30,6 +30,20 @@ const renderPosts = (posts, onChange = jest.fn()) => mount(
 describe('profile post actions', () => {
     beforeEach(() => jest.clearAllMocks());
 
+    test('renders attachments on multiple non-virtualized posts', () => {
+        const wrapper = renderPosts([
+            {id: 'first', attachments: ['https://example.com/first.png']},
+            {id: 'second', attachments: ['https://example.com/second.png']}
+        ]);
+        const attachments = wrapper.find('PostAttachment');
+        expect(attachments).toHaveLength(2);
+        attachments.forEach(attachment => {
+            expect(attachment.prop('onPreviewChange')).toBeUndefined();
+            attachment.find('img').simulate('load');
+        });
+        wrapper.unmount();
+    });
+
     test('shows the full post composer', () => {
         const wrapper = renderPosts([]);
 

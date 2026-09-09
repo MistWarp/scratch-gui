@@ -284,13 +284,17 @@ export default function (vm) {
                 const stageVariableOptions = vm.runtime.getTargetForStage().getAllVariableNamesInScopeByType('');
                 sort(stageVariableOptions);
                 const stageVariableMenuItems = stageVariableOptions.map(variable => [variable, variable]);
-                if (sensingOfBlock.inputs.OBJECT.shadow !== sensingOfBlock.inputs.OBJECT.block) {
+                const objectInput = sensingOfBlock.inputs && sensingOfBlock.inputs.OBJECT;
+                if (!objectInput || objectInput.shadow !== objectInput.block) {
                     // There's a block dropped on top of the menu. It'd be nice to evaluate it and
                     // return the correct list, but that is tricky. Scratch2 just returns stage options
                     // so just do that here too.
                     return stageOptions.concat(stageVariableMenuItems);
                 }
-                const menuBlock = lookupBlocks.getBlock(sensingOfBlock.inputs.OBJECT.shadow);
+                const menuBlock = lookupBlocks.getBlock(objectInput.shadow);
+                if (!menuBlock || !menuBlock.fields || !menuBlock.fields.OBJECT) {
+                    return stageOptions.concat(stageVariableMenuItems);
+                }
                 const selectedItem = menuBlock.fields.OBJECT.value;
                 if (selectedItem === '_stage_') {
                     return stageOptions.concat(stageVariableMenuItems);

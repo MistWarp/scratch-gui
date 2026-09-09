@@ -252,7 +252,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
             <div className={styles.list}>
                 {sorted.length > VIRTUALIZATION_THRESHOLD ? (
                     <VirtualPostList posts={sorted} renderPost={renderPost} />
-                ) : sorted.map(renderPost)}
+                ) : sorted.map(post => renderPost(post))}
             </div>
         </div>
     );

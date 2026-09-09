@@ -8,13 +8,18 @@ const PostAttachment = ({url, className, onPreviewChange}) => {
     const {text: communityText} = useCommunityText();
     const [kind, setKind] = useState(videoUrl(url) ? 'video' : 'image');
     const [failed, setFailed] = useState(false);
-    const previewChangeRef = useRef(onPreviewChange);
-    previewChangeRef.current = onPreviewChange;
+    const previewChange = typeof onPreviewChange === 'function' ? onPreviewChange : null;
+    const previewChangeRef = useRef(previewChange);
+    previewChangeRef.current = previewChange;
     useEffect(() => {
         if (previewChangeRef.current) previewChangeRef.current();
     }, [failed, kind]);
     if (failed) {
-        return <a className={className} href={url} target="_blank" rel="noreferrer">{communityText('Open attachment')}</a>;
+        return (
+            <a className={className} href={url} target="_blank" rel="noreferrer">
+                {communityText('Open attachment')}
+            </a>
+        );
     }
     if (kind === 'video') {
         return (
@@ -23,7 +28,7 @@ const PostAttachment = ({url, className, onPreviewChange}) => {
                 src={url}
                 controls
                 preload="metadata"
-                onLoadedMetadata={onPreviewChange}
+                onLoadedMetadata={previewChange}
                 onError={() => setFailed(true)}
             />
         );
@@ -34,7 +39,7 @@ const PostAttachment = ({url, className, onPreviewChange}) => {
                 src={url}
                 alt={communityText('Post attachment')}
                 loading="lazy"
-                onLoad={onPreviewChange}
+                onLoad={previewChange}
                 onError={() => setKind('video')}
             />
         </a>
