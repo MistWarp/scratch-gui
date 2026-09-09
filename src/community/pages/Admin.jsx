@@ -14,6 +14,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import {timeAgo, formatBytes, formatDateTime, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
+import copyText from '../copy-text.js';
 import styles from './Admin.module.css';
 
 const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
@@ -1772,7 +1773,7 @@ const ExtensionManager = () => {
     );
 };
 
-const ErrorManager = () => {
+export const ErrorManager = () => {
     const {text: communityText} = useCommunityText();
     const [data, setData] = useState(null);
     const [show, setShow] = useState('open');
@@ -1780,12 +1781,29 @@ const ErrorManager = () => {
     const [query, setQuery] = useState('');
     const [expanded, setExpanded] = useState(null);
     const [busy, setBusy] = useState('');
+    const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+    const [responseJson, setResponseJson] = useState('');
+    const [copied, setCopied] = useState(false);
+    const mutationInFlight = useRef(false);
+    const loadVersion = useRef(0);
+    const finishMutation = () => {
+        mutationInFlight.current = false;
+        setBusy('');
+    };
 
     const load = useCallback(nextShow => {
+        const version = ++loadVersion.current;
         setError('');
         return api.admin.siteErrors(nextShow || show)
-            .then(result => setData(result))
-            .catch(e => setError(e.message || 'Could not load errors.'));
+            .then(result => {
+                if (version !== loadVersion.current) return;
+                setData(result);
+                setResponseJson(JSON.stringify(result, null, 2));
+                setCopied(false);
+            })
+            .catch(e => {
+                if (version === loadVersion.current) setError(e.message || 'Could not load errors.');
+            });
     }, [show]);
 
     useEffect(() => {
@@ -1793,6 +1811,8 @@ const ErrorManager = () => {
     }, [show, load]);
 
     const setResolved = async (id, resolved) => {
+        if (mutationInFlight.current) return;
+        mutationInFlight.current = true;
         setBusy(id);
         setError('');
         try {
@@ -1816,11 +1836,13 @@ const ErrorManager = () => {
         } catch (e) {
             setError(e.message || 'Could not update that error.');
         } finally {
-            setBusy('');
+            finishMutation();
         }
     };
 
     const remove = async id => {
+        if (mutationInFlight.current) return;
+        mutationInFlight.current = true;
         setBusy(id);
         setError('');
         try {
@@ -1837,7 +1859,40 @@ const ErrorManager = () => {
         } catch (e) {
             setError(e.message || 'Could not delete that error.');
         } finally {
-            setBusy('');
+            finishMutation();
+        }
+    };
+
+    const removeAll = async () => {
+        if (mutationInFlight.current) return;
+        mutationInFlight.current = true;
+        setBusy('all');
+        setError('');
+        try {
+            await api.admin.deleteAllSiteErrors();
+            ++loadVersion.current;
+            setData(current => ({...current, errors: [], openCount: 0}));
+            setResponseJson('');
+            setCopied(false);
+            setExpanded(null);
+            setConfirmDeleteAll(false);
+            window.dispatchEvent(new Event('mw:errors-updated'));
+            await load(show);
+        } catch (e) {
+            setError(e.message || 'Could not delete all errors.');
+        } finally {
+            finishMutation();
+        }
+    };
+
+    const copyResponse = async () => {
+        setError('');
+        try {
+            await copyText(responseJson);
+            setCopied(true);
+        } catch (e) {
+            setCopied(false);
+            setError(e.message || 'Could not copy the response.');
         }
     };
 
@@ -1869,6 +1924,33 @@ const ErrorManager = () => {
     return (
         <div>
             <h2>{communityText('Errors')}</h2>
+            <AdminActionDialog
+                dialog={confirmDeleteAll ? {
+                    title: communityText('Delete all errors?'),
+                    description: communityText('This permanently deletes all stored errors, including resolved errors and errors outside the current filter.'),
+                    action: communityText('Delete all errors'),
+                    danger: true
+                } : null}
+                busy={Boolean(busy)}
+                error={error}
+                onCancel={() => {
+                    if (!mutationInFlight.current) setConfirmDeleteAll(false);
+                }}
+                onConfirm={removeAll}
+            />
+            <div className={styles.errorActions}>
+                <button className={styles.secondary} disabled={!responseJson || Boolean(busy)} onClick={copyResponse}>
+                    {copied ? communityText('Copied JSON') : communityText('Copy response JSON')}
+                </button>
+                <button
+                    className={styles.danger}
+                    disabled={Boolean(busy)}
+                    onClick={() => {
+                        setError('');
+                        setConfirmDeleteAll(true);
+                    }}
+                >{communityText('Delete all errors')}</button>
+            </div>
             <input
                 type="search"
                 className={`${styles.input} ${styles.extensionSearch}`}
@@ -1886,6 +1968,7 @@ const ErrorManager = () => {
                     <button
                         key={item.value}
                         className={show === item.value ? styles.extensionTabActive : styles.extensionTab}
+                        disabled={Boolean(busy)}
                         onClick={() => {
                             setShow(item.value);
                             setExpanded(null);
@@ -1922,19 +2005,19 @@ const ErrorManager = () => {
                                         {item.resolved ? (
                                             <button
                                                 className={styles.secondary}
-                                                disabled={busy === id}
+                                                disabled={Boolean(busy)}
                                                 onClick={() => setResolved(id, false)}
                                             >{communityText('Reopen')}</button>
                                         ) : (
                                             <button
                                                 className={styles.secondary}
-                                                disabled={busy === id}
+                                                disabled={Boolean(busy)}
                                                 onClick={() => setResolved(id, true)}
                                             >{communityText('Resolve')}</button>
                                         )}
                                         <button
                                             className={styles.danger}
-                                            disabled={busy === id}
+                                            disabled={Boolean(busy)}
                                             onClick={() => remove(id)}
                                         >{communityText('Delete')}</button>
                                     </div>
