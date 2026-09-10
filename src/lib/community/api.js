@@ -454,6 +454,11 @@ const updateProject = (id, patch) => request(`/projects/${id}`, {method: 'PUT', 
 
 const getProject = id => request(`/projects/${id}`);
 
+const getRandomProject = exclude => request(
+    exclude ? `/projects/random?exclude=${encodeURIComponent(exclude)}` : '/projects/random',
+    {cache: false}
+);
+
 const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
@@ -492,6 +497,7 @@ export {
     getPerks,
     getEditorProject,
     getProjectCommits,
+    getRandomProject,
     remixProject,
     deleteProject,
     request,

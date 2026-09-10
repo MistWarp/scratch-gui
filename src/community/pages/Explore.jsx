@@ -178,6 +178,14 @@ const Explore = () => {
             <ExploreNav active="projects" />
             <div className={styles.head}>
                 <h1>{q ? communityText("Results for \"{value1}\"", {value1: q}) : communityText('Explore')}</h1>
+                <div>
+                    <Link
+                        to="/random"
+                        className={styles.category}
+                    >
+                        {communityText('Surprise me')}
+                    </Link>
+                </div>
                 <SectionTabs
                     items={SORTS}
                     value={sort}
