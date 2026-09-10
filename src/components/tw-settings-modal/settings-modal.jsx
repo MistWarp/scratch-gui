@@ -1203,28 +1203,10 @@ const ExperimentalPage = props => (<PageRenderer
     config={pageConfigurations.experimental}
     {...props}
 />);
-const EditorPage = props => {
-    const [section, setSection] = React.useState(0);
-    return (<React.Fragment>
-        <div
-            className={styles.themeTabs}
-            role="tablist"
-            aria-label="Editor settings"
-        >
-            {pageConfigurations.editor.sections.map((item, index) => (<button
-                key={item.headerMessage}
-                type="button"
-                role="tab"
-                aria-selected={index === section}
-                onClick={() => setSection(index)}
-            ><FormattedMessage {...messages[item.headerMessage]} /></button>))}
-        </div>
-        <PageRenderer
-            config={{sections: [pageConfigurations.editor.sections[section]]}}
-            {...props}
-        />
-    </React.Fragment>);
-};
+const EditorPage = props => (<PageRenderer
+    config={pageConfigurations.editor}
+    {...props}
+/>);
 const StylesPage = props => (<PageRenderer
     config={pageConfigurations.styles}
     {...props}
@@ -1827,9 +1809,6 @@ class DesktopPage extends React.Component {
     }
 }
 
-const themeViews = ['appearance', 'blocks', 'wallpaper', 'fonts', 'editor', 'loadingScreen'];
-const themeLabels = ['Appearance', 'Blocks', 'Wallpaper', 'Fonts', 'Editor', 'Loading screen'];
-
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
@@ -1839,7 +1818,7 @@ const SettingsRouter = ({view, ...handlers}) => {
     case 'shortcuts':
         return <ShortcutManager />;
     case 'appearance':
-        return <React.Fragment><StylesPage {...handlers} /><MenuBarPage {...handlers} /></React.Fragment>;
+        return <StylesPage {...handlers} />;
     case 'blocks':
         return <ThemePage />;
     case 'wallpaper':
@@ -1885,7 +1864,7 @@ class SettingsModalComponent extends React.Component {
 
         const requestedView = takeSettingsModalInitialView() || 'general';
         this.state = {
-            currentView: ['theme', 'menuBar'].includes(requestedView) ? 'appearance' : requestedView,
+            currentView: requestedView === 'theme' ? 'appearance' : requestedView,
             mobileView: 'list'
         };
     }
@@ -1932,7 +1911,7 @@ class SettingsModalComponent extends React.Component {
                                         key={cat.id}
                                         icon={cat.icon}
                                         label={cat.label}
-                                        selected={currentView === cat.id || (cat.id === 'appearance' && themeViews.includes(currentView))}
+                                        selected={currentView === cat.id}
                                         onClick={() => this.handleNavigate(cat.id)}
                                     />
                                 ))}
@@ -1952,20 +1931,6 @@ class SettingsModalComponent extends React.Component {
                                 id="tw.settingsModal.back"
                             />
                         </button>
-                        {themeViews.includes(currentView) && <div
-                            className={styles.themeTabs}
-                            role="tablist"
-                            aria-label="Theme"
-                        >
-                            {themeViews.map((view, index) => (<button
-                                key={view}
-                                type="button"
-                                role="tab"
-                                aria-selected={view === currentView}
-                                onClick={() => this.handleNavigate(view)}
-                            >{intl.formatMessage({id: `mw.settings.themeTab.${view}`,
-                                    defaultMessage: themeLabels[index]})}</button>))}
-                        </div>}
                         <SettingsRouter
                             view={currentView}
                             {...this.props}
