@@ -7,19 +7,15 @@ import {SettingsModalComponent} from '../../../src/components/tw-settings-modal/
 import {ModalSidebarItem} from '../../../src/components/modal-sidebar/modal-sidebar.jsx';
 
 describe('settings navigation', () => {
-    test('Theme is one sidebar destination with tabs for its sections', () => {
+    test('Appearance sections are sidebar destinations', () => {
         const modal = shallowWithIntl(<SettingsModalComponent onClose={jest.fn()} />);
         const labels = modal.find(ModalSidebarItem).map(item => item.prop('label'));
-        expect(labels).toContain('Theme');
-        expect(labels).not.toContain('Menu bar');
-        expect(labels).not.toContain('Fonts');
-        modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Theme').simulate('click');
-        expect(modal.state('currentView')).toBe('appearance');
-        const tabs = modal.find('button[role="tab"]');
-        expect(tabs).toHaveLength(6);
-        tabs.at(1).simulate('click');
-        expect(modal.state('currentView')).toBe('blocks');
-        expect(modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Theme').prop('selected'))
-            .toBe(true);
+        for (const label of ['Appearance', 'Menu Bar', 'Blocks', 'Wallpaper', 'Fonts', 'Editor', 'Loading screen']) {
+            expect(labels).toContain(label);
+        }
+        expect(modal.find('button[role="tab"]')).toHaveLength(0);
+        modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Fonts')
+            .simulate('click');
+        expect(modal.state('currentView')).toBe('fonts');
     });
 });

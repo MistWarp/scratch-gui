@@ -1,12 +1,18 @@
 import {
+    Blocks,
     Bug,
     GitBranch,
     Globe,
     History,
+    Image,
     Keyboard,
+    Loader,
     Monitor,
     Palette,
+    PanelTop,
+    Pen,
     Settings,
+    Type,
     Variable,
     Zap
 } from 'lucide-react';
@@ -43,8 +49,38 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
             items: [
                 {
                     id: 'appearance',
-                    label: intl.formatMessage({id: 'mw.settings.theme', defaultMessage: 'Theme'}),
+                    label: intl.formatMessage({id: 'mw.settings.appearance', defaultMessage: 'Appearance'}),
                     icon: Palette
+                },
+                {
+                    id: 'menuBar',
+                    label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: 'Menu Bar'}),
+                    icon: PanelTop
+                },
+                {
+                    id: 'blocks',
+                    label: intl.formatMessage({id: 'mw.settings.blocks', defaultMessage: 'Blocks'}),
+                    icon: Blocks
+                },
+                {
+                    id: 'wallpaper',
+                    label: intl.formatMessage({id: 'mw.settings.wallpaper', defaultMessage: 'Wallpaper'}),
+                    icon: Image
+                },
+                {
+                    id: 'fonts',
+                    label: intl.formatMessage({id: 'mw.settings.fonts', defaultMessage: 'Fonts'}),
+                    icon: Type
+                },
+                {
+                    id: 'editor',
+                    label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: 'Editor'}),
+                    icon: Pen
+                },
+                {
+                    id: 'loadingScreen',
+                    label: intl.formatMessage({id: 'mw.settings.loadingScreen', defaultMessage: 'Loading screen'}),
+                    icon: Loader
                 }
             ]
         },

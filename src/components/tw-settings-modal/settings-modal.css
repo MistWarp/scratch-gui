@@ -1260,22 +1260,3 @@
     }
 }
 
-.theme-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    border-bottom: 1px solid $ui-black-transparent;
-}
-.theme-tabs button {
-    background: transparent;
-    color: inherit;
-    border: 0;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.35rem;
-    cursor: pointer;
-}
-.theme-tabs button[aria-selected="true"] {
-    background: $looks-secondary;
-    color: white;
-}
