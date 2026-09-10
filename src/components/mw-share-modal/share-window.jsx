@@ -5,10 +5,6 @@ import {
     publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob, getRememberedPlatformProjectState
 } from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
-import {getRepoChanges} from '../../lib/git/browser-git.js';
-import {ensureProjectHistoryHydrated} from '../../lib/git/project-history.js';
-import {getFractchGitDiff} from '../../lib/git/fractch-diff.js';
-import {generateCommitName, getSmartFeaturesBalance} from '../../lib/sable/smart-features.js';
 import Markdown from '../../community/components/Markdown.jsx';
 import styles from './share-window.css';
 
@@ -21,7 +17,6 @@ class ShareWindow extends React.Component {
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
         this.handleChangeMessage = this.handleChangeMessage.bind(this);
-        this.handleGenerateName = this.handleGenerateName.bind(this);
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.handleProgress = this.handleProgress.bind(this);
         this.prepareThumbnail = this.prepareThumbnail.bind(this);
@@ -49,8 +44,7 @@ class ShareWindow extends React.Component {
             done: null,
             agreement: null,
             agreeBusy: false,
-            agreeError: '',
-            sableCredits: null
+            agreeError: ''
         };
     }
     componentDidMount () {
@@ -58,19 +52,6 @@ class ShareWindow extends React.Component {
             data => ({data}),
             error => ({error})
         );
-        if (typeof getSmartFeaturesBalance === 'function') {
-            getSmartFeaturesBalance().then(
-                result => {
-                    const credits = result && (
-                        typeof result.credits === 'number' ? result.credits :
-                            typeof result.balance === 'number' ? result.balance :
-                                typeof result.balance_sc === 'number' ? result.balance_sc : null
-                    );
-                    if (typeof credits === 'number') this.setState({sableCredits: credits});
-                },
-                () => {}
-            );
-        }
         if (this.props.action === 'update') {
             return;
         }
@@ -85,31 +66,6 @@ class ShareWindow extends React.Component {
     }
     handleChangeMessage (event) {
         this.setState({changeMessage: event.target.value});
-    }
-    async handleGenerateName () {
-        if (this.state.status) return;
-        this.setState({status: 'Writing a commit name', phase: 'name', error: null});
-        try {
-            await ensureProjectHistoryHydrated(this.props.vm);
-            const changes = await getRepoChanges(this.props.vm);
-            const diff = await getFractchGitDiff(changes);
-            const result = await generateCommitName(diff);
-            const notice = typeof result.balance === 'number' && result.balance >= 0 ?
-                `Sable named this version. ${result.balance} SC left.` :
-                'Sable named this version.';
-            this.setState({
-                changeMessage: result.name,
-                status: null,
-                phase: null,
-                notice
-            });
-        } catch (error) {
-            this.setState({
-                status: null,
-                phase: null,
-                error: error.message || 'Sable could not name this version.'
-            });
-        }
     }
     prepareThumbnail (thumbnail) {
         this.thumbnailPreparationSource = thumbnail;
@@ -313,9 +269,7 @@ class ShareWindow extends React.Component {
         const hasUploadTotal = uploading && this.state.total > 0;
         const uploadComplete = hasUploadTotal && this.state.loaded >= this.state.total;
         let detail = 'Nothing has been uploaded yet.';
-        if (this.state.phase === 'name') {
-            detail = 'Sending the changed Fractch diff directly to Sable Spark.';
-        } else if (this.state.phase === 'register') {
+        if (this.state.phase === 'register') {
             detail = 'Setting up the project page.';
         } else if (this.state.phase === 'package') {
             detail = 'Compressing the project and its pushed history on this device.';
@@ -426,7 +380,6 @@ class ShareWindow extends React.Component {
         }
         const isUpdate = this.props.action === 'update';
         if (isUpdate) {
-            const showGenerate = this.state.sableCredits !== 0;
             return (
                 <div className={styles.root}>
                     <div className={styles.body}>
@@ -449,10 +402,7 @@ class ShareWindow extends React.Component {
                             onChange={this.handleChangeMessage}
                         />
                         <p className={styles.notice}>
-                            {showGenerate ?
-                                'Write the name yourself, or click Generate name to ask Sable. ' +
-                                'Generating a name may use some of your Sable Credit (SC).' :
-                                'Write the name yourself. Sable naming needs Sable Credit (SC).'}
+                            {'Write the name yourself.'}
                         </p>
                         {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                         {this.renderStatus()}
@@ -471,14 +421,6 @@ class ShareWindow extends React.Component {
                             onClick={this.handleSkipSave}
                             disabled={!!this.state.status}
                         >Save without a version</button>
-                        {showGenerate ? (
-                            <button
-                                type="button"
-                                className={styles.secondary}
-                                onClick={this.handleGenerateName}
-                                disabled={!!this.state.status}
-                            >Generate name</button>
-                        ) : null}
                         <button
                             type="button"
                             className={styles.primary}

@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, Sparkles} from 'lucide-react';
+import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
@@ -33,10 +33,6 @@ import {analyticsEnabled, setAnalyticsEnabled} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import LanguagePicker from '../components/LanguagePicker.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
-import {
-    getSmartFeaturesBalance,
-    topUpSmartFeatures
-} from '../../lib/sable/smart-features.js';
 import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
@@ -97,7 +93,6 @@ const formatProjectName = (key, value) => {
 const SECTIONS = [
     {key: 'theme', label: 'Theme', icon: Palette},
     {key: 'presence', label: 'Presence', icon: Radio},
-    {key: 'smart', label: 'Smart features', icon: Sparkles},
     {key: 'notifications', label: 'Notifications', icon: Bell},
     {key: 'privacy', label: 'Privacy', icon: Eye},
     {key: 'safety', label: 'Safety', icon: Shield},
@@ -106,6 +101,7 @@ const SECTIONS = [
 ];
 const settingsSection = value => {
     if (value === 'permissions') return 'safety';
+    if (value === 'smart') return SECTIONS[0].key;
     if (SECTIONS.some(section => section.key === value)) return value;
     return SECTIONS[0].key;
 };
@@ -194,10 +190,6 @@ const Settings = () => {
     const [privacyStatus, setPrivacyStatus] = useState('');
     const [privacyLoadError, setPrivacyLoadError] = useState(false);
     const [privacyAttempt, setPrivacyAttempt] = useState(0);
-    const [smartBalance, setSmartBalance] = useState(null);
-    const [smartRc, setSmartRc] = useState(null);
-    const [smartBusy, setSmartBusy] = useState('');
-    const [smartStatus, setSmartStatus] = useState('');
     const gameDataState = settingsLoadState(dataBusy === 'game-load', gameDataError);
     const dataContext = useRef((user && user.username) || '');
     dataContext.current = (user && user.username) || '';
@@ -222,30 +214,6 @@ const Settings = () => {
         setGameDataError('');
         setSaveToDelete(null);
     }, [user]);
-
-    useEffect(() => {
-        setSmartBalance(null);
-        setSmartRc(null);
-        setSmartStatus('');
-        setSmartBusy('');
-        if (!viewerName || activeSection !== 'smart') return () => {};
-        let cancelled = false;
-        setSmartBusy('balance');
-        getSmartFeaturesBalance()
-            .then(result => {
-                if (!cancelled) setSmartBalance(result.credits);
-                if (!cancelled) setSmartRc(result.rc);
-            })
-            .catch(error => {
-                if (!cancelled) setSmartStatus(error.message || 'Could not load your smart features balance.');
-            })
-            .finally(() => {
-                if (!cancelled) setSmartBusy('');
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [activeSection, viewerName]);
 
     const setActiveSection = section => {
         setSearchParams(settingsParamsForSection(searchParams, section));
@@ -395,21 +363,6 @@ const Settings = () => {
     const changeUsername = value => {
         setUsername(value);
         setUsernameOverride(value || null);
-    };
-    const topUpSmartBalance = async () => {
-        if (smartBusy) return;
-        setSmartBusy('topup');
-        setSmartStatus('');
-        try {
-            const result = await topUpSmartFeatures();
-            setSmartBalance(result.credits);
-            setSmartRc(result.rc);
-            setSmartStatus('Added 10 RC to your smart features balance.');
-        } catch (error) {
-            setSmartStatus(error.message || 'Could not add funds.');
-        } finally {
-            setSmartBusy('');
-        }
     };
     const changeAccentMenuBar = enabled => {
         setAccentMenuBar(enabled);
@@ -674,39 +627,6 @@ const Settings = () => {
                                     />
                                 ))}
                             </div>
-                        </section>
-                    ) : null}
-
-                    {activeSection === 'smart' ? (
-                        <section className={styles.card}>
-                            <h2>{communityText('Smart features')}</h2>
-                            <p className={styles.lead}>{communityText('Optional commit naming powered by Sable. It sends the changed Fractch diff only after you click Generate name, and may use some of your Sable Credit.')}</p>
-                            {!user ? (
-                                <Button onClick={login}>{communityText('Sign in with Rotur')}</Button>
-                            ) : (
-                                <React.Fragment>
-                                    <div className={styles.dataAction}>
-                                        <div>
-                                            <h3>{communityText('Balance')}</h3>
-                                            <p>
-                                                <span>{smartBalance === -1 ? communityText('Unlimited Sable Credit') :
-                                                    (smartBalance === null ? communityText('Loading Sable Credit…') : communityText("{value1} SC available", {value1: smartBalance}))}</span>
-                                                {smartRc === null ? null : <span>{communityText(" · {value1} RC in Rotur", {value1: smartRc})}</span>}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            busy={smartBusy === 'topup'}
-                                            busyLabel={communityText('Adding…')}
-                                            disabled={Boolean(smartBusy) || smartBalance === -1 ||
-                                                (typeof smartRc === 'number' && smartRc < 10)}
-                                            onClick={topUpSmartBalance}
-                                        >{communityText('Add 10 RC')}</Button>
-                                    </div>
-                                    <p className={styles.note}>{communityText('Adding funds moves 10 RC into Sable Credit. Sable deducts the exact model cost when it generates a commit name.')}</p>
-                                    <p className={styles.note}>{communityText('Sable never reads ahead or drafts while you type.')}</p>
-                                </React.Fragment>
-                            )}
-                            {smartStatus ? <p className={styles.note} aria-live="polite">{smartStatus}</p> : null}
                         </section>
                     ) : null}
 
