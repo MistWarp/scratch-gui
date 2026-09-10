@@ -3,7 +3,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {
     Search, Compass, Plus, FolderOpen, Bell, LogIn,
-    Layers3, House, Crown
+    Layers3, House, Crown, Shuffle
 } from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl, projectUrl} from '../api';
@@ -355,6 +355,14 @@ const NavBar = () => {
                     >
                         <Compass size={17} />
                         <span className={styles.linkLabel}>{t('nav.explore')}</span>
+                    </Link>
+                    <Link
+                        to="/random"
+                        className={styles.link}
+                        aria-label={t('nav.random')}
+                    >
+                        <Shuffle size={17} />
+                        <span className={styles.linkLabel}>{t('nav.random')}</span>
                     </Link>
                 </nav>
 

@@ -16,6 +16,7 @@ import {useCommunityIntl} from './i18n.jsx';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Explore = lazy(() => import('./pages/Explore.jsx'));
+const Random = lazy(() => import('./pages/Random.jsx'));
 const Bounties = lazy(() => import('./pages/Bounties.jsx'));
 const Bounty = lazy(() => import('./pages/Bounty.jsx'));
 const Project = lazy(() => import('./pages/Project.jsx'));
@@ -53,6 +54,7 @@ const Group = lazy(() => import('./pages/Group.jsx'));
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
     ['/explore', 'Explore'],
+    ['/random', 'Random project'],
     ['/themes/', 'Theme'],
     ['/themes', 'Themes'],
     ['/groups/', 'Group'],
@@ -108,6 +110,7 @@ const App = () => {
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
+                        <Route path="/random" element={<Random />} />
                         <Route path="/bounties/:id" element={<Bounty />} />
                         <Route path="/bounties" element={<Bounties />} />
                         <Route path="/themes" element={<Themes />} />

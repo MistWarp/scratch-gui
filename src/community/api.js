@@ -194,6 +194,10 @@ const api = {
     readNotifications: () => request('/notifications/read', {method: 'POST'}),
     explore: ({sort = 'recent', q = '', tag = '', offset = 0, limit = 24} = {}) =>
         request(`/explore?sort=${sort}&q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&offset=${offset}&limit=${limit}`),
+    randomProject: exclude => request(
+        exclude ? `/projects/random?exclude=${encodeURIComponent(exclude)}` : '/projects/random',
+        {cache: false}
+    ),
     leaderboard: by => request(`/leaderboard?by=${by}`),
     getProject: id => request(`/projects/${id}${projectAccessQuery()}`, {cache: false}),
     createProject,
