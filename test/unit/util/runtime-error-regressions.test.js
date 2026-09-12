@@ -1,4 +1,4 @@
-import {importWithRetry, isChunkLoadError} from '../../../src/lib/lazy-with-retry';
+import {importWithRetry, isChunkLoadError, reloadStalePage} from '../../../src/lib/lazy-with-retry';
 import VideoProvider from '../../../src/lib/video/video-provider';
 import {requestVideoStream, requestDisableVideo} from '../../../src/lib/video/camera';
 
@@ -82,4 +82,23 @@ test.each([
     'Unable to preload CSS for /assets/Home.css'
 ])('recognizes Vite transport errors: %s', message => {
     expect(isChunkLoadError(new TypeError(message))).toBe(true);
+});
+
+test('stale community pages reload once per build without a reload loop', () => {
+    const entries = new Map();
+    const browser = {
+        sessionStorage: {getItem: key => entries.get(key), setItem: (key, value) => entries.set(key, value)},
+        location: {reload: jest.fn()}
+    };
+    const error = new Error('Failed to fetch dynamically imported module: /assets/old.js');
+    expect(reloadStalePage(error, browser)).toBe(true);
+    expect(reloadStalePage(error, browser)).toBe(false);
+    expect(browser.location.reload).toHaveBeenCalledTimes(1);
+    expect(reloadStalePage(new Error('Module execution failed'), browser)).toBe(false);
+});
+
+test('blocked session storage leaves chunk recovery to the manual reload button', () => {
+    const browser = {get sessionStorage () { throw new Error('blocked'); }, location: {reload: jest.fn()}};
+    expect(reloadStalePage(new Error('Importing a module script failed.'), browser)).toBe(false);
+    expect(browser.location.reload).not.toHaveBeenCalled();
 });

@@ -276,8 +276,10 @@ describe('heartbeat', () => {
             expect(gone).not.toHaveBeenCalled();
 
             // No inbound data for > deadPeerTimeoutMs
-            now += 31000;
-            jest.advanceTimersByTime(31000);
+            for (let i = 0; i < 4; i++) {
+                now += 10000;
+                jest.advanceTimersByTime(10000);
+            }
             expect(gone).toHaveBeenCalledWith('client-1');
             transport.destroy();
         } finally {
@@ -418,6 +420,130 @@ describe('client reconnection', () => {
             expect(peers[0].connections.length).toBe(1);
         } finally {
             jest.useRealTimers();
+        }
+    });
+});
+
+describe('connection lifecycle regressions', () => {
+    test('late events from a replaced channel cannot disconnect or impersonate its replacement', async () => {
+        const {transport, peers} = makeTransport();
+        const hosted = transport.host('room1');
+        peers[0].simulateOpen();
+        await hosted;
+        const disconnected = jest.fn();
+        const message = jest.fn();
+        transport.on('peer-disconnected', disconnected);
+        transport.on('message', message);
+        const old = peers[0].simulateIncomingConnection('client');
+        old.simulateOpen();
+        const replacement = peers[0].simulateIncomingConnection('client');
+        replacement.simulateOpen();
+        expect(old.closed).toBe(true);
+        old.trigger('close');
+        old.simulateError();
+        old.simulateData(makeCtrl(CTRL.PING, {}));
+        expect(transport.isOpen('client')).toBe(true);
+        expect(disconnected).not.toHaveBeenCalled();
+        expect(message).not.toHaveBeenCalled();
+        expect(replacement.sent).toHaveLength(0);
+        transport.destroy();
+    });
+
+    test('an error on an open client channel starts reconnecting immediately', async () => {
+        jest.useFakeTimers();
+        const {transport, peers} = makeTransport();
+        try {
+            const joined = transport.join('room1');
+            peers[0].simulateOpen();
+            await flush();
+            peers[0].lastConnection.simulateOpen();
+            await joined;
+            const reconnecting = jest.fn();
+            transport.on('reconnecting', reconnecting);
+            peers[0].lastConnection.simulateError();
+            expect(reconnecting).toHaveBeenCalledTimes(1);
+            expect(peers[0].lastConnection.closed).toBe(true);
+        } finally {
+            transport.destroy();
+            jest.useRealTimers();
+        }
+    });
+
+    test('a failed broker handshake destroys its peer and ignores late broker events', async () => {
+        jest.useFakeTimers();
+        const {transport, peers} = makeTransport();
+        try {
+            const failed = expect(transport.host('room1')).rejects.toMatchObject({collabCode: 'SERVER_UNREACHABLE'});
+            jest.advanceTimersByTime(15001);
+            await failed;
+            expect(peers[0].destroyed).toBe(true);
+            expect(transport.peer).toBeNull();
+            const fatal = jest.fn();
+            transport.on('fatal', fatal);
+            peers[0].simulateOpen();
+            peers[0].trigger('error', new Error('late error'));
+            peers[0].trigger('disconnected');
+            expect(fatal).not.toHaveBeenCalled();
+            expect(peers[0].reconnectCalls).toBe(0);
+        } finally {
+            transport.destroy();
+            jest.useRealTimers();
+        }
+    });
+
+    test('a channel closing before open rejects the join without waiting for timeout', async () => {
+        const {transport, peers} = makeTransport();
+        try {
+            const joined = expect(transport.join('room1')).rejects.toMatchObject({collabCode: 'CONNECTION_CLOSED'});
+            peers[0].simulateOpen();
+            await flush();
+            peers[0].lastConnection.close();
+            await joined;
+        } finally {
+            transport.destroy();
+        }
+    });
+});
+
+describe('host cleanup and background tab recovery', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    test('a host discards channels that never open and ignores late opens', async () => {
+        const {transport, peers} = makeTransport();
+        try {
+            const hosted = transport.host('room1');
+            peers[0].simulateOpen();
+            await hosted;
+            const connected = jest.fn();
+            transport.on('peer-connected', connected);
+            const pending = peers[0].simulateIncomingConnection('client');
+            jest.advanceTimersByTime(15001);
+            expect(pending.closed).toBe(true);
+            pending.simulateOpen();
+            expect(transport.isOpen('client')).toBe(false);
+            expect(connected).not.toHaveBeenCalled();
+        } finally {
+            transport.destroy();
+        }
+    });
+
+    test('waking a suspended tab allows a fresh heartbeat before disconnecting peers', async () => {
+        const {transport, peers} = makeTransport();
+        try {
+            const hosted = transport.host('room1');
+            peers[0].simulateOpen();
+            await hosted;
+            const client = peers[0].simulateIncomingConnection('client');
+            client.simulateOpen();
+            jest.setSystemTime(Date.now() + 120000);
+            jest.advanceTimersByTime(10000);
+            expect(transport.isOpen('client')).toBe(true);
+            expect(client.sent.some(data => data.type === CTRL.PING)).toBe(true);
+            jest.advanceTimersByTime(40000);
+            expect(transport.isOpen('client')).toBe(false);
+        } finally {
+            transport.destroy();
         }
     });
 });

@@ -50,7 +50,12 @@ for (const definition of DEFINITIONS) {
 const events = new EventTarget();
 
 const getSetting = id => {
-    const stored = localStorage.getItem(STORAGE_PREFIX + id);
+    let stored;
+    try {
+        stored = localStorage.getItem(STORAGE_PREFIX + id);
+    } catch (e) {
+        return defaults[id] || false;
+    }
     if (stored === 'true') return true;
     if (stored === 'false') return false;
     return defaults[id] || false;

@@ -24,21 +24,43 @@ const getHeader = (headers, name) => {
     return headers[name] || headers[name.toLowerCase()] || null;
 };
 
+// Project endpoints sometimes receive a successful SPA fallback response from a
+// proxy. Never cache that HTML as project bytes, including old polluted entries.
+const isHtml = buffer => {
+    const prefix = String.fromCharCode(...new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 256)));
+    return /^\s*(?:<!doctype\s+html|<html[\s>])/i.test(prefix);
+};
+
+const readProjectResponse = async response => {
+    const buffer = await response.arrayBuffer();
+    if (isHtml(buffer)) {
+        throw new Error('The project server returned a web page. Please try loading the project again.');
+    }
+    return buffer;
+};
+
 const fetchAndStore = async url => {
     const generation = cacheGeneration;
     const cache = await openCache();
     let cachedHit = null;
+    let cachedBuffer;
     let storedEtag = null;
     if (cache) {
         try {
             const hit = await cache.match(url);
             if (hit) {
+                const buffer = await hit.arrayBuffer();
+                if (isHtml(buffer)) {
+                    await cache.delete(url);
+                    throw new Error('Discarding cached HTML project response');
+                }
                 const at = Number(getHeader(hit.headers, CACHED_AT_HEADER));
                 if (at && Date.now() - at < TTL) {
-                    return hit.arrayBuffer();
+                    return buffer;
                 }
                 storedEtag = getHeader(hit.headers, ETAG_HEADER) || getHeader(hit.headers, 'etag');
                 cachedHit = hit;
+                cachedBuffer = buffer;
             }
         } catch (e) {
             // fall through to network
@@ -55,13 +77,13 @@ const fetchAndStore = async url => {
         response = await fetch(url, Object.keys(requestHeaders).length ? {headers: requestHeaders} : {});
     } catch (err) {
         if (cachedHit) {
-            return cachedHit.arrayBuffer();
+            return cachedBuffer;
         }
         throw err;
     }
 
     if (response.status === 304 && cachedHit) {
-        const buffer = await cachedHit.arrayBuffer();
+        const buffer = cachedBuffer;
         if (cache && generation === cacheGeneration) {
             const headers = {
                 [CACHED_AT_HEADER]: String(Date.now()),
@@ -83,7 +105,15 @@ const fetchAndStore = async url => {
     }
 
     const etag = getHeader(response.headers, 'etag');
-    const buffer = await response.arrayBuffer();
+    let buffer;
+    try {
+        buffer = await readProjectResponse(response);
+    } catch (error) {
+        // Bypass intermediary caches once to recover from an HTML fallback.
+        const retry = await fetch(url, {cache: 'reload'});
+        if (!retry.ok) throw error;
+        buffer = await readProjectResponse(retry);
+    }
     if (cache && generation === cacheGeneration) {
         try {
             const headers = {

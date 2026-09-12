@@ -1,6 +1,6 @@
 import tokenStyles from './styles/tokens.module.css';
 import React, {Suspense, useEffect} from 'react';
-import lazy from '../lib/lazy-with-retry.js';
+import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import ErrorBoundary from '../containers/error-boundary.jsx';
 import {Routes, Route, useLocation} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';

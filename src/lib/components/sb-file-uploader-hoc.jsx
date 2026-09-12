@@ -417,7 +417,10 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         };
     };
     const mapDispatchToProps = (dispatch, ownProps) => ({
-        cancelFileUpload: loadingState => dispatch(onLoadedProject(loadingState, false, false)),
+        cancelFileUpload: loadingState => {
+            const action = onLoadedProject(loadingState, false, false);
+            if (action) dispatch(action);
+        },
         closeFileMenu: () => dispatch(closeFileMenu()),
         onLoadingFailed: error => {
             dispatch(setProjectError(error));
@@ -426,7 +429,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         // transition project state from loading to regular, and close
         // loading screen and file menu
         onLoadingFinished: (loadingState, success) => {
-            dispatch(onLoadedProject(loadingState, ownProps.canSave, success));
+            const action = onLoadedProject(loadingState, ownProps.canSave, success);
+            if (action) dispatch(action);
             dispatch(closeLoadingProject());
             dispatch(closeFileMenu());
         },

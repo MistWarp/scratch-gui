@@ -1,4 +1,5 @@
-import Peer from 'peerjs';
+import PeerModule from 'peerjs';
+import {resolvePeerConstructor} from './peer-constructor.js';
 import Emitter from './emitter.js';
 import {validateEnvelope, makeCtrl, KIND, CTRL} from './protocol.js';
 import {APP_NAME} from '../constants/brand.js';
@@ -76,7 +77,7 @@ class Transport extends Emitter {
     constructor (options = {}) {
         super();
         this._peerConfig = options.peerConfig || DEFAULT_PEER_CONFIG;
-        this._createPeer = options.createPeer || ((id, config) => new Peer(id, config));
+        this._createPeer = options.createPeer || ((id, config) => new (resolvePeerConstructor(PeerModule))(id, config));
         this._heartbeatIntervalMs = options.heartbeatIntervalMs || HEARTBEAT_INTERVAL_MS;
         this._deadPeerTimeoutMs = options.deadPeerTimeoutMs || DEAD_PEER_TIMEOUT_MS;
         this._dialTimeoutMs = options.dialTimeoutMs || DIAL_TIMEOUT_MS;
@@ -276,25 +277,40 @@ class Transport extends Emitter {
     _openPeer (peerId) {
         return new Promise((resolve, reject) => {
             let settled = false;
+            if (this.destroyed) {
+                reject(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
+                return;
+            }
             const peer = this._createPeer(peerId, this._peerConfig);
             this.peer = peer;
+            const disposePeer = () => {
+                if (this.peer === peer) this.peer = null;
+                try {
+                    peer.destroy();
+                } catch (error) {
+                    // A failed peer may already be destroyed.
+                }
+            };
             const pending = {timer: null};
             const cancel = () => {
                 if (settled) return;
                 settled = true;
                 clearTimeout(pending.timer);
                 this._pendingConnections.delete(cancel);
+                disposePeer();
                 reject(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
             };
             pending.timer = setTimeout(() => {
                 if (settled) return;
                 settled = true;
                 this._pendingConnections.delete(cancel);
+                disposePeer();
                 reject(collabError('SERVER_UNREACHABLE', 'The collaboration server did not respond.'));
             }, this._dialTimeoutMs);
             this._pendingConnections.add(cancel);
 
             peer.on('open', id => {
+                if (this.destroyed || this.peer !== peer) return;
                 if (!settled) {
                     settled = true;
                     clearTimeout(pending.timer);
@@ -304,10 +320,12 @@ class Transport extends Emitter {
             });
 
             peer.on('error', error => {
+                if (this.destroyed || this.peer !== peer) return;
                 if (!settled) {
                     settled = true;
                     clearTimeout(pending.timer);
                     this._pendingConnections.delete(cancel);
+                    disposePeer();
                     reject(this._describeError(error));
                     return;
                 }
@@ -322,7 +340,7 @@ class Transport extends Emitter {
             // The broker connection dropped. PeerJS keeps datachannels
             // alive but we can no longer accept new dials; re-register.
             peer.on('disconnected', () => {
-                if (this.destroyed || peer.destroyed) return;
+                if (this.destroyed || peer.destroyed || this.peer !== peer) return;
                 try {
                     peer.reconnect();
                 } catch (error) {
@@ -383,6 +401,9 @@ class Transport extends Emitter {
             }
 
             conn.on('open', () => settle(null, conn));
+            conn.on('close', () => settle(collabError(
+                'CONNECTION_CLOSED', 'The host connection closed before joining. Please try again.'
+            )));
             conn.on('error', error => settle(this._describeError(
                 error || new Error(`Could not connect to room "${this.roomId}".`)
             )));
@@ -390,30 +411,63 @@ class Transport extends Emitter {
     }
 
     _wireConnection (conn) {
-        // Host side: a client dialed us. Register handlers now; announce
-        // once the channel actually opens.
-        if (conn.open) {
+        if (this.destroyed) {
+            conn.close();
+            return;
+        }
+        let finished = false;
+        let timer = null;
+        const pending = {cancel: null};
+        const cleanup = () => {
+            clearTimeout(timer);
+            this._pendingConnections.delete(pending.cancel);
+        };
+        const cancel = () => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+            try {
+                conn.close();
+            } catch (error) {
+                // The incomplete channel may already be closed.
+            }
+        };
+        pending.cancel = cancel;
+        const opened = () => {
+            if (finished || this.destroyed) return;
+            finished = true;
+            cleanup();
             this._registerConnection(conn);
             this.emit('peer-connected', conn.peer, conn.metadata || {});
+        };
+        conn.on('close', cancel);
+        conn.on('error', cancel);
+        if (conn.open) {
+            opened();
         } else {
-            conn.on('open', () => {
-                if (this.destroyed) return;
-                this._registerConnection(conn);
-                this.emit('peer-connected', conn.peer, conn.metadata || {});
-            });
+            this._pendingConnections.add(cancel);
+            timer = setTimeout(cancel, this._dialTimeoutMs);
+            conn.on('open', opened);
         }
-        conn.on('error', () => {
-            this._handleConnectionDown(conn.peer);
-        });
     }
 
     _registerConnection (conn) {
+        const previous = this._connections.get(conn.peer);
+        if (previous && previous.conn === conn) return;
         this._connections.set(conn.peer, {conn, lastSeen: Date.now()});
+        if (previous) {
+            try {
+                previous.conn.close();
+            } catch (error) {
+                // The replacement is already registered; stale events are ignored.
+            }
+        }
 
         conn.on('data', data => {
             if (this.destroyed) return;
             const entry = this._connections.get(conn.peer);
-            if (entry) entry.lastSeen = Date.now();
+            if (!entry || entry.conn !== conn) return;
+            entry.lastSeen = Date.now();
 
             const error = validateEnvelope(data);
             if (error) {
@@ -432,14 +486,23 @@ class Transport extends Emitter {
         });
 
         conn.on('close', () => {
-            this._handleConnectionDown(conn.peer);
+            this._handleConnectionDown(conn.peer, conn);
+        });
+        conn.on('error', () => {
+            this._handleConnectionDown(conn.peer, conn);
         });
     }
 
-    _handleConnectionDown (peerId) {
+    _handleConnectionDown (peerId, conn) {
         if (this.destroyed) return;
-        if (!this._connections.has(peerId)) return;
+        const entry = this._connections.get(peerId);
+        if (!entry || (conn && entry.conn !== conn)) return;
         this._connections.delete(peerId);
+        try {
+            entry.conn.close();
+        } catch (error) {
+            // Continue recovery even if the broken channel cannot close cleanly.
+        }
         this.emit('peer-disconnected', peerId);
 
         if (!this.isHost && peerId === this.hostPeerId) {
@@ -492,9 +555,15 @@ class Transport extends Emitter {
 
     _startHeartbeat () {
         if (this._heartbeatTimer) return;
+        let lastHeartbeatAt = Date.now();
         this._heartbeatTimer = setInterval(() => {
             const now = Date.now();
+            const resumed = now - lastHeartbeatAt > this._deadPeerTimeoutMs;
+            lastHeartbeatAt = now;
             this._connections.forEach((entry, peerId) => {
+                // A suspended tab could not receive pongs. Allow a fresh ping
+                // round after waking before declaring every peer disconnected.
+                if (resumed) entry.lastSeen = now;
                 if (now - entry.lastSeen > this._deadPeerTimeoutMs) {
                     try {
                         entry.conn.close();

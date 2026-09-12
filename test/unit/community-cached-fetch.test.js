@@ -25,6 +25,22 @@ describe('community project content cache', () => {
         delete global.fetch;
     });
 
+    test('retries HTML fallback responses without caching them', async () => {
+        const html = Uint8Array.from(Array.from('<!DOCTYPE html><html>App</html>'), c => c.charCodeAt(0)).buffer;
+        const project = new Uint8Array([80, 75, 3, 4]).buffer;
+        global.fetch.mockResolvedValueOnce({ok: true, arrayBuffer: async () => html})
+            .mockResolvedValueOnce({ok: true, arrayBuffer: async () => project});
+        await expect(cachedFetchBuffer(url)).resolves.toBe(project);
+        expect(global.fetch).toHaveBeenLastCalledWith(url, {cache: 'reload'});
+    });
+
+    test('reports a persistent HTML fallback as a project download failure', async () => {
+        const html = Uint8Array.from(Array.from('<!DOCTYPE html>'), c => c.charCodeAt(0)).buffer;
+        global.fetch.mockResolvedValue({ok: true, arrayBuffer: async () => html});
+        await expect(cachedFetchBuffer(url)).rejects.toThrow('project server returned a web page');
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
     test('hands a preloaded project to the loader without copying it', async () => {
         const buffer = new Uint8Array([1, 2, 3]).buffer;
         global.fetch.mockResolvedValue({

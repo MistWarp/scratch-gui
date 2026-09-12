@@ -137,7 +137,7 @@ const vmManagerHOC = function (WrappedComponent) {
                         // the renderer can be async.
                         const drawTimeout = setTimeout(() => {
                             this.loadTimeouts.delete(drawTimeout);
-                            if (this._isMounted && loadGeneration === this.loadGeneration) {
+                            if (this._isMounted && loadGeneration === this.loadGeneration && vm.renderer) {
                                 vm.renderer.draw();
                             }
                         });

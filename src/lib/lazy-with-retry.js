@@ -1,4 +1,5 @@
 import {lazy} from 'react';
+import {BUILD_ID} from './build-version';
 
 export const isChunkLoadError = error => Boolean(error && (
     error.name === 'ChunkLoadError' ||
@@ -21,3 +22,24 @@ export const importWithRetry = async load => {
 };
 
 export default load => lazy(() => importWithRetry(load));
+
+// Community page navigation can recover from assets removed by a deployment.
+// Do not use this for editor imports, where a reload could discard project edits.
+export const reloadStalePage = (error, browser = window) => {
+    if (!isChunkLoadError(error)) return false;
+    try {
+        const key = `mw:chunk-reload:${BUILD_ID}`;
+        if (browser.sessionStorage.getItem(key)) return false;
+        browser.sessionStorage.setItem(key, '1');
+        browser.location.reload();
+        return true;
+    } catch (e) {
+        // Storage can be blocked in embedded pages. Keep the manual reload UI.
+        return false;
+    }
+};
+
+export const lazyWithReload = load => lazy(() => importWithRetry(load).catch(error => {
+    reloadStalePage(error);
+    throw error;
+}));
