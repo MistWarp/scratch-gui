@@ -5,8 +5,9 @@ export default async function ({ addon, console }) {
   const originalInit = Blockly.init_;
   Blockly.init_ = function (...args) {
     workspace = args[0];
+    const result = originalInit.call(this, ...args);
     if (!addon.self.disabled) setGrid(true);
-    return originalInit.call(this, ...args);
+    return result;
   };
 
   setGrid(true);
@@ -16,6 +17,7 @@ export default async function ({ addon, console }) {
   addon.self.addEventListener("reenabled", () => setGrid(true));
 
   function setGrid(enabled) {
+    if (!workspace || !workspace.grid_) return;
     workspace.grid_.snapToGrid_ = enabled;
     if (enabled) workspace.grid_.spacing_ = addon.settings.get("grid");
     else workspace.grid_.spacing_ = 40;
