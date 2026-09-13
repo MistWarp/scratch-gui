@@ -57,10 +57,13 @@
     }
   },
   "dependencies": {
+    "@fiahfy/icns": "0.0.7",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
+    "@turbowarp/json": "^0.1.2",
     "@turbowarp/jszip": "^3.11.1",
     "@turbowarp/nanolog": "^0.2.0",
+    "@turbowarp/sbdl": "^4.0.1",
     "@turbowarp/scratch-l10n": "^3.1001.0-202401241456-994097a5",
     "@turbowarp/scratch-storage": "^0.0.202403251715",
     "@turbowarp/scratch-svg-renderer": "^1.0.0-202312242305-12c360b",
@@ -112,6 +115,7 @@
     "scratch-render": "github:MistWarp/scratch-render#develop",
     "scratch-vm": "github:MistWarp/scratch-vm#develop",
     "scratchblocks": "3.7.1",
+    "sha.js": "^2.4.12",
     "to-style": "1.3.3",
     "wav-encoder": "1.3.0",
     "xhr": "2.5.0"

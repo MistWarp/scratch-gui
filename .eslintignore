@@ -15,3 +15,6 @@ src/addons/ScratchAddons
 
 # Generated Vite locale and Closure modules
 src/generated
+
+# Integrated upstream packager sources use their original coding style.
+src/packager

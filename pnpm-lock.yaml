@@ -27,18 +27,27 @@ importers:
 
   .:
     dependencies:
+      '@fiahfy/icns':
+        specifier: 0.0.7
+        version: 0.0.7
       '@isomorphic-git/lightning-fs':
         specifier: ^4.6.2
         version: 4.6.2(patch_hash=643a58f73e8033b07791c6c64162fee23ec538fddb710842e66a2090474ad699)
       '@microbit/microbit-universal-hex':
         specifier: 0.2.2
         version: 0.2.2(tslib@2.8.1)
+      '@turbowarp/json':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@turbowarp/jszip':
         specifier: ^3.11.1
         version: 3.12.0
       '@turbowarp/nanolog':
         specifier: ^0.2.0
         version: 0.2.0
+      '@turbowarp/sbdl':
+        specifier: ^4.0.1
+        version: 4.0.1
       '@turbowarp/scratch-l10n':
         specifier: ^3.1001.0-202401241456-994097a5
         version: 3.1001.202405101234
@@ -192,6 +201,9 @@ importers:
       scratchblocks:
         specifier: 3.7.1
         version: 3.7.1
+      sha.js:
+        specifier: ^2.4.12
+        version: 2.4.12
       to-style:
         specifier: 1.3.3
         version: 1.3.3
@@ -1144,6 +1156,14 @@ packages:
     resolution: {integrity: sha512-qQfo2mxH5yVom1kacMtZZJFVdW+E70mqHMJvVg6WTLo+VBuQJ4TojZlfWBjK0ve5BdEeNAVxOsl/nvNMpJOaJA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
+  '@fiahfy/icns@0.0.7':
+    resolution: {integrity: sha512-0apAtbUXTU3Opy/Z4h69o53voBa+am8FmdZauyagUMskAVYN1a5yIRk48Sf+tEdBLlefbvqLWPJ4pxr/Y/QtTg==}
+    engines: {node: '>=8'}
+
+  '@fiahfy/packbits@0.0.6':
+    resolution: {integrity: sha512-XuhF/edg+iIvXjkCWgfj6fWtRi/KrEPg2ILXj1l86EN4EssuOiPcLKgkMDr9cL8jTGtVd/MKUWW6Y0/ZVf1PGA==}
+    engines: {node: '>=8'}
+
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
 
@@ -1493,11 +1513,18 @@ packages:
     resolution: {integrity: sha512-RCpqAqxZlrHDo7rfam8tLSoT02wvF8LQeNRC0VZG5IGrH+wv+G6fB8PWLLHrvUuaqO6XCwkMmYlJ/X9U9TLTHw==}
     engines: {node: '>=14.0.0'}
 
+  '@turbowarp/json@0.1.2':
+    resolution: {integrity: sha512-9nWywp+0SH7ROVzQPQQO9gMWBikahsqyMWp1Ku8VV0q+q6bnx6dS0aNPTjqTtF2GHAY55hcREsqKzaoUdWBSwg==}
+
   '@turbowarp/jszip@3.12.0':
     resolution: {integrity: sha512-nTKFFc1rUToxTdxUKPIou3YKUsSelgEoyx4TAPzK/0BkGPntkenp9zoJOSnxnGWNchVXYVZv01+3aZwlS1K8hw==}
 
   '@turbowarp/nanolog@0.2.0':
     resolution: {integrity: sha512-texcM9oxfEsADVlVDR5UhLkYclPKsV9mytJh+9pHHonNcUrxRVGF6FkJTzWO/Hl5NafU1crSdw737nqKE3atSA==}
+
+  '@turbowarp/sbdl@4.0.1':
+    resolution: {integrity: sha512-S4pCot6YqdgEAh3cjIXxPE4cTSOVHZC+Ru7CkdDrdXn32j9Nr0lhGUEeHejnnO6C2anPtR+n5PMPhl2Hza0t/g==}
+    hasBin: true
 
   '@turbowarp/scratch-l10n@3.1001.202405101234':
     resolution: {integrity: sha512-a0JTugOunBFQqAKtjdkViUSmLxuDWwtdNi+1gbqnbDQyGfHOBdOe1xVkmQekw/CzR2HgsBAlL8aS4rsuVXzR3Q==}
@@ -4703,6 +4730,10 @@ packages:
     resolution: {integrity: sha512-NPE8TDbzl/3YQYY7CSS228s3g2ollTFnc+Qi3tqmqJp9Vg2ovUpixcJEo2HJScN2Ez+kEaal6y70c0ehqJBJeA==}
     engines: {node: '>=10'}
 
+  pngjs@6.0.0:
+    resolution: {integrity: sha512-TRzzuFRRmEoSW/p1KVAmiOgPco2Irlah+bGFCeNfJXxxYGwSw7YwAOAcd7X28K/m5bjBWKsC29KyoMfHbypayg==}
+    engines: {node: '>=12.13.0'}
+
   posix-character-classes@0.1.1:
     resolution: {integrity: sha512-xTgYBc3fuo7Yt7JbiuFxSYGToMoz8fLoE6TC9Wx1P/u+LfeThMOAqmuyECnlBaaJb+u1m9hHiXUEtwW4OzfUJg==}
     engines: {node: '>=0.10.0'}
@@ -6919,6 +6950,13 @@ snapshots:
 
   '@eslint/js@8.55.0': {}
 
+  '@fiahfy/icns@0.0.7':
+    dependencies:
+      '@fiahfy/packbits': 0.0.6
+      pngjs: 6.0.0
+
+  '@fiahfy/packbits@0.0.6': {}
+
   '@floating-ui/core@1.8.0':
     dependencies:
       '@floating-ui/utils': 0.2.12
@@ -7297,6 +7335,8 @@ snapshots:
     dependencies:
       core-js: 3.49.0
 
+  '@turbowarp/json@0.1.2': {}
+
   '@turbowarp/jszip@3.12.0':
     dependencies:
       lie: 3.3.0
@@ -7305,6 +7345,14 @@ snapshots:
       setimmediate: 1.0.5
 
   '@turbowarp/nanolog@0.2.0': {}
+
+  '@turbowarp/sbdl@4.0.1':
+    dependencies:
+      '@turbowarp/json': 0.1.2
+      cross-fetch: 3.1.5
+      jszip: 3.10.1
+    transitivePeerDependencies:
+      - encoding
 
   '@turbowarp/scratch-l10n@3.1001.202405101234':
     dependencies:
@@ -11287,6 +11335,8 @@ snapshots:
   pkg-dir@5.0.0:
     dependencies:
       find-up: 5.0.0
+
+  pngjs@6.0.0: {}
 
   posix-character-classes@0.1.1: {}
 
