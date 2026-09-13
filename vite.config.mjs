@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
+import {Script} from 'node:vm';
 import {execSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {defineConfig, loadEnv, build, transformWithEsbuild} from 'vite';
@@ -12,6 +13,8 @@ import ejs from 'ejs';
 import postcssImport from 'postcss-import';
 import postcssVars from 'postcss-simple-vars';
 import autoprefixer from 'autoprefixer';
+// Runtime URLs and development cache policy come from the same GUI build plugin.
+import {packagerRuntime} from './scripts/vite-packager.mjs';
 import {APP_NAME} from './src/lib/constants/brand.js';
 import {scratchDependencies} from './scripts/vite-dependencies.mjs';
 import {writeEditorLocales} from './scripts/vite-locales.mjs';
@@ -59,12 +62,16 @@ const buildScript = async filename => {
         define: {'process.env.NODE_ENV': JSON.stringify('production')},
         plugins: [nodePolyfills()],
         build: {write: false,
-            minify: true,
+            minify: false,
+            target: 'esnext',
             lib: {entry: filename, name: 'ExtensionFrame', formats: ['iife']},
             commonjsOptions: {include: [/node_modules/, /scratch-vm/], transformMixedEsModules: true}}
     });
     const output = Array.isArray(result) ? result[0].output : result.output;
-    return output.find(item => item.type === 'chunk').code;
+    const {code} = await transformWithEsbuild(output.find(item => item.type === 'chunk').code,
+        filename, {minify: true, target: 'es2020'});
+    new Script(code, {filename});
+    return code;
 };
 
 const scriptCache = new Map();
@@ -75,7 +82,7 @@ const bundleScript = filename => {
 
 // Scratch packages still ship loader requests in their source. Handle them here
 // so the GUI does not need a Webpack installation or forks of those packages.
-const scratchCompatibility = () => ({
+const scratchCompatibility = ({inlineWorkers = false} = {}) => ({
     name: 'mistwarp-scratch-compatibility',
     enforce: 'pre',
     transform (code, id) {
@@ -115,7 +122,10 @@ const scratchCompatibility = () => ({
             if (source.includes('arraybuffer-loader')) {
                 return `\0mw-arraybuffer:${Buffer.from(resolved.id).toString('base64url')}.js`;
             }
-            if (source.includes('worker-loader')) return `${resolved.id}?worker`;
+            if (source.includes('worker-loader')) {
+                if (inlineWorkers) return `\0mw-inline-worker:${Buffer.from(resolved.id).toString('base64url')}.js`;
+                return `${resolved.id}?worker`;
+            }
             if (source.includes('tw-load-script-as-plain-text')) {
                 return `\0mw-script:${Buffer.from(resolved.id).toString('base64url')}.js`;
             }
@@ -133,11 +143,14 @@ const scratchCompatibility = () => ({
             this.addWatchFile(original);
             return fs.readFileSync(original, 'utf8');
         }
-        for (const type of ['base64', 'arraybuffer', 'script', 'recolor']) {
+        for (const type of ['base64', 'arraybuffer', 'script', 'recolor', 'inline-worker']) {
             const prefix = `\0mw-${type}:`;
             if (!id.startsWith(prefix)) continue;
             const filename = Buffer.from(id.slice(prefix.length, -3), 'base64url').toString();
             this.addWatchFile(filename);
+            if (type === 'inline-worker') {
+                return `export {default} from ${JSON.stringify(`${filename}?worker&inline`)};`;
+            }
             if (type === 'recolor') {
                 return require('./src/lib/tw-recolor/build.js')(fs.readFileSync(filename, 'utf8'));
             }
@@ -339,6 +352,9 @@ export default defineConfig(({mode}) => {
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
         GOOGLE_FONTS_API_KEY: env.GOOGLE_FONTS_API_KEY || 'demo'
     };
+    values.MW_PACKAGER_BUILD_ID = createHash('sha256')
+        .update(`${values.MW_BUILD_ID}:${values.MW_BUILD_TIME || new Date().toISOString()}`)
+        .digest('hex').slice(0, 20);
     return {
         cacheDir: `node_modules/.vite/${mode}-${env.PORT || 8601}`,
         base: library ? `${env.STATIC_PATH || '/static'}/` : root || './',
@@ -346,8 +362,11 @@ export default defineConfig(({mode}) => {
         resolve: sharedResolve,
         define: Object.fromEntries(Object.entries(values).map(([key, value]) =>
             [`process.env.${key}`, JSON.stringify(value)])),
-        plugins: [scratchCompatibility(), react({jsxRuntime: 'classic'}),
-            viteCommonjs({exclude: ['/node_modules/.vite/', '/peerjs/dist/', '/generated/scratch-blocks.js']}),
+        plugins: [packagerRuntime({buildId: values.MW_PACKAGER_BUILD_ID, absolute, sharedResolve, scratchCompatibility, nodePolyfills,
+            postcssImport, postcssVars, autoprefixer}), scratchCompatibility(), react({jsxRuntime: 'classic'}),
+            // The packager is ESM. Its require() calls are text inside generated Electron scripts.
+            viteCommonjs({exclude: ['/node_modules/.vite/', '/peerjs/dist/', '/generated/scratch-blocks.js',
+                '/src/packager/packager/packager.js']}),
             nodePolyfills(), pagesAndAssets(env, root, library, generatedInputs)],
         css: {modules: {localsConvention: 'camelCase',
             generateScopedName: (name, filename) => {
