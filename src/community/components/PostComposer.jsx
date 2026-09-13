@@ -177,9 +177,12 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                                 value={option}
                                 maxLength={80}
                                 placeholder={communityText("Option {value1}", {value1: index + 1})}
-                                onChange={event => setPoll(current => current.map((value, item) => (
-                                    item === index ? event.target.value : value
-                                )))}
+                                onChange={event => {
+                                    const nextValue = event.target.value;
+                                    setPoll(current => current.map((value, item) => (
+                                        item === index ? nextValue : value
+                                    )));
+                                }}
                             />
                             {poll.length > 2 ? (
                                 <button
