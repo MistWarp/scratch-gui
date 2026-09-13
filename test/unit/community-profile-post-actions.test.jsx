@@ -1,5 +1,6 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
+import {unstable_batchedUpdates as batchUpdates} from 'react-dom';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -51,6 +52,34 @@ describe('profile post actions', () => {
         expect(wrapper.find('button').filterWhere(button => button.text() === 'GIF')).toHaveLength(1);
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Poll')).toHaveLength(1);
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Schedule')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    test('poll edits survive event cleanup before batched state updates run', async () => {
+        const wrapper = renderPosts([]);
+        wrapper.find('button[title="Add a poll"]').simulate('click');
+        const inputs = wrapper.find('input[maxLength=80]');
+        const firstEvent = {target: {value: 'First choice'}};
+        const secondEvent = {target: {value: 'Second choice'}};
+
+        act(() => batchUpdates(() => {
+            inputs.at(0).prop('onChange')(firstEvent);
+            inputs.at(1).prop('onChange')(secondEvent);
+            // React 16 releases pooled events before processing queued updates.
+            firstEvent.target = null;
+            secondEvent.target = null;
+        }));
+        wrapper.update();
+        expect(wrapper.find('input[maxLength=80]').map(input => input.prop('value')))
+            .toEqual(['First choice', 'Second choice']);
+
+        rotur.createPost.mockResolvedValue({id: 'poll-post'});
+        await act(async () => {
+            await wrapper.find('form').prop('onSubmit')({preventDefault: jest.fn()});
+        });
+        expect(rotur.createPost).toHaveBeenCalledWith('', expect.objectContaining({
+            poll: ['First choice', 'Second choice']
+        }));
         wrapper.unmount();
     });
 
