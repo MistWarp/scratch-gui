@@ -8,7 +8,6 @@ import CollaborationModal from '../components/collaboration-modal/collaboration-
 import ProjectSession from '../components/collaboration-modal/project-session.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
-import api from '../community/api.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
 
 import {
@@ -203,7 +202,7 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'public', this.props.roturHandle, 3, scope
+                roomId, username, false, 'public', this.props.roturHandle, scope
             );
 
             // Don't set connected immediately - wait for connected-to-host event
@@ -226,22 +225,12 @@ class CollaborationContainer extends Component {
         try {
             this.props.onSetError(null);
 
-            let maxUsers = 3;
-            let tier = 'Free';
-            try {
-                const perks = await api.perks();
-                maxUsers = perks.current?.mistwarp?.collaborationLimit || maxUsers;
-                tier = perks.current?.tier || tier;
-            } catch (e) {
-                // The free room limit is the safe fallback when perks cannot be checked.
-            }
             await this.collaborationService.connectToRoom(
                 roomId,
                 username,
                 true,
                 privacy,
                 this.props.roturHandle,
-                maxUsers,
                 scope
             );
 
@@ -250,9 +239,6 @@ class CollaborationContainer extends Component {
             this.props.onSetRoomId(roomId);
             this.props.onSetRoomPrivacy(privacy);
             this.updateUsersList();
-            if (!scope) {
-                NotificationSystem.info(`Your ${tier} Rotur plan allows up to ${maxUsers} people in this room.`, 4500);
-            }
 
             // Try to attach to workspace if it exists
             this.tryAttachToWorkspace();
