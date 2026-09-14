@@ -23,7 +23,6 @@ const MISTWARP_ROWS = [
     ['Named history checkpoints', 'historyCheckpoints', String],
     ['Custom project branding', 'customProjectBranding', String],
     ['Vanity project URLs', 'vanityProjectUrls', String],
-    ['People in a collaboration room', 'collaborationLimit', String],
     ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`],
     ['Maximum project price', 'maxProjectPrice', value => `${value} RC`]
 ];
@@ -97,7 +96,7 @@ const PaidPerks = () => {
                     <article className={`${styles.plan} ${plan.tier === currentTier ? styles.current : ''}`} key={plan.tier}>
                         <div><h2>{plan.tier}</h2>{plan.tier === currentTier ? <span>{communityText('Current')}</span> : null}</div>
                         <strong>{PRICES[plan.tier]}</strong>
-                        <p>{plan.mistwarp.weeklyUploadBytes / 1048576}{communityText(' MB weekly uploads · ')}{plan.mistwarp.recoveryDays}{communityText('-day recovery · ')}{plan.mistwarp.collaborationLimit}{communityText('-person rooms')}</p>
+                        <p>{plan.mistwarp.weeklyUploadBytes / 1048576}{communityText(' MB weekly uploads · ')}{plan.mistwarp.recoveryDays}{communityText('-day recovery')}</p>
                     </article>
                 ))}
             </section>

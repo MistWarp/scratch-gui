@@ -292,7 +292,7 @@ const nextPeerId = prefix => `${prefix}-${++peerCounter}`;
  * @param {boolean} [options.autoSnapshot] Auto-serve snapshots (default true).
  * @returns {Promise<object>} {hub, host, clients, quiesce, edit, allDocs, expectConverged}
  */
-const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = true, maxUsers = 128, scope = null} = {}) => {
+const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = true, scope = null} = {}) => {
     const hub = new FakeHub();
     const clientsById = new Map();
 
@@ -304,7 +304,6 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
         roomId: 'room',
         username: 'host',
         privacy,
-        maxUsers,
         scope
     });
     await hostSession.start();

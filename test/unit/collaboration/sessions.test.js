@@ -39,7 +39,7 @@ describe('join flow', () => {
     });
 
     test('32 simultaneous participants converge after interleaved edits', async () => {
-        const room = await createRoom({clientCount: 0, maxUsers: 32});
+        const room = await createRoom({clientCount: 0});
         for (let i = 0; i < 31; i++) await room.addClient(`person-${i}`);
         await room.hub.flush();
         expect(room.host.session.getUsers()).toHaveLength(32);
@@ -51,22 +51,6 @@ describe('join flow', () => {
             expect(client.applier.snapshot()).toEqual(room.host.applier.snapshot());
             expect(client.session.lastAppliedSeq).toBe(room.host.session.seq);
         });
-        room.destroy();
-    });
-
-    test('the host plan limits the total number of people in a room', async () => {
-        const room = await createRoom({clientCount: 0, maxUsers: 2});
-        const first = await room.addClient('anna');
-        await room.hub.flush();
-        const second = await room.addClient('ben');
-        const denied = jest.fn();
-        second.session.on('join-denied', denied);
-        await room.hub.flush();
-
-        expect(first.session.isApproved).toBe(true);
-        expect(second.session.isApproved).toBe(false);
-        expect(denied).toHaveBeenCalledWith(expect.stringMatching(/2 people/));
-        expect(room.host.session.getUsers()).toHaveLength(2);
         room.destroy();
     });
 
