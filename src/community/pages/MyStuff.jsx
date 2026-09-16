@@ -9,7 +9,7 @@ import {
     RefreshCw, AlertTriangle, CheckCircle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
-import {formatBytes, formatDate} from '../format';
+import {formatBytes, formatCountdown, formatDate} from '../format';
 import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -393,7 +393,8 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
         setResetError('');
     }, []);
 
-    const oldestDate = quota && quota.oldestEventMs ? formatDate(quota.oldestEventMs) : null;
+    const nextFreesIn = quota && quota.nextExpiryInMs > 0 && quota.nextReleaseBytes > 0 ?
+        `${formatBytes(quota.nextReleaseBytes)} in ${formatCountdown(quota.nextExpiryInMs)}` : null;
 
     if (error) {
         return (
@@ -407,10 +408,13 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
         return <p className={styles.status}>{communityText('Loading upload info…')}</p>;
     }
 
+    const remaining = quota.remaining ?? Math.max(0, (quota.limit || 0) - (quota.used || 0));
+    const releases = (quota.releases || []).slice(0, 5);
     const summaryStats = [
         {value: formatBytes(quota.used), label: 'Used'},
         {value: formatBytes(quota.limit), label: 'Limit'},
-        ...(oldestDate ? [{value: oldestDate, label: 'Oldest upload'}] : []),
+        {value: formatBytes(remaining), label: 'Remaining'},
+        ...(nextFreesIn ? [{value: nextFreesIn, label: 'Frees up next'}] : []),
         {value: quota.eventCount || 0, label: 'Uploads this week'}
     ];
 
@@ -449,6 +453,26 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
                 accent="#4C97FF"
                 emptyText="No uploads in the current window."
             />
+
+            {releases.length ? (
+                <div className={styles.uploadReset}>
+                    <h3 className={styles.uploadChartTitle}>{communityText('When space frees up')}</h3>
+                    <p className={styles.uploadResetDesc}>{communityText('Uploads leave your weekly budget 7 days after each save. The next space back is ')}
+                        <strong>{nextFreesIn}</strong>.
+                    </p>
+                    <ul className={styles.ovRecentList}>
+                        {releases.map(release => (
+                            <li key={release.atMs} className={styles.ovRecentItem}>
+                                <span>{formatBytes(release.bytes)}</span>
+                                <span className={styles.ovRecentMeta}>{communityText(' frees in ')}{formatCountdown(release.inMs)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className={styles.uploadResetDesc}>{communityText('Saves that fail validation or change nothing are free and never touch this budget.')}</p>
+                </div>
+            ) : (
+                <p className={styles.uploadResetDesc}>{communityText('Nothing on the clock: saves that fail validation or change nothing are free and never touch this budget.')}</p>
+            )}
 
             <div className={styles.uploadReset}>
                 <h3 className={styles.uploadChartTitle}>{communityText('Reset upload quota')}</h3>
