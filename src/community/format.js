@@ -79,4 +79,19 @@ const formatPlaytime = (value, includeLabel = true) => {
     return includeLabel ? formatCommunityMessage('{duration} played', {duration}) : duration;
 };
 
-export {timeAgo, sameUser, formatBytes, formatDate, formatDateTime, formatPlaytime, safeDate};
+const formatCountdown = ms => {
+    const remaining = Number(ms);
+    if (!Number.isFinite(remaining) || remaining <= 0) return 'soon';
+    const mins = Math.ceil(remaining / 60000);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 48) {
+        const rest = mins % 60;
+        return rest ? `${hours}h ${rest}m` : `${hours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const restHours = hours % 24;
+    return restHours ? `${days}d ${restHours}h` : `${days}d`;
+};
+
+export {timeAgo, sameUser, formatBytes, formatCountdown, formatDate, formatDateTime, formatPlaytime, safeDate};
