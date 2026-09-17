@@ -14,6 +14,9 @@ class AudioBufferPlayer {
     }
 
     play (trimStart, trimEnd, onUpdate, onEnded) {
+        trimStart = Math.min(Math.max(trimStart, 0), 1);
+        trimEnd = Math.min(Math.max(trimEnd, trimStart), 1);
+
         this.updateCallback = onUpdate;
         this.trimStart = trimStart;
         this.trimEnd = trimEnd;

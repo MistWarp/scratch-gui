@@ -57,8 +57,19 @@ const openDB = () => {
         };
 
         request.onsuccess = () => {
-            _cachedDB = request.result;
-            resolve(request.result);
+            const db = request.result;
+            const forget = () => {
+                if (_cachedDB === db) {
+                    _cachedDB = null;
+                }
+            };
+            db.onclose = forget;
+            db.onversionchange = () => {
+                forget();
+                db.close();
+            };
+            _cachedDB = db;
+            resolve(db);
         };
 
         request.onerror = () => {
@@ -394,7 +405,11 @@ const createRestorePoint = (
         };
 
         writeMetadata();
-    });
+    })
+        .catch(error => {
+            vm.emit('RESTORE_POINT_END');
+            rejectTransaction(error);
+        });
 }));
 
 // Safety copies are retained until the user deletes them. A failed backup must
