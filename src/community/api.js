@@ -198,6 +198,10 @@ const api = {
         exclude ? `/projects/random?exclude=${encodeURIComponent(exclude)}` : '/projects/random',
         {cache: false}
     ),
+    relatedProjects: (id, {exclude = [], limit = 6} = {}) => request(
+        `/projects/${id}/related?limit=${limit}&exclude=${encodeURIComponent(exclude.join(','))}`
+    ),
+    featuredProject: () => request('/projects/featured'),
     leaderboard: by => request(`/leaderboard?by=${by}`),
     getProject: id => request(`/projects/${id}${projectAccessQuery()}`, {cache: false}),
     createProject,
@@ -269,7 +273,7 @@ const api = {
         request(`/users/${encodeURIComponent(name)}/library?offset=${offset}&limit=${limit}`),
     userProjects: (name, {offset = 0, limit = 24} = {}) =>
         request(`/users/${encodeURIComponent(name)}/projects?offset=${offset}&limit=${limit}`),
-    searchUsers: q => request(`/search/users?q=${encodeURIComponent(q)}`),
+    searchUsers: (q, {limit = 8} = {}) => request(`/search/users?q=${encodeURIComponent(q)}&limit=${limit}`),
     activity: users => request(`/activity?users=${encodeURIComponent(users.join(','))}`),
     getComments: (id, options) => request(`/projects/${id}/comments?${commentQuery(options)}`),
     addComment: (id, content, parent, kind = 'comment', donation = null) =>

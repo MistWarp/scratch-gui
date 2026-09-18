@@ -406,3 +406,18 @@
 .panelTabs {
     padding: 0 16px;
 }
+
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.facts > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}

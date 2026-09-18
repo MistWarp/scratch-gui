@@ -13,6 +13,7 @@ import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx'
 import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance';
 import {customThemeManager} from '../lib/themes/custom-themes';
+import {request} from '../lib/community/api.js';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -124,14 +125,59 @@ const WrappedGUI = compose(
     TWEmbedFullScreenHOC
 )(GUI);
 
-render(<WrappedGUI
-    isEmbedded
-    projectId={projectId}
-    onVmInit={onVmInit}
-    onProjectLoaded={onProjectLoaded}
-    routingStyle="none"
-    theme={detectTheme()}
-/>, prepareLocale);
+const publicEmbedId = urlParams.get('mw');
+
+const resolvePublicEmbed = async () => {
+    try {
+        const data = await request(`/projects/${encodeURIComponent(publicEmbedId)}`);
+        const project = data && data.project;
+        if (!project || !project.projectJsonUrl) throw new Error('unavailable');
+        const params = new URLSearchParams();
+        params.set('project_url', project.projectJsonUrl);
+        params.set('mw_assets', project.assetsBase);
+        params.set('platform_project', project.id);
+        params.set('mw_public', '1');
+        if (urlParams.has('autoplay')) params.set('autoplay', '');
+        location.replace(`${location.pathname}?${params.toString()}`);
+    } catch (e) {
+        document.body.textContent = 'This MistWarp project is not available.';
+    }
+};
+
+const addPlayOnMistWarpLink = () => {
+    const link = document.createElement('a');
+    link.href = `${location.origin}/project/${encodeURIComponent(projectId)}`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Play on MistWarp';
+    Object.assign(link.style, {
+        position: 'fixed',
+        right: '8px',
+        bottom: '8px',
+        zIndex: '1000',
+        padding: '5px 9px',
+        borderRadius: '8px',
+        background: 'rgba(0, 0, 0, 0.62)',
+        color: '#ffffff',
+        font: '600 12px Helvetica Neue, Helvetica, Arial, sans-serif',
+        textDecoration: 'none'
+    });
+    document.body.appendChild(link);
+};
+
+if (publicEmbedId && !urlParams.get('project_url')) {
+    resolvePublicEmbed();
+} else {
+    if (urlParams.get('mw_public') === '1') addPlayOnMistWarpLink();
+    render(<WrappedGUI
+        isEmbedded
+        projectId={projectId}
+        onVmInit={onVmInit}
+        onProjectLoaded={onProjectLoaded}
+        routingStyle="none"
+        theme={detectTheme()}
+    />, prepareLocale);
+}
 
 window.addEventListener('message', event => {
     if (!event.data || event.data.type !== 'mw:apply-theme') return;

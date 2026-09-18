@@ -1,0 +1,176 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: var(--page-pad);
+}
+
+.title {
+    margin: 0 0 14px;
+    font-size: var(--fs-3xl);
+    overflow-wrap: anywhere;
+}
+
+.tabs {
+    margin-bottom: 24px;
+}
+
+.section {
+    margin-bottom: 34px;
+}
+
+.sectionHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.sectionHead h2 {
+    margin: 0;
+    font-size: var(--fs-xl);
+}
+
+.seeAll {
+    border: 0;
+    background: transparent;
+    color: var(--accent-strong);
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.seeAll:hover {
+    text-decoration: underline;
+}
+
+.sorts {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 18px;
+    padding: 4px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    width: fit-content;
+}
+
+.sort,
+.sortActive {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+}
+
+.sort:hover {
+    color: var(--mw-text);
+}
+
+.sortActive {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.spaceGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.people {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-shadow);
+    padding: 12px 16px;
+}
+
+.person:hover .personName {
+    color: var(--accent-strong);
+}
+
+.personInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.personName {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+}
+
+.personMeta {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 28px 0;
+}
+
+.more span {
+    color: var(--mw-danger);
+    font-size: var(--fs-sm);
+}
+
+.status {
+    color: var(--text-dim);
+    padding: 40px 0;
+    text-align: center;
+}
+
+@media (max-width: 1000px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .spaceGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 680px) {
+    .page {
+        padding: 22px 14px 80px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .spaceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .sorts {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

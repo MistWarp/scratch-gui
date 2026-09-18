@@ -16,6 +16,7 @@ import UserLink from './UserLink.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
 import searchFocusIndex from '../search-keyboard.js';
+import {rankSections} from '../search-rank.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
@@ -24,8 +25,49 @@ import styles from './NavBar.module.css';
 
 const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 
-const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, placeholderLabel, searchLabel, suggestionId}) => {
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, onSeeAll, placeholderLabel, searchLabel, suggestionId}) => {
     const {text: communityText} = useCommunityIntl();
+    const sections = rankSections([
+        {
+            key: 'projects',
+            label: 'Projects',
+            match: projects.map(project => project.title),
+            items: projects.map(project => (
+                <div key={project.id} className={styles.suggestion}>
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: project.title})} onClick={() => onProject(project)} />
+                    <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
+                    <span>{project.title}</span>
+                    <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
+                </div>
+            ))
+        },
+        {
+            key: 'people',
+            label: 'People',
+            match: people.map(person => person.username),
+            items: people.map(person => (
+                <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
+                    <Avatar username={person.username} size={26} />
+                    <span>{person.username}</span>
+                    {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
+                    <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
+                </button>
+            ))
+        },
+        {
+            key: 'spaces',
+            label: 'Spaces',
+            match: spaces.map(space => space.title),
+            items: spaces.map(space => (
+                <div key={space._id} className={styles.suggestion}>
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: space.title})} onClick={() => onSpace(space._id)} />
+                    <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
+                    <span>{space.title}</span>
+                    <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
+                </div>
+            ))
+        }
+    ].filter(section => section.items.length), query);
     return (<form
         className={`${styles.search} ${className}`}
         onSubmit={onSubmit}
@@ -51,31 +93,18 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             <div className={styles.suggestions} id={suggestionId} role="listbox">
                 {searching ? <p className={styles.suggestionStatus}>{communityText('Searching…')}</p> : null}
                 {!searching && searchFailed ? <p className={styles.suggestionStatus}>{communityText('Could not load quick results. Press Enter to search.')}</p> : null}
-                {!searching && !searchFailed && searchReady && !people.length && !projects.length && !spaces.length ? <p className={styles.suggestionStatus}>{communityText('No quick matches. Press Enter to search all projects.')}</p> : null}
-                {projects.map(project => (
-                    <div key={project.id} className={styles.suggestion}>
-                        <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: project.title})} onClick={() => onProject(project)} />
-                        <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
-                        <span>{project.title}</span>
-                        <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
+                {!searching && !searchFailed && searchReady && !sections.length ? <p className={styles.suggestionStatus}>{communityText('No quick matches. Press Enter to search everything.')}</p> : null}
+                {sections.map(section => (
+                    <div key={section.key} className={styles.suggestionGroup}>
+                        <p className={styles.suggestionGroupLabel}>{communityText(section.label)}</p>
+                        {section.items}
                     </div>
                 ))}
-                {people.map(person => (
-                    <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
-                        <Avatar username={person.username} size={26} />
-                        <span>{person.username}</span>
-                        {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
-                        <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
+                {sections.length ? (
+                    <button type="button" className={`${styles.suggestion} ${styles.suggestionAll}`} onClick={onSeeAll}>
+                        {communityText("See all results for \"{value1}\"", {value1: query.trim()})}
                     </button>
-                ))}
-                {spaces.map(space => (
-                    <div key={space._id} className={styles.suggestion}>
-                        <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: space.title})} onClick={() => onSpace(space._id)} />
-                        <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
-                        <span>{space.title}</span>
-                        <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
-                    </div>
-                ))}
+                ) : null}
             </div>
         ) : null}
     </form>);
@@ -218,9 +247,9 @@ const NavBar = () => {
         setSuggestionsFailed(false);
         const timer = setTimeout(() => {
             Promise.allSettled([
-                api.searchUsers(q),
-                api.explore({q, limit: 5}),
-                api.spaces({q, limit: 5})
+                api.searchUsers(q, {limit: 5}),
+                api.explore({q, sort: 'relevance', limit: 5}),
+                api.spaces({q, limit: 4})
             ]).then(async results => {
                 if (stale) return;
                 const [userResult, projectResult, spaceResult] = results;
@@ -231,7 +260,7 @@ const NavBar = () => {
                 if (stale) return;
                 setSuggestions(representedUsers);
                 setProjectSuggestions(p.projects || []);
-                setSpaceSuggestions((s.spaces || []).slice(0, 5));
+                setSpaceSuggestions((s.spaces || []).slice(0, 4));
                 setSuggestionsFailed(results.every(result => result.status === 'rejected'));
                 setSuggestionsSearching(false);
                 setSuggestionsReady(true);
@@ -263,10 +292,14 @@ const NavBar = () => {
         return () => document.removeEventListener('mousedown', close);
     }, []);
 
-    const submitSearch = event => {
-        event.preventDefault();
+    const runSearch = () => {
         setSuggestionsOpen(false);
         navigate(searchPath(query));
+    };
+
+    const submitSearch = event => {
+        event.preventDefault();
+        runSearch();
     };
 
     const handleSearchKeyDown = (event, searchRef) => {
@@ -388,6 +421,7 @@ const NavBar = () => {
                     onProject={goToProject}
                     onProfile={goToProfile}
                     onSpace={goToSpace}
+                    onSeeAll={runSearch}
                     searchLabel={t('nav.search')}
                     suggestionId="mw-search-suggestions-desktop"
                 />
@@ -472,6 +506,7 @@ const NavBar = () => {
                 onProject={goToProject}
                 onProfile={goToProfile}
                 onSpace={goToSpace}
+                onSeeAll={runSearch}
                 placeholderLabel="Search"
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"

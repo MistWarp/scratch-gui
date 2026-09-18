@@ -5,8 +5,8 @@ import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useParams, Link, useNavigate} from 'react-router-dom';
 import {
     Play, GitFork, ExternalLink, EyeOff, Clock3,
-    MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag,
-    ShieldCheck, ShieldAlert, MoreHorizontal, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
+    MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag, CalendarDays,
+    ShieldCheck, ShieldAlert, MoreHorizontal, Code2, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
     Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronRight, GitPullRequest, Search,
     History, GitBranch, Package
 } from 'lucide-react';
@@ -41,6 +41,7 @@ import {canViewProjectSource} from '../project-source-access';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
+import useAfterLogin from '../use-after-login.js';
 import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
 import CommentThread from '../components/CommentThread.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
@@ -72,6 +73,8 @@ import projectRealtime from '../project-realtime.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../../lib/project-prompt-blocking.js';
 import styles from './Project.module.css';
 import tabStyles from '../components/UnderlineTabs.module.css';
+import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
+import {track} from '../analytics';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
@@ -233,12 +236,10 @@ const Project = () => {
     const [projectFileCount, setProjectFileCount] = useState(null);
     const [title, setTitle] = useState('');
     const [savingTitle, setSavingTitle] = useState(false);
-    const [thumbnailMenu, setThumbnailMenu] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
     const [reporting, setReporting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [collectionOpen, setCollectionOpen] = useState(false);
-    const thumbMenuRef = useRef(null);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const roturActivityScope = useRef(null);
@@ -395,7 +396,6 @@ const Project = () => {
         setReporting(false);
         setTab(initialActivityTab());
         setVersionControlTab(initialVersionControlTab());
-        setThumbnailMenu(false);
         setCollectionOpen(false);
         setConfirmBuy(false);
         setConfirmBalance(null);
@@ -437,6 +437,8 @@ const Project = () => {
     useEffect(() => {
         if (userLoading || !id) return;
         api.view(id).catch(() => {});
+        rememberProject(id);
+        track('project_view', {project: id, signedIn: Boolean(user)});
     }, [id, userLoading]);
 
     useEffect(() => {
@@ -512,6 +514,9 @@ const Project = () => {
             }
             if (event.data.type === 'mw:diagnostic') {
                 projectRealtime.diagnostic(id, event.data.diagnostic);
+                if (event.data.diagnostic && event.data.diagnostic.type === 'playtime_start') {
+                    track('project_play_start', {project: id});
+                }
             }
         };
         window.addEventListener('message', onMessage);
@@ -1032,17 +1037,17 @@ const Project = () => {
         }
     };
 
-    const remix = () => {
-        if (userLoading) return;
-        if (!user) {
-            login();
-            return;
-        }
+    const startRemix = () => {
         setActionError(null);
         setForkSetup({
             title: `${project.title} fork`,
             branch: project.gitBranch || 'main'
         });
+    };
+
+    const remixAfterLogin = useAfterLogin(startRemix, 'remix');
+    const remix = () => {
+        if (!userLoading) remixAfterLogin();
     };
 
     const remixForBounty = bounty => {
@@ -1268,6 +1273,7 @@ const Project = () => {
             if (actionContextRef.current === context) setSavingLibrary(false);
         }
     };
+    const saveAfterLogin = useAfterLogin(toggleLibrary, 'library');
 
     const toggleFeatured = async () => {
         const context = actionContextRef.current;
@@ -1290,9 +1296,9 @@ const Project = () => {
         }
     };
 
-    const copyLink = () => {
+    const copyLink = (text = window.location.href) => {
         const context = actionContextRef.current;
-        copyText(window.location.href)
+        copyText(text)
             .then(() => {
                 if (actionContextRef.current !== context) return;
                 setActionError(null);
@@ -1312,16 +1318,6 @@ const Project = () => {
     const menuReport = () => {
         setReporting(true);
     };
-
-    useEffect(() => {
-        const onDown = event => {
-            if (thumbMenuRef.current && !thumbMenuRef.current.contains(event.target)) {
-                setThumbnailMenu(false);
-            }
-        };
-        window.addEventListener('mousedown', onDown);
-        return () => window.removeEventListener('mousedown', onDown);
-    }, []);
 
     const pickThumbnail = event => {
         const file = event.target.files && event.target.files[0];
@@ -1344,7 +1340,6 @@ const Project = () => {
     };
 
     const useStageThumbnail = () => {
-        setThumbnailMenu(false);
         const context = actionContextRef.current;
         const frame = stageFrame.current;
         if (!frame || !frame.contentWindow) {
@@ -1390,7 +1385,6 @@ const Project = () => {
     };
 
     const chooseThumbnailUpload = () => {
-        setThumbnailMenu(false);
         thumbInput.current.click();
     };
 
@@ -1585,6 +1579,20 @@ const Project = () => {
                                     }}
                                 >
                                     <Link2 size={15} />{communityText('Copy link')}</button>
+                                {project.shared && visibility === 'public' ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            close();
+                                            track('embed_code_copied', {project: project.id});
+                                            copyLink(`<iframe src="${window.location.origin}/embed.html?mw=${
+                                                encodeURIComponent(project.id)
+                                            }" width="482" height="412" frameborder="0" scrolling="no" ` +
+                                                'allowfullscreen></iframe>');
+                                        }}
+                                    >
+                                        <Code2 size={15} />{communityText('Copy embed code')}</button>
+                                ) : null}
                                 {user ? (
                                     <button
                                         type="button"
@@ -1596,6 +1604,28 @@ const Project = () => {
                                         <Library size={15} />{communityText('Save to collection')}</button>
                                 ) : null}
                                 {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
+                                {project.isOwner ? (
+                                    <button
+                                        type="button"
+                                        disabled={thumbnailStatus === 'saving'}
+                                        onClick={() => {
+                                            close();
+                                            useStageThumbnail();
+                                        }}
+                                    >
+                                        <MonitorPlay size={15} />{communityText('Use stage as thumbnail')}</button>
+                                ) : null}
+                                {project.isOwner ? (
+                                    <button
+                                        type="button"
+                                        disabled={thumbnailStatus === 'saving'}
+                                        onClick={() => {
+                                            close();
+                                            chooseThumbnailUpload();
+                                        }}
+                                    >
+                                        <ImageUp size={15} />{communityText('Upload thumbnail')}</button>
+                                ) : null}
                                 {project.isOwner ? (
                                     <Link
                                         to={`/mystuff/project/${project.id}`}
@@ -1919,7 +1949,7 @@ const Project = () => {
             ) : null}
             {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
             <LiveProjectSession project={project} />
-            {copied ? <div className={styles.actionSuccess}>{communityText('Link copied to clipboard.')}</div> : null}
+            {copied ? <div className={styles.actionSuccess}>{communityText('Copied to clipboard.')}</div> : null}
             {thumbnailStatus !== 'idle' ? (
                 <div className={styles.actionSuccess}>
                     {thumbnailStatus === 'saving' ? communityText('Saving thumbnail…') : communityText('Thumbnail updated.')}
@@ -2079,7 +2109,7 @@ const Project = () => {
                                 communityText('Sign in to save to your library')}
                             aria-label={communityText("{value1} library, {value2} saves", {value1: project.saved ? 'Remove from' : 'Save to', value2: project.saveCount || 0})}
                             aria-pressed={Boolean(project.saved)}
-                            onClick={user ? toggleLibrary : login}
+                            onClick={saveAfterLogin}
                         >
                             {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                             {(project.saveCount || 0).toLocaleString(getCommunityLocale())}
@@ -2095,38 +2125,6 @@ const Project = () => {
                                     communityText("{value1} played", {value1: formatPlaytime(project.myPlaytimeMs, false)}) : communityText('Not played yet')}
                             </span>
                         ) : null}
-                        {blockStats ? (
-                            <span className={styles.statMuted}>
-                                <Blocks size={15} />
-                                {blockStats.total.toLocaleString(getCommunityLocale())}{communityText(' blocks')}</span>
-                        ) : null}
-                        <ProjectCompatibility compatibility={project.compatibility} compact />
-                        <span className={styles.statSpacer} />
-                        {project.isOwner ? (
-                            <div
-                                className={styles.thumbnailPicker}
-                                ref={thumbMenuRef}
-                            >
-                                <button
-                                    type="button"
-                                    className={styles.statButton}
-                                    title={communityText('Set the project thumbnail')}
-                                    disabled={thumbnailStatus === 'saving'}
-                                    onClick={() => setThumbnailMenu(open => !open)}
-                                >
-                                    <ImageUp size={15} />
-                                    {thumbnailStatus === 'saving' ? communityText('Saving…') : communityText('Thumbnail')}
-                                </button>
-                                {thumbnailMenu ? (
-                                    <div className={styles.thumbnailMenu}>
-                                        <button type="button" onClick={useStageThumbnail}>
-                                            <MonitorPlay size={15} />{communityText('Use current stage')}</button>
-                                        <button type="button" onClick={chooseThumbnailUpload}>
-                                            <Upload size={15} />{communityText('Upload image')}</button>
-                                    </div>
-                                ) : null}
-                            </div>
-                        ) : null}
                         <input
                             ref={thumbInput}
                             className={styles.hiddenInput}
@@ -2134,13 +2132,24 @@ const Project = () => {
                             accept="image/png,image/jpeg"
                             onChange={pickThumbnail}
                         />
-                        {sharedDate ? <span className={styles.statMuted}>{sharedDate}</span> : null}
                     </div>
                 </div>
 
                 <div className={styles.sideCol}>
                     <ProjectInfoPanel
                         project={project}
+                        facts={(
+                            <React.Fragment>
+                                {sharedDate ? <span><CalendarDays size={15} />{sharedDate}</span> : null}
+                                {blockStats ? (
+                                    <span>
+                                        <Blocks size={15} />
+                                        {blockStats.total.toLocaleString(getCommunityLocale())}{communityText(' blocks')}
+                                    </span>
+                                ) : null}
+                                <ProjectCompatibility compatibility={project.compatibility} compact />
+                            </React.Fragment>
+                        )}
                         onSaved={updated => {
                             if (updated) setProject(updated);
                         }}
@@ -2264,6 +2273,7 @@ const Project = () => {
 
                 <aside className={styles.remixCol}>
                     <RemixTree id={id} baseUrl={baseProjectUrl} />
+                    {project.shared ? <RelatedProjects id={project.id} /> : null}
                 </aside>
             </div>
         </main>
