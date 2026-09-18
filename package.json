@@ -32,6 +32,7 @@
     "test": "pnpm run test:unit:ci && pnpm run build && pnpm run test:integration",
     "test:integration": "node scripts/test-integration.mjs",
     "test:lint": "eslint . --ext .js,.jsx",
+    "check:community-css": "node scripts/check-community-css.mjs",
     "test:collab": "jest test[\\\\/]unit[\\\\/]collaboration",
     "test:unit": "jest test[\\\\/]unit",
     "test:unit:ci": "jest --runInBand test[\\\\/]unit",

@@ -42,7 +42,7 @@
 
 .composerFooter > span {
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .list {
@@ -74,12 +74,12 @@
 }
 
 .body header strong {
-    font-size: 14px;
+    font-size: var(--fs-md);
 }
 
 .body time {
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .pinned {
@@ -87,10 +87,10 @@
     align-items: center;
     gap: 3px;
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 10px;
+    font-size: var(--fs-2xs);
 }
 
 .delete {
@@ -98,7 +98,7 @@
     margin-inline-start: auto;
     padding: 5px;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-2xs);
     background: transparent;
     color: var(--text-faint);
 }
@@ -111,7 +111,7 @@
 .content {
     margin-top: 8px;
     color: var(--mw-text);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.55;
     overflow-wrap: anywhere;
 }
@@ -144,7 +144,7 @@
     gap: 16px;
     margin-top: 11px;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .body footer span,
@@ -178,7 +178,7 @@
 .error {
     margin: 0;
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
 }
 
 .error {

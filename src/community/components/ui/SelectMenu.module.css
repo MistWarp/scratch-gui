@@ -13,11 +13,11 @@
     min-width: 0;
     padding: 8px 11px;
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     background: var(--bg-raised);
     color: var(--mw-text);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-align: start;
 }
 

@@ -10,18 +10,18 @@
     gap: 5px;
     margin-bottom: 14px;
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
 }
 
 .summary strong {
     color: var(--mw-text);
-    font-size: 18px;
+    font-size: var(--fs-xl);
 }
 
 .summary span {
     margin-inline-start: auto;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .list {
@@ -58,15 +58,15 @@
 .rank {
     width: 24px;
     color: var(--text-faint);
-    font-size: 13px;
-    font-weight: 800;
+    font-size: var(--fs-sm);
+    font-weight: 700;
     text-align: center;
 }
 
 .thumb {
     width: 96px;
     height: 72px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     object-fit: cover;
     flex: 0 0 auto;
 }

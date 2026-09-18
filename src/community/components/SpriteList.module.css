@@ -8,7 +8,7 @@
     padding: 8px;
     overflow: auto;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
 }
@@ -22,7 +22,7 @@
     min-width: 0;
     padding: 7px 8px;
     border: 0;
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     background: transparent;
     color: var(--text-dim);
     font: inherit;
@@ -48,7 +48,7 @@
     width: 40px;
     height: 40px;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
 }
 
 .thumb {
@@ -71,8 +71,8 @@
 .thumbFallback {
     background: var(--bg-raised);
     color: var(--text-faint);
-    font-size: 16px;
-    font-weight: 800;
+    font-size: var(--fs-lg);
+    font-weight: 700;
 }
 
 .rowText {
@@ -84,14 +84,14 @@
 .rowText strong {
     overflow: hidden;
     color: var(--mw-text);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .rowText span {
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 @media (max-width: 860px) {

@@ -4,7 +4,7 @@
     gap: 6px;
     min-width: 0;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .dot {

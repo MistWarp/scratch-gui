@@ -1,7 +1,7 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 22px 88px;
+    padding: var(--page-pad);
 }
 
 .profileCardThemed {
@@ -95,7 +95,7 @@
     min-width: 0;
     margin: 0;
     color: var(--mw-text);
-    font-size: 22px;
+    font-size: var(--fs-2xl);
     line-height: 1.15;
     letter-spacing: -0.02em;
 }
@@ -117,7 +117,7 @@
 
 .pronouns {
     color: var(--text-faint);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.8;
 }
 
@@ -125,7 +125,7 @@
     max-height: 120px;
     overflow-y: auto;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.5;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
@@ -151,7 +151,7 @@
     gap: 2px;
     min-width: 0;
     padding: 8px 2px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     background: var(--bg-raised);
 }
 
@@ -163,13 +163,13 @@
     overflow: hidden;
     max-width: 100%;
     color: var(--mw-text);
-    font-size: 14px;
+    font-size: var(--fs-md);
     text-overflow: ellipsis;
 }
 
 .profileStats span {
     color: var(--text-faint);
-    font-size: 9px;
+    font-size: var(--fs-2xs);
 }
 
 .actions {
@@ -200,7 +200,7 @@
     gap: 7px;
     border: none;
     font-weight: 700;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     padding: 9px 12px;
     border-radius: var(--radius-sm);
     min-width: 0;
@@ -209,7 +209,7 @@
 .modalText {
     margin: 0;
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.5;
 }
 
@@ -245,7 +245,7 @@
 .railSection h2 {
     margin: 0 0 8px;
     color: var(--text-faint);
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: none;
@@ -257,7 +257,7 @@
     gap: 5px 12px;
     margin-top: 14px;
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .accountMeta span {
@@ -278,7 +278,7 @@
     border-radius: var(--radius-sm);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 600;
 }
 
@@ -300,13 +300,13 @@
 }
 
 .sectionTitle {
-    font-size: 18px;
+    font-size: var(--fs-xl);
     margin: 0 0 14px;
 }
 
 .sectionEmpty {
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     margin: 0;
 }
 
@@ -384,7 +384,7 @@
     display: -webkit-box;
     overflow: hidden;
     color: var(--mw-text);
-    font-size: 15px;
+    font-size: var(--fs-lg);
     font-weight: 700;
     line-height: 1.25;
     -webkit-box-orient: vertical;
@@ -399,7 +399,7 @@
     flex-wrap: wrap;
     gap: 6px;
     color: var(--accent-strong);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
@@ -419,12 +419,12 @@
     margin-top: auto;
     padding-top: 10px;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .privateActivity {
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .activityActions,
@@ -441,7 +441,7 @@
 .libraryLink {
     gap: 5px;
     color: var(--accent-strong);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -450,7 +450,7 @@
     align-items: center;
     gap: 2px;
     color: var(--accent-strong);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     margin-bottom: 14px;
 }
@@ -476,7 +476,7 @@
 .followerChip span {
     display: block;
     width: 100%;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     max-width: 100%;
     overflow: hidden;
@@ -496,12 +496,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: none;
+    background: var(--bg-field);
     border: 1px solid var(--border);
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     padding: 5px 10px;
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     margin-inline-start: 6px;
     white-space: nowrap;
 }
@@ -509,47 +509,6 @@
 .commentsToggle:hover {
     color: var(--mw-text);
     border-color: var(--accent-border);
-}
-
-.tab,
-.tabActive {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border: none;
-    background: transparent;
-    color: var(--text-dim);
-    font-weight: 600;
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 8px;
-}
-
-.tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 24px;
-    padding: 4px;
-    border: 1px solid var(--border-soft);
-    border-radius: 11px;
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-}
-
-.tab > span,
-.tabActive > span {
-    min-width: 18px;
-    padding: 1px 5px;
-    border-radius: 999px;
-    background: var(--bg-raised);
-    color: var(--text-faint);
-    font-size: 10px;
-}
-
-.tabActive {
-    color: var(--accent-strong);
-    background: var(--accent-soft);
 }
 
 .loadMore {
@@ -592,7 +551,7 @@
 .reviewHead strong {
     min-width: 0;
     overflow: hidden;
-    font-size: 14px;
+    font-size: var(--fs-md);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -600,7 +559,7 @@
 .reviewHead span {
     margin-inline-start: auto;
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     white-space: nowrap;
 }
 
@@ -615,7 +574,7 @@
     display: -webkit-box;
     margin: 9px 0 0;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.45;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -712,7 +671,7 @@
     }
 
     .sectionTitle {
-        font-size: 17px;
+        font-size: var(--fs-lg);
     }
 
     .sectionHead {
@@ -739,15 +698,6 @@
         border-radius: 50%;
     }
 
-    .tabs {
-        width: 100%;
-    }
-
-    .tab,
-    .tabActive {
-        flex: 1;
-    }
-
     .commentsToggle {
         max-width: 150px;
         white-space: normal;
@@ -765,7 +715,7 @@
     }
 
     .profileStats strong {
-        font-size: 13px;
+        font-size: var(--fs-sm);
     }
 
     .sectionHead {
@@ -785,7 +735,7 @@
 
 .donateText {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.5;
     color: var(--text-dim);
 }
@@ -794,10 +744,10 @@
     width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg);
+    background: var(--bg-field);
     color: var(--mw-text);
     font: inherit;
-    font-size: 15px;
+    font-size: var(--fs-lg);
     padding: 11px 13px;
 }
 
@@ -808,7 +758,7 @@
 
 .donateStatus {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: #e25555;
 }
 
@@ -819,7 +769,7 @@
     gap: 8px;
     border: none;
     font-weight: 700;
-    font-size: 15px;
+    font-size: var(--fs-lg);
     padding: 12px 18px;
     border-radius: var(--radius-sm);
     background: var(--accent);
@@ -851,7 +801,7 @@
     justify-content: center;
     width: 56px;
     height: 56px;
-    border-radius: 16px;
+    border-radius: var(--radius);
     background: var(--accent-soft);
     color: var(--accent-strong);
 }
@@ -878,19 +828,23 @@
 }
 
 .adminPanelHead {display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px;}
-.adminPanelHead h2 {margin: 2px 0 0; font-size: 18px;}
-.adminPanelHead > strong {padding: 5px 8px; border-radius: 7px; background: var(--bg-raised); font-size: 12px; text-transform: capitalize;}
+.adminPanelHead h2 {margin: 2px 0 0; font-size: var(--fs-xl);}
+.adminPanelHead > strong {padding: 5px 8px; border-radius: var(--radius-xs); background: var(--bg-raised); font-size: var(--fs-xs); text-transform: capitalize;}
 
 .adminFields {display: flex; align-items: flex-end; gap: 9px; margin-top: 10px;}
-.adminFields label {display: grid; gap: 5px; color: var(--text-dim); font-size: 12px; font-weight: 600;}
+.adminFields label {display: grid; gap: 5px; color: var(--text-dim); font-size: var(--fs-xs); font-weight: 600;}
 .adminFields select,
 .adminFields input {min-height: 38px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--mw-text); font: inherit;}
 .adminReason {flex: 1;}
 .adminActions {display: flex; gap: 9px; margin-top: 12px;}
-.adminNote {margin: 10px 0 0; color: var(--text-dim); font-size: 13px;}
+.adminNote {margin: 10px 0 0; color: var(--text-dim); font-size: var(--fs-sm);}
 
 @media (max-width: 600px) {
     .adminFields {align-items: stretch; flex-direction: column;}
     .adminFields label {width: 100%;}
     .adminActions {flex-wrap: wrap;}
+}
+
+.tabs {
+    margin-bottom: 24px;
 }

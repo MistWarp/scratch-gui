@@ -1,6 +1,6 @@
 .markdown {
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.65;
     overflow-wrap: anywhere;
 }
@@ -52,7 +52,7 @@
 .markdown code {
     padding: .12em .35em;
     border: 1px solid var(--border-soft);
-    border-radius: 5px;
+    border-radius: var(--radius-2xs);
     background: var(--bg-raised);
     color: var(--mw-text);
     font-family: var(--code-font, monospace);

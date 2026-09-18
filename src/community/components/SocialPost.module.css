@@ -30,7 +30,7 @@
 .edited,
 .via {
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .edited::before {
@@ -42,10 +42,10 @@
     align-items: center;
     gap: 3px;
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     color: var(--accent-strong);
     background: var(--accent-soft);
-    font-size: 10px;
+    font-size: var(--fs-2xs);
 }
 
 .content {
@@ -151,7 +151,7 @@
 .manage button {
     min-height: 32px;
     padding: 5px 9px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .card .actions {
@@ -196,7 +196,7 @@
     resize: vertical;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    background: var(--bg-inset);
+    background: var(--bg-field);
     color: var(--mw-text);
     font: inherit;
 }
@@ -213,7 +213,7 @@
 .empty {
     margin: 10px 0 0;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .error {
@@ -244,7 +244,7 @@
     padding: 9px 11px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    background: var(--bg-inset);
+    background: var(--bg-field);
     color: var(--mw-text);
 }
 

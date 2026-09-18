@@ -1,7 +1,7 @@
 .page {
-    width: min(1480px, 100%);
+    max-width: var(--maxw-code);
     margin: 0 auto;
-    padding: 26px 28px 80px;
+    padding: var(--page-pad);
 }
 
 .back {
@@ -10,8 +10,8 @@
     gap: 6px;
     margin-bottom: 18px;
     color: var(--text-dim);
-    font-size: 13px;
-    font-weight: 650;
+    font-size: var(--fs-sm);
+    font-weight: 600;
 }
 
 .header,
@@ -41,21 +41,21 @@
 .title h1 {
     margin: 0;
     color: var(--mw-text);
-    font-size: 22px;
+    font-size: var(--fs-2xl);
 }
 
 .manageButton {
     min-height: 32px;
     margin-inline-start: auto;
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .meta {
     flex-wrap: wrap;
     margin-top: 13px;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .meta strong {
@@ -65,7 +65,7 @@
 .meta code {
     margin-inline-start: auto;
     color: var(--text-dim);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .layout {
@@ -90,7 +90,8 @@
     margin: 10px;
     padding: 0 9px;
     border: 1px solid var(--border);
-    border-radius: 9px;
+    background: var(--bg-field);
+    border-radius: var(--radius-xs);
     color: var(--text-faint);
 }
 
@@ -103,7 +104,7 @@
     background: transparent;
     color: var(--mw-text);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .files button {
@@ -118,7 +119,7 @@
     background: transparent;
     color: var(--text-dim);
     font: inherit;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     text-align: start;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -173,7 +174,7 @@
 .loadingCopy h1 {
     margin: 0;
     color: var(--mw-text);
-    font-size: 14px;
+    font-size: var(--fs-md);
 }
 
 .loadingTrack {
@@ -195,7 +196,7 @@
     grid-area: percent;
     color: var(--text-faint);
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .manageModal {
@@ -213,7 +214,7 @@
 
 .manageSectionHead strong {
     color: var(--mw-text);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -223,12 +224,12 @@
     height: 38px;
     padding: 0 11px;
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     outline: none;
     background: var(--bg-card);
     color: var(--mw-text);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .manageSection input:focus {
@@ -238,7 +239,7 @@
 .noCoAuthors,
 .manageError {
     margin: 0;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.45;
 }
 
@@ -250,7 +251,7 @@
 .manageSectionHead span,
 .noCoAuthors {
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .coAuthors {
@@ -268,7 +269,7 @@
     min-height: 42px;
     border-top: 1px solid var(--border-soft);
     color: var(--mw-text);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .coAuthors li:first-child {
@@ -283,7 +284,7 @@
     height: 30px;
     padding: 0;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     background: transparent;
     color: var(--text-dim);
     cursor: pointer;
@@ -291,7 +292,7 @@
 
 .coAuthors button:hover {
     background: var(--bg-card);
-    color: var(--danger, #e35d6a);
+    color: var(--mw-danger);
 }
 
 .coAuthors button:disabled {
@@ -306,7 +307,7 @@
 }
 
 .manageError {
-    color: var(--danger, #e35d6a);
+    color: var(--mw-danger);
 }
 
 @media (max-width: 860px) {

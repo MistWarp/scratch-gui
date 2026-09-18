@@ -1,8 +1,8 @@
 .page {
-    max-width: 1120px;
+    max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
     color: var(--mw-text);
+    padding: var(--page-pad);
 }
 
 .back {
@@ -11,7 +11,7 @@
     gap: 6px;
     margin-bottom: 16px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -31,13 +31,13 @@
 
 .hero h1 {
     margin: 4px 0 7px;
-    font-size: 34px;
+    font-size: var(--fs-4xl);
 }
 
 .description {
     max-width: 720px;
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.55;
     white-space: pre-wrap;
 }
@@ -53,7 +53,7 @@
     gap: 8px;
     margin-top: 14px;
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .owner a {
@@ -72,7 +72,7 @@
     align-items: center;
     gap: 6px;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 700;
 }
 
@@ -93,14 +93,14 @@
 .projects h2,
 .discussion h2 {
     margin: 0 0 3px;
-    font-size: 22px;
+    font-size: var(--fs-2xl);
 }
 
 .projects header p,
 .discussion header p {
     margin: 0;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .grid {
@@ -132,7 +132,7 @@
 
 .empty span,
 .error {
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .error {

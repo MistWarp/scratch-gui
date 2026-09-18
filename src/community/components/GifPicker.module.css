@@ -8,7 +8,7 @@
     overflow: hidden;
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
-    background: var(--bg-inset);
+    background: var(--bg-field);
 }
 
 .head,
@@ -52,13 +52,13 @@
 }
 
 .head > button:hover {
-    background: var(--bg-hover);
+    background: var(--bg-raised);
 }
 
 .label,
 .credit {
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .grid {
@@ -94,7 +94,7 @@
     min-height: 100px;
     place-items: center;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .error {

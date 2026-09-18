@@ -10,7 +10,7 @@
     width: 28px;
     height: 28px;
     border: 1px solid var(--mw-border);
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     background: var(--mw-panel);
     color: var(--mw-text-muted);
 }
@@ -38,7 +38,7 @@
     gap: 10px;
     padding: 11px 12px;
     border: 1px solid var(--border-soft);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     background: var(--bg-raised);
     color: var(--accent-strong);
 }
@@ -49,10 +49,10 @@
 }
 
 .card strong {
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .card small {
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }

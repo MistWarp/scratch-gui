@@ -38,7 +38,7 @@
     min-width: 0;
     overflow: hidden;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
 }
@@ -50,7 +50,7 @@
     margin: 14px;
     padding: 0 10px;
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     color: var(--text-faint);
     background: var(--bg-raised);
 }
@@ -63,7 +63,7 @@
     color: var(--mw-text);
     background: transparent;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .fileCount {
@@ -71,7 +71,7 @@
     border-top: 1px solid var(--border-soft);
     border-bottom: 1px solid var(--border-soft);
     color: var(--text-dim);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .sidebar nav {
@@ -100,11 +100,11 @@
     min-width: 0;
     padding: 6px 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     color: var(--text-dim);
     background: none;
     font: inherit;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     text-align: start;
 }
 
@@ -144,7 +144,7 @@
     min-width: 0;
     overflow: hidden;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
 }
@@ -157,7 +157,7 @@
     padding: 0 16px;
     border-bottom: 1px solid var(--border-soft);
     background: var(--bg-card);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .viewer > header strong {
@@ -191,12 +191,12 @@
     gap: 4px;
     padding: 5px 7px;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     background: none;
     color: var(--text-dim);
     font: inherit;
-    font-size: 11px;
-    font-weight: 650;
+    font-size: var(--fs-2xs);
+    font-weight: 600;
 }
 
 .viewMode:hover,
@@ -227,7 +227,7 @@
     display: block;
     max-width: 100%;
     max-height: 640px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     object-fit: contain;
 }
 
@@ -268,7 +268,7 @@
 
 .token-keyword {
     color: color-mix(in srgb, var(--accent-strong) 82%, #b58cff);
-    font-weight: 650;
+    font-weight: 600;
 }
 
 .token-value {
@@ -311,7 +311,7 @@
 }
 
 .binaryState span {
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 @media (max-width: 760px) {

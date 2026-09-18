@@ -14,21 +14,21 @@
 .header h1 {
     margin: 0;
     color: var(--mw-text);
-    font-size: 24px;
-    font-weight: 750;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
     letter-spacing: -0.5px;
 }
 
 .header p {
     margin: 6px 0 0;
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.5;
 }
 
 .count {
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .grid {
@@ -74,7 +74,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--mw-text);
-    font-size: 16px;
+    font-size: var(--fs-lg);
     font-weight: 700;
     line-height: 1.4;
     text-decoration: none;
@@ -87,7 +87,7 @@
 .owner {
     margin-top: 5px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .owner a {
@@ -112,7 +112,7 @@
     border-radius: var(--radius-xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 600;
 }
 
@@ -136,13 +136,13 @@
 .empty h2 {
     margin: 0;
     color: var(--mw-text);
-    font-size: 16px;
+    font-size: var(--fs-lg);
 }
 
 .empty p {
     margin: 0;
     max-width: 340px;
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.5;
 }
 

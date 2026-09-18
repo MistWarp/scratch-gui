@@ -5,9 +5,9 @@
     gap: 7px;
     font: inherit;
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--fs-md);
     padding: 8px 14px;
-    border-radius: var(--radius-sm, 12px);
+    border-radius: var(--radius-sm, var(--radius-sm));
     border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
     cursor: pointer;
     min-height: 38px;

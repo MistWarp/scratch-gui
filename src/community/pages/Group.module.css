@@ -1,7 +1,7 @@
 .page {
-    max-width: 1260px;
+    max-width: var(--maxw);
     margin: 0 auto;
-    padding: 34px 28px 90px;
+    padding: var(--page-pad);
 }
 
 .loading {
@@ -14,7 +14,7 @@
     gap: 7px;
     margin-bottom: 22px;
     color: var(--text-dim);
-    font-size: .9rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     text-decoration: none;
 }
@@ -57,15 +57,15 @@
 .handle,
 .cardType {
     color: var(--accent);
-    font-size: .76rem;
-    font-weight: 750;
+    font-size: var(--fs-sm);
+    font-weight: 700;
     letter-spacing: .05em;
     text-transform: none;
 }
 
 .sectionHeading h1 {
     margin: 4px 0 0;
-    font-size: 1.55rem;
+    font-size: var(--fs-2xl);
     letter-spacing: -.025em;
 }
 
@@ -86,7 +86,7 @@
 .dataCard {
     overflow: hidden;
     border: 1px solid var(--mw-border);
-    border-radius: 17px;
+    border-radius: var(--radius);
     background: var(--bg-card);
 }
 
@@ -111,7 +111,7 @@
     margin-top: -39px;
     margin-bottom: 12px;
     border: 4px solid var(--bg-card);
-    border-radius: 18px;
+    border-radius: var(--radius);
     background: var(--bg-card);
     box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
     object-fit: cover;
@@ -124,7 +124,7 @@
 
 .profileBody > h1 {
     margin: 5px 0 8px;
-    font-size: 1.65rem;
+    font-size: var(--fs-3xl);
     line-height: 1.08;
     letter-spacing: -.03em;
 }
@@ -155,7 +155,7 @@
     background: none;
     color: var(--text-dim);
     font: inherit;
-    font-size: .78rem;
+    font-size: var(--fs-sm);
 }
 
 .stats > button {
@@ -181,10 +181,10 @@
     gap: 7px;
     margin: 12px 0 0;
     padding: 9px 10px;
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     background: var(--accent-softer);
     color: var(--accent);
-    font-size: .78rem;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -200,7 +200,7 @@
     align-items: center;
     gap: 7px;
     color: var(--text-dim);
-    font-size: .84rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     text-decoration: none;
 }
@@ -217,7 +217,7 @@
     gap: 15px;
     padding: 22px;
     border: 1px solid var(--mw-border);
-    border-radius: 15px;
+    border-radius: var(--radius);
     background: var(--bg-card);
 }
 
@@ -227,7 +227,7 @@
     height: 46px;
     flex: 0 0 46px;
     place-items: center;
-    border-radius: 13px;
+    border-radius: var(--radius-sm);
     background: var(--bg-raised);
     color: var(--accent);
 }
@@ -238,13 +238,13 @@
 }
 
 .emptyState h2 {
-    font-size: 1.02rem;
+    font-size: var(--fs-lg);
 }
 
 .emptyState p {
     margin: 4px 0 10px;
     color: var(--text-dim);
-    font-size: .89rem;
+    font-size: var(--fs-md);
 }
 
 .memberGrid {
@@ -260,7 +260,8 @@
     gap: 11px;
     padding: 10px;
     border: 1px solid var(--mw-border);
-    border-radius: 12px;
+    background: var(--bg-field);
+    border-radius: var(--radius-sm);
     color: inherit;
     text-decoration: none;
 }
@@ -309,7 +310,7 @@
 
 .dataCard h2 {
     margin: 11px 0 7px;
-    font-size: 1.05rem;
+    font-size: var(--fs-lg);
 }
 
 .dataCard p {
@@ -353,7 +354,7 @@
     flex: 1;
     padding: 10px;
     border: 1px solid var(--mw-border);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     outline: none;
     background: var(--bg-raised);
     color: inherit;
@@ -368,12 +369,13 @@
 .message {
     margin: 18px 0 0;
     padding: 10px 12px;
-    border-radius: 10px;
-    font-size: .88rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-md);
 }
 
 .notice {
     border: 1px solid var(--mw-border);
+    background: var(--bg-field);
     color: var(--text-dim);
 }
 
@@ -440,15 +442,15 @@
         height: 62px;
         margin: 0 0 10px;
         border-width: 0;
-        border-radius: 14px;
+        border-radius: var(--radius);
     }
 
     .profileBody > h1 {
-        font-size: 1.35rem;
+        font-size: var(--fs-2xl);
     }
 
     .description {
-        font-size: .88rem;
+        font-size: var(--fs-md);
     }
 
     .tabs {

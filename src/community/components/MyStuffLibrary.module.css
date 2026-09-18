@@ -16,19 +16,19 @@
 }
 
 .header h1 {
-    font-size: 24px;
+    font-size: var(--fs-2xl);
 }
 
 .header p {
     margin-top: 4px;
     color: var(--mw-text-muted);
-    font-size: 14px;
+    font-size: var(--fs-md);
 }
 
 .header > span {
     flex-shrink: 0;
     color: var(--mw-text-muted);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .list {
@@ -68,7 +68,7 @@
     width: 82px;
     aspect-ratio: 4 / 3;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     object-fit: cover;
     background: var(--bg-raised);
 }
@@ -90,7 +90,7 @@
 .playtime small {
     margin-top: 3px;
     color: var(--mw-text-muted);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .playtime {
@@ -104,13 +104,13 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .public,
 .hidden {
     padding: 5px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     font-weight: 700;
 }
 
@@ -130,7 +130,7 @@
     height: 36px;
     padding: 0;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     place-items: center;
     color: var(--mw-text-muted);
     background: transparent;

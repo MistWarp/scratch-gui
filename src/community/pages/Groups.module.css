@@ -1,8 +1,8 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
     color: var(--mw-text);
+    padding: var(--page-pad);
 }
 
 .header,
@@ -30,13 +30,13 @@
 }
 
 .title h1 {
-    font-size: 26px;
+    font-size: var(--fs-3xl);
 }
 
 .title p {
     margin-top: 3px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .search {
@@ -95,7 +95,7 @@
     overflow: hidden;
     margin: 1px 0 2px;
     color: var(--mw-text);
-    font-size: 16px;
+    font-size: var(--fs-lg);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -107,13 +107,13 @@
 }
 
 .card span {
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .card p {
     min-height: 39px;
     margin: 10px 0 14px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
@@ -121,7 +121,7 @@
     gap: 5px;
     padding-top: 11px;
     border-top: 1px solid var(--border-soft);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .icon {
@@ -129,7 +129,7 @@
     flex: 0 0 auto;
     width: 44px;
     height: 44px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     background: var(--accent-soft);
     color: var(--accent-strong);
     place-items: center;

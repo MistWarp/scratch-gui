@@ -1,8 +1,8 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
     color: var(--mw-text);
+    padding: var(--page-pad);
 }
 
 .hero,
@@ -23,7 +23,7 @@
 }
 
 .hero h1 {
-    font-size: 26px;
+    font-size: var(--fs-3xl);
 }
 
 .hero p,
@@ -67,15 +67,15 @@
     padding: 10px 32px 10px 12px;
     color: var(--mw-text);
     font: inherit;
-    font-size: 13px;
-    font-weight: 650;
+    font-size: var(--fs-sm);
+    font-weight: 600;
 }
 
 .resultCount {
     align-self: center;
     margin-inline-start: auto;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .tools select {
@@ -113,12 +113,12 @@
 
 .empty h2 {
     color: var(--mw-text);
-    font-size: 18px;
+    font-size: var(--fs-xl);
 }
 
 .empty p {
     margin-bottom: 7px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .gate {
@@ -140,7 +140,7 @@
 .perk {
     padding: 11px 13px;
     border-radius: var(--radius-xs);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.45;
 }
 
@@ -198,7 +198,7 @@
     display: grid;
     gap: 6px;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 700;
 }
 

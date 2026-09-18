@@ -51,15 +51,15 @@
 
 .badge {
     margin-inline-start: auto;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--accent-strong);
 }
 
 .groupLabel {
     margin: 10px 10px 1px;
     color: var(--text-faint);
-    font-size: 10px;
-    font-weight: 800;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: none;
 }

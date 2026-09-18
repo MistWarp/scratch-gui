@@ -1,35 +1,56 @@
 :root:where(.root) {
-    --mw-accent: var(--looks-secondary, hsl(260, 60%, 60%));
-    --mw-accent-text: var(--accent-foreground, #ffffff);
-    --mw-border: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-    --mw-panel: var(--ui-secondary, #1e1e1e);
-    --mw-input: var(--ui-tertiary, #1a1a1a);
-    --mw-text-muted: color-mix(in srgb, var(--text-primary, #eeeeee) 80%, transparent);
-    --mw-danger: #d94747;
     --accent: var(--looks-secondary, hsl(260, 60%, 60%));
     --accent-strong: var(--looks-secondary, var(--accent));
     --accent-dim: var(--looks-secondary-dark, var(--accent));
     --accent-soft: var(--looks-light-transparent, rgba(133, 92, 214, 0.15));
-    --accent-softer: var(--looks-light-transparent, rgba(133, 92, 214, 0.08));
+    --accent-softer: color-mix(in srgb, var(--accent) 8%, transparent);
     --accent-border: var(--looks-transparent, rgba(133, 92, 214, 0.35));
     --accent-shadow: rgba(0, 0, 0, 0.3);
     --accent-contrast: var(--accent-foreground, #ffffff);
 
-    --bg: var(--page-background, #111111);
-    --bg-raised: var(--ui-tertiary, #1a1a1a);
-    --bg-card: var(--ui-secondary, #1e1e1e);
-    --bg-header: var(--ui-secondary, #1c1c22);
-    --border: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
-    --border-soft: var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
     --mw-text: var(--text-primary, #eeeeee);
-    --text-dim: color-mix(in srgb, var(--text-primary, #eeeeee) 80%, transparent);
-    --text-faint: color-mix(in srgb, var(--text-primary, #eeeeee) 62%, transparent);
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --text-dim: color-mix(in srgb, var(--mw-text) 78%, transparent);
+    --text-faint: color-mix(in srgb, var(--mw-text) 58%, transparent);
+
+    --bg: var(--page-background, #111111);
+    --bg-card: color-mix(in srgb, var(--mw-text) 4%, var(--ui-secondary, #1e1e1e));
+    --bg-raised: color-mix(in srgb, var(--mw-text) 7%, var(--ui-tertiary, #1a1a1a));
+    --bg-inset: var(--bg);
+    --bg-field: color-mix(in srgb, var(--mw-text) 6%, transparent);
+    --bg-header: var(--bg-card);
+    --border: color-mix(in srgb, var(--mw-text) 11%, transparent);
+    --border-soft: color-mix(in srgb, var(--mw-text) 6%, transparent);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+
+    --mw-accent: var(--accent);
+    --mw-accent-text: var(--accent-contrast);
+    --mw-border: var(--border);
+    --mw-panel: var(--bg-card);
+    --mw-input: var(--bg-raised);
+    --mw-text-muted: var(--text-dim);
+    --mw-danger: #d94747;
+
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-md: 14px;
+    --fs-lg: 16px;
+    --fs-xl: 18px;
+    --fs-2xl: 22px;
+    --fs-3xl: 28px;
+    --fs-4xl: 36px;
+    --fs-hero: clamp(28px, 4vw, 36px);
 
     --radius: 16px;
     --radius-sm: 12px;
     --radius-xs: 8px;
+    --radius-2xs: 5px;
+
     --maxw: 1180px;
+    --maxw-mid: 980px;
+    --maxw-narrow: 760px;
+    --maxw-code: 1480px;
+    --page-pad: 32px 24px 80px;
 
     --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }

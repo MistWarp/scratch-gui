@@ -16,7 +16,7 @@ import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import ProjectDonationAnalytics from '../components/ProjectDonationAnalytics.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Sidebar from '../components/Sidebar.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
 import Modal from '../components/ui/Modal.jsx';
@@ -109,13 +109,11 @@ const PageHeading = ({title, description}) => (
 );
 
 const PageTabs = ({items, value, onChange, label}) => (
-    <SectionTabs
+    <UnderlineTabs
         items={items}
         value={value}
         onChange={onChange}
         className={styles.pageTabs}
-        itemClassName={styles.pageTab}
-        activeClassName={styles.pageTabActive}
         ariaLabel={label}
     />
 );

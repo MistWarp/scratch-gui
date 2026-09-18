@@ -1,15 +1,15 @@
 .page {
-    max-width: 1280px;
+    max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
     color: var(--mw-text);
+    padding: var(--page-pad);
 }
 
 .back {
     display: inline-block;
     margin-bottom: 16px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -56,7 +56,7 @@
 
 .info h1 {
     margin: 0;
-    font-size: clamp(28px, 4vw, 42px);
+    font-size: var(--fs-hero);
     line-height: 1.05;
 }
 
@@ -66,7 +66,7 @@
     gap: 9px;
     justify-self: start;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .creator strong {
@@ -94,7 +94,7 @@
 .editFields label {
     gap: 5px;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 700;
 }
 
@@ -118,7 +118,7 @@
     flex-wrap: wrap;
     gap: 14px;
     color: var(--text-faint);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .stats span {
@@ -139,7 +139,7 @@
     margin: 0;
     padding: 10px 12px;
     border-radius: var(--radius-xs);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.45;
 }
 
@@ -156,7 +156,7 @@
 .help {
     padding-top: 6px;
     border-top: 1px solid var(--border);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .status {

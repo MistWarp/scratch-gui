@@ -1,7 +1,7 @@
 .page {
-    width: min(1180px, calc(100% - 32px));
+    max-width: var(--maxw);
     margin: 0 auto;
-    padding: 38px 0 64px;
+    padding: var(--page-pad);
 }
 
 .status {
@@ -16,7 +16,7 @@
 .hero h1 {
     margin: 12px 0 10px;
     color: var(--mw-text);
-    font-size: clamp(30px, 5vw, 48px);
+    font-size: var(--fs-hero);
     line-height: 1.05;
 }
 
@@ -75,19 +75,19 @@
     border-radius: var(--radius-xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
 }
 
 .plan > strong {
     display: block;
     margin-top: 10px;
-    font-size: 18px;
+    font-size: var(--fs-xl);
 }
 
 .plan p {
     margin: 8px 0 0;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .section {
@@ -116,7 +116,7 @@
     padding: 12px 14px;
     border-bottom: 1px solid var(--border-soft);
     text-align: center;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .tableWrap th:first-child {
