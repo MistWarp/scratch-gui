@@ -16,12 +16,12 @@
 
 .title {
     margin: 0 0 16px;
-    font-size: 16px;
+    font-size: var(--fs-lg);
 }
 
 .empty {
     color: var(--text-dim);
-    font-size: 14px;
+    font-size: var(--fs-md);
     margin: 0;
 }
 
@@ -42,7 +42,7 @@
 
 .tick {
     fill: var(--text-dim);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .endpoint {

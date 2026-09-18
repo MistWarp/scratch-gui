@@ -2,7 +2,7 @@
     display: inline-block;
     margin: 0 1px;
     padding: 1px 5px;
-    border-radius: 6px;
+    border-radius: var(--radius-2xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
     font-weight: 700;
@@ -18,11 +18,11 @@
 .internalLink {
     display: inline;
     padding: 1px 4px;
-    border-radius: 5px;
+    border-radius: var(--radius-2xs);
     background: var(--bg-raised);
     box-decoration-break: clone;
     color: var(--accent-strong);
-    font-weight: 650;
+    font-weight: 600;
     overflow-wrap: anywhere;
     text-decoration: none;
     -webkit-box-decoration-break: clone;

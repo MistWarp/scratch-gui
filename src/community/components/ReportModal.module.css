@@ -1,5 +1,5 @@
 .label {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text-dim);
 }
@@ -9,7 +9,7 @@
     width: 100%;
     font: inherit;
     color: var(--mw-text);
-    background: var(--bg);
+    background: var(--bg-field);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 9px 10px;
@@ -28,7 +28,7 @@
 
 .error {
     color: #e25555;
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .sent {

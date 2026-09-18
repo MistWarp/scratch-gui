@@ -11,7 +11,7 @@
     min-width: 190px;
     padding: 5px;
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
     display: flex;
@@ -32,13 +32,13 @@
     gap: 8px;
     width: 100%;
     border: none;
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     background: transparent;
     color: var(--mw-text);
     padding: 8px 10px;
     text-align: start;
     font: inherit;
-    font-size: 14px;
+    font-size: var(--fs-md);
     cursor: pointer;
 }
 

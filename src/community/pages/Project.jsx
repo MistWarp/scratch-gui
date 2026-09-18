@@ -71,6 +71,7 @@ import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import projectRealtime from '../project-realtime.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../../lib/project-prompt-blocking.js';
 import styles from './Project.module.css';
+import tabStyles from '../components/UnderlineTabs.module.css';
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
@@ -2150,20 +2151,20 @@ const Project = () => {
             <div className={`${styles.bottomGrid} ${tab === 'Files' || tab === 'Version control' ? styles.filesGrid : ''}`}>
                 <section className={styles.commentsCol}>
                     <div className={styles.commentsHead}>
-                        <nav className={styles.tabs} aria-label={communityText('Project activity')}>
+                        <nav className={tabStyles.tabs} aria-label={communityText('Project activity')}>
                             {activityTabsFor(project).map(name => (
                                 <button
                                     type="button"
                                     key={name}
-                                    className={name === tab ? styles.tabActive : styles.tab}
+                                    className={name === tab ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab}
                                     onClick={() => setTab(name)}
                                 >
                                     {name}
                                     {name === 'Bounties' && openBountyCount !== null ? (
-                                        <span className={styles.tabCount}>{openBountyCount}</span>
+                                        <b>{openBountyCount}</b>
                                     ) : null}
                                     {name === 'Files' && projectFileCount !== null ? (
-                                        <span className={styles.tabCount}>{projectFileCount}</span>
+                                        <b>{projectFileCount}</b>
                                     ) : null}
                                 </button>
                             ))}

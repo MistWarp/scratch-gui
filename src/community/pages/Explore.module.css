@@ -1,7 +1,7 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
+    padding: var(--page-pad);
 }
 
 .head {
@@ -15,14 +15,13 @@
 
 .head h1 {
     margin: 0;
-    font-size: 26px;
+    font-size: var(--fs-3xl);
 }
 
 .tabs {
     display: flex;
-    gap: 6px;
+    gap: 2px;
     background: var(--bg-card);
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 4px;
 }
@@ -43,7 +42,7 @@
     color: var(--text-dim);
     background: transparent;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -65,7 +64,7 @@
 
 .more span {
     color: var(--mw-danger);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .tab,
@@ -74,14 +73,18 @@
     background: transparent;
     color: var(--text-dim);
     font-weight: 600;
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: var(--radius-xs);
+    font-size: var(--fs-sm);
+}
+
+.tab:hover {
+    color: var(--mw-text);
 }
 
 .tabActive {
-    background: var(--accent);
-    color: #fff;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
 }
 
 .grid {
@@ -174,11 +177,11 @@
 }
 
 .personName {
-    font-size: 15px;
+    font-size: var(--fs-lg);
     font-weight: 700;
 }
 
 .personMeta {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: var(--text-dim);
 }

@@ -90,16 +90,16 @@
 .branch {
     flex: 0 0 auto;
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
 }
 
 .meta {
     color: var(--text-dim);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .meta code {
@@ -113,9 +113,9 @@
     margin-inline-start: auto;
     padding: 2px 8px;
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     background: var(--bg-card);
-    color: var(--text);
+    color: var(--mw-text);
     font: inherit;
     cursor: pointer;
 }

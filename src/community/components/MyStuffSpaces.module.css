@@ -12,13 +12,13 @@
 }
 
 .header h2 {
-    font-size: 22px;
+    font-size: var(--fs-2xl);
 }
 
 .header p {
     margin-top: 4px;
     color: var(--mw-text-muted);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .header > a,
@@ -28,7 +28,7 @@
     color: var(--mw-accent);
     background: transparent;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -52,7 +52,7 @@
 
 .groupHeading h3 {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--fs-lg);
 }
 
 .groupHeading svg,
@@ -61,7 +61,7 @@
 }
 
 .groupHeading span {
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .empty,

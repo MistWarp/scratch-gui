@@ -14,7 +14,7 @@
     max-width: 460px;
     background: var(--bg-card, #1e1e1e);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-    border-radius: var(--radius, 16px);
+    border-radius: var(--radius, var(--radius));
     box-shadow: var(--card-shadow, 0 8px 28px rgba(0, 0, 0, 0.45));
     color: var(--mw-text, #eeeeee);
     overflow: hidden;
@@ -34,7 +34,7 @@
     align-items: center;
     gap: 8px;
     font-weight: 700;
-    font-size: 15px;
+    font-size: var(--fs-lg);
     color: var(--mw-text, #eeeeee);
 }
 
@@ -93,7 +93,7 @@
         border-inline-end: 0;
         border-bottom: 0;
         border-inline-start: 0;
-        border-radius: 18px 18px 0 0;
+        border-radius: var(--radius) var(--radius) 0 0;
     }
 
     .head {

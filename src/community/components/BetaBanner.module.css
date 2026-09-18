@@ -5,7 +5,7 @@
     gap: 8px;
     background: var(--accent-soft);
     color: var(--mw-text);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     padding: 7px 14px;
 }
 

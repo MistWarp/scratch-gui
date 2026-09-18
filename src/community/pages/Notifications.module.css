@@ -1,12 +1,12 @@
 .page {
-    max-width: 720px;
+    max-width: var(--maxw-narrow);
     margin: 0 auto;
-    padding: 32px 24px 96px;
+    padding: var(--page-pad);
 }
 
 .page h1 {
     margin: 0 0 6px;
-    font-size: 24px;
+    font-size: var(--fs-3xl);
     font-weight: 700;
     letter-spacing: -0.01em;
 }
@@ -63,13 +63,13 @@
     align-items: baseline;
     gap: 8px;
     color: var(--text-dim);
-    font-size: 13.5px;
+    font-size: var(--fs-md);
 }
 
 .postHead time {
     margin-inline-start: auto;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
 }
@@ -77,7 +77,7 @@
 .postContent {
     margin-top: 4px;
     color: var(--mw-text);
-    font-size: 13.5px;
+    font-size: var(--fs-md);
     line-height: 1.6;
     overflow-wrap: anywhere;
 }
@@ -92,7 +92,7 @@
     gap: 16px;
     margin-top: 8px;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .postMeta span,
@@ -117,7 +117,7 @@
 .typeIcon {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     display: grid;
     place-items: center;
     flex-shrink: 0;
@@ -133,7 +133,7 @@
     display: flex;
     align-items: baseline;
     gap: 10px;
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.55;
 }
 
@@ -147,7 +147,7 @@
 .sysAvatar {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     display: grid;
     place-items: center;
     flex-shrink: 0;
@@ -158,7 +158,7 @@
 
 .text {
     flex: 1;
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.55;
     min-width: 0;
     padding-top: 1px;
@@ -202,7 +202,7 @@
     background: transparent;
     box-shadow: none;
     color: var(--text-dim);
-    font-size: 13.5px;
+    font-size: var(--fs-md);
     line-height: 1.6;
     overflow-wrap: anywhere;
     display: -webkit-box;
@@ -226,7 +226,7 @@
     display: inline;
     margin-inline-start: 6px;
     padding: 0;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 500;
     text-transform: none;
     letter-spacing: 0;
@@ -243,7 +243,7 @@
 
 .time {
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     flex-shrink: 0;
     margin-top: 3px;
     margin-inline-start: auto;
@@ -265,7 +265,7 @@
 
     .page h1 {
         margin-bottom: 6px;
-        font-size: 20px;
+        font-size: var(--fs-3xl);
     }
 
     .item,

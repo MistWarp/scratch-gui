@@ -8,11 +8,11 @@
     gap: 6px;
     padding: 4px 8px 4px 5px;
     border: 1px solid var(--accent-border);
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     background: var(--accent-softer);
     color: var(--accent-strong);
-    font-size: .75rem;
-    font-weight: 750;
+    font-size: var(--fs-xs);
+    font-weight: 700;
     letter-spacing: .035em;
     line-height: 1;
     text-decoration: none;
@@ -51,7 +51,7 @@
     min-height: 22px;
     gap: 5px;
     padding: 3px 7px 3px 4px;
-    font-size: .69rem;
+    font-size: var(--fs-xs);
 }
 
 .compact img {

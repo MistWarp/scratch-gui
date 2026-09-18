@@ -1,7 +1,7 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: 28px 20px 80px;
+    padding: var(--page-pad);
 }
 
 .header,
@@ -24,13 +24,13 @@
 }
 
 .header h1 {
-    font-size: 26px;
+    font-size: var(--fs-3xl);
 }
 
 .header p {
     margin-top: 3px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 .header label {
@@ -74,23 +74,23 @@
     align-self: flex-start;
     gap: 5px;
     padding: 5px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     background: color-mix(in srgb, #d99b23 15%, transparent);
     color: #d99b23;
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .grid h2 {
     margin: 14px 0 7px;
     color: var(--mw-text);
-    font-size: 17px;
+    font-size: var(--fs-lg);
 }
 
 .grid article > p {
     flex: 1;
     margin: 0 0 20px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
@@ -112,13 +112,13 @@
     gap: 2px;
     min-width: 0;
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .grid footer > div a {
     overflow: hidden;
     color: var(--mw-text);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -128,10 +128,10 @@
     flex: 0 0 auto;
     min-height: 32px;
     padding: 0 11px;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 700;
 }
 

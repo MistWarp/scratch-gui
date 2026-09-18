@@ -13,7 +13,7 @@ import SpriteList from '../components/SpriteList.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {canViewProjectSource} from '../project-source-access.js';
@@ -502,7 +502,7 @@ const PullRequest = () => {
                 </div>
             </header>
 
-            <SectionTabs
+            <UnderlineTabs
                 items={[
                     {key: 'conversation', label: <><MessageSquare size={15} />{communityText(' Conversation ')}<span>{timeline.comments.length + 1}</span></>},
                     {key: 'commits', label: <><GitCommitHorizontal size={15} />{communityText(' Commits ')}<span>{timeline.commits.length}</span></>},
@@ -511,8 +511,6 @@ const PullRequest = () => {
                 value={tab}
                 onChange={setTab}
                 className={styles.tabs}
-                itemClassName={styles.tab}
-                activeClassName={styles.tabActive}
                 ariaLabel="Pull request sections"
             />
 

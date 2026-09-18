@@ -22,7 +22,7 @@
     background: transparent;
     color: var(--text-dim);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
@@ -38,13 +38,14 @@
 }
 
 /* Pill count inside a tab label: label: <>Projects <b>{n}</b></> */
-.tab b {
+.tab b,
+.tab > span {
     min-width: 20px;
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-2xs);
     background: var(--bg-raised);
     color: var(--text-dim);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-align: center;
 }

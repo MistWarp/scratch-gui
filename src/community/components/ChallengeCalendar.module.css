@@ -18,14 +18,14 @@
 
 .head h2 {
     margin: 0 0 2px;
-    font-size: 17px;
+    font-size: var(--fs-lg);
 }
 
 .head p,
 .head > a {
     margin: 0;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .head > a {
@@ -54,7 +54,7 @@
     border-inline-end: 1px solid var(--border-soft);
     color: var(--text-dim);
     background: var(--bg-raised);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
 }
 
@@ -67,12 +67,12 @@
     border-top: 1px solid var(--border-soft);
     border-inline-end: 1px solid var(--border-soft);
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .days strong {
     color: var(--text-dim);
-    font-size: 10px;
+    font-size: var(--fs-2xs);
 }
 
 .days .today {
@@ -108,12 +108,12 @@
     gap: 7px;
     margin: 2px 3px;
     padding: 0 9px;
-    border-radius: 4px;
+    border-radius: var(--radius-2xs);
     color: #fff;
     background: var(--mw-challenge-color);
     grid-column: var(--mw-calendar-column) / span var(--mw-calendar-span);
     grid-row: var(--mw-calendar-row);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     line-height: 26px;
     overflow: hidden;
 }

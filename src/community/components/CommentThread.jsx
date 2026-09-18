@@ -232,6 +232,8 @@ const InlineComposer = ({
 }) => {
     const {text: communityText} = useCommunityText();
     const previewTier = !small ? commentDonationTier(parseCommentDonation(donation)) : '';
+    const [engaged, setEngaged] = useState(false);
+    const expanded = small || engaged || Boolean(value);
     return (
         <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
             <Avatar
@@ -240,16 +242,17 @@ const InlineComposer = ({
             />
             <div className={styles.composerBody}>
                 <textarea
-                    className={styles.input}
+                    className={expanded ? styles.input : `${styles.input} ${styles.inputIdle}`}
                     data-donation-tier={previewTier || null}
                     placeholder={placeholder}
                     value={value}
                     maxLength={500}
                     disabled={busy}
+                    onFocus={() => setEngaged(true)}
                     onChange={e => onChange(e.target.value)}
                 />
                 {error ? <div className={styles.error}>{error}</div> : null}
-                <div className={styles.composerFooter}>
+                {expanded ? <div className={styles.composerFooter}>
                     {!small && onKindChange ? (
                         <SelectMenu
                             compact
@@ -295,7 +298,7 @@ const InlineComposer = ({
                             onClick={onSubmit}
                         >{small ? communityText('Reply') : communityText('Post')}</button>
                     </div>
-                </div>
+                </div> : null}
             </div>
         </div>
     );
@@ -792,7 +795,7 @@ const CommentThread = ({
                 </p>
             )}
 
-            {projectComments && comments.length ? (
+            {projectComments && comments.length > 7 ? (
                 <div className={styles.commentTools}>
                     <label className={styles.searchField}>
                         <Search size={15} aria-hidden="true" />

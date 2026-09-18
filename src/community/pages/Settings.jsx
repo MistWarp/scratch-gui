@@ -6,7 +6,7 @@ import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import Sidebar from '../components/Sidebar.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Button from '../components/ui/Button.jsx';
 import {Switch, SwitchRow} from '../components/ui/Switch.jsx';
@@ -520,7 +520,7 @@ const Settings = () => {
                 <div className={styles.content}>
                     {activeSection === 'theme' ? (
                         <section className={styles.card}>
-                            <SectionTabs items={THEME_TABS} value={themeTab} onChange={setThemeTab} className={styles.themeTabs} itemClassName={styles.themeTab} activeClassName={styles.themeTabActive} ariaLabel="Theme sections" />
+                            <UnderlineTabs items={THEME_TABS} value={themeTab} onChange={setThemeTab} className={styles.themeTabs} ariaLabel="Theme sections" />
                             {themeTab === 'appearance' ? <div className={styles.themeContent}>
                                 <ThemeAccentPanel theme={theme} onChangeTheme={applyAndPersist} />
                                 <div className={styles.appearanceSection}>
@@ -745,7 +745,7 @@ const Settings = () => {
                         <section className={styles.card}>
                             <h2>{communityText('Your MistWarp data')}</h2>
                             <p className={styles.lead}>{communityText('These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.')}</p>
-                            <SectionTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} itemClassName={styles.themeTab} activeClassName={styles.themeTabActive} ariaLabel="Data sections" />
+                            <UnderlineTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} ariaLabel="Data sections" />
                             {dataTab === 'account' ? <React.Fragment>
                                 <div className={styles.dataAction}>
                                     <div>

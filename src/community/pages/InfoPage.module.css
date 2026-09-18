@@ -1,7 +1,7 @@
 .page {
-    width: min(920px, calc(100% - 32px));
+    max-width: var(--maxw-mid);
     margin: 0 auto;
-    padding: 42px 0 88px;
+    padding: var(--page-pad);
 }
 
 .head {
@@ -10,7 +10,7 @@
 
 .head h1 {
     margin: 0 0 10px;
-    font-size: 30px;
+    font-size: var(--fs-3xl);
 }
 
 .head p,
@@ -29,19 +29,19 @@
 .section {
     margin-bottom: 18px;
     border: 1px solid var(--mw-border);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: var(--mw-panel);
     padding: 22px 24px;
 }
 
 .section h2 {
     margin: 0 0 10px;
-    font-size: 18px;
+    font-size: var(--fs-xl);
 }
 
 .section h3 {
     margin: 22px 0 8px;
-    font-size: 15px;
+    font-size: var(--fs-lg);
 }
 
 .section p:last-child,
@@ -76,7 +76,7 @@ button.link {
     display: grid;
     gap: 7px;
     color: var(--mw-text-muted);
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 600;
 }
 
@@ -85,7 +85,7 @@ button.link {
 .form textarea {
     width: 100%;
     border: 1px solid var(--mw-border);
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     background: var(--mw-input);
     color: var(--mw-text);
     font: inherit;
@@ -116,7 +116,7 @@ button.link {
 
 .success {
     border: 1px solid color-mix(in srgb, #37a866 45%, transparent);
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     background: color-mix(in srgb, #37a866 12%, transparent);
     padding: 12px 14px;
 }
@@ -166,7 +166,7 @@ button.link {
 .actions time,
 .incident time {
     color: var(--mw-text-muted);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .incident {

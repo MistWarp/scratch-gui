@@ -1,11 +1,11 @@
 .page {
-    max-width: 900px;
+    max-width: var(--maxw-mid);
     margin: 0 auto;
-    padding: 22px 20px 80px;
+    padding: var(--page-pad);
 }
 
 .page h1 {
-    font-size: 22px;
+    font-size: var(--fs-3xl);
     margin: 10px 0 20px;
 }
 
@@ -14,7 +14,7 @@
     align-items: center;
     gap: 6px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .cell span {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     max-width: 100%;
     overflow: hidden;

@@ -31,6 +31,7 @@ import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import {formatPlaytime, safeDate, timeAgo} from '../format';
 import styles from './Profile.module.css';
+import tabStyles from '../components/UnderlineTabs.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
 const PROFILE_TABS = ['projects', 'posts', 'themes'];
@@ -507,14 +508,14 @@ const Profile = () => {
                         <div className={styles.notOnMistwarp}>{communityText('Not on MistWarp yet. This is ')}<UserLink username={profile.username || name}>{profile.username || name}</UserLink>{communityText("'s Rotur profile.")}</div>
                     ) : null}
 
-                    <div className={styles.tabs} role="tablist" aria-label={communityText('Profile content')}>
-                        <button type="button" role="tab" aria-selected={activeTab === 'projects'} className={activeTab === 'projects' ? styles.tabActive : styles.tab} onClick={() => selectTab('projects')}>
+                    <div className={`${tabStyles.tabs} ${styles.tabs}`} role="tablist" aria-label={communityText('Profile content')}>
+                        <button type="button" role="tab" aria-selected={activeTab === 'projects'} className={activeTab === 'projects' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('projects')}>
                             <FolderKanban size={15} />{communityText(' Projects ')}<span>{projectTotal}</span>
                         </button>
-                        <button type="button" role="tab" aria-selected={activeTab === 'posts'} className={activeTab === 'posts' ? styles.tabActive : styles.tab} onClick={() => selectTab('posts')}>
+                        <button type="button" role="tab" aria-selected={activeTab === 'posts'} className={activeTab === 'posts' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('posts')}>
                             <MessageSquare size={15} />{communityText(' Posts ')}<span>{profilePosts.length}</span>
                         </button>
-                        <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? styles.tabActive : styles.tab} onClick={() => selectTab('themes')}>
+                        <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('themes')}>
                             <Palette size={15} />{communityText(' Themes ')}<span>{profileThemes?.length || 0}</span>
                         </button>
                     </div>

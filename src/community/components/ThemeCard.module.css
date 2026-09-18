@@ -47,7 +47,7 @@
     display: -webkit-box;
     overflow: hidden;
     color: var(--mw-text);
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 700;
     line-height: 1.25;
     -webkit-box-orient: vertical;
@@ -58,7 +58,7 @@
     position: relative;
     z-index: 2;
     color: var(--accent-strong);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
@@ -73,7 +73,7 @@
     margin-top: auto;
     padding-top: 7px;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .stats span {

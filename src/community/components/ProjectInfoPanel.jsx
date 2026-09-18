@@ -6,7 +6,7 @@ import {Check, GitPullRequest, Pencil, Plus, Users, X, GitFork} from 'lucide-rea
 import api, {projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
-import SectionTabs from './SectionTabs.jsx';
+import UnderlineTabs from './UnderlineTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import Button from './ui/Button.jsx';
 import IconButton from './ui/IconButton.jsx';
@@ -109,13 +109,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
 
     return (
         <aside className={embedded ? `${styles.sidePanel} ${styles.sidePanelEmbedded}` : styles.sidePanel}>
-            <SectionTabs
+            <UnderlineTabs
                 items={INFO_TABS.map(name => ({key: name, label: name}))}
                 value={tab}
                 onChange={setTab}
                 className={styles.panelTabs}
-                itemClassName={styles.panelTab}
-                activeClassName={styles.panelTabActive}
                 ariaLabel="Project information"
             />
             <div className={styles.panelBody} role="tabpanel">

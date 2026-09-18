@@ -34,7 +34,7 @@
 .foot > span {
     margin-inline-start: auto;
     color: var(--text-faint);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .foot > .over {
@@ -59,7 +59,7 @@
     background: transparent;
     color: var(--text-dim);
     font: inherit;
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .tools button:hover:not(:disabled),
@@ -70,7 +70,7 @@
 }
 
 .tools strong {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     letter-spacing: .2px;
 }
 
@@ -91,7 +91,7 @@
     overflow: hidden;
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
-    background: var(--bg-inset);
+    background: var(--bg-field);
 }
 
 .attachment > a,
@@ -161,7 +161,7 @@
     padding: 8px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    background: var(--bg-inset);
+    background: var(--bg-field);
     color: var(--mw-text);
 }
 
@@ -171,13 +171,13 @@
     gap: 8px;
     margin: 8px 0;
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 .error {
     margin: 8px 0 0;
     color: var(--mw-danger);
-    font-size: 13px;
+    font-size: var(--fs-sm);
 }
 
 @media (max-width: 680px) {

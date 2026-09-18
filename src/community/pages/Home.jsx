@@ -426,7 +426,7 @@ const ProjectRow = ({title, icon: Icon, projects, link, onRetry}) => {
         {projects === null ? <div className={styles.projectGrid}>{[0, 1, 2, 3].map(i => <div key={i} className={styles.projectSkeleton} />)}</div> : null}
         {projects === false ? <div className={styles.empty}>{communityText("Couldn't load projects. ")}<Button onClick={onRetry}>{communityText('Try again')}</Button></div> : null}
         {Array.isArray(projects) && !projects.length ? <div className={styles.empty}>{communityText('No shared projects yet.')}</div> : null}
-        {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
+        {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.slice(0, projects.length > 4 ? projects.length - (projects.length % 4) : 4).map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
     </section>);
 };
 

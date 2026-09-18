@@ -24,20 +24,20 @@
 .logo {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     display: block;
 }
 
 .wordmark {
-    font-weight: 800;
-    font-size: 18px;
+    font-weight: 700;
+    font-size: var(--fs-xl);
     letter-spacing: -0.02em;
 }
 
 .tagline {
     margin: 4px 0 0;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
@@ -56,7 +56,7 @@
 
 .column a {
     color: var(--text-dim);
-    font-size: 13.5px;
+    font-size: var(--fs-md);
 }
 
 .column a:hover {
@@ -65,7 +65,7 @@
 
 .columnTitle {
     font-weight: 700;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-transform: none;
     letter-spacing: 0.06em;
     color: var(--text-faint);
@@ -83,7 +83,7 @@
     margin: 0 auto;
     padding: 0 22px 26px;
     color: var(--text-faint);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
 }
 
 .version {

@@ -28,13 +28,13 @@
 .logo {
     width: 34px;
     height: 34px;
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     display: block;
 }
 
 .wordmark {
-    font-weight: 800;
-    font-size: 19px;
+    font-weight: 700;
+    font-size: var(--fs-xl);
     color: var(--menu-bar-foreground, #fff);
     letter-spacing: -0.02em;
 }
@@ -51,7 +51,7 @@
     gap: 7px;
     color: var(--menu-bar-foreground, #fff);
     font-weight: 600;
-    font-size: 14.5px;
+    font-size: var(--fs-md);
     padding: 0 13px;
     opacity: 0.94;
 }
@@ -91,11 +91,11 @@
     width: 100%;
     height: 40px;
     border: 1px solid transparent;
-    border-radius: 11px;
+    border-radius: var(--radius-sm);
     padding: 0 14px 0 38px;
     background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent);
     color: var(--menu-bar-foreground, #fff);
-    font-size: 14px;
+    font-size: var(--fs-md);
     outline: none;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -140,7 +140,7 @@
     background: none;
     border: none;
     color: var(--mw-text);
-    font-size: 14px;
+    font-size: var(--fs-md);
     font-weight: 600;
     padding: 8px 12px;
     text-align: start;
@@ -159,7 +159,7 @@
     margin: 0;
     padding: 12px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.4;
 }
 
@@ -172,7 +172,7 @@
     z-index: 2;
     margin-inline-start: auto;
     color: var(--text-faint);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     white-space: nowrap;
 }
@@ -206,7 +206,7 @@ a.suggestionMeta:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
+    font-size: var(--fs-2xs);
     color: var(--text-dim);
     overflow: hidden;
 }
@@ -216,7 +216,7 @@ a.suggestionMeta:hover {
     width: 28px;
     height: 28px;
     place-items: center;
-    border-radius: 8px;
+    border-radius: var(--radius-xs);
     color: var(--accent-strong);
     background: var(--accent-soft);
     flex-shrink: 0;
@@ -254,10 +254,10 @@ a.suggestionMeta:hover {
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
-    border-radius: 5px;
+    border-radius: var(--radius-2xs);
     background: #e25555;
     color: #fff;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     line-height: 16px;
     text-align: center;
@@ -320,7 +320,7 @@ a.suggestionMeta:hover {
     max-width: 1200px;
     margin: 0 auto;
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: var(--fs-md);
     color: #fff;
     background: #e0245e;
 }
@@ -330,7 +330,7 @@ a.suggestionMeta:hover {
     border: none;
     background: none;
     color: inherit;
-    font-size: 18px;
+    font-size: var(--fs-xl);
     line-height: 1;
     cursor: pointer;
 }
@@ -445,7 +445,7 @@ a.suggestionMeta:hover {
         min-height: 52px;
         padding: 4px 2px 3px;
         border: 0;
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
         align-items: center;
         justify-content: center;
         flex-direction: column;
@@ -453,7 +453,7 @@ a.suggestionMeta:hover {
         color: var(--text-faint);
         background: transparent;
         font: inherit;
-        font-size: 10.5px;
+        font-size: var(--fs-2xs);
         font-weight: 700;
         white-space: nowrap;
     }
@@ -483,7 +483,7 @@ a.suggestionMeta:hover {
         height: 38px;
         margin-top: 0;
         place-items: center;
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
         color: var(--accent-contrast);
         background: var(--accent);
         box-shadow: 0 4px 12px var(--accent-shadow);
@@ -501,10 +501,10 @@ a.suggestionMeta:hover {
         height: 15px;
         padding: 0 3px;
         border: 2px solid var(--bg-card);
-        border-radius: 8px;
+        border-radius: var(--radius-xs);
         color: #fff;
         background: #e25555;
-        font-size: 9px;
+        font-size: var(--fs-2xs);
         line-height: 11px;
         text-align: center;
     }
