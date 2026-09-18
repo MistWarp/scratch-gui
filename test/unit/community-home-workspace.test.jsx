@@ -11,7 +11,17 @@ import api from '../../src/community/api';
 jest.mock('../../src/community/UserContext', () => ({useUser: jest.fn()}));
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
-    default: {myProjectPage: jest.fn(), getProject: jest.fn(), spaces: jest.fn(), explore: jest.fn(), news: jest.fn(), roadmap: jest.fn()},
+    default: {
+        myProjectPage: jest.fn(),
+        getProject: jest.fn(),
+        spaces: jest.fn(),
+        explore: jest.fn(),
+        news: jest.fn(),
+        roadmap: jest.fn(),
+        featuredProject: jest.fn(() => Promise.resolve({})),
+        leaderboard: jest.fn(() => Promise.resolve({users: []})),
+        getUser: jest.fn(() => Promise.resolve({recentActivity: []}))
+    },
     editorUrl: ({platformProject, starter} = {}) => platformProject ? `/editor#mw-${platformProject}` : `/editor${starter ? `?starter=${starter}` : ''}`,
     projectUrl: id => `/project/${id}`
 }));

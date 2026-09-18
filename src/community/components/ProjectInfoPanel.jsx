@@ -31,7 +31,7 @@ const creditLink = credit => {
 
 const INFO_TABS = ['About', 'Details'];
 
-const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
+const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) => {
     const {text: communityText} = useCommunityText();
     const [tab, setTab] = useState('About');
     const [editing, setEditing] = useState(false);
@@ -176,6 +176,12 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
 
                 {tab === 'Details' && (
                     <div className={styles.detailSections}>
+                        {facts ? (
+                            <section>
+                                <h3>{communityText('Project')}</h3>
+                                <div className={styles.facts}>{facts}</div>
+                            </section>
+                        ) : null}
                         <section>
                             <h3>{communityText('Team')}</h3>
                             <div className={styles.teamPanel}>
@@ -308,7 +314,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false}) => {
                                 {project.tags.map(tag => (
                                     <Link
                                         key={tag}
-                                        to={`/explore?q=${encodeURIComponent(`#${tag}`)}`}
+                                        to={`/explore?tag=${encodeURIComponent(tag)}`}
                                         className={styles.tag}
                                     >{`#${tag}`}</Link>
                                 ))}

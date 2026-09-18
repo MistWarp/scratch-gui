@@ -1,16 +1,14 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
-import {useSearchParams, Link} from 'react-router-dom';
+import {Navigate, useSearchParams} from 'react-router-dom';
 import api from '../api';
-import rotur from '../rotur';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
-import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import ExploreNav from '../components/ExploreNav.jsx';
-import GroupTag from '../components/GroupTag.jsx';
+import searchPath from '../search-path.js';
 import {useUser} from '../UserContext.jsx';
 import styles from './Explore.module.css';
 
@@ -74,7 +72,6 @@ const Explore = () => {
     const tag = params.get('tag') || '';
     const pageDepth = getPageDepth(params.get('page'));
     const [projects, setProjects] = useState([]);
-    const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -94,6 +91,7 @@ const Explore = () => {
     }, [params, paramsKey, setParams]);
 
     useEffect(() => {
+        if (q.trim()) return;
         if (shouldSkipPageRestore(skipNextPageRestore.current, paramsKey)) {
             skipNextPageRestore.current = '';
             return;
@@ -115,14 +113,6 @@ const Explore = () => {
             }))
             .catch(fresh(() => setFailed(true)))
             .finally(fresh(() => setLoading(false)));
-        if (q.trim()) {
-            api.searchUsers(q.trim())
-                .then(data => rotur.withGroupTags((data.users || []).slice(0, 5)))
-                .then(fresh(setPeople))
-                .catch(fresh(() => setPeople([])));
-        } else {
-            setPeople([]);
-        }
     }, [sort, q, tag, pageDepth, paramsKey, beginLoad, attempt, viewerName]);
 
     const setSort = key => {
@@ -173,11 +163,13 @@ const Explore = () => {
         }
     };
 
+    if (q.trim()) return <Navigate to={searchPath(q)} replace />;
+
     return (
         <main className={styles.page}>
             <ExploreNav active="projects" />
             <div className={styles.head}>
-                <h1>{q ? communityText("Results for \"{value1}\"", {value1: q}) : communityText('Explore')}</h1>
+                <h1>{communityText('Explore')}</h1>
                 <SectionTabs
                     items={SORTS}
                     value={sort}
@@ -195,31 +187,6 @@ const Explore = () => {
                     <button type="button" key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
                 ))}
             </div>
-            {people.length ? (
-                <div className={styles.people}>
-                    {people.map(person => (
-                        <Link
-                            key={person.username}
-                            to={`/users/${person.username}`}
-                            className={styles.person}
-                        >
-                            <Avatar
-                                username={person.username}
-                                size={44}
-                            />
-                            <div className={styles.personInfo}>
-                                <span className={styles.personName}>{person.username}</span>
-                                {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
-                                <span className={styles.personMeta}>
-                                    {person.followers ?? 0} {person.followers === 1 ? communityText('follower') : communityText('followers')}
-                                    <br />
-                                    {person.projects} {person.projects === 1 ? communityText('project') : communityText('projects')}
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            ) : null}
             {loading ? (
                 <p className={styles.status}>{communityText('Loading…')}</p>
             ) : failed ? (

@@ -84,7 +84,7 @@ const buildChallengeCalendar = (source, now = Date.now()) => {
     return {today, rangeStart, days, months, events, lanes: laneEnds.length};
 };
 
-const ChallengeCalendar = ({spaces, className = ''}) => {
+const ChallengeCalendar = ({spaces, className = '', bare = false}) => {
     const {text: communityText} = useCommunityText();
     const [loadedSpaces, setLoadedSpaces] = useState(null);
     const [loadError, setLoadError] = useState(false);
@@ -114,7 +114,7 @@ const ChallengeCalendar = ({spaces, className = ''}) => {
     const todayOffset = calendar.today - calendar.rangeStart;
     return (
         <section className={`${styles.section}${className ? ` ${className}` : ''}`}>
-            <div className={styles.head}><div><h2>{communityText('Challenge calendar')}</h2><p>{communityText('See what is running now and what starts next.')}</p></div><Link to="/spaces?kind=challenge">{communityText('All challenges')}</Link></div>
+            {bare ? null : <div className={styles.head}><div><h2>{communityText('Challenge calendar')}</h2><p>{communityText('See what is running now and what starts next.')}</p></div><Link to="/spaces?kind=challenge">{communityText('All challenges')}</Link></div>}
             <div className={styles.scroll}>
                 <div className={styles.calendar} style={{'--mw-calendar-days': calendar.days.length}}>
                     <div className={styles.months}>{calendar.months.map(month => <span key={month.key} style={{gridColumn: `span ${month.span}`}}>{month.label}</span>)}</div>

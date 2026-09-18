@@ -42,6 +42,7 @@ const Footer = () => {
                     <Link to="/news">{communityText('News')}</Link>
                     <Link to="/stats">{communityText('Stats')}</Link>
                     <Link to="/roadmap">{communityText('Roadmap')}</Link>
+                    <Link to="/compare">{communityText('Compare with Scratch')}</Link>
                     <Link to="/roadmap?new=bug">{communityText('Report a bug')}</Link>
                 </div>
                 <div className={styles.column}>

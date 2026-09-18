@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {Heart, ThumbsDown} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
+import useAfterLogin from '../use-after-login.js';
 import {sameUser} from '../format';
 import styles from './ReactionButtons.module.css';
 
@@ -14,7 +15,8 @@ const ReactionButtons = ({
     reactions, counts, activeReaction, onReact, small, variant, heartKey, downKey, disabled,
     disabledTitle, showCounts, between, interactive, className
 }) => {
-    const {user, login} = useUser();
+    const {user} = useUser();
+    const reactAfterLogin = useAfterLogin(key => onReact(key), 'react');
     const lists = reactions || {};
     const keys = {heart: heartKey, down: downKey};
     const classes = [styles.row, small ? styles.rowSmall : '', styles[variant] || '', className]
@@ -51,7 +53,7 @@ const ReactionButtons = ({
                                 title={buttonTitle}
                                 aria-label={label}
                                 aria-pressed={mine}
-                                onClick={() => (signedOut ? login() : onReact(key))}
+                                onClick={() => reactAfterLogin(key)}
                             >{content}</button>
                         ) : <span className={buttonClass}>{content}</span>}
                     </React.Fragment>

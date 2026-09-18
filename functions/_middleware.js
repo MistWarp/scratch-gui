@@ -55,6 +55,11 @@ const STATIC_META = {
         title: 'Spaces - MistWarp',
         description: 'Browse studios, collections, and community challenges on MistWarp.'
     },
+    '/compare': {
+        title: 'MistWarp compared with Scratch and TurboWarp - MistWarp',
+        description: 'What MistWarp adds on top of Scratch and TurboWarp: ' +
+            'a built-in community, version history, faster projects, and more blocks.'
+    },
     '/roadmap': {
         title: 'Roadmap - MistWarp',
         description: 'Suggest, discuss, and vote on ideas for MistWarp.'
@@ -495,6 +500,25 @@ const vanityPullMeta = async (slug, index) => {
 export const onRequest = async context => {
     const {request, next} = context;
     const url = new URL(request.url);
+
+    if (url.pathname === '/sitemap.xml') {
+        try {
+            const upstream = await fetch(`${API_BASE}/sitemap.xml`, {
+                signal: AbortSignal.timeout(FETCH_TIMEOUT_MS * 3)
+            });
+            if (upstream.ok) {
+                return new Response(upstream.body, {
+                    headers: {
+                        'Content-Type': 'application/xml; charset=utf-8',
+                        'Cache-Control': 'public, max-age=3600'
+                    }
+                });
+            }
+        } catch (e) {
+            return new Response('Sitemap unavailable', {status: 503});
+        }
+        return new Response('Sitemap unavailable', {status: 503});
+    }
 
     const response = await next();
     const contentType = response.headers.get('content-type') || '';

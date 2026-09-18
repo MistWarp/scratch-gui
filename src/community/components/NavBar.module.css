@@ -146,6 +146,30 @@
     text-align: start;
 }
 
+.suggestionGroup {
+    padding: 6px 0;
+    border-top: 1px solid var(--border-soft);
+}
+
+.suggestionGroup:first-of-type {
+    border-top: 0;
+}
+
+.suggestionGroupLabel {
+    margin: 0;
+    padding: 4px 12px;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+.suggestionAll {
+    border-top: 1px solid var(--border-soft);
+    color: var(--accent-strong);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+}
+
 .suggestionTarget {
     position: absolute;
     z-index: 1;

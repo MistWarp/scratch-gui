@@ -79,16 +79,19 @@ describe('CommentThread signed-out flow', () => {
         });
     });
 
-    test('offers a working sign-in action', () => {
-        const login = jest.fn();
-        useUser.mockReturnValue({user: null, login});
-        const source = {list: jest.fn(() => Promise.resolve({comments: []}))};
+    test('lets a signed-out visitor write first and asks for sign-in on submit', () => {
+        const loginOrThrow = jest.fn(() => Promise.resolve());
+        useUser.mockReturnValue({user: null, loginOrThrow});
+        const source = {list: jest.fn(() => Promise.resolve({comments: []})), add: jest.fn()};
         const wrapper = shallow(<CommentThread source={source} />);
-        const signIn = wrapper.find('button').filterWhere(button => button.text() === 'Sign in');
+        const composer = () => wrapper.findWhere(node => node.prop('placeholder') === 'Add a comment');
 
-        expect(signIn).toHaveLength(1);
-        signIn.simulate('click');
-        expect(login).toHaveBeenCalledTimes(1);
+        expect(composer()).toHaveLength(1);
+        composer().prop('onChange')('Nice project');
+        wrapper.update();
+        composer().prop('onSubmit')();
+        expect(loginOrThrow).toHaveBeenCalledTimes(1);
+        expect(source.add).not.toHaveBeenCalled();
     });
 
     test('hides zero playtime and shows recorded playtime', async () => {

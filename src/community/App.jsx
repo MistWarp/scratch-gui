@@ -16,6 +16,7 @@ import {useCommunityIntl} from './i18n.jsx';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Explore = lazy(() => import('./pages/Explore.jsx'));
+const Search = lazy(() => import('./pages/Search.jsx'));
 const Random = lazy(() => import('./pages/Random.jsx'));
 const Bounties = lazy(() => import('./pages/Bounties.jsx'));
 const Bounty = lazy(() => import('./pages/Bounty.jsx'));
@@ -43,6 +44,7 @@ const Space = lazy(() => import('./pages/Space.jsx'));
 const ManageSpace = lazy(() => import('./pages/ManageSpace.jsx'));
 const Roadmap = lazy(() => import('./pages/Roadmap.jsx'));
 const Trust = lazy(() => import('./pages/Trust.jsx'));
+const Compare = lazy(() => import('./pages/Compare.jsx'));
 const Support = lazy(() => import('./pages/Support.jsx'));
 const Status = lazy(() => import('./pages/Status.jsx'));
 const PaidPerks = lazy(() => import('./pages/PaidPerks.jsx'));
@@ -54,6 +56,7 @@ const Group = lazy(() => import('./pages/Group.jsx'));
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
     ['/explore', 'Explore'],
+    ['/search', 'Search'],
     ['/random', 'Random project'],
     ['/themes/', 'Theme'],
     ['/themes', 'Themes'],
@@ -72,6 +75,7 @@ const ROUTE_TITLES = [
     ['/spaces/', 'Space'],
     ['/spaces', 'Spaces'],
     ['/roadmap', 'Roadmap'],
+    ['/compare', 'Compare with Scratch'],
     ['/trust', 'Trust and safety'],
     ['/support', 'Support'],
     ['/status', 'Service status'],
@@ -110,6 +114,7 @@ const App = () => {
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
+                        <Route path="/search" element={<Search />} />
                         <Route path="/random" element={<Random />} />
                         <Route path="/bounties/:id" element={<Bounty />} />
                         <Route path="/bounties" element={<Bounties />} />
@@ -146,6 +151,7 @@ const App = () => {
                         <Route path="/spaces/:id" element={<Space />} />
                         <Route path="/spaces/:id/manage" element={<ManageSpace />} />
                         <Route path="/roadmap" element={<Roadmap />} />
+                        <Route path="/compare" element={<Compare />} />
                         <Route path="/trust" element={<Trust />} />
                         <Route path="/support" element={<Support />} />
                         <Route path="/status" element={<Status />} />

@@ -4,6 +4,7 @@ import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
+import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
 import ReportModal from './ReportModal.jsx';
@@ -234,12 +235,16 @@ const InlineComposer = ({
     const previewTier = !small ? commentDonationTier(parseCommentDonation(donation)) : '';
     const [engaged, setEngaged] = useState(false);
     const expanded = small || engaged || Boolean(value);
+    const signedInLabel = small ? communityText('Reply') : communityText('Post');
+    const submitLabel = user ? signedInLabel : communityText('Sign in to post');
     return (
         <div className={small ? styles.inlineComposerSmall : styles.inlineComposer}>
-            <Avatar
-                username={user.username}
-                size={small ? 28 : 36}
-            />
+            {user ? (
+                <Avatar
+                    username={user.username}
+                    size={small ? 28 : 36}
+                />
+            ) : null}
             <div className={styles.composerBody}>
                 <textarea
                     className={expanded ? styles.input : `${styles.input} ${styles.inputIdle}`}
@@ -296,7 +301,7 @@ const InlineComposer = ({
                             className={styles.post}
                             disabled={busy || !value.trim()}
                             onClick={onSubmit}
-                        >{small ? communityText('Reply') : communityText('Post')}</button>
+                        >{submitLabel}</button>
                     </div>
                 </div> : null}
             </div>
@@ -309,7 +314,7 @@ const CommentThread = ({
     composerAction, onCountChange = null, donationRecipient = ''
 }) => {
     const {text: communityText} = useCommunityText();
-    const {user, login} = useUser();
+    const {user} = useUser();
     const viewerName = (user && user.username) || '';
     const [comments, setComments] = useState([]);
     const [content, setContent] = useState('');
@@ -609,6 +614,10 @@ const CommentThread = ({
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setBusy(false);
         }
     };
+    const submitAfterLogin = useAfterLogin(async (text, parent, commentKind) => {
+        await submit(text, parent, commentKind);
+        load();
+    }, 'comment');
 
     const remove = async commentId => {
         const actionSource = source;
@@ -773,12 +782,12 @@ const CommentThread = ({
                     ) : null}
                     <p className={styles.signedOut}>{disabledReason || communityText('Comments are turned off.')}</p>
                 </>
-            ) : user ? (
+            ) : (
                 <InlineComposer
                     user={user}
                     value={content}
                     onChange={setContent}
-                    onSubmit={() => submit(content, null, kind)}
+                    onSubmit={() => (user ? submit(content, null, kind) : submitAfterLogin(content, null, kind))}
                     placeholder={communityText('Add a comment')}
                     busy={busy}
                     error={replyTo === null ? error : null}
@@ -786,13 +795,10 @@ const CommentThread = ({
                     onKindChange={projectComments ? setKind : null}
                     composerAction={composerAction}
                     donation={donation}
-                    onDonationChange={source.donationIntent && donationRecipient &&
+                    onDonationChange={user && source.donationIntent && donationRecipient &&
                         !sameUser(donationRecipient, user.username) ? setDonation : null}
                     donationRecipient={donationRecipient}
                 />
-            ) : (
-                <p className={styles.signedOut}>{communityText('Sign in to comment. ')}<button type="button" onClick={login}>{communityText('Sign in')}</button>
-                </p>
             )}
 
             {projectComments && comments.length > 7 ? (
