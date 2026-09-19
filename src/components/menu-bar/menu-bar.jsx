@@ -83,6 +83,7 @@ import {
     openProjectMetadataModal,
     openGitModal,
     openExtensionManagerModal,
+    openExtensionLibrary,
     openVariableManagerModal,
     openProductsModal,
     openGameItemsModal,
@@ -2634,6 +2635,7 @@ const mapDispatchToProps = dispatch => ({
     onClickSeeInside: () => dispatch(setPlayer(false)),
     autoUpdateProject: () => dispatch(autoUpdateProject()),
     onOpenTipLibrary: () => dispatch(openTipsLibrary()),
+    onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
     onClickCollaboration: () => dispatch(openCollaborationModal()),
@@ -2690,4 +2692,4 @@ export default compose(
     )
 )(MenuBar);
 
-export {MenuBar};
+export {MenuBar, mapDispatchToProps};

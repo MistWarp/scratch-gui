@@ -507,11 +507,12 @@ export class BlockTypeInfo {
                 const isStage = targetInput.value === '_stage_';
 
                 if (isStage) {
-                    const stageVariableOptions = vm.runtime.getTargetForStage().getAllVariableNamesInScopeByType('');
+                    const stage = vm.runtime.getTargetForStage();
+                    const stageVariableOptions = stage ? stage.getAllVariableNamesInScopeByType('') : [];
                     options = stageVariableOptions.map(variable => [variable, variable]).concat(stageOptions);
                 } else {
                     const sprite = vm.runtime.getSpriteTargetByName(targetInput.value);
-                    const spriteVariableOptions = sprite.getAllVariableNamesInScopeByType('', true);
+                    const spriteVariableOptions = sprite ? sprite.getAllVariableNamesInScopeByType('', true) : [];
                     options = spriteVariableOptions.map(variable => [variable, variable]).concat(spriteOptions);
                 }
 

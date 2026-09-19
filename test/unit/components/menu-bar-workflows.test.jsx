@@ -1,4 +1,5 @@
-import {MenuBar} from '../../../src/components/menu-bar/menu-bar.jsx';
+import {MenuBar, mapDispatchToProps} from '../../../src/components/menu-bar/menu-bar.jsx';
+import {openExtensionLibrary} from '../../../src/reducers/modals';
 import {commitProject, pull, push, repoExists} from '../../../src/lib/git/browser-git';
 import {createMwp} from '../../../src/lib/git/mwp.js';
 import requestVersionMessage from '../../../src/lib/mw/request-version-message.jsx';
@@ -33,6 +34,13 @@ const makeMenuBar = props => {
 };
 
 describe('menu bar file workflows', () => {
+    test('opens the extension library without a callback from its parent', () => {
+        const dispatch = jest.fn();
+        const menuBar = makeMenuBar(mapDispatchToProps(dispatch));
+        menuBar.handleOpenExtensionLibrary();
+        expect(dispatch).toHaveBeenCalledWith(openExtensionLibrary());
+    });
+
     beforeEach(() => {
         createMwp.mockClear();
         createMwp.mockResolvedValue({blob: new Blob()});

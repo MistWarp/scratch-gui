@@ -281,7 +281,8 @@ export default function (vm) {
                     options.sort(ScratchBlocks.scratchBlocksUtils.compareStrings);
                 };
                 // Get all the stage variables (no lists) so we can add them to menu when the stage is selected.
-                const stageVariableOptions = vm.runtime.getTargetForStage().getAllVariableNamesInScopeByType('');
+                const stage = vm.runtime.getTargetForStage();
+                const stageVariableOptions = stage ? stage.getAllVariableNamesInScopeByType('') : [];
                 sort(stageVariableOptions);
                 const stageVariableMenuItems = stageVariableOptions.map(variable => [variable, variable]);
                 const objectInput = sensingOfBlock.inputs && sensingOfBlock.inputs.OBJECT;
