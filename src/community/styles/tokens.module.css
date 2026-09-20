@@ -30,6 +30,11 @@
     --mw-text-muted: var(--text-dim);
     --mw-danger: #d94747;
 
+    --status-building: #e7a33e;
+    --status-shipped: #58c78b;
+    --status-planned: #a898ff;
+    --status-open: #6db9f2;
+
     --fs-2xs: 11px;
     --fs-xs: 12px;
     --fs-sm: 13px;

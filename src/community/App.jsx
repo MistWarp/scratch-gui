@@ -153,6 +153,8 @@ const App = () => {
                         <Route path="/spaces/:id" element={<Space />} />
                         <Route path="/spaces/:id/manage" element={<ManageSpace />} />
                         <Route path="/roadmap" element={<Roadmap />} />
+                        <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
+                        <Route path="/roadmap/:status" element={<Roadmap />} />
                         <Route path="/compare" element={<Compare />} />
                         <Route path="/trust" element={<Trust />} />
                         <Route path="/support" element={<Support />} />

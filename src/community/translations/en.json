@@ -1958,5 +1958,16 @@
   "Copy embed code": "Copy embed code",
   "Use stage as thumbnail": "Use stage as thumbnail",
   "Upload thumbnail": "Upload thumbnail",
-  "Copied to clipboard.": "Copied to clipboard."
+  "Copied to clipboard.": "Copied to clipboard.",
+  "Back to roadmap entries": "Back to roadmap entries",
+  "Roadmap overview": "Roadmap overview",
+  "Roadmap entry": "Roadmap entry",
+  "Follow work in progress, see what is done, and vote on what comes next.": "Follow work in progress, see what is done, and vote on what comes next.",
+  "This roadmap entry could not be found.": "This roadmap entry could not be found.",
+  "This roadmap stage could not be found.": "This roadmap stage could not be found.",
+  "No matching entries in this stage. Try clearing the filters.": "No matching entries in this stage. Try clearing the filters.",
+  "Roadmap pages": "Roadmap pages",
+  "Page {page} of {total}": "Page {page} of {total}",
+  "No matching entries.": "No matching entries.",
+  "View all": "View all"
 }
