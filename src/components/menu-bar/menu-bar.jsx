@@ -1,3 +1,4 @@
+import {navigateFromEditor} from '../../lib/editor-sandbox/navigation.js';
 import blockCountStyles from './block-count.module.css';
 import {withProjectReplacement} from '../../lib/project-replacement.js';
 import {isProjectOperationActive} from '../../lib/project-operation.js';
@@ -750,12 +751,12 @@ class MenuBar extends React.Component {
         const stored = this.state.mistwarpProject;
         if (stored) {
             if (stored.url) {
-                window.location.href = stored.url;
+                navigateFromEditor(stored.url).catch(() => {});
                 return;
             }
             const vanity = typeof stored.vanitySlug === 'string' ? stored.vanitySlug.trim() : '';
-            window.location.href = /^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
-                `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`;
+            navigateFromEditor(/^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
+                `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`).catch(() => {});
         }
     }
 

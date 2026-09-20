@@ -1,3 +1,4 @@
+import {isIsolatedEditor} from '../lib/editor-sandbox/protocol.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -294,6 +295,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {string} The VM worker mode to use
      */
     async getSandboxMode (url) {
+        if (isIsolatedEditor()) return 'unsandboxed';
         if (await isPlatformTrustedExtension(url) || isTrustedExtension(url)) {
             log.info(`Loading extension ${url} unsandboxed`);
             return 'unsandboxed';
@@ -340,6 +342,7 @@ class TWSecurityManagerComponent extends React.Component {
             }
             return true;
         };
+        if (isIsolatedEditor()) return allowProjectExtension();
         const dangerousJs = jsExecutionExtension(url);
         if (await isPlatformTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);

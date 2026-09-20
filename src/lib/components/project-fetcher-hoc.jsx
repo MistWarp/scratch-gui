@@ -1,3 +1,4 @@
+import {getInitialEditorRestore} from '../editor-sandbox/client.js';
 import {prepareProjectReplacement} from '../project-replacement.js';
 import {beginProjectOperation, isProjectOperationActive} from '../project-operation.js';
 import React from 'react';
@@ -286,7 +287,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             } else if (isInitialFetch && searchParams && searchParams.has('restore')) {
                 const id = Number(searchParams.get('restore'));
                 assetPromise = Number.isSafeInteger(id) && id > 0 ?
-                    RestorePointAPI.exportRestorePoint(id)
+                    (getInitialEditorRestore()?.id === id ?
+                        Promise.resolve(getInitialEditorRestore()) : RestorePointAPI.exportRestorePoint(id))
                         .then(async ({blob, title}) => ({data: await blob.arrayBuffer(), title})) :
                     Promise.reject(new Error('This device backup is not available. Open Device backups from File.'));
             } else if (isInitialFetch && searchParams && searchParams.has('starter')) {

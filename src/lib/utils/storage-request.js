@@ -3,7 +3,7 @@
  */
 const requestPersistentStorage = () => {
     if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist();
+        navigator.storage.persist().catch(() => {});
 
         // We don't really care about the result.
         // Safari auto-denies. Chrome auto-approves. That's not very useful information.
