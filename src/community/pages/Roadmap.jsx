@@ -1,8 +1,8 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Link, useLocation, useSearchParams} from 'react-router-dom';
-import {Bug, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
+import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {Bug, ArrowRight, Check, ChevronLeft, ChevronRight, Circle, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -10,7 +10,6 @@ import Button from '../components/ui/Button.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
-import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {timeAgo} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './Roadmap.module.css';
@@ -95,6 +94,7 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy, op
                     <div className={styles.labels}>
                         <span className={idea.kind === 'bug' ? styles.bugLabel : styles.ideaLabel}>{idea.kind === 'bug' ? <Bug size={11} /> : null}{idea.kind === 'bug' ? communityText('Bug') : communityText('Idea')}</span>
                         <span title={communityText('Area')}>{idea.category}</span>
+                        <span>{communityText(STATUS_LABELS[idea.status])}</span>
                     </div>
                     {user && user.isAdmin ? (
                         <div className={styles.adminActions}>
@@ -132,16 +132,40 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy, op
     );
 };
 
+const RoadmapRow = ({idea, search, preview = false, from}) => {
+    const {text: communityText} = useCommunityText();
+    const description = (idea.description || '').replace(/\s+/g, ' ').trim();
+    const excerpt = description.length > 160 ? `${description.slice(0, 160)}…` : description;
+    const Heading = preview ? 'h3' : 'h2';
+    return (
+        <article className={styles.entry}>
+            <Heading className={styles.entryHeading}>
+                <Link className={styles.entryLink} to={`/roadmap/entry/${encodeURIComponent(idea._id)}${search}`} state={{roadmapFrom: from}}>
+                    {idea.kind === 'bug' ? <Bug size={17} aria-label={communityText('Bug')} /> : <Lightbulb size={17} aria-label={communityText('Idea')} />}
+                    <span className={styles.entryTitle}>
+                        <span className={styles.entryName}>{idea.title}</span>
+                        <span className={styles.entryDescription}>{excerpt}</span>
+                        <span className={styles.entryByline}><Avatar username={idea.author} size={16} /><span>{idea.author}</span><span className={styles.entryCategory}>{idea.category}</span></span>
+                    </span>
+                    {!preview ? <span className={styles.entryScore}>{idea.score || 0}<small>{communityText('score')}</small></span> : null}
+                    {!preview ? <span className={styles.entryComments}><MessageCircle size={14} />{idea.commentCount || 0}<span className={styles.srOnly}>{communityText('comments')}</span></span> : null}
+                    <ChevronRight size={16} />
+                </Link>
+            </Heading>
+        </article>
+    );
+};
+
 const Roadmap = () => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
     const [params, setParams] = useSearchParams();
     const location = useLocation();
-    const linkedId = params.get('idea') || (location.hash.startsWith('#idea-') ? location.hash.slice(6) : '');
-    const handledLink = useRef('');
-    const [expandedId, setExpandedId] = useState('');
-    const stageId = STAGES.some(stage => stage.id === params.get('status')) ? params.get('status') : 'building';
+    const navigate = useNavigate();
+    const {status: routeStatus, entryId} = useParams();
+    const legacyId = params.get('idea') || (location.hash.startsWith('#idea-') ? location.hash.slice(6) : '');
+    const stageId = routeStatus || params.get('status') || '';
     const stage = STAGES.find(item => item.id === stageId);
     const composerKind = ROADMAP_KINDS.includes(params.get('new')) ? params.get('new') : '';
     const [ideas, setIdeas] = useState(null);
@@ -172,7 +196,6 @@ const Roadmap = () => {
         const next = withRoadmapParam(params, key, value);
         if (key !== 'page') next.delete('page');
         next.delete('idea');
-        setExpandedId('');
         setParams(next, {replace});
     };
 
@@ -189,16 +212,22 @@ const Roadmap = () => {
         });
     }, [ideas, query, categoryFilter, sourceFilter, kindFilter]);
     const filtering = Boolean(query || categoryFilter || sourceFilter || kindFilter);
-    const ideasByStage = useMemo(() => STAGES.reduce((groups, stage) => ({
+    const ideasByStage = useMemo(() => STAGES.reduce((groups, item) => ({
         ...groups,
-        [stage.id]: visibleIdeas.filter(idea => idea.status === stage.id)
+        [item.id]: visibleIdeas.filter(idea => idea.status === item.id)
     }), {}), [visibleIdeas]);
-    const stageIdeas = ideasByStage[stageId];
+    const stageIdeas = ideasByStage[stageId] || [];
+    const selectedIdea = ideas && ideas.find(idea => String(idea._id) === entryId);
+    const resultCount = stage ? stageIdeas.length : visibleIdeas.length;
+    const routeParams = new URLSearchParams(params);
+    ['status', 'page', 'idea', 'new'].forEach(key => routeParams.delete(key));
+    const filterSearch = routeParams.toString() ? `?${routeParams}` : '';
+    const from = `${location.pathname}${location.search}`;
     const pageCount = Math.max(1, Math.ceil(stageIdeas.length / PAGE_SIZE));
     const requestedPage = Number(params.get('page'));
     const page = Math.min(pageCount, Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1);
     const pageIdeas = stageIdeas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    const StageIcon = stage.icon;
+    const PageIcon = entryId ? Lightbulb : stage ? stage.icon : Map;
     const clearFilters = () => {
         const next = new URLSearchParams(params);
         ['q', 'area', 'source', 'kind', 'page', 'idea'].forEach(key => next.delete(key));
@@ -228,29 +257,8 @@ const Roadmap = () => {
         if (composerKind) setForm(current => ({...current, kind: composerKind}));
     }, [composerKind]);
     useEffect(() => {
-        if (!linkedId) {
-            handledLink.current = '';
-            return;
-        }
-        if (!ideas || handledLink.current === linkedId) return;
-        const linkedIdea = ideas.find(idea => String(idea._id) === linkedId);
-        if (!linkedIdea) return;
-        handledLink.current = linkedId;
-        const entries = ideas.filter(idea => idea.status === linkedIdea.status);
-        const next = new URLSearchParams(params);
-        ['q', 'area', 'source', 'kind'].forEach(key => next.delete(key));
-        next.set('status', linkedIdea.status);
-        next.set('page', String(Math.floor(entries.indexOf(linkedIdea) / PAGE_SIZE) + 1));
-        next.set('idea', linkedId);
-        setExpandedId(linkedId);
-        setParams(next, {replace: true});
-    }, [ideas, linkedId, params, setParams]);
-    useEffect(() => {
-        if (expandedId && expandedId === linkedId) {
-            const target = document.getElementById(`idea-${expandedId}`);
-            if (target) target.scrollIntoView({block: 'nearest'});
-        }
-    }, [expandedId, linkedId, stageId, page]);
+        if (legacyId) navigate(`/roadmap/entry/${encodeURIComponent(legacyId)}`, {replace: true});
+    }, [legacyId, navigate]);
 
     const create = async event => {
         event.preventDefault();
@@ -260,7 +268,7 @@ const Roadmap = () => {
         }
         const payload = roadmapPayload(form);
         if (!payload.title || !payload.description) {
-            setError(communityText("Add a title and description before posting."));
+            setError(communityText('Add a title and description before posting.'));
             return;
         }
         const actionViewer = viewerName;
@@ -273,9 +281,7 @@ const Roadmap = () => {
             const data = await api.createIdea(payload);
             if (currentViewer.current === actionViewer) {
                 setForm({kind: 'idea', title: '', description: '', category: 'Community'});
-                const next = new URLSearchParams();
-                next.set('idea', data.idea._id);
-                setParams(next);
+                navigate(`/roadmap/entry/${encodeURIComponent(data.idea._id)}`);
                 setIdeas(current => [data.idea, ...(current || [])].sort((a, b) => b.score - a.score));
             }
         } catch (e) {
@@ -341,11 +347,12 @@ const Roadmap = () => {
     };
 
     return (
-        <main className={styles.page}>
+        <main className={`${styles.page} ${styles[`stage${selectedIdea ? selectedIdea.status : stageId}`] || ''}`}>
+            {stageId || entryId ? <Link className={styles.backLink} to={entryId && selectedIdea ? (location.state?.roadmapFrom || `/roadmap/${selectedIdea.status}${filterSearch}`) : `/roadmap${filterSearch}`}><ChevronLeft size={16} />{entryId ? communityText('Back to roadmap entries') : communityText('Roadmap overview')}</Link> : null}
             <header className={styles.head}>
                 <div>
-                    <h1><Map size={26} />{communityText('Roadmap')}</h1>
-                    <p>{communityText('Follow work in progress, see what is done, and vote on what comes next.')}</p>
+                    <h1><PageIcon size={26} />{entryId ? (selectedIdea ? selectedIdea.title : communityText('Roadmap entry')) : communityText(stage ? stage.label : 'Roadmap')}</h1>
+                    {!entryId ? <p>{stage ? communityText(stage.description) : communityText('Follow work in progress, see what is done, and vote on what comes next.')}</p> : null}
                 </div>
                 <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText(' Add an entry')}</Button>
             </header>
@@ -371,70 +378,60 @@ const Roadmap = () => {
                 </form>
             ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}
-            {ideas && ideas.length ? (
+            {ideas && ideas.length && !entryId && (!stageId || stage) ? (
                 <div className={styles.filters}>
                     <div className={styles.searchFilter}><Search size={16} /><input aria-label={communityText('Search roadmap')} value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder={communityText('Search ideas and bugs')} /></div>
-                    <select aria-label={communityText('Filter by type')} value={kindFilter} onChange={event => setFilter('kind', event.target.value)}><option value="">{communityText('Ideas and bugs')}</option><option value="idea">{communityText('Ideas')}</option><option value="bug">{communityText('Bugs')}</option></select>
+                    <select aria-label={communityText('Filter by type')} value={kindFilter} onChange={event => setFilter('kind', event.target.value)}><option value="">{communityText('All types')}</option><option value="idea">{communityText('Ideas')}</option><option value="bug">{communityText('Bugs')}</option></select>
                     <select aria-label={communityText('Filter by area')} value={categoryFilter} onChange={event => setFilter('area', event.target.value)}><option value="">{communityText('Any area')}</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select>
                     <select aria-label={communityText('Filter by submitter')} value={sourceFilter} onChange={event => setFilter('source', event.target.value)}><option value="">{communityText('Anyone')}</option><option value="community">{communityText('Community')}</option><option value="mistwarp">{communityText('MistWarp')}</option></select>
                     <div className={styles.filterSummary}>
-                        <span>{stageIdeas.length} {stageIdeas.length === 1 ? communityText('result') : communityText('results')}</span>
+                        <span>{resultCount} {resultCount === 1 ? communityText('result') : communityText('results')}</span>
                         {filtering ? <button type="button" onClick={clearFilters}>{communityText('Clear filters')}</button> : null}
                     </div>
                 </div>
             ) : null}
             {!ideas && !loadError ? <p className={styles.empty}>{communityText('Loading suggestions…')}</p> : null}
             {loadError ? <p className={styles.empty}>{communityText('Could not load suggestions. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
-            {ideas && !ideas.length ? <p className={styles.empty}>{communityText('No suggestions yet. Add the first one.')}</p> : null}
-            {ideas && ideas.length ? (
+            {ideas && entryId ? (
+                selectedIdea ? <IdeaCard key={selectedIdea._id} idea={selectedIdea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} busy={busyIdea === selectedIdea._id} openDiscussion /> : <p className={styles.empty}>{communityText('This roadmap entry could not be found.')}</p>
+            ) : null}
+            {ideas && !entryId && stageId && !stage ? <p className={styles.empty}>{communityText('This roadmap stage could not be found.')}</p> : null}
+            {ideas && !entryId && stage ? (
                 <>
-                    <UnderlineTabs
-                        ariaLabel={communityText('Roadmap stages')}
-                        value={stageId}
-                        onChange={value => setFilter('status', value)}
-                        items={STAGES.map(item => {
+                    {pageIdeas.length ? <div className={styles.list}>{pageIdeas.map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} />)}</div> : <p className={styles.empty}>{filtering ? communityText('No matching entries in this stage. Try clearing the filters.') : communityText('Nothing is in this stage yet.')}</p>}
+                    {stageIdeas.length > PAGE_SIZE ? (
+                        <nav className={styles.pagination} aria-label={communityText('Roadmap pages')}>
+                            <Button variant="secondary" disabled={page === 1} onClick={() => setFilter('page', String(page - 1))}><ChevronLeft size={16} />{communityText('Previous')}</Button>
+                            <span aria-live="polite">{communityText('Page {page} of {total}', {page, total: pageCount})}</span>
+                            <Button variant="secondary" disabled={page === pageCount} onClick={() => setFilter('page', String(page + 1))}>{communityText('Next')}<ChevronRight size={16} /></Button>
+                        </nav>
+                    ) : null}
+                </>
+            ) : null}
+            {ideas && !entryId && !stageId ? (
+                <>
+                    <div className={styles.overview}>
+                        {STAGES.filter(item => item.id !== 'declined').map(item => {
                             const Icon = item.icon;
-                            return {key: item.id, label: <><Icon size={16} />{communityText(item.label)} <b>{ideasByStage[item.id].length}</b></>};
+                            const entries = ideasByStage[item.id];
+                            return (
+                                <section key={item.id} className={`${styles.preview} ${styles[`stage${item.id}`]}`} aria-labelledby={`heading-${item.id}`}>
+                                    <header className={styles.stageHead}>
+                                        <h2 id={`heading-${item.id}`}><Icon size={19} />{communityText(item.label)}<span>{entries.length}</span></h2>
+                                        <p>{communityText(item.description)}</p>
+                                    </header>
+                                    <div className={`${styles.previewList} ${entries.length > 3 ? styles.previewFaded : ''} ${!entries.length ? styles.previewListEmpty : ''}`}>
+                                        {entries.slice(0, 3).map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} preview />)}
+                                        {!entries.length ? <p className={styles.previewEmpty}>{filtering ? communityText('No matching entries.') : communityText('Nothing is in this stage yet.')}</p> : null}
+                                    </div>
+                                    <Link className={styles.viewStage} to={`/roadmap/${item.id}${filterSearch}`} aria-label={`${communityText('View all')} ${communityText(item.label).toLowerCase()}`}>
+                                        {communityText('View all')}<ArrowRight size={16} />
+                                    </Link>
+                                </section>
+                            );
                         })}
-                    />
-                    <section className={styles.stage} role="tabpanel" aria-label={communityText(stage.label)}>
-                        <header className={styles.stageHead}>
-                            <h2><StageIcon size={18} />{communityText(stage.label)}</h2>
-                            <p>{communityText(stage.description)}</p>
-                        </header>
-                        {pageIdeas.length ? (
-                            <div className={styles.list}>{pageIdeas.map(idea => {
-                                const expanded = expandedId === String(idea._id);
-                                return (
-                                    <article key={idea._id} id={`idea-${idea._id}`} className={styles.entry}>
-                                        <h3 className={styles.entryHeading}>
-                                            <button
-                                                type="button"
-                                                className={styles.entryToggle}
-                                                aria-expanded={expanded}
-                                                aria-controls={expanded ? `details-${idea._id}` : undefined}
-                                                onClick={() => setExpandedId(expanded ? '' : String(idea._id))}
-                                            >
-                                                {idea.kind === 'bug' ? <Bug size={17} aria-label={communityText('Bug')} /> : <Lightbulb size={17} aria-label={communityText('Idea')} />}
-                                                <span className={styles.entryTitle}>{idea.title}<small>{idea.category}</small></span>
-                                                <span className={styles.entryScore}>{idea.score || 0}<small>{communityText('score')}</small></span>
-                                                <span className={styles.entryComments}><MessageCircle size={14} />{idea.commentCount || 0}<span className={styles.srOnly}>{communityText('comments')}</span></span>
-                                                <ChevronDown size={16} className={expanded ? styles.chevronOpen : ''} />
-                                            </button>
-                                        </h3>
-                                        {expanded ? <IdeaCard idea={idea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} busy={busyIdea === idea._id} openDiscussion={linkedId === String(idea._id)} /> : null}
-                                    </article>
-                                );
-                            })}</div>
-                        ) : <p className={styles.empty}>{filtering ? communityText('No matching entries in this stage. Try another tab or clear the filters.') : communityText('Nothing is in this stage yet.')}</p>}
-                        {stageIdeas.length > PAGE_SIZE ? (
-                            <nav className={styles.pagination} aria-label={communityText('Roadmap pages')}>
-                                <Button variant="secondary" disabled={page === 1} onClick={() => setFilter('page', String(page - 1))}><ChevronLeft size={16} />{communityText('Previous')}</Button>
-                                <span aria-live="polite">{communityText('Page {page} of {total}', {page, total: pageCount})}</span>
-                                <Button variant="secondary" disabled={page === pageCount} onClick={() => setFilter('page', String(page + 1))}>{communityText('Next')}<ChevronRight size={16} /></Button>
-                            </nav>
-                        ) : null}
-                    </section>
+                    </div>
+                    <Link className={styles.archiveLink} to={`/roadmap/declined${filterSearch}`}><X size={16} />{communityText('Not planned')}<span>{ideasByStage.declined.length}</span><ArrowRight size={16} /></Link>
                 </>
             ) : null}
         </main>

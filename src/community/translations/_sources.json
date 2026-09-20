@@ -88,7 +88,7 @@
     "src/community/pages/Random.jsx:49",
     "src/community/pages/RemixTree.jsx:83",
     "src/community/pages/RemixTree.jsx:212",
-    "src/community/pages/Roadmap.jsx:357",
+    "src/community/pages/Roadmap.jsx:394",
     "src/community/pages/Search.jsx:155",
     "src/community/pages/Settings.jsx:652",
     "src/community/pages/Settings.jsx:691",
@@ -223,7 +223,7 @@
   ],
   "Bug report": [
     "src/community/components/CommentThread.jsx:23",
-    "src/community/pages/Roadmap.jsx:331"
+    "src/community/pages/Roadmap.jsx:368"
   ],
   "Suggestion": [
     "src/community/components/CommentThread.jsx:24"
@@ -324,7 +324,7 @@
     "src/community/pages/Project.jsx:2482",
     "src/community/pages/Project.jsx:2814",
     "src/community/pages/PullRequest.jsx:649",
-    "src/community/pages/Roadmap.jsx:339",
+    "src/community/pages/Roadmap.jsx:376",
     "src/community/pages/Settings.jsx:866",
     "src/community/pages/Settings.jsx:889",
     "src/community/pages/Spaces.jsx:269",
@@ -362,7 +362,8 @@
     "src/community/components/CommentThread.jsx:812"
   ],
   "All types": [
-    "src/community/components/CommentThread.jsx:821"
+    "src/community/components/CommentThread.jsx:821",
+    "src/community/pages/Roadmap.jsx:384"
   ],
   "Newest": [
     "src/community/components/CommentThread.jsx:834",
@@ -648,7 +649,7 @@
     "src/community/components/NavBar.jsx:369",
     "src/community/components/NavBar.jsx:376",
     "src/community/components/RichText.jsx:116",
-    "src/community/pages/Roadmap.jsx:349"
+    "src/community/pages/Roadmap.jsx:386"
   ],
   "Build, share, and remix projects together.": [
     "src/community/components/Footer.jsx:25"
@@ -662,7 +663,7 @@
   "Editor": [
     "src/community/components/Footer.jsx:32",
     "src/community/pages/ManageProject.jsx:984",
-    "src/community/pages/Roadmap.jsx:335"
+    "src/community/pages/Roadmap.jsx:372"
   ],
   "My stuff": [
     "src/community/components/Footer.jsx:33",
@@ -676,8 +677,8 @@
     "src/community/components/Footer.jsx:36",
     "src/community/pages/Challenge.jsx:283",
     "src/community/pages/Challenge.jsx:347",
-    "src/community/pages/Roadmap.jsx:335",
-    "src/community/pages/Roadmap.jsx:349"
+    "src/community/pages/Roadmap.jsx:372",
+    "src/community/pages/Roadmap.jsx:386"
   ],
   "Explore": [
     "src/community/components/Footer.jsx:37",
@@ -702,8 +703,7 @@
   "Roadmap": [
     "src/community/components/Footer.jsx:44",
     "src/community/pages/Home.jsx:170",
-    "src/community/pages/Home.jsx:457",
-    "src/community/pages/Roadmap.jsx:317"
+    "src/community/pages/Home.jsx:457"
   ],
   "Compare with Scratch": [
     "src/community/components/Footer.jsx:45"
@@ -1758,7 +1758,8 @@
     "src/community/components/ReportModal.jsx:77",
     "src/community/pages/ManageProject.jsx:922",
     "src/community/pages/Profile.jsx:1067",
-    "src/community/pages/Project.jsx:1702"
+    "src/community/pages/Project.jsx:1702",
+    "src/community/pages/Roadmap.jsx:27"
   ],
   "Sending…": [
     "src/community/components/ReportModal.jsx:84",
@@ -2045,32 +2046,32 @@
     "src/community/components/ThemeCard.jsx:32"
   ],
   "{size} MB of uploads every week": [
-    "src/community/components/UpgradeCelebration.jsx:32"
+    "src/community/components/UpgradeCelebration.jsx:36"
   ],
   "{size} MB of assets per project": [
-    "src/community/components/UpgradeCelebration.jsx:35"
-  ],
-  "{days} days of deleted project recovery": [
-    "src/community/components/UpgradeCelebration.jsx:38"
-  ],
-  "Advanced analytics and CSV exports": [
     "src/community/components/UpgradeCelebration.jsx:39"
   ],
+  "{days} days of deleted project recovery": [
+    "src/community/components/UpgradeCelebration.jsx:42"
+  ],
+  "Advanced analytics and CSV exports": [
+    "src/community/components/UpgradeCelebration.jsx:43"
+  ],
   "Vanity project URLs": [
-    "src/community/components/UpgradeCelebration.jsx:40"
+    "src/community/components/UpgradeCelebration.jsx:44"
   ],
   "Welcome to {tier}": [
-    "src/community/components/UpgradeCelebration.jsx:46"
+    "src/community/components/UpgradeCelebration.jsx:50"
   ],
   "Close": [
-    "src/community/components/UpgradeCelebration.jsx:49",
+    "src/community/components/UpgradeCelebration.jsx:53",
     "src/community/components/ui/Modal.jsx:85"
   ],
   "See all your perks": [
-    "src/community/components/UpgradeCelebration.jsx:55"
+    "src/community/components/UpgradeCelebration.jsx:59"
   ],
   "Thank you for supporting MistWarp. Your new limits are already active.": [
-    "src/community/components/UpgradeCelebration.jsx:67"
+    "src/community/components/UpgradeCelebration.jsx:71"
   ],
   "Unshared": [
     "src/community/components/VisibilityMenu.jsx:10",
@@ -2115,7 +2116,7 @@
     "src/community/pages/Admin.jsx:30",
     "src/community/pages/Admin.jsx:1579",
     "src/community/pages/Admin.jsx:1620",
-    "src/community/pages/Roadmap.jsx:335"
+    "src/community/pages/Roadmap.jsx:372"
   ],
   "Errors": [
     "src/community/pages/Admin.jsx:31",
@@ -2530,13 +2531,15 @@
     "src/community/pages/Admin.jsx:1348"
   ],
   "Previous": [
-    "src/community/pages/Admin.jsx:1357"
+    "src/community/pages/Admin.jsx:1357",
+    "src/community/pages/Roadmap.jsx:404"
   ],
   "{value1}–{value2} of {value3}": [
     "src/community/pages/Admin.jsx:1358"
   ],
   "Next": [
-    "src/community/pages/Admin.jsx:1364"
+    "src/community/pages/Admin.jsx:1364",
+    "src/community/pages/Roadmap.jsx:406"
   ],
   "Title:": [
     "src/community/pages/Admin.jsx:1381"
@@ -3547,7 +3550,7 @@
     "src/community/pages/ManageProject.jsx:71",
     "src/community/pages/ManageProject.jsx:935",
     "src/community/pages/ManageProject.jsx:1042",
-    "src/community/pages/Roadmap.jsx:335"
+    "src/community/pages/Roadmap.jsx:372"
   ],
   "Ownership": [
     "src/community/pages/ManageProject.jsx:73",
@@ -3636,7 +3639,7 @@
   ],
   "Title": [
     "src/community/pages/ManageProject.jsx:627",
-    "src/community/pages/Roadmap.jsx:332"
+    "src/community/pages/Roadmap.jsx:369"
   ],
   "Vanity URL": [
     "src/community/pages/ManageProject.jsx:636"
@@ -4000,7 +4003,7 @@
   "Description": [
     "src/community/pages/ManageSpace.jsx:628",
     "src/community/pages/ManageSpace.jsx:668",
-    "src/community/pages/Roadmap.jsx:333",
+    "src/community/pages/Roadmap.jsx:370",
     "src/community/pages/Theme.jsx:254",
     "src/community/pages/Themes.jsx:200"
   ],
@@ -4588,7 +4591,7 @@
   "Posting…": [
     "src/community/pages/News.jsx:295",
     "src/community/pages/PullRequest.jsx:559",
-    "src/community/pages/Roadmap.jsx:338"
+    "src/community/pages/Roadmap.jsx:375"
   ],
   "Publish post": [
     "src/community/pages/News.jsx:296"
@@ -5481,155 +5484,165 @@
   " Descendants": [
     "src/community/pages/RemixTree.jsx:254"
   ],
-  "Suggested": [
+  "In progress": [
     "src/community/pages/Roadmap.jsx:26"
   ],
   "Planned": [
-    "src/community/pages/Roadmap.jsx:27"
-  ],
-  "In progress": [
     "src/community/pages/Roadmap.jsx:28"
   ],
-  "Shipped": [
+  "Suggested": [
     "src/community/pages/Roadmap.jsx:29"
   ],
   "Not planned": [
-    "src/community/pages/Roadmap.jsx:30"
+    "src/community/pages/Roadmap.jsx:30",
+    "src/community/pages/Roadmap.jsx:434"
   ],
   "score": [
-    "src/community/pages/Roadmap.jsx:89"
+    "src/community/pages/Roadmap.jsx:90",
+    "src/community/pages/Roadmap.jsx:150"
   ],
   "Bug": [
-    "src/community/pages/Roadmap.jsx:94"
+    "src/community/pages/Roadmap.jsx:95",
+    "src/community/pages/Roadmap.jsx:144"
   ],
   "Idea": [
-    "src/community/pages/Roadmap.jsx:94",
-    "src/community/pages/Roadmap.jsx:331"
+    "src/community/pages/Roadmap.jsx:95",
+    "src/community/pages/Roadmap.jsx:144",
+    "src/community/pages/Roadmap.jsx:368"
   ],
   "Area": [
-    "src/community/pages/Roadmap.jsx:95",
-    "src/community/pages/Roadmap.jsx:334"
+    "src/community/pages/Roadmap.jsx:96",
+    "src/community/pages/Roadmap.jsx:371"
   ],
   "Suggestion status": [
-    "src/community/pages/Roadmap.jsx:99"
-  ],
-  "Show less": [
-    "src/community/pages/Roadmap.jsx:114"
-  ],
-  "Show full details": [
-    "src/community/pages/Roadmap.jsx:114"
+    "src/community/pages/Roadmap.jsx:101"
   ],
   "comment": [
-    "src/community/pages/Roadmap.jsx:129"
+    "src/community/pages/Roadmap.jsx:120"
   ],
   "comments": [
-    "src/community/pages/Roadmap.jsx:129"
+    "src/community/pages/Roadmap.jsx:120",
+    "src/community/pages/Roadmap.jsx:151"
   ],
   "Hide": [
-    "src/community/pages/Roadmap.jsx:130"
+    "src/community/pages/Roadmap.jsx:121"
   ],
   "Discuss": [
-    "src/community/pages/Roadmap.jsx:130"
+    "src/community/pages/Roadmap.jsx:121"
   ],
   "Sign in to join the discussion": [
-    "src/community/pages/Roadmap.jsx:135"
+    "src/community/pages/Roadmap.jsx:126"
   ],
   "Add a title and description before posting.": [
-    "src/community/pages/Roadmap.jsx:235"
+    "src/community/pages/Roadmap.jsx:271"
   ],
-  "See what is being considered, what is underway, and what has shipped. Vote or add context to help the team decide what comes next.": [
-    "src/community/pages/Roadmap.jsx:318"
+  "Back to roadmap entries": [
+    "src/community/pages/Roadmap.jsx:351"
+  ],
+  "Roadmap overview": [
+    "src/community/pages/Roadmap.jsx:351"
+  ],
+  "Roadmap entry": [
+    "src/community/pages/Roadmap.jsx:354"
+  ],
+  "Follow work in progress, see what is done, and vote on what comes next.": [
+    "src/community/pages/Roadmap.jsx:355"
   ],
   " Add an entry": [
-    "src/community/pages/Roadmap.jsx:320"
+    "src/community/pages/Roadmap.jsx:357"
   ],
   "Type": [
-    "src/community/pages/Roadmap.jsx:324",
+    "src/community/pages/Roadmap.jsx:361",
     "src/community/pages/Spaces.jsx:234"
   ],
   "A clear summary": [
-    "src/community/pages/Roadmap.jsx:332"
+    "src/community/pages/Roadmap.jsx:369"
   ],
   "What happened, what did you expect, and how can someone reproduce it?": [
-    "src/community/pages/Roadmap.jsx:333"
+    "src/community/pages/Roadmap.jsx:370"
   ],
   "What should change, and who would it help?": [
-    "src/community/pages/Roadmap.jsx:333"
+    "src/community/pages/Roadmap.jsx:370"
   ],
   "Mobile": [
-    "src/community/pages/Roadmap.jsx:335"
+    "src/community/pages/Roadmap.jsx:372"
   ],
   "Other": [
-    "src/community/pages/Roadmap.jsx:335"
+    "src/community/pages/Roadmap.jsx:372"
   ],
   "Report bug": [
-    "src/community/pages/Roadmap.jsx:338"
+    "src/community/pages/Roadmap.jsx:375"
   ],
   "Post idea": [
-    "src/community/pages/Roadmap.jsx:338"
+    "src/community/pages/Roadmap.jsx:375"
   ],
   "Search roadmap": [
-    "src/community/pages/Roadmap.jsx:346"
+    "src/community/pages/Roadmap.jsx:383"
   ],
   "Search ideas and bugs": [
-    "src/community/pages/Roadmap.jsx:346"
+    "src/community/pages/Roadmap.jsx:383"
   ],
   "Filter by type": [
-    "src/community/pages/Roadmap.jsx:347"
-  ],
-  "Ideas and bugs": [
-    "src/community/pages/Roadmap.jsx:347"
+    "src/community/pages/Roadmap.jsx:384"
   ],
   "Ideas": [
-    "src/community/pages/Roadmap.jsx:347"
+    "src/community/pages/Roadmap.jsx:384"
   ],
   "Bugs": [
-    "src/community/pages/Roadmap.jsx:347"
+    "src/community/pages/Roadmap.jsx:384"
   ],
   "Filter by area": [
-    "src/community/pages/Roadmap.jsx:348"
+    "src/community/pages/Roadmap.jsx:385"
   ],
   "Any area": [
-    "src/community/pages/Roadmap.jsx:348"
+    "src/community/pages/Roadmap.jsx:385"
   ],
   "Filter by submitter": [
-    "src/community/pages/Roadmap.jsx:349"
+    "src/community/pages/Roadmap.jsx:386"
   ],
   "Anyone": [
-    "src/community/pages/Roadmap.jsx:349"
+    "src/community/pages/Roadmap.jsx:386"
   ],
   "result": [
-    "src/community/pages/Roadmap.jsx:351"
+    "src/community/pages/Roadmap.jsx:388"
   ],
   "results": [
-    "src/community/pages/Roadmap.jsx:351"
+    "src/community/pages/Roadmap.jsx:388"
   ],
   "Clear filters": [
-    "src/community/pages/Roadmap.jsx:352"
+    "src/community/pages/Roadmap.jsx:389"
   ],
   "Loading suggestions…": [
-    "src/community/pages/Roadmap.jsx:356"
+    "src/community/pages/Roadmap.jsx:393"
   ],
   "Could not load suggestions. ": [
-    "src/community/pages/Roadmap.jsx:357"
+    "src/community/pages/Roadmap.jsx:394"
   ],
-  "No suggestions yet. Add the first one.": [
-    "src/community/pages/Roadmap.jsx:358"
+  "This roadmap entry could not be found.": [
+    "src/community/pages/Roadmap.jsx:396"
   ],
-  "No suggestions match those filters.": [
-    "src/community/pages/Roadmap.jsx:359"
+  "This roadmap stage could not be found.": [
+    "src/community/pages/Roadmap.jsx:398"
   ],
-  "Roadmap stages": [
-    "src/community/pages/Roadmap.jsx:362"
-  ],
-  "Stages": [
-    "src/community/pages/Roadmap.jsx:363"
-  ],
-  "No matching entries in this stage.": [
-    "src/community/pages/Roadmap.jsx:392"
+  "No matching entries in this stage. Try clearing the filters.": [
+    "src/community/pages/Roadmap.jsx:401"
   ],
   "Nothing is in this stage yet.": [
-    "src/community/pages/Roadmap.jsx:392"
+    "src/community/pages/Roadmap.jsx:401",
+    "src/community/pages/Roadmap.jsx:425"
+  ],
+  "Roadmap pages": [
+    "src/community/pages/Roadmap.jsx:403"
+  ],
+  "Page {page} of {total}": [
+    "src/community/pages/Roadmap.jsx:405"
+  ],
+  "No matching entries.": [
+    "src/community/pages/Roadmap.jsx:425"
+  ],
+  "View all": [
+    "src/community/pages/Roadmap.jsx:427",
+    "src/community/pages/Roadmap.jsx:428"
   ],
   "Best match": [
     "src/community/pages/Search.jsx:19"
