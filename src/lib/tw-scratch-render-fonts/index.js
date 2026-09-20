@@ -7,13 +7,13 @@ const Marker = require('./Knewave.woff2?base64');
 const Curly = require('./Griffy-Regular.woff2?base64');
 const Pixel = require('./Grand9K-Pixel.woff2?base64');
 const Scratch = require('./ScratchSavers_b2.woff2?base64');
-const Playful = require('scratch-paint/node_modules/scratch-render-fonts/src/BadComic-Regular.ttf?base64');
-const Bubbly = require('scratch-paint/node_modules/scratch-render-fonts/src/QTKooper.otf?base64');
-const BitsAndBytes = require('scratch-paint/node_modules/scratch-render-fonts/src/freecam-v2.ttf?base64');
-const Technological = require('scratch-paint/node_modules/scratch-render-fonts/src/MonospaceBold.ttf?base64');
-const Arcade = require('scratch-paint/node_modules/scratch-render-fonts/src/PressStart2P.ttf?base64');
-const Archivo = require('scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Regular.ttf?base64');
-const ArchivoBlack = require('scratch-paint/node_modules/scratch-render-fonts/src/Archivo-Black.ttf?base64');
+const Playful = require('scratch-render-fonts/src/BadComic-Regular.ttf?base64');
+const Bubbly = require('scratch-render-fonts/src/QTKooper.otf?base64');
+const BitsAndBytes = require('scratch-render-fonts/src/freecam-v2.ttf?base64');
+const Technological = require('scratch-render-fonts/src/MonospaceBold.ttf?base64');
+const Arcade = require('scratch-render-fonts/src/PressStart2P.ttf?base64');
+const Archivo = require('scratch-render-fonts/src/Archivo-Regular.ttf?base64');
+const ArchivoBlack = require('scratch-render-fonts/src/Archivo-Black.ttf?base64');
 
 const fontSource = {
     'Sans Serif': {data: SansSerif, mime: 'font/woff2'},
