@@ -21,6 +21,9 @@ import {writeEditorLocales} from './scripts/vite-locales.mjs';
 import {writeCommunityLocales} from './scripts/community-translations.mjs';
 import {writeScratchBlocks} from './scripts/vite-blocks.mjs';
 
+const editorRuntimeCSP = 'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
+const editorRuntimePath = pathname => /\/editor-runtime(?:\.html)?\/?$/.test(pathname);
+
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
@@ -166,7 +169,8 @@ const scratchCompatibility = ({inlineWorkers = false} = {}) => ({
 });
 
 const pageDefinitions = {
-    'editor': ['editor.html', 'index', 'editor.jsx'],
+    'editor': ['editor.html', 'index', 'editor-shell.js'],
+    'editor-runtime': ['editor-runtime.html', 'index', 'editor-runtime.js'],
     'community': ['index.html', 'simple', 'community.jsx'],
     'player': ['player.html', 'index', 'player.jsx'],
     'fullscreen': ['fullscreen.html', 'index', 'fullscreen.jsx'],
@@ -178,7 +182,7 @@ const pageDefinitions = {
 const pagesAndAssets = (env, root, library, generatedInputs) => {
     const routeRoot = root || '/';
     const selected = Object.entries(pageDefinitions).filter(([name]) =>
-        (!env.ONLY_ENTRY || name === env.ONLY_ENTRY) &&
+        (!env.ONLY_ENTRY || name === env.ONLY_ENTRY || (env.ONLY_ENTRY === 'editor' && name === 'editor-runtime')) &&
         (name !== 'community' || env.MW_COMMUNITY === 'true'));
     if (!library && selected.length === 0) throw new Error(`No entry selected: ${env.ONLY_ENTRY}`);
     const pages = new Map(selected.map(([name, [filename, template, entry]]) => [filename, {name, template, entry}]));
@@ -212,6 +216,8 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
         server.middlewares.use(async (req, res, next) => {
             const url = new URL(req.url, 'http://localhost');
             const pathname = decodeURIComponent(url.pathname);
+            if (editorRuntimePath(pathname)) res.setHeader('Content-Security-Policy', editorRuntimeCSP);
+            res.setHeader('Access-Control-Allow-Origin', '*');
             const local = pathname.startsWith(routeRoot) ? pathname.slice(routeRoot.length) : pathname.slice(1);
             for (const [from, to] of [...copies].reverse()) {
                 if (local === to && fs.statSync(absolute(from)).isFile()) {
@@ -235,7 +241,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             }
             if (!req.headers.accept?.includes('text/html')) return next();
             let filename = local.replace(/\/$/, '');
-            if (/^(?:\d+\/)?(?:editor|fullscreen|embed)$/.test(filename)) {
+            if (/^(?:\d+\/)?(?:editor|editor-runtime|fullscreen|embed)$/.test(filename)) {
                 filename = `${filename.split('/').pop()}.html`;
             } else if (/^\d+$/.test(filename)) filename = 'player.html';
             else if (['addons', 'credits'].includes(filename)) filename += '.html';
@@ -261,7 +267,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
         },
         config: () => (library ? {} : {
             build: {rollupOptions: {input: (env.ONLY_ENTRY === 'editor' ?
-                ['editor.html'] : [...pages.keys()]).map(absolute)}},
+                ['editor.html', 'editor-runtime.html'] : [...pages.keys()]).map(absolute)}},
             optimizeDeps: {entries: [
                 ...[...pages.values()].map(page => `src/playground/${page.entry}`),
                 '!deploy-build/**'
@@ -279,23 +285,20 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
         configurePreviewServer (server) {
             server.middlewares.use((req, res, next) => {
                 const url = new URL(req.url, 'http://localhost');
+                if (editorRuntimePath(url.pathname)) res.setHeader('Content-Security-Policy', editorRuntimeCSP);
+                res.setHeader('Access-Control-Allow-Origin', '*');
                 let local = url.pathname.startsWith(routeRoot) ?
                     url.pathname.slice(routeRoot.length) : url.pathname.slice(1);
                 local = local.replace(/\/$/, '');
-                if (/^(?:\d+\/)?(?:editor|fullscreen|embed)$/.test(local)) local = `${local.split('/').pop()}.html`;
-                else if (/^\d+$/.test(local)) local = 'player.html';
+                if (/^(?:\d+\/)?(?:editor|editor-runtime|fullscreen|embed)$/.test(local)) {
+                    local = `${local.split('/').pop()}.html`;
+                } else if (/^\d+$/.test(local)) local = 'player.html';
                 else if (['addons', 'credits'].includes(local)) local += '.html';
                 if (pages.has(local)) req.url = `${routeRoot}${local}${url.search}`;
                 next();
             });
         },
         generateBundle (options, bundle) {
-            if (!library && env.ONLY_ENTRY === 'editor') {
-                const chunks = Object.values(bundle).filter(item => item.type === 'chunk');
-                if (chunks.length !== 1 || chunks[0].imports.length || chunks[0].dynamicImports.length) {
-                    this.error('The editor must be emitted as one JavaScript bundle without runtime imports.');
-                }
-            }
             if (env.MW_BUILD_STATS === 'true') {
                 this.emitFile({type: 'asset',
                     fileName: 'stats.json',
@@ -409,16 +412,13 @@ export default defineConfig(({mode}) => {
                     /\?(raw|worker)$/.test(id) || id.startsWith('\0mw-') ? 'preferred' : false
                 )
             },
-            ...(!library && env.ONLY_ENTRY === 'editor' ? {
-                cssCodeSplit: false,
-                rollupOptions: {output: {inlineDynamicImports: true}}
-            } : !library ? {
+            ...(library ? {} : {
                 // Shared translations belong in their own chunk on site builds,
                 // not in an arbitrarily named UI component such as "checkbox".
                 rollupOptions: {output: {manualChunks: id => (
                     id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
                 )}}
-            } : {}),
+            }),
             ...(library ? {lib: {entry: absolute('src/index.js'),
                 name: 'GUI',
                 formats: ['es', 'umd'],
