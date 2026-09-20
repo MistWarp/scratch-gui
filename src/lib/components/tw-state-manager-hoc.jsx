@@ -1,4 +1,5 @@
 import {isProjectOperationActive} from '../project-operation.js';
+import {isIsolatedEditor} from '../editor-sandbox/protocol.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -159,7 +160,8 @@ class FileHashRouter extends HashRouter {
             newPathname = this.editorPath;
         }
 
-        return `${newPathname}${location.search}${newHash ? `#${newHash}` : ''}`;
+        const path = isIsolatedEditor() ? location.pathname : newPathname;
+        return `${path}${location.search}${newHash ? `#${newHash}` : ''}`;
     }
 }
 
@@ -246,7 +248,7 @@ class WildcardRouter extends Router {
             parts.push('editor');
         }
 
-        const path = `${this.root}${parts.join('/')}`;
+        const path = isIsolatedEditor() ? location.pathname : `${this.root}${parts.join('/')}`;
         const canonical = `${location.origin}${this.root}${projectId === '0' ? '' : projectId}`;
         getCanonicalLinkElement().href = canonical;
 

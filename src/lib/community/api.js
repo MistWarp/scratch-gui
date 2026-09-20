@@ -1,3 +1,5 @@
+import {isIsolatedEditor} from '../editor-sandbox/protocol.js';
+import {editorRequest, getEditorIdentity} from '../editor-sandbox/client.js';
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
@@ -24,6 +26,7 @@ const loadRoturToken = () => {
 let exchangeInFlight = null;
 
 const loadSession = () => {
+    if (isIsolatedEditor()) return null;
     try {
         return localStorage.getItem(SESSION_KEY) || null;
     } catch (e) {
@@ -31,7 +34,10 @@ const loadSession = () => {
     }
 };
 
+const hasSession = () => (isIsolatedEditor() ? Boolean(getEditorIdentity().user) : Boolean(loadSession()));
+
 const storeSession = token => {
+    if (isIsolatedEditor()) return;
     try {
         const previous = localStorage.getItem(SESSION_KEY);
         if (token) {
@@ -159,6 +165,7 @@ const runExchange = token => {
 };
 
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs = 0} = {}) => {
+    if (isIsolatedEditor()) return editorRequest(path, {method, body, raw});
     const cacheable = method === 'GET' && !raw && cache;
     const cacheKey = cacheable ? getCacheKey(path) : '';
     if (cacheable) {
@@ -251,7 +258,7 @@ const createProject = payload => request('/projects', {method: 'POST', body: pay
 const UPLOAD_STALL_TIMEOUT = 120000;
 const UPLOAD_PROCESSING_TIMEOUT = 180000;
 
-const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
+const uploadXhrDirect = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let timeoutId = null;
     let settled = false;
@@ -314,6 +321,9 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
     scheduleTimeout(UPLOAD_STALL_TIMEOUT, false);
     xhr.send(form);
 });
+
+const uploadXhr = (path, form, onUploadProgress) => (isIsolatedEditor() ?
+    editorRequest(path, {method: 'POST', body: form}) : uploadXhrDirect(path, form, onUploadProgress));
 
 const getCustomExtensionUrls = project => {
     const urls = {...(project.extensionURLs || {})};
@@ -482,6 +492,7 @@ const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 export {
     uploadXhr,
     loadSession,
+    hasSession,
     storeSession,
     exchangeValidator,
     runExchange,

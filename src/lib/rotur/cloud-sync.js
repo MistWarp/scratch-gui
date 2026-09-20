@@ -1,4 +1,4 @@
-import {loadSession, request} from '../community/api.js';
+import {hasSession, request} from '../community/api.js';
 import {ORDER_KEY as MENU_BAR_ORDER_KEY, HIDDEN_KEY as MENU_BAR_HIDDEN_KEY} from '../mw-menu-bar-layout.js';
 import {
     CHANGE_EVENT as MENU_BAR_SETTINGS_CHANGE_EVENT,
@@ -191,9 +191,9 @@ const applySnapshotLocally = snapshot => {
 };
 
 const pushToCloud = () => {
-    if (suppressPush || !loadSession()) return Promise.resolve(false);
+    if (suppressPush || !hasSession()) return Promise.resolve(false);
     pushChain = pushChain.catch(() => null).then(async () => {
-        if (suppressPush || !loadSession()) return false;
+        if (suppressPush || !hasSession()) return false;
         try {
             await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
             markDirty(false);
@@ -208,7 +208,7 @@ const pushToCloud = () => {
 };
 
 const pullFromCloud = async () => {
-    if (!loadSession()) {
+    if (!hasSession()) {
         return {applied: false};
     }
 
@@ -243,7 +243,7 @@ const pullFromCloud = async () => {
  */
 const notifyLocalChange = (delayMs = 800) => {
     if (suppressPush) return;
-    if (!loadSession()) return;
+    if (!hasSession()) return;
     markDirty(true);
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {

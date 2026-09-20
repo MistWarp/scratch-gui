@@ -1,3 +1,5 @@
+import {isIsolatedEditor} from '../editor-sandbox/protocol.js';
+import {callEditorHost} from '../editor-sandbox/client.js';
 import {request} from '../community/api.js';
 
 const capabilities = new Map();
@@ -32,36 +34,41 @@ const withCapability = async (projectId, context, callback) => {
     }
 };
 
-const loadProjectSave = (projectId, context) => withCapability(projectId, context, capability =>
-    request(`/projects/${encodeURIComponent(projectId)}/me/save`, {
-        headers: {'X-MistWarp-Game-Data': capability},
-        cache: false
-    }).then(result => result.save)
-);
+const loadProjectSave = (projectId, context) => (isIsolatedEditor() ?
+    callEditorHost('game.data', {id: projectId, action: 'load'}) : withCapability(projectId, context, capability =>
+        request(`/projects/${encodeURIComponent(projectId)}/me/save`, {
+            headers: {'X-MistWarp-Game-Data': capability},
+            cache: false
+        }).then(result => result.save)
+    ));
 
-const saveProjectData = (projectId, context, save) => withCapability(projectId, context, capability =>
-    request(`/projects/${encodeURIComponent(projectId)}/me/save`, {
-        method: 'PUT',
-        body: save,
-        headers: {'X-MistWarp-Game-Data': capability}
-    }).then(result => result.save)
-);
+const saveProjectData = (projectId, context, save) => (isIsolatedEditor() ?
+    callEditorHost('game.data', {id: projectId, action: 'save', save}) :
+    withCapability(projectId, context, capability =>
+        request(`/projects/${encodeURIComponent(projectId)}/me/save`, {
+            method: 'PUT',
+            body: save,
+            headers: {'X-MistWarp-Game-Data': capability}
+        }).then(result => result.save)
+    ));
 
-const loadProjectInventory = (projectId, context) => withCapability(projectId, context, capability =>
-    request(`/projects/${encodeURIComponent(projectId)}/me/inventory`, {
-        headers: {'X-MistWarp-Game-Data': capability},
-        cache: false
-    }).then(result => result.inventory)
-);
+const loadProjectInventory = (projectId, context) => (isIsolatedEditor() ?
+    callEditorHost('game.data', {id: projectId, action: 'inventory'}) : withCapability(projectId, context, capability =>
+        request(`/projects/${encodeURIComponent(projectId)}/me/inventory`, {
+            headers: {'X-MistWarp-Game-Data': capability},
+            cache: false
+        }).then(result => result.inventory)
+    ));
 
-const grantProjectItem = (projectId, context, item, requestId) =>
+const grantProjectItem = (projectId, context, item, requestId) => (isIsolatedEditor() ?
+    callEditorHost('game.data', {id: projectId, action: 'grant', item, requestId}) :
     withCapability(projectId, context, capability =>
         request(`/projects/${encodeURIComponent(projectId)}/me/inventory/grant`, {
             method: 'POST',
             body: {item, requestId},
             headers: {'X-MistWarp-Game-Data': capability}
         }).then(result => result.inventory)
-    );
+    ));
 
 const clearCapabilities = () => capabilities.clear();
 

@@ -3,3 +3,20 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+/editor-runtime
+  Content-Security-Policy: sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals
+  Cache-Control: no-cache
+
+/editor-runtime.html
+  Content-Security-Policy: sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals
+  Cache-Control: no-cache
+
+/js/*
+  Access-Control-Allow-Origin: *
+
+/assets/*
+  Access-Control-Allow-Origin: *
+
+/static/*
+  Access-Control-Allow-Origin: *

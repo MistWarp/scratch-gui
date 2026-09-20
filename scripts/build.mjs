@@ -9,7 +9,7 @@ process.env.MW_BUILD_ID = env.MW_BUILD_ID || env.GITHUB_SHA ||
 process.env.MW_BUILD_TIME = env.MW_BUILD_TIME || new Date().toISOString();
 const siteOnly = process.argv.includes('--site-only');
 // Compile all selected pages together so the editor, player, and community
-// share modules. ONLY_ENTRY=editor still produces a standalone editor bundle.
+// share modules. ONLY_ENTRY=editor emits the editor shell and its isolated runtime.
 await build();
 execFileSync(process.execPath, ['scripts/write-version.mjs', env.BUILD_DIR || 'build'], {stdio: 'inherit'});
 if (!siteOnly && !env.ONLY_ENTRY) {

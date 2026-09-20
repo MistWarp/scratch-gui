@@ -1,3 +1,5 @@
+import {isIsolatedEditor} from '../editor-sandbox/protocol.js';
+import {callEditorHost, getEditorIdentity, subscribeEditorIdentity} from '../editor-sandbox/client.js';
 import {
     restoreSession as roturRestore,
     login as roturLogin,
@@ -18,7 +20,7 @@ import {
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
 
-let state = {status: 'idle', user: null, banMessage: null};
+let state = isIsolatedEditor() ? getEditorIdentity() : {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
 
 const getState = () => state;
@@ -73,6 +75,7 @@ const adoptUrlToken = () => {
 };
 
 const ensureMistSession = () => {
+    if (isIsolatedEditor()) return Promise.resolve(null);
     const existing = loadSession();
     if (existing) {
         return Promise.resolve(existing);
@@ -95,6 +98,10 @@ const invalidateFailedValidator = error => {
 let restoreInFlight = null;
 
 const doRestore = async () => {
+    if (isIsolatedEditor()) {
+        setState(await callEditorHost('identity.restore'));
+        return state.user;
+    }
     setState({status: 'restoring'});
     adoptUrlToken();
     let user = null;
@@ -129,6 +136,10 @@ const restore = () => {
 };
 
 const login = async () => {
+    if (isIsolatedEditor()) {
+        setState(await callEditorHost('identity.login'));
+        return state.user;
+    }
     const previousUser = state.user;
     setState({status: 'logging-in'});
     let user;
@@ -150,6 +161,7 @@ const login = async () => {
 };
 
 const logout = () => {
+    if (isIsolatedEditor()) return callEditorHost('identity.logout').then(setState);
     mistLogout().catch(() => null);
     try {
         onRoturLogout();
@@ -167,7 +179,9 @@ const logout = () => {
 };
 
 const getMistSession = () => loadSession();
-const getRoturToken = () => getRotur().token || readRoturToken();
+const getRoturToken = () => (isIsolatedEditor() ? null : getRotur().token || readRoturToken());
+
+if (isIsolatedEditor()) subscribeEditorIdentity(setState);
 
 const getMistWarpAuthor = async () => {
     const user = state.user || await restore();
