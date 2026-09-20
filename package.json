@@ -111,10 +111,11 @@
     "redux-throttle": "0.1.1",
     "rotur-sdk": "^2.0.0",
     "scratch-audio": "github:TurboWarp/scratch-audio#develop",
-    "scratch-blocks": "github:MistWarp/scratch-blocks#2662d89a85de3fe1a245767af77686265ce3928b",
-    "scratch-paint": "github:MistWarp/scratch-paint#develop",
-    "scratch-render": "github:MistWarp/scratch-render#develop",
-    "scratch-vm": "github:MistWarp/scratch-vm#develop",
+    "scratch-blocks": "https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/2662d89a85de3fe1a245767af77686265ce3928b",
+    "scratch-paint": "https://codeload.github.com/MistWarp/scratch-paint/tar.gz/b6b4e6787cd02c17a010c9514d30185c5ec4c4c2",
+    "scratch-render": "https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a",
+    "scratch-render-fonts": "https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd",
+    "scratch-vm": "https://codeload.github.com/MistWarp/scratch-vm/tar.gz/52beace9f9da98c6ec57acc968d2ccc2215846b0",
     "scratchblocks": "3.7.1",
     "sha.js": "^2.4.12",
     "to-style": "1.3.3",
@@ -225,19 +226,10 @@
       "chromedriver",
       "fsevents",
       "scratch-audio",
-      "scratch-blocks",
-      "scratch-paint",
-      "scratch-render",
-      "scratch-vm",
       "esbuild"
     ],
     "overrides": {
-      "cheerio": "1.0.0-rc.12",
-      "scratch-blocks": "link:../scratch-blocks",
-      "scratch-render": "link:../scratch-render",
-      "scratch-vm": "link:../scratch-vm",
-      "scratch-paint": "link:../scratch-paint",
-      "rotur-sdk": "link:../../rotur-sdk"
+      "cheerio": "1.0.0-rc.12"
     },
     "patchedDependencies": {
       "@isomorphic-git/lightning-fs": "patches/@isomorphic-git__lightning-fs.patch",
