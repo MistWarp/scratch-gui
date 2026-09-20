@@ -1,0 +1,58 @@
+.confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.confetti span {
+    position: absolute;
+    top: -12px;
+    left: calc(var(--i) * 4.2%);
+    width: 8px;
+    height: 14px;
+    border-radius: var(--radius-2xs);
+    background: hsl(calc(var(--i) * 47), 85%, 62%);
+    animation: fall calc(2.2s + var(--i) * 0.07s) linear calc(var(--i) * -0.13s) 3;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(105vh) rotate(720deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .confetti {
+        display: none;
+    }
+}
+
+.lead {
+    margin: 0 0 12px;
+    font-size: var(--fs-md);
+    color: var(--text-dim);
+}
+
+.list {
+    margin: 0;
+    padding: 12px 14px;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    background: var(--bg-raised);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-md);
+    font-weight: 500;
+}
+
+.list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list svg {
+    flex: none;
+    color: var(--accent);
+}

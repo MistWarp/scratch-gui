@@ -1942,5 +1942,21 @@
   "Nothing matched that search.": "Nothing matched that search.",
   "No projects matched that search.": "No projects matched that search.",
   "No people matched that search.": "No people matched that search.",
-  "No studios or challenges matched that search.": "No studios or challenges matched that search."
+  "No studios or challenges matched that search.": "No studios or challenges matched that search.",
+  "{size} MB of uploads every week": "{size} MB of uploads every week",
+  "{size} MB of assets per project": "{size} MB of assets per project",
+  "{days} days of deleted project recovery": "{days} days of deleted project recovery",
+  "Advanced analytics and CSV exports": "Advanced analytics and CSV exports",
+  "Vanity project URLs": "Vanity project URLs",
+  "Welcome to {tier}": "Welcome to {tier}",
+  "See all your perks": "See all your perks",
+  "Thank you for supporting MistWarp. Your new limits are already active.": "Thank you for supporting MistWarp. Your new limits are already active.",
+  "MistWarp is a Scratch mod built on TurboWarp. Your Scratch projects open as they are.": "MistWarp is a Scratch mod built on TurboWarp. Your Scratch projects open as they are.",
+  "The editor works without signing in. You only need an account to share or save to MistWarp.": "The editor works without signing in. You only need an account to share or save to MistWarp.",
+  "Game library": "Game library",
+  "Games you save to your library show up here after you play them.": "Games you save to your library show up here after you play them.",
+  "Copy embed code": "Copy embed code",
+  "Use stage as thumbnail": "Use stage as thumbnail",
+  "Upload thumbnail": "Upload thumbnail",
+  "Copied to clipboard.": "Copied to clipboard."
 }

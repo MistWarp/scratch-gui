@@ -9,6 +9,7 @@ import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
 import BetaBanner from './components/BetaBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
+import UpgradeCelebration from './components/UpgradeCelebration.jsx';
 import UpdateToast from '../components/update-toast/update-toast.jsx';
 import Footer from './components/Footer.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -108,6 +109,7 @@ const App = () => {
         <BetaBanner />
         <StandingBanner />
         <UpdateToast />
+        <UpgradeCelebration />
         <div className={tokenStyles['mw-app-content']} id="mw-main-content" tabIndex="-1">
             <ErrorBoundary action="community-route">
                 <Suspense fallback={<p className={tokenStyles['mw-route-loading']} role="status">{communityText('Loading page…')}</p>}>
