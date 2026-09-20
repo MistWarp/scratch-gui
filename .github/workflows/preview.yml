@@ -1,0 +1,75 @@
+# Builds each pull request and publishes it to a Cloudflare Pages preview at
+# https://pr-<number>.<project>.pages.dev, then links it from the pull request.
+#
+# Requires the CLOUDFLARE_API_TOKEN secret (with the "Cloudflare Pages: Edit"
+# permission), the CLOUDFLARE_ACCOUNT_ID secret, and CLOUDFLARE_PROJECT_NAME as
+# either a repository variable or a secret.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    # Forks cannot read the Cloudflare secrets, so skip rather than fail.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build
+        env:
+          NODE_ENV: production
+          # Hash routing needs no server-side rewrites, so a preview works
+          # without its own redirect rules. Matches Build and Deploy.
+          ROUTING_STYLE: hash
+          # Identify the pull request head rather than the synthetic merge
+          # commit, so version.json points at a commit that exists.
+          MW_BUILD_ID: ${{ github.event.pull_request.head.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME || secrets.CLOUDFLARE_PROJECT_NAME }}
+        run: |
+          if [ -z "$PROJECT_NAME" ]; then
+            echo "Set CLOUDFLARE_PROJECT_NAME, as a repository variable or secret, to the Cloudflare Pages project name." >&2
+            exit 1
+          fi
+          # The deploy branch is named after the pull request rather than its
+          # head branch, so the preview URL stays stable across pushes and can
+          # never collide with the production branch.
+          pnpm dlx wrangler@4 pages deploy build \
+            --project-name "$PROJECT_NAME" \
+            --branch "pr-${{ github.event.number }}" \
+            --commit-dirty=true
+          echo "url=https://pr-${{ github.event.number }}.$PROJECT_NAME.pages.dev" >> "$GITHUB_OUTPUT"
+
+      # Reuses this workflow's previous comment, so pushes update it in place
+      # instead of stacking a new comment onto the pull request.
+      - name: Link the preview from the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh pr comment "${{ github.event.number }}" --edit-last --create-if-none \
+            --body "Preview for \`${HEAD_SHA:0:7}\`: ${{ steps.deploy.outputs.url }}"
