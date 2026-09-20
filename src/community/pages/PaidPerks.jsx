@@ -74,7 +74,7 @@ const PaidPerks = () => {
         return () => {
             active = false;
         };
-    }, [user?.username]);
+    }, [user?.username, user?.subscription]);
 
     if (error) return <main className={styles.page}><p className={styles.status}>{error}</p></main>;
     if (!data) return <main className={styles.page}><p className={styles.status}>{communityText('Loading membership benefits…')}</p></main>;

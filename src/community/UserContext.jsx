@@ -184,6 +184,7 @@ const UserProvider = ({children}) => {
                 loginOrThrow,
                 logout,
                 refreshUser,
+                setSubscription: subscription => setUser(current => current && {...current, subscription}),
                 banMessage,
                 dismissBan: () => setBanMessage(null),
                 signInError,

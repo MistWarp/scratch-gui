@@ -18,6 +18,7 @@ import {
 import {subscribeRoturSettings} from '../lib/rotur/settings.js';
 import {onRoturLogin, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
 import {getRememberedPlatformProject} from '../lib/community/publish.js';
+import {watchTier} from '../community/tier-watch.js';
 import {getProject as getMistWarpProject} from '../lib/community/api.js';
 import {setRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
@@ -128,6 +129,7 @@ class RoturSession extends React.Component {
             this.props.onSetUser(next.user);
             this.applyCloudPreferences().then(() => this.syncCurrentActivity());
             this.ensureNotificationSubscription();
+            this.unsubscribeTier = watchTier(next.user.username, () => {});
         } else if (!next.user && hadUser) {
             clearActivity();
             this.clearNotificationSubscription();
@@ -161,6 +163,10 @@ class RoturSession extends React.Component {
         if (this.unsubscribeNotifications) {
             this.unsubscribeNotifications();
             this.unsubscribeNotifications = null;
+        }
+        if (this.unsubscribeTier) {
+            this.unsubscribeTier();
+            this.unsubscribeTier = null;
         }
         if (this.unsubscribeNotificationRemovals) {
             this.unsubscribeNotificationRemovals();

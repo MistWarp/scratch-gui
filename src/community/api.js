@@ -171,6 +171,8 @@ const api = {
     logout,
     me: () => request('/me'),
     perks: () => request('/perks'),
+    refreshPerks: () => request('/perks/refresh', {method: 'POST'}),
+    perksSeen: () => request('/perks/seen', {method: 'POST'}),
     group: tag => request(`/groups/${encodeURIComponent(tag)}`),
     resolveVanity: slug => request(`/vanity/${encodeURIComponent(slug)}`),
     quota: () => request('/me/quota'),

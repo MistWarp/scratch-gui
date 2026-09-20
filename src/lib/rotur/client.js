@@ -479,6 +479,24 @@ const subscribeNotificationRemovals = listener => {
     };
 };
 
+const subscribeTier = listener => {
+    let off = null;
+    let cancelled = false;
+    const read = value => (value && typeof value === 'object' ? String(value.tier || 'Free') : 'Free');
+    ensureSocket().then(connected => {
+        if (!connected || cancelled) return;
+        const socket = getClient().socket;
+        listener(read(socket.getKey('sys.subscription')));
+        off = socket.onKeyChange((key, value) => {
+            if (key === 'sys.subscription') listener(read(value));
+        });
+    });
+    return () => {
+        cancelled = true;
+        if (off) off();
+    };
+};
+
 /**
  * Publish MistWarp editing presence.
  * Title/status are fixed strings; edit duration uses start_time only.
@@ -819,6 +837,7 @@ export {
     logout,
     subscribeNotifications,
     subscribeNotificationRemovals,
+    subscribeTier,
     syncActivity,
     clearActivity,
     isLoggedIn,
