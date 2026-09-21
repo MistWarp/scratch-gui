@@ -1,3 +1,5 @@
+import {isIsolatedEditor} from '../lib/editor-sandbox/protocol.js';
+import {callEditorHost} from '../lib/editor-sandbox/client.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -193,6 +195,8 @@ class RoturExtensionHost extends React.Component {
     }
 
     async ensureConsent (scopes, meta) {
+        // The parent checks the actual operation and shows its own consent.
+        if (isIsolatedEditor()) return Boolean(this.currentUser().loggedIn);
         if (!this.currentUser().loggedIn) {
             throw new Error('Log in to Rotur to let this project connect');
         }
@@ -221,6 +225,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async call (method, args, opts) {
+        if (isIsolatedEditor()) return callEditorHost('rotur.call', {method, args});
         if (isActivityMethod(method)) {
             const allowed = await this.ensureActivitySharing();
             if (!allowed) {

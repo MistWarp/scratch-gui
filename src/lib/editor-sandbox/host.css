@@ -1,0 +1,15 @@
+.mw-editor-host {position:fixed;inset:0;display:flex;flex-direction:column;background:#202025;color:#eee;font:14px system-ui,sans-serif}
+.mw-editor-host button {font:inherit;padding:6px 12px;border:0;border-radius:6px;background:#494052;color:#fff;cursor:pointer}
+.mw-editor-host button:focus-visible {outline:2px solid #c6a2ff;outline-offset:2px}
+.mw-editor-host iframe {flex:1;width:100%;min-height:0;border:0;background:#202025}
+.mw-editor-host-backdrop {position:absolute;inset:0;display:grid;place-items:center;background:#0009;z-index:1}
+.mw-editor-host-dialog {width:min(440px,calc(100% - 48px));padding:24px;border-radius:12px;background:#292930}
+.mw-editor-host-dialog h2 {margin:0 0 16px;font-size:20px}
+.mw-editor-host-dialog p {line-height:1.5}
+.mw-editor-host-dialog > div {display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
+.mw-editor-host-dialog button:last-child {background:#7450a5}
+
+.mw-editor-host-dialog {max-height:80vh;overflow:auto}
+.mw-editor-host-backup {display:block;margin-top:12px;color:#d8baff}
+
+.mw-editor-host-error {position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;width:max-content;max-width:calc(100% - 64px);padding:12px 16px;border-radius:8px;background:#292930;box-shadow:0 4px 16px #0006;z-index:2}

@@ -1,3 +1,5 @@
+import {isIsolatedEditor} from '../../lib/editor-sandbox/protocol.js';
+import {navigateFromEditor} from '../../lib/editor-sandbox/navigation.js';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -38,6 +40,15 @@ const getAdminLabel = (openReports, openErrors) => {
 
 const RoturAccount = props => {
     const handleSwitchAccount = React.useCallback(() => {
+        if (isIsolatedEditor()) {
+            props.onCloseMenu();
+            const api = getRoturSessionApi();
+            if (api) {
+                Promise.resolve(api.logout()).then(() => api.login())
+                    .catch(() => {});
+            }
+            return;
+        }
         const authUrl = buildAuthUrl();
         props.onCloseMenu();
         logout(props.onLogout);
@@ -71,7 +82,7 @@ const RoturAccount = props => {
 
     const go = path => () => {
         props.onCloseMenu();
-        window.location.href = path;
+        navigateFromEditor(path).catch(() => {});
     };
 
     return (

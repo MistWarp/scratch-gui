@@ -1,3 +1,4 @@
+import {isIsolatedEditor} from '../lib/editor-sandbox/protocol.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -294,6 +295,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {string} The VM worker mode to use
      */
     async getSandboxMode (url) {
+        if (isIsolatedEditor()) return 'unsandboxed';
         if (await isPlatformTrustedExtension(url) || isTrustedExtension(url)) {
             log.info(`Loading extension ${url} unsandboxed`);
             return 'unsandboxed';
@@ -360,6 +362,14 @@ class TWSecurityManagerComponent extends React.Component {
             return allowed ? allowProjectExtension() : false;
         }
         if (this.props.vm.runtime._mwProjectTrusted === true) return allowProjectExtension();
+        if (isIsolatedEditor()) {
+            // The isolated editor runs every extension unsandboxed (see getSandboxMode), so there
+            // is no sandboxed choice to offer. It still asks: the account is out of reach, but the
+            // extension can read and change this project and the editor around it.
+            const {showModal} = await this.acquireModalLock();
+            const allowed = await showModal(SecurityModals.LoadExtension, {url, unsandboxed: true, isolated: true});
+            return allowed ? allowProjectExtension() : false;
+        }
         const {showModal} = await this.acquireModalLock();
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {

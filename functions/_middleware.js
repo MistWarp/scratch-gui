@@ -501,6 +501,23 @@ export const onRequest = async context => {
     const {request, next} = context;
     const url = new URL(request.url);
 
+    // The account host's permission dialogs must not be framed by another site.
+    if (/^(?:\/\d+)?\/editor(?:\.html)?\/?$/.test(url.pathname)) {
+        const upstream = await next();
+        const response = new Response(upstream.body, upstream);
+        response.headers.set('Content-Security-Policy', "frame-ancestors 'self'");
+        return response;
+    }
+
+    if (/^\/editor-runtime(?:\.html)?\/?$/.test(url.pathname)) {
+        const upstream = await next();
+        const response = new Response(upstream.body, upstream);
+        response.headers.set('Content-Security-Policy',
+            'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals');
+        response.headers.set('Cache-Control', 'no-cache');
+        return response;
+    }
+
     if (url.pathname === '/sitemap.xml') {
         try {
             const upstream = await fetch(`${API_BASE}/sitemap.xml`, {
@@ -533,6 +550,11 @@ export const onRequest = async context => {
         });
     }
 
+    if (STATIC_FILE_PATH.test(url.pathname)) {
+        const corsResponse = new Response(response.body, response);
+        corsResponse.headers.set('Access-Control-Allow-Origin', '*');
+        return corsResponse;
+    }
     if (!contentType.includes('text/html')) return response;
     if (SKIP_PATHS.has(url.pathname)) return response;
 
