@@ -167,10 +167,13 @@
       "raf/polyfill",
       "<rootDir>/test/helpers/enzyme-setup.js"
     ],
+    "globalSetup": "<rootDir>/test/helpers/jest-global-setup.mjs",
     "testPathIgnorePatterns": [
-      "src/test.js"
+      "src/test.js",
+      "<rootDir>/.claude/"
     ],
     "moduleNameMapper": {
+      "^scratch-paint$": "<rootDir>/test/__mocks__/scratch-paint.js",
       "\\.module\\.css$": "<rootDir>/test/__mocks__/cssModuleMock.js",
       "generated/editor-locales/index\\.js$": "<rootDir>/test/__mocks__/editor-locales.js",
       "\\?arraybuffer$": "<rootDir>/test/__mocks__/arrayBufferMock.js",
@@ -197,7 +200,7 @@
       ]
     },
     "transformIgnorePatterns": [
-      "/node_modules/(?!(scratch-audio|fractch|scratchblocks|pify|isomorphic-git|rotur-sdk|@vernier/godirect|@chenglou/pretext)/)"
+      "/node_modules/(?!(scratch-audio|scratch-paint|fractch|scratchblocks|pify|isomorphic-git|rotur-sdk|@vernier/godirect|@chenglou/pretext)/)"
     ],
     "transform": {
       "^.+\\.(js|jsx|mjs|cjs)$": [
