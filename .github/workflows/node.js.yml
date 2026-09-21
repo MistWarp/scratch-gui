@@ -28,6 +28,9 @@ jobs:
         node-version-file: .nvmrc
         cache: pnpm
     - run: pnpm install --frozen-lockfile
+    # pnpm does not run the prepublish lifecycle on install; the build imports
+    # the micro:bit HEX it downloads.
+    - run: pnpm run prepublish
     - run: pnpm run deps:check
     - run: pnpm run i18n:community:check
     - run: pnpm run i18n:editor:check
