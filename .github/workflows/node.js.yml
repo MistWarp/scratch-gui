@@ -45,8 +45,10 @@ jobs:
         path: ./build/
 
   deploy:
-    # Pull requests build and test, but only develop publishes.
-    if: github.event_name != 'pull_request'
+    # Pull requests build and test, but only develop publishes. The ref check
+    # also covers workflow_dispatch, which would otherwise let a manual run on
+    # any branch deploy that branch to production.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/develop'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
