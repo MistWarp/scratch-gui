@@ -124,7 +124,7 @@ describe('VM assets and generated identities', () => {
     let host;
     let client;
     const Storage = require('@turbowarp/scratch-storage');
-    const Renderer = require('scratch-vm/test/fixtures/fake-renderer');
+    const Renderer = require('../../fixtures/fake-renderer');
     beforeEach(() => {
         host = makeVM(); client = makeVM();
         host.attachStorage(new Storage()); client.attachStorage(new Storage());

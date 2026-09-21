@@ -4,7 +4,7 @@ import {FakeHub} from '../../fixtures/collab-harness';
 const Storage = require('@turbowarp/scratch-storage');
 const Sprite = require('scratch-vm/src/sprites/sprite');
 const RenderedTarget = require('scratch-vm/src/sprites/rendered-target');
-const Renderer = require('scratch-vm/test/fixtures/fake-renderer');
+const Renderer = require('../../fixtures/fake-renderer');
 let mockHub;
 let mockPeer = 0;
 
