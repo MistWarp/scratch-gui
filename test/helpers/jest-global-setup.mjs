@@ -1,9 +1,12 @@
-// Tests import the Closure bundle the Vite build writes to src/generated, and
-// CI runs them before building.
+// Tests import sources the Vite build writes to src/generated, and CI runs
+// them before building.
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeScratchBlocks} from '../../scripts/vite-blocks.mjs';
+import {writeCommunityLocales} from '../../scripts/community-translations.mjs';
 
 export default () => {
-    writeScratchBlocks(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'));
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+    writeScratchBlocks(root);
+    writeCommunityLocales(root);
 };
