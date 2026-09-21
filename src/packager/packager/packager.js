@@ -7,8 +7,8 @@ import pngToAppleICNS from './icns';
 import {buildId, verifyBuildId} from './build-id';
 import {encode} from './base85';
 import {parsePlist, generatePlist} from './plist';
-import {APP_NAME, WEBSITE, ACCENT_COLOR} from '../../lib/constants/brand';
-import COPYRIGHT_NOTICE from '../copyright-notice';
+import {appName as APP_NAME, website as WEBSITE, accentColor as ACCENT_COLOR,
+  copyrightNotice as COPYRIGHT_NOTICE} from 'virtual:packager-runtime';
 import {OutdatedPackagerError} from '../common/errors';
 import {darken} from './colors';
 import {Adapter} from './adapter';

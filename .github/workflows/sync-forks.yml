@@ -1,0 +1,54 @@
+name: Sync fork pins
+
+# scratch-gui builds on its own on Cloudflare Pages and on the Actions runners, so it
+# cannot use the sibling checkouts that `pnpm run link` wires up locally: package.json
+# pins every engine fork to an immutable tarball instead. Nothing moves those pins on
+# its own, which is how the editor ended up shipping a months-old scratch-blocks, so
+# check every morning and raise a pull request when a fork has moved ahead.
+#
+# This needs "Allow GitHub Actions to create and approve pull requests" enabled under
+# Settings -> Actions -> General, otherwise the final step fails with a 403.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: "sync-forks"
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+    - name: Repin the forks
+      run: pnpm run deps:sync
+    - name: Refresh the lockfile
+      run: pnpm install --no-frozen-lockfile
+    - name: Open a pull request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        branch: deps/sync-forks
+        title: "Update the engine fork pins"
+        commit-message: |
+          Update the engine fork pins
+
+          Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+        body: |
+          `pnpm run deps:sync` found one or more engine forks ahead of the pins in
+          package.json. Merging this brings the editor build back in step with
+          `develop` on every MistWarp fork.
+        delete-branch: true

@@ -57,7 +57,16 @@ export const packagerRuntime = ({buildId, absolute, sharedResolve, scratchCompat
         },
         load (id) {
             if (id === '\0mw-packager-runtime.js') {
-                return `export const buildId = ${JSON.stringify(buildId)}; export const development = ${development};`;
+                return `export const buildId = ${JSON.stringify(buildId)};\n` +
+                    `export const development = ${development};\n` +
+                    'export const runtimeUrl = name => ' +
+                    `\`\${import.meta.env.BASE_URL}packager-runtime/\${buildId}/\${name}\`;\n` +
+                    // The branding a packaged project carries belongs to whichever app did the
+                    // packaging, so the host supplies it rather than src/packager hardcoding ours.
+                    'export {APP_NAME as appName, WEBSITE as website, ACCENT_COLOR as accentColor} ' +
+                    `from ${JSON.stringify(absolute('src/lib/constants/brand.js'))};\n` +
+                    'export {default as copyrightNotice} ' +
+                    `from ${JSON.stringify(absolute('src/packager/copyright-notice.js'))};\n`;
             }
         },
         configureServer (server) {
