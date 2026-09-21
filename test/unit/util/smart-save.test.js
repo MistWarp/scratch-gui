@@ -4,6 +4,7 @@ import {createMwp} from '../../../src/lib/git/mwp.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src/lib/community/publish.js';
 import downloadBlob from '../../../src/lib/utils/download-blob';
 import {request} from '../../../src/lib/community/api.js';
+import {getSaveFeedback, SAVE_FEEDBACK_EVENT} from '../../../src/lib/mw/save-feedback.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
@@ -32,6 +33,26 @@ describe('MistWarp smart save results', () => {
         expect(createMwp).toHaveBeenCalledTimes(1);
         expect(downloadBlob).toHaveBeenCalledWith('My_Project.mwp', expect.any(Blob));
         expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+
+    test('reports download progress and failure as save feedback', async () => {
+        getRememberedPlatformProjectState.mockReturnValue(null);
+        const vm = {};
+        const seen = [];
+        const record = () => seen.push(getSaveFeedback(vm));
+        window.addEventListener(SAVE_FEEDBACK_EVENT, record);
+        try {
+            await smartSave({vm, title: 'Project'});
+            expect(seen).toEqual(['downloading', 'downloaded']);
+
+            seen.length = 0;
+            createMwp.mockRejectedValueOnce(new Error('disk full'));
+            await expect(smartSave({vm, title: 'Project'})).rejects.toThrow('disk full');
+            expect(seen).toEqual(['downloading', 'downloadFailed']);
+            expect(downloadBlob).toHaveBeenCalledTimes(1);
+        } finally {
+            window.removeEventListener(SAVE_FEEDBACK_EVENT, record);
+        }
     });
 
     test('returns false when saving needs a remix window', async () => {

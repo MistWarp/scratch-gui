@@ -1046,6 +1046,7 @@
   "tw.changeUsername.cannotChangeWhileRunning": "Username cannot be changed while the project is running.",
   "gui.alerts.savesuccess": "Project saved.",
   "tw.alerts.savedToDisk": "Saved to your computer.",
+  "mw.alerts.savingMwp": "Preparing your project file…",
   "gui.alerts.saving": "Saving project…",
   "mw.alerts.gitCommitting": "Committing to Git…",
   "mw.alerts.gitPushing": "Pushing to remote…",
