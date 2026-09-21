@@ -111,19 +111,12 @@ describe('MistWarp share window workflows', () => {
         wrapper.unmount();
     });
 
-    test('asks Sable for a name only after Generate name is clicked', async () => {
+    test('asks for a written version name without offering Sable generation', () => {
         const wrapper = makeWindow();
-        const publish = jest.spyOn(wrapper.instance(), 'handlePublish').mockImplementation(() => {});
 
+        expect(wrapper.text()).toContain('Write the name yourself.');
+        expect(wrapper.find('button').filterWhere(button => button.text() === 'Generate name')).toHaveLength(0);
         expect(generateCommitName).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('Generating a name may use some of your Sable Credit (SC).');
-        const generateButton = wrapper.find('button').filterWhere(button => button.text() === 'Generate name');
-        await generateButton.props().onClick();
-
-        expect(getRepoChanges).toHaveBeenCalledWith(wrapper.instance().props.vm);
-        expect(generateCommitName).toHaveBeenCalledWith('diff --git a/Stage.fractch b/Stage.fractch');
-        expect(wrapper.state('changeMessage')).toBe('Fix stage movement');
-        expect(publish).not.toHaveBeenCalled();
         wrapper.unmount();
     });
 
