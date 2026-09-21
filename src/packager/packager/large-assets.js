@@ -1,4 +1,4 @@
-import {buildId} from './build-id';
+import {runtimeUrl} from 'virtual:packager-runtime';
 
 // This defines where files are fetched from when the packager needs to download files.
 // Files fetched from an external server have a SHA-256 checksum used to validate the download.
@@ -20,7 +20,9 @@ const externalFile = (name) => [
   `https://blobs.turbowarp.xyz/${name}`
 ];
 
-const relativeScaffolding = (name) => `${import.meta.env.BASE_URL}packager-runtime/${buildId}/${name}`;
+// Where the host build emits the packager runtime. The editor serves it from a
+// build-id directory; the standalone packager puts it next to the app.
+const relativeScaffolding = (name) => runtimeUrl(name);
 
 export default {
   'nwjs-win64': {
