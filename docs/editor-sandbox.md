@@ -7,7 +7,9 @@ The web editor uses two entry points on the existing site:
 
 The runtime keeps synchronous `Scratch.vm` and renderer access. This isolates the account from project code; it does not isolate extensions from the current project or from one another.
 
-The iframe has no `allow-same-origin`, popup or top-navigation permission. Its HTML response also carries a CSP `sandbox` directive in the Vite server, preview server, static header configuration and hosting middleware. The bootstrap checks both its opaque origin and that it is framed before importing the editor. Direct entry fails closed even on a static host that ignores the header configuration. Public assets need CORS headers so the opaque runtime can load modules and fonts.
+Because the runtime cannot sandbox them further, custom extensions run unsandboxed there. A project still asks before loading each extension that is not trusted; the prompt says the extension cannot reach the account but can read and change the project.
+
+The iframe has no `allow-same-origin`, popup or top-navigation permission. Its HTML response also carries a CSP `sandbox` directive in the Vite server, preview server, static header configuration and hosting middleware. The bootstrap checks both its opaque origin and that it is framed before importing the editor. Direct entry fails closed even on a static host that ignores the header configuration. The host is the reverse: its response carries `frame-ancestors 'self'` in the same four places, and it refuses to start inside any frame, so another site cannot overlay its permission dialogs. Public assets need CORS headers so the opaque runtime can load modules and fonts.
 
 ## Account operations
 
