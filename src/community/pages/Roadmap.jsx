@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {Bug, ArrowRight, Check, ChevronLeft, ChevronRight, Circle, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
+import {Bug, ArrowRight, Check, ChevronLeft, ChevronRight, Circle, GitMerge, GitPullRequest, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -10,6 +10,9 @@ import Button from '../components/ui/Button.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
+import PullRequestList from '../components/PullRequestList.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {filterPulls, groupPulls, pullLinkValue, pullRepos, roadmapIndexForPulls, roadmapProgress} from '../development.js';
 import {timeAgo} from '../format';
 import useLatest from '../use-latest.js';
 import styles from './Roadmap.module.css';
@@ -32,6 +35,8 @@ const STAGES = [
 
 const PAGE_SIZE = 10;
 
+const PULL_GROUP_ICONS = {review: GitPullRequest, merged: GitMerge};
+
 const ROADMAP_KINDS = ['idea', 'bug'];
 const ROADMAP_SOURCES = ['community', 'mistwarp'];
 
@@ -48,6 +53,9 @@ const normalizeRoadmapParams = currentParams => {
     const area = (next.get('area') || '').trim();
     if (area) next.set('area', area);
     else next.delete('area');
+    const repo = (next.get('repo') || '').trim();
+    if (repo) next.set('repo', repo);
+    else next.delete('repo');
     return next;
 };
 
@@ -65,9 +73,21 @@ export const roadmapPayload = form => ({
     description: form.description.trim()
 });
 
-const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy, openDiscussion}) => {
+const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, onLinkPulls, busy, openDiscussion}) => {
     const {text: communityText} = useCommunityText();
     const [discussionOpen, setDiscussionOpen] = useState(openDiscussion);
+    const [linkDraft, setLinkDraft] = useState('');
+    const pulls = idea.pullRequests || [];
+    // The stored links are the ones an admin attached; a pull request that
+    // named this entry itself is not theirs to detach here.
+    const manualLinks = useMemo(() => pulls.filter(pull => pull.linkedBy === 'manual').map(pullLinkValue), [pulls]);
+    const addLink = event => {
+        event.preventDefault();
+        const value = linkDraft.trim();
+        if (!value) return;
+        onLinkPulls(idea, [...manualLinks, value]);
+        setLinkDraft('');
+    };
     const source = useMemo(() => ({
         list: options => api.ideaComments(idea._id, options),
         add: (content, parent) => api.addIdeaComment(idea._id, content, parent),
@@ -105,6 +125,42 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, busy, op
                     ) : null}
                 </div>
                 <p className={styles.description}><RichText text={idea.description} /></p>
+                {pulls.length ? (
+                    <section className={styles.pulls}>
+                        <h3><GitPullRequest size={16} />{communityText('Pull requests')}</h3>
+                        <PullRequestList pulls={pulls} />
+                    </section>
+                ) : null}
+                {user && user.isAdmin ? (
+                    <form className={styles.linkPull} onSubmit={addLink}>
+                        <label htmlFor={`link-${idea._id}`}>{communityText('Link a pull request')}</label>
+                        <div className={styles.linkPullRow}>
+                            <input
+                                id={`link-${idea._id}`}
+                                value={linkDraft}
+                                disabled={busy}
+                                placeholder={communityText('scratch-gui#218 or a GitHub link')}
+                                onChange={event => setLinkDraft(event.target.value)}
+                            />
+                            <Button type="submit" variant="secondary" disabled={busy || !linkDraft.trim()}>{communityText('Link')}</Button>
+                        </div>
+                        {manualLinks.length ? (
+                            <ul className={styles.linkedList}>
+                                {manualLinks.map(value => (
+                                    <li key={value}>
+                                        {value}
+                                        <button
+                                            type="button"
+                                            disabled={busy}
+                                            aria-label={`${communityText('Unlink')} ${value}`}
+                                            onClick={() => onLinkPulls(idea, manualLinks.filter(item => item !== value))}
+                                        ><X size={13} /></button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : null}
+                    </form>
+                ) : null}
                 <div className={styles.ideaFooter}>
                     <div className={styles.meta}>
                         <Link to={`/users/${idea.author}`}><Avatar username={idea.author} size={24} />{idea.author}</Link>
@@ -137,6 +193,7 @@ const RoadmapRow = ({idea, search, preview = false, from}) => {
     const description = (idea.description || '').replace(/\s+/g, ' ').trim();
     const excerpt = description.length > 160 ? `${description.slice(0, 160)}…` : description;
     const Heading = preview ? 'h3' : 'h2';
+    const progress = roadmapProgress(idea);
     return (
         <article className={styles.entry}>
             <Heading className={styles.entryHeading}>
@@ -149,6 +206,13 @@ const RoadmapRow = ({idea, search, preview = false, from}) => {
                     </span>
                     {!preview ? <span className={styles.entryScore}>{idea.score || 0}<small>{communityText('score')}</small></span> : null}
                     {!preview ? <span className={styles.entryComments}><MessageCircle size={14} />{idea.commentCount || 0}<span className={styles.srOnly}>{communityText('comments')}</span></span> : null}
+                    {!preview && progress.total ? (
+                        <span className={styles.entryPulls}>
+                            {progress.merged ? <GitMerge size={14} /> : <GitPullRequest size={14} />}
+                            {progress.merged || progress.open}
+                            <span className={styles.srOnly}>{progress.merged ? communityText('merged pull requests') : communityText('open pull requests')}</span>
+                        </span>
+                    ) : null}
                     <ChevronRight size={16} />
                 </Link>
             </Heading>
@@ -156,7 +220,7 @@ const RoadmapRow = ({idea, search, preview = false, from}) => {
     );
 };
 
-const Roadmap = () => {
+const Roadmap = ({changes = false}) => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const viewerName = (user && user.username) || '';
@@ -170,6 +234,8 @@ const Roadmap = () => {
     const composerKind = ROADMAP_KINDS.includes(params.get('new')) ? params.get('new') : '';
     const [ideas, setIdeas] = useState(null);
     const [loadError, setLoadError] = useState(false);
+    const [pulls, setPulls] = useState(null);
+    const [pullsError, setPullsError] = useState(false);
     const creating = Boolean(composerKind);
     const [form, setForm] = useState({kind: composerKind || 'idea', title: '', description: '', category: 'Community'});
     const [error, setError] = useState('');
@@ -177,12 +243,16 @@ const Roadmap = () => {
     const [busyIdea, setBusyIdea] = useState('');
     const query = params.get('q') || '';
     const categoryFilter = params.get('area') || '';
+    const repoFilter = params.get('repo') || '';
     const sourceFilter = ROADMAP_SOURCES.includes(params.get('source')) ? params.get('source') : '';
     const kindFilter = ROADMAP_KINDS.includes(params.get('kind')) ? params.get('kind') : '';
     const actionLocks = useRef(new Set());
     const currentViewer = useRef(viewerName);
     currentViewer.current = viewerName;
     const beginLoad = useLatest();
+    // A separate guard: useLatest is one sequence counter, so sharing it would
+    // make each loader cancel the other.
+    const beginPullsLoad = useLatest();
     const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
     const closeComposer = () => {
         if (params.has('new')) {
@@ -200,6 +270,11 @@ const Roadmap = () => {
     };
 
     const categories = useMemo(() => (ideas ? [...new Set(ideas.map(idea => idea.category).filter(Boolean))].sort() : []), [ideas]);
+    const repos = useMemo(() => pullRepos(pulls), [pulls]);
+    const visiblePulls = useMemo(() => filterPulls(pulls, {repo: repoFilter, query}), [pulls, repoFilter, query]);
+    const pullGroups = useMemo(() => groupPulls(visiblePulls), [visiblePulls]);
+    const entriesByPull = useMemo(() => roadmapIndexForPulls(ideas), [ideas]);
+    const entryForPull = useCallback(pull => entriesByPull.get(pull.id) || null, [entriesByPull]);
     const visibleIdeas = useMemo(() => {
         if (!ideas) return [];
         const normalizedQuery = query.trim().toLowerCase();
@@ -220,17 +295,18 @@ const Roadmap = () => {
     const selectedIdea = ideas && ideas.find(idea => String(idea._id) === entryId);
     const resultCount = stage ? stageIdeas.length : visibleIdeas.length;
     const routeParams = new URLSearchParams(params);
-    ['status', 'page', 'idea', 'new'].forEach(key => routeParams.delete(key));
+    ['status', 'page', 'idea', 'new', 'repo'].forEach(key => routeParams.delete(key));
     const filterSearch = routeParams.toString() ? `?${routeParams}` : '';
     const from = `${location.pathname}${location.search}`;
     const pageCount = Math.max(1, Math.ceil(stageIdeas.length / PAGE_SIZE));
     const requestedPage = Number(params.get('page'));
     const page = Math.min(pageCount, Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1);
     const pageIdeas = stageIdeas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    const PageIcon = entryId ? Lightbulb : stage ? stage.icon : Map;
+    const PageIcon = changes ? GitPullRequest : entryId ? Lightbulb : stage ? stage.icon : Map;
+    const showTabs = !entryId;
     const clearFilters = () => {
         const next = new URLSearchParams(params);
-        ['q', 'area', 'source', 'kind', 'page', 'idea'].forEach(key => next.delete(key));
+        ['q', 'area', 'source', 'kind', 'repo', 'page', 'idea'].forEach(key => next.delete(key));
         setParams(next);
     };
 
@@ -243,7 +319,17 @@ const Roadmap = () => {
             .catch(fresh(() => setLoadError(true)));
     }, [beginLoad, viewerName]);
 
+    const loadPulls = useCallback(() => {
+        const fresh = beginPullsLoad();
+        setPulls(null);
+        setPullsError(false);
+        api.developmentPulls()
+            .then(fresh(data => setPulls(data.pulls || [])))
+            .catch(fresh(() => setPullsError(true)));
+    }, [beginPullsLoad]);
+
     useEffect(load, [load]);
+    useEffect(loadPulls, [loadPulls]);
     useEffect(() => {
         const normalized = normalizeRoadmapParams(params);
         if (normalized.toString() !== params.toString()) setParams(normalized, {replace: true});
@@ -339,6 +425,28 @@ const Roadmap = () => {
         }
     };
 
+    const linkPulls = async (idea, links) => {
+        const actionViewer = viewerName;
+        const actionKey = `${actionViewer}\u0000idea`;
+        if (actionLocks.current.has(actionKey)) return;
+        actionLocks.current.add(actionKey);
+        setBusyIdea(idea._id);
+        setError('');
+        try {
+            const data = await api.updateIdea(idea._id, {pulls: links});
+            if (currentViewer.current === actionViewer) {
+                setIdeas(current => (current || []).map(item => (item._id === idea._id ?
+                    {...item, pullRequests: data.idea.pullRequests || []} :
+                    item)));
+            }
+        } catch (e) {
+            if (currentViewer.current === actionViewer) setError(e.message || 'Could not update the linked pull requests.');
+        } finally {
+            actionLocks.current.delete(actionKey);
+            if (currentViewer.current === actionViewer) setBusyIdea('');
+        }
+    };
+
     const updateCommentCount = (id, delta) => {
         setIdeas(current => (current || []).map(idea => (idea._id === id ? {
             ...idea,
@@ -351,12 +459,25 @@ const Roadmap = () => {
             {stageId || entryId ? <Link className={styles.backLink} to={entryId && selectedIdea ? (location.state?.roadmapFrom || `/roadmap/${selectedIdea.status}${filterSearch}`) : `/roadmap${filterSearch}`}><ChevronLeft size={16} />{entryId ? communityText('Back to roadmap entries') : communityText('Roadmap overview')}</Link> : null}
             <header className={styles.head}>
                 <div>
-                    <h1><PageIcon size={26} />{entryId ? (selectedIdea ? selectedIdea.title : communityText('Roadmap entry')) : communityText(stage ? stage.label : 'Roadmap')}</h1>
-                    {!entryId ? <p>{stage ? communityText(stage.description) : communityText('Follow work in progress, see what is done, and vote on what comes next.')}</p> : null}
+                    <h1><PageIcon size={26} />{changes ? communityText('Changes') : entryId ? (selectedIdea ? selectedIdea.title : communityText('Roadmap entry')) : communityText(stage ? stage.label : 'Roadmap')}</h1>
+                    {changes ? <p>{communityText('Pull requests open against MistWarp\u2019s repositories, and the work that recently merged.')}</p> : null}
+                    {!changes && !entryId ? <p>{stage ? communityText(stage.description) : communityText('Follow work in progress, see what is done, and vote on what comes next.')}</p> : null}
                 </div>
-                <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText(' Add an entry')}</Button>
+                {!changes ? <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText(' Add an entry')}</Button> : null}
             </header>
-            {creating ? (
+            {showTabs ? (
+                <UnderlineTabs
+                    className={styles.tabs}
+                    ariaLabel="Roadmap sections"
+                    value={changes ? 'changes' : 'roadmap'}
+                    onChange={key => navigate(key === 'changes' ? '/roadmap/changes' : `/roadmap${filterSearch}`)}
+                    items={[
+                        {key: 'roadmap', label: <>{communityText('Roadmap')} <b>{ideas ? ideas.length : 0}</b></>},
+                        {key: 'changes', label: <>{communityText('Changes')} <b>{pulls ? pulls.length : 0}</b></>}
+                    ]}
+                />
+            ) : null}
+            {creating && !changes ? (
                 <form className={styles.form} onSubmit={create}>
                     <label>{communityText('Type')}<select
                         value={form.kind}
@@ -378,7 +499,7 @@ const Roadmap = () => {
                 </form>
             ) : null}
             {error ? <p className={styles.error}>{error}</p> : null}
-            {ideas && ideas.length && !entryId && (!stageId || stage) ? (
+            {!changes && ideas && ideas.length && !entryId && (!stageId || stage) ? (
                 <div className={styles.filters}>
                     <div className={styles.searchFilter}><Search size={16} /><input aria-label={communityText('Search roadmap')} value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder={communityText('Search ideas and bugs')} /></div>
                     <select aria-label={communityText('Filter by type')} value={kindFilter} onChange={event => setFilter('kind', event.target.value)}><option value="">{communityText('All types')}</option><option value="idea">{communityText('Ideas')}</option><option value="bug">{communityText('Bugs')}</option></select>
@@ -390,13 +511,44 @@ const Roadmap = () => {
                     </div>
                 </div>
             ) : null}
-            {!ideas && !loadError ? <p className={styles.empty}>{communityText('Loading suggestions…')}</p> : null}
-            {loadError ? <p className={styles.empty}>{communityText('Could not load suggestions. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
-            {ideas && entryId ? (
-                selectedIdea ? <IdeaCard key={selectedIdea._id} idea={selectedIdea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} busy={busyIdea === selectedIdea._id} openDiscussion /> : <p className={styles.empty}>{communityText('This roadmap entry could not be found.')}</p>
+            {!changes && !ideas && !loadError ? <p className={styles.empty}>{communityText('Loading suggestions…')}</p> : null}
+            {!changes && loadError ? <p className={styles.empty}>{communityText('Could not load suggestions. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
+            {changes ? (
+                <>
+                    {pulls && pulls.length ? (
+                        <div className={styles.changeFilters}>
+                            <div className={styles.searchFilter}><Search size={16} /><input aria-label={communityText('Search changes')} value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder={communityText('Search pull requests')} /></div>
+                            <select aria-label={communityText('Filter by repository')} value={repoFilter} onChange={event => setFilter('repo', event.target.value)}>
+                                <option value="">{communityText('All repositories')}</option>
+                                {repos.map(repo => <option key={repo} value={repo}>{repo}</option>)}
+                            </select>
+                            <div className={styles.filterSummary}>
+                                <span>{visiblePulls.length} {visiblePulls.length === 1 ? communityText('result') : communityText('results')}</span>
+                                {query || repoFilter ? <button type="button" onClick={clearFilters}>{communityText('Clear filters')}</button> : null}
+                            </div>
+                        </div>
+                    ) : null}
+                    {!pulls && !pullsError ? <p className={styles.empty}>{communityText('Loading changes…')}</p> : null}
+                    {pullsError ? <p className={styles.empty}>{communityText('Could not load changes. ')}<button type="button" onClick={loadPulls}>{communityText('Try again')}</button></p> : null}
+                    {pulls && !pulls.length ? <p className={styles.empty}>{communityText('No pull requests are open right now.')}</p> : null}
+                    {pulls && pulls.length ? pullGroups.map(group => {
+                        const GroupIcon = PULL_GROUP_ICONS[group.key];
+                        return (
+                            <section key={group.key} className={styles.changeGroup} aria-labelledby={`changes-${group.key}`}>
+                                <h2 id={`changes-${group.key}`}><GroupIcon size={19} />{communityText(group.label)}<span>{group.pulls.length}</span></h2>
+                                {group.pulls.length ?
+                                    <PullRequestList pulls={group.pulls} entryFor={entryForPull} /> :
+                                    <p className={styles.empty}>{communityText('Nothing here right now.')}</p>}
+                            </section>
+                        );
+                    }) : null}
+                </>
             ) : null}
-            {ideas && !entryId && stageId && !stage ? <p className={styles.empty}>{communityText('This roadmap stage could not be found.')}</p> : null}
-            {ideas && !entryId && stage ? (
+            {!changes && ideas && entryId ? (
+                selectedIdea ? <IdeaCard key={selectedIdea._id} idea={selectedIdea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} onLinkPulls={linkPulls} busy={busyIdea === selectedIdea._id} openDiscussion /> : <p className={styles.empty}>{communityText('This roadmap entry could not be found.')}</p>
+            ) : null}
+            {!changes && ideas && !entryId && stageId && !stage ? <p className={styles.empty}>{communityText('This roadmap stage could not be found.')}</p> : null}
+            {!changes && ideas && !entryId && stage ? (
                 <>
                     {pageIdeas.length ? <div className={styles.list}>{pageIdeas.map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} />)}</div> : <p className={styles.empty}>{filtering ? communityText('No matching entries in this stage. Try clearing the filters.') : communityText('Nothing is in this stage yet.')}</p>}
                     {stageIdeas.length > PAGE_SIZE ? (
@@ -408,7 +560,7 @@ const Roadmap = () => {
                     ) : null}
                 </>
             ) : null}
-            {ideas && !entryId && !stageId ? (
+            {!changes && ideas && !entryId && !stageId ? (
                 <>
                     <div className={styles.overview}>
                         {STAGES.filter(item => item.id !== 'declined').map(item => {

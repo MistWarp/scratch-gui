@@ -725,3 +725,139 @@
         height: 80px;
     }
 }
+
+.tabs {
+    margin-bottom: 20px;
+}
+
+.pulls {
+    margin-top: 16px;
+}
+
+.pulls h3,
+.changeGroup h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: var(--fs-lg);
+    letter-spacing: -.01em;
+}
+
+.changeGroup {
+    margin-bottom: 28px;
+}
+
+.changeGroup h2 {
+    font-size: var(--fs-xl);
+}
+
+.changeGroup h2 span {
+    padding: 2px 8px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: var(--fs-2xs);
+}
+
+.changeFilters {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(120px, 180px);
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.changeFilters select {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 40px;
+    padding: 7px 28px 7px 9px;
+    border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--mw-text);
+    background: var(--bg-raised);
+    font: inherit;
+    font-size: var(--fs-xs);
+}
+
+.linkPull {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-field);
+}
+
+.linkPull label {
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+
+.linkPullRow {
+    display: flex;
+    gap: 8px;
+}
+
+.linkPullRow input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--mw-text);
+    background: var(--bg-raised);
+    font: inherit;
+    font-size: var(--fs-sm);
+}
+
+.linkedList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.linkedList li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 9px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: var(--fs-2xs);
+    font-weight: 600;
+}
+
+.linkedList button {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    border: 0;
+    border-radius: var(--radius-2xs);
+    background: transparent;
+    color: var(--text-faint);
+}
+
+.linkedList button:hover {
+    color: var(--mw-danger);
+}
+
+.entryPulls {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+@media (max-width: 760px) {
+    .changeFilters {
+        grid-template-columns: 1fr;
+    }
+}
