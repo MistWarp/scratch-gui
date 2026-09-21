@@ -354,7 +354,13 @@ const createMwp = async ({
     vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, branch = 'main', additionalParents = [],
     message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null
 } = {}) => {
-    const author = projectId ? await getMistWarpAuthor() : getDefaultAuthor();
+    // Cloud history records the Rotur account. A save to the user's computer
+    // uploads nothing, so it falls back to the local author when signed out.
+    const resolveAuthor = () => {
+        if (!projectId) return getDefaultAuthor();
+        if (commitChanges) return getMistWarpAuthor();
+        return getMistWarpAuthor().catch(() => getDefaultAuthor());
+    };
     let shallowBase = false;
     if (!(await repoExists())) {
         if (remixParent && !remoteHead) {
@@ -369,12 +375,12 @@ const createMwp = async ({
             initialMessage: message,
             initialParent,
             initialParents,
-            author
+            author: await resolveAuthor()
         });
         shallowBase = Boolean(initialParent);
     } else if ((vm || sb3Files) && commitChanges) {
         try {
-            await commitProject({vm, sb3Files, message, author, rememberAuthor: false});
+            await commitProject({vm, sb3Files, message, author: await resolveAuthor(), rememberAuthor: false});
         } catch (error) {
             if (!/No changes to commit/.test(error.message || '')) throw error;
             if (requireChanges) {
