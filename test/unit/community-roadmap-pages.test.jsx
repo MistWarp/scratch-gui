@@ -7,7 +7,7 @@ import api from '../../src/community/api.js';
 
 jest.mock('../../src/community/api.js', () => ({
     __esModule: true,
-    default: {roadmap: jest.fn(), updateIdea: jest.fn(), voteIdea: jest.fn()}
+    default: {developmentPulls: jest.fn(), roadmap: jest.fn(), updateIdea: jest.fn(), voteIdea: jest.fn()}
 }));
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: {username: 'Mist', isAdmin: true}, login: jest.fn()})
@@ -38,6 +38,7 @@ const render = async (url = '/roadmap') => {
             <MemoryRouter initialEntries={[url]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                 <Routes>
                     <Route path="/roadmap" element={<Roadmap />} />
+                    <Route path="/roadmap/changes" element={<Roadmap changes />} />
                     <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
                     <Route path="/roadmap/:status" element={<Roadmap />} />
                 </Routes>
@@ -47,6 +48,23 @@ const render = async (url = '/roadmap') => {
     wrapper.update();
     return wrapper;
 };
+
+const pull = overrides => ({
+    id: `${overrides.repo || 'scratch-gui'}#${overrides.number}`,
+    repo: 'scratch-gui',
+    title: `Pull ${overrides.number}`,
+    url: `https://github.com/MistWarp/scratch-gui/pull/${overrides.number}`,
+    state: 'open',
+    author: 'Mistium',
+    authorUrl: 'https://github.com/Mistium',
+    authorAvatar: '',
+    comments: 0,
+    labels: [],
+    createdAt: '2026-09-01T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+    mergedAt: '',
+    ...overrides
+});
 
 const clickLink = async (wrapper, selector) => {
     await act(async () => wrapper.find(selector).simulate('click', {button: 0}));
@@ -58,6 +76,7 @@ describe('roadmap overview and detail pages', () => {
         jest.clearAllMocks();
         api.roadmap.mockResolvedValue({ideas: ['building', 'shipped', 'planned', 'open', 'declined']
             .flatMap(status => Array.from({length: 25}, (_, index) => entry(status, index)))});
+        api.developmentPulls.mockResolvedValue({pulls: []});
     });
 
     test('caps every overview preview and links to separate stage pages', async () => {
@@ -124,6 +143,110 @@ describe('roadmap overview and detail pages', () => {
     test('shows a missing-entry message for stale links', async () => {
         const wrapper = await render('/roadmap/entry/missing');
         expect(wrapper.text()).toContain('This roadmap entry could not be found.');
+        wrapper.unmount();
+    });
+});
+
+describe('roadmap changes tab', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        api.roadmap.mockResolvedValue({ideas: [{
+            ...entry('building', 0),
+            pullRequests: [pull({number: 20, state: 'open', linkedBy: 'manual'})]
+        }]});
+        api.developmentPulls.mockResolvedValue({pulls: [
+            pull({number: 20, state: 'open'}),
+            pull({number: 21, state: 'merged', mergedAt: '2026-09-12T00:00:00Z'}),
+            pull({number: 12, repo: 'scratch-vm', state: 'draft'})
+        ]});
+    });
+
+    test('groups open and merged work, and links a pull request to its entry', async () => {
+        const wrapper = await render('/roadmap/changes');
+        expect(wrapper.find('h1').text()).toBe('Changes');
+        expect(wrapper.find('h2').map(node => node.text())).toEqual(['In review2', 'Recently merged1']);
+        expect(wrapper.text()).toContain('Pull 20');
+        expect(wrapper.text()).toContain('scratch-vm');
+        expect(wrapper.find('a[href="https://github.com/MistWarp/scratch-gui/pull/21"]').exists()).toBe(true);
+        expect(wrapper.find('a[href="/roadmap/entry/building-0"]').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    test('does not offer the entry composer on the changes tab', async () => {
+        const wrapper = await render('/roadmap/changes');
+        expect(wrapper.text()).not.toContain('Add an entry');
+        wrapper.unmount();
+    });
+
+    test('filters the feed by repository', async () => {
+        const wrapper = await render('/roadmap/changes');
+        await act(async () => {
+            wrapper.find('select[aria-label="Filter by repository"]')
+                .simulate('change', {target: {value: 'scratch-vm'}});
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('1 result');
+        expect(wrapper.text()).not.toContain('Pull 20');
+        wrapper.unmount();
+    });
+
+    test('searches the feed', async () => {
+        const wrapper = await render('/roadmap/changes');
+        await act(async () => {
+            wrapper.find('input[aria-label="Search changes"]').simulate('change', {target: {value: 'Pull 21'}});
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('1 result');
+        expect(wrapper.text()).toContain('Recently merged1');
+        wrapper.unmount();
+    });
+
+    test('reports a feed that could not be loaded without hiding the roadmap', async () => {
+        api.developmentPulls.mockRejectedValue(new Error('offline'));
+        const wrapper = await render('/roadmap/changes');
+        expect(wrapper.text()).toContain('Could not load changes.');
+        wrapper.unmount();
+    });
+
+    test('shows an entry its linked pull requests', async () => {
+        const wrapper = await render('/roadmap/entry/building-0');
+        expect(wrapper.text()).toContain('Pull requests');
+        expect(wrapper.find('a[href="https://github.com/MistWarp/scratch-gui/pull/20"]').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    test('lets an admin attach and detach a pull request', async () => {
+        api.updateIdea.mockResolvedValue({idea: {pullRequests: [
+            pull({number: 20, state: 'open', linkedBy: 'manual'}),
+            pull({number: 21, state: 'merged', linkedBy: 'manual'})
+        ]}});
+        const wrapper = await render('/roadmap/entry/building-0');
+        await act(async () => {
+            wrapper.find('input#link-building-0').simulate('change', {target: {value: ' scratch-gui#21 '}});
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('form').filterWhere(node => node.find('input#link-building-0').exists()).simulate('submit');
+        });
+        wrapper.update();
+        expect(api.updateIdea).toHaveBeenCalledWith('building-0', {pulls: ['scratch-gui#20', 'scratch-gui#21']});
+
+        api.updateIdea.mockResolvedValue({idea: {pullRequests: [pull({number: 21, state: 'merged', linkedBy: 'manual'})]}});
+        await act(async () => {
+            wrapper.find('button[aria-label="Unlink scratch-gui#20"]').simulate('click');
+        });
+        wrapper.update();
+        expect(api.updateIdea).toHaveBeenLastCalledWith('building-0', {pulls: ['scratch-gui#21']});
+        wrapper.unmount();
+    });
+
+    test('offers no linking controls to a pull request the entry only referenced', async () => {
+        api.roadmap.mockResolvedValue({ideas: [{
+            ...entry('building', 0),
+            pullRequests: [pull({number: 20, state: 'open', linkedBy: 'reference'})]
+        }]});
+        const wrapper = await render('/roadmap/entry/building-0');
+        expect(wrapper.find('button[aria-label="Unlink scratch-gui#20"]').exists()).toBe(false);
         wrapper.unmount();
     });
 });
