@@ -43,14 +43,6 @@ export const mountEditorHost = async () => {
     const root = document.getElementById('app');
     root.replaceChildren();
     root.className = 'mw-editor-host';
-    const toolbar = textElement('div', '');
-    toolbar.className = 'mw-editor-host-toolbar';
-    const home = textElement('a', 'MistWarp');
-    home.href = '/';
-    const status = textElement('span', 'Editor isolated from your account');
-    const login = textElement('button', user ? `Account: ${user.username}` : 'Sign in');
-    login.type = 'button';
-    toolbar.append(home, status, login);
     const frame = document.createElement('iframe');
     frame.title = 'MistWarp editor';
     frame.setAttribute('sandbox', SANDBOX);
@@ -64,11 +56,25 @@ export const mountEditorHost = async () => {
     const scratchRoute = /\/(\d+)\/editor(?:\.html)?\/?$/.exec(location.pathname);
     if (!url.hash && scratchRoute) url.hash = scratchRoute[1];
     frame.src = url.href;
-    root.append(toolbar);
+    const reportError = message => {
+        let alert = root.querySelector('.mw-editor-host-error');
+        if (!alert) {
+            alert = textElement('div', '');
+            alert.className = 'mw-editor-host-error';
+            alert.setAttribute('role', 'alert');
+            alert.append(textElement('span', ''));
+            const dismiss = textElement('button', 'Dismiss');
+            dismiss.type = 'button';
+            dismiss.onclick = () => alert.remove();
+            alert.append(dismiss);
+            root.append(alert);
+        }
+        alert.querySelector('span').textContent = message;
+    };
 
     let activeDialog = false;
     const consent = (message, action = () => true, label = 'Allow') => new Promise((resolve, reject) => {
-        if (activeDialog) return reject(new Error('Finish the request in the editor account controls first.'));
+        if (activeDialog) return reject(new Error('Finish the open dialog first.'));
         activeDialog = true;
         const backdrop = document.createElement('div');
         backdrop.className = 'mw-editor-host-backdrop';
@@ -111,7 +117,6 @@ export const mountEditorHost = async () => {
     });
     const showIdentity = () => {
         const state = publicIdentity(identity.getState());
-        login.textContent = state.user ? `Account: ${state.user.username}` : 'Sign in';
         if (port) port.postMessage({kind: 'identity', identity: state});
         return state;
     };
@@ -120,19 +125,6 @@ export const mountEditorHost = async () => {
             await identity.login();
             return showIdentity();
         }, 'Sign in');
-    login.onclick = () => {
-        if (identity.getState().user) {
-            consent('Sign out of MistWarp?', () => {
-                identity.logout();
-                saveApproved = false;
-                return showIdentity();
-            }, 'Sign out').catch(() => {});
-        } else {
-            signIn().catch(error => {
-                status.textContent = error.message;
-            });
-        }
-    };
     identity.subscribe(() => {
         roturReadGrants.clear();
         saveApproved = false;
@@ -228,6 +220,45 @@ export const mountEditorHost = async () => {
         return result;
     };
     let apiQueue = Promise.resolve();
+    const openDeviceBackups = async () => {
+        if (activeDialog) return;
+        activeDialog = true;
+        const backdrop = document.createElement('div');
+        backdrop.className = 'mw-editor-host-backdrop';
+        const dialog = document.createElement('section');
+        dialog.className = 'mw-editor-host-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-label', 'Device backups');
+        const close = textElement('button', 'Close');
+        close.onclick = () => {
+            activeDialog = false; backdrop.remove();
+        };
+        dialog.append(textElement('h2', 'Device backups'), close);
+        backdrop.append(dialog);
+        root.append(backdrop);
+        close.focus();
+        try {
+            const {default: backups} = await import('../api/restore-points.js');
+            const {restorePoints} = await backups.getAllRestorePoints();
+            if (!restorePoints.length) dialog.append(textElement('p', 'No earlier device backups.'));
+            for (const backup of restorePoints) {
+                const link = textElement('a', `${backup.title} · ${new Date(backup.created * 1000).toLocaleString()}`);
+                link.href = `${process.env.ROOT || '/'}editor?restore=${encodeURIComponent(backup.id)}`;
+                link.className = 'mw-editor-host-backup';
+                dialog.append(link);
+            }
+        } catch (error) {
+            dialog.append(textElement('p', error.message));
+        }
+    };
+    const importBackpack = () => consent(
+        'Copy your existing device backpack into this workspace? Its extensions will be able to read the copied items.',
+        async () => {
+            const {snapshotDatabase} = await import('./storage.js');
+            const snapshot = await snapshotDatabase(indexedDB, 'TW_Backpack');
+            if (snapshot.stores.length && port) port.postMessage({kind: 'database-import', snapshot});
+        }, 'Import');
     const handlers = {
         'request': args => {
             const pending = apiQueue.then(() => handleRequest(args));
@@ -287,6 +318,8 @@ export const mountEditorHost = async () => {
             if (action === 'grant') return games.grantProjectItem(projectId, 'editor', item, requestId);
             throw new Error('Unknown editor game-data operation.');
         },
+        'backups.open': openDeviceBackups,
+        'backpack.import': importBackpack,
         'identity.restore': () => publicIdentity(identity.getState()),
         'identity.login': signIn,
         'identity.logout': () => consent('Sign out of MistWarp?', () => {
@@ -318,7 +351,7 @@ export const mountEditorHost = async () => {
             await persist();
         },
         'storage.error': ({message}) => {
-            status.textContent = `Local backup failed: ${String(message).slice(0, 200)}`;
+            reportError(`Local backup failed: ${String(message).slice(0, 200)}`);
         }
     };
     window.addEventListener('message', event => {
@@ -361,53 +394,6 @@ export const mountEditorHost = async () => {
             event.preventDefault(); event.returnValue = '';
         }
     });
-    const backupButton = textElement('button', 'Device backups');
-    backupButton.type = 'button';
-    backupButton.onclick = async () => {
-        if (activeDialog) return;
-        activeDialog = true;
-        const backdrop = document.createElement('div');
-        backdrop.className = 'mw-editor-host-backdrop';
-        const dialog = document.createElement('section');
-        dialog.className = 'mw-editor-host-dialog';
-        dialog.setAttribute('role', 'dialog');
-        dialog.setAttribute('aria-modal', 'true');
-        dialog.setAttribute('aria-label', 'Device backups');
-        const close = textElement('button', 'Close');
-        close.onclick = () => {
-            activeDialog = false; backdrop.remove();
-        };
-        dialog.append(textElement('h2', 'Device backups'), close);
-        backdrop.append(dialog);
-        root.append(backdrop);
-        close.focus();
-        try {
-            const {default: backups} = await import('../api/restore-points.js');
-            const {restorePoints} = await backups.getAllRestorePoints();
-            if (!restorePoints.length) dialog.append(textElement('p', 'No earlier device backups.'));
-            for (const backup of restorePoints) {
-                const link = textElement('a', `${backup.title} · ${new Date(backup.created * 1000).toLocaleString()}`);
-                link.href = `./editor?restore=${encodeURIComponent(backup.id)}`;
-                link.className = 'mw-editor-host-backup';
-                dialog.append(link);
-            }
-        } catch (error) {
-            dialog.append(textElement('p', error.message));
-        }
-    };
-    const backpackButton = textElement('button', 'Import saved backpack');
-    backpackButton.type = 'button';
-    backpackButton.onclick = () => consent(
-        'Copy your existing device backpack into this workspace? Its extensions will be able to read the copied items.',
-        async () => {
-            const {snapshotDatabase} = await import('./storage.js');
-            const snapshot = await snapshotDatabase(indexedDB, 'TW_Backpack');
-            if (snapshot.stores.length && port) port.postMessage({kind: 'database-import', snapshot});
-        }, 'Import').catch(error => {
-        status.textContent = error.message;
-    });
-    toolbar.insertBefore(backupButton, login);
-    toolbar.insertBefore(backpackButton, login);
     root.append(frame);
     if (window.SplashEnd) window.SplashEnd();
 };

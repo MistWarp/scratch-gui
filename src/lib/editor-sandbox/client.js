@@ -22,7 +22,7 @@ export const callEditorHost = (method, args = {}) => new Promise((resolve, rejec
     const id = ++nextId;
     const timer = setTimeout(() => {
         pending.delete(id);
-        reject(new Error('The editor request timed out. Check the editor account controls.'));
+        reject(new Error('The editor request timed out. Check for an open permission dialog.'));
     }, 240000);
     pending.set(id, {resolve, reject, timer});
     try {

@@ -19,6 +19,12 @@ jest.mock('../../../src/lib/rotur/identity', () => ({
 jest.mock('../../../src/lib/rotur/extension-bridge', () => ({callRotur: jest.fn(async () => 'value')}));
 jest.mock('../../../src/lib/rotur/client', () => ({ensureScopes: jest.fn(async () => {})}));
 
+jest.mock('../../../src/lib/api/restore-points', () => ({
+    getAllRestorePoints: jest.fn(async () => ({
+        restorePoints: [{id: 42, title: 'Earlier project', created: 1}]
+    }))
+}));
+
 let channels;
 let frame;
 let port;
@@ -156,4 +162,43 @@ test('legacy numeric editor routes use the root runtime with the project hash', 
     const url = new URL(document.querySelector('iframe').src);
     expect(url.pathname).toBe('/editor-runtime.html');
     expect(url.hash).toBe('#123');
+});
+
+
+test('backpack import from the editor still requires host consent', async () => {
+    await send('backpack.import');
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog.textContent).toContain('Copy your existing device backpack');
+    expect(port.postMessage).not.toHaveBeenCalled();
+    dialog.querySelector('button').click();
+    await tick();
+    expect(port.postMessage).toHaveBeenCalledWith({id: 1, error: {message: 'Request cancelled.'}});
+});
+
+test('account login stays available through the bridge without a host toolbar', async () => {
+    expect(document.querySelector('.mw-editor-host-toolbar')).toBeNull();
+    await send('identity.login');
+    expect(identity.login).not.toHaveBeenCalled();
+    document.querySelector('[role="dialog"] button:last-child').click();
+    await tick();
+    expect(identity.login).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(port.postMessage.mock.calls)).not.toContain('secret');
+});
+
+test('storage failures remain visible and dismissible without a toolbar', async () => {
+    await send('storage.error', {message: 'Disk full'});
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert.textContent).toContain('Local backup failed: Disk full');
+    alert.querySelector('button').click();
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+});
+
+test('earlier backups stay in the host when opened from the editor menu', async () => {
+    await send('backups.open');
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog.textContent).toContain('Earlier project');
+    expect(dialog.querySelector('a').getAttribute('href')).toBe('/editor?restore=42');
+    expect(JSON.stringify(port.postMessage.mock.calls)).not.toContain('Earlier project');
+    dialog.querySelector('button').click();
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
