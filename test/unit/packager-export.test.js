@@ -40,8 +40,9 @@ test('cancelled project preparation cannot continue into packaging', async () =>
     expect(downloadProject).not.toHaveBeenCalled();
 });
 
-test('runtime validation rejects stale deployments and unversioned scripts', () => {
+test('runtime validation rejects stale deployments and accepts unstamped runtimes', () => {
     expect(verifyBuildId('current', 'runtime code\n// current =^..^=')).toBe(true);
     expect(verifyBuildId('current', 'runtime code\n// previous =^..^=')).toBe(false);
-    expect(verifyBuildId('current', 'runtime code')).toBe(false);
+    // Development builds of the standalone packager do not stamp their runtimes.
+    expect(verifyBuildId('current', 'runtime code')).toBe(true);
 });
