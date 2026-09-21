@@ -109,7 +109,6 @@ const removeDiffDirectory = async (pfs, path) => {
 
 const importMwp = async input => {
     const {zip, manifest, paths} = await loadMwp(input);
-    if (manifest.delta) throw new Error('A history delta must be combined with its base before importing');
     const fs = getFs();
     const pfs = fs.promises;
     const staging = `${REPO_DIR}-import-${Date.now()}-${Math.random().toString(36)
@@ -134,11 +133,21 @@ const importMwp = async input => {
         if (!safeBranchName(branch) || branch !== manifest.branch) {
             throw new Error('MistWarp manifest branch disagrees with HEAD');
         }
-        const branches = await git.listBranches({fs, dir: staging});
-        for (const name of branches) {
-            const head = await git.resolveRef({fs, dir: staging, ref: name});
-            await collectReachableObjectOids(head, new Set(), staging);
+        // The API serves a layered history with the newest layer's delta
+        // manifest on top. That archive is complete once every ref resolves,
+        // so only a bare delta without its base objects is rejected here.
+        try {
+            const branches = await git.listBranches({fs, dir: staging});
+            for (const name of branches) {
+                const head = await git.resolveRef({fs, dir: staging, ref: name});
+                await collectReachableObjectOids(head, new Set(), staging);
+            }
+        } catch (error) {
+            if (manifest.delta) throw new Error('A history delta must be combined with its base before importing');
+            throw error;
         }
+        manifest.delta = false;
+        manifest.baseHead = null;
         manifest.head = await git.resolveRef({fs, dir: staging, ref: 'HEAD'});
         manifest.branch = branch;
         if (manifest.worktree === false) await git.checkout({fs, dir: staging, ref: branch, force: true});

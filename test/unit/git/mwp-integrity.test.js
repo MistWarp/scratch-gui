@@ -83,3 +83,22 @@ test('a delta declares its base and cannot be imported as a full workspace', asy
     expect(delta.manifest.baseHead).toBe(base);
     await expect(importMwp(await bytes(delta.blob))).rejects.toThrow('combined with its base');
 });
+
+test('a delta stacked on its base imports as a full workspace', async () => {
+    const base = await commit('base');
+    const full = await exportCurrentMwp({});
+    const head = await commit('edit');
+    const delta = await exportCurrentMwp({}, {baseHead: base});
+    // Mirror the API's layer merge: the delta's entries win over the base's.
+    const combined = await JSZip.loadAsync(await bytes(full.blob));
+    const top = await JSZip.loadAsync(await bytes(delta.blob));
+    for (const path of Object.keys(top.files)) {
+        if (!top.files[path].dir) combined.file(path, await top.files[path].async('uint8array'));
+    }
+    await deleteRepo();
+    const imported = await importMwp(await combined.generateAsync({type: 'uint8array'}));
+    expect(imported.head).toBe(head);
+    expect(imported.delta).toBe(false);
+    expect(imported.baseHead).toBe(null);
+    expect(await getFs().promises.readFile(`${REPO_DIR}/file.txt`, 'utf8')).toBe('edit');
+});
