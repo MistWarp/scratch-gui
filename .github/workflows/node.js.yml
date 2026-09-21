@@ -9,11 +9,11 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# Keyed by ref so a merge into develop cannot cancel an unrelated pull
+# request's checks. Runs for the same ref still supersede each other.
 concurrency:
-  group: "deploy"
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -45,9 +45,15 @@ jobs:
         path: ./build/
 
   deploy:
+    # Pull requests build and test, but only develop publishes.
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     needs: build
     steps:
