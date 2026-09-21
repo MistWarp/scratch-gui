@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2} from 'lucide-react';
+import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
@@ -660,6 +660,19 @@ const Settings = () => {
                         <section className={styles.card}>
                             <h2>{communityText('Identity')}</h2>
                             <p className={styles.lead}>{communityText('Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.')}</p>
+                            {user ? (
+                                <div className={styles.accountRow}>
+                                    <div>
+                                        <strong>@{user.username}</strong>
+                                        <small>{communityText('To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.')}</small>
+                                    </div>
+                                    <a
+                                        href="https://rotur.dev/me"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >{communityText('Change username ')}<ExternalLink size={13} /></a>
+                                </div>
+                            ) : null}
                             <label
                                 className={styles.field}
                                 htmlFor="username-override"

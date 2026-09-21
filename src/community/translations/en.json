@@ -1986,5 +1986,7 @@
   "Loading changes…": "Loading changes…",
   "Could not load changes. ": "Could not load changes. ",
   "No pull requests are open right now.": "No pull requests are open right now.",
-  "Nothing here right now.": "Nothing here right now."
+  "Nothing here right now.": "Nothing here right now.",
+  "To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.": "To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.",
+  "Change username ": "Change username "
 }
