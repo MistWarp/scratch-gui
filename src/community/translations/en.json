@@ -1969,5 +1969,22 @@
   "Roadmap pages": "Roadmap pages",
   "Page {page} of {total}": "Page {page} of {total}",
   "No matching entries.": "No matching entries.",
-  "View all": "View all"
+  "View all": "View all",
+  "In review": "In review",
+  "Recently merged": "Recently merged",
+  "Link a pull request": "Link a pull request",
+  "scratch-gui#218 or a GitHub link": "scratch-gui#218 or a GitHub link",
+  "Link": "Link",
+  "Unlink": "Unlink",
+  "merged pull requests": "merged pull requests",
+  "open pull requests": "open pull requests",
+  "Changes": "Changes",
+  "Pull requests open against MistWarp’s repositories, and the work that recently merged.": "Pull requests open against MistWarp’s repositories, and the work that recently merged.",
+  "Search changes": "Search changes",
+  "Filter by repository": "Filter by repository",
+  "All repositories": "All repositories",
+  "Loading changes…": "Loading changes…",
+  "Could not load changes. ": "Could not load changes. ",
+  "No pull requests are open right now.": "No pull requests are open right now.",
+  "Nothing here right now.": "Nothing here right now."
 }
