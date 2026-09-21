@@ -501,6 +501,14 @@ export const onRequest = async context => {
     const {request, next} = context;
     const url = new URL(request.url);
 
+    // The account host's permission dialogs must not be framed by another site.
+    if (/^(?:\/\d+)?\/editor(?:\.html)?\/?$/.test(url.pathname)) {
+        const upstream = await next();
+        const response = new Response(upstream.body, upstream);
+        response.headers.set('Content-Security-Policy', "frame-ancestors 'self'");
+        return response;
+    }
+
     if (/^\/editor-runtime(?:\.html)?\/?$/.test(url.pathname)) {
         const upstream = await next();
         const response = new Response(upstream.body, upstream);

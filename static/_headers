@@ -4,6 +4,15 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+/editor
+  Content-Security-Policy: frame-ancestors 'self'
+
+/editor.html
+  Content-Security-Policy: frame-ancestors 'self'
+
+/:project/editor
+  Content-Security-Policy: frame-ancestors 'self'
+
 /editor-runtime
   Content-Security-Policy: sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals
   Cache-Control: no-cache
