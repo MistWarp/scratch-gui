@@ -107,7 +107,8 @@
 }
 
 .safetyRow,
-.dataAction {
+.dataAction,
+.accountRow {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -176,6 +177,29 @@
     font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.accountRow {
+    margin-bottom: 14px;
+    border-top: 0;
+    padding-top: 0;
+}
+
+.accountRow > div {
+    display: grid;
+    gap: 4px;
+}
+
+.accountRow small {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.accountRow a {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
 }
 
 .field {
