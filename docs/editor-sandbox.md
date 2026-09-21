@@ -23,7 +23,7 @@ Network requests from the runtime have origin `null`. Public endpoints with perm
 
 The runtime gets a scoped localStorage implementation and a private IndexedDB factory. Committed database contents, including binary assets and indexes, are persisted by the host under its selected account/workspace key and restored before the editor starts. Session storage remains temporary. Native account storage is never copied wholesale.
 
-The host's Device backups control opens earlier device backups without exposing the full backup database to extensions. Import saved backpack copies the existing device backpack only after host consent. Backups created inside the editor are accessible to code in that workspace, just like its other project data.
+The editor fills the window without an extra host toolbar. Sign-in and account actions use the existing editor account menu; permission dialogs still run in the host. File → Earlier device backups opens earlier device backups without exposing the full backup database to extensions. File → Import saved backpack copies the existing device backpack only after host consent. Backups created inside the editor are accessible to code in that workspace, just like its other project data.
 
 ## Verification
 

@@ -1,3 +1,5 @@
+import {callEditorHost} from '../../lib/editor-sandbox/client.js';
+import {isIsolatedEditor} from '../../lib/editor-sandbox/protocol.js';
 import {navigateFromEditor} from '../../lib/editor-sandbox/navigation.js';
 import blockCountStyles from './block-count.module.css';
 import {withProjectReplacement} from '../../lib/project-replacement.js';
@@ -639,6 +641,18 @@ class MenuBar extends React.Component {
         this.props.onClickPackager();
         this.props.onRequestCloseFile();
     }
+    handleEarlierDeviceBackups = () => this.handleDeviceStorageAction('backups.open');
+    handleImportSavedBackpack = () => this.handleDeviceStorageAction('backpack.import');
+
+    handleDeviceStorageAction = method => {
+        this.props.onRequestCloseFile();
+        callEditorHost(method).catch(error => {
+            if (error.message !== 'Request cancelled.') {
+                this.showAlert('Device storage', error.message);
+            }
+        });
+    };
+
     handleClickRestorePoints () {
         this.props.onClickRestorePoints();
         this.props.onRequestCloseFile();
@@ -1929,6 +1943,28 @@ class MenuBar extends React.Component {
                                                 id="tw.menuBar.createRestorePoint"
                                             />
                                         </MenuItem>
+                                        {isIsolatedEditor() && (
+                                            <MenuItem
+                                                onClick={this.handleEarlierDeviceBackups}
+                                            >
+                                                <RefreshCcw />
+                                                <FormattedMessage
+                                                    defaultMessage="Earlier device backups"
+                                                    id="mw.menuBar.earlierDeviceBackups"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                        {isIsolatedEditor() && (
+                                            <MenuItem
+                                                onClick={this.handleImportSavedBackpack}
+                                            >
+                                                <Backpack />
+                                                <FormattedMessage
+                                                    defaultMessage="Import saved backpack"
+                                                    id="mw.menuBar.importSavedBackpack"
+                                                />
+                                            </MenuItem>
+                                        )}
                                     </MenuSection>
                                 </MenuBarMenu>
                             </MenuLabel>

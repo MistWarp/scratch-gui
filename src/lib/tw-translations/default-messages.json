@@ -216,6 +216,8 @@
   "tw.menuBar.package": "Package project",
   "tw.menuBar.restorePoints": "Device backups",
   "tw.menuBar.createRestorePoint": "Create device backup",
+  "mw.menuBar.earlierDeviceBackups": "Earlier device backups",
+  "mw.menuBar.importSavedBackpack": "Import saved backpack",
   "gui.menuBar.undo": "Undo",
   "gui.menuBar.redo": "Redo",
   "tw.menuBar.addons": "Addons",
