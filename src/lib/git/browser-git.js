@@ -200,9 +200,12 @@ const getFs = () => {
         } catch (error) {
             // A private in-memory session still gets its own database name.
         }
-        const next = new LightningFS(name);
+        // Without defer, LightningFS starts an unawaited operation from its constructor,
+        // so storage that will not open reports an unhandled rejection. Deferred, the
+        // first real operation opens it and its caller receives the error.
+        const next = new LightningFS(name, {defer: true});
         const raw = next.promises;
-        const source = new LightningFS(previousName).promises;
+        const source = new LightningFS(previousName, {defer: true}).promises;
         const ready = (async () => {
             let found = false;
             try {
@@ -213,8 +216,12 @@ const getFs = () => {
             }
             if (found) {
                 for (const path of await listFilesRecursive(source, REPO_DIR)) {
+                    // LightningFS returns undefined when the browser evicted a file's
+                    // contents but kept its metadata. Skip it rather than failing the copy.
+                    const data = await source.readFile(path);
+                    if (!data) continue;
                     await ensureParentDir(raw, path);
-                    await raw.writeFile(path, await source.readFile(path));
+                    await raw.writeFile(path, data);
                 }
             }
             try {
@@ -847,7 +854,16 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
 const deleteRepo = async () => {
     const fs = getFs();
     const pfs = fs.promises;
-    if (!(await exists(pfs, REPO_DIR))) return;
+    let found;
+    try {
+        found = await exists(pfs, REPO_DIR);
+    } catch (error) {
+        // Safari private browsing and full disks refuse to open IndexedDB. No history
+        // can be read from storage that will not open, so loading the project continues.
+        console.warn('Project history storage is unavailable', error);
+        return;
+    }
+    if (!found) return;
     await removeRecursive(pfs, REPO_DIR);
 };
 
