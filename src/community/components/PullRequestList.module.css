@@ -1,0 +1,116 @@
+.list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.state {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+}
+
+.open {
+    color: var(--status-open);
+}
+
+.draft {
+    color: var(--text-faint);
+}
+
+.merged {
+    color: var(--status-shipped);
+}
+
+.closed,
+.unknown {
+    color: var(--text-faint);
+}
+
+.body {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.title {
+    color: var(--mw-text);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.title:hover {
+    color: var(--accent);
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.repo {
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.number {
+    color: var(--text-faint);
+    font-weight: 400;
+}
+
+.author,
+.comments {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.author img {
+    border-radius: 50%;
+}
+
+.author:hover {
+    color: var(--mw-text);
+}
+
+.entry {
+    padding: 2px 8px;
+    border-radius: var(--radius-2xs);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.entry:hover {
+    background: var(--accent-softer);
+}
+
+@media (max-width: 760px) {
+    .row {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
