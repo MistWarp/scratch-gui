@@ -23,6 +23,10 @@ import {writeScratchBlocks} from './scripts/vite-blocks.mjs';
 
 const editorRuntimeCSP = 'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
 const editorRuntimePath = pathname => /\/editor-runtime(?:\.html)?\/?$/.test(pathname);
+// The account host's permission dialogs must not be framed, or another site
+// could overlay them and steer the clicks.
+const editorHostCSP = "frame-ancestors 'self'";
+const editorHostPath = pathname => /\/editor(?:\.html)?\/?$/.test(pathname);
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -217,6 +221,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             const url = new URL(req.url, 'http://localhost');
             const pathname = decodeURIComponent(url.pathname);
             if (editorRuntimePath(pathname)) res.setHeader('Content-Security-Policy', editorRuntimeCSP);
+            if (editorHostPath(pathname)) res.setHeader('Content-Security-Policy', editorHostCSP);
             res.setHeader('Access-Control-Allow-Origin', '*');
             const local = pathname.startsWith(routeRoot) ? pathname.slice(routeRoot.length) : pathname.slice(1);
             for (const [from, to] of [...copies].reverse()) {
@@ -286,6 +291,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             server.middlewares.use((req, res, next) => {
                 const url = new URL(req.url, 'http://localhost');
                 if (editorRuntimePath(url.pathname)) res.setHeader('Content-Security-Policy', editorRuntimeCSP);
+                if (editorHostPath(url.pathname)) res.setHeader('Content-Security-Policy', editorHostCSP);
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 let local = url.pathname.startsWith(routeRoot) ?
                     url.pathname.slice(routeRoot.length) : url.pathname.slice(1);

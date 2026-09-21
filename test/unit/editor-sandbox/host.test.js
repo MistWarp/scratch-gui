@@ -202,3 +202,16 @@ test('earlier backups stay in the host when opened from the editor menu', async 
     dialog.querySelector('button').click();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
+
+test('refuses to start inside another page\'s frame', async () => {
+    const parent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', {configurable: true, value: {}});
+    try {
+        document.body.innerHTML = '<div id="app"></div>';
+        await expect(mountEditorHost()).rejects.toThrow('Open the editor in its own tab.');
+        expect(document.querySelector('iframe')).toBeNull();
+    } finally {
+        if (parent) Object.defineProperty(window, 'parent', parent);
+        else delete window.parent;
+    }
+});

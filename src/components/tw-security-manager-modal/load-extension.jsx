@@ -88,6 +88,16 @@ const LoadExtensionModal = props => (
                 ) : null}
             </React.Fragment>
         ) : null}
+        {props.isolated ? (
+            <div className={styles.sandboxed}>
+                <FormattedMessage
+                    // eslint-disable-next-line max-len
+                    defaultMessage="The editor keeps it away from your MistWarp account, but it can read and change this project and use the internet. Only run it if you trust the person who made this project."
+                    description="Warning shown before loading a custom extension in the isolated web editor"
+                    id="mw.loadExtension.isolated"
+                />
+            </div>
+        ) : null}
         {props.unsandboxed || props.dangerousBuiltin || props.dangerousJs || (
             <div className={styles.sandboxed}>
                 <FormattedMessage
@@ -104,6 +114,7 @@ const LoadExtensionModal = props => (
 LoadExtensionModal.propTypes = {
     dangerousBuiltin: PropTypes.bool,
     dangerousJs: PropTypes.string,
+    isolated: PropTypes.bool,
     url: PropTypes.string.isRequired,
     unsandboxed: PropTypes.bool.isRequired,
     onChangeUnsandboxed: PropTypes.func

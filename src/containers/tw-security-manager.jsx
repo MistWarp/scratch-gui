@@ -342,7 +342,6 @@ class TWSecurityManagerComponent extends React.Component {
             }
             return true;
         };
-        if (isIsolatedEditor()) return allowProjectExtension();
         const dangerousJs = jsExecutionExtension(url);
         if (await isPlatformTrustedExtension(url)) {
             log.info(`Loading extension ${url} automatically`);
@@ -363,6 +362,14 @@ class TWSecurityManagerComponent extends React.Component {
             return allowed ? allowProjectExtension() : false;
         }
         if (this.props.vm.runtime._mwProjectTrusted === true) return allowProjectExtension();
+        if (isIsolatedEditor()) {
+            // The isolated editor runs every extension unsandboxed (see getSandboxMode), so there
+            // is no sandboxed choice to offer. It still asks: the account is out of reach, but the
+            // extension can read and change this project and the editor around it.
+            const {showModal} = await this.acquireModalLock();
+            const allowed = await showModal(SecurityModals.LoadExtension, {url, unsandboxed: true, isolated: true});
+            return allowed ? allowProjectExtension() : false;
+        }
         const {showModal} = await this.acquireModalLock();
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {

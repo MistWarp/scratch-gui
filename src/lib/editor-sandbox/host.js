@@ -14,8 +14,10 @@ const textElement = (tag, text) => {
 };
 
 export const mountEditorHost = async () => {
-    // Account pages must never start a nested editor host inside a runtime.
-    if (window.parent !== window && window.origin === 'null') {
+    // Never start inside a frame: not nested inside a runtime, and not under
+    // another site that could overlay the permission dialogs. The response's
+    // frame-ancestors policy says the same where the host honours headers.
+    if (window.parent !== window) {
         throw new Error('Open the editor in its own tab.');
     }
     const initialURL = new URL(location.href);
