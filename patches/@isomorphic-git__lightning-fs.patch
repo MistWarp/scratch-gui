@@ -1,5 +1,5 @@
 diff --git a/src/DefaultBackend.js b/src/DefaultBackend.js
-index d184ca4..d2d555c 100644
+index d0563618bc975277ee39193858534a294892e6ce..e3ff3efa6a0c9840875dd7c6834d5349edeb4394 100644
 --- a/src/DefaultBackend.js
 +++ b/src/DefaultBackend.js
 @@ -6,7 +6,6 @@ const { ENOENT, ENOTEMPTY, ETIMEDOUT } = require("./errors.js");
@@ -23,3 +23,32 @@ index d184ca4..d2d555c 100644
      this._cache = new CacheFS(name);
      this._opts = { wipe, url };
      this._needsWipe = !!wipe;
+diff --git a/src/IdbBackend.js b/src/IdbBackend.js
+index c7af775e6e5e3a338256d7da872e05465b95b437..e51a3a36c7d785c7582a7a2c03189f0cb861bf45 100644
+--- a/src/IdbBackend.js
++++ b/src/IdbBackend.js
+@@ -5,6 +5,11 @@ module.exports = class IdbBackend {
+     this._database = dbname;
+     this._storename = storename;
+     this._store = new idb.Store(this._database, this._storename);
++    // idb-keyval opens the database in the constructor and leaves the promise
++    // unhandled until the first operation. Safari private browsing and sandboxed
++    // frames reject it, which surfaced as unhandled rejections. Operations still
++    // chain from this promise and report the error to their callers.
++    this._store._dbp.catch(() => {});
+   }
+   saveSuperblock(superblock) {
+     return idb.set("!root", superblock, this._store);
+diff --git a/src/Mutex.js b/src/Mutex.js
+index d7df3579919eb4e3238fe0fdcbad73fb265b3c1b..75c9dd82763e672e3355c616936ab3c7c6d790ab 100644
+--- a/src/Mutex.js
++++ b/src/Mutex.js
+@@ -8,6 +8,8 @@ module.exports = class Mutex {
+     this._database = dbname
+     this._storename = storename
+     this._store = new idb.Store(this._database, this._storename)
++    // See IdbBackend: operations still receive the error.
++    this._store._dbp.catch(() => {})
+     this._lock = null
+   }
+   async has ({ margin = 2000 } = {}) {
