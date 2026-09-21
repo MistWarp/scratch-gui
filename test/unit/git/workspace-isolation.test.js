@@ -1,4 +1,6 @@
 const mockRoots = new Map();
+// Replaces methods on every filesystem opened afterwards, keyed by method name.
+let mockOverrides = {};
 jest.mock('@isomorphic-git/lightning-fs', () => class TestFs {
     constructor (name) {
         const fs = require('fs');
@@ -10,6 +12,7 @@ jest.mock('@isomorphic-git/lightning-fs', () => class TestFs {
         for (const method of ['stat', 'lstat', 'readFile', 'writeFile', 'mkdir', 'rmdir', 'readdir', 'unlink', 'chmod']) {
             this.promises[method] = (file, ...args) => fs.promises[method](path.join(this.root, file), ...args);
         }
+        Object.assign(this.promises, mockOverrides);
     }
 });
 
@@ -18,6 +21,10 @@ const openPage = () => {
     jest.isolateModules(() => { git = require('../../../src/lib/git/browser-git.js'); });
     return git;
 };
+
+afterEach(() => {
+    mockOverrides = {};
+});
 
 afterAll(() => {
     for (const root of mockRoots.values()) require('fs').rmSync(root, {recursive: true, force: true});
@@ -51,4 +58,31 @@ test('rollback restores uncommitted files and all branch refs', async () => {
     await rollback();
     expect(await pfs.readFile('/repo/unsaved.fractch', 'utf8')).toBe('uncommitted edits');
     expect(await pfs.readFile('/repo/.git/refs/heads/feature', 'utf8')).toBe('feature commit');
+});
+
+test('a duplicated tab skips files whose contents the browser evicted', async () => {
+    sessionStorage.clear();
+    const first = openPage();
+    const fs1 = first.getFs();
+    await first.ensureParentDir(fs1.promises, '/repo/.git/HEAD');
+    await fs1.promises.writeFile('/repo/.git/HEAD', 'ref: refs/heads/main');
+    await fs1.promises.writeFile('/repo/evicted.fractch', 'gone');
+    const readFile = fs1.promises.readFile;
+    // LightningFS keeps metadata for evicted files but resolves their contents as undefined.
+    mockOverrides = {readFile: (file, ...args) => (file.endsWith('evicted.fractch') ? undefined : readFile(file, ...args))};
+    const second = openPage();
+    const pfs = second.getFs().promises;
+    expect(await pfs.readFile('/repo/.git/HEAD', 'utf8')).toBe('ref: refs/heads/main');
+    await expect(pfs.stat('/repo/evicted.fractch')).rejects.toMatchObject({code: 'ENOENT'});
+});
+
+test('deleting history succeeds when storage refuses to open', async () => {
+    sessionStorage.clear();
+    const refused = Object.assign(new Error('Unable to open database file on disk'), {name: 'UnknownError'});
+    mockOverrides = {stat: () => Promise.reject(refused)};
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const repo = openPage();
+    await expect(repo.deleteRepo()).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledWith('Project history storage is unavailable', refused);
+    warn.mockRestore();
 });
