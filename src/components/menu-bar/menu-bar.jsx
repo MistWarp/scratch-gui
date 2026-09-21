@@ -937,6 +937,8 @@ class MenuBar extends React.Component {
                     excludeAcceptAllOption: true
                 });
             }
+            // Loading cloud history and packing the archive can take a while.
+            this.props.onShowGitStatus('savingMwp');
             const platformProject = getRememberedPlatformProjectState();
             await ensureProjectHistoryHydrated(this.props.vm);
             const exported = await createMwp({
@@ -956,9 +958,10 @@ class MenuBar extends React.Component {
             } else {
                 downloadBlob(filename, exported.blob);
             }
-            this.props.showToast('MistWarp project file saved (includes full history).', 'success');
+            this.props.onGitStatusDone('twSaveToDiskSuccess');
             return true;
         } catch (error) {
+            this.props.onCloseGitStatus('savingMwp');
             if (error && error.name === 'AbortError') return false;
             this.props.showToast(
                 `Could not save MistWarp project: ${error && error.message ? error.message : error}`,

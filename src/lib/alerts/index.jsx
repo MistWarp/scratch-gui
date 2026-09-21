@@ -133,7 +133,7 @@ const alerts = [
     {
         alertId: 'savingError',
         clearList: ['createSuccess', 'creating', 'createCopySuccess', 'creatingCopy',
-            'createRemixSuccess', 'creatingRemix', 'saveSuccess', 'saving'],
+            'createRemixSuccess', 'creatingRemix', 'saveSuccess', 'saving', 'savingMwp'],
         showDownload: true,
         // showSaveNow: true,
         closeButton: true,
@@ -247,7 +247,7 @@ const alerts = [
     {
         alertId: 'twSaveToDiskSuccess',
         alertType: AlertTypes.INLINE,
-        clearList: ['saveSuccess', 'saving', 'savingError', 'twCreatingRestorePoint',
+        clearList: ['saveSuccess', 'saving', 'savingError', 'savingMwp', 'twCreatingRestorePoint',
             'twRestorePointSuccess', 'twRestorePointError'],
         content: (
             <FormattedMessage
@@ -259,6 +259,20 @@ const alerts = [
         iconURL: successImage,
         level: AlertLevels.SUCCESS,
         maxDisplaySecs: 3
+    },
+    {
+        alertId: 'savingMwp',
+        alertType: AlertTypes.INLINE,
+        clearList: ['saveSuccess', 'saving', 'savingError', 'savingMwp', 'twSaveToDiskSuccess'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Preparing your project file…"
+                description="Message shown while a .mwp file with the project's history is built for download"
+                id="mw.alerts.savingMwp"
+            />
+        ),
+        iconSpinner: true,
+        level: AlertLevels.INFO
     },
     {
         alertId: 'saving',
