@@ -3,7 +3,9 @@
  */
 const requestPersistentStorage = () => {
     if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist();
+        // Sandboxed frames and some Safari contexts reject with "The operation is not
+        // supported in this context."
+        navigator.storage.persist().catch(() => {});
 
         // We don't really care about the result.
         // Safari auto-denies. Chrome auto-approves. That's not very useful information.
