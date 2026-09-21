@@ -114,7 +114,7 @@
     "redux-throttle": "0.1.1",
     "rotur-sdk": "^2.0.0",
     "scratch-audio": "https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33",
-    "scratch-blocks": "https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/624bc1ceca5da8874326b640b9585d63026e297c",
+    "scratch-blocks": "https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/f3ed3e3cdf3aa04d362bdf3ef02dd53cf340228e",
     "scratch-paint": "https://codeload.github.com/MistWarp/scratch-paint/tar.gz/b6b4e6787cd02c17a010c9514d30185c5ec4c4c2",
     "scratch-render": "https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a",
     "scratch-render-fonts": "https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd",
