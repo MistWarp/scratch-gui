@@ -258,7 +258,10 @@ describe('menu bar file workflows', () => {
             name: 'Project.mwp'
         }));
         const menuBar = makeMenuBar({
+            onCloseGitStatus: jest.fn(),
+            onGitStatusDone: jest.fn(),
             onRequestCloseFile: jest.fn(),
+            onShowGitStatus: jest.fn(),
             projectTitle: 'Project',
             showSaveFilePicker,
             showToast: jest.fn(),
@@ -276,8 +279,13 @@ describe('menu bar file workflows', () => {
             commitChanges: false
         }));
         expect(requestVersionMessage).not.toHaveBeenCalled();
-        expect(menuBar.props.showToast).toHaveBeenCalledWith(
-            'MistWarp project file saved (includes full history).', 'success');
+        expect(menuBar.props.onShowGitStatus).toHaveBeenCalledWith('savingMwp');
+        expect(showSaveFilePicker.mock.invocationCallOrder[0])
+            .toBeLessThan(menuBar.props.onShowGitStatus.mock.invocationCallOrder[0]);
+        expect(menuBar.props.onShowGitStatus.mock.invocationCallOrder[0])
+            .toBeLessThan(createMwp.mock.invocationCallOrder[0]);
+        expect(menuBar.props.onGitStatusDone).toHaveBeenCalledWith('twSaveToDiskSuccess');
+        expect(menuBar.props.showToast).not.toHaveBeenCalled();
     });
 
     test('ignores another MWP save while the first picker is open', async () => {
@@ -288,7 +296,9 @@ describe('menu bar file workflows', () => {
             cancelPicker = () => reject(cancelled);
         }));
         const menuBar = makeMenuBar({
+            onCloseGitStatus: jest.fn(),
             onRequestCloseFile: jest.fn(),
+            onShowGitStatus: jest.fn(),
             projectTitle: 'Project',
             showSaveFilePicker,
             showToast: jest.fn(),
@@ -310,7 +320,9 @@ describe('menu bar file workflows', () => {
         createMwp.mockRejectedValueOnce(new Error('disk full'));
         const showToast = jest.fn();
         const menuBar = makeMenuBar({
+            onCloseGitStatus: jest.fn(),
             onRequestCloseFile: jest.fn(),
+            onShowGitStatus: jest.fn(),
             projectTitle: 'Project',
             showToast,
             vm: {}
@@ -320,6 +332,8 @@ describe('menu bar file workflows', () => {
 
         await expect(menuBar.saveMwp(false)).resolves.toBe(false);
 
+        expect(menuBar.props.onShowGitStatus).toHaveBeenCalledWith('savingMwp');
+        expect(menuBar.props.onCloseGitStatus).toHaveBeenCalledWith('savingMwp');
         expect(showToast).toHaveBeenCalledWith('Could not save MistWarp project: disk full', 'error');
         expect(menuBar.mwpSaving).toBe(false);
     });

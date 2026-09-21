@@ -2,7 +2,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useState} from 'react';
 import InlineMessages from '../../containers/inline-messages.jsx';
-import {filterInlineAlerts} from '../../reducers/alerts';
+import {closeAlertWithId, filterInlineAlerts, showAlertWithTimeout, showStandardAlert} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
 import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
@@ -20,7 +20,10 @@ const TWSaveStatus = ({
     projectChanged,
     projectTitle,
     roturReady,
+    onAlertDone,
+    onCloseAlert,
     onProjectUnchanged,
+    onShowAlert,
     vm
 }) => {
     const [feedback, setFeedback] = useState(() => getSaveFeedback(vm));
@@ -32,7 +35,19 @@ const TWSaveStatus = ({
         const refresh = () => refreshPlatform(version => version + 1);
         window.addEventListener('mw:platform-project-changed', refresh);
         const update = event => {
-            if (event.detail.vm === vm) setFeedback(getSaveFeedback(vm));
+            if (event.detail.vm !== vm) return;
+            const next = getSaveFeedback(vm);
+            setFeedback(next);
+            // Downloads from this button, Ctrl+S and the shortcut all land here,
+            // so show their progress and outcome where the user can see it.
+            if (next === 'downloading') {
+                onShowAlert('savingMwp');
+            } else if (next === 'downloaded') {
+                onAlertDone('twSaveToDiskSuccess');
+            } else if (next === 'downloadFailed') {
+                onCloseAlert('savingMwp');
+                onShowAlert('savingError');
+            }
         };
         const reset = () => {
             setSaveFeedback(vm, null);
@@ -47,7 +62,7 @@ const TWSaveStatus = ({
             if (vm.off) vm.off('PROJECT_LOADED', reset);
             unsubscribe();
         };
-    }, [vm]);
+    }, [vm, onAlertDone, onCloseAlert, onShowAlert]);
     const platformState = communityEnabled && roturReady ? getRememberedPlatformProjectState() : null;
     const isOwner = platformState && (platformState.isOwner === true || platformState.canSaveDirectly === true);
     const mistwarpAction = getMistWarpAction(platformState, projectChanged) ||
@@ -68,9 +83,11 @@ const TWSaveStatus = ({
                 .finally(() => setBusy(false));
         }
     }, [vm, projectTitle, mistwarpAction, onProjectUnchanged, busy]);
-    const status = busy ? 'Preparing download…' : downloadError ? 'Download failed. Try again' :
-        projectChanged ? 'Unsaved changes' : isOwner ? 'Saved to MistWarp' :
-            feedback === 'downloaded' ? 'Downloaded to computer' : platformState ? 'Shared project' : 'Local project';
+    const status = busy || feedback === 'downloading' ? 'Preparing download…' :
+        downloadError ? 'Download failed. Try again' :
+            projectChanged ? 'Unsaved changes' : isOwner ? 'Saved to MistWarp' :
+                feedback === 'downloaded' ? 'Downloaded to computer' :
+                    platformState ? 'Shared project' : 'Local project';
     const label = communityEnabled ?
         (mistwarpAction === 'remix' ? 'Remix to MistWarp' :
             mistwarpAction === 'update' ? 'Save changes' : 'Save to MistWarp') :
@@ -110,7 +127,10 @@ TWSaveStatus.propTypes = {
     projectChanged: PropTypes.bool,
     projectTitle: PropTypes.string,
     roturReady: PropTypes.bool,
+    onAlertDone: PropTypes.func,
+    onCloseAlert: PropTypes.func,
     onProjectUnchanged: PropTypes.func,
+    onShowAlert: PropTypes.func,
     vm: PropTypes.shape({
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object,
@@ -129,7 +149,10 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onProjectUnchanged: () => dispatch(setProjectUnchanged())
+    onAlertDone: alertId => showAlertWithTimeout(dispatch, alertId),
+    onCloseAlert: alertId => dispatch(closeAlertWithId(alertId)),
+    onProjectUnchanged: () => dispatch(setProjectUnchanged()),
+    onShowAlert: alertId => dispatch(showStandardAlert(alertId))
 });
 
 export default connect(
