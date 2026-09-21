@@ -31,8 +31,15 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
     if (!platform) {
-        const {blob} = await withProjectOperation(vm, () =>
-            createMwp({vm, message: 'Save MistWarp project', commitChanges: false}));
+        setSaveFeedback(vm, 'downloading');
+        let blob;
+        try {
+            ({blob} = await withProjectOperation(vm, () =>
+                createMwp({vm, message: 'Save MistWarp project', commitChanges: false})));
+        } catch (e) {
+            setSaveFeedback(vm, 'downloadFailed');
+            throw e;
+        }
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);
         setSaveFeedback(vm, 'downloaded');
         trackDaily('project_saved', {kind: 'download'});
