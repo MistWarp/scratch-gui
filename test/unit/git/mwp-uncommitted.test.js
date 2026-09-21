@@ -14,6 +14,9 @@ jest.mock('@isomorphic-git/lightning-fs', () => class TestFs {
         this.promises.rename = (from, to) => fs.promises.rename(path.join(this.root, from), path.join(this.root, to));
     }
 });
+jest.mock('../../../src/lib/rotur/identity.js', () => ({
+    getMistWarpAuthor: jest.fn(() => Promise.reject(new Error('Sign in to Rotur before saving a MistWarp project')))
+}));
 
 const {git, getFs, REPO_DIR, deleteRepo} = require('../../../src/lib/git/browser-git.js');
 const {createMwp, importMwp, buildSb3FromCurrentRepo} = require('../../../src/lib/git/mwp.js');
@@ -140,4 +143,12 @@ test('browsing another project preserves uncommitted files and incomplete reposi
     await inspectMwpFiles({workspace});
     expect(String(await fs.promises.readFile(scratchFile))).toBe('Work before the first commit');
     expect(await fs.promises.readdir(REPO_DIR)).toEqual(['unsaved.txt']);
+});
+
+test('saving a cloud project to the computer does not need a Rotur sign-in', async () => {
+    const saved = await createMwp({sb3Files: projectFiles(0), projectId: 'p1', commitChanges: false});
+    expect(saved.manifest.projectId).toBe('p1');
+    const [entry] = await git.log({fs: getFs(), dir: REPO_DIR, depth: 1});
+    expect(entry.commit.author.name).toBe('User');
+    await expect(createMwp({sb3Files: projectFiles(1), projectId: 'p1'})).rejects.toThrow('Sign in to Rotur');
 });
