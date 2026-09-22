@@ -2,10 +2,10 @@ import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-int
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {Activity, Cloud, GitBranch, Users} from 'lucide-react';
+import {Activity, ArrowUpRight, CircleAlert, Cloud, GitBranch, LogIn, Lock, Users} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
-import Box from '../box/box.jsx';
+import Avatar from '../mw-avatar/avatar.jsx';
 import Button from '../button/button.jsx';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import styles from './rotur-login-modal.css';
@@ -25,6 +25,7 @@ const messages = defineMessages({
 
 const FEATURES = [
     {
+        id: 'activity',
         icon: Activity,
         title: (
             <FormattedMessage
@@ -42,6 +43,7 @@ const FEATURES = [
         )
     },
     {
+        id: 'cloud',
         icon: Cloud,
         title: (
             <FormattedMessage
@@ -52,34 +54,34 @@ const FEATURES = [
         ),
         description: (
             <FormattedMessage
-                defaultMessage="Sync themes and settings across devices when signed in."
+                defaultMessage="Keep your themes and settings in sync across devices."
                 description="Rotur login feature description"
-                id="mw.roturLogin.feature.cloud.desc"
+                id="mw.roturLogin.feature.cloud.description"
             />
         )
     },
     {
+        id: 'git',
         icon: GitBranch,
         title: (
             <FormattedMessage
-                defaultMessage="Rotur Git in the Git window"
+                defaultMessage="Rotur Git"
                 description="Rotur login feature title"
-                id="mw.roturLogin.feature.git.title"
+                id="mw.roturLogin.feature.git.name"
             />
         ),
         description: (
             <FormattedMessage
-                defaultMessage="Create repos on git.rotur.dev, push your project, and clone others."
+                defaultMessage="Push and clone projects from the Git window."
                 description="Rotur login feature description"
-                id="mw.roturLogin.feature.git.desc"
+                id="mw.roturLogin.feature.git.description"
             />
         )
-    }
-];
-
-const COMING_SOON = [
+    },
     {
+        id: 'friends',
         icon: Users,
+        comingSoon: true,
         title: (
             <FormattedMessage
                 defaultMessage="Friends and collab invites"
@@ -89,9 +91,9 @@ const COMING_SOON = [
         ),
         description: (
             <FormattedMessage
-                defaultMessage="See online friends on MistWarp and invite them to collab."
+                defaultMessage="See which friends are online and invite them to collab."
                 description="Upcoming Rotur feature description"
-                id="mw.roturLogin.coming.friends.desc"
+                id="mw.roturLogin.coming.friends.description"
             />
         )
     }
@@ -99,13 +101,27 @@ const COMING_SOON = [
 
 const FeatureRow = ({icon: Icon, title, description, comingSoon}) => (
     <li className={comingSoon ? styles.featureComing : styles.feature}>
-        <div className={styles.featureIcon}>
-            <Icon />
-        </div>
-        <div className={styles.featureText}>
-            <p className={styles.featureTitle}>{title}</p>
-            <p className={styles.featureDesc}>{description}</p>
-        </div>
+        <span className={styles.featureIcon}>
+            <Icon
+                aria-hidden="true"
+                size={16}
+            />
+        </span>
+        <span className={styles.featureText}>
+            <span className={styles.featureTitle}>
+                {title}
+                {comingSoon ? (
+                    <span className={styles.badge}>
+                        <FormattedMessage
+                            defaultMessage="Coming soon"
+                            description="Badge on a planned Rotur feature"
+                            id="mw.roturLogin.comingSoon"
+                        />
+                    </span>
+                ) : null}
+            </span>
+            <span className={styles.featureDesc}>{description}</span>
+        </span>
     </li>
 );
 
@@ -166,128 +182,167 @@ class RoturLoginModal extends React.Component {
             <Modal
                 className={styles.modalContent}
                 contentLabel={this.props.intl.formatMessage(loggedIn ? messages.infoTitle : messages.title)}
-                headerClassName={styles.header}
                 id="roturLoginModal"
                 onRequestClose={this.handleRequestClose}
                 resizable
                 maximizable={false}
                 width={440}
-                height={480}
+                height={loggedIn ? 470 : 530}
                 minHeight={320}
-                minWidth={320}
+                minWidth={340}
             >
-                <Box className={styles.body}>
-                    <div className={styles.hero}>
-                        <img
-                            alt=""
-                            className={styles.logo}
-                            draggable={false}
-                            src="https://rotur.dev/Rotur%20Logo.png"
-                        />
-                        <div className={styles.heroText}>
-                            <h2 className={styles.title}>
-                                {loggedIn ? (
-                                    <FormattedMessage
-                                        defaultMessage="Rotur in MistWarp"
-                                        description="Headline in Rotur info modal when signed in"
-                                        id="mw.roturLogin.infoHeadline"
-                                    />
-                                ) : (
-                                    <FormattedMessage
-                                        defaultMessage="Connect MistWarp to Rotur"
-                                        description="Headline in Rotur login modal"
-                                        id="mw.roturLogin.headline"
-                                    />
-                                )}
-                            </h2>
-                            <p className={styles.subtitle}>
-                                {loggedIn ? (
-                                    <FormattedMessage
-                                        // eslint-disable-next-line max-len
-                                        defaultMessage="You're signed in as {username}. Here's what your account enables."
-                                        description="Subtitle in Rotur info modal when signed in"
-                                        id="mw.roturLogin.infoSubtitle"
-                                        values={{username: this.props.username}}
-                                    />
-                                ) : (
-                                    <FormattedMessage
-                                        // eslint-disable-next-line max-len
-                                        defaultMessage="Sign in for presence, your profile picture, and cloud sync of themes and settings."
-                                        description="Subtitle in Rotur login modal"
-                                        id="mw.roturLogin.subtitle"
-                                    />
-                                )}
-                            </p>
+                <div className={styles.root}>
+                    <div className={styles.body}>
+                        <div className={styles.hero}>
+                            {loggedIn ? (
+                                <Avatar
+                                    className={styles.heroAvatar}
+                                    username={this.props.username}
+                                    size={52}
+                                />
+                            ) : (
+                                <img
+                                    alt=""
+                                    className={styles.logo}
+                                    draggable={false}
+                                    src="https://rotur.dev/Rotur%20Logo.png"
+                                />
+                            )}
+                            <div className={styles.heroText}>
+                                <h2 className={styles.title}>
+                                    {loggedIn ? (
+                                        <FormattedMessage
+                                            defaultMessage="Signed in as {username}"
+                                            description="Headline in Rotur info modal when signed in"
+                                            id="mw.roturLogin.signedInAs"
+                                            values={{username: this.props.username}}
+                                        />
+                                    ) : (
+                                        <FormattedMessage
+                                            defaultMessage="Connect MistWarp to Rotur"
+                                            description="Headline in Rotur login modal"
+                                            id="mw.roturLogin.headline"
+                                        />
+                                    )}
+                                </h2>
+                                <p className={styles.subtitle}>
+                                    {loggedIn ? (
+                                        <FormattedMessage
+                                            defaultMessage="Your Rotur account turns these on in the editor."
+                                            description="Subtitle in Rotur info modal when signed in"
+                                            id="mw.roturLogin.signedInSubtitle"
+                                        />
+                                    ) : (
+                                        <FormattedMessage
+                                            defaultMessage="One Rotur account turns these on in the editor."
+                                            description="Subtitle in Rotur login modal"
+                                            id="mw.roturLogin.intro"
+                                        />
+                                    )}
+                                </p>
+                            </div>
                         </div>
+
+                        <ul className={styles.featureList}>
+                            {FEATURES.map(feature => (
+                                <FeatureRow
+                                    key={feature.id}
+                                    icon={feature.icon}
+                                    title={feature.title}
+                                    description={feature.description}
+                                    comingSoon={feature.comingSoon}
+                                />
+                            ))}
+                        </ul>
+
+                        {error ? (
+                            <div
+                                className={styles.error}
+                                role="alert"
+                            >
+                                <CircleAlert
+                                    aria-hidden="true"
+                                    className={styles.errorIcon}
+                                    size={16}
+                                />
+                                <div className={styles.errorText}>
+                                    <p className={styles.errorMessage}>{error}</p>
+                                    <a
+                                        className={styles.link}
+                                        href="https://rotur.dev/me"
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="Check your account standing on rotur.dev"
+                                            description="Link shown under a Rotur sign-in error"
+                                            id="mw.roturLogin.checkStanding"
+                                        />
+                                        <ArrowUpRight
+                                            aria-hidden="true"
+                                            size={14}
+                                        />
+                                    </a>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {loggedIn ? null : (
+                            <p className={styles.footnote}>
+                                <Lock
+                                    aria-hidden="true"
+                                    size={13}
+                                />
+                                <span>
+                                    <FormattedMessage
+                                        defaultMessage="You sign in on {link}, so MistWarp never sees your password."
+                                        description="Privacy note under the Rotur login features"
+                                        id="mw.roturLogin.privacy"
+                                        values={{
+                                            link: (
+                                                <a
+                                                    className={styles.link}
+                                                    href="https://rotur.dev"
+                                                    rel="noopener noreferrer"
+                                                    target="_blank"
+                                                >
+                                                    {'rotur.dev'}
+                                                </a>
+                                            )
+                                        }}
+                                    />
+                                </span>
+                            </p>
+                        )}
                     </div>
 
-                    <p className={styles.sectionLabel}>
-                        <FormattedMessage
-                            defaultMessage="What you unlock"
-                            description="Section label listing Rotur login benefits"
-                            id="mw.roturLogin.unlocks"
-                        />
-                    </p>
-
-                    <ul className={styles.featureList}>
-                        {FEATURES.map((feature, index) => (
-                            <FeatureRow
-                                key={`feature-${index}`}
-                                icon={feature.icon}
-                                title={feature.title}
-                                description={feature.description}
-                            />
-                        ))}
-                    </ul>
-
-                    <p className={styles.sectionLabel}>
-                        <FormattedMessage
-                            defaultMessage="Coming soon"
-                            description="Section label for planned Rotur features"
-                            id="mw.roturLogin.comingSoon"
-                        />
-                    </p>
-
-                    <ul className={styles.featureList}>
-                        {COMING_SOON.map((feature, index) => (
-                            <FeatureRow
-                                key={`coming-${index}`}
-                                icon={feature.icon}
-                                title={feature.title}
-                                description={feature.description}
-                                comingSoon
-                            />
-                        ))}
-                    </ul>
-
-                    {error ? (
-                        <div>
-                            <p className={styles.error}>{error}</p>
-                            <p style={{marginTop: '4px', fontSize: '0.85rem', textAlign: 'center'}}>
-                                <a
-                                    href="https://rotur.dev/me"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{color: '#c299cf', textDecoration: 'underline'}}
-                                >
-                                    {'Check account standing on rotur.dev'}
-                                </a>
-                            </p>
-                        </div>
-                    ) : null}
-
-                    <div className={styles.actions}>
+                    <div className={styles.footer}>
                         {loggedIn ? (
-                            <Button
-                                variant="primary"
-                                onClick={this.handleRequestClose}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Close"
-                                    description="Close button on Rotur info modal"
-                                    id="mw.roturLogin.close"
-                                />
-                            </Button>
+                            <React.Fragment>
+                                <Button
+                                    href="https://rotur.dev/me"
+                                    iconElem={ArrowUpRight}
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                    variant="secondary"
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Manage account"
+                                        description="Link to the Rotur account page from the Rotur info modal"
+                                        id="mw.roturLogin.manage"
+                                    />
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={this.handleRequestClose}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Close"
+                                        description="Close button on Rotur info modal"
+                                        id="mw.roturLogin.close"
+                                    />
+                                </Button>
+                            </React.Fragment>
                         ) : (
                             <React.Fragment>
                                 <Button
@@ -302,16 +357,24 @@ class RoturLoginModal extends React.Component {
                                     />
                                 </Button>
                                 <Button
+                                    className={styles.continue}
+                                    iconElem={busy ? null : LogIn}
                                     variant="primary"
                                     disabled={busy}
                                     onClick={this.handleLogin}
                                 >
                                     {busy ? (
-                                        <FormattedMessage
-                                            defaultMessage="Opening Rotur..."
-                                            description="Loading state for Rotur login button"
-                                            id="mw.roturLogin.opening"
-                                        />
+                                        <React.Fragment>
+                                            <span
+                                                aria-hidden="true"
+                                                className={styles.spinner}
+                                            />
+                                            <FormattedMessage
+                                                defaultMessage="Waiting for Rotur..."
+                                                description="Loading state for Rotur login button"
+                                                id="mw.roturLogin.waiting"
+                                            />
+                                        </React.Fragment>
                                     ) : (
                                         <FormattedMessage
                                             defaultMessage="Continue with Rotur"
@@ -323,27 +386,7 @@ class RoturLoginModal extends React.Component {
                             </React.Fragment>
                         )}
                     </div>
-
-                    <p className={styles.footnote}>
-                        <FormattedMessage
-                            // eslint-disable-next-line max-len
-                            defaultMessage="Secure sign-in on {link}. Your account powers presence, cloud sync, and Rotur Git."
-                            description="Privacy footnote under Rotur login"
-                            id="mw.roturLogin.footnote"
-                            values={{
-                                link: (
-                                    <a
-                                        href="https://rotur.dev"
-                                        rel="noopener noreferrer"
-                                        target="_blank"
-                                    >
-                                        {'rotur.dev'}
-                                    </a>
-                                )
-                            }}
-                        />
-                    </p>
-                </Box>
+                </div>
             </Modal>
         );
     }
