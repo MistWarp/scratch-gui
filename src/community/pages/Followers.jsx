@@ -2,10 +2,13 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {useParams, Link} from 'react-router-dom';
-import {ArrowLeft} from 'lucide-react';
+import {Users} from 'lucide-react';
 import rotur from '../rotur';
 import Avatar from '../components/Avatar.jsx';
-import Button from '../components/ui/Button.jsx';
+import CardGrid from '../components/ui/CardGrid.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
 import styles from './Followers.module.css';
@@ -19,7 +22,12 @@ const Followers = ({mode}) => {
     const beginLoad = useLatest();
     const following = mode === 'following';
     const label = following ? 'following' : 'followers';
-    const emptyText = following ? `${name} is not following anyone yet.` : 'No followers yet.';
+    const title = following ?
+        communityText('Users {name} follows', {name}) :
+        communityText("{name}'s followers", {name});
+    const emptyTitle = following ?
+        communityText('{name} is not following anyone yet', {name}) :
+        communityText('No followers yet');
 
     useEffect(() => {
         setPageMeta({title: `${name}'s ${label}`, image: rotur.avatar(name, 256), card: 'summary'});
@@ -32,28 +40,26 @@ const Followers = ({mode}) => {
         const request = following ? rotur.following(name) : rotur.followers(name);
         request
             .then(fresh(data => setFollowers(data[label] || [])))
-            .catch(fresh(() => setError(`Could not load ${label}.`)));
+            .catch(fresh(() => setError(following ?
+                communityText('Could not load who this user follows.') :
+                communityText('Could not load followers.'))));
     }, [name, beginLoad, attempt, following, label]);
 
     return (
         <main className={styles.page}>
-            <Link
-                to={`/users/${name}`}
-                className={styles.backLink}
-            >
-                <ArrowLeft size={14} />
-                {name}
-            </Link>
-            <h1>{name}{communityText("'s ")}{label}</h1>
+            <PageHeader
+                compact
+                icon={Users}
+                backTo={`/users/${name}`}
+                backLabel={name}
+                title={title}
+            />
             {error ? (
-                <p className={styles.status}>
-                    {error}{' '}
-                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                </p>
+                <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : followers === null ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage />
             ) : followers.length ? (
-                <div className={styles.grid}>
+                <CardGrid min={96}>
                     {followers.map(follower => (
                         <Link
                             key={follower}
@@ -67,9 +73,13 @@ const Followers = ({mode}) => {
                             <span>{follower}</span>
                         </Link>
                     ))}
-                </div>
+                </CardGrid>
             ) : (
-                <p className={styles.status}>{emptyText}</p>
+                <EmptyState icon={Users} title={emptyTitle}>
+                    {following ?
+                        communityText('Profiles this user follows will show up here.') :
+                        communityText('People who follow this profile will show up here.')}
+                </EmptyState>
             )}
         </main>
     );

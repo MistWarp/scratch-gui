@@ -1,7 +1,7 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount, shallow} from 'enzyme';
-import Modal from '../../src/community/components/ui/Modal.jsx';
+import ConfirmModal from '../../src/community/components/ui/ConfirmModal.jsx';
 import api from '../../src/community/api.js';
 import {
     AdminActionDialog, AnalyticsChart, buildSeries, StatsOverview, UserManager
@@ -30,12 +30,11 @@ describe('admin action dialog', () => {
             />
         );
 
-        expect(wrapper.find(Modal).prop('title')).toBe('Warn user?');
+        expect(wrapper.find(ConfirmModal).prop('title')).toBe('Warn user?');
         wrapper.find('textarea').simulate('change', {target: {value: 'Clear reason'}});
         expect(onChange).toHaveBeenCalledWith('reason', 'Clear reason');
 
-        const actions = shallow(<div>{wrapper.find(Modal).prop('actions')}</div>);
-        actions.find('button').at(1).simulate('click');
+        wrapper.find(ConfirmModal).prop('onConfirm')();
         expect(onConfirm).toHaveBeenCalledTimes(1);
     });
 
@@ -51,9 +50,8 @@ describe('admin action dialog', () => {
             />
         );
 
-        expect(wrapper.find(Modal).prop('dismissDisabled')).toBe(true);
-        const content = shallow(<div>{wrapper.find(Modal).prop('children')}</div>);
-        expect(content.text()).toContain('storage unavailable');
+        expect(wrapper.find(ConfirmModal).prop('busy')).toBe(true);
+        expect(wrapper.find(ConfirmModal).prop('error')).toBe('storage unavailable');
     });
 });
 

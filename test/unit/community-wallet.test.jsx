@@ -109,7 +109,7 @@ describe('Wallet billing result', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Donation history is unavailable.');
+        expect(wrapper.text()).toContain('Donation history unavailable');
         expect(wrapper.text()).not.toContain('No profile donations yet.');
 
         await act(async () => {

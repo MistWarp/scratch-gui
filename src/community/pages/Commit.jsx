@@ -1,8 +1,8 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ArrowLeft, GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
-import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
@@ -12,7 +12,11 @@ import SpriteList from '../components/SpriteList.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {base64ToBytes, inlineDataToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {textsFromInspectionFiles} from '../fractch-summary.js';
 import {formatDateTime} from '../format.js';
@@ -227,7 +231,7 @@ const Commit = () => {
         if (!name) return;
         const coAuthors = normalizeCommitCoAuthors(entry);
         if (coAuthors.some(item => item.toLowerCase() === name.toLowerCase())) {
-            setManageError(`${name} is already attached to this commit.`);
+            setManageError(communityText('{value1} is already attached to this commit.', {value1: name}));
             return;
         }
         setCollaboratorName('');
@@ -237,15 +241,15 @@ const Commit = () => {
     if (resolveError) {
         return (
             <main className={styles.page}>
-                <div className={styles.state}><p>{resolveError}</p></div>
+                <StatusMessage error>{resolveError}</StatusMessage>
             </main>
         );
     }
     if (error) {
         return (
             <main className={styles.page}>
-                <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} />{communityText(' Back to project')}</Link>
-                <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div>
+                <PageHeader compact backTo={`${baseUrl}#history`} backLabel={communityText('Back to project')} icon={GitCommitHorizontal} title={communityText('Commit')} />
+                <StatusMessage error onRetry={load}>{error}</StatusMessage>
             </main>
         );
     }
@@ -285,22 +289,22 @@ const Commit = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={`${baseUrl}#history`}><ArrowLeft size={15} /> {project.title}</Link>
-            <section className={styles.header}>
-                <div className={styles.title}>
-                    <GitCommitHorizontal size={20} />
-                    <h1>{entry.message || communityText('Untitled commit')}</h1>
-                    {canManageCommit(project) ? (
-                        <Button className={styles.manageButton} onClick={openManage}>
-                            <Settings2 size={14} />{communityText(' Manage')}</Button>
-                    ) : null}
-                </div>
+            <PageHeader
+                compact
+                backTo={`${baseUrl}#history`}
+                backLabel={project.title}
+                icon={GitCommitHorizontal}
+                title={entry.message || communityText('Untitled commit')}
+                actions={canManageCommit(project) ? (
+                    <Button onClick={openManage}><Settings2 size={14} />{communityText('Manage')}</Button>
+                ) : null}
+            >
                 <div className={styles.meta}>
                     <UserLink username={entry.authorName}><Avatar username={entry.authorName} size={26} /></UserLink>
                     <UserLink username={entry.authorName}><strong>{entry.authorName}</strong></UserLink>
-                    <span>{communityText('committed ')}{formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))}</span>
+                    <span>{communityText('committed {value1}', {value1: formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))})}</span>
                     {normalizeCommitCoAuthors(entry).length ? (
-                        <span className={styles.credited}>{communityText('co-authored by ')}{normalizeCommitCoAuthors(entry).map((username, index) => (
+                        <span className={styles.credited}>{communityText('co-authored by')}{' '}{normalizeCommitCoAuthors(entry).map((username, index) => (
                             <React.Fragment key={username}>
                                 {index ? ', ' : ''}<UserLink username={username}>{username}</UserLink>
                             </React.Fragment>
@@ -309,17 +313,16 @@ const Commit = () => {
                     ) : null}
                     <code>{entry.oid}</code>
                 </div>
-            </section>
-            <UnderlineTabs
-                items={[
-                    {key: 'changes', label: <>{communityText('Changes ')}<b>{files.length}</b></>},
-                    {key: 'files', label: 'Files at this commit'}
-                ]}
-                value={fileView ? 'files' : 'changes'}
-                onChange={key => (key === 'files' ? showFiles(historicalPath) : showDiff())}
-                className={styles.views}
-                ariaLabel="Commit views"
-            />
+                <UnderlineTabs
+                    items={[
+                        {key: 'changes', label: <>{communityText('Changes')} <b>{files.length}</b></>},
+                        {key: 'files', label: communityText('Files at this commit')}
+                    ]}
+                    value={fileView ? 'files' : 'changes'}
+                    onChange={key => (key === 'files' ? showFiles(historicalPath) : showDiff())}
+                    ariaLabel="Commit views"
+                />
+            </PageHeader>
             {fileView ? (
                 <ProjectFiles
                     bounded
@@ -338,7 +341,7 @@ const Commit = () => {
                     />
                     <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
                 </div>
-            ) : <p className={styles.rootCommit}>{communityText('No files changed in this commit.')}</p>}
+            ) : <EmptyState icon={GitCommitHorizontal} title={communityText('No files changed')}>{communityText('This commit did not change any files.')}</EmptyState>}
             {manageOpen ? (
                 <Modal
                     className={styles.manageModal}
@@ -359,7 +362,7 @@ const Commit = () => {
                                         <UserLink username={username}>{username}</UserLink>
                                         <button
                                             type="button"
-                                            aria-label={communityText("Remove {value1}", {value1: username})}
+                                            aria-label={communityText('Remove {value1}', {value1: username})}
                                             disabled={Boolean(manageBusy)}
                                             onClick={() => updateCoAuthors(
                                                 normalizeCommitCoAuthors(entry).filter(item => item !== username)
@@ -382,10 +385,10 @@ const Commit = () => {
                                 busy={manageBusy === 'coAuthors'}
                                 busyLabel={communityText('Saving…')}
                                 disabled={Boolean(manageBusy) || !collaboratorName.trim()}
-                            ><Plus size={15} />{communityText(' Add')}</Button>
+                            ><Plus size={15} />{communityText('Add')}</Button>
                         </form>
                     </section>
-                    {manageError ? <p className={styles.manageError}>{manageError}</p> : null}
+                    {manageError ? <Notice variant="error" className={styles.manageNotice}>{manageError}</Notice> : null}
                 </Modal>
             ) : null}
         </main>

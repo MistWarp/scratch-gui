@@ -4,7 +4,7 @@ import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
 import api from '../api.js';
 import NewsItem from '../components/NewsItem.jsx';
-import Button from '../components/ui/Button.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import setPageMeta from '../page-meta.js';
 import styles from './NewsPost.module.css';
 
@@ -20,7 +20,7 @@ const NewsPost = () => {
                 setItem(data.item);
                 setPageMeta({title: data.item.title});
             })
-            .catch(cause => setError(cause.message || 'Could not load this post.'));
+            .catch(cause => setError(cause.message || communityText('Could not load this post.')));
     }, [id]);
     useEffect(load, [load]);
     useEffect(() => {
@@ -29,9 +29,9 @@ const NewsPost = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to="/news"><ArrowLeft size={15} />{communityText(' All news')}</Link>
-            {error ? <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div> : null}
-            {!error && !item ? <p className={styles.state}>{communityText('Loading post…')}</p> : null}
+            <Link className={styles.back} to="/news"><ArrowLeft size={15} />{communityText('All news')}</Link>
+            {error ? <StatusMessage error onRetry={load}>{error}</StatusMessage> : null}
+            {!error && !item ? <StatusMessage>{communityText('Loading post…')}</StatusMessage> : null}
             {item ? <NewsItem full item={item} onChanged={load} /> : null}
         </main>
     );

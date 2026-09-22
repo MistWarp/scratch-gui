@@ -3,6 +3,9 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {Search, X} from 'lucide-react';
 import {findGifs, gifUrl} from '../gifs.js';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './GifPicker.module.css';
 
 const GifPicker = ({onClose, onSelect}) => {
@@ -25,7 +28,7 @@ const GifPicker = ({onClose, onSelect}) => {
             findGifs(query, controller.signal).then(setGifs).catch(cause => {
                 if (controller.signal.aborted) return;
                 setGifs([]);
-                setError(cause.message || 'Could not load GIFs.');
+                setError(cause.message || communityText('Could not load GIFs.'));
             }).finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
             });
@@ -50,12 +53,20 @@ const GifPicker = ({onClose, onSelect}) => {
                         onChange={event => setQuery(event.target.value)}
                     />
                 </label>
-                <button type="button" onClick={onClose} aria-label={communityText('Close GIF picker')}><X size={16} /></button>
+                <button type="button" onClick={onClose} aria-label={communityText('Close GIF picker')}>
+                    <X size={16} />
+                </button>
             </div>
-            <div className={styles.label}>{query.trim() ? communityText('Results') : communityText('Popular GIFs')}</div>
-            {loading && !gifs.length ? <div className={styles.status}>{communityText('Loading GIFs…')}</div> : null}
-            {error ? <div className={styles.error} role="alert">{error}</div> : null}
-            {!loading && !error && !gifs.length ? <div className={styles.status}>{communityText('No GIFs found.')}</div> : null}
+            <div className={styles.label}>
+                {query.trim() ? communityText('Results') : communityText('Popular GIFs')}
+            </div>
+            {loading && !gifs.length ? <StatusMessage compact>{communityText('Loading GIFs…')}</StatusMessage> : null}
+            {error ? <Notice variant="error">{error}</Notice> : null}
+            {!loading && !error && !gifs.length ? (
+                <EmptyState compact title={communityText('No GIFs found')}>
+                    {communityText('Try a different search.')}
+                </EmptyState>
+            ) : null}
             {gifs.length ? (
                 <div className={styles.grid}>
                     {gifs.map(gif => {

@@ -4,28 +4,6 @@
     padding: var(--page-pad);
 }
 
-.head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 20px;
-}
-
-.head h1 {
-    margin: 0 0 7px;
-    font-size: var(--fs-3xl);
-    letter-spacing: -.02em;
-}
-
-.head p {
-    max-width: 660px;
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    line-height: 1.55;
-}
-
 .form,
 .list {
     display: grid;
@@ -176,11 +154,6 @@
     font-weight: 700;
 }
 
-.labels .official {
-    color: var(--mw-text);
-    background: var(--bg-raised);
-}
-
 .meta {
     display: flex;
     align-items: center;
@@ -239,9 +212,8 @@
     margin-bottom: 14px;
 }
 
-.error {
-    margin: 0 0 14px;
-    color: var(--mw-danger);
+.notice {
+    margin-bottom: 14px;
 }
 
 .filters {
@@ -313,31 +285,7 @@
     cursor: pointer;
 }
 
-.empty {
-    margin: 0;
-    padding: 44px 20px;
-    border: 0;
-    border-radius: var(--radius-sm);
-    color: var(--text-dim);
-    text-align: center;
-}
-
-.empty button {
-    padding: 0;
-    border: 0;
-    color: var(--accent-strong);
-    background: transparent;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-}
-
 @media (max-width: 620px) {
-    .head {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
     .idea {
         grid-template-columns: 34px minmax(0, 1fr);
         gap: 10px;
@@ -376,16 +324,10 @@
     }
 }
 
-
-.head h1,
 .stageHead h2 {
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.head > button {
-    flex-shrink: 0;
 }
 
 .stageHead {
@@ -536,23 +478,6 @@
     }
 }
 
-.backLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 20px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
-.head h1 {
-    overflow-wrap: anywhere;
-}
-
-.head h1 svg {
-    flex-shrink: 0;
-}
-
 .overview {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -613,11 +538,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    margin: 0;
     padding: 20px;
-    color: var(--text-faint);
-    font-size: var(--fs-sm);
-    text-align: center;
 }
 
 .viewStage {
@@ -724,10 +645,6 @@
     .previewListEmpty {
         height: 80px;
     }
-}
-
-.tabs {
-    margin-bottom: 20px;
 }
 
 .pulls {

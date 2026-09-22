@@ -16,7 +16,7 @@ import {
     updateReviewSummary
 } from '../../src/community/pages/Project.jsx';
 import GitGraph from '../../src/community/components/GitGraph.jsx';
-import Modal from '../../src/community/components/ui/Modal.jsx';
+import ConfirmModal from '../../src/community/components/ui/ConfirmModal.jsx';
 import api from '../../src/community/api.js';
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
@@ -99,7 +99,7 @@ describe('Project content action payloads', () => {
         wrapper.find(GitGraph).prop('onRestore')(commit);
         wrapper.update();
 
-        const confirmation = wrapper.find(Modal);
+        const confirmation = wrapper.find(ConfirmModal);
         expect(confirmation.prop('title')).toBe('Restore this version?');
         expect(shallow(<div>{confirmation.prop('children')}</div>).text()).toContain('Added level two');
     });

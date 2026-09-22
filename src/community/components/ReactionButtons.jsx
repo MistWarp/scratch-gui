@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {Heart, ThumbsDown} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
+import {useCommunityIntl} from '../i18n.jsx';
 import useAfterLogin from '../use-after-login.js';
 import {sameUser} from '../format';
 import styles from './ReactionButtons.module.css';
@@ -16,6 +17,7 @@ const ReactionButtons = ({
     disabledTitle, showCounts, between, interactive, className
 }) => {
     const {user} = useUser();
+    const {text: communityText} = useCommunityIntl();
     const reactAfterLogin = useAfterLogin(key => onReact(key), 'react');
     const lists = reactions || {};
     const keys = {heart: heartKey, down: downKey};
@@ -32,9 +34,10 @@ const ReactionButtons = ({
                 const count = counts && Number.isFinite(counts[key]) ? counts[key] : names.length;
                 const inactive = disabled;
                 const signedOut = !user;
-                let buttonTitle = label;
-                if (inactive) buttonTitle = disabledTitle || 'Unavailable';
-                else if (signedOut) buttonTitle = 'Sign in to react';
+                const labelText = communityText(label);
+                let buttonTitle = labelText;
+                if (inactive) buttonTitle = disabledTitle || communityText('Unavailable');
+                else if (signedOut) buttonTitle = communityText('Sign in to react');
                 const buttonClass = mine ? (kind === 'down' ? styles.buttonDownOn : styles.buttonOn) : styles.button;
                 const content = (
                     <>
@@ -51,7 +54,7 @@ const ReactionButtons = ({
                                 className={buttonClass}
                                 disabled={inactive}
                                 title={buttonTitle}
-                                aria-label={label}
+                                aria-label={labelText}
                                 aria-pressed={mine}
                                 onClick={() => reactAfterLogin(key)}
                             >{content}</button>

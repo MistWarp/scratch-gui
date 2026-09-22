@@ -6,6 +6,10 @@ import api from '../api.js';
 import {formatDate} from '../format.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ProjectBranches.module.css';
 
 const decodeBase64 = value => {
@@ -63,7 +67,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setNewBranchFrom(previous => (branches.some(branch => branch.name === previous) ? previous : (current || main || branches[0] || {}).name || ''));
     }).catch(loadError => {
         setData({branches: []});
-        setError(loadError.message || 'Could not load branches.');
+        setError(loadError.message || communityText('Could not load branches.'));
     }), [id]);
 
     useEffect(() => {
@@ -94,7 +98,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             targetHead: mergeData.targetHead
         });
         setSession(null);
-        setNotice(`Merged ${mergeData.sourceBranch} into ${mergeData.targetBranch}.`);
+        setNotice(communityText('Merged {value1} into {value2}.', {value1: mergeData.sourceBranch, value2: mergeData.targetBranch}));
         await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
     };
 
@@ -106,7 +110,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         try {
             const mergeData = await api.mergeBranches(id, source, target);
             if (mergeData.merge.alreadyMerged) {
-                setNotice(`${source} is already included in ${target}.`);
+                setNotice(communityText('{value1} is already included in {value2}.', {value1: source, value2: target}));
                 return;
             }
             const prepared = await materializeBranchMerge(mergeData);
@@ -116,7 +120,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 await upload(mergeData, prepared.files);
             }
         } catch (mergeError) {
-            setError(mergeError.message || 'Could not merge the branches.');
+            setError(mergeError.message || communityText('Could not merge the branches.'));
         } finally {
             setBusy('');
         }
@@ -130,7 +134,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             const files = new Map(session.files);
             for (const file of session.conflicts) files.set(file.path, new TextEncoder().encode(file.content));
             for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(`Choose a version for ${file.path}.`);
+                if (!file.choice) throw new Error(communityText('Choose a version for {value1}.', {value1: file.path}));
                 const useSource = file.choice === 'source';
                 const deleted = useSource ? file.theirsDeleted : file.oursDeleted;
                 const content = useSource ? file.theirs : file.ours;
@@ -139,7 +143,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             }
             await upload(session.data, files);
         } catch (resolveError) {
-            setError(resolveError.message || 'Could not resolve the merge.');
+            setError(resolveError.message || communityText('Could not resolve the merge.'));
         } finally {
             setBusy('');
         }
@@ -163,9 +167,9 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         try {
             await api.createBranch(id, name, newBranchFrom);
             setNewBranch('');
-            await finishManagementAction(`Created ${name} from ${newBranchFrom}.`);
+            await finishManagementAction(communityText('Created {value1} from {value2}.', {value1: name, value2: newBranchFrom}));
         } catch (createError) {
-            setError(createError.message || 'Could not create the branch.');
+            setError(createError.message || communityText('Could not create the branch.'));
         } finally {
             setBusy('');
         }
@@ -187,9 +191,9 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setNotice('');
         try {
             await api.renameBranch(id, branch, name);
-            await finishManagementAction(`Renamed ${branch} to ${name}.`);
+            await finishManagementAction(communityText('Renamed {value1} to {value2}.', {value1: branch, value2: name}));
         } catch (renameError) {
-            setError(renameError.message || 'Could not rename the branch.');
+            setError(renameError.message || communityText('Could not rename the branch.'));
         } finally {
             setBusy('');
         }
@@ -202,9 +206,9 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setNotice('');
         try {
             await api.deleteBranch(id, branch);
-            await finishManagementAction(`Deleted ${branch}.`);
+            await finishManagementAction(communityText('Deleted {value1}.', {value1: branch}));
         } catch (deleteError) {
-            setError(deleteError.message || 'Could not delete the branch.');
+            setError(deleteError.message || communityText('Could not delete the branch.'));
         } finally {
             setBusy('');
         }
@@ -219,16 +223,15 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         binaryConflicts: current.binaryConflicts.map(file => (file.path === path ? {...file, choice} : file))
     }));
 
-    if (!data) return <div className={styles.state}>{communityText('Loading branches…')}</div>;
+    if (!data) return <StatusMessage compact>{communityText('Loading branches…')}</StatusMessage>;
 
     return (
         <div className={styles.panel}>
-            <header className={styles.header}>
-                <div>
-                    <h2><GitBranch size={19} />{communityText(' Branches')}</h2>
-                    <p>{communityText('Each branch points to its latest saved project version.')}</p>
-                </div>
-            </header>
+            <SectionHeading
+                icon={GitBranch}
+                title={communityText('Branches')}
+                lead={communityText('Each branch points to its latest saved project version.')}
+            />
 
             {canManage && branches.length ? (
                 <form className={styles.createBox} onSubmit={createBranch}>
@@ -250,40 +253,66 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         </select>
                     </label>
                     <Button type="submit" variant="primary" busy={busy === 'create'} busyLabel={communityText('Creating…')} disabled={!newBranch.trim() || !newBranchFrom || Boolean(busy)}>
-                        <Plus size={16} />{communityText(' Create branch')}</Button>
+                        <Plus size={16} />
+                        {communityText('Create branch')}
+                    </Button>
                 </form>
             ) : null}
 
             {canManage && branches.length > 1 ? (
                 <section className={styles.mergeBox}>
                     <div className={styles.mergeFields}>
-                        <label>{communityText('Merge ')}<select value={source} onChange={event => setSource(event.target.value)}>{availableSources.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
+                        <label>
+                            <span>{communityText('Merge')}</span>
+                            <select value={source} onChange={event => setSource(event.target.value)}>
+                                {availableSources.map(branch => <option key={branch.name}>{branch.name}</option>)}
+                            </select>
+                        </label>
                         <span>{communityText('into')}</span>
-                        <label><span className={styles.srOnly}>{communityText('Target branch')}</span><select value={target} onChange={event => setTarget(event.target.value)}>{branches.map(branch => <option key={branch.name}>{branch.name}</option>)}</select></label>
-                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel={communityText('Merging…')} disabled={!source || !target || Boolean(busy)}><GitMerge size={16} />{communityText(' Merge branches')}</Button>
+                        <label>
+                            <span className={styles.srOnly}>{communityText('Target branch')}</span>
+                            <select value={target} onChange={event => setTarget(event.target.value)}>
+                                {branches.map(branch => <option key={branch.name}>{branch.name}</option>)}
+                            </select>
+                        </label>
+                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel={communityText('Merging…')} disabled={!source || !target || Boolean(busy)}>
+                            <GitMerge size={16} />
+                            {communityText('Merge branches')}
+                        </Button>
                     </div>
                     <p>{communityText('The project switches to the target branch after the merge.')}</p>
                 </section>
             ) : null}
 
-            {error ? <p className={styles.error}>{error}</p> : null}
-            {notice ? <p className={styles.notice}>{notice}</p> : null}
+            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
 
             {session ? (
                 <section className={styles.conflicts}>
-                    <h3>{communityText('Resolve merge conflicts')}</h3>
-                    <p>{communityText('Edit text conflicts and choose which branch to keep for assets.')}</p>
+                    <SectionHeading
+                        as="h3"
+                        icon={GitMerge}
+                        title={communityText('Resolve merge conflicts')}
+                        lead={communityText('Edit text conflicts and choose which branch to keep for assets.')}
+                    />
                     {session.conflicts.map(file => (
                         <label key={file.path}><span>{file.path}</span><textarea value={file.content} disabled={busy} onChange={event => updateText(file.path, event.target.value)} /></label>
                     ))}
                     {session.binaryConflicts.map(file => (
                         <div className={styles.binaryConflict} key={file.path}>
                             <span>{file.path}</span>
-                            <button className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>{communityText('Keep ')}{session.data.targetBranch}</button>
-                            <button className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>{communityText('Use ')}{session.data.sourceBranch}</button>
+                            <button type="button" className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>
+                                {communityText('Keep {value1}', {value1: session.data.targetBranch})}
+                            </button>
+                            <button type="button" className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>
+                                {communityText('Use {value1}', {value1: session.data.sourceBranch})}
+                            </button>
                         </div>
                     ))}
-                    <Button variant="primary" busy={busy === 'merge'} busyLabel={communityText('Merging…')} onClick={resolve}>{communityText('Save resolutions and merge')}</Button>
+                    <Button variant="primary" busy={busy === 'merge'} busyLabel={communityText('Merging…')} onClick={resolve}>
+                        <GitMerge size={16} />
+                        {communityText('Save resolutions and merge')}
+                    </Button>
                 </section>
             ) : null}
 
@@ -305,7 +334,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                                         type="text"
                                         value={renamedBranch}
                                         maxLength={100}
-                                        aria-label={communityText("New name for {value1}", {value1: branch.name})}
+                                        aria-label={communityText('New name for {value1}', {value1: branch.name})}
                                         disabled={Boolean(busy)}
                                         onChange={event => setRenamedBranch(event.target.value)}
                                     />
@@ -322,17 +351,19 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         </span>
                         {canManage ? (
                             <div className={styles.actions}>
-                                <button type="button" title={communityText("Rename {value1}", {value1: branch.name})} disabled={Boolean(busy)} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
+                                <button type="button" title={communityText('Rename {value1}', {value1: branch.name})} disabled={Boolean(busy)} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
                                 {!branch.current ? (
                                     deletingBranch === branch.name ? (
-                                        <span className={styles.deleteConfirm}>{communityText('Delete?')}<button type="button" disabled={Boolean(busy)} onClick={() => deleteBranch(branch.name)}>{communityText('Yes')}</button>
+                                        <span className={styles.deleteConfirm}>
+                                            {communityText('Delete?')}
+                                            <button type="button" disabled={Boolean(busy)} onClick={() => deleteBranch(branch.name)}>{communityText('Yes')}</button>
                                             <button type="button" disabled={Boolean(busy)} onClick={() => setDeletingBranch('')}>{communityText('No')}</button>
                                         </span>
                                     ) : (
                                         <button
                                             type="button"
                                             className={styles.deleteButton}
-                                            title={communityText("Delete {value1}", {value1: branch.name})}
+                                            title={communityText('Delete {value1}', {value1: branch.name})}
                                             disabled={Boolean(busy)}
                                             onClick={() => {
                                                 setEditingBranch('');
@@ -347,7 +378,11 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         ) : null}
                     </article>
                 ))}
-                {!branches.length ? <p className={styles.state}>{communityText('This project does not have saved branch history yet.')}</p> : null}
+                {!branches.length ? (
+                    <EmptyState compact icon={GitBranch} title={communityText('No branches yet')}>
+                        {communityText('This project does not have saved branch history yet.')}
+                    </EmptyState>
+                ) : null}
             </div>
         </div>
     );

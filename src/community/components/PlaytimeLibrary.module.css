@@ -1,9 +1,3 @@
-.status {
-    color: var(--text-dim);
-    padding: 42px 0;
-    text-align: center;
-}
-
 .summary {
     display: flex;
     align-items: baseline;
@@ -15,7 +9,6 @@
 
 .summary strong {
     color: var(--mw-text);
-    font-size: var(--fs-xl);
 }
 
 .summary span {
@@ -109,23 +102,6 @@
     display: flex;
     justify-content: center;
     padding-top: 18px;
-}
-
-.empty {
-    display: flex;
-    min-height: 220px;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 9px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-dim);
-    text-align: center;
-}
-
-.empty strong {
-    color: var(--mw-text);
 }
 
 @media (max-width: 620px) {

@@ -1,3 +1,4 @@
+import {formatCommunityMessage} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Blocks, Eye, EyeOff, Image, Layers, Move, Puzzle, Variable, Volume2} from 'lucide-react';
@@ -6,20 +7,18 @@ import {cancelMovedAssets, filterCoveredDiffLines, isEmptySummary, summarizeFrac
 import {changedScripts} from '../scratchblocks-translate.js';
 import {builtinExtensionMeta, resolveExtensionMetas} from '../extension-meta.js';
 import BlocksCompare from './BlocksCompare.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import {groupFilesBySprite, spriteLabel, spriteOfPath} from './SpriteList.jsx';
 import styles from './DiffView.module.css';
 
 const DIFF_HEADER = /^diff --(?:mwp|git) a\/(.+?) b\/(.+)$/;
 
-const CATEGORIES = [
-    {key: 'code', label: 'Code'},
-    {key: 'costumes', label: 'Costumes'},
-    {key: 'sounds', label: 'Sounds'}
-];
+const CATEGORIES = [{key: 'code'}, {key: 'costumes'}, {key: 'sounds'}];
+const categoryLabelsFor = text => ({code: text('Code'), costumes: text('Costumes'), sounds: text('Sounds')});
+const fileStatusLabelsFor = text => ({Modified: text('Modified'), Added: text('Added'), Deleted: text('Deleted')});
 
 const MAX_BLOCK_SCRIPTS = 6;
-
-const truncatedScriptsLabel = count => `And ${count} more changed script${count === 1 ? '' : 's'}.`;
 
 const defaultTabForFiles = files => {
     for (const category of CATEGORIES) {
@@ -116,41 +115,46 @@ export const OpenFileButton = ({file, onOpenFile}) => {
     ) : null);
 };
 
-const FileSummary = ({file, additions, deletions, onOpenFile}) => (
-    <React.Fragment>
-        <span className={styles.chevron} aria-hidden="true" />
-        <span className={styles.path}>{file.path}</span>
-        <span className={styles.status}>{file.status}</span>
-        <OpenFileButton file={file} onOpenFile={onOpenFile} />
-        <span className={styles.fileStats}>
-            {(additions ?? file.additions) ? (
-                <span className={styles.addCount}>+{additions ?? file.additions}</span>
-            ) : null}
-            {(deletions ?? file.deletions) ? (
-                <span className={styles.delCount}>-{deletions ?? file.deletions}</span>
-            ) : null}
-        </span>
-    </React.Fragment>
-);
+const FileSummary = ({file, additions, deletions, onOpenFile}) => {
+    const {text: communityText} = useCommunityText();
+    const statusLabels = fileStatusLabelsFor(communityText);
+    return (
+        <React.Fragment>
+            <span className={styles.chevron} aria-hidden="true" />
+            <span className={styles.path}>{file.path}</span>
+            <span className={styles.status}>{statusLabels[file.status] || file.status}</span>
+            <OpenFileButton file={file} onOpenFile={onOpenFile} />
+            <span className={styles.fileStats}>
+                {(additions ?? file.additions) ? (
+                    <span className={styles.addCount}>+{additions ?? file.additions}</span>
+                ) : null}
+                {(deletions ?? file.deletions) ? (
+                    <span className={styles.delCount}>-{deletions ?? file.deletions}</span>
+                ) : null}
+            </span>
+        </React.Fragment>
+    );
+};
 
-const AssetPane = ({label, side, onRetry}) => {
+const AssetPane = ({label, loadingText, side, onRetry}) => {
     const {text: communityText} = useCommunityText();
     let body = null;
     if (side.status === 'loading') {
-        body = <p className={styles.assetState}>{communityText('Loading ')}{label.toLowerCase()}{communityText(' version…')}</p>;
+        body = <div className={styles.assetState}><StatusMessage compact>{loadingText}</StatusMessage></div>;
     } else if (side.status === 'error') {
         body = (
-            <p className={styles.assetState}>
-                {side.message || communityText('Could not load this preview.')}
-                <button type="button" onClick={onRetry}>{communityText('Try again')}</button>
-            </p>
+            <div className={styles.assetState}>
+                <StatusMessage compact error onRetry={onRetry}>
+                    {side.message || communityText('Could not load this preview.')}
+                </StatusMessage>
+            </div>
         );
     } else if (side.status === 'empty') {
         body = <p className={styles.assetState}>{side.message}</p>;
     } else if (side.mediaType.startsWith('image/')) {
         body = (
             <div className={styles.assetPreview}>
-                <img src={side.url} alt={communityText("{value1} version preview", {value1: label})} />
+                <img src={side.url} alt={communityText('{value1} version preview', {value1: label})} />
             </div>
         );
     } else if (side.mediaType.startsWith('audio/')) {
@@ -181,11 +185,11 @@ const AssetPane = ({label, side, onRetry}) => {
 };
 
 const SUMMARY_SECTIONS = [
-    {key: 'variables', title: 'Variables', icon: Variable},
-    {key: 'scripts', title: 'Scripts', icon: Layers},
-    {key: 'assets', title: 'Costumes & sounds', icon: Blocks},
-    {key: 'watchers', title: 'Watchers', icon: Eye},
-    {key: 'extensions', title: 'Extensions', icon: Puzzle}
+    {key: 'variables', icon: Variable},
+    {key: 'scripts', icon: Layers},
+    {key: 'assets', icon: Blocks},
+    {key: 'watchers', icon: Eye},
+    {key: 'extensions', icon: Puzzle}
 ];
 
 const summaryIconFor = item => {
@@ -196,45 +200,64 @@ const summaryIconFor = item => {
     return section ? section.icon : Blocks;
 };
 
-const SummaryRows = ({rows, extensionMetas}) => (
-    <ul>
-        {rows.map((item, index) => {
-            const meta = item.type === 'extension' ? extensionMetas[item.id] : null;
-            const RowIcon = summaryIconFor(item);
-            const changeClass = item.change === 'added' ? styles.summaryAdd :
-                item.change === 'removed' ? styles.summaryRemove : styles.summaryChange;
-            const text = item.type === 'extension' ?
-                `Extension "${meta?.name || item.id}" ${item.change === 'added' ? 'added' : 'removed'}` :
-                item.text;
-            return (
-                <li key={index} className={changeClass}>
-                    {meta?.iconUrl ? (
-                        <img className={styles.summaryIcon} src={meta.iconUrl} alt="" draggable={false} />
-                    ) : <RowIcon size={13} />}
-                    <span>{text}</span>
-                </li>
-            );
-        })}
-    </ul>
-);
+const SummaryRows = ({rows, extensionMetas}) => {
+    const {text: communityText} = useCommunityText();
+    return (
+        <ul>
+            {rows.map((item, index) => {
+                const meta = item.type === 'extension' ? extensionMetas[item.id] : null;
+                const RowIcon = summaryIconFor(item);
+                const changeClass = item.change === 'added' ? styles.summaryAdd :
+                    item.change === 'removed' ? styles.summaryRemove : styles.summaryChange;
+                let text = item.text;
+                if (item.type === 'extension') {
+                    const name = meta?.name || item.id;
+                    text = item.change === 'added' ?
+                        communityText('Extension "{value1}" added', {value1: name}) :
+                        communityText('Extension "{value1}" removed', {value1: name});
+                }
+                return (
+                    <li key={index} className={changeClass}>
+                        {meta?.iconUrl ? (
+                            <img className={styles.summaryIcon} src={meta.iconUrl} alt="" draggable={false} />
+                        ) : <RowIcon size={13} />}
+                        <span>{text}</span>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+};
 
-const SummarySections = ({summary, assetsTitle, extensionMetas}) => (
-    <div className={styles.summary}>
-        {(summary.sprite || []).length ? <SummaryRows rows={summary.sprite} extensionMetas={extensionMetas} /> : null}
-        {SUMMARY_SECTIONS.map(section => {
-            const rows = summary[section.key] || [];
-            if (!rows.length) return null;
-            const Icon = section.icon;
-            const title = section.key === 'assets' && assetsTitle ? assetsTitle : section.title;
-            return (
-                <section key={section.key}>
-                    <header><Icon size={13} />{title}</header>
-                    <SummaryRows rows={rows} extensionMetas={extensionMetas} />
-                </section>
-            );
-        })}
-    </div>
-);
+const SummarySections = ({summary, assetsTitle, extensionMetas}) => {
+    const {text: communityText} = useCommunityText();
+    const titles = {
+        variables: communityText('Variables'),
+        scripts: communityText('Scripts'),
+        assets: communityText('Costumes and sounds'),
+        watchers: communityText('Watchers'),
+        extensions: communityText('Extensions')
+    };
+    return (
+        <div className={styles.summary}>
+            {(summary.sprite || []).length ? (
+                <SummaryRows rows={summary.sprite} extensionMetas={extensionMetas} />
+            ) : null}
+            {SUMMARY_SECTIONS.map(section => {
+                const rows = summary[section.key] || [];
+                if (!rows.length) return null;
+                const Icon = section.icon;
+                const title = section.key === 'assets' && assetsTitle ? assetsTitle : titles[section.key];
+                return (
+                    <section key={section.key}>
+                        <header><Icon size={13} />{title}</header>
+                        <SummaryRows rows={rows} extensionMetas={extensionMetas} />
+                    </section>
+                );
+            })}
+        </div>
+    );
+};
 
 export const summaryForTab = (summary, tab) => {
     if (!summary) return null;
@@ -256,8 +279,12 @@ export const summaryForTab = (summary, tab) => {
 };
 
 const sideForStatus = (side, status) => {
-    if (side === 'old' && status === 'Added') return {status: 'empty', message: 'New in this commit.'};
-    if (side === 'new' && status === 'Deleted') return {status: 'empty', message: 'Removed in this commit.'};
+    if (side === 'old' && status === 'Added') {
+        return {status: 'empty', message: formatCommunityMessage('New in this commit.')};
+    }
+    if (side === 'new' && status === 'Deleted') {
+        return {status: 'empty', message: formatCommunityMessage('Removed in this commit.')};
+    }
     return {status: 'loading'};
 };
 
@@ -294,8 +321,8 @@ export const AssetCompare = ({file, loadAsset}) => {
                         [side]: {
                             status: 'empty',
                             message: side === 'old' ?
-                                'No previous version found.' :
-                                'No updated version found.'
+                                communityText('No previous version found.') :
+                                communityText('No updated version found.')
                         }
                     }));
                     return;
@@ -316,7 +343,10 @@ export const AssetCompare = ({file, loadAsset}) => {
                 if (active) {
                     setSides(current => ({
                         ...current,
-                        [side]: {status: 'error', message: error.message || 'Could not load this preview.'}
+                        [side]: {
+                            status: 'error',
+                            message: error.message || communityText('Could not load this preview.')
+                        }
                     }));
                 }
             });
@@ -329,8 +359,18 @@ export const AssetCompare = ({file, loadAsset}) => {
     const retry = () => setAttempt(value => value + 1);
     return (
         <div className={styles.assetCompare}>
-            <AssetPane label={communityText('Before')} side={sides.old} onRetry={retry} />
-            <AssetPane label={communityText('After')} side={sides.new} onRetry={retry} />
+            <AssetPane
+                label={communityText('Before')}
+                loadingText={communityText('Loading previous version…')}
+                side={sides.old}
+                onRetry={retry}
+            />
+            <AssetPane
+                label={communityText('After')}
+                loadingText={communityText('Loading updated version…')}
+                side={sides.new}
+                onRetry={retry}
+            />
         </div>
     );
 };
@@ -411,14 +451,20 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
         return {blockScripts: map, blockDiffFiles: paths};
     }, [spriteFiles, fileTexts]);
 
+    const categoryLabels = categoryLabelsFor(communityText);
+    const statusLabels = fileStatusLabelsFor(communityText);
     if (diff === null || typeof diff === 'undefined') {
-        return <p className={styles.empty}>{communityText('Loading diff…')}</p>;
+        return <StatusMessage compact>{communityText('Loading diff…')}</StatusMessage>;
     }
     if (!diff || diff === 'No textual changes.') {
-        return <p className={styles.empty}>{communityText('No changes.')}</p>;
+        return (
+            <EmptyState compact title={communityText('No changes')}>
+                {communityText('This version did not change any files.')}
+            </EmptyState>
+        );
     }
     if (!files.length) {
-        return <p className={styles.empty}>{diff}</p>;
+        return <StatusMessage compact error>{diff}</StatusMessage>;
     }
     const additions = spriteFiles.reduce((total, file) => total + file.additions, 0);
     const deletions = spriteFiles.reduce((total, file) => total + file.deletions, 0);
@@ -452,12 +498,20 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
         );
         return [...summaryOnly, ...rest];
     }, [tabFiles, summaries, coveredFiles, activeTab]);
-    const emptyLabel = `No ${activeTab} changes${spriteFilter ? ` for ${spriteFilter}` : ''} found.`;
+    const emptyLabel = spriteFilter ?
+        communityText('No {value1} changes for {value2} found.', {
+            value1: categoryLabels[activeTab].toLowerCase(), value2: spriteFilter
+        }) :
+        communityText('No {value1} changes found.', {value1: categoryLabels[activeTab].toLowerCase()});
     return (
         <div className={styles.diff}>
             <header className={styles.overview}>
                 <div className={styles.overviewTop}>
-                    <strong>{spriteFiles.length} {spriteFiles.length === 1 ? communityText('file') : communityText('files')}{communityText(' changed')}</strong>
+                    <strong>
+                        {spriteFiles.length === 1 ?
+                            communityText('1 file changed') :
+                            communityText('{value1} files changed', {value1: spriteFiles.length})}
+                    </strong>
                     <div className={styles.diffTabs} role="tablist" aria-label={communityText('Change categories')}>
                         {CATEGORIES.map(category => (
                             <button
@@ -467,7 +521,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                 aria-selected={activeTab === category.key}
                                 className={activeTab === category.key ? styles.diffTabActive : styles.diffTab}
                                 onClick={() => setActiveTab(category.key)}
-                            >{category.label} <span>{counts[category.key]}</span></button>
+                            >{categoryLabels[category.key]} <span>{counts[category.key]}</span></button>
                         ))}
                     </div>
                     <span>
@@ -479,13 +533,16 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
             <div className={styles.files}>
                 {groups.length ? groups.map(group => {
                     const tabSummary = summaryForTab(summaries[group.name], activeTab);
-                    const assetsTitle = activeTab === 'sounds' ? 'Sounds' :
-                        activeTab === 'costumes' ? 'Costumes' : null;
+                    const assetsTitle = activeTab === 'code' ? null : categoryLabels[activeTab];
                     return (
                         <section className={styles.spriteGroup} key={group.name || 'other'}>
                             <header className={styles.spriteHeading}>
                                 <strong>{spriteLabel(group.name)}</strong>
-                                <span>{group.files.length}{communityText(' changed file')}{group.files.length === 1 ? '' : communityText('s')}</span>
+                                <span>
+                                    {group.files.length === 1 ?
+                                        communityText('1 changed file') :
+                                        communityText('{value1} changed files', {value1: group.files.length})}
+                                </span>
                             </header>
                             {tabSummary ? (
                                 <SummarySections
@@ -495,7 +552,10 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                 />
                             ) : null}
                             {activeTab === 'code' && (blockScripts[group.name] || []).length ? (
-                                <section className={styles.blocksSection} aria-label={communityText('Changed scripts as blocks')}>
+                                <section
+                                    className={styles.blocksSection}
+                                    aria-label={communityText('Changed scripts as blocks')}
+                                >
                                     {blockScripts[group.name].slice(0, MAX_BLOCK_SCRIPTS).map(script => (
                                         <div className={styles.blockScript} key={script.key}>
                                             <span className={styles.blockDesc}>{script.desc}</span>
@@ -504,7 +564,11 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                     ))}
                                     {blockScripts[group.name].length > MAX_BLOCK_SCRIPTS ? (
                                         <p className={styles.blockTruncated}>
-                                            {truncatedScriptsLabel(blockScripts[group.name].length - MAX_BLOCK_SCRIPTS)}
+                                            {blockScripts[group.name].length - MAX_BLOCK_SCRIPTS === 1 ?
+                                                communityText('And 1 more changed script.') :
+                                                communityText('And {value1} more changed scripts.', {
+                                                    value1: blockScripts[group.name].length - MAX_BLOCK_SCRIPTS
+                                                })}
                                         </p>
                                     ) : null}
                                 </section>
@@ -521,7 +585,9 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                             <div className={styles.fileHeader}>
                                                 <span className={styles.binaryDot} aria-hidden="true" />
                                                 <span className={styles.path}>{file.path}</span>
-                                                <span className={styles.status}>{file.status}</span>
+                                                <span className={styles.status}>
+                                                    {statusLabels[file.status] || file.status}
+                                                </span>
                                                 <OpenFileButton file={file} onOpenFile={onOpenFile} />
                                             </div>
                                             <AssetCompare file={file} loadAsset={loadAsset} />
@@ -567,14 +633,18 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                         <div className={styles.lines}>
                                             {filtered.lines.length ? filtered.lines.map((line, lineIndex) => (
                                                 <DiffLine key={lineIndex} line={line} />
-                                            )) : <p className={styles.noLines}>{communityText('No line changes to show.')}</p>}
+                                            )) : (
+                                                <p className={styles.noLines}>
+                                                    {communityText('No line changes to show.')}
+                                                </p>
+                                            )}
                                         </div>
                                     </details>
                                 );
                             })}
                         </section>
                     );
-                }) : <p className={styles.empty}>{emptyLabel}</p>}
+                }) : <EmptyState compact title={communityText('Nothing to show')}>{emptyLabel}</EmptyState>}
             </div>
         </div>
     );

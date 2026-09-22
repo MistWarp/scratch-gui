@@ -7,7 +7,11 @@ import api from '../api.js';
 import ExploreNav from '../components/ExploreNav.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {useUser} from '../UserContext.jsx';
 import {CustomTheme, customThemeManager} from '../../lib/themes/custom-themes.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
@@ -102,7 +106,7 @@ const Theme = () => {
                 ...data.theme,
                 isOwner: Boolean(user && sameUser(user.username, data.theme.owner))
             } : null))
-            .catch(requestError => active && setError(requestError.message || 'Could not load this theme.'))
+            .catch(requestError => active && setError(requestError.message || communityText('Could not load this theme.')))
             .finally(() => active && setLoading(false));
         return () => {
             active = false;
@@ -118,7 +122,7 @@ const Theme = () => {
         try {
             await action();
         } catch (actionError) {
-            if (mounted.current) setError(actionError.message || 'The theme action failed.');
+            if (mounted.current) setError(actionError.message || communityText('The theme action failed.'));
         } finally {
             releaseAction();
             if (mounted.current) setBusyAction('');
@@ -129,7 +133,7 @@ const Theme = () => {
         const downloaded = await download();
         if (!mounted.current) return;
         applyTheme(CustomTheme.import(downloaded));
-        setNotice(`Applied "${theme.name}".`);
+        setNotice(communityText('Applied "{name}".', {name: theme.name}));
     });
     const save = () => run('save', async () => {
         const downloaded = await download();
@@ -142,7 +146,7 @@ const Theme = () => {
         });
         if (!mounted.current) return;
         setSaved(true);
-        setNotice(`"${stored.name}" is now in your local theme library.`);
+        setNotice(communityText('"{name}" is now in your local theme library.', {name: stored.name}));
     });
     const like = () => run('like', async () => {
         const result = await api.likeTheme(theme.id);
@@ -172,7 +176,7 @@ const Theme = () => {
         if (!mounted.current) return;
         setTheme(current => ({...current, name: nextName, description: nextDescription}));
         setEditOpen(false);
-        setNotice('Theme details updated.');
+        setNotice(communityText('Theme details updated.'));
     });
     const closeDelete = () => {
         setDeleteOpen(false);
@@ -186,54 +190,55 @@ const Theme = () => {
     return (
         <main className={styles.page}>
             <ExploreNav active="themes" />
-            {loading ? <p className={styles.status}>{communityText('Loading theme…')}</p> : error && !theme ? <div className={styles.status}><p>{error}</p><Link to={returnContext.to}>{returnContext.label}</Link></div> : theme ? (
+            {loading ? <StatusMessage>{communityText('Loading theme…')}</StatusMessage> : error && !theme ? (
                 <React.Fragment>
-                    <Link className={styles.back} to={returnContext.to}>← {returnContext.label}</Link>
+                    <PageHeader compact backTo={returnContext.to} backLabel={communityText(returnContext.label)} title={communityText('Theme')} />
+                    <StatusMessage error>{error}</StatusMessage>
+                </React.Fragment>
+            ) : theme ? (
+                <React.Fragment>
+                    <PageHeader compact icon={Palette} backTo={returnContext.to} backLabel={communityText(returnContext.label)} title={theme.name} />
                     <div className={styles.layout}>
                         <section className={styles.previewCard}>
                             <iframe
                                 ref={previewFrame}
                                 className={styles.previewFrame}
                                 src="/?mw_theme_preview=1"
-                                title={communityText("{value1} theme preview", {value1: theme.name})}
+                                title={communityText('{value1} theme preview', {value1: theme.name})}
                                 onLoad={sendThemeToPreview}
                                 sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                             />
                         </section>
                         <aside className={styles.info}>
-                            <h1>{theme.name}</h1>
-                            <Link className={styles.creator} to={`/users/${encodeURIComponent(theme.owner)}`}><Avatar size={32} username={theme.owner} /><span>{communityText('by ')}<strong>{theme.owner}</strong></span></Link>
+                            <Link className={styles.creator} to={`/users/${encodeURIComponent(theme.owner)}`}><Avatar size={32} username={theme.owner} /><span>{communityText('by {owner}', {owner: theme.owner})}</span></Link>
                             <p className={styles.description}>{theme.description || communityText('No description provided.')}</p>
-                            <div className={styles.stats}><span><Heart size={15} /> {theme.likes || 0}{communityText(' likes')}</span><span><Download size={15} /> {theme.downloads || 0}{communityText(' downloads')}</span></div>
-                            {error && !deleteOpen && !editOpen ? <p className={styles.error} role="alert">{error}</p> : null}
-                            {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
+                            <div className={styles.stats}><span><Heart size={15} /> {communityText('{count} likes', {count: theme.likes || 0})}</span><span><Download size={15} /> {communityText('{count} downloads', {count: theme.downloads || 0})}</span></div>
+                            {error && !deleteOpen && !editOpen ? <Notice variant="error">{error}</Notice> : null}
+                            {notice ? <Notice variant="success">{notice}</Notice> : null}
                             <div className={styles.actions}>
-                                <Button busy={busyAction === 'apply'} busyLabel={communityText('Applying…')} disabled={busy} variant="primary" onClick={apply}><Palette size={16} />{communityText(' Apply theme')}</Button>
-                                <Button busy={busyAction === 'save'} busyLabel={communityText('Saving…')} disabled={busy || saved} variant="secondary" onClick={save}>{saved ? <Check size={16} /> : <BookmarkPlus size={16} />} {saved ? communityText('Saved to My Stuff') : communityText('Save to My Stuff')}</Button>
-                                {user ? <Button busy={busyAction === 'like'} busyLabel={communityText('Updating…')} disabled={busy} variant="secondary" onClick={like}><Heart fill={theme.liked ? 'currentColor' : 'none'} size={16} /> {theme.liked ? communityText('Unlike') : communityText('Like')}</Button> : null}
-                                {theme.isOwner ? <Button disabled={busy} variant="secondary" onClick={openEdit}><Pencil size={16} />{communityText(' Edit details')}</Button> : null}
-                                {theme.isOwner ? <Button disabled={busy} variant="danger" onClick={openDelete}><Trash2 size={16} />{communityText(' Delete')}</Button> : null}
+                                <Button busy={busyAction === 'apply'} busyLabel={communityText('Applying…')} disabled={busy} variant="primary" onClick={apply}><Palette size={16} />{communityText('Apply theme')}</Button>
+                                <Button busy={busyAction === 'save'} busyLabel={communityText('Saving…')} disabled={busy || saved} variant="secondary" onClick={save}>{saved ? <Check size={16} /> : <BookmarkPlus size={16} />}{saved ? communityText('Saved to My stuff') : communityText('Save to My stuff')}</Button>
+                                {user ? <Button busy={busyAction === 'like'} busyLabel={communityText('Updating…')} disabled={busy} variant="secondary" onClick={like}><Heart fill={theme.liked ? 'currentColor' : 'none'} size={16} />{theme.liked ? communityText('Unlike') : communityText('Like')}</Button> : null}
+                                {theme.isOwner ? <Button disabled={busy} variant="secondary" onClick={openEdit}><Pencil size={16} />{communityText('Edit details')}</Button> : null}
+                                {theme.isOwner ? <Button disabled={busy} variant="danger" onClick={openDelete}><Trash2 size={16} />{communityText('Delete')}</Button> : null}
                             </div>
-                            <p className={styles.help}>{communityText('Saved themes are available in ')}<Link to="/mystuff?section=themes">{communityText('My Stuff')}</Link>{communityText('. You can switch themes at any time.')}</p>
+                            <p className={styles.help}>{communityText('Saved themes are available in My stuff. You can switch themes at any time.')} <Link to="/mystuff?section=themes">{communityText('Open My stuff')}</Link></p>
                         </aside>
                     </div>
                     {deleteOpen ? (
-                        <Modal
+                        <ConfirmModal
                             title={communityText('Delete theme?')}
                             icon={Trash2}
-                            dismissDisabled={busy}
-                            onClose={closeDelete}
-                            onDismiss={closeDelete}
-                            actions={(
-                                <React.Fragment>
-                                    <Button disabled={busy} variant="secondary" onClick={closeDelete}>{communityText('Cancel')}</Button>
-                                    <Button busy={busyAction === 'delete'} busyLabel={communityText('Deleting…')} disabled={busy} variant="danger" onClick={remove}>{communityText('Delete theme')}</Button>
-                                </React.Fragment>
-                            )}
+                            destructive
+                            busy={busyAction === 'delete'}
+                            busyLabel={communityText('Deleting…')}
+                            confirmLabel={communityText('Delete theme')}
+                            error={error || null}
+                            onConfirm={remove}
+                            onCancel={closeDelete}
                         >
-                            <p>{communityText("\"{value1}\" will be removed from WarpTheme. This cannot be undone.", {value1: theme.name})}</p>
-                            {error ? <p className={styles.error} role="alert">{error}</p> : null}
-                        </Modal>
+                            {communityText('"{value1}" will be removed from WarpTheme. This cannot be undone.', {value1: theme.name})}
+                        </ConfirmModal>
                     ) : null}
                     {editOpen ? (
                         <Modal
@@ -253,7 +258,7 @@ const Theme = () => {
                                 <label>{communityText('Name')}<input maxLength="100" value={editName} onChange={event => setEditName(event.target.value)} /></label>
                                 <label>{communityText('Description')}<textarea maxLength="500" value={editDescription} onChange={event => setEditDescription(event.target.value)} /></label>
                             </div>
-                            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+                            {error ? <Notice variant="error">{error}</Notice> : null}
                         </Modal>
                     ) : null}
                 </React.Fragment>

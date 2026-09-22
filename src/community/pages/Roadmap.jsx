@@ -7,6 +7,10 @@ import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import RichText from '../components/RichText.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
@@ -456,27 +460,27 @@ const Roadmap = ({changes = false}) => {
 
     return (
         <main className={`${styles.page} ${styles[`stage${selectedIdea ? selectedIdea.status : stageId}`] || ''}`}>
-            {stageId || entryId ? <Link className={styles.backLink} to={entryId && selectedIdea ? (location.state?.roadmapFrom || `/roadmap/${selectedIdea.status}${filterSearch}`) : `/roadmap${filterSearch}`}><ChevronLeft size={16} />{entryId ? communityText('Back to roadmap entries') : communityText('Roadmap overview')}</Link> : null}
-            <header className={styles.head}>
-                <div>
-                    <h1><PageIcon size={26} />{changes ? communityText('Changes') : entryId ? (selectedIdea ? selectedIdea.title : communityText('Roadmap entry')) : communityText(stage ? stage.label : 'Roadmap')}</h1>
-                    {changes ? <p>{communityText('Pull requests open against MistWarp\u2019s repositories, and the work that recently merged.')}</p> : null}
-                    {!changes && !entryId ? <p>{stage ? communityText(stage.description) : communityText('Follow work in progress, see what is done, and vote on what comes next.')}</p> : null}
-                </div>
-                {!changes ? <Button disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText(' Add an entry')}</Button> : null}
-            </header>
-            {showTabs ? (
-                <UnderlineTabs
-                    className={styles.tabs}
-                    ariaLabel="Roadmap sections"
-                    value={changes ? 'changes' : 'roadmap'}
-                    onChange={key => navigate(key === 'changes' ? '/roadmap/changes' : `/roadmap${filterSearch}`)}
-                    items={[
-                        {key: 'roadmap', label: <>{communityText('Roadmap')} <b>{ideas ? ideas.length : 0}</b></>},
-                        {key: 'changes', label: <>{communityText('Changes')} <b>{pulls ? pulls.length : 0}</b></>}
-                    ]}
-                />
-            ) : null}
+            <PageHeader
+                className={styles.head}
+                icon={PageIcon}
+                title={changes ? communityText('Changes') : entryId ? (selectedIdea ? selectedIdea.title : communityText('Roadmap entry')) : communityText(stage ? stage.label : 'Roadmap')}
+                lead={changes ? communityText('Pull requests open against MistWarp\u2019s repositories, and the work that recently merged.') : entryId ? null : (stage ? communityText(stage.description) : communityText('Follow work in progress, see what is done, and vote on what comes next.'))}
+                backTo={stageId || entryId ? (entryId && selectedIdea ? (location.state?.roadmapFrom || `/roadmap/${selectedIdea.status}${filterSearch}`) : `/roadmap${filterSearch}`) : null}
+                backLabel={entryId ? communityText('Back to roadmap entries') : communityText('Roadmap overview')}
+                actions={changes ? null : <Button variant="primary" disabled={createBusy} onClick={() => (user ? (creating ? closeComposer() : openComposer('idea')) : login())}><Plus size={16} />{communityText('Add an entry')}</Button>}
+            >
+                {showTabs ? (
+                    <UnderlineTabs
+                        ariaLabel="Roadmap sections"
+                        value={changes ? 'changes' : 'roadmap'}
+                        onChange={key => navigate(key === 'changes' ? '/roadmap/changes' : `/roadmap${filterSearch}`)}
+                        items={[
+                            {key: 'roadmap', label: <>{communityText('Roadmap')} <b>{ideas ? ideas.length : 0}</b></>},
+                            {key: 'changes', label: <>{communityText('Changes')} <b>{pulls ? pulls.length : 0}</b></>}
+                        ]}
+                    />
+                ) : null}
+            </PageHeader>
             {creating && !changes ? (
                 <form className={styles.form} onSubmit={create}>
                     <label>{communityText('Type')}<select
@@ -498,7 +502,7 @@ const Roadmap = ({changes = false}) => {
                     </div>
                 </form>
             ) : null}
-            {error ? <p className={styles.error}>{error}</p> : null}
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
             {!changes && ideas && ideas.length && !entryId && (!stageId || stage) ? (
                 <div className={styles.filters}>
                     <div className={styles.searchFilter}><Search size={16} /><input aria-label={communityText('Search roadmap')} value={query} onChange={event => setFilter('q', event.target.value, true)} placeholder={communityText('Search ideas and bugs')} /></div>
@@ -511,8 +515,8 @@ const Roadmap = ({changes = false}) => {
                     </div>
                 </div>
             ) : null}
-            {!changes && !ideas && !loadError ? <p className={styles.empty}>{communityText('Loading suggestions…')}</p> : null}
-            {!changes && loadError ? <p className={styles.empty}>{communityText('Could not load suggestions. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
+            {!changes && !ideas && !loadError ? <StatusMessage>{communityText('Loading suggestions…')}</StatusMessage> : null}
+            {!changes && loadError ? <StatusMessage error onRetry={load}>{communityText('Could not load suggestions.')}</StatusMessage> : null}
             {changes ? (
                 <>
                     {pulls && pulls.length ? (
@@ -528,9 +532,9 @@ const Roadmap = ({changes = false}) => {
                             </div>
                         </div>
                     ) : null}
-                    {!pulls && !pullsError ? <p className={styles.empty}>{communityText('Loading changes…')}</p> : null}
-                    {pullsError ? <p className={styles.empty}>{communityText('Could not load changes. ')}<button type="button" onClick={loadPulls}>{communityText('Try again')}</button></p> : null}
-                    {pulls && !pulls.length ? <p className={styles.empty}>{communityText('No pull requests are open right now.')}</p> : null}
+                    {!pulls && !pullsError ? <StatusMessage>{communityText('Loading changes…')}</StatusMessage> : null}
+                    {pullsError ? <StatusMessage error onRetry={loadPulls}>{communityText('Could not load changes.')}</StatusMessage> : null}
+                    {pulls && !pulls.length ? <EmptyState icon={GitPullRequest} title={communityText('No pull requests yet')}>{communityText('Pull requests against MistWarp\u2019s repositories will show up here.')}</EmptyState> : null}
                     {pulls && pulls.length ? pullGroups.map(group => {
                         const GroupIcon = PULL_GROUP_ICONS[group.key];
                         return (
@@ -538,19 +542,27 @@ const Roadmap = ({changes = false}) => {
                                 <h2 id={`changes-${group.key}`}><GroupIcon size={19} />{communityText(group.label)}<span>{group.pulls.length}</span></h2>
                                 {group.pulls.length ?
                                     <PullRequestList pulls={group.pulls} entryFor={entryForPull} /> :
-                                    <p className={styles.empty}>{communityText('Nothing here right now.')}</p>}
+                                    <EmptyState compact icon={GroupIcon} title={communityText('Nothing here right now')} />}
                             </section>
                         );
                     }) : null}
                 </>
             ) : null}
             {!changes && ideas && entryId ? (
-                selectedIdea ? <IdeaCard key={selectedIdea._id} idea={selectedIdea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} onLinkPulls={linkPulls} busy={busyIdea === selectedIdea._id} openDiscussion /> : <p className={styles.empty}>{communityText('This roadmap entry could not be found.')}</p>
+                selectedIdea ? <IdeaCard key={selectedIdea._id} idea={selectedIdea} user={user} login={login} onVote={vote} onStatus={updateStatus} onCommentCount={updateCommentCount} onLinkPulls={linkPulls} busy={busyIdea === selectedIdea._id} openDiscussion /> : <EmptyState icon={Lightbulb} title={communityText('Entry not found')}>{communityText('This roadmap entry could not be found.')}</EmptyState>
             ) : null}
-            {!changes && ideas && !entryId && stageId && !stage ? <p className={styles.empty}>{communityText('This roadmap stage could not be found.')}</p> : null}
+            {!changes && ideas && !entryId && stageId && !stage ? <EmptyState icon={Map} title={communityText('Stage not found')}>{communityText('This roadmap stage could not be found.')}</EmptyState> : null}
             {!changes && ideas && !entryId && stage ? (
                 <>
-                    {pageIdeas.length ? <div className={styles.list}>{pageIdeas.map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} />)}</div> : <p className={styles.empty}>{filtering ? communityText('No matching entries in this stage. Try clearing the filters.') : communityText('Nothing is in this stage yet.')}</p>}
+                    {pageIdeas.length ? <div className={styles.list}>{pageIdeas.map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} />)}</div> : (
+                        <EmptyState
+                            icon={stage.icon}
+                            title={filtering ? communityText('No matching entries') : communityText('Nothing in this stage yet')}
+                            action={filtering ? <Button onClick={clearFilters}>{communityText('Clear filters')}</Button> : null}
+                        >
+                            {filtering ? communityText('No entries in this stage match the current filters.') : null}
+                        </EmptyState>
+                    )}
                     {stageIdeas.length > PAGE_SIZE ? (
                         <nav className={styles.pagination} aria-label={communityText('Roadmap pages')}>
                             <Button variant="secondary" disabled={page === 1} onClick={() => setFilter('page', String(page - 1))}><ChevronLeft size={16} />{communityText('Previous')}</Button>
@@ -574,7 +586,7 @@ const Roadmap = ({changes = false}) => {
                                     </header>
                                     <div className={`${styles.previewList} ${entries.length > 3 ? styles.previewFaded : ''} ${!entries.length ? styles.previewListEmpty : ''}`}>
                                         {entries.slice(0, 3).map(idea => <RoadmapRow key={idea._id} idea={idea} search={filterSearch} from={from} preview />)}
-                                        {!entries.length ? <p className={styles.previewEmpty}>{filtering ? communityText('No matching entries.') : communityText('Nothing is in this stage yet.')}</p> : null}
+                                        {!entries.length ? <div className={styles.previewEmpty}><EmptyState compact icon={Icon} title={filtering ? communityText('No matching entries') : communityText('Nothing in this stage yet')} /></div> : null}
                                     </div>
                                     <Link className={styles.viewStage} to={`/roadmap/${item.id}${filterSearch}`} aria-label={`${communityText('View all')} ${communityText(item.label).toLowerCase()}`}>
                                         {communityText('View all')}<ArrowRight size={16} />

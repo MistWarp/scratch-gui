@@ -79,7 +79,7 @@ const Footer = () => {
             className={styles.version}
             title={BUILD_TIME ? communityText('Deployed {value1}', {value1: BUILD_TIME}) : BUILD_ID}
         >
-            {communityText(' · Version ')}
+            {communityText('Version')}{' '}
             {commitUrl ? (
                 <a
                     href={commitUrl}

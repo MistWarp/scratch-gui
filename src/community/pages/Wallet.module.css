@@ -4,17 +4,6 @@
     padding: var(--page-pad);
 }
 
-.heading {
-    margin: 0 0 20px;
-    font-size: var(--fs-3xl);
-}
-
-.status {
-    color: var(--text-dim);
-    text-align: center;
-    padding: 40px 0;
-}
-
 .balanceCard {
     display: flex;
     align-items: center;
@@ -284,10 +273,8 @@
     cursor: default;
 }
 
-.billingMsg {
-    margin: 0 0 14px;
-    font-size: var(--fs-sm);
-    color: var(--accent-strong);
+.notice {
+    margin-bottom: 14px;
 }
 
 .checkoutNote {
@@ -296,10 +283,8 @@
     color: var(--text-dim);
 }
 
-.checkoutError {
-    margin: 12px 0 0;
-    font-size: var(--fs-sm);
-    color: #d64545;
+.checkoutNotice {
+    margin-top: 12px;
 }
 
 .portalButton {
@@ -400,20 +385,6 @@
     font-size: var(--fs-sm);
     color: var(--text-dim);
     white-space: nowrap;
-}
-
-.empty {
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    margin: 0;
-}
-
-.exploreLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--accent-strong);
-    font-weight: 600;
 }
 
 @media (max-width: 520px) {

@@ -264,11 +264,6 @@
     color: #9ba1af;
 }
 
-.empty {
-    color: var(--text-dim);
-    padding: 16px 0;
-}
-
 .assetCompare {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -359,15 +354,6 @@
     color: var(--text-dim);
     font-size: var(--fs-xs);
     text-align: center;
-}
-
-.assetState button {
-    border: 0;
-    background: none;
-    color: var(--accent-strong);
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
 }
 
 .blocksSection {

@@ -5,53 +5,10 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 16px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
-.hero {
-    display: grid;
-    align-items: start;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 16px;
-    padding: 22px 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-}
-
-.hero > svg {
-    color: var(--accent-strong);
-}
-
-.hero h1 {
-    margin: 4px 0 7px;
-    font-size: var(--fs-4xl);
-}
-
-.description {
-    max-width: 720px;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    line-height: 1.55;
-    white-space: pre-wrap;
-}
-
-.description a {
-    color: var(--accent-strong);
-    text-decoration: underline;
-}
-
 .owner {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 14px;
     color: var(--text-faint);
     font-size: var(--fs-2xs);
 }
@@ -61,96 +18,13 @@
     font-weight: 700;
 }
 
-.actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.actions a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-dim);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-}
-
-/* Spacing around the shared UnderlineTabs; tab visuals live there. */
 .tabs {
-    margin: 20px 0 26px;
-}
-
-.projects > header,
-.discussion > header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-}
-
-.projects h2,
-.discussion h2 {
-    margin: 0 0 3px;
-    font-size: var(--fs-2xl);
-}
-
-.projects header p,
-.discussion header p {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
-}
-
-.discussion > header {
-    align-items: center;
-    justify-content: flex-start;
-    gap: 9px;
-}
-
-.empty {
-    display: grid;
-    min-height: 220px;
-    place-items: center;
-    align-content: center;
-    gap: 7px;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    color: var(--text-faint);
-}
-
-.empty strong {
-    color: var(--mw-text);
-}
-
-.empty span,
-.error {
-    font-size: var(--fs-xs);
-}
-
-.error {
-    color: var(--mw-danger);
+    margin: 0 0 26px;
 }
 
 @media (max-width: 650px) {
     .page {
         padding: 20px 14px 64px;
-    }
-
-    .hero {
-        grid-template-columns: 1fr;
-    }
-
-    .actions {
-        grid-column: 1;
-        width: 100%;
     }
 
     .tabs {

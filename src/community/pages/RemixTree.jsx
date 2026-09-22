@@ -1,12 +1,16 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useState} from 'react';
-import {ArrowLeft, ChevronRight, GitBranch, GitCommitHorizontal, GitFork} from 'lucide-react';
+import {ChevronRight, GitBranch, GitCommitHorizontal, GitFork} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
 import api, {projectUrl} from '../api.js';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import UserLink from '../components/UserLink.jsx';
+import Button from '../components/ui/Button.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {timeAgo} from '../format.js';
 import {buildRemixTree, layoutRemixGraph} from '../remix-tree.js';
 import setPageMeta from '../page-meta.js';
@@ -52,12 +56,18 @@ const RemixGraph = ({tree, selectedId}) => {
                             <Avatar username={node.owner} size={30} />
                             <span className={styles.nodeText}>
                                 <strong>{node.title || communityText('Untitled project')}</strong>
-                                <span>{communityText('by ')}{node.owner || communityText('unknown')}{age ? ` · ${age}` : ''}</span>
+                                <span>
+                                    {communityText('by {owner}', {owner: node.owner || communityText('unknown')})}
+                                    {age ? ` · ${age}` : ''}
+                                </span>
                             </span>
                             {children.length ? (
                                 <span
                                     className={styles.childCount}
-                                    title={communityText("{value1} direct remix{value2}", {value1: children.length, value2: children.length === 1 ? '' : 'es'})}
+                                    title={communityText(
+                                        '{count, plural, one {# direct remix} other {# direct remixes}}',
+                                        {count: children.length}
+                                    )}
                                 >
                                     <GitFork size={13} /> {children.length}
                                 </span>
@@ -73,15 +83,20 @@ const RemixGraph = ({tree, selectedId}) => {
 const CommitHistory = ({id, baseUrl, history, onRetry}) => {
     const {text: communityText} = useCommunityText();
     if (!history) {
-        return <p className={styles.state}>{communityText('Loading Git history…')}</p>;
+        return <StatusMessage compact className={styles.state}>{communityText('Loading Git history…')}</StatusMessage>;
     }
     if (history.restricted) {
-        return <p className={styles.state}>{communityText('You do not have permission to view commits for this project.')}</p>;
+        return (
+            <p className={styles.state}>
+                {communityText('You do not have permission to view commits for this project.')}
+            </p>
+        );
     }
     if (history.error) {
         return (
-            <p className={styles.state}>{communityText('Could not load Git history. ')}<button type="button" onClick={onRetry}>{communityText('Try again')}</button>
-            </p>
+            <StatusMessage compact error onRetry={onRetry} className={styles.state}>
+                {communityText('Could not load Git history.')}
+            </StatusMessage>
         );
     }
     if (history.graph?.nodes?.length) {
@@ -97,7 +112,7 @@ const CommitHistory = ({id, baseUrl, history, onRetry}) => {
                 <li key={commit.sha}>
                     <Link to={`${baseUrl}/commits/${commit.sha}`}>
                         <GitCommitHorizontal size={15} />
-                        <span>{(commit.message || 'Untitled commit').split('\n')[0]}</span>
+                        <span>{(commit.message || communityText('Untitled commit')).split('\n')[0]}</span>
                         <code>{commit.sha.slice(0, 7)}</code>
                     </Link>
                 </li>
@@ -175,22 +190,28 @@ const RemixTree = () => {
     }, [selected]);
 
     if (resolving) {
-        return <main className={styles.page}><p className={styles.state}>{communityText('Finding project…')}</p></main>;
+        return <main className={styles.page}><StatusMessage>{communityText('Finding project…')}</StatusMessage></main>;
     }
     if (resolveError || (!id && treeError)) {
         return (
             <main className={styles.page}>
-                <p className={styles.state}>{resolveError || communityText('Could not load this remix tree.')}</p>
+                <StatusMessage error>{resolveError || communityText('Could not load this remix tree.')}</StatusMessage>
             </main>
         );
     }
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={baseUrl}><ArrowLeft size={15} />{communityText(' Back to project')}</Link>
-            <header className={styles.header}>
-                <h1>{selected?.title || communityText('Project lineage')}</h1>
-                <p>{communityText('Pick any project in this remix tree to follow that branch and read its Git history.')}</p>
+            <PageHeader
+                compact
+                icon={GitFork}
+                backTo={baseUrl}
+                backLabel={communityText('Back to project')}
+                title={selected?.title || communityText('Project lineage')}
+                lead={communityText(
+                    'Pick any project in this remix tree to follow that branch and read its Git history.'
+                )}
+            >
                 {path.length ? (
                     <nav className={styles.path} aria-label={communityText('Selected remix path')}>
                         {path.map((node, index) => (
@@ -204,13 +225,12 @@ const RemixTree = () => {
                         ))}
                     </nav>
                 ) : null}
-            </header>
+            </PageHeader>
 
             {treeError ? (
-                <section className={styles.loadError}>
-                    <p>{communityText('Could not load this remix tree.')}</p>
-                    <button type="button" onClick={() => setTreeAttempt(value => value + 1)}>{communityText('Try again')}</button>
-                </section>
+                <StatusMessage error onRetry={() => setTreeAttempt(value => value + 1)}>
+                    {communityText('Could not load this remix tree.')}
+                </StatusMessage>
             ) : (
                 <div className={styles.layout}>
                     <aside className={styles.treePanel}>
@@ -218,14 +238,18 @@ const RemixTree = () => {
                             <div>
                                 <span>{communityText('Lineage')}</span>
                                 <strong>
-                                    {tree ? communityText("{value1} project{value2}", {value1: tree.nodes?.length || 0, value2: tree.nodes?.length === 1 ? '' : 's'}) :
-                                        communityText('Loading…')}
+                                    {tree ? communityText(
+                                        '{count, plural, one {# project} other {# projects}}',
+                                        {count: tree.nodes?.length || 0}
+                                    ) : communityText('Loading…')}
                                 </strong>
                             </div>
                         </div>
                         {model.root ? (
                             <RemixGraph tree={tree} selectedId={id} />
-                        ) : tree ? <p className={styles.state}>{communityText('No projects found in this tree.')}</p> : null}
+                        ) : tree ? (
+                            <p className={styles.state}>{communityText('No projects found in this tree.')}</p>
+                        ) : <StatusMessage compact className={styles.state} />}
                     </aside>
 
                     <section className={styles.historyPanel}>
@@ -235,30 +259,39 @@ const RemixTree = () => {
                                 <div>
                                     <h2>{selected?.title || communityText('Git history')}</h2>
                                     {selected?.owner ? (
-                                        <p>{communityText('by ')}<UserLink username={selected.owner}>{selected.owner}</UserLink></p>
+                                        <p>
+                                            <UserLink username={selected.owner}>
+                                                {communityText('by {owner}', {owner: selected.owner})}
+                                            </UserLink>
+                                        </p>
                                     ) : null}
                                 </div>
                             </div>
-                            <Link className={styles.openProject} to={baseUrl}>{communityText('Open project')}</Link>
+                            <Button as={Link} to={baseUrl}>{communityText('Open project')}</Button>
                         </div>
                         <dl className={styles.stats}>
                             <div>
-                                <dt><GitCommitHorizontal size={14} />{communityText(' Commits')}</dt>
+                                <dt><GitCommitHorizontal size={14} />{communityText('Commits')}</dt>
                                 <dd>{history ? commitCount : '…'}</dd>
                             </div>
                             <div>
-                                <dt><GitFork size={14} />{communityText(' Direct remixes')}</dt>
+                                <dt><GitFork size={14} />{communityText('Direct remixes')}</dt>
                                 <dd>{tree ? directRemixes : '…'}</dd>
                             </div>
                             <div>
-                                <dt><GitBranch size={14} />{communityText(' Descendants')}</dt>
+                                <dt><GitBranch size={14} />{communityText('Descendants')}</dt>
                                 <dd>{tree ? descendants : '…'}</dd>
                             </div>
                         </dl>
-                        <div className={styles.historyHeading}>
-                            <h2>{communityText('Git history')}</h2>
-                            {history?.branch ? <span><GitBranch size={13} /> {history.branch}</span> : null}
-                        </div>
+                        <SectionHeading
+                            as="h3"
+                            icon={GitCommitHorizontal}
+                            title={communityText('Git history')}
+                            className={styles.historyHeading}
+                            actions={history?.branch ? (
+                                <span className={styles.branch}><GitBranch size={13} /> {history.branch}</span>
+                            ) : null}
+                        />
                         <CommitHistory
                             id={id}
                             baseUrl={baseUrl}

@@ -58,12 +58,15 @@ const FeaturedProject = ({project}) => {
                     <Link to={projectUrl(displayProject)} className={styles.title}>
                         {displayProject.title}
                     </Link>
-                    <Link to={`/users/${displayProject.owner}`} className={styles.owner}>{communityText('by ')}{displayProject.owner}
+                    <Link to={`/users/${displayProject.owner}`} className={styles.owner}>
+                        {communityText('by {value1}', {value1: displayProject.owner})}
                     </Link>
                     <GroupTag username={displayProject.owner} compact />
                 </div>
                 <Link to={projectUrl(displayProject)} className={styles.openProject}>
-                    <ExternalLink size={14} />{communityText('Project page')}</Link>
+                    <ExternalLink size={14} />
+                    {communityText('Project page')}
+                </Link>
             </div>
             <div
                 className={styles.stageWrap}
@@ -84,7 +87,7 @@ const FeaturedProject = ({project}) => {
                     <button
                         type="button"
                         className={styles.thumbnail}
-                        aria-label={communityText("Play {value1}", {value1: displayProject.title})}
+                        aria-label={communityText('Play {value1}', {value1: displayProject.title})}
                         disabled={playRequested}
                         onClick={() => setRequestedProjectId(project.id)}
                     >

@@ -3,8 +3,12 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import api from '../api';
+import {Bug, LifeBuoy, Send} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
 import styles from './InfoPage.module.css';
 
 const TOPICS = ['account', 'safety', 'legal', 'appeal'];
@@ -72,7 +76,7 @@ const Support = () => {
         const context = requestContextRef.current;
         const payload = supportPayload(form, user);
         if (!payload.username || !payload.subject || !payload.message) {
-            setError(communityText("Complete every field before sending your request."));
+            setError(communityText('Complete every field before sending your request.'));
             return;
         }
         if (submitLocks.current.has(context)) return;
@@ -83,7 +87,7 @@ const Support = () => {
             await api.support(payload);
             if (requestContextRef.current === context) setSent(true);
         } catch (e) {
-            if (requestContextRef.current === context) setError(e.message || 'Could not send your request.');
+            if (requestContextRef.current === context) setError(e.message || communityText('Could not send your request.'));
         } finally {
             submitLocks.current.delete(context);
             if (requestContextRef.current === context) setBusy(false);
@@ -91,35 +95,41 @@ const Support = () => {
     };
     return (
         <main className={styles.page}>
-            <header className={styles.head}>
-                <h1>{communityText('Support')}</h1>
-                <p>{communityText('Contact MistWarp about accounts, safety, legal questions, or moderation decisions.')}</p>
-            </header>
+            <PageHeader
+                icon={LifeBuoy}
+                title={communityText('Support')}
+                lead={communityText('Contact MistWarp about accounts, safety, legal questions, or moderation decisions.')}
+            />
             <section className={styles.section}>
-                <h2>{communityText('Found a product bug?')}</h2>
-                <p>{communityText('Post it on the ')}<Link to="/roadmap?new=bug">{communityText('Roadmap bug tracker')}</Link>{communityText('. Other users can confirm it, add context, and follow its status.')}</p>
+                <SectionHeading icon={Bug} title={communityText('Found a product bug?')} />
+                <p>{communityText('Post it on the roadmap bug tracker. Other users can confirm it, add context, and follow its status.')}</p>
+                <p><Link to="/roadmap?new=bug">{communityText('Open the roadmap bug tracker')}</Link></p>
             </section>
             <section className={styles.section}>
-                <h2>{communityText('Send a private request')}</h2>
+                <SectionHeading icon={Send} title={communityText('Send a private request')} />
                 {sent ? (
-                    <div className={styles.success}>
-                        <p>{communityText('Your request was sent to the MistWarp moderators.')}</p>
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                                setForm(current => resetSupportForm(current, user));
-                                setSent(false);
-                            }}
-                        >{communityText('Send another request')}</Button>
-                    </div>
+                    <Notice
+                        variant="success"
+                        action={(
+                            <Button
+                                variant="secondary"
+                                onClick={() => {
+                                    setForm(current => resetSupportForm(current, user));
+                                    setSent(false);
+                                }}
+                            >{communityText('Send another request')}</Button>
+                        )}
+                    >
+                        {communityText('Your request was sent to the MistWarp moderators.')}
+                    </Notice>
                 ) : (
                     <form className={styles.form} onSubmit={submit}>
                         <label>{communityText('Topic')}<select value={form.type} disabled={busy} onChange={event => setParams(withSupportTopic(params, event.target.value))}><option value="account">{communityText('Account help')}</option><option value="safety">{communityText('Safety concern')}</option><option value="legal">{communityText('Legal or copyright')}</option><option value="appeal">{communityText('Moderation appeal')}</option></select></label>
                         <label>{communityText('Rotur username')}<input value={user ? user.username : form.username} disabled={Boolean(user) || busy} required maxLength={80} onChange={event => update('username', event.target.value)} /></label>
                         <label>{communityText('Subject')}<input value={form.subject} disabled={busy} required maxLength={120} onChange={event => update('subject', event.target.value)} /></label>
                         <label>{communityText('Message')}<textarea value={form.message} disabled={busy} required maxLength={3000} onChange={event => update('message', event.target.value)} /></label>
-                        {error ? <p className={styles.error}>{error}</p> : null}
-                        <div className={styles.actions}><Button variant="primary" type="submit" busy={busy} busyLabel={communityText('Sending…')}>{communityText('Send request')}</Button></div>
+                        {error ? <Notice variant="error">{error}</Notice> : null}
+                        <div className={styles.actions}><Button variant="primary" type="submit" busy={busy} busyLabel={communityText('Sending…')}><Send size={16} aria-hidden="true" />{communityText('Send request')}</Button></div>
                     </form>
                 )}
             </section>

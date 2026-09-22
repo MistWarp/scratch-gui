@@ -4,37 +4,7 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 20px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
-.back:hover {
-    color: var(--accent-strong);
-}
-
-.loadState {
-    display: grid;
-    justify-items: center;
-    gap: 12px;
-    padding: 80px 20px;
-    color: var(--text-dim);
-    text-align: center;
-}
-
-.prHeader h1 {
-    margin: 0;
-    color: var(--mw-text);
-    font-size: var(--fs-hero);
-    line-height: 1.2;
-}
-
-.prHeader h1 span {
+.prNumber {
     color: var(--text-faint);
     font-weight: 500;
 }
@@ -44,7 +14,6 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
     color: var(--text-dim);
     font-size: var(--fs-sm);
 }
@@ -89,7 +58,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 350px;
     gap: 24px;
-    margin-top: 24px;
     align-items: start;
 }
 
@@ -118,7 +86,6 @@
 .commentCard,
 .description,
 .commentForm,
-.signInComment,
 .commitsPanel {
     border-radius: var(--radius-sm);
     background: var(--bg-card);
@@ -253,6 +220,10 @@
     border-color: var(--accent-border);
 }
 
+.commentNotice {
+    margin-top: 9px;
+}
+
 .commentForm footer {
     display: flex;
     align-items: center;
@@ -263,15 +234,8 @@
     font-size: var(--fs-2xs);
 }
 
-.signInComment {
-    display: flex;
-    justify-content: center;
-    padding: 18px;
-}
-
 .commitsPanel {
     width: min(1050px, 100%);
-    margin-top: 20px;
     overflow: hidden;
 }
 
@@ -328,15 +292,13 @@
 }
 
 .commitRow span,
-.commitRow code,
-.emptyCommits {
+.commitRow code {
     color: var(--text-dim);
     font-size: var(--fs-xs);
 }
 
 .emptyCommits {
-    margin: 0;
-    padding: 24px;
+    padding: 0 16px;
 }
 
 .description,
@@ -369,38 +331,6 @@
 
 .description p {
     margin: 0;
-}
-
-.changeSummary {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 13px 15px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
-.changeSummary strong {
-    color: var(--mw-text);
-}
-
-.changeSummary button {
-    margin-inline-start: auto;
-    border: 0;
-    background: none;
-    color: var(--accent-strong);
-    font: inherit;
-    font-weight: 700;
-}
-
-.additions {
-    color: #2f9e5b;
-    font-family: ui-monospace, monospace;
-}
-
-.deletions {
-    color: #d05a5a;
-    font-family: ui-monospace, monospace;
 }
 
 .mergeBox {
@@ -442,145 +372,15 @@
     justify-content: center;
 }
 
-.error {
-    margin: 0;
-    color: #d64f62;
-    font-size: var(--fs-sm);
-}
-
 .filesLayout {
     display: grid;
     grid-template-columns: 270px minmax(0, 1fr);
     gap: 18px;
-    margin-top: 20px;
     align-items: start;
-}
-
-.fileTree {
-    position: sticky;
-    top: 18px;
-    display: grid;
-    max-height: calc(100vh - 40px);
-    overflow: auto;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-}
-
-.fileTree label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin: 10px;
-    padding: 0 9px;
-    border: 1px solid var(--border);
-    background: var(--bg-field);
-    border-radius: var(--radius-xs);
-    color: var(--text-faint);
-}
-
-.fileTree input {
-    width: 100%;
-    min-width: 0;
-    height: 34px;
-    border: 0;
-    outline: 0;
-    background: none;
-    color: var(--mw-text);
-    font: inherit;
-    font-size: var(--fs-xs);
-}
-
-.fileLink,
-.fileActive {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    padding: 9px 11px;
-    border: 0;
-    border-top: 1px solid var(--border-soft);
-    background: none;
-    color: var(--text-dim);
-    font: inherit;
-    font-size: var(--fs-xs);
-    text-align: start;
-}
-
-.folderRow {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding-top: 8px;
-    padding-inline-end: 11px;
-    padding-bottom: 5px;
-    color: var(--mw-text);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-}
-
-.folderRow svg,
-.fileLink > svg,
-.fileActive > svg {
-    flex: 0 0 auto;
-    color: var(--text-faint);
-}
-
-.fileActive {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
-.fileLink > span,
-.fileActive > span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.fileLink > span:first-child:last-child,
-.fileActive > span:first-child:last-child {
-    flex: 1;
-}
-
-.fileLink > small,
-.fileActive > small {
-    display: flex;
-    gap: 4px;
-    margin-inline-start: auto;
-    font-family: ui-monospace, monospace;
-    font-style: normal;
-}
-
-.fileLink b,
-.fileActive b {
-    color: #2f9e5b;
-}
-
-.fileLink i,
-.fileActive i {
-    color: #d05a5a;
-    font-style: normal;
 }
 
 .diffColumn {
     min-width: 0;
-}
-
-.diffFailure {
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    padding: 28px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-    color: var(--text-dim);
-}
-
-.diffFailure p {
-    margin: 0;
 }
 
 .diffColumn > div {
@@ -655,26 +455,11 @@
     .mergeBox {
         grid-row: 1;
     }
-
-    .fileTree {
-        position: static;
-        max-height: 260px;
-    }
 }
 
 @media (max-width: 620px) {
     .page {
         padding: 18px 12px 60px;
-    }
-
-    .changeSummary {
-        flex-wrap: wrap;
-    }
-
-    .changeSummary button {
-        width: 100%;
-        margin-inline-start: 0;
-        text-align: start;
     }
 
     .eventFeed {
@@ -701,8 +486,4 @@
     .commitEvent small {
         grid-column: 1 / -1;
     }
-}
-
-.tabs {
-    margin-top: 28px;
 }

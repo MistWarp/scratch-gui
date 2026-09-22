@@ -74,7 +74,7 @@ describe('community search page', () => {
         const wrapper = await renderSearch('zzz');
 
         expect(api.explore).toHaveBeenCalledWith(expect.objectContaining({q: 'zzz', sort: 'relevance'}));
-        expect(wrapper.text()).toContain('Nothing matched that search.');
+        expect(wrapper.text()).toContain('Nothing matched that search');
         wrapper.unmount();
     });
 });

@@ -1,9 +1,10 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {ArrowLeft, Gamepad2} from 'lucide-react';
-import {Link, useParams} from 'react-router-dom';
+import {Gamepad2} from 'lucide-react';
+import {useParams} from 'react-router-dom';
 import api from '../api';
 import PlaytimeLibrary from '../components/PlaytimeLibrary.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
 import {useUser} from '../UserContext.jsx';
 import setPageMeta from '../page-meta.js';
 import styles from './UserLibrary.module.css';
@@ -73,14 +74,15 @@ const UserLibrary = () => {
 
     return (
         <main className={styles.page}>
-            <Link className={styles.back} to={`/users/${name}`}><ArrowLeft size={15} />{communityText(' Back to profile')}</Link>
-            <header className={styles.head}>
-                <span className={styles.icon}><Gamepad2 size={24} /></span>
-                <div>
-                    <h1>{self ? communityText('Your game library') : communityText("{value1}'s game library", {value1: name})}</h1>
-                    <p>{communityText('Games ranked by total playtime.')}</p>
-                </div>
-            </header>
+            <PageHeader
+                icon={Gamepad2}
+                backTo={`/users/${name}`}
+                backLabel={communityText('Back to profile')}
+                title={self ?
+                    communityText('Your game library') :
+                    communityText("{value1}'s game library", {value1: name})}
+                lead={communityText('Games ranked by total playtime.')}
+            />
             <PlaytimeLibrary
                 projects={projects}
                 total={total}

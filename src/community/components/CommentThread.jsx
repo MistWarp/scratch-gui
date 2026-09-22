@@ -1,14 +1,18 @@
-import {getCommunityLocale} from '../locale.js';
+import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Reply, Search, MoreHorizontal, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
+import {Reply, Search, MoreHorizontal, MessageSquare, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
 import ReactionButtons from './ReactionButtons.jsx';
 import ReportModal from './ReportModal.jsx';
-import Modal from './ui/Modal.jsx';
+import Button from './ui/Button.jsx';
+import ConfirmModal from './ui/ConfirmModal.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import SelectMenu from './ui/SelectMenu.jsx';
 import RichText from './RichText.jsx';
 import GroupTag from './GroupTag.jsx';
@@ -18,11 +22,11 @@ import {sendCommercePayment, isInsufficientFunds} from '../credits';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
-const COMMENT_KINDS = [
-    {value: 'comment', label: 'Comment'},
-    {value: 'bug', label: 'Bug report'},
-    {value: 'suggestion', label: 'Suggestion'},
-    {value: 'question', label: 'Question'}
+const commentKindOptions = text => [
+    {value: 'comment', label: text('Comment')},
+    {value: 'bug', label: text('Bug report')},
+    {value: 'suggestion', label: text('Suggestion')},
+    {value: 'question', label: text('Question')}
 ];
 const ROOT_PAGE = 20;
 const donationAmount = comment => {
@@ -63,7 +67,7 @@ export const postCommentDonation = async ({source, text, kind, amount}) => {
             await new Promise(resolve => window.setTimeout(resolve, 1500));
         }
     }
-    throw lastError || new Error('Donation could not be confirmed.');
+    throw lastError || new Error(formatCommunityMessage('Donation could not be confirmed.'));
 };
 export const addCreatedComment = (comments, comment) => {
     const previous = (comments || []).find(item => sameUser(item.author, comment.author));
@@ -83,7 +87,7 @@ export const mergeCommentPages = (current, incoming) => {
     for (const comment of incoming || []) byId.set(comment.id, comment);
     return Array.from(byId.values()).sort(compareRootOrder);
 };
-const kindLabel = kind => COMMENT_KINDS.find(item => item.value === kind)?.label || 'Comment';
+const kindLabel = (kind, text) => commentKindOptions(text).find(item => item.value === kind)?.label || text('Comment');
 
 const CommentRow = ({
     comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onPin, onReport, canReply, canDelete,
@@ -114,7 +118,7 @@ const CommentRow = ({
                     <GroupTag username={comment.author} compact />
                     {!isReply && comment.kind && comment.kind !== 'comment' ? (
                         <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
-                            {kindLabel(comment.kind)}
+                            {kindLabel(comment.kind, communityText)}
                         </span>
                     ) : null}
                     {Number.isFinite(comment.playtimeMs) && comment.playtimeMs > 0 ? (
@@ -122,16 +126,26 @@ const CommentRow = ({
                     ) : null}
                     {donationAmount(comment) > 0 ? (
                         <span className={styles.donation} title={communityText('Donation attached to this comment')}>
-                            <Coins size={11} /> {donationAmount(comment).toLocaleString(getCommunityLocale())}{communityText(' credits')}</span>
+                            <Coins size={11} />
+                            {communityText('{value1} credits', {
+                                value1: donationAmount(comment).toLocaleString(getCommunityLocale())
+                            })}
+                        </span>
                     ) : null}
                     {comment.created ? (
                         <span className={styles.time}>{timeAgo(comment.created)}</span>
                     ) : null}
                     {comment.edited ? (
-                        <span className={styles.edited} title={communityText('Edited')} aria-label={communityText('Edited')}>✎</span>
+                        <span className={styles.edited} title={communityText('Edited')}>
+                            <Pencil size={12} aria-hidden="true" />
+                            {communityText('Edited')}
+                        </span>
                     ) : null}
                     {comment.pinned ? (
-                        <span className={styles.pinned} title={communityText('Pinned comment')}><Pin size={11} />{communityText(' Pinned')}</span>
+                        <span className={styles.pinned} title={communityText('Pinned comment')}>
+                            <Pin size={11} />
+                            {communityText('Pinned')}
+                        </span>
                     ) : null}
                     <span className={styles.headSpacer} />
                     {canReply ? (
@@ -165,23 +179,26 @@ const CommentRow = ({
                                         onClick={() => {
                                             close(); onEdit();
                                         }}
-                                    ><Pencil size={14} />{communityText(' Edit comment')}</DropdownItem> : null}
+                                    ><Pencil size={14} />{communityText('Edit comment')}</DropdownItem> : null}
                                     {canPin ? <DropdownItem
                                         disabled={pinning}
                                         onClick={() => {
                                             close(); onPin();
                                         }}
-                                    ><Pin size={14} /> {comment.pinned ? communityText('Unpin') : communityText('Pin to top')}</DropdownItem> : null}
+                                    >
+                                        <Pin size={14} />
+                                        {comment.pinned ? communityText('Unpin') : communityText('Pin to top')}
+                                    </DropdownItem> : null}
                                     {canReport ? <DropdownItem
                                         onClick={() => {
                                             close(); onReport();
                                         }}
-                                    ><Flag size={14} />{communityText(' Report comment')}</DropdownItem> : null}
+                                    ><Flag size={14} />{communityText('Report comment')}</DropdownItem> : null}
                                     {canDelete ? <DropdownItem
                                         danger disabled={deleting} onClick={() => {
                                             close(); onDelete();
                                         }}
-                                    ><Trash2 size={14} />{communityText(' Delete comment')}</DropdownItem> : null}
+                                    ><Trash2 size={14} />{communityText('Delete comment')}</DropdownItem> : null}
                                 </>
                             )}
                         </Dropdown>
@@ -197,18 +214,16 @@ const CommentRow = ({
                             onChange={event => onEditTextChange(event.target.value)}
                         />
                         <div className={styles.composerButtons}>
-                            <button
-                                type="button"
-                                className={styles.cancel}
-                                disabled={editBusy}
-                                onClick={onCancelEdit}
-                            >{communityText('Cancel')}</button>
-                            <button
-                                type="button"
-                                className={styles.post}
-                                disabled={editBusy || !editText.trim()}
+                            <Button disabled={editBusy} onClick={onCancelEdit}>{communityText('Cancel')}</Button>
+                            <Button
+                                variant="primary"
+                                busy={editBusy}
+                                busyLabel={communityText('Saving…')}
+                                disabled={!editText.trim()}
                                 onClick={onSaveEdit}
-                            >{editBusy ? communityText('Saving…') : communityText('Save')}</button>
+                            >
+                                {communityText('Save')}
+                            </Button>
                         </div>
                     </div>
                 ) : <p className={styles.text}><RichText text={comment.content} /></p>}
@@ -219,7 +234,7 @@ const CommentRow = ({
                         activeReaction={comment.myReaction || ''}
                         onReact={onReact}
                         disabled={reacting}
-                        disabledTitle="Saving…"
+                        disabledTitle={communityText('Saving…')}
                     />
                 </div>
             </div>
@@ -256,23 +271,26 @@ const InlineComposer = ({
                     onFocus={() => setEngaged(true)}
                     onChange={e => onChange(e.target.value)}
                 />
-                {error ? <div className={styles.error}>{error}</div> : null}
+                {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
                 {expanded ? <div className={styles.composerFooter}>
                     {!small && onKindChange ? (
                         <SelectMenu
                             compact
                             className={styles.kindMenu}
-                            options={COMMENT_KINDS}
+                            options={commentKindOptions(communityText)}
                             value={kind}
                             disabled={busy}
                             onChange={onKindChange}
-                            ariaLabel="Comment type"
+                            ariaLabel={communityText('Comment type')}
                             width={180}
                         />
                     ) : null}
                     {composerAction ? <div className={styles.composerAction}>{composerAction}</div> : null}
                     {!small && onDonationChange ? (
-                        <label className={styles.donationField} title={communityText("Donate credits to {value1}", {value1: donationRecipient})}>
+                        <label
+                            className={styles.donationField}
+                            title={communityText('Donate credits to {value1}', {value1: donationRecipient})}
+                        >
                             <Coins size={14} />
                             <input
                                 type="number"
@@ -282,26 +300,20 @@ const InlineComposer = ({
                                 value={donation}
                                 disabled={busy}
                                 placeholder={communityText('Donation')}
-                                aria-label={communityText("Donation to {value1} in credits", {value1: donationRecipient})}
+                                aria-label={communityText('Donation to {value1} in credits', {
+                                    value1: donationRecipient
+                                })}
                                 onChange={event => onDonationChange(event.target.value)}
                             />
                         </label>
                     ) : null}
                     <div className={styles.composerButtons}>
                         {onCancel ? (
-                            <button
-                                type="button"
-                                className={styles.cancel}
-                                disabled={busy}
-                                onClick={onCancel}
-                            >{communityText('Cancel')}</button>
+                            <Button disabled={busy} onClick={onCancel}>{communityText('Cancel')}</Button>
                         ) : null}
-                        <button
-                            type="button"
-                            className={styles.post}
-                            disabled={busy || !value.trim()}
-                            onClick={onSubmit}
-                        >{submitLabel}</button>
+                        <Button variant="primary" busy={busy} disabled={!value.trim()} onClick={onSubmit}>
+                            {submitLabel}
+                        </Button>
                     </div>
                 </div> : null}
             </div>
@@ -570,7 +582,7 @@ const CommentThread = ({
         if (!text.trim()) return;
         const attachedDonation = parent ? 0 : parseCommentDonation(donation);
         if (attachedDonation === null) {
-            setError(communityText("Enter a donation between 0.01 and 100000 credits."));
+            setError(communityText('Enter a donation between 0.01 and 100000 credits.'));
             return;
         }
         const actionSource = source;
@@ -606,8 +618,8 @@ const CommentThread = ({
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
                 setError(isInsufficientFunds(e) ?
-                    'You do not have enough credits for this donation.' :
-                    (e.message || 'Could not post comment.'));
+                    communityText('You do not have enough credits for this donation.') :
+                    (e.message || communityText('Could not post comment.')));
             }
         } finally {
             releaseAction();
@@ -642,7 +654,7 @@ const CommentThread = ({
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || 'Could not delete comment.');
+                setError(e.message || communityText('Could not delete comment.'));
             }
         } finally {
             releaseAction();
@@ -670,7 +682,7 @@ const CommentThread = ({
             setEditText('');
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || 'Could not edit comment.');
+                setError(e.message || communityText('Could not edit comment.'));
             }
         } finally {
             releaseAction();
@@ -693,7 +705,7 @@ const CommentThread = ({
                 c)));
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || 'Could not react.');
+                setError(e.message || communityText('Could not react.'));
             }
         } finally {
             releaseAction();
@@ -716,7 +728,7 @@ const CommentThread = ({
             setComments(cs => cs.map(c => (c.id === commentId ? {...c, ...updated} : c)));
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || 'Could not pin comment.');
+                setError(e.message || communityText('Could not pin comment.'));
             }
         } finally {
             releaseAction();
@@ -780,7 +792,7 @@ const CommentThread = ({
                     {composerAction ? (
                         <div className={styles.disabledComposerAction}>{composerAction}</div>
                     ) : null}
-                    <p className={styles.signedOut}>{disabledReason || communityText('Comments are turned off.')}</p>
+                    <Notice variant="info">{disabledReason || communityText('Comments are turned off.')}</Notice>
                 </>
             ) : (
                 <InlineComposer
@@ -818,10 +830,13 @@ const CommentThread = ({
                     </label>
                     <SelectMenu
                         compact
-                        options={[{value: 'all', label: 'All types'}, ...COMMENT_KINDS]}
+                        options={[
+                            {value: 'all', label: communityText('All types')},
+                            ...commentKindOptions(communityText)
+                        ]}
                         value={kindFilter}
                         className={styles.filterMenu}
-                        ariaLabel="Filter comments by type"
+                        ariaLabel={communityText('Filter comments by type')}
                         onChange={nextKind => {
                             setKindFilter(nextKind);
                             setRootLimit(ROOT_PAGE);
@@ -831,12 +846,12 @@ const CommentThread = ({
                     <SelectMenu
                         compact
                         options={[
-                            {value: 'newest', label: 'Newest'},
-                            {value: 'donations', label: 'Highest donations'}
+                            {value: 'newest', label: communityText('Newest')},
+                            {value: 'donations', label: communityText('Highest donations')}
                         ]}
                         value={sortOrder}
                         className={styles.sortMenu}
-                        ariaLabel="Sort comments"
+                        ariaLabel={communityText('Sort comments')}
                         onChange={nextSort => {
                             setSortOrder(nextSort);
                             setRootLimit(ROOT_PAGE);
@@ -931,7 +946,10 @@ const CommentThread = ({
                                                     type="button"
                                                     className={styles.showMore}
                                                     onClick={() => showMoreReplies(comment.id)}
-                                                >{communityText('Show ')}{hidden}{communityText(' more ')}{hidden === 1 ? communityText('reply') : communityText('replies')}
+                                                >
+                                                    {hidden === 1 ?
+                                                        communityText('Show 1 more reply') :
+                                                        communityText('Show {value1} more replies', {value1: hidden})}
                                                 </button>
                                             ) : all.length > INITIAL_LIMIT ? (
                                                 <button
@@ -951,7 +969,7 @@ const CommentThread = ({
                                         onChange={setReplyText}
                                         onSubmit={() => submit(replyText, comment.id)}
                                         onCancel={() => setReplyTo(null)}
-                                        placeholder={communityText("Reply to {value1}", {value1: comment.author})}
+                                        placeholder={communityText('Reply to {value1}', {value1: comment.author})}
                                         busy={busy}
                                         error={error}
                                     />
@@ -964,7 +982,11 @@ const CommentThread = ({
                             type="button"
                             className={`${styles.showMore} ${styles.rootMore}`}
                             onClick={() => setRootLimit(limit => limit + ROOT_PAGE)}
-                        >{communityText('Show ')}{Math.min(ROOT_PAGE, filteredRoots.length - visibleRoots.length)}{communityText(' more comments')}</button>
+                        >
+                            {communityText('Show {value1} more comments', {
+                                value1: Math.min(ROOT_PAGE, filteredRoots.length - visibleRoots.length)
+                            })}
+                        </button>
                     ) : nextOffset < totalRoots ? (
                         <button
                             type="button"
@@ -973,19 +995,38 @@ const CommentThread = ({
                             onClick={loadMore}
                         >
                             {loadingMore ? communityText('Loading…') :
-                                communityText("Show {value1} more comments", {value1: Math.min(ROOT_PAGE, totalRoots - nextOffset)})}
+                                communityText('Show {value1} more comments', {
+                                    value1: Math.min(ROOT_PAGE, totalRoots - nextOffset)
+                                })}
                         </button>
                     ) : null}
-                    {moreFailed ? <p className={styles.moreError}>{communityText('Could not load more comments. Try again.')}</p> : null}
+                    {moreFailed ? (
+                        <Notice variant="error" className={styles.message}>
+                            {communityText('Could not load more comments. Try again.')}
+                        </Notice>
+                    ) : null}
                 </>
             ) : (
-                <p className={styles.empty}>
-                    {loadingComments ? communityText('Loading comments…') : loadFailed ? (
-                        <>{communityText('Comments could not be loaded right now.')}{' '}
-                            <button type="button" className={styles.showMore} onClick={load}>{communityText('Try again')}</button>
-                        </>
-                    ) : comments.length ? communityText('No comments match those filters.') : communityText('No comments yet.')}
-                </p>
+                <React.Fragment>
+                    {loadingComments ? (
+                        <StatusMessage compact>{communityText('Loading comments…')}</StatusMessage>
+                    ) : null}
+                    {!loadingComments && loadFailed ? (
+                        <StatusMessage compact error onRetry={load}>
+                            {communityText('Comments could not be loaded right now.')}
+                        </StatusMessage>
+                    ) : null}
+                    {!loadingComments && !loadFailed && comments.length ? (
+                        <EmptyState compact icon={Search} title={communityText('No matching comments')}>
+                            {communityText('No comments match those filters.')}
+                        </EmptyState>
+                    ) : null}
+                    {!loadingComments && !loadFailed && !comments.length ? (
+                        <EmptyState compact icon={MessageSquare} title={communityText('No comments yet')}>
+                            {communityText('Be the first to leave a comment.')}
+                        </EmptyState>
+                    ) : null}
+                </React.Fragment>
             )}
             {reportId ? (
                 <ReportModal
@@ -997,33 +1038,24 @@ const CommentThread = ({
                 />
             ) : null}
             {deleteComment ? (
-                <Modal
+                <ConfirmModal
+                    destructive
                     icon={Trash2}
                     title={communityText('Delete comment?')}
-                    onClose={() => setDeleteId(null)}
-                    dismissDisabled={removingId !== null}
-                    actions={(
-                        <React.Fragment>
-                            <button
-                                type="button"
-                                className={styles.cancel}
-                                disabled={removingId !== null}
-                                onClick={() => setDeleteId(null)}
-                            >{communityText('Cancel')}</button>
-                            <button
-                                type="button"
-                                className={styles.deleteConfirm}
-                                disabled={removingId !== null}
-                                onClick={() => remove(deleteComment.id)}
-                            >{removingId !== null ? communityText('Deleting…') : communityText('Delete comment')}</button>
-                        </React.Fragment>
-                    )}
+                    confirmLabel={communityText('Delete comment')}
+                    busy={removingId !== null}
+                    busyLabel={communityText('Deleting…')}
+                    error={error}
+                    onConfirm={() => remove(deleteComment.id)}
+                    onCancel={() => setDeleteId(null)}
                 >
-                    <p className={styles.modalText}>{communityText('This comment will be deleted permanently.')}{deleteComment.parent ? '' : communityText(' Its replies will also be removed.')}
+                    <p className={styles.modalText}>
+                        {deleteComment.parent ?
+                            communityText('This comment will be deleted permanently.') :
+                            communityText('This comment and its replies will be deleted permanently.')}
                     </p>
                     <p className={styles.commentPreview}>{deleteComment.content}</p>
-                    {error ? <p className={styles.error}>{error}</p> : null}
-                </Modal>
+                </ConfirmModal>
             ) : null}
         </div>
     );

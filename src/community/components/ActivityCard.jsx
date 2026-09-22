@@ -26,7 +26,7 @@ const ActivityCard = ({activity}) => {
     const image = safeUrl(activity.image || assets.large_image);
     const smallImage = safeUrl(assets.small_image);
     const url = safeUrl(activity.url || application.url);
-    const title = activity.title || application.name || 'Activity';
+    const title = activity.title || application.name || communityText('Activity');
     const details = activity.details || media.title;
     const status = activity.state || media.artist || activity.status;
     const isListening = Boolean(activity.media) || activity.type === 2;
@@ -74,7 +74,7 @@ const ActivityCard = ({activity}) => {
                 <div className={styles.details}>
                     {details ? <strong>{details}</strong> : null}
                     {status && status !== details ? <span>{status}</span> : null}
-                    {media.album ? <span>{communityText('On ')}{media.album}</span> : null}
+                    {media.album ? <span>{communityText('On {value1}', {value1: media.album})}</span> : null}
                     {timing ? (
                         <div className={styles.timing}>
                             {!timing.total ? <Clock size={12} /> : null}

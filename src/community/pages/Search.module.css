@@ -4,31 +4,8 @@
     padding: var(--page-pad);
 }
 
-.title {
-    margin: 0 0 14px;
-    font-size: var(--fs-3xl);
-    overflow-wrap: anywhere;
-}
-
-.tabs {
-    margin-bottom: 24px;
-}
-
 .section {
     margin-bottom: 34px;
-}
-
-.sectionHead {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
-}
-
-.sectionHead h2 {
-    margin: 0;
-    font-size: var(--fs-xl);
 }
 
 .seeAll {
@@ -137,12 +114,6 @@
 .more span {
     color: var(--mw-danger);
     font-size: var(--fs-sm);
-}
-
-.status {
-    color: var(--text-dim);
-    padding: 40px 0;
-    text-align: center;
 }
 
 @media (max-width: 1000px) {
