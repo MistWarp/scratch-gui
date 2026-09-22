@@ -6,6 +6,7 @@ import {Activity, Cloud, GitBranch, Users} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
+import Button from '../button/button.jsx';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import styles from './rotur-login-modal.css';
 
@@ -277,36 +278,33 @@ class RoturLoginModal extends React.Component {
 
                     <div className={styles.actions}>
                         {loggedIn ? (
-                            <button
-                                className={`${styles.button} ${styles.primary}`}
+                            <Button
+                                variant="primary"
                                 onClick={this.handleRequestClose}
-                                type="button"
                             >
                                 <FormattedMessage
                                     defaultMessage="Close"
                                     description="Close button on Rotur info modal"
                                     id="mw.roturLogin.close"
                                 />
-                            </button>
+                            </Button>
                         ) : (
                             <React.Fragment>
-                                <button
-                                    className={`${styles.button} ${styles.secondary}`}
+                                <Button
+                                    variant="secondary"
                                     onClick={this.handleRequestClose}
                                     disabled={busy}
-                                    type="button"
                                 >
                                     <FormattedMessage
                                         defaultMessage="Not now"
                                         description="Cancel button on Rotur login modal"
                                         id="mw.roturLogin.notNow"
                                     />
-                                </button>
-                                <button
-                                    className={`${styles.button} ${styles.primary}`}
+                                </Button>
+                                <Button
+                                    variant="primary"
                                     disabled={busy}
                                     onClick={this.handleLogin}
-                                    type="button"
                                 >
                                     {busy ? (
                                         <FormattedMessage
@@ -321,7 +319,7 @@ class RoturLoginModal extends React.Component {
                                             id="mw.roturLogin.continue"
                                         />
                                     )}
-                                </button>
+                                </Button>
                             </React.Fragment>
                         )}
                     </div>

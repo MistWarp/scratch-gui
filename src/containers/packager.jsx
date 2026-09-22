@@ -153,8 +153,14 @@ class PackagerWindow extends React.Component {
             const parsed = JSON.parse(await file.text());
             const options = merge(recursivelyDeserializeBlobs(parsed), deepClone(this.defaults));
             if (this.disposed) return;
-            if (Packager.usesUnsafeOptions(options) &&
-                !window.confirm(getTranslator(this.props.locale)('options.confirmImportUnsafe'))) return;
+            if (Packager.usesUnsafeOptions(options)) {
+                const translate = getTranslator(this.props.locale);
+                const accepted = await this.props.confirm(
+                    translate('options.import'),
+                    translate('options.confirmImportUnsafe')
+                );
+                if (!accepted || this.disposed) return;
+            }
             this.editOptions(draft => Object.assign(draft, options));
         } catch (error) {
             if (!this.disposed) this.setState({error: error.message});
@@ -220,7 +226,7 @@ class PackagerWindow extends React.Component {
                         <button onClick={() => this.setState({error: null})}>Dismiss</button>
                     </div>}
                     <div className={styles.body}>
-                        <SettingsContext.Provider value={{tab, translate}}>
+                        <SettingsContext.Provider value={{tab, translate, confirm: this.props.confirm}}>
                             <PackagerOptions model={model} />
                         </SettingsContext.Provider>
                     </div>
@@ -242,9 +248,10 @@ class PackagerWindow extends React.Component {
                             />
                             <button
                                 onClick={() => {
-                                    if (window.confirm(translate('reset.confirmAll'))) {
-                                        this.resetOptions(Object.keys(this.defaults));
-                                    }
+                                    this.props.confirm(translate('reset.reset'), translate('reset.confirmAll'))
+                                        .then(accepted => {
+                                            if (accepted) this.resetOptions(Object.keys(this.defaults));
+                                        });
                                 }}
                             >Reset settings</button>
                         </div>
@@ -301,6 +308,7 @@ class PackagerWindow extends React.Component {
 }
 
 PackagerWindow.propTypes = {
+    confirm: PropTypes.func.isRequired,
     vm: PropTypes.object.isRequired,
     projectTitle: PropTypes.string.isRequired,
     locale: PropTypes.string,

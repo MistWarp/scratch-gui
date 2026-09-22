@@ -9,7 +9,7 @@ import {openSimpleDialog} from '../../reducers/modals';
 
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
- * This allows external applications to send SB3 data or URLs to Mistwarp for loading.
+ * This allows external applications to send SB3 data or URLs to MistWarp for loading.
  *
  * Expected message format:
  * {
@@ -47,7 +47,7 @@ const SB3PostMessageHOC = function (WrappedComponent) {
 
         isAllowedParentOrigin (origin) {
             // More permissive validation for parent pages
-            // This allows legitimate websites to open Mistwarp and send SB3 data
+            // This allows legitimate websites to open MistWarp and send SB3 data
             
             // Block obviously malicious origins
             if (!origin || origin === 'null') {

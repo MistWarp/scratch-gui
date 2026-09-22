@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import {FormattedMessage} from 'react-intl';
+import {X} from 'lucide-react';
 
 import styles from './monitor.css';
 import List from 'react-virtualized/dist/commonjs/List';
@@ -79,7 +80,7 @@ class ListMonitorScroller extends React.Component {
                                     className={styles.removeButton}
                                     onMouseDown={this.props.onRemove} // mousedown to get ahead of blur
                                 >
-                                    {'✖︎'}
+                                    <X size={12} />
                                 </button>
                             </div>
 

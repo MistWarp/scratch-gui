@@ -159,45 +159,6 @@
     margin-top: 0.15rem;
 }
 
-.button {
-    appearance: none;
-    border: none;
-    border-radius: 0.4rem;
-    padding: 0.4rem 0.75rem;
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
-}
-
-.button:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
-.primary {
-    background: $looks-secondary;
-    color: $ui-white;
-    border: 1px solid $looks-secondary;
-}
-
-.primary:hover:not(:disabled) {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
-}
-
-.secondary {
-    background: $ui-white;
-    color: $text-primary;
-    border: 1px solid $ui-black-transparent;
-}
-
-.secondary:hover:not(:disabled) {
-    background: $ui-secondary;
-    border-color: $looks-transparent;
-}
-
 .footnote {
     margin: 0;
     font-size: 0.7rem;

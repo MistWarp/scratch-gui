@@ -456,10 +456,8 @@
 
   .sa-debugger-chart-header h2 {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--text-primary-transparent);
   }
 
@@ -502,10 +500,8 @@
 
   .sa-memory-info-title {
     margin: 0;
-    font-size: 0.5625rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--text-primary-transparent);
   }
 
@@ -538,10 +534,8 @@
 
   .sa-memory-section-title {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--text-primary-transparent);
     flex-shrink: 0;
   }

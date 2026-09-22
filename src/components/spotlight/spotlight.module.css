@@ -267,10 +267,8 @@
 .sa-mcp-section-header {
     padding: 16px 18px 4px;
     color: var(--ui-text-primary-transparent);
-    font-size: 20px;
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     box-sizing: border-box;
 }
 

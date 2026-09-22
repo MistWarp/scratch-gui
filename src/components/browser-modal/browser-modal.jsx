@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Box from '../box/box.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
-import ReactModal from '../../containers/windowed-modal.jsx';
+import Modal from '../../containers/windowed-modal.jsx';
 import {
     isRendererSupported,
     isNewFunctionSupported,
@@ -30,11 +30,9 @@ const BrowserModal = ({intl, ...props}) => {
     const title = props.onClickDesktopSettings ? messages.systemNotSupported : messages.browserNotSupported;
     const incompatibleUserscripts = findIncompatibleUserscripts();
     return (
-        <ReactModal
+        <Modal
             isOpen
-            className={styles.modalContent}
             contentLabel={intl.formatMessage(title)}
-            overlayClassName={styles.modalOverlay}
         >
             <div dir={props.isRtl ? 'rtl' : 'ltr'} >
                 <Box className={styles.illustration}>
@@ -124,7 +122,7 @@ const BrowserModal = ({intl, ...props}) => {
                     {/* eslint-enable max-len */}
                 </Box>
             </div>
-        </ReactModal>
+        </Modal>
     );
 };
 

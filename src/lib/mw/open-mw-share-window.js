@@ -3,6 +3,7 @@ import * as bundledModule0 from "../../components/mw-share-modal/share-window.js
 /* eslint-disable react/jsx-filename-extension, react/jsx-no-literals */
 import React from 'react';
 import ReactDOM from 'react-dom';
+import {IntlProvider} from 'react-intl';
 
 import WindowManager from '../../addons/window-system/window-manager';
 import {openProjectMetadataModal} from '../../reducers/modals';
@@ -55,8 +56,12 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
     Promise.resolve(bundledModule0).then(({default: ShareWindow}) => {
         // The window may have closed before the callback runs.
         if (!shareWindow || !container) return;
+        const locales = window.ReduxStore ? window.ReduxStore.getState().locales : null;
         ReactDOM.render(
-            React.createElement(ShareWindow, {
+            React.createElement(IntlProvider, {
+                locale: (locales && locales.locale) || 'en',
+                messages: (locales && locales.messages) || {}
+            }, React.createElement(ShareWindow, {
                 vm,
                 initialTitle,
                 initialError,
@@ -73,7 +78,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
                         onPublished(result);
                     }
                 }
-            }),
+            })),
             container
         );
     }).catch(() => {
