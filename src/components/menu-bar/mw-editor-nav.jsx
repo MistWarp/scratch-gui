@@ -7,6 +7,7 @@ import {BarChart3, FolderOpen} from 'lucide-react';
 
 import menuBarStyles from './menu-bar.css';
 import MwNotifications from './mw-notifications.jsx';
+import MwFriendsButton from './mw-friends-button.jsx';
 import {openProductsModal} from '../../reducers/modals.js';
 
 const messages = defineMessages({
@@ -69,6 +70,7 @@ const MwEditorNav = ({intl, username, projectId, onOpenAnalytics}) => {
                 icon={FolderOpen}
                 href="/mystuff"
             />
+            <MwFriendsButton />
             <MwNotifications />
         </React.Fragment>
     );

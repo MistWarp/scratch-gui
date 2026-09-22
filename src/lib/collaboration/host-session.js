@@ -59,6 +59,7 @@ class HostSession extends Emitter {
         this.users = new Map();
         this.pendingJoinRequests = new Map();
         this.pendingSyncs = new Set();
+        this.inviteKeys = new Map();
         this._clientOpCounter = 0;
         this._started = false;
 
@@ -100,6 +101,7 @@ class HostSession extends Emitter {
         this.users.clear();
         this.pendingJoinRequests.clear();
         this.pendingSyncs.clear();
+        this.inviteKeys.clear();
         this.removeAllListeners();
     }
 
@@ -191,8 +193,31 @@ class HostSession extends Emitter {
         this.transport.closeConnection(requesterId);
     }
 
+    addInviteKey (key, username, expiresAt) {
+        this.inviteKeys.set(key, {username, expiresAt, peerId: null});
+    }
+
+    revokeInviteKey (key) {
+        this.inviteKeys.delete(key);
+    }
+
+    _useInviteKey (peerId, key) {
+        const invite = typeof key === 'string' ? this.inviteKeys.get(key) : null;
+        if (!invite) return null;
+        if (invite.peerId) return invite.peerId === peerId ? invite : null;
+        if (invite.expiresAt < Date.now()) {
+            this.inviteKeys.delete(key);
+            return null;
+        }
+        invite.peerId = peerId;
+        return invite;
+    }
+
     kickUser (peerId, reason = 'You were removed from the room') {
         if (!this.isClientApproved(peerId)) return;
+        for (const [key, invite] of this.inviteKeys) {
+            if (invite.peerId === peerId) this.inviteKeys.delete(key);
+        }
         this.transport.send(peerId, makeCtrl(CTRL.KICK, {reason}));
         this.transport.closeConnection(peerId);
         this._removeClient(peerId);
@@ -337,7 +362,16 @@ class HostSession extends Emitter {
     }
 
     _onHello (peerId, payload) {
-        if (this.scope && (payload.scope?.projectId !== this.scope.projectId ||
+        if (payload.protocolVersion !== PROTOCOL_VERSION) {
+            this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
+                reason: 'This room is running a different version of the app. ' +
+                    'Make sure everyone is on the latest version.'
+            }));
+            this.transport.closeConnection(peerId);
+            return;
+        }
+        const invite = this._useInviteKey(peerId, payload.invite);
+        if (!invite && this.scope && (payload.scope?.projectId !== this.scope.projectId ||
             payload.scope?.branch !== this.scope.branch)) {
             this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
                 reason: 'Open the same project and branch before joining this editing session.'
@@ -345,12 +379,9 @@ class HostSession extends Emitter {
             this.transport.closeConnection(peerId);
             return;
         }
-        if (payload.protocolVersion !== PROTOCOL_VERSION) {
-            this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
-                reason: 'This room is running a different version of the app. ' +
-                    'Make sure everyone is on the latest version.'
-            }));
-            this.transport.closeConnection(peerId);
+        if (invite) {
+            this.pendingJoinRequests.delete(peerId);
+            this._admitClient(peerId, payload.username, payload.lastAppliedSeq, invite.username);
             return;
         }
         if (this.users.has(peerId)) {

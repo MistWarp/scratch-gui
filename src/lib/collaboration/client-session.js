@@ -45,8 +45,9 @@ class ClientSession extends Emitter {
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */
-    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null}) {
+    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null, invite = null}) {
         super();
+        this.invite = invite;
         this.transport = transport;
         this.applier = applier;
         this.roomId = roomId;
@@ -223,6 +224,7 @@ class ClientSession extends Emitter {
         };
         if (this.handle) payload.handle = this.handle;
         if (this.scope) payload.scope = this.scope;
+        if (this.invite) payload.invite = this.invite;
         if (this.lastAppliedSeq !== null) {
             payload.lastAppliedSeq = this.lastAppliedSeq;
         }

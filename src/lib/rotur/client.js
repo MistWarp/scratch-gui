@@ -693,13 +693,40 @@ const ensureScopes = async scopes => {
     if (!missing.length) {
         return true;
     }
+    const staleSocket = rotur.socket ? rotur.socket.ws : null;
     await rotur.login({
         system: LOGIN_SYSTEM,
         timeout: 120000,
         requires: [...new Set([...LOGIN_PERMISSIONS, ...granted, ...wanted])]
     });
+    if (staleSocket && rotur.socket && rotur.socket.ws !== staleSocket) {
+        staleSocket.onmessage = null;
+        staleSocket.onclose = null;
+        staleSocket.onerror = null;
+        staleSocket.close();
+    }
     storeToken(rotur.token);
     return true;
+};
+
+const hasScopes = async scopes => {
+    const rotur = getClient();
+    if (!rotur.loggedIn) {
+        return false;
+    }
+    try {
+        const abilities = await rotur.me.abilities();
+        if (!abilities || abilities.error) {
+            return false;
+        }
+        if (abilities.token_type === 'main') {
+            return true;
+        }
+        const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
+        return granted.includes('full') || scopes.every(scope => granted.includes(scope));
+    } catch (_) {
+        return false;
+    }
 };
 
 const isPaymentPermissionError = error => {
@@ -849,6 +876,8 @@ export {
     payUser,
     claimDaily,
     ensureScopes,
+    ensureSocket,
+    hasScopes,
     isVisibleNotification,
     fetchNotifications,
     fetchFollowingFeed,
