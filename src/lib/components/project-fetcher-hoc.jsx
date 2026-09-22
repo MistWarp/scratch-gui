@@ -36,6 +36,7 @@ import {
     setRemoteProjectHistory
 } from '../git/project-history.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
+import {buildSb3FromCurrentRepo, importMwp, isMwpArchive} from '../git/mwp.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
@@ -282,7 +283,19 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 }
                 const jsonUrl = projectUrl;
                 assetPromise = (hasBridge() ? bridgeFetch(jsonUrl) : fetchArrayBuffer(jsonUrl))
-                    .then(buffer => ({data: buffer}));
+                    .then(async buffer => {
+                        if (!(await isMwpArchive(buffer))) return {data: buffer};
+                        return queueProjectHistoryLoad(async () => {
+                            if (fetchGeneration !== this.fetchGeneration) return null;
+                            rememberPlatformProject(null);
+                            setRemoteProjectHistory(null);
+                            await importMwp(buffer);
+                            const sb3 = await buildSb3FromCurrentRepo();
+                            return fetchGeneration === this.fetchGeneration ?
+                                {data: await sb3.arrayBuffer(), historyPrepared: true} :
+                                null;
+                        });
+                    });
             } else if (isInitialFetch && searchParams && searchParams.has('restore')) {
                 const id = Number(searchParams.get('restore'));
                 assetPromise = Number.isSafeInteger(id) && id > 0 ?
