@@ -8,9 +8,11 @@ import collaborationReducer from '../../../src/reducers/collaboration';
 
 jest.mock('../../../src/lib/collaboration/index.js');
 jest.mock('../../../src/lib/notification-manager.js');
+jest.mock('../../../src/lib/mw/smart-save.js', () => jest.fn(async () => true));
 
 import CollaborationService from '../../../src/lib/collaboration/index.js';
 import NotificationSystem from '../../../src/lib/notification-manager.js';
+import smartSave from '../../../src/lib/mw/smart-save.js';
 
 const mockCollaborationService = {
     isConnected: false,
@@ -132,6 +134,42 @@ describe('CollaborationContainer', () => {
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
+    });
+
+    test('joining with unsaved changes offers to save first', async () => {
+        const container = instanceOf(mountContainer());
+        let dialog = null;
+        container.props = {...container.props, projectChanged: true, openSimpleDialog: config => {
+            dialog = config;
+            config.onOk('save');
+        }};
+
+        await container.handleJoinRoom('test-room', 'Alice');
+
+        expect(dialog.choices.map(choice => choice.value)).toEqual(['join', 'save']);
+        expect(smartSave).toHaveBeenCalled();
+        expect(smartSave.mock.invocationCallOrder[0])
+            .toBeLessThan(mockCollaborationService.connectToRoom.mock.invocationCallOrder[0]);
+    });
+
+    test('joining waits when saving needs the save window', async () => {
+        smartSave.mockResolvedValueOnce(false);
+        const container = instanceOf(mountContainer());
+        container.props = {...container.props, projectChanged: true, openSimpleDialog: config => config.onOk('save')};
+
+        await expect(container.handleJoinRoom('test-room', 'Alice')).rejects.toThrow('Finish saving');
+        expect(mockCollaborationService.connectToRoom).not.toHaveBeenCalled();
+    });
+
+    test('a friend invite that was already confirmed skips the generic dialog', async () => {
+        const container = instanceOf(mountContainer());
+        const dialog = jest.fn();
+        container.props = {...container.props, openSimpleDialog: dialog};
+
+        await container.handleJoinRoom('friend-room', 'Alice', null, 'a'.repeat(32), {confirmed: true});
+
+        expect(dialog).not.toHaveBeenCalled();
+        expect(mockCollaborationService.connectToRoom).toHaveBeenCalled();
     });
 
     test('handleJoinRoom passes a friend invite key through to the service', async () => {

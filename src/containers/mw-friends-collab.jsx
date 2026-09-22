@@ -25,7 +25,9 @@ import {
     readInvite,
     readReply
 } from '../lib/collaboration/friend-invites.js';
-import {openRoturLoginModal} from '../reducers/modals.js';
+import {openRoturLoginModal, openSimpleDialog} from '../reducers/modals.js';
+import {setProjectUnchanged} from '../reducers/project-changed.js';
+import smartSave from '../lib/mw/smart-save.js';
 
 const NOTE_LIFETIME = 30 * 1000;
 const MAX_INCOMING = 4;
@@ -55,6 +57,61 @@ const messages = defineMessages({
         defaultMessage: '{name} declined your invite.',
         description: 'Toast when a friend declines your collaboration invite',
         id: 'mw.friends.declinedToast'
+    },
+    joinTitle: {
+        defaultMessage: 'Join {name}?',
+        description: 'Title of the dialog shown before joining a friend from an invite',
+        id: 'mw.friends.joinTitle'
+    },
+    joinReplaces: {
+        defaultMessage: 'Your editor switches to the project {name} is working on while you edit together.',
+        description: 'Dialog text explaining that joining a friend replaces the project in your editor',
+        id: 'mw.friends.joinReplaces'
+    },
+    joinLeaves: {
+        defaultMessage: 'You will leave your current live session.',
+        description: 'Dialog text shown when joining a friend while already in a live session',
+        id: 'mw.friends.joinLeaves'
+    },
+    joinEndsHosting: {
+        defaultMessage: 'You are hosting a live session, and everyone in it will be disconnected.',
+        description: 'Dialog text shown when joining a friend while hosting a live session with other people',
+        id: 'mw.friends.joinEndsHosting'
+    },
+    joinUnsaved: {
+        defaultMessage: 'You have unsaved changes. Save them first so you can come back to your project.',
+        description: 'Dialog text shown when joining a friend with unsaved changes',
+        id: 'mw.friends.joinUnsaved'
+    },
+    joinBackup: {
+        defaultMessage: 'MistWarp also keeps a backup on this device before your project is replaced.',
+        description: 'Dialog text explaining the automatic device backup taken before joining',
+        id: 'mw.friends.joinBackup'
+    },
+    joinButton: {
+        defaultMessage: 'Join',
+        description: 'Button in the join dialog that joins a friend without saving because nothing changed',
+        id: 'mw.friends.joinButton'
+    },
+    saveAndJoin: {
+        defaultMessage: 'Save and join',
+        description: 'Button in the join dialog that saves the current project, then joins the friend',
+        id: 'mw.friends.saveAndJoin'
+    },
+    joinWithoutSaving: {
+        defaultMessage: 'Join without saving',
+        description: 'Button in the join dialog that joins the friend without saving the current project',
+        id: 'mw.friends.joinWithoutSaving'
+    },
+    finishSaving: {
+        defaultMessage: 'Finish saving your project, then choose Join again.',
+        description: 'Toast when saving before joining a friend needs the save window first',
+        id: 'mw.friends.finishSaving'
+    },
+    saveFailed: {
+        defaultMessage: 'Your project could not be saved, so you have not joined yet.',
+        description: 'Toast when saving before joining a friend fails',
+        id: 'mw.friends.saveFailed'
     },
     friendRequestFailed: {
         defaultMessage: 'Rotur could not update that friend request.',
@@ -292,10 +349,50 @@ class FriendsCollab extends React.Component {
         }
     }
 
+    confirmJoin (invite) {
+        const {intl, projectChanged, service} = this.props;
+        const name = invite.from;
+        const hostingOthers = service.isConnected && service.isHost &&
+            service.getConnectedUsers().length > 1;
+        const sentences = [intl.formatMessage(messages.joinReplaces, {name})];
+        if (hostingOthers) sentences.push(intl.formatMessage(messages.joinEndsHosting));
+        else if (service.isConnected) sentences.push(intl.formatMessage(messages.joinLeaves));
+        if (projectChanged) sentences.push(intl.formatMessage(messages.joinUnsaved));
+        sentences.push(intl.formatMessage(messages.joinBackup));
+        const choices = projectChanged ? [
+            {value: 'join', label: intl.formatMessage(messages.joinWithoutSaving)},
+            {value: 'save', label: intl.formatMessage(messages.saveAndJoin)}
+        ] : [{value: 'join', label: intl.formatMessage(messages.joinButton)}];
+        return new Promise(resolve => this.props.openSimpleDialog({
+            type: 'confirm',
+            title: intl.formatMessage(messages.joinTitle, {name}),
+            message: sentences.join(' '),
+            choices,
+            onOk: value => resolve(value),
+            onCancel: () => resolve(null)
+        }));
+    }
+
+    async saveBeforeJoining () {
+        const {intl, vm, projectTitle} = this.props;
+        try {
+            if (await smartSave({vm, title: projectTitle, onSaved: this.props.onProjectUnchanged})) return true;
+            NotificationSystem.info(intl.formatMessage(messages.finishSaving), 6000);
+        } catch (error) {
+            NotificationSystem.error(intl.formatMessage(messages.saveFailed), 6000);
+        }
+        return false;
+    }
+
     async handleAcceptInvite (invite) {
         this.setState({busyId: invite.id});
+        const choice = await this.confirmJoin(invite);
+        if (!choice || (choice === 'save' && !(await this.saveBeforeJoining()))) {
+            this.setState({busyId: null});
+            return;
+        }
         try {
-            await this.props.onJoinRoom(invite.room, this.props.roturHandle, null, invite.key);
+            await this.props.onJoinRoom(invite.room, this.props.roturHandle, null, invite.key, {confirmed: true});
         } catch (error) {
             this.setState({busyId: null});
             if (!/cancel/i.test(error && error.message)) {
@@ -422,6 +519,8 @@ FriendsCollab.propTypes = {
         session: PropTypes.object,
         onHost: PropTypes.func
     }),
+    openSimpleDialog: PropTypes.func.isRequired,
+    projectChanged: PropTypes.bool,
     projectTitle: PropTypes.string,
     roturHandle: PropTypes.string,
     sessionMembers: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -431,12 +530,15 @@ FriendsCollab.propTypes = {
         roomId: PropTypes.string,
         on: PropTypes.func.isRequired,
         off: PropTypes.func.isRequired,
+        getConnectedUsers: PropTypes.func.isRequired,
         addInviteKey: PropTypes.func.isRequired,
         revokeInviteKey: PropTypes.func.isRequired
     }).isRequired,
     onCreateRoom: PropTypes.func.isRequired,
     onJoinRoom: PropTypes.func.isRequired,
+    vm: PropTypes.object,
     onOpen: PropTypes.func.isRequired,
+    onProjectUnchanged: PropTypes.func.isRequired,
     onSignIn: PropTypes.func.isRequired
 };
 
@@ -444,12 +546,16 @@ export {FriendsCollab};
 
 export default injectIntl(connect(
     state => ({
+        projectChanged: state.scratchGui.projectChanged,
         projectTitle: state.scratchGui.projectTitle,
+        vm: state.scratchGui.vm,
         sessionMembers: state.scratchGui.collaboration.connectedUsers
             .map(user => String(user.handle || '').toLowerCase())
             .filter(Boolean)
     }),
     dispatch => ({
+        openSimpleDialog: config => dispatch(openSimpleDialog(config)),
+        onProjectUnchanged: () => dispatch(setProjectUnchanged()),
         onSignIn: () => dispatch(openRoturLoginModal())
     })
 )(FriendsCollab));
