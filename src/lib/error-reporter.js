@@ -47,11 +47,32 @@ const isBenignResizeObserverLoop = (message, stack) => {
     return text.includes('ResizeObserver loop') || text.includes('undelivered notifications');
 };
 
+const CRAWLER_AGENT = /googlebot|bingbot|yandexbot|duckduckbot|baiduspider|applebot|petalbot|ahrefsbot|semrushbot|facebookexternalhit|slurp|crawler|spider/i;
+
+const isCrawler = () => {
+    try {
+        return CRAWLER_AGENT.test(String(window.navigator.userAgent || ''));
+    } catch (e) {
+        return false;
+    }
+};
+
+const BROWSER_EXTENSION_FRAME = /(?:chrome|moz|safari|safari-web)-extension:\/\//;
+
+const isUnactionable = (message, stack) => {
+    if (message === 'Script error.') return true;
+    const frames = String(stack || '')
+        .split('\n')
+        .filter(line => /:\d+:\d+\)?\s*$/.test(line));
+    return frames.length > 0 && BROWSER_EXTENSION_FRAME.test(frames[0]);
+};
+
 export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = ''}) => {
     try {
         const text = String(message || '').trim();
         if (!text || sending) return;
         if (isBenignResizeObserverLoop(text, stack)) return;
+        if (isUnactionable(text, stack) || isCrawler()) return;
         const href = String(url || window.location.href || '').slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
