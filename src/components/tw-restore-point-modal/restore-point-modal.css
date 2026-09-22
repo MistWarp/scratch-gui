@@ -61,29 +61,6 @@
     gap: 0.5rem;
 }
 
-.confirmation-actions .secondary-button {
-    margin-top: 0;
-}
-
-.confirmation-button {
-    appearance: none;
-    min-height: 1.9rem;
-    padding: 0 0.65rem;
-    border: 0;
-    border-radius: 4px;
-    background: $error-primary;
-    color: white;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.confirmation-button:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
 .automatic-row,
 .list-toolbar {
     display: flex;
@@ -190,53 +167,15 @@ button:focus-visible {
 }
 
 .icon-button:disabled,
-.action-button:disabled,
-.primary-button:disabled {
+.action-button:disabled {
     opacity: 0.45;
     cursor: default;
 }
 
 .icon-button svg,
-.action-button svg,
-.primary-button svg,
-.secondary-button svg,
-.delete-all-button svg {
+.action-button svg {
     width: 0.95rem;
     height: 0.95rem;
-}
-
-.primary-button,
-.secondary-button,
-.delete-all-button {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    min-height: 1.9rem;
-    padding: 0 0.65rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.primary-button {
-    border: 0;
-    background: $looks-secondary;
-    color: white;
-}
-
-.primary-button:hover:not(:disabled) {
-    filter: brightness(0.94);
-}
-
-.secondary-button {
-    margin-top: 0.4rem;
-    border: 1px solid $ui-black-transparent;
-    background: $ui-primary;
-    color: $text-primary;
 }
 
 .table {
@@ -264,9 +203,8 @@ button:focus-visible {
     border-bottom: 1px solid $ui-black-transparent;
     background: $ui-primary;
     color: color-mix(in srgb, $text-primary 55%, transparent);
-    font-size: 0.62rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
 }
 
 .restore-point-container {
@@ -359,17 +297,6 @@ button:focus-visible {
     min-height: 2.5rem;
     color: color-mix(in srgb, $text-primary 55%, transparent);
     font-size: 0.68rem;
-}
-
-.delete-all-button {
-    border: 0;
-    background: transparent;
-    color: color-mix(in srgb, $text-primary 68%, transparent);
-}
-
-.delete-all-button:hover {
-    background: color-mix(in srgb, $error-primary 10%, transparent);
-    color: $error-primary;
 }
 
 .state {

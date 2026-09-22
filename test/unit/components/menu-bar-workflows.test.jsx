@@ -179,6 +179,7 @@ describe('menu bar file workflows', () => {
     test('reports a Git push failure in a toast and releases the action lock', async () => {
         push.mockRejectedValueOnce(new Error('network unavailable'));
         const menuBar = makeMenuBar({
+            intl: {formatMessage: (message, values) => message.defaultMessage.replace('{error}', values.error)},
             onCloseGitStatus: jest.fn(),
             onRequestCloseFile: jest.fn(),
             onShowGitStatus: jest.fn(),

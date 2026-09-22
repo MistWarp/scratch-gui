@@ -7,7 +7,6 @@ import {FormattedMessage} from 'react-intl';
 import Box from '../box/box.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
-import showAlert from '../../addons/window-system/alert';
 import GradientBuilder from './gradient-builder.jsx';
 
 import styles from './settings-modal.css';
@@ -52,6 +51,7 @@ class CustomThemesPage extends React.Component {
             createDescription: '',
             originalThemeBeforePreview: null,
             statusMessage: '',
+            errorMessage: '',
             pendingDelete: null,
             deleteError: ''
         };
@@ -91,7 +91,8 @@ class CustomThemesPage extends React.Component {
             editorInitial: {},
             pendingDelete: null,
             deleteError: '',
-            statusMessage: ''
+            statusMessage: '',
+            errorMessage: ''
         }, () => {
             if (notify) this.notifyTabChange(tab);
         });
@@ -114,10 +115,14 @@ class CustomThemesPage extends React.Component {
         });
     };
 
-    handleCreateFromCurrent = async () => {
+    showError = message => {
+        this.setState({errorMessage: message, statusMessage: ''});
+    };
+
+    handleCreateFromCurrent = () => {
         const name = this.state.createName.trim();
         if (!name) {
-            await showAlert('Theme name is required');
+            this.showError('Theme name is required.');
             return;
         }
         try {
@@ -130,11 +135,12 @@ class CustomThemesPage extends React.Component {
                 createName: '',
                 createDescription: '',
                 tab: TABS.LIBRARY,
+                errorMessage: '',
                 statusMessage: `“${customTheme.name}” saved to your library.`
             }, () => this.notifyTabChange(TABS.LIBRARY));
             this.props.onChangeTheme(customTheme);
         } catch (error) {
-            await showAlert(`Failed to create theme: ${error.message}`);
+            this.showError(`Failed to create theme: ${error.message}`);
         }
     };
 
@@ -163,9 +169,9 @@ class CustomThemesPage extends React.Component {
         this.props.onChangeTheme(previewTheme);
     };
 
-    handleCreateGradient = async (name, description, colorStops, primary, direction) => {
+    handleCreateGradient = (name, description, colorStops, primary, direction) => {
         if (!name.trim()) {
-            await showAlert('Theme name is required');
+            this.showError('Theme name is required.');
             return;
         }
         this.stopPreview();
@@ -181,20 +187,21 @@ class CustomThemesPage extends React.Component {
             this.closeEditor();
             this.setState({
                 tab: TABS.LIBRARY,
+                errorMessage: '',
                 statusMessage: `“${customTheme.name}” saved to your library.`
             }, () => this.notifyTabChange(TABS.LIBRARY));
             this.props.onChangeTheme(customTheme);
         } catch (error) {
-            await showAlert(`Failed to create gradient theme: ${error.message}`);
+            this.showError(`Failed to create gradient theme: ${error.message}`);
         }
     };
 
-    handleEditGradient = async themeUuid => {
+    handleEditGradient = themeUuid => {
         try {
             const gradientInfo = customThemeManager.getThemeGradientInfo(themeUuid);
             const theme = customThemeManager.getTheme(themeUuid);
             if (!gradientInfo || !theme) {
-                await showAlert('Could not load gradient information for this theme');
+                this.showError('Could not load gradient information for this theme.');
                 return;
             }
             this.setState({
@@ -212,14 +219,14 @@ class CustomThemesPage extends React.Component {
                 }
             }, () => this.notifyTabChange(TABS.CREATE));
         } catch (error) {
-            await showAlert(`Failed to load gradient theme: ${error.message}`);
+            this.showError(`Failed to load gradient theme: ${error.message}`);
         }
     };
 
-    handleUpdateGradient = async (name, description, colorStops, primary, direction) => {
+    handleUpdateGradient = (name, description, colorStops, primary, direction) => {
         const {editingThemeUuid} = this.state;
         if (!name.trim()) {
-            await showAlert('Theme name is required');
+            this.showError('Theme name is required.');
             return;
         }
         this.stopPreview();
@@ -254,6 +261,7 @@ class CustomThemesPage extends React.Component {
             this.closeEditor();
             this.setState({
                 tab: TABS.LIBRARY,
+                errorMessage: '',
                 statusMessage: 'Theme updated.'
             }, () => this.notifyTabChange(TABS.LIBRARY));
 
@@ -262,7 +270,7 @@ class CustomThemesPage extends React.Component {
                 this.props.onChangeTheme(customThemeManager.getTheme(editingThemeUuid));
             }
         } catch (error) {
-            await showAlert(`Failed to update gradient theme: ${error.message}`);
+            this.showError(`Failed to update gradient theme: ${error.message}`);
         }
     };
 
@@ -281,6 +289,7 @@ class CustomThemesPage extends React.Component {
             this.setState({
                 pendingDelete: null,
                 deleteError: '',
+                errorMessage: '',
                 statusMessage: `“${pendingDelete.name}” deleted.`
             });
         } catch (error) {
@@ -300,7 +309,7 @@ class CustomThemesPage extends React.Component {
         URL.revokeObjectURL(url);
     }
 
-    handleExportThemes = async () => {
+    handleExportThemes = () => {
         try {
             const date = new Date().toISOString()
                 .split('T')[0];
@@ -308,13 +317,13 @@ class CustomThemesPage extends React.Component {
                 customThemeManager.exportAllThemes(),
                 `mistwarp-themes-${date}.json`
             );
-            this.setState({statusMessage: 'Exported all themes.'});
+            this.setState({errorMessage: '', statusMessage: 'Exported all themes.'});
         } catch (error) {
-            await showAlert(`Failed to export themes: ${error.message}`);
+            this.showError(`Failed to export themes: ${error.message}`);
         }
     };
 
-    handleExportSingleTheme = async theme => {
+    handleExportSingleTheme = theme => {
         try {
             this.downloadJSON({
                 version: '2.0',
@@ -323,7 +332,7 @@ class CustomThemesPage extends React.Component {
                 platform: 'MistWarp'
             }, `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`);
         } catch (error) {
-            await showAlert(`Failed to export theme: ${error.message}`);
+            this.showError(`Failed to export theme: ${error.message}`);
         }
     };
 
@@ -332,7 +341,7 @@ class CustomThemesPage extends React.Component {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = async e => {
+        reader.onload = e => {
             try {
                 const data = JSON.parse(e.target.result);
                 const results = customThemeManager.importThemes(data, false);
@@ -342,13 +351,14 @@ class CustomThemesPage extends React.Component {
                 if (results.errors.length > 0) message += `, ${results.errors.length} error(s)`;
                 this.setState({
                     tab: TABS.LIBRARY,
+                    errorMessage: '',
                     statusMessage: `${message}.`
                 }, () => this.notifyTabChange(TABS.LIBRARY));
                 if (results.errors.length > 0) {
-                    await showAlert(results.errors.join('\n'));
+                    this.showError(results.errors.join(' '));
                 }
             } catch (error) {
-                await showAlert(`Failed to import themes: ${error.message}`);
+                this.showError(`Failed to import themes: ${error.message}`);
             }
         };
         reader.readAsText(file);
@@ -843,7 +853,7 @@ class CustomThemesPage extends React.Component {
     }
 
     render () {
-        const {tab, statusMessage} = this.state;
+        const {tab, statusMessage, errorMessage} = this.state;
 
         return (
             <Box className={styles.ctPage}>
@@ -851,6 +861,12 @@ class CustomThemesPage extends React.Component {
 
                 {statusMessage && (
                     <div className={styles.ctStatus}>{statusMessage}</div>
+                )}
+                {errorMessage && (
+                    <div
+                        className={styles.ctDeleteError}
+                        role="alert"
+                    >{errorMessage}</div>
                 )}
 
                 <div className={styles.ctContent}>

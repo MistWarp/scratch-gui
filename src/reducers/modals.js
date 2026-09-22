@@ -22,7 +22,6 @@ const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
-const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_DEBUGGER = 'debuggerModal';
@@ -54,7 +53,6 @@ const initialState = {
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_EXTENSION_MANAGER]: false,
     [MODAL_GIT]: false,
-    [MODAL_PREFERENCES]: false,
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_DEBUGGER]: false,
@@ -169,9 +167,6 @@ const openExtensionManagerModal = function () {
 };
 const openGitModal = function () {
     return openModal(MODAL_GIT);
-};
-const openPreferencesModal = function () {
-    return openModal(MODAL_PREFERENCES);
 };
 const openShortcutManagerModal = function () {
     // eslint-disable-next-line global-require
@@ -292,9 +287,6 @@ const closeExtensionManagerModal = function () {
 const closeGitModal = function () {
     return closeModal(MODAL_GIT);
 };
-const closePreferencesModal = function () {
-    return closeModal(MODAL_PREFERENCES);
-};
 const closeShortcutManagerModal = function () {
     return closeModal(MODAL_SHORTCUT_MANAGER);
 };
@@ -322,7 +314,6 @@ export {
     openInvalidProjectModal,
     openExtensionManagerModal,
     openGitModal,
-    openPreferencesModal,
     openShortcutManagerModal,
     openDebuggerModal,
     closeDebuggerModal,
@@ -359,6 +350,5 @@ export {
     closeInvalidProjectModal,
     closeExtensionManagerModal,
     closeGitModal,
-    closePreferencesModal,
     closeShortcutManagerModal
 };

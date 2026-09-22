@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import AddonWindow from '../../addons/window-system/window.jsx';
+import Button from '../button/button.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
 import styles from './media-recorder.css';
@@ -380,23 +381,21 @@ class MediaRecorderButton extends React.Component {
                     </div>
                 )}
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={styles.secondaryButton}
+                    <Button
+                        variant="secondary"
+                        iconElem={X}
                         onClick={this.handleClose}
                     >
-                        <X size={17} />
                         {'Cancel'}
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.primaryButton}
+                    </Button>
+                    <Button
+                        variant="primary"
+                        iconElem={Video}
                         disabled={this.state.starting}
                         onClick={this.handleStart}
                     >
-                        <Video size={17} />
                         {this.state.starting ? 'Starting…' : 'Start recording'}
-                    </button>
+                    </Button>
                 </div>
             </React.Fragment>
         );
@@ -468,23 +467,21 @@ class MediaRecorderButton extends React.Component {
                     </div>
                 )}
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={styles.secondaryButton}
+                    <Button
+                        variant="secondary"
+                        iconElem={X}
                         onClick={this.handleCancel}
                     >
-                        <X size={17} />
                         {'Discard'}
-                    </button>
+                    </Button>
                     {!waiting && !delaying && (
-                        <button
-                            type="button"
-                            className={styles.primaryButton}
+                        <Button
+                            variant="primary"
+                            iconElem={Square}
                             onClick={this.handleStopAndSave}
                         >
-                            <Square size={17} />
                             {'Stop and save'}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

@@ -1,12 +1,53 @@
 import {guardSavedCallback} from '../../lib/mw/save-guard.js';
 import React from 'react';
 import PropTypes from 'prop-types';
+import {defineMessages, injectIntl} from 'react-intl';
 import {
     publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob, getRememberedPlatformProjectState
 } from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
 import Markdown from '../../community/components/Markdown.jsx';
+import Button from '../button/button.jsx';
 import styles from './share-window.css';
+
+const messages = defineMessages({
+    cancel: {defaultMessage: 'Cancel', description: 'Cancel button in the share window', id: 'mw.shareWindow.cancel'},
+    close: {defaultMessage: 'Close', description: 'Close button in the share window', id: 'mw.shareWindow.close'},
+    openProjectPage: {
+        defaultMessage: 'Open project page',
+        description: 'Button that opens the shared project page',
+        id: 'mw.shareWindow.openProjectPage'
+    },
+    saveWithoutVersion: {
+        defaultMessage: 'Save without a version',
+        description: 'Button that saves the project without creating a version',
+        id: 'mw.shareWindow.saveWithoutVersion'
+    },
+    createVersionAndSave: {
+        defaultMessage: 'Create version and save',
+        description: 'Button that creates a version and saves the project',
+        id: 'mw.shareWindow.createVersionAndSave'
+    },
+    useCurrentCanvas: {
+        defaultMessage: 'Use current canvas',
+        description: 'Button that captures the stage as the project thumbnail',
+        id: 'mw.shareWindow.useCurrentCanvas'
+    },
+    uploadImage: {
+        defaultMessage: 'Upload an image',
+        description: 'Button that picks a thumbnail image from the computer',
+        id: 'mw.shareWindow.uploadImage'
+    },
+    saving: {defaultMessage: 'Saving…', description: 'Busy label while the project saves', id: 'mw.shareWindow.saving'},
+    remix: {defaultMessage: 'Remix', description: 'Confirm button when remixing', id: 'mw.shareWindow.remix'},
+    update: {defaultMessage: 'Update', description: 'Confirm button when updating', id: 'mw.shareWindow.update'},
+    save: {defaultMessage: 'Save', description: 'Confirm button when saving a project', id: 'mw.shareWindow.save'},
+    changeMessagePlaceholder: {
+        defaultMessage: 'For example: Added a new level',
+        description: 'Placeholder for the change summary input in the share window',
+        id: 'mw.shareWindow.changeMessagePlaceholder'
+    }
+});
 
 class ShareWindow extends React.Component {
     constructor (props) {
@@ -309,8 +350,9 @@ class ShareWindow extends React.Component {
         );
     }
     render () {
-        const actionLabel = this.props.action === 'remix' ? 'Remix' :
-            this.props.action === 'update' ? 'Update' : 'Save';
+        const {intl} = this.props;
+        const actionLabel = intl.formatMessage(this.props.action === 'remix' ? messages.remix :
+            this.props.action === 'update' ? messages.update : messages.save);
 
         if (this.state.agreement) {
             return (
@@ -327,22 +369,22 @@ class ShareWindow extends React.Component {
                         ) : null}
                     </div>
                     <div className={styles.footer}>
-                        <button
+                        <Button
                             type="button"
-                            className={styles.secondary}
+                            variant="secondary"
                             onClick={() => this.setState({agreement: null, agreeError: ''})}
                             disabled={this.state.agreeBusy}
-                        >Cancel</button>
-                        <button
+                        >{intl.formatMessage(messages.cancel)}</Button>
+                        <Button
                             type="button"
-                            className={styles.primary}
+                            variant="primary"
                             onClick={this.handleAcceptAgreement}
                             disabled={this.state.agreeBusy}
                         >
                             {this.state.agreeBusy ?
                                 'Accepting…' :
                                 `Accept v${this.state.agreement.version} & ${actionLabel.toLowerCase()}`}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             );
@@ -361,19 +403,19 @@ class ShareWindow extends React.Component {
                         {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                     </div>
                     <div className={styles.footer}>
-                        <button
+                        <Button
                             type="button"
-                            className={styles.secondary}
+                            variant="secondary"
                             onClick={this.props.onClose}
-                        >Close</button>
-                        <button
+                        >{intl.formatMessage(messages.close)}</Button>
+                        <Button
                             type="button"
-                            className={styles.primary}
+                            variant="primary"
                             onClick={() => {
                                 window.open(this.state.done.url, '_blank', 'noopener');
                                 this.props.onClose();
                             }}
-                        >Open project page</button>
+                        >{intl.formatMessage(messages.openProjectPage)}</Button>
                     </div>
                 </div>
             );
@@ -398,7 +440,7 @@ class ShareWindow extends React.Component {
                             value={this.state.changeMessage}
                             disabled={!!this.state.status}
                             maxLength={120}
-                            placeholder="For example: Added a new level"
+                            placeholder={this.props.intl.formatMessage(messages.changeMessagePlaceholder)}
                             onChange={this.handleChangeMessage}
                         />
                         <p className={styles.notice}>
@@ -409,24 +451,26 @@ class ShareWindow extends React.Component {
                         {this.renderError()}
                     </div>
                     <div className={styles.footer}>
-                        <button
+                        <Button
                             type="button"
-                            className={styles.secondary}
+                            variant="secondary"
                             onClick={this.props.onClose}
                             disabled={!!this.state.status}
-                        >Cancel</button>
-                        <button
+                        >{intl.formatMessage(messages.cancel)}</Button>
+                        <Button
                             type="button"
-                            className={styles.secondary}
+                            variant="secondary"
                             onClick={this.handleSkipSave}
                             disabled={!!this.state.status}
-                        >Save without a version</button>
-                        <button
+                        >{intl.formatMessage(messages.saveWithoutVersion)}</Button>
+                        <Button
                             type="button"
-                            className={styles.primary}
+                            variant="primary"
                             onClick={this.handlePublish}
                             disabled={!!this.state.status || !this.state.changeMessage.trim()}
-                        >{this.state.status ? 'Saving…' : 'Create version and save'}</button>
+                        >
+                            {intl.formatMessage(this.state.status ? messages.saving : messages.createVersionAndSave)}
+                        </Button>
                     </div>
                 </div>
             );
@@ -456,18 +500,18 @@ class ShareWindow extends React.Component {
                             <div className={styles.thumbEmpty}>No preview</div>
                         )}
                         <div className={styles.thumbButtons}>
-                            <button
+                            <Button
                                 type="button"
-                                className={styles.secondary}
+                                variant="secondary"
                                 onClick={this.handleRetake}
                                 disabled={!!this.state.status}
-                            >Use current canvas</button>
-                            <button
+                            >{intl.formatMessage(messages.useCurrentCanvas)}</Button>
+                            <Button
                                 type="button"
-                                className={styles.secondary}
+                                variant="secondary"
                                 onClick={() => this.fileInput.current && this.fileInput.current.click()}
                                 disabled={!!this.state.status}
-                            >Upload an image</button>
+                            >{intl.formatMessage(messages.uploadImage)}</Button>
                             <input
                                 ref={this.fileInput}
                                 className={styles.hiddenInput}
@@ -486,18 +530,18 @@ class ShareWindow extends React.Component {
                     {this.renderError()}
                 </div>
                 <div className={styles.footer}>
-                    <button
+                    <Button
                         type="button"
-                        className={styles.secondary}
+                        variant="secondary"
                         onClick={this.props.onClose}
                         disabled={!!this.state.status}
-                    >Cancel</button>
-                    <button
+                    >{intl.formatMessage(messages.cancel)}</Button>
+                    <Button
                         type="button"
-                        className={styles.primary}
+                        variant="primary"
                         onClick={this.handlePublish}
                         disabled={!!this.state.status || !this.state.title.trim()}
-                    >{this.state.status ? 'Saving…' : actionLabel}</button>
+                    >{this.state.status ? intl.formatMessage(messages.saving) : actionLabel}</Button>
                 </div>
             </div>
         );
@@ -505,6 +549,7 @@ class ShareWindow extends React.Component {
 }
 
 ShareWindow.propTypes = {
+    intl: PropTypes.shape({formatMessage: PropTypes.func.isRequired}).isRequired,
     vm: PropTypes.shape({
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object
@@ -524,4 +569,5 @@ ShareWindow.defaultProps = {
     action: 'save'
 };
 
-export default ShareWindow;
+export {ShareWindow};
+export default injectIntl(ShareWindow);

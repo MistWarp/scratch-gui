@@ -184,7 +184,7 @@ import {
     GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
-    ShoppingBag, Backpack
+    ShoppingBag, Backpack, Check
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -204,6 +204,21 @@ const twMessages = defineMessages({
         id: 'tw.menuBar.compileError',
         defaultMessage: '{sprite}: {error}',
         description: 'Error message in error menu'
+    },
+    gitPushFailed: {
+        id: 'mw.menuBar.gitPushFailed',
+        defaultMessage: 'Push failed. {error}',
+        description: 'Toast shown when pushing the project to git fails. {error} is the error message.'
+    },
+    gitPullFailed: {
+        id: 'mw.menuBar.gitPullFailed',
+        defaultMessage: 'Pull failed. {error}',
+        description: 'Toast shown when pulling the project from git fails. {error} is the error message.'
+    },
+    gitCommitFailed: {
+        id: 'mw.menuBar.gitCommitFailed',
+        defaultMessage: 'Commit failed. {error}',
+        description: 'Toast shown when committing the project to git fails. {error} is the error message.'
     }
 });
 
@@ -239,6 +254,16 @@ const menuLabelMessages = defineMessages({
     more: {
         id: 'mw.menuBar.more',
         defaultMessage: 'More menus'
+    },
+    moreTitle: {
+        id: 'mw.menuBar.moreTitle',
+        defaultMessage: 'More',
+        description: 'Tooltip for the menu bar button that reveals the remaining menus'
+    },
+    home: {
+        id: 'mw.menuBar.home',
+        defaultMessage: 'MistWarp home',
+        description: 'Tooltip for the MistWarp logo link in the menu bar'
     },
     tools: {
         id: 'gui.menuBar.tools',
@@ -830,7 +855,9 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPushing');
-            this.showToastMessage(`Push failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(this.props.intl.formatMessage(twMessages.gitPushFailed, {
+                error: e && e.message ? e.message : String(e)
+            }), 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -876,7 +903,9 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitPulling');
-            this.showToastMessage(`Pull failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(this.props.intl.formatMessage(twMessages.gitPullFailed, {
+                error: e && e.message ? e.message : String(e)
+            }), 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -913,7 +942,9 @@ class MenuBar extends React.Component {
         } catch (e) {
             console.error(e);
             this.props.onCloseGitStatus('gitCommitting');
-            this.showToastMessage(`Commit failed. ${e && e.message ? e.message : e}`, 'error');
+            this.showToastMessage(this.props.intl.formatMessage(twMessages.gitCommitFailed, {
+                error: e && e.message ? e.message : String(e)
+            }), 'error');
             return false;
         } finally {
             this.gitActionInFlight = false;
@@ -1417,12 +1448,8 @@ class MenuBar extends React.Component {
         };
     }
     showToastMessage (message, type = 'info') {
-        // Use the toast notification system instead of manual DOM manipulation
         if (this.props.showToast) {
             this.props.showToast(message, type);
-        } else {
-            // Fallback to console if showToast is not available
-            console.log(`[${type.toUpperCase()}] ${message}`);
         }
     }
     restoreOptionMessage (deletedItem) {
@@ -1625,7 +1652,7 @@ class MenuBar extends React.Component {
                     <a
                         href="/"
                         className={classNames(styles.menuBarItem, styles.hoverable, styles.homeLink)}
-                        title="MistWarp home"
+                        title={this.props.intl.formatMessage(menuLabelMessages.home)}
                         data-mw-item="__home"
                     >
                         <img
@@ -1647,7 +1674,7 @@ class MenuBar extends React.Component {
                             aria-haspopup="menu"
                             aria-label={this.props.intl.formatMessage(menuLabelMessages.more)}
                             onClick={this.handleToggleMoreMenu}
-                            title="More"
+                            title={this.props.intl.formatMessage(menuLabelMessages.moreTitle)}
                         >
                             <MenuIcon size={20} />
                         </button>
@@ -2112,7 +2139,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem onClick={this.handleSetMode('NOW')}>
                                             <span className={classNames({[styles.inactive]: !this.props.modeNow})}>
-                                                {'✓'}
+                                                <Check size={14} />
                                             </span>
                                             {' '}
                                             <FormattedMessage
@@ -2123,7 +2150,7 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                         <MenuItem onClick={this.handleSetMode('2020')}>
                                             <span className={classNames({[styles.inactive]: !this.props.mode2020})}>
-                                                {'✓'}
+                                                <Check size={14} />
                                             </span>
                                             {' '}
                                             <FormattedMessage

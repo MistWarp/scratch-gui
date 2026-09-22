@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {AlertTriangle, FilePlus2, FolderPlus} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
+import Button from '../button/button.jsx';
 import {buildTree, AssetFolder} from './asset-tree.jsx';
 import AssetPreview from './asset-preview.jsx';
 import {formatBytes} from '../../lib/utils/bytes';
@@ -72,17 +73,14 @@ const AssetsModal = props => {
                             )}
                             {props.dialogError ? <p className={styles.dialogError}>{props.dialogError}</p> : null}
                             <div className={styles.dialogActions}>
-                                <button
-                                    type="button"
-                                    className={styles.dialogCancel}
+                                <Button
+                                    variant="secondary"
                                     onClick={props.onDialogCancel}
-                                >{'Cancel'}</button>
-                                <button
-                                    type="button"
-                                    className={props.dialog.type === 'delete' ?
-                                        styles.dialogDelete : styles.dialogConfirm}
+                                >{'Cancel'}</Button>
+                                <Button
+                                    variant={props.dialog.type === 'delete' ? 'danger' : 'primary'}
                                     onClick={props.onDialogConfirm}
-                                >{props.dialog.type === 'delete' ? 'Delete asset' : 'Create folder'}</button>
+                                >{props.dialog.type === 'delete' ? 'Delete asset' : 'Create folder'}</Button>
                             </div>
                         </div>
                     </div>

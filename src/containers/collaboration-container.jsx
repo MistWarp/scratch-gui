@@ -293,26 +293,21 @@ class CollaborationContainer extends Component {
         this.updateUsersList();
     }
 
-    handleUserJoined (user) {
-        console.log('User joined:', user);
+    handleUserJoined () {
         this.updateUsersList();
     }
 
     handleUserLeft (user) {
-        console.log('User left:', user);
         const username = user.username || user.id || 'A user';
         NotificationSystem.info(`${username} disconnected`, 3000);
         this.updateUsersList();
     }
 
-    handleUsersUpdated (data) {
-        console.log('Users list updated:', data.users);
+    handleUsersUpdated () {
         this.updateUsersList();
     }
 
     handleConnectionFailed (data) {
-        console.log('Connection failed:', data.error);
-
         // Immediately clear connection state and show error
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
@@ -321,8 +316,6 @@ class CollaborationContainer extends Component {
     }
 
     handleUsernameChanged (user) {
-        console.log('Username changed:', user);
-
         // If this is our own username change from another client, update local state.
         // When signed into Rotur the two names are separate, so don't clobber the project name.
         if (
@@ -334,9 +327,7 @@ class CollaborationContainer extends Component {
         this.updateUsersList();
     }
 
-    handleKickedFromRoom (data) {
-        console.log('Kicked from room:', data);
-
+    handleKickedFromRoom () {
         // Disconnect from the collaboration service but don't clear the error
         this.collaborationService.disconnect();
 
@@ -360,8 +351,6 @@ class CollaborationContainer extends Component {
     }
 
     handleConnectedToHost () {
-        console.log('Successfully connected to host');
-
         // Now we're actually connected and can show the connected UI
         this.props.onSetConnected(true);
 
@@ -381,8 +370,6 @@ class CollaborationContainer extends Component {
     }
 
     handleDisconnected () {
-        console.log('Disconnected from collaboration');
-
         NotificationSystem.info('Disconnected from collaboration room', 3000);
 
         this.clearWaitingOverlay();
@@ -394,8 +381,6 @@ class CollaborationContainer extends Component {
     }
 
     handleCancelConnection () {
-        console.log('User cancelled connection');
-
         // Disconnect from the collaboration service
         this.collaborationService.disconnect();
 
@@ -435,20 +420,17 @@ class CollaborationContainer extends Component {
         this.handleCancelConnection();
     }
 
-    handleJoinRequestReceived (data) {
-        console.log('Join request received:', data);
+    handleJoinRequestReceived () {
         // The modal will handle this event directly from the collaboration service
     }
 
     handleJoinApproved () {
-        console.log('Join request approved');
         // The user has been approved to join the room
         this.props.onSetConnected(true);
         this.updateUsersList();
     }
 
     handleJoinDenied (data) {
-        console.log('Join request denied:', data);
         this.props.onSetError(data || 'Your join request was denied');
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
@@ -466,7 +448,6 @@ class CollaborationContainer extends Component {
     }
 
     handleRoomPrivacyChanged (privacy) {
-        console.log('Room privacy changed to:', privacy);
         this.props.onSetRoomPrivacy(privacy);
     }
 
@@ -641,6 +622,8 @@ class CollaborationContainer extends Component {
                         onCancelJoinRequest={this.handleCancelJoinRequest}
                         onChangeRoomPrivacy={this.handleChangeRoomPrivacy}
                         onOpenChangeUsername={this.props.onOpenChangeUsername}
+                        onShowToast={this.props.onShowToast}
+                        openSimpleDialog={this.props.openSimpleDialog}
                     />
                 </React.Fragment>)}
             </ProjectSession>
@@ -662,6 +645,7 @@ CollaborationContainer.propTypes = {
     roturHandle: PropTypes.string,
     isProjectReady: PropTypes.bool,
     openSimpleDialog: PropTypes.func.isRequired,
+    onShowToast: PropTypes.func.isRequired,
     vm: PropTypes.object.isRequired,
     onRequestClose: PropTypes.func.isRequired,
     onSetConnected: PropTypes.func.isRequired,
@@ -720,7 +704,12 @@ const mapDispatchToProps = dispatch => ({
     onSetReconnecting: isReconnecting => dispatch(setCollaborationReconnecting(isReconnecting)),
     onSetUserActivity: activity => dispatch(setUserActivity(activity)),
     onRemoveUserActivity: userId => dispatch(removeUserActivity(userId)),
-    onOpenChangeUsername: () => dispatch(openUsernameModal())
+    onOpenChangeUsername: () => dispatch(openUsernameModal()),
+    onShowToast: (message, type) => dispatch({
+        type: 'scratch-gui/SHOW_TOAST',
+        message,
+        toastType: type
+    })
 });
 
 export default compose(

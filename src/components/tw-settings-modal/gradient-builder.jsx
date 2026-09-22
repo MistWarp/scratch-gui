@@ -4,7 +4,6 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import {GradientUtils} from '../../lib/themes/custom-themes.js';
-import showAlert from '../../addons/window-system/alert';
 
 import styles from '../menu-bar/settings-menu.css';
 
@@ -69,7 +68,7 @@ const GradientBuilder = props => {
         if (props.onSubmit) props.onSubmit(name, description, gradientColors, primaryColor, direction);
     };
 
-    const handlePreview = async () => {
+    const handlePreview = () => {
         if (isPreviewActive) {
             setIsPreviewActive(false);
             if (props.onPreview) {
@@ -78,10 +77,7 @@ const GradientBuilder = props => {
             return;
         }
 
-        if (!name.trim()) {
-            await showAlert('Please enter a theme name first');
-            return;
-        }
+        if (!name.trim()) return;
 
         if (props.onPreview) {
             props.onPreview(name, gradientColors, primaryColor, direction);

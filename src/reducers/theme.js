@@ -22,13 +22,10 @@ const reducer = (state = initialState, action) => {
     }
 };
 
-const setTheme = theme => {
-    console.log('setTheme', theme);
-    return {
-        type: SET_THEME,
-        theme
-    };
-};
+const setTheme = theme => ({
+    type: SET_THEME,
+    theme
+});
 
 export {
     reducer as default,

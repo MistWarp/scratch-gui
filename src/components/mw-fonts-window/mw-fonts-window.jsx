@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import classNames from 'classnames';
 
@@ -122,6 +122,14 @@ SelectedFontDisplay.propTypes = {
     onReset: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired
 };
+
+const messages = defineMessages({
+    searchGoogleFonts: {
+        defaultMessage: 'Search Google Fonts…',
+        description: 'Placeholder for the Google Fonts search box in the fonts window',
+        id: 'mw.fontsWindow.searchGoogleFonts'
+    }
+});
 
 class MWFontsWindow extends React.Component {
     constructor (props) {
@@ -454,7 +462,7 @@ class MWFontsWindow extends React.Component {
                         <input
                             type="text"
                             className={styles.fontInput}
-                            placeholder="Search Google Fonts..."
+                            placeholder={this.props.intl.formatMessage(messages.searchGoogleFonts)}
                             value={this.state.googleFontInput}
                             onChange={this.handleGoogleFontInputChange}
                             onKeyDown={this.handleGoogleInputKeyDown}
@@ -505,6 +513,7 @@ class MWFontsWindow extends React.Component {
 }
 
 MWFontsWindow.propTypes = {
+    intl: intlShape.isRequired,
     onChangeTheme: PropTypes.func.isRequired,
     theme: PropTypes.instanceOf(Theme),
     vm: PropTypes.object
@@ -522,4 +531,4 @@ const mapDispatchToProps = dispatch => ({
     }
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(MWFontsWindow);
+export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(MWFontsWindow));

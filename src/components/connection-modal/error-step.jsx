@@ -26,7 +26,7 @@ const ErrorStep = props => (
         <Box className={styles.bottomArea}>
             <div className={classNames(styles.bottomAreaItem, styles.instructions)}>
                 <FormattedMessage
-                    defaultMessage="Oops, looks like something went wrong."
+                    defaultMessage="Something went wrong."
                     description="The device connection process has encountered an error."
                     id="gui.connection.error.errorMessage"
                 />

@@ -35,6 +35,16 @@ const messages = defineMessages({
         defaultMessage: 'Project Management & Analytics',
         description: 'Title for project management and analytics window',
         id: 'mw.productsModal.title'
+    },
+    grantPlaceholder: {
+        defaultMessage: 'Username to grant',
+        description: 'Placeholder for the username input when granting a product',
+        id: 'mw.productsModal.grantPlaceholder'
+    },
+    revokePlaceholder: {
+        defaultMessage: 'Username to revoke',
+        description: 'Placeholder for the username input when revoking a product',
+        id: 'mw.productsModal.revokePlaceholder'
     }
 });
 
@@ -497,7 +507,7 @@ class ProductsModalComponent extends React.Component {
                         </label>
                         <input
                             className={styles.formInput}
-                            placeholder="Username to revoke"
+                            placeholder={this.props.intl.formatMessage(messages.revokePlaceholder)}
                             type="text"
                             value={revokeUsernameInput}
                             onChange={e => this.setState({
@@ -956,7 +966,7 @@ class ProductsModalComponent extends React.Component {
                                 </label>
                                 <input
                                     className={styles.formInput}
-                                    placeholder="Username to grant"
+                                    placeholder={this.props.intl.formatMessage(messages.grantPlaceholder)}
                                     type="text"
                                     value={grantUsernameInput}
                                     onChange={e => this.setState({grantUsernameInput: e.target.value})}
@@ -1006,7 +1016,7 @@ class ProductsModalComponent extends React.Component {
                             </label>
                             <input
                                 className={styles.formInput}
-                                placeholder="Username to grant"
+                                placeholder={this.props.intl.formatMessage(messages.grantPlaceholder)}
                                 type="text"
                                 value={grantUsernameInput}
                                 onChange={e => this.setState({grantUsernameInput: e.target.value})}

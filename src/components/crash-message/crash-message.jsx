@@ -16,7 +16,7 @@ const CrashMessage = props => (
             />
             <p className={styles.header}>
                 <FormattedMessage
-                    defaultMessage="Oops! Something went wrong."
+                    defaultMessage="Something went wrong."
                     description="Crash Message title"
                     id="gui.crashMessage.label"
                 />
