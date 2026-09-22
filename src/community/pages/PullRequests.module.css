@@ -4,9 +4,7 @@
     padding: var(--page-pad);
 }
 
-.header,
-.header > div,
-.tools label,
+.search,
 .list > header,
 .list > header button,
 .list article,
@@ -16,42 +14,15 @@
     align-items: center;
 }
 
-.header {
-    justify-content: space-between;
-    gap: 18px;
-}
-
-.header > div {
-    gap: 10px;
-}
-
-.header a {
-    color: var(--accent-strong);
-    font-size: var(--fs-md);
-    font-weight: 700;
-}
-
-.header h1 {
-    margin: 0;
-    color: var(--mw-text);
-    font-size: var(--fs-3xl);
-}
-
-.tools {
-    margin: 22px 0 12px;
-}
-
-.tools label {
+.search {
     gap: 8px;
     padding: 0 12px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    background: var(--bg-field);
     color: var(--text-faint);
 }
 
-.tools input {
+.search input {
     width: 100%;
     height: 42px;
     border: 0;
@@ -105,11 +76,11 @@
 }
 
 .openIcon {
-    color: #2f9e5b;
+    color: var(--status-shipped);
 }
 
 .closedIcon {
-    color: #7655c5;
+    color: var(--status-planned);
 }
 
 .list article div {
@@ -132,6 +103,7 @@
 }
 
 .list article div > span {
+    flex-wrap: wrap;
     gap: 5px;
     color: var(--text-dim);
     font-size: var(--fs-xs);
@@ -144,24 +116,8 @@
     font-size: var(--fs-xs);
 }
 
-.empty,
-.state {
-    padding: 34px;
-    color: var(--text-dim);
-    text-align: center;
-}
-
 @media (max-width: 620px) {
     .page {
         padding: 20px 12px 60px;
-    }
-
-    .header {
-        align-items: flex-start;
-    }
-
-    .header > div {
-        display: grid;
-        gap: 2px;
     }
 }

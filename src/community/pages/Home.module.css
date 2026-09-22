@@ -38,52 +38,6 @@
     gap: 12px;
 }
 
-.primaryButton,
-.secondaryButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: var(--radius-sm);
-    font-size: var(--fs-md);
-    font-weight: 700;
-}
-
-.primaryButton {
-    border: none;
-    color: var(--accent-contrast);
-    background: var(--accent);
-}
-
-.primaryButton:hover {
-    background: var(--accent-strong);
-}
-
-.secondaryButton {
-    border: 1px solid var(--border);
-    color: var(--mw-text);
-    background: var(--bg-raised);
-}
-
-.secondaryButton:hover {
-    border-color: var(--accent-border);
-    color: var(--accent-strong);
-}
-
-.heroArt {
-    display: grid;
-    place-items: center;
-}
-
-.heroLogo {
-    box-sizing: border-box;
-    width: 118px;
-    height: 118px;
-    padding: 13px;
-    border-radius: 26px;
-    background: var(--accent);
-}
-
 .heroDemo {
     display: flex;
     flex-direction: column;
@@ -101,13 +55,12 @@
     line-height: 1.5;
 }
 
-.heroDemo a { color: var(--accent-strong); font-weight: 700; }
-
-.dashboardGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 32px;
-    margin-top: 40px;
+.heroDemo a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent-strong);
+    font-weight: 700;
 }
 
 .feedBox {
@@ -115,33 +68,6 @@
     min-width: 0;
     height: 340px;
     flex-direction: column;
-}
-
-.sectionHead {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.sectionHead h2 {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 0;
-    font-size: var(--fs-2xl);
-    letter-spacing: -.01em;
-}
-
-.sectionHead h2 svg,
-.sectionHead > a {
-    color: var(--accent-strong);
-}
-
-.sectionHead > a {
-    font-size: var(--fs-md);
-    font-weight: 600;
 }
 
 .feedScroll {
@@ -164,27 +90,9 @@
     50% { opacity: .55; }
 }
 
-.empty {
-    padding: 34px 20px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-dim);
-    text-align: center;
-}
-
-.empty button {
-    margin-inline-start: 6px;
-    border: none;
-    color: var(--accent-strong);
-    background: none;
-    font: inherit;
-    font-weight: 700;
-}
-
 .newsList,
 .activityList,
-.roadmapList,
-.notificationList {
+.roadmapList {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -239,18 +147,11 @@
     background: var(--accent-soft);
 }
 
-.roadmapItem,
-.notificationItem,
-.notificationUnread {
-    display: block;
-    padding: 12px 14px;
+.roadmapItem {
+    position: relative;
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
-}
-
-.roadmapItem {
-    position: relative;
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr);
     gap: 14px;
@@ -310,8 +211,7 @@
 }
 
 .roadmapLabels,
-.roadmapMeta,
-.notificationTop {
+.roadmapMeta {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -332,11 +232,6 @@
     font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: capitalize;
-}
-
-.roadmapLabels .roadmapOfficial {
-    color: var(--mw-text);
-    background: var(--bg-raised);
 }
 
 .roadmapLabels .roadmapStatusshipped {
@@ -389,49 +284,7 @@
     text-decoration: underline;
 }
 
-.notificationUnread {
-    background: color-mix(in srgb, var(--accent) 5%, var(--bg-card));
-    box-shadow: inset 3px 0 var(--accent), var(--card-shadow);
-}
-
-.notificationTop > strong {
-    min-width: 0;
-    overflow: hidden;
-    font-size: var(--fs-sm);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.notificationItem p,
-.notificationUnread p {
-    margin: 8px 0 0 44px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    line-height: 1.45;
-}
-
-.notificationTop time {
-    margin-inline-start: auto;
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-    white-space: nowrap;
-}
-
-.systemIcon {
-    display: inline-grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    color: var(--accent-strong);
-    background: var(--accent-soft);
-}
-
 .projectSection {
-    margin-top: 40px;
-}
-
-.homeCalendar {
     margin-top: 40px;
 }
 
@@ -458,14 +311,6 @@
     .hero {
         grid-template-columns: 1fr;
         padding: 24px;
-    }
-
-    .heroArt {
-        display: none;
-    }
-
-    .dashboardGrid {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -497,21 +342,8 @@
         gap: 9px;
     }
 
-    .primaryButton,
-    .secondaryButton {
-        min-height: 44px;
-        padding: 9px 10px;
-        justify-content: center;
-        text-align: center;
-    }
-
     .heroActions > :last-child {
         grid-column: 1 / -1;
-    }
-
-    .dashboardGrid {
-        gap: 28px;
-        margin-top: 30px;
     }
 
     .feedBox {
@@ -529,16 +361,7 @@
         display: none;
     }
 
-    .sectionHead {
-        margin-bottom: 12px;
-    }
-
-    .sectionHead h2 {
-        font-size: var(--fs-xl);
-    }
-
-    .projectSection,
-    .homeCalendar {
+    .projectSection {
         margin-top: 32px;
     }
 

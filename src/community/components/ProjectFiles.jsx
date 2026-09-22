@@ -1,10 +1,12 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
-import {Code2, Eye, FileCode2, FileQuestion} from 'lucide-react';
+import {Code2, Eye, FileCode2, FileQuestion, Lock} from 'lucide-react';
 import api from '../api.js';
 import {canViewProjectSource} from '../project-source-access';
 import FileBrowserTree from './FileBrowserTree.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ProjectFiles.module.css';
 
 export {buildProjectFileTree, initiallyOpenFolders} from './FileBrowserTree.jsx';
@@ -278,8 +280,9 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         setSnapshot(null);
         setError('');
         if (!canLoadProjectSnapshot(project)) {
-            setError(canViewProjectSource(project) ? 'This project does not have a saved file archive yet.' :
-                'You do not have permission to view files for this project.');
+            setError(canViewProjectSource(project) ?
+                communityText('This project does not have a saved file archive yet.') :
+                communityText('You do not have permission to view files for this project.'));
             return () => {};
         }
         loadSnapshot(project).then(result => {
@@ -290,7 +293,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
             const first = requested || result.files.find(file => !file.binary) || result.files[0];
             setSelectedPath(first ? first.path : '');
         }).catch(loadError => {
-            if (active) setError(loadError.message || 'Could not load project files.');
+            if (active) setError(loadError.message || communityText('Could not load project files.'));
         });
         return () => {
             active = false;
@@ -315,7 +318,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         loadProjectFileContent(project.id, snapshot, selectedFile).then(file => {
             if (active) setSelectedContent(file);
         }).catch(loadError => {
-            if (active) setContentError(loadError.message || 'Could not load this file.');
+            if (active) setContentError(loadError.message || communityText('Could not load this file.'));
         }).finally(() => {
             if (active) setContentLoading(false);
         });
@@ -347,11 +350,25 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
     };
 
     if (!canViewProjectSource(project)) {
-        return <div className={styles.state}>{communityText('You do not have permission to view files for this project.')}</div>;
+        return (
+            <EmptyState compact icon={Lock} className={styles.state} title={communityText('Files are private')}>
+                {communityText('You do not have permission to view files for this project.')}
+            </EmptyState>
+        );
     }
-    if (error) return <div className={styles.state}>{error}</div>;
-    if (!snapshot) return <div className={styles.state}>{communityText('Loading project files…')}</div>;
-    if (!files.length) return <div className={styles.state}>{communityText('This project has no files.')}</div>;
+    if (error) return <StatusMessage compact error className={styles.state}>{error}</StatusMessage>;
+    if (!snapshot) {
+        return (
+            <StatusMessage compact className={styles.state}>{communityText('Loading project files…')}</StatusMessage>
+        );
+    }
+    if (!files.length) {
+        return (
+            <EmptyState compact icon={FileQuestion} className={styles.state} title={communityText('No files yet')}>
+                {communityText('This project has no files.')}
+            </EmptyState>
+        );
+    }
 
     return (
         <section className={`${styles.browser} ${bounded ? styles.browserBounded : ''}`}>
@@ -370,23 +387,28 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                                         type="button"
                                         className={viewMode === 'preview' ? styles.viewModeActive : styles.viewMode}
                                         onClick={() => setViewMode('preview')}
-                                    ><Eye size={13} />{communityText(' Preview')}</button>
+                                    ><Eye size={13} />{communityText('Preview')}</button>
                                     <button
                                         type="button"
                                         className={viewMode === 'code' ? styles.viewModeActive : styles.viewMode}
                                         onClick={() => setViewMode('code')}
-                                    ><Code2 size={13} />{communityText(' Source')}</button>
+                                    ><Code2 size={13} />{communityText('Source')}</button>
                                 </div>
                             ) : null}
                         </header>
                         {contentLoading ? (
-                            <div className={styles.state}>{communityText('Loading file…')}</div>
+                            <StatusMessage compact className={styles.state}>
+                                {communityText('Loading file…')}
+                            </StatusMessage>
                         ) : contentError ? (
-                            <div className={styles.state}>{contentError}</div>
+                            <StatusMessage compact error className={styles.state}>{contentError}</StatusMessage>
                         ) : selected.media && viewMode === 'preview' && mediaUrl ? (
                             <div className={styles.mediaPreview}>
                                 {selected.mediaType.startsWith('image/') ? (
-                                    <img src={mediaUrl} alt={communityText("Preview of {value1}", {value1: selected.path})} />
+                                    <img
+                                        src={mediaUrl}
+                                        alt={communityText('Preview of {value1}', {value1: selected.path})}
+                                    />
                                 ) : selected.mediaType.startsWith('audio/') ? (
                                     <audio controls src={mediaUrl}><track kind="captions" /></audio>
                                 ) : (
@@ -399,12 +421,20 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                                 <strong>{communityText('Binary file')}</strong>
                                 <span>
                                     {selected.mediaType && !selected.media ?
-                                        communityText("{value1} · This file is too large to preview.", {value1: formatSize(selected.size)}) :
-                                        communityText("{value1} · Preview is not available.", {value1: formatSize(selected.size)})}
+                                        communityText('{value1} · This file is too large to preview.', {
+                                            value1: formatSize(selected.size)
+                                        }) :
+                                        communityText('{value1} · Preview is not available.', {
+                                            value1: formatSize(selected.size)
+                                        })}
                                 </span>
                             </div>
                         ) : (
-                            <div className={styles.code} role="region" aria-label={communityText("{value1} contents", {value1: selected.path})}>
+                            <div
+                                className={styles.code}
+                                role="region"
+                                aria-label={communityText('{value1} contents', {value1: selected.path})}
+                            >
                                 {lines.map((line, index) => (
                                     <div className={styles.codeLine} key={index}>
                                         <span>{index + 1}</span><code>{line.length ? line.map((token, tokenIndex) => (
@@ -418,7 +448,16 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                             </div>
                         )}
                     </React.Fragment>
-                ) : <div className={styles.state}>{communityText('Select a file to read it.')}</div>}
+                ) : (
+                    <EmptyState
+                        compact
+                        icon={FileCode2}
+                        className={styles.state}
+                        title={communityText('No file selected')}
+                    >
+                        {communityText('Select a file to read it.')}
+                    </EmptyState>
+                )}
             </article>
         </section>
     );

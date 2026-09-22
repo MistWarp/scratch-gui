@@ -68,8 +68,9 @@
 }
 
 .placeholder {
-    font-size: 44px;
+    font-size: var(--fs-4xl);
     font-weight: 700;
+    line-height: 1;
     color: var(--accent);
     opacity: 0.55;
     text-transform: none;

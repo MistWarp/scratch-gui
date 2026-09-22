@@ -12,6 +12,10 @@ import {
 } from '../credits';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {formatDate, safeDate} from '../format';
 import styles from './Wallet.module.css';
 
@@ -27,6 +31,7 @@ const donationDate = value => {
 
 const Wallet = () => {
     const {text: communityText} = useCommunityText();
+    const credits = value => communityText('{value1} credits', {value1: fmtCredits(value)});
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
     const walletContext = useRef(viewerName);
@@ -83,7 +88,7 @@ const Wallet = () => {
             })
             .catch(() => {
                 if (stale) return;
-                setAccountError('Could not load your wallet data.');
+                setAccountError(communityText('Could not load your wallet data.'));
                 setAccountLoaded(true);
             });
         return () => {
@@ -102,7 +107,7 @@ const Wallet = () => {
         setPurchaseError('');
         api.purchases()
             .then(data => !stale && setPurchases(data.purchases || []))
-            .catch(() => !stale && setPurchaseError('Could not load purchase history.'));
+            .catch(() => !stale && setPurchaseError(communityText('Could not load purchase history.')));
         return () => {
             stale = true;
         };
@@ -125,7 +130,7 @@ const Wallet = () => {
                 if (!data) throw new Error('Creator earnings are unavailable.');
                 setEarnings(data);
             })
-            .catch(() => !stale && setEarningsError('Could not load creator earnings.'));
+            .catch(() => !stale && setEarningsError(communityText('Could not load creator earnings.')));
         return () => {
             stale = true;
         };
@@ -147,12 +152,12 @@ const Wallet = () => {
     }, [viewerName]);
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
+        return <main className={styles.page}><StatusMessage /></main>;
     }
     if (!user) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>{communityText('Sign in to view your wallet. ')}<Button onClick={login}>{communityText('Sign in')}</Button></p>
+                <SignInPrompt onSignIn={login}>{communityText('Sign in to view your wallet.')}</SignInPrompt>
             </main>
         );
     }
@@ -171,7 +176,7 @@ const Wallet = () => {
         try {
             await claimDaily();
             if (walletContext.current !== context) return;
-            setClaimMsg('Daily credits claimed!');
+            setClaimMsg(communityText('Daily credits claimed.'));
             const data = await getAccountSummary();
             if (data && walletContext.current === context) {
                 setAccount(data);
@@ -180,9 +185,11 @@ const Wallet = () => {
         } catch (e) {
             if (walletContext.current !== context) return;
             if (e.waitHours) {
-                setClaimMsg(`Already claimed. Come back in ${e.waitHours}h.`);
+                setClaimMsg(communityText('Already claimed. Come back in {value1}h.', {value1: e.waitHours}));
             } else if (e.needsReauth) {
-                setClaimMsg('Your current login cannot claim daily credits. Log out and back in, then try again.');
+                setClaimMsg(communityText(
+                    'Your current login cannot claim daily credits. Log out and back in, then try again.'
+                ));
             } else {
                 setClaimMsg(e.message || 'Could not claim daily credits.');
             }
@@ -204,7 +211,7 @@ const Wallet = () => {
         } catch (e) {
             if (walletContext.current === context) {
                 setCheckoutError(e.needsReauth ?
-                    'Your current login cannot buy credits. Log out and back in, then try again.' :
+                    communityText('Your current login cannot buy credits. Log out and back in, then try again.') :
                     (e.message || 'Could not open checkout.'));
             }
         } finally {
@@ -234,7 +241,7 @@ const Wallet = () => {
 
     return (
         <main className={styles.page}>
-            <h1 className={styles.heading}>{communityText('Wallet')}</h1>
+            <PageHeader icon={WalletIcon} title={communityText('Wallet')} />
 
             <section className={styles.balanceCard}>
                 <span className={styles.balanceIcon}><WalletIcon size={22} /></span>
@@ -264,10 +271,9 @@ const Wallet = () => {
                     <CalendarCheck size={16} />{communityText('Claim daily')}</Button>
             </section>
             {accountError ? (
-                <p className={styles.status}>
-                    {accountError}{' '}
-                    <Button variant="secondary" onClick={() => setAccountAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                </p>
+                <StatusMessage compact error onRetry={() => setAccountAttempt(value => value + 1)}>
+                    {accountError}
+                </StatusMessage>
             ) : null}
 
             {account && (account.donationsReceived > 0 || account.donationsGiven > 0) ? (
@@ -275,13 +281,13 @@ const Wallet = () => {
                     {account.donationsReceived > 0 ? (
                         <div className={styles.donationCard}>
                             <HeartHandshake size={16} />
-                            <span>{communityText("{value1} received in donations", {value1: fmtCredits(account.donationsReceived)})}</span>
+                            <span>{communityText('{value1} received in donations', {value1: fmtCredits(account.donationsReceived)})}</span>
                         </div>
                     ) : null}
                     {account.donationsGiven > 0 ? (
                         <div className={styles.donationCard}>
                             <Send size={16} />
-                            <span>{communityText("{value1} given in donations", {value1: fmtCredits(account.donationsGiven)})}</span>
+                            <span>{communityText('{value1} given in donations', {value1: fmtCredits(account.donationsGiven)})}</span>
                         </div>
                     ) : null}
                 </div>
@@ -293,14 +299,17 @@ const Wallet = () => {
                 {earnings ? (
                     <React.Fragment>
                         <div className={styles.earningsGrid}>
-                            <div><span>{communityText('Today')}</span><strong>{fmtCredits(earnings.totals.today)}{communityText(' credits')}</strong></div>
+                            <div>
+                                <span>{communityText('Today')}</span>
+                                <strong>{credits(earnings.totals.today)}</strong>
+                            </div>
                             <div>
                                 <span>{communityText('Last 30 days')}</span>
-                                <strong>{fmtCredits(earnings.totals.last_30_days)}{communityText(' credits')}</strong>
+                                <strong>{credits(earnings.totals.last_30_days)}</strong>
                             </div>
                             <div>
                                 <span>{communityText('Recorded total')}</span>
-                                <strong>{fmtCredits(earnings.totals.lifetime)}{communityText(' credits')}</strong>
+                                <strong>{credits(earnings.totals.lifetime)}</strong>
                             </div>
                         </div>
                         {earnings.history && earnings.history.length ? (
@@ -311,23 +320,19 @@ const Wallet = () => {
                                             <strong>
                                                 {entry.note || String(entry.kind || 'earning').replace(/_/g, ' ')}
                                             </strong>
-                                            <small>{entry.payer ? communityText("From {value1}", {value1: entry.payer}) : entry.source}</small>
+                                            <small>{entry.payer ? communityText('From {value1}', {value1: entry.payer}) : entry.source}</small>
                                         </span>
-                                        <strong>+{fmtCredits(entry.amount)}{communityText(' credits')}</strong>
+                                        <strong>+{credits(entry.amount)}</strong>
                                     </li>
                                 ))}
                             </ul>
-                        ) : <p className={styles.empty}>{communityText('No creator earnings yet.')}</p>}
+                        ) : <EmptyState compact icon={Coins} title={communityText('No creator earnings yet')} />}
                     </React.Fragment>
                 ) : earningsError ? (
-                    <p className={styles.empty}>
-                        {earningsError}{' '}
-                        <Button
-                            variant="secondary"
-                            onClick={() => setEarningsAttempt(value => value + 1)}
-                        >{communityText('Try again')}</Button>
-                    </p>
-                ) : <p className={styles.empty}>{communityText('Loading creator earnings…')}</p>}
+                    <StatusMessage compact error onRetry={() => setEarningsAttempt(value => value + 1)}>
+                        {earningsError}
+                    </StatusMessage>
+                ) : <StatusMessage compact>{communityText('Loading creator earnings…')}</StatusMessage>}
             </section>
 
             <section className={styles.section}>
@@ -347,7 +352,7 @@ const Wallet = () => {
                                         <strong>{received ? communityText('Received') : communityText('Sent')}</strong>
                                         {donation.user ? (
                                             <span>
-                                                {received ? communityText('From ') : communityText('To ')}
+                                                {received ? communityText('From') : communityText('To')}{' '}
                                                 <Link to={`/users/${donation.user}`}>{donation.user}</Link>
                                             </span>
                                         ) : null}
@@ -358,17 +363,19 @@ const Wallet = () => {
                                         ) : null}
                                     </span>
                                     <strong className={received ? styles.receivedAmount : styles.givenAmount}>
-                                        {received ? '+' : '-'}{fmtCredits(donation.amount)}{communityText(' credits')}</strong>
+                                        {received ? '+' : '-'}{credits(donation.amount)}</strong>
                                 </li>
                             );
                         })}
                     </ul>
                 ) : accountError ? (
-                    <p className={styles.empty}>{communityText('Donation history is unavailable. Try loading your wallet data again above.')}</p>
+                    <EmptyState compact icon={HeartHandshake} title={communityText('Donation history unavailable')}>
+                        {communityText('Try loading your wallet data again above.')}
+                    </EmptyState>
                 ) : accountLoaded ? (
-                    <p className={styles.empty}>{communityText('No profile donations yet.')}</p>
+                    <EmptyState compact icon={HeartHandshake} title={communityText('No profile donations yet')} />
                 ) : (
-                    <p className={styles.empty}>{communityText('Loading donation history…')}</p>
+                    <StatusMessage compact>{communityText('Loading donation history…')}</StatusMessage>
                 )}
             </section>
 
@@ -376,11 +383,11 @@ const Wallet = () => {
                 <h2 className={styles.sectionTitle}>{communityText('Buy credits')}</h2>
                 <p className={styles.sectionLead}>{communityText('Top up through Stripe. Credits are added to your Rotur account after checkout.')}</p>
                 {billingMsg ? (
-                    <p className={styles.billingMsg}>
+                    <Notice variant={billingMsg === 'success' ? 'success' : 'info'} className={styles.notice}>
                         {billingMsg === 'success' ?
                             communityText('Payment successful. Credits will appear in your balance shortly.') :
                             communityText('Checkout cancelled.')}
-                    </p>
+                    </Notice>
                 ) : null}
                 <div className={styles.tiers}>
                     {CREDIT_PACKS.map(pack => (
@@ -393,7 +400,7 @@ const Wallet = () => {
                         >
                             <span className={styles.tierCredits}>
                                 {pack.credits.toLocaleString(getCommunityLocale())}
-                                <span>{communityText(' credits')}</span>
+                                <span>{communityText('credits')}</span>
                             </span>
                             <span className={styles.tierPrice}>${pack.price.toFixed(2)}</span>
                         </button>
@@ -401,9 +408,13 @@ const Wallet = () => {
                 </div>
                 {checkoutBusy ? <p className={styles.checkoutNote}>{communityText('Opening secure Stripe checkout…')}</p> : null}
                 {!billing ? <p className={styles.checkoutNote}>{communityText('Checking billing availability…')}</p> : null}
-                {checkoutError ? <p className={styles.checkoutError}>{checkoutError}</p> : null}
+                {checkoutError ? (
+                    <Notice variant="error" className={styles.checkoutNotice}>{checkoutError}</Notice>
+                ) : null}
                 {billing && !billing.billing_configured ? (
-                    <p className={styles.checkoutError}>{communityText('Stripe billing is currently unavailable. Try again later.')}</p>
+                    <Notice variant="warning" className={styles.checkoutNotice}>
+                        {communityText('Stripe billing is currently unavailable. Try again later.')}
+                    </Notice>
                 ) : null}
                 {billing && billing.stripe_portal ? (
                     <Button
@@ -420,15 +431,11 @@ const Wallet = () => {
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>{communityText('Purchase history')}</h2>
                 {purchaseError ? (
-                    <p className={styles.status}>
-                        {purchaseError}{' '}
-                        <Button
-                            variant="secondary"
-                            onClick={() => setPurchaseAttempt(value => value + 1)}
-                        >{communityText('Try again')}</Button>
-                    </p>
+                    <StatusMessage compact error onRetry={() => setPurchaseAttempt(value => value + 1)}>
+                        {purchaseError}
+                    </StatusMessage>
                 ) : purchases === null ? (
-                    <p className={styles.status}>{communityText('Loading…')}</p>
+                    <StatusMessage compact />
                 ) : purchases.length ? (
                     <ul className={styles.purchases}>
                         {purchases.map((purchase, index) => (
@@ -453,13 +460,14 @@ const Wallet = () => {
                         ))}
                     </ul>
                 ) : (
-                    <p className={styles.empty}>{communityText('You have not bought any projects yet.')}{' '}
-                        <Link
-                            to="/explore"
-                            className={styles.exploreLink}
-                        >{communityText('Explore projects')}<ExternalLink size={13} />
-                        </Link>
-                    </p>
+                    <EmptyState
+                        compact
+                        icon={Coins}
+                        title={communityText('No purchases yet')}
+                        action={<Button as={Link} to="/explore">{communityText('Explore projects')}</Button>}
+                    >
+                        {communityText('You have not bought any projects yet.')}
+                    </EmptyState>
                 )}
             </section>
         </main>

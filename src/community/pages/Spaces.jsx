@@ -6,6 +6,12 @@ import {Layers3, Trophy, Library, Plus, Search} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
+import CardGrid from '../components/ui/CardGrid.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
 import ExploreNav from '../components/ExploreNav.jsx';
@@ -141,7 +147,7 @@ const Spaces = () => {
             .catch(() => {
                 if (loadSequence.current !== sequence) return;
                 if (initial) setFailed(true);
-                else setLoadMoreError('Could not load more spaces.');
+                else setLoadMoreError(communityText('Could not load more spaces.'));
             })
             .finally(() => {
                 if (loadSequence.current !== sequence) return;
@@ -172,11 +178,11 @@ const Spaces = () => {
         }
         const payload = spaceCreatePayload(form);
         if (!payload.title) {
-            setError(communityText("Enter a name for this space."));
+            setError(communityText('Enter a name for this space.'));
             return;
         }
         if (form.kind === 'challenge' && !challengeDatesValid(form.startsAt, form.endsAt)) {
-            setError(communityText("Submissions must close after they open."));
+            setError(communityText('Submissions must close after they open.'));
             return;
         }
         const actionViewer = viewerName;
@@ -192,7 +198,7 @@ const Spaces = () => {
             }
         } catch (e) {
             if (currentViewer.current === actionViewer) {
-                setError(e.message || 'Could not create the space.');
+                setError(e.message || communityText('Could not create the space.'));
             }
         } finally {
             createLocks.current.delete(actionViewer);
@@ -203,25 +209,26 @@ const Spaces = () => {
     return (
         <main className={styles.page}>
             <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
-            <header className={styles.hero}>
-                <div>
-                    <h1>{kind === 'mine' ? communityText('Your spaces') : `${KIND_LABELS[kind]}s`}</h1>
-                    <p>{kind === 'mine' ? communityText('Spaces you own, curate, follow, or have been invited to.') : KIND_DESCRIPTIONS[kind]}</p>
-                </div>
-                <div className={styles.heroActions}>
-                    {kind !== 'mine' ? <Link className={styles.mineLink} to="/spaces?kind=mine">{communityText('Your spaces')}</Link> : null}
-                    <Button
-                        variant="primary"
-                        disabled={createBusy}
-                        onClick={() => (user ? setSearchParams(withSpaceCreate(searchParams, !creating)) : login())}
-                    >
-                        <Plus size={16} />{communityText('New space')}</Button>
-                </div>
-            </header>
+            <PageHeader
+                icon={KIND_ICONS[kind] || Layers3}
+                title={communityText(KINDS.find(item => item.key === kind).label)}
+                lead={kind === 'mine' ? communityText('Spaces you own, curate, follow, or have been invited to.') : communityText(KIND_DESCRIPTIONS[kind])}
+                actions={(
+                    <React.Fragment>
+                        {kind !== 'mine' ? <Button as={Link} to="/spaces?kind=mine">{communityText('Your spaces')}</Button> : null}
+                        <Button
+                            variant="primary"
+                            disabled={createBusy}
+                            onClick={() => (user ? setSearchParams(withSpaceCreate(searchParams, !creating)) : login())}
+                        >
+                            <Plus size={16} />{communityText('New space')}</Button>
+                    </React.Fragment>
+                )}
+            />
 
             {creating ? (
                 <form className={styles.form} onSubmit={create} aria-busy={createBusy}>
-                    <h2>{communityText('Create a space')}</h2>
+                    <SectionHeading icon={Plus} title={communityText('Create a space')} />
                     <label>
                         <span>{communityText('Name')}</span>
                         <input value={form.title} disabled={createBusy} maxLength={100} required onChange={event => updateForm('title', event.target.value)} />
@@ -239,7 +246,7 @@ const Spaces = () => {
                                     <label key={key} className={form.kind === key ? styles.typeChoiceActive : styles.typeChoice}>
                                         <input type="radio" name="space-kind" value={key} checked={form.kind === key} onChange={event => updateForm('kind', event.target.value)} />
                                         <Icon size={18} />
-                                        <span><strong>{KIND_LABELS[key]}</strong><small>{KIND_DESCRIPTIONS[key]}</small></span>
+                                        <span><strong>{communityText(KIND_LABELS[key])}</strong><small>{communityText(KIND_DESCRIPTIONS[key])}</small></span>
                                     </label>
                                 );
                             })}
@@ -254,7 +261,7 @@ const Spaces = () => {
                         </select>
                     </label>
                     <label>
-                        <span>{communityText('Group owner ')}<small>{communityText('optional Rotur group tag')}</small></span>
+                        <span>{communityText('Group owner')} <small>{communityText('optional Rotur group tag')}</small></span>
                         <input maxLength="32" value={form.groupTag} disabled={createBusy} placeholder={communityText('for example, mistwarp')} onChange={event => updateForm('groupTag', event.target.value)} />
                     </label>
                     {form.kind === 'challenge' ? (
@@ -263,9 +270,9 @@ const Spaces = () => {
                             <label><span>{communityText('Submissions close')}</span><input type="datetime-local" disabled={createBusy} required value={form.endsAt} onChange={event => updateForm('endsAt', event.target.value)} /></label>
                         </div>
                     ) : null}
-                    {error ? <p className={styles.error}>{error}</p> : null}
+                    {error ? <Notice variant="error">{error}</Notice> : null}
                     <div className={styles.actions}>
-                        <Button type="submit" busy={createBusy} busyLabel={communityText('Creating…')}>{communityText('Create')}</Button>
+                        <Button variant="primary" type="submit" busy={createBusy} busyLabel={communityText('Creating…')}><Plus size={16} />{communityText('Create')}</Button>
                         <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setSearchParams(withSpaceCreate(searchParams, false))}>{communityText('Cancel')}</Button>
                     </div>
                 </form>
@@ -287,21 +294,31 @@ const Spaces = () => {
                 </form>
             </div>
 
-            {loading ? <p className={styles.status}>{communityText('Loading spaces…')}</p> : null}
-            {failed ? <p className={styles.status}>{communityText('Could not load spaces. ')}<Button onClick={() => load(requestedQuery)}>{communityText('Try again')}</Button></p> : null}
-            {!loading && !failed && kind === 'mine' && !user ? <p className={styles.status}>{communityText('Sign in to see spaces you own, curate, follow, or have been invited to. ')}<Button onClick={login}>{communityText('Sign in')}</Button></p> : null}
-            {!loading && !failed && !(kind === 'mine' && !user) && !spaces.length ? <p className={styles.status}>{communityText('No spaces here yet.')}</p> : null}
+            {loading ? <StatusMessage>{communityText('Loading spaces…')}</StatusMessage> : null}
+            {failed ? <StatusMessage error onRetry={() => load(requestedQuery)}>{communityText('Could not load spaces.')}</StatusMessage> : null}
+            {!loading && !failed && kind === 'mine' && !user ? (
+                <SignInPrompt onSignIn={login} title={communityText('Sign in to see your spaces')}>
+                    {communityText('Sign in to see spaces you own, curate, follow, or have been invited to.')}
+                </SignInPrompt>
+            ) : null}
+            {!loading && !failed && !(kind === 'mine' && !user) && !spaces.length ? (
+                <EmptyState icon={KIND_ICONS[kind] || Layers3} title={communityText('No spaces here yet')}>
+                    {requestedQuery ? communityText('Try a different search term.') : communityText('Create a space to get started.')}
+                </EmptyState>
+            ) : null}
             {!loading && !failed && kind === 'challenge' && spaces.length ? <ChallengeCalendar spaces={spaces} /> : null}
-            <div className={styles.grid}>
-                {spaces.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
-            </div>
+            {spaces.length ? (
+                <CardGrid>
+                    {spaces.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
+                </CardGrid>
+            ) : null}
             {!loading && !failed && kind !== 'mine' && spaces.length < total ? (
                 <div className={styles.more}>
                     <Button
                         busy={loadingMore}
                         busyLabel={communityText('Loading…')}
                         onClick={() => load(requestedQuery, spaces.length)}
-                    >{communityText("Load more ({value1} left)", {value1: total - spaces.length})}</Button>
+                    >{communityText('Load more ({value1} left)', {value1: total - spaces.length})}</Button>
                     {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                 </div>
             ) : null}

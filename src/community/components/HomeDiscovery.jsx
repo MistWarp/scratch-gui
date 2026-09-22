@@ -10,6 +10,7 @@ import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
 import FeaturedProject from './FeaturedProject.jsx';
 import Button from './ui/Button.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './HomeDiscovery.module.css';
 
 const sameName = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
@@ -48,10 +49,12 @@ const SuggestedCreators = ({viewerName}) => {
     if (!creators.length) return null;
     return (
         <section>
-            <div className={styles.head}>
-                <h2><UserPlus size={19} />{text('Creators to follow')}</h2>
-                <Link to="/leaderboard">{text('See all')}</Link>
-            </div>
+            <SectionHeading
+                icon={UserPlus}
+                title={text('Creators to follow')}
+                link="/leaderboard"
+                linkLabel={text('See all')}
+            />
             <div className={styles.creators}>
                 {creators.map(creator => (
                     <div key={creator.username} className={styles.creator}>
@@ -99,9 +102,7 @@ const HomeDiscovery = ({viewerName, side}) => {
         <div className={featured ? styles.grid : null}>
             {featured ? (
                 <section>
-                    <div className={styles.head}>
-                        <h2><Star size={19} />{text('Featured today')}</h2>
-                    </div>
+                    <SectionHeading icon={Star} title={text('Featured today')} />
                     <FeaturedProject project={featured} />
                 </section>
             ) : null}

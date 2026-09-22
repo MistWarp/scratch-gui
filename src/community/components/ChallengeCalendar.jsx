@@ -3,8 +3,12 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {CalendarDays} from 'lucide-react';
 import api from '../api';
 import {formatDate} from '../format.js';
+import EmptyState from './ui/EmptyState.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ChallengeCalendar.module.css';
 
 const DAY_MS = 86400000;
@@ -108,13 +112,39 @@ const ChallengeCalendar = ({spaces, className = '', bare = false}) => {
     const source = typeof spaces === 'undefined' ? loadedSpaces : spaces;
     const calendar = useMemo(() => buildChallengeCalendar(source), [source]);
 
-    if (loadError) return <div className={`${styles.empty}${className ? ` ${className}` : ''}`} role="alert">{communityText('Could not load the challenge calendar. ')}<button type="button" onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</button></div>;
-    if (calendar === null) return <div className={`${styles.skeleton}${className ? ` ${className}` : ''}`} role="status" aria-label={communityText('Loading challenge calendar')} />;
-    if (calendar === false) return <p className={`${styles.empty}${className ? ` ${className}` : ''}`}>{communityText('No challenges are scheduled.')}</p>;
+    if (loadError) {
+        return (
+            <StatusMessage compact error className={className || null} onRetry={() => setAttempt(value => value + 1)}>
+                {communityText('Could not load the challenge calendar.')}
+            </StatusMessage>
+        );
+    }
+    if (calendar === null) {
+        return <StatusMessage compact className={className || null}>{communityText('Loading challenge calendar…')}</StatusMessage>;
+    }
+    if (calendar === false) {
+        return (
+            <EmptyState compact icon={CalendarDays} className={className || null} title={communityText('No challenges scheduled')}>
+                {communityText('No challenges are scheduled.')}
+            </EmptyState>
+        );
+    }
     const todayOffset = calendar.today - calendar.rangeStart;
     return (
         <section className={`${styles.section}${className ? ` ${className}` : ''}`}>
-            {bare ? null : <div className={styles.head}><div><h2>{communityText('Challenge calendar')}</h2><p>{communityText('See what is running now and what starts next.')}</p></div><Link to="/spaces?kind=challenge">{communityText('All challenges')}</Link></div>}
+            {bare ? null : (
+                <div className={styles.head}>
+                    <SectionHeading
+                        as="h3"
+                        icon={CalendarDays}
+                        className={styles.heading}
+                        title={communityText('Challenge calendar')}
+                        lead={communityText('See what is running now and what starts next.')}
+                        link="/spaces?kind=challenge"
+                        linkLabel={communityText('All challenges')}
+                    />
+                </div>
+            )}
             <div className={styles.scroll}>
                 <div className={styles.calendar} style={{'--mw-calendar-days': calendar.days.length}}>
                     <div className={styles.months}>{calendar.months.map(month => <span key={month.key} style={{gridColumn: `span ${month.span}`}}>{month.label}</span>)}</div>
@@ -122,7 +152,7 @@ const ChallengeCalendar = ({spaces, className = '', bare = false}) => {
                     <div className={styles.plot} style={{gridTemplateRows: `repeat(${calendar.lanes}, 34px)`}}>{todayOffset >= 0 && todayOffset < calendar.days.length ? <i className={styles.todayBand} style={{'--mw-today-offset': todayOffset}} /> : null}{calendar.events.map(event => {
                         const submissions = Number.isFinite(event.projectCount) ?
                             event.projectCount : (event.projects || []).length;
-                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={communityText("{value1}, {value2} to {value3}", {value1: event.title, value2: formatDate(event.startsAt), value3: formatDate(event.endsAt)})}><strong>{event.title}</strong><span>{event.participantCount || 0}{communityText(' joined, ')}{submissions} {submissions === 1 ? communityText('submission') : communityText('submissions')}</span></Link>;
+                        return <Link key={event._id} to={`/spaces/${event._id}`} className={styles.event} style={{'--mw-calendar-column': event.column, '--mw-calendar-span': event.span, '--mw-calendar-row': event.lane + 1, '--mw-challenge-color': event.color}} title={communityText('{value1}, {value2} to {value3}', {value1: event.title, value2: formatDate(event.startsAt), value3: formatDate(event.endsAt)})}><strong>{event.title}</strong><span>{submissions === 1 ? communityText('{value1} joined, 1 submission', {value1: event.participantCount || 0}) : communityText('{value1} joined, {value2} submissions', {value1: event.participantCount || 0, value2: submissions})}</span></Link>;
                     })}</div>
                 </div>
             </div>

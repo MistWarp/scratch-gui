@@ -4,16 +4,6 @@
     padding: var(--page-pad);
 }
 
-.head {
-    margin-bottom: 28px;
-}
-
-.head h1 {
-    margin: 0 0 10px;
-    font-size: var(--fs-3xl);
-}
-
-.head p,
 .section p,
 .section li {
     color: var(--mw-text-muted);
@@ -28,20 +18,9 @@
 
 .section {
     margin-bottom: 18px;
-    border: 1px solid var(--mw-border);
     border-radius: var(--radius-sm);
     background: var(--mw-panel);
     padding: 22px 24px;
-}
-
-.section h2 {
-    margin: 0 0 10px;
-    font-size: var(--fs-xl);
-}
-
-.section h3 {
-    margin: 22px 0 8px;
-    font-size: var(--fs-lg);
 }
 
 .section p:last-child,
@@ -55,16 +34,18 @@
     text-decoration: underline;
 }
 
-button.link {
-    background: none;
-    border: 0;
-    padding: 0;
-    font: inherit;
-    cursor: pointer;
-}
-
 .agreement {
     color: var(--mw-text-muted);
+}
+
+.agreement h2 {
+    margin: 22px 0 8px;
+    font-size: var(--fs-xl);
+}
+
+.agreement h3 {
+    margin: 22px 0 8px;
+    font-size: var(--fs-lg);
 }
 
 .form {
@@ -107,18 +88,8 @@ button.link {
 .actions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
-}
-
-.error {
-    color: var(--mw-danger);
-}
-
-.success {
-    border: 1px solid color-mix(in srgb, #37a866 45%, transparent);
-    border-radius: var(--radius-xs);
-    background: color-mix(in srgb, #37a866 12%, transparent);
-    padding: 12px 14px;
 }
 
 .statusRow {
@@ -142,7 +113,7 @@ button.link {
 }
 
 .statusOk {
-    color: #37a866;
+    color: var(--status-shipped);
 }
 
 .statusBad {
@@ -150,7 +121,7 @@ button.link {
 }
 
 .statusWarn {
-    color: #b7791f;
+    color: var(--status-building);
 }
 
 .statusChecking {
@@ -193,7 +164,7 @@ button.link {
 
 .notFound h1 {
     margin: 0;
-    font-size: 72px;
+    font-size: calc(var(--fs-4xl) * 2);
 }
 
 @media (max-width: 700px) {

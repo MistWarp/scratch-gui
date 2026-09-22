@@ -1,0 +1,52 @@
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 40px 16px;
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+    text-align: center;
+}
+
+.compact {
+    padding: 16px 0;
+    font-size: var(--fs-sm);
+}
+
+.error {
+    color: var(--mw-text);
+}
+
+.error > svg {
+    flex: 0 0 auto;
+    color: var(--mw-danger);
+}
+
+.text {
+    max-width: 52ch;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent-strong);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation: none;
+        border-top-color: var(--border);
+    }
+}

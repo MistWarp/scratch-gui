@@ -146,7 +146,7 @@ describe('theme marketplace action locks', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Could not load themes');
+        expect(wrapper.text()).toContain('WarpTheme is unavailable.');
         expect(wrapper.text()).not.toContain('No themes found');
         await act(async () => {
             wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
@@ -291,7 +291,7 @@ describe('theme marketplace action locks', () => {
         wrapper.update();
 
         const savedButton = wrapper.find(Button)
-            .filterWhere(button => button.text().includes('Saved to My Stuff'));
+            .filterWhere(button => button.text().includes('Saved to My stuff'));
         expect(savedButton.prop('disabled')).toBe(true);
         wrapper.unmount();
     });

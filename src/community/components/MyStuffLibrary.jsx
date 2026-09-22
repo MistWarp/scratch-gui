@@ -1,26 +1,32 @@
-import {getCommunityLocale} from '../locale.js';
+import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {BookmarkMinus, Clock3, Eye, EyeOff, MoreHorizontal} from 'lucide-react';
+import {BookmarkMinus, Clock3, Eye, EyeOff, Library, MoreHorizontal} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {formatPlaytime, timeAgo} from '../format';
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import UserLink from './UserLink.jsx';
 import styles from './MyStuffLibrary.module.css';
 
 const playtimeLabel = project => {
-    if (!(project.duration > 0)) return 'Not played yet';
-    return `${formatPlaytime(project.duration, false)} played`;
+    if (!(project.duration > 0)) return formatCommunityMessage('Not played yet');
+    return formatCommunityMessage('{duration} played', {duration: formatPlaytime(project.duration, false)});
 };
 
 const lastPlayedLabel = project => {
     if (!(project.lastPlayed > 0)) return '';
     const relative = timeAgo(project.lastPlayed);
-    return relative === 'just now' ? 'Played just now' : `Last played ${relative} ago`;
+    return relative === 'just now' ?
+        formatCommunityMessage('Played just now') :
+        formatCommunityMessage('Last played {value1} ago', {value1: relative});
 };
 
 const MyStuffLibrary = ({
@@ -28,20 +34,17 @@ const MyStuffLibrary = ({
     onRetry, onLoadMore, onChangeVisibility, onRemove
 }) => {
     const {text: communityText} = useCommunityText();
-    return (<section className={styles.library}>
-        <header className={styles.header}>
-            <div>
-                <h1>{communityText('Library')}</h1>
-                <p>{communityText('Games you saved, with your playtime and public profile controls.')}</p>
-            </div>
-            {!loading && !error ? <span>{total.toLocaleString(getCommunityLocale())} {total === 1 ? communityText('game') : communityText('games')}</span> : null}
-        </header>
-        {loading ? <p className={styles.status}>{communityText('Loading your library…')}</p> : error ? (
-            <div className={styles.status} role="alert">
-                <strong>{communityText('Could not load your library.')}</strong>
-                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
-            </div>
-        ) : projects.length ? (
+    let body;
+    if (loading) {
+        body = <StatusMessage compact>{communityText('Loading your library…')}</StatusMessage>;
+    } else if (error) {
+        body = (
+            <StatusMessage compact error onRetry={onRetry}>
+                {communityText('Could not load your library.')}
+            </StatusMessage>
+        );
+    } else if (projects.length) {
+        body = (
             <React.Fragment>
                 <div className={styles.list}>
                     {projects.map(project => (
@@ -52,7 +55,10 @@ const MyStuffLibrary = ({
                                 </Link>
                                 <span className={styles.details}>
                                     <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
-                                    <small>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></small>
+                                    <small>
+                                        {communityText('by')}{' '}
+                                        <UserLink username={project.owner}>{project.owner}</UserLink>
+                                    </small>
                                 </span>
                             </div>
                             <span className={styles.playtime}>
@@ -68,7 +74,9 @@ const MyStuffLibrary = ({
                                     <button
                                         type="button"
                                         className={styles.menuButton}
-                                        aria-label={communityText("Library options for {value1}", {value1: project.title})}
+                                        aria-label={communityText('Library options for {value1}', {
+                                            value1: project.title
+                                        })}
                                         aria-expanded={open}
                                         aria-haspopup="menu"
                                         onClick={toggle}
@@ -86,7 +94,8 @@ const MyStuffLibrary = ({
                                         >
                                             {project.libraryPublic === false ? <Eye size={15} /> : <EyeOff size={15} />}
                                             {project.libraryPublic === false ?
-                                                communityText('Show in public library') : communityText('Hide from public library')}
+                                                communityText('Show in public library') :
+                                                communityText('Hide from public library')}
                                         </DropdownItem>
                                         <DropdownItem
                                             danger
@@ -95,27 +104,55 @@ const MyStuffLibrary = ({
                                                 close(false);
                                                 onRemove(project);
                                             }}
-                                        ><BookmarkMinus size={15} />{communityText(' Remove from library')}</DropdownItem>
+                                        >
+                                            <BookmarkMinus size={15} />
+                                            {communityText('Remove from library')}
+                                        </DropdownItem>
                                     </React.Fragment>
                                 )}
                             </Dropdown>
                         </article>
                     ))}
                 </div>
-                {actionError ? <p className={styles.error} role="alert">{actionError}</p> : null}
+                {actionError ? <Notice variant="error" className={styles.actionError}>{actionError}</Notice> : null}
                 {hasMore ? (
                     <div className={styles.more}>
-                        <Button variant="secondary" busy={moreBusy} busyLabel={communityText('Loading…')} onClick={onLoadMore}>{communityText('Load more games')}</Button>
+                        <Button
+                            variant="secondary"
+                            busy={moreBusy}
+                            busyLabel={communityText('Loading…')}
+                            onClick={onLoadMore}
+                        >
+                            {communityText('Load more games')}
+                        </Button>
                     </div>
                 ) : null}
             </React.Fragment>
-        ) : (
-            <div className={styles.status}>
-                <strong>{communityText('Your library is empty.')}</strong>
-                <span>{communityText('Use "Save to library" on a project to add it here.')}</span>
-            </div>
-        )}
-    </section>);
+        );
+    } else {
+        body = (
+            <EmptyState compact icon={Library} title={communityText('Your library is empty')}>
+                {communityText('Use "Save to library" on a project to add it here.')}
+            </EmptyState>
+        );
+    }
+    return (
+        <section className={styles.library}>
+            <SectionHeading
+                icon={Library}
+                title={communityText('Library')}
+                lead={communityText('Games you saved, with your playtime and public profile controls.')}
+                actions={!loading && !error ? (
+                    <span className={styles.count}>
+                        {total === 1 ?
+                            communityText('1 game') :
+                            communityText('{value1} games', {value1: total.toLocaleString(getCommunityLocale())})}
+                    </span>
+                ) : null}
+            />
+            {body}
+        </section>
+    );
 };
 
 MyStuffLibrary.propTypes = {

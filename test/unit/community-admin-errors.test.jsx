@@ -64,7 +64,7 @@ describe('admin error bulk actions', () => {
         api.admin.siteErrors.mockResolvedValue({ok: true, errors: [], openCount: 0});
         await act(async () => { finish({ok: true, deleted: 250}); await deleting; });
         wrapper.update();
-        expect(wrapper.text()).toContain('Open (0)');
+        expect(wrapper.text()).toContain('Open0');
         expect(wrapper.text()).toContain('No errors here.');
         expect(wrapper.find(AdminActionDialog).prop('dialog')).toBeNull();
         wrapper.unmount();

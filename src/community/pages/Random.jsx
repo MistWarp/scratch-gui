@@ -1,9 +1,12 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Dices} from 'lucide-react';
+import {Compass, Dices} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import setPageMeta from '../page-meta.js';
+import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import styles from './InfoPage.module.css';
 
 const Random = () => {
@@ -34,30 +37,29 @@ const Random = () => {
 
     return (
         <main className={`${styles.page} ${styles.notFound}`}>
-            <div>
-                <h1><Dices size={32} /></h1>
-                <h2>
-                    {loading ? communityText('Finding a random project…') : communityText('No shared projects yet.')}
-                </h2>
-                {error ? (
-                    <p>
-                        <button
-                            type="button"
-                            className={styles.link}
-                            onClick={() => loadRandom()}
-                        >
-                            {communityText('Try again')}
-                        </button>
-                        {' · '}
-                        <Link
-                            className={styles.link}
-                            to="/explore"
-                        >
-                            {communityText('Browse projects instead')}
-                        </Link>
-                    </p>
-                ) : null}
-            </div>
+            {loading ? (
+                <StatusMessage>{communityText('Finding a random project…')}</StatusMessage>
+            ) : null}
+            {error ? (
+                <EmptyState
+                    icon={Dices}
+                    title={communityText('No shared projects yet')}
+                    action={(
+                        <React.Fragment>
+                            <Button variant="primary" onClick={() => loadRandom()}>
+                                <Dices size={16} aria-hidden="true" />
+                                {communityText('Try again')}
+                            </Button>
+                            <Button as={Link} to="/explore">
+                                <Compass size={16} aria-hidden="true" />
+                                {communityText('Browse projects instead')}
+                            </Button>
+                        </React.Fragment>
+                    )}
+                >
+                    {communityText('Share a project and it can turn up here.')}
+                </EmptyState>
+            ) : null}
         </main>
     );
 };

@@ -129,12 +129,6 @@
     word-break: break-word;
 }
 
-.panelEmpty {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-md);
-}
-
 .tagInput {
     box-sizing: border-box;
     width: 100%;
@@ -223,9 +217,7 @@
 }
 
 .panelError {
-    margin: 0 0 8px;
-    color: #e0245e;
-    font-size: var(--fs-sm);
+    margin-bottom: 8px;
 }
 
 .creditEditor {

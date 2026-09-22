@@ -1,0 +1,80 @@
+.notice {
+    --notice-color: var(--accent-strong);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--notice-color) 10%, transparent);
+    color: var(--mw-text);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.success {
+    --notice-color: var(--status-shipped);
+}
+
+.warning {
+    --notice-color: var(--status-building);
+}
+
+.error {
+    --notice-color: var(--mw-danger);
+}
+
+.icon {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: var(--notice-color);
+}
+
+.content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-wrap: anywhere;
+}
+
+.title {
+    font-weight: 700;
+}
+
+.body p {
+    margin: 0;
+}
+
+.body a {
+    color: var(--notice-color);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.action {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+}
+
+.dismiss {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: -5px -6px -5px 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--text-dim);
+}
+
+.dismiss:hover {
+    background: color-mix(in srgb, var(--notice-color) 12%, transparent);
+    color: var(--mw-text);
+}

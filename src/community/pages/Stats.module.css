@@ -4,26 +4,8 @@
     padding: var(--page-pad);
 }
 
-.head {
-    max-width: 720px;
-    margin-bottom: 30px;
-}
-
-.head h1 {
-    margin: 8px 0;
-    font-size: var(--fs-hero);
-    letter-spacing: -.04em;
-}
-
-.head p,
-.note,
-.state {
+.note {
     color: var(--text-dim);
-}
-
-.head p {
-    margin: 0;
-    font-size: var(--fs-lg);
 }
 
 .statGrid {
@@ -38,7 +20,6 @@
     grid-template-columns: auto 1fr;
     gap: 8px;
     padding: 16px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
@@ -67,11 +48,6 @@
 .note {
     margin-top: 16px;
     font-size: var(--fs-xs);
-    text-align: center;
-}
-
-.state {
-    padding: 60px 0;
     text-align: center;
 }
 

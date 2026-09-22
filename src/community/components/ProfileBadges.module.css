@@ -132,8 +132,7 @@
     font-size: var(--fs-sm);
 }
 
-.editorIntro p,
-.editorState {
+.editorIntro p {
     margin: 0;
 }
 
@@ -156,7 +155,6 @@
     align-items: center;
     gap: 8px;
     padding: 9px;
-    border: 1px solid var(--border-soft);
     border-radius: var(--radius-xs);
     background: var(--bg-raised);
 }
@@ -213,12 +211,4 @@
     font-size: var(--fs-2xs);
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.editorError {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    color: var(--mw-danger);
 }

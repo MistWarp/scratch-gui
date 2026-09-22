@@ -190,7 +190,7 @@ describe('My Stuff load failures', () => {
 
         expect(api.quotaResetConfirm).toHaveBeenCalledTimes(2);
         expect(wrapper.find(Modal)).toHaveLength(0);
-        expect(wrapper.text()).toContain('Quota reset successfully!');
+        expect(wrapper.text()).toContain('Quota reset successfully.');
         wrapper.unmount();
     });
 

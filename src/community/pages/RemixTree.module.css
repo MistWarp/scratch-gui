@@ -4,47 +4,17 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 18px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
-.header,
 .treePanel,
-.historyPanel,
-.loadError {
+.historyPanel {
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
-}
-
-.header {
-    padding: 18px 20px;
-}
-
-.header h1 {
-    margin: 6px 0 4px;
-    color: var(--mw-text);
-    font-size: var(--fs-hero);
-    line-height: 1.12;
-}
-
-.header > p {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
 }
 
 .path {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-top: 13px;
     overflow-x: auto;
     color: var(--text-faint);
     font-size: var(--fs-xs);
@@ -67,7 +37,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    margin-top: 16px;
     align-items: start;
 }
 
@@ -76,8 +45,7 @@
 }
 
 .panelHeading,
-.projectHeading,
-.historyHeading {
+.projectHeading {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -144,8 +112,6 @@
     width: 210px;
     height: 66px;
     padding: 8px;
-    border: 1px solid transparent;
-    border-color: var(--border-soft);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     color: var(--mw-text);
@@ -153,15 +119,13 @@
 }
 
 .node:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
     background: var(--bg-raised);
     transform: translateY(-1px);
 }
 
 .nodeSelected {
-    border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
     background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-card));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 9%, transparent), 0 5px 16px rgb(0 0 0 / 10%);
+    box-shadow: 0 0 0 2px var(--accent), 0 5px 16px rgb(0 0 0 / 10%);
 }
 
 .nodeText {
@@ -230,22 +194,6 @@
     font-size: var(--fs-xs);
 }
 
-.openProject {
-    flex: 0 0 auto;
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    background: var(--bg-field);
-    border-radius: var(--radius-xs);
-    color: var(--text-dim);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-}
-
-.openProject:hover {
-    border-color: var(--accent);
-    color: var(--accent-strong);
-}
-
 .stats {
     display: flex;
     flex-wrap: wrap;
@@ -260,7 +208,6 @@
     align-items: center;
     gap: 7px;
     padding: 5px 8px;
-    border: 1px solid var(--border-soft);
     border-radius: var(--radius-xs);
     background: var(--bg-raised);
 }
@@ -281,16 +228,11 @@
 }
 
 .historyHeading {
+    margin-bottom: 0;
     padding: 15px 20px 7px;
 }
 
-.historyHeading h2 {
-    margin: 0;
-    color: var(--mw-text);
-    font-size: var(--fs-lg);
-}
-
-.historyHeading span {
+.branch {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -302,31 +244,12 @@
     font-weight: 700;
 }
 
-.state,
-.loadError {
+.state {
     margin: 0;
     padding: 30px 20px;
     color: var(--text-dim);
     font-size: var(--fs-sm);
     text-align: center;
-}
-
-.state button,
-.loadError button {
-    border: 0;
-    background: transparent;
-    color: var(--accent-strong);
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.loadError {
-    margin-top: 20px;
-}
-
-.loadError p {
-    margin: 0 0 8px;
 }
 
 .commitList {

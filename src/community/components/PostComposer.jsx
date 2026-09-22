@@ -5,6 +5,7 @@ import {Clock, Image, ListChecks, Plus, Send, X} from 'lucide-react';
 import rotur from '../rotur.js';
 import {ATTACHMENT_TYPES, uploadPostAttachment} from '../post-upload.js';
 import Button from './ui/Button.jsx';
+import Notice from './ui/Notice.jsx';
 import GifPicker from './GifPicker.jsx';
 import PostAttachment from './PostAttachment.jsx';
 import styles from './PostComposer.module.css';
@@ -42,13 +43,14 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
     const pollValid = !poll || poll.filter(value => value.trim()).length >= 2;
     const canPost = (content.trim() || attachments.length || (poll && pollValid)) &&
         content.length <= maxLength && !busy && !uploading && pollValid;
+    const attachmentLimitMessage = () => (maxAttachments === 1 ?
+        communityText('Your account can add one attachment.') :
+        communityText('Your account can add up to {value1} attachments.', {value1: maxAttachments}));
 
     const addFiles = async filesValue => {
         const files = Array.from(filesValue || []).slice(0, Math.max(0, maxAttachments - attachments.length));
         if (!files.length) {
-            if (attachments.length >= maxAttachments) {
-                setError(`Your account can add up to ${maxAttachments} attachment${maxAttachments === 1 ? '' : 's'}.`);
-            }
+            if (attachments.length >= maxAttachments) setError(attachmentLimitMessage());
             return;
         }
         setUploading(true);
@@ -59,7 +61,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
             for (const file of files) uploaded.push(await uploadPostAttachment(file, setProgress));
             setAttachments(current => [...current, ...uploaded].slice(0, maxAttachments));
         } catch (cause) {
-            setError(cause.message || 'Could not upload this attachment.');
+            setError(cause.message || communityText('Could not upload this attachment.'));
         } finally {
             setUploading(false);
         }
@@ -70,7 +72,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
     };
     const selectGif = url => {
         if (attachments.length >= maxAttachments) {
-            setError(`Your account can add up to ${maxAttachments} attachment${maxAttachments === 1 ? '' : 's'}.`);
+            setError(attachmentLimitMessage());
             return;
         }
         setAttachments(current => (current.includes(url) ? current : [...current, url]));
@@ -96,7 +98,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
             setScheduledFor('');
             setGifPickerOpen(false);
         } catch (cause) {
-            setError(cause.message || 'Could not publish this post.');
+            setError(cause.message || communityText('Could not publish this post.'));
         } finally {
             releaseSubmit();
             setBusy(false);
@@ -136,7 +138,9 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 value={content}
                 maxLength={maxLength}
                 disabled={busy}
-                placeholder={profileOnly ? communityText('Post something to your profile') : communityText('Post something')}
+                placeholder={profileOnly ?
+                    communityText('Post something to your profile') :
+                    communityText('Post something')}
                 aria-label={communityText('Post content')}
                 onPaste={handlePaste}
                 onChange={event => setContent(event.target.value)}
@@ -152,7 +156,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
             {uploading ? (
                 <div className={styles.upload}>
                     <span style={{width: `${progress}%`}} />
-                    <small>{communityText('Uploading… ')}{progress}%</small>
+                    <small>{communityText('Uploading… {value1}%', {value1: progress})}</small>
                 </div>
             ) : null}
             {attachments.length ? (
@@ -176,7 +180,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                             <input
                                 value={option}
                                 maxLength={80}
-                                placeholder={communityText("Option {value1}", {value1: index + 1})}
+                                placeholder={communityText('Option {value1}', {value1: index + 1})}
                                 onChange={event => {
                                     const nextValue = event.target.value;
                                     setPoll(current => current.map((value, item) => (
@@ -188,23 +192,28 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                                 <button
                                     type="button"
                                     onClick={() => setPoll(current => current.filter((_, item) => item !== index))}
-                                    aria-label={communityText("Remove option {value1}", {value1: index + 1})}
+                                    aria-label={communityText('Remove option {value1}', {value1: index + 1})}
                                 ><X size={14} /></button>
                             ) : null}
                         </div>
                     ))}
                     {poll.length < 6 ? (
                         <button type="button" onClick={() => setPoll(current => [...current, ''])}>
-                            <Plus size={14} />{communityText(' Add option')}</button>
+                            <Plus size={14} />
+                            {communityText('Add option')}
+                        </button>
                     ) : null}
                 </div>
             ) : null}
             {scheduledFor ? (
-                <label className={styles.schedule}><Clock size={14} />{communityText(' Publish at')}<input
-                    type="datetime-local"
-                    value={scheduledFor}
-                    onChange={event => setScheduledFor(event.target.value)}
-                />
+                <label className={styles.schedule}>
+                    <Clock size={14} />
+                    {communityText('Publish at')}
+                    <input
+                        type="datetime-local"
+                        value={scheduledFor}
+                        onChange={event => setScheduledFor(event.target.value)}
+                    />
                 </label>
             ) : null}
             {gifPickerOpen ? <GifPicker onSelect={selectGif} onClose={() => setGifPickerOpen(false)} /> : null}
@@ -238,9 +247,11 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 </div>
                 <span className={content.length >= maxLength ? styles.over : ''}>{content.length}/{maxLength}</span>
                 <Button type="submit" variant="primary" busy={busy} disabled={!canPost}>
-                    <Send size={15} />{communityText(' Post')}</Button>
+                    <Send size={15} />
+                    {communityText('Post')}
+                </Button>
             </div>
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
         </form>
     );
 };

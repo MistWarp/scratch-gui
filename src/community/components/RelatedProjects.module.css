@@ -2,14 +2,6 @@
     margin-top: 18px;
 }
 
-.head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
 .next {
     display: inline-flex;
     align-items: center;
@@ -20,18 +12,6 @@
     color: var(--accent-strong);
     font-size: var(--fs-sm);
     font-weight: 700;
-}
-
-.related h2 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    font-size: var(--fs-lg);
-}
-
-.related h2 svg {
-    color: var(--accent-strong);
 }
 
 .list {

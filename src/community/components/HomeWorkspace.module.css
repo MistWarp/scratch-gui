@@ -1,13 +1,9 @@
 .section { margin: 32px 0; scroll-margin-top: 80px; }
 .section:first-child { margin-top: 4px; }
-.heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 20px; }
-.heading h1, .heading h2 { margin: 4px 0 8px; font-size: var(--fs-3xl); letter-spacing: -.025em; line-height: 1.15; }
-.heading p, .empty p, .backup p, .challenge p { margin: 5px 0 0; color: var(--text-dim); line-height: 1.5; }
-.heading > a, .backup > a, .challenge > a { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--accent-strong); font-size: var(--fs-md); font-weight: 600; min-height: 44px; }
-.projectGrid, .starterGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.link { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--accent-strong); font-size: var(--fs-md); font-weight: 600; min-height: 44px; }
 .resumeCard, .starterCard { min-width: 0; border: 1px solid transparent; border-radius: var(--radius-sm); background: var(--bg-card); overflow: hidden; transition: border-color .15s, transform .15s; }
 .resumeCard:hover, .starterCard:hover { border-color: var(--accent-strong); transform: translateY(-2px); }
-.resumeCard:focus-visible, .starterCard:focus-visible, .heading a:focus-visible, .backup a:focus-visible, .challenge a:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 4px; }
+.resumeCard:focus-visible, .starterCard:focus-visible, .link:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 4px; }
 .resumeCard > div { padding: 16px; }
 .thumbnail, .thumbnailFallback { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--bg-raised); color: var(--text-dim); font-size: var(--fs-3xl); }
 .resumeCard h2 { font-size: var(--fs-xl); margin: 8px 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -15,12 +11,7 @@
 .continueButton, .continueLink { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 700; min-height: 36px; }
 .continueButton { padding: 0 12px; background: var(--accent); color: var(--accent-contrast); border-radius: var(--radius-xs); }
 .continueLink { color: var(--accent-strong); }
-.empty, .backup { display: flex; align-items: center; gap: 16px; border: 1px solid var(--border); background: var(--bg-field); border-radius: var(--radius-sm); padding: 18px 20px; }
-.empty { background: var(--bg-raised); }
-.empty > svg, .backup > svg { flex-shrink: 0; color: var(--accent-strong); }
 .backup { margin: 20px 0; }
-.backup > div { flex: 1; min-width: 0; }
-.backup p { font-size: var(--fs-sm); overflow-wrap: anywhere; }
 .starterArt { position: relative; display: flex; align-items: center; justify-content: center; height: 190px; overflow: hidden; }
 .purple { background: #ddd4f8; color: #422675; }
 .blue { background: #cceaf5; color: #16445a; }
@@ -38,21 +29,17 @@
 .challenge > svg { color: var(--accent-strong); flex-shrink: 0; }
 .challenge > div { flex: 1; min-width: 0; }
 .challenge h2 { margin: 5px 0; font-size: var(--fs-2xl); overflow-wrap: anywhere; }
+.challenge p { margin: 5px 0 0; color: var(--text-dim); line-height: 1.5; }
 @media (max-width: 760px) {
-    .heading { align-items: flex-start; flex-direction: column; gap: 0; }
-    .projectGrid { grid-template-columns: 1fr; }
     .resumeCard { display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; }
     .thumbnail, .thumbnailFallback { height: 100%; aspect-ratio: auto; }
-    .starterGrid { grid-template-columns: 1fr; }
     .starterCard { display: grid; grid-template-columns: 130px minmax(0, 1fr); }
     .starterArt { height: 100%; min-height: 180px; }
     .starterArt img { width: 85px; height: 85px; }
     .kind { left: 8px; font-size: var(--fs-2xs); gap: 4px; }
     .controls { font-size: var(--fs-2xs); }
     .challenge { flex-wrap: wrap; gap: 14px; padding: 20px; }
-    .challenge > a { width: 100%; }
-    .backup { flex-wrap: wrap; }
-    .backup > a { width: 100%; }
+    .challenge > .link { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
     .resumeCard, .starterCard { transition: none; }

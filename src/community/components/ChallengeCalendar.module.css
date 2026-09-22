@@ -8,29 +8,12 @@
 }
 
 .head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
 }
 
-.head h2 {
-    margin: 0 0 2px;
-    font-size: var(--fs-lg);
-}
-
-.head p,
-.head > a {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
-.head > a {
-    color: var(--accent-strong);
-    font-weight: 700;
+.heading {
+    margin-bottom: 0;
 }
 
 .scroll {
@@ -132,31 +115,4 @@
     flex: 0 0 auto;
     opacity: .82;
     white-space: nowrap;
-}
-
-.empty,
-.skeleton {
-    min-height: 120px;
-    margin: 40px 0;
-    padding: 20px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    text-align: center;
-}
-
-.skeleton {
-    border-style: solid;
-    background: var(--bg-card);
-}
-
-.empty button {
-    margin-inline-start: 6px;
-    padding: 0;
-    border: 0;
-    color: var(--accent-strong);
-    background: transparent;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
 }

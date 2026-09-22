@@ -62,14 +62,14 @@
 }
 
 .search {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: min(440px, 36vw);
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
     max-width: 440px;
-    transform: translate(-50%, -50%);
+    margin-inline: auto;
     display: flex;
     align-items: center;
+    align-self: center;
 }
 
 .mobileSearch {
@@ -249,7 +249,7 @@ a.suggestionMeta:hover {
 .account {
     display: flex;
     align-items: stretch;
-    margin-inline-start: auto;
+    flex-shrink: 0;
 }
 
 .iconLink {

@@ -1,6 +1,7 @@
 import React from 'react';
 import {mount, render, shallow} from 'enzyme';
 
+import StatusMessage from '../../src/community/components/ui/StatusMessage.jsx';
 import DiffView, {AssetCompare, OpenFileButton, parseDiff} from '../../src/community/components/DiffView.jsx';
 import {classifyAssetFile, formatAssetSize} from '../../src/community/asset-media.js';
 
@@ -306,7 +307,7 @@ describe('DiffView', () => {
 
     test('uses a plain status instead of a code panel for failed diffs', () => {
         const wrapper = shallow(<DiffView diff="Could not load diff." />);
-        expect(wrapper.type()).toBe('p');
-        expect(wrapper.text()).toBe('Could not load diff.');
+        expect(wrapper.find(StatusMessage).prop('error')).toBe(true);
+        expect(wrapper.find(StatusMessage).children().text()).toBe('Could not load diff.');
     });
 });

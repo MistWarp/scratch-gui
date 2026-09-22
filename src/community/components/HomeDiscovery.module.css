@@ -6,33 +6,6 @@
     margin-top: 40px;
 }
 
-.head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.head h2 {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 0;
-    font-size: var(--fs-2xl);
-    letter-spacing: -.01em;
-}
-
-.head h2 svg,
-.head > a {
-    color: var(--accent-strong);
-}
-
-.head > a {
-    font-size: var(--fs-md);
-    font-weight: 600;
-}
-
 .creators {
     display: grid;
     gap: 10px;

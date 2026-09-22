@@ -4,13 +4,6 @@
     padding: var(--page-pad);
 }
 
-.page h1 {
-    margin: 0 0 6px;
-    font-size: var(--fs-3xl);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-
 /* Roomy vertical list: dividers only, no cards */
 .list {
     display: flex;
@@ -178,16 +171,6 @@
     word-break: break-word;
 }
 
-.link {
-    color: var(--accent-strong);
-    text-decoration: underline;
-    word-break: break-all;
-}
-
-.link:hover {
-    text-decoration: none;
-}
-
 .body strong {
     color: var(--mw-text);
     font-weight: 600;
@@ -252,20 +235,13 @@
     white-space: nowrap;
 }
 
-.status {
-    color: var(--text-dim);
-    text-align: center;
-    padding: 40px 0;
+.notice {
+    margin-bottom: 12px;
 }
 
 @media (max-width: 620px) {
     .page {
         padding: 24px 16px 72px;
-    }
-
-    .page h1 {
-        margin-bottom: 6px;
-        font-size: var(--fs-3xl);
     }
 
     .item,

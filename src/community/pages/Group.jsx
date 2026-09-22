@@ -28,9 +28,40 @@ import GroupTag from '../components/GroupTag.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
 import Button from '../components/ui/Button.jsx';
+import CardGrid from '../components/ui/CardGrid.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import styles from './Group.module.css';
 
 const TAB_KEYS = ['projects', 'studios', 'challenges', 'collections', 'members', 'support'];
+const SPACE_KINDS = {
+    studio: {
+        icon: Layers3,
+        title: 'Studios run by {group}',
+        create: 'New studio',
+        empty: 'No studios yet',
+        emptyManager: 'Create the first studio for {group}.',
+        emptyPublic: '{group} has not published any studios.'
+    },
+    challenge: {
+        icon: Trophy,
+        title: 'Challenges from {group}',
+        create: 'New challenge',
+        empty: 'No challenges yet',
+        emptyManager: 'Create the first challenge for {group}.',
+        emptyPublic: '{group} has not published any challenges.'
+    },
+    collection: {
+        icon: Library,
+        title: 'Collections by {group}',
+        create: 'New collection',
+        empty: 'No collections yet',
+        emptyManager: 'Create the first collection for {group}.',
+        emptyPublic: '{group} has not published any collections.'
+    }
+};
 const formatNumber = value => new Intl.NumberFormat(getCommunityLocale(), {maximumFractionDigits: 2}).format(Number(value) || 0);
 
 const normalizeGroupTabParams = currentParams => {
@@ -39,13 +70,6 @@ const normalizeGroupTabParams = currentParams => {
     if (!TAB_KEYS.includes(tab) || tab === 'projects') next.delete('tab');
     return next;
 };
-
-const EmptyState = ({icon: Icon, title, children, action}) => (
-    <div className={styles.emptyState}>
-        <span className={styles.emptyIcon}><Icon size={23} /></span>
-        <div><h2>{title}</h2><p>{children}</p>{action}</div>
-    </div>
-);
 
 const Group = () => {
     const {text: communityText} = useCommunityText();
@@ -83,7 +107,7 @@ const Group = () => {
                 setEvents(Array.isArray(bundle.events) ? bundle.events : []);
                 setProducts(Array.isArray(bundle.products) ? bundle.products : []);
             }))
-            .catch(fresh(e => setError(e.message || 'Could not load this group.')));
+            .catch(fresh(e => setError(e.message || communityText('Could not load this group.'))));
     }, [beginLoad, includeMembers, tag]);
 
     useEffect(() => {
@@ -116,7 +140,7 @@ const Group = () => {
             else await rotur.groups.join(tag);
             await load();
         } catch (e) {
-            setError(e.message || 'Could not update membership.');
+            setError(e.message || communityText('Could not update membership.'));
         } finally {
             setBusy('');
         }
@@ -135,9 +159,9 @@ const Group = () => {
             window.dispatchEvent(new CustomEvent('mw:group-representation', {
                 detail: {username: refreshed?.username, tag: refreshed?.group_tag || ''}
             }));
-            setMessage(representing ? 'This group is no longer shown with your MistWarp identity.' : `You now represent ${data.group.name} across MistWarp.`);
+            setMessage(representing ? communityText('This group is no longer shown with your MistWarp identity.') : communityText('You now represent {group} across MistWarp.', {group: data.group.name}));
         } catch (e) {
-            setError(e.message || 'Could not update your represented group.');
+            setError(e.message || communityText('Could not update your represented group.'));
         } finally {
             setBusy('');
         }
@@ -146,21 +170,21 @@ const Group = () => {
     const contribute = async campaign => {
         if (!user) return login();
         const amount = Number(amounts[campaign.id]);
-        if (!(amount > 0)) return setError(communityText("Enter an amount to contribute."));
+        if (!(amount > 0)) return setError(communityText('Enter an amount to contribute.'));
         setBusy(campaign.id);
         setError('');
         try {
             await rotur.groups.contribute(tag, campaign.id, amount);
             await load();
         } catch (e) {
-            setError(e.message || 'Contribution failed.');
+            setError(e.message || communityText('Contribution failed.'));
         } finally {
             setBusy('');
         }
     };
 
-    if (error && !data) return <main className={styles.page}><p className={styles.error}>{error} <Button onClick={load}>{communityText('Try again')}</Button></p></main>;
-    if (!data) return <main className={styles.page}><p className={styles.loading}>{communityText('Loading group…')}</p></main>;
+    if (error && !data) return <main className={styles.page}><StatusMessage error onRetry={load}>{error}</StatusMessage></main>;
+    if (!data) return <main className={styles.page}><StatusMessage>{communityText('Loading group…')}</StatusMessage></main>;
 
     const {group, members = [], projects = [], spaces = []} = data;
     const studios = spaces.filter(space => space.kind === 'studio');
@@ -174,62 +198,71 @@ const Group = () => {
     const groupIcon = group.icon_url || `https://api.rotur.dev/groups/${encodeURIComponent(tag)}/icon.jpg`;
 
     const tabItems = [
-        {key: 'projects', label: <>{communityText('Projects ')}<b>{projects.length}</b></>},
-        {key: 'studios', label: <>{communityText('Studios ')}<b>{studios.length}</b></>},
-        {key: 'challenges', label: <>{communityText('Challenges ')}<b>{challenges.length}</b></>},
-        {key: 'collections', label: <>{communityText('Collections ')}<b>{collections.length}</b></>},
-        {key: 'members', label: <>{communityText('Members ')}<b>{memberCount}</b></>},
-        {key: 'support', label: <>{communityText('Support ')}<b>{campaigns.length + products.length}</b></>}
+        {key: 'projects', label: <>{communityText('Projects')} <b>{projects.length}</b></>},
+        {key: 'studios', label: <>{communityText('Studios')} <b>{studios.length}</b></>},
+        {key: 'challenges', label: <>{communityText('Challenges')} <b>{challenges.length}</b></>},
+        {key: 'collections', label: <>{communityText('Collections')} <b>{collections.length}</b></>},
+        {key: 'members', label: <>{communityText('Members')} <b>{memberCount}</b></>},
+        {key: 'support', label: <>{communityText('Support')} <b>{campaigns.length + products.length}</b></>}
     ];
 
-    const createLink = (kind, label) => (manager ? (
-        <Button as={Link} variant="primary" to={`/spaces?create=1&group=${encodeURIComponent(tag)}&kind=${kind}`}><Plus size={16} />{communityText(' New ')}{label}</Button>
+    const createLink = kind => (manager ? (
+        <Button as={Link} variant="primary" to={`/spaces?create=1&group=${encodeURIComponent(tag)}&kind=${kind}`}><Plus size={16} />{communityText(SPACE_KINDS[kind].create)}</Button>
     ) : null);
 
-    const spacePanel = (items, kind, title, Icon) => (
-        <section className={styles.contentSection}>
-            <div className={styles.sectionHeading}><div><h1>{title}</h1></div>{createLink(kind, kind)}</div>
-            {items.length ? <div className={styles.spaceGrid}>{items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}</div> : <EmptyState icon={Icon} title={communityText("No {value1}s yet", {value1: kind})} action={createLink(kind, kind)}>{manager ? communityText("Create the first {value1} for {value2}.", {value1: kind, value2: group.name}) : communityText("{value1} has not published any {value2}s.", {value1: group.name, value2: kind})}</EmptyState>}
-        </section>
-    );
+    const spacePanel = (items, kind) => {
+        const config = SPACE_KINDS[kind];
+        return (
+            <section className={styles.contentSection}>
+                <SectionHeading icon={config.icon} title={communityText(config.title, {group: group.name})} actions={createLink(kind)} />
+                {items.length ? (
+                    <CardGrid>{items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}</CardGrid>
+                ) : (
+                    <EmptyState icon={config.icon} title={communityText(config.empty)} action={createLink(kind)}>
+                        {manager ? communityText(config.emptyManager, {group: group.name}) : communityText(config.emptyPublic, {group: group.name})}
+                    </EmptyState>
+                )}
+            </section>
+        );
+    };
 
     return (
         <main className={styles.page}>
-            <Link className={styles.backLink} to="/groups"><ArrowLeft size={16} />{communityText(' All groups')}</Link>
+            <Link className={styles.backLink} to="/groups"><ArrowLeft size={16} />{communityText('All groups')}</Link>
             <div className={styles.layout}>
                 <div className={styles.mainColumn}>
                     <UnderlineTabs items={tabItems} value={activeTab} onChange={selectTab} ariaLabel="Group content" />
 
-                    {error ? <p className={styles.error}>{error}</p> : null}
-                    {message ? <p className={styles.message}>{message}</p> : null}
+                    {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
+                    {message ? <Notice variant="success" className={styles.notice}>{message}</Notice> : null}
 
                     {activeTab === 'projects' ? (
                         <section className={styles.contentSection}>
-                            <div className={styles.sectionHeading}><div><h1>{communityText('Projects by ')}{group.name}</h1></div>{manager ? <small>{communityText('Assign a project from its metadata settings')}</small> : null}</div>
-                            {projects.length ? <div className={styles.projectGrid}>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <EmptyState icon={FolderKanban} title={communityText('No projects yet')}>{communityText('Projects assigned to this group will appear here.')}</EmptyState>}
+                            <SectionHeading icon={FolderKanban} title={communityText('Projects by {group}', {group: group.name})} lead={manager ? communityText('Assign a project from its metadata settings.') : null} />
+                            {projects.length ? <CardGrid>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid> : <EmptyState icon={FolderKanban} title={communityText('No projects yet')}>{communityText('Projects assigned to this group will appear here.')}</EmptyState>}
                         </section>
                     ) : null}
 
-                    {activeTab === 'studios' ? spacePanel(studios, 'studio', `Studios run by ${group.name}`, Layers3) : null}
-                    {activeTab === 'challenges' ? spacePanel(challenges, 'challenge', `Challenges from ${group.name}`, Trophy) : null}
-                    {activeTab === 'collections' ? spacePanel(collections, 'collection', `Collections by ${group.name}`, Library) : null}
+                    {activeTab === 'studios' ? spacePanel(studios, 'studio') : null}
+                    {activeTab === 'challenges' ? spacePanel(challenges, 'challenge') : null}
+                    {activeTab === 'collections' ? spacePanel(collections, 'collection') : null}
 
                     {activeTab === 'members' ? (
                         <section className={styles.contentSection}>
-                            <div className={styles.sectionHeading}><div><h1>{formatNumber(memberCount)}{communityText(' members')}</h1></div></div>
-                            {members.length ? <div className={styles.memberGrid}>{members.map(name => <Link to={`/users/${name}`} key={name}><Avatar username={name} size={44} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{communityText('Member of ')}{group.tag}</small></span></Link>)}</div> : data.membershipLive ? <EmptyState icon={Users} title={communityText('No members yet')}>{communityText('Members will appear here after they join.')}</EmptyState> : null}
-                            {!members.length && !data.membershipLive ? <EmptyState icon={Users} title={communityText("{value1} members", {value1: formatNumber(memberCount)})}>{user ? communityText('The member directory is private.') : communityText('Join this group to browse its member directory.')}</EmptyState> : null}
+                            <SectionHeading icon={Users} title={communityText('{count} members', {count: formatNumber(memberCount)})} />
+                            {members.length ? <CardGrid min={205} className={styles.memberGrid}>{members.map(name => <Link to={`/users/${name}`} key={name}><Avatar username={name} size={44} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{communityText('Member of {tag}', {tag: group.tag})}</small></span></Link>)}</CardGrid> : data.membershipLive ? <EmptyState icon={Users} title={communityText('No members yet')}>{communityText('Members will appear here after they join.')}</EmptyState> : null}
+                            {!members.length && !data.membershipLive ? <EmptyState icon={Users} title={communityText('{value1} members', {value1: formatNumber(memberCount)})}>{user ? communityText('The member directory is private.') : communityText('Join this group to browse its member directory.')}</EmptyState> : null}
                         </section>
                     ) : null}
 
                     {activeTab === 'support' ? (
                         <div className={styles.supportSections}>
                             <section className={styles.contentSection}>
-                                <div className={styles.sectionHeading}><div><h1>{communityText('Support ')}{group.name}</h1></div></div>
-                                {campaigns.length ? <div className={styles.cardGrid}>{campaigns.map(campaign => <article className={styles.dataCard} key={campaign.id}><span className={styles.cardType}><HeartHandshake size={14} /> {campaign.status === 'ACTIVE' ? communityText('Accepting support') : campaign.status}</span><h2>{campaign.title}</h2><p>{campaign.description}</p><div className={styles.progress}><i style={{width: `${Math.min(100, (campaign.raised_credits / campaign.goal_credits) * 100)}%`}} /></div><small>{formatNumber(campaign.raised_credits)}{communityText(' of ')}{formatNumber(campaign.goal_credits)}{communityText(' credits')}</small>{campaign.status === 'ACTIVE' ? <div className={styles.fund}><input min="0.01" step="0.01" type="number" aria-label={communityText("Credits for {value1}", {value1: campaign.title})} placeholder={communityText('Credits')} value={amounts[campaign.id] || ''} onChange={event => setAmounts({...amounts, [campaign.id]: event.target.value})} /><Button busy={busy === campaign.id} onClick={() => contribute(campaign)}>{communityText('Contribute')}</Button></div> : null}</article>)}</div> : <EmptyState icon={HeartHandshake} title={communityText('No active fundraisers')}>{communityText('You can still support this group through its Rotur page.')}</EmptyState>}
+                                <SectionHeading icon={HeartHandshake} title={communityText('Support {group}', {group: group.name})} />
+                                {campaigns.length ? <div className={styles.cardGrid}>{campaigns.map(campaign => <article className={styles.dataCard} key={campaign.id}><span className={styles.cardType}><HeartHandshake size={14} /> {campaign.status === 'ACTIVE' ? communityText('Accepting support') : campaign.status}</span><h2>{campaign.title}</h2><p>{campaign.description}</p><div className={styles.progress}><i style={{width: `${Math.min(100, (campaign.raised_credits / campaign.goal_credits) * 100)}%`}} /></div><small>{communityText('{raised} of {goal} credits', {raised: formatNumber(campaign.raised_credits), goal: formatNumber(campaign.goal_credits)})}</small>{campaign.status === 'ACTIVE' ? <div className={styles.fund}><input min="0.01" step="0.01" type="number" aria-label={communityText('Credits for {value1}', {value1: campaign.title})} placeholder={communityText('Credits')} value={amounts[campaign.id] || ''} onChange={event => setAmounts({...amounts, [campaign.id]: event.target.value})} /><Button busy={busy === campaign.id} onClick={() => contribute(campaign)}>{communityText('Contribute')}</Button></div> : null}</article>)}</div> : <EmptyState icon={HeartHandshake} title={communityText('No active fundraisers')}>{communityText('You can still support this group through its Rotur page.')}</EmptyState>}
                             </section>
-                            {products.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><h1>{communityText('Join with a membership')}</h1></div></div><div className={styles.cardGrid}>{products.map(product => <article className={styles.dataCard} key={product.id}><span className={styles.cardType}><Coins size={14} /> {formatNumber(product.price_credits || product.price)}{communityText(' credits')}</span><h2>{product.name || product.title}</h2><p>{product.description}</p><a href={roturGroupUrl} target="_blank" rel="noreferrer">{communityText('Purchase on Rotur ')}<ExternalLink size={13} /></a></article>)}</div></section> : null}
-                            {announcements.length || events.length ? <section className={styles.contentSection}><div className={styles.sectionHeading}><div><h1>{communityText('Updates from ')}{group.name}</h1></div></div><div className={styles.cardGrid}>{announcements.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><Megaphone size={14} />{communityText(' Announcement')}</span><h2>{item.title}</h2><p>{item.body}</p></article>)}{events.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><CalendarDays size={14} />{communityText(' Event')}</span><h2>{item.title}</h2><p>{item.description}</p></article>)}</div></section> : null}
+                            {products.length ? <section className={styles.contentSection}><SectionHeading icon={Coins} title={communityText('Join with a membership')} /><div className={styles.cardGrid}>{products.map(product => <article className={styles.dataCard} key={product.id}><span className={styles.cardType}><Coins size={14} /> {communityText('{amount} credits', {amount: formatNumber(product.price_credits || product.price)})}</span><h2>{product.name || product.title}</h2><p>{product.description}</p><a href={roturGroupUrl} target="_blank" rel="noreferrer">{communityText('Purchase on Rotur')}<ExternalLink size={13} /></a></article>)}</div></section> : null}
+                            {announcements.length || events.length ? <section className={styles.contentSection}><SectionHeading icon={Megaphone} title={communityText('Updates from {group}', {group: group.name})} /><div className={styles.cardGrid}>{announcements.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><Megaphone size={14} />{communityText('Announcement')}</span><h2>{item.title}</h2><p>{item.body}</p></article>)}{events.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><CalendarDays size={14} />{communityText('Event')}</span><h2>{item.title}</h2><p>{item.description}</p></article>)}</div></section> : null}
                         </div>
                     ) : null}
                 </div>
@@ -247,14 +280,14 @@ const Group = () => {
                                 <span><Coins size={16} /><strong>{formatNumber(group.credits_balance)}</strong><span>{communityText('credits')}</span></span>
                             </div>
                             <div className={styles.actions}>
-                                {!member ? <Button busy={busy === 'join'} onClick={() => membership('join')}>{group.join_policy === 'REQUEST' ? communityText('Request to join') : communityText('Join group')}</Button> : null}
+                                {!member ? <Button variant="primary" busy={busy === 'join'} onClick={() => membership('join')}><Plus size={16} />{group.join_policy === 'REQUEST' ? communityText('Request to join') : communityText('Join group')}</Button> : null}
                                 {member ? <Button variant={representing ? 'secondary' : 'primary'} busy={busy === 'represent'} busyLabel={communityText('Saving…')} onClick={toggleRepresentation}>{representing ? communityText('Stop representing') : communityText('Represent group')}</Button> : null}
                                 {data.isMember && !manager ? <Button variant="secondary" busy={busy === 'leave'} onClick={() => membership('leave')}>{communityText('Leave group')}</Button> : null}
                             </div>
-                            {representing ? <p className={styles.representing}><ShieldCheck size={15} />{communityText(' Shown with your identity across MistWarp')}</p> : null}
+                            {representing ? <p className={styles.representing}><ShieldCheck size={15} />{communityText('Shown with your identity across MistWarp')}</p> : null}
                             <div className={styles.externalLinks}>
-                                <a href={roturGroupUrl} target="_blank" rel="noreferrer"><ExternalLink size={15} />{communityText(' View on rotur.dev')}</a>
-                                {manager ? <a href={roturGroupUrl} target="_blank" rel="noreferrer"><ShieldCheck size={15} />{communityText(' Manage group')}</a> : null}
+                                <a href={roturGroupUrl} target="_blank" rel="noreferrer"><ExternalLink size={15} />{communityText('View on rotur.dev')}</a>
+                                {manager ? <a href={roturGroupUrl} target="_blank" rel="noreferrer"><ShieldCheck size={15} />{communityText('Manage group')}</a> : null}
                             </div>
                         </div>
                     </section>

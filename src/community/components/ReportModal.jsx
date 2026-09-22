@@ -4,6 +4,7 @@ import {Flag} from 'lucide-react';
 import api from '../api';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
+import Notice from './ui/Notice.jsx';
 import styles from './ReportModal.module.css';
 
 const REASONS = [
@@ -16,15 +17,23 @@ const REASONS = [
     'Something else'
 ];
 
-const NOUNS = {
-    project: 'project',
-    user: 'user',
-    comment: 'comment',
-    bounty: 'bounty'
-};
-
 const ReportModal = ({type, target, context, targetUser, onClose}) => {
     const {text: communityText} = useCommunityText();
+    const reasonLabels = {
+        'Inappropriate or explicit content': communityText('Inappropriate or explicit content'),
+        'Harassment or bullying': communityText('Harassment or bullying'),
+        'Spam or misleading': communityText('Spam or misleading'),
+        'Hateful or abusive behaviour': communityText('Hateful or abusive behaviour'),
+        'Dangerous or illegal activity': communityText('Dangerous or illegal activity'),
+        'Copyright or credit problem': communityText('Copyright or credit problem'),
+        'Something else': communityText('Something else')
+    };
+    const titles = {
+        project: communityText('Report this project'),
+        user: communityText('Report this user'),
+        comment: communityText('Report this comment'),
+        bounty: communityText('Report this bounty')
+    };
     const [category, setCategory] = useState(REASONS[0]);
     const [details, setDetails] = useState('');
     const [busy, setBusy] = useState(false);
@@ -56,7 +65,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
             if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
             if (currentRequestKey.current === requestKey) {
-                setError(e.message || 'Could not send the report.');
+                setError(e.message || communityText('Could not send the report.'));
             }
         } finally {
             submitLocks.current.delete(requestKey);
@@ -67,7 +76,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
     return (
         <Modal
             icon={Flag}
-            title={communityText("Report this {value1}", {value1: NOUNS[type] || 'content'})}
+            title={titles[type] || communityText('Report this content')}
             onClose={onClose}
             dismissDisabled={busy}
             actions={sent ? (
@@ -103,7 +112,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                             <option
                                 key={reason}
                                 value={reason}
-                            >{reason}</option>
+                            >{reasonLabels[reason] || reason}</option>
                         ))}
                     </select>
                     <label className={styles.label}>{communityText('Details (optional)')}</label>
@@ -115,7 +124,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                         placeholder={communityText('Add anything that helps a moderator understand the problem.')}
                         onChange={e => setDetails(e.target.value)}
                     />
-                    {error ? <div className={styles.error}>{error}</div> : null}
+                    {error ? <Notice variant="error">{error}</Notice> : null}
                 </React.Fragment>
             )}
         </Modal>

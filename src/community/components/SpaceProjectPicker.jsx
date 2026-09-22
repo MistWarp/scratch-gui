@@ -2,12 +2,17 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Check, Plus, Search, X} from 'lucide-react';
+import {Check, FolderPlus, Plus, Search, X} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
 import IconButton from './ui/IconButton.jsx';
+import Notice from './ui/Notice.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
+import UnderlineTabs from './UnderlineTabs.jsx';
 import UserLink from './UserLink.jsx';
 import useLatest from '../use-latest.js';
 import styles from '../pages/Spaces.module.css';
@@ -72,7 +77,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                 }
             })
             .catch(() => {
-                if (active) setMineError('Could not load your projects.');
+                if (active) setMineError(communityText('Could not load your projects.'));
             });
         return () => {
             active = false;
@@ -125,7 +130,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
             const data = await api.explore({q: value, sort: 'recent', limit: 18});
             fresh(setResults)(data.projects || []);
         } catch (e) {
-            fresh(setError)(e.message || 'Could not search projects.');
+            fresh(setError)(e.message || communityText('Could not search projects.'));
         } finally {
             actionLocks.current.delete(actionKey);
             fresh(setSearching)(false);
@@ -144,7 +149,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
             if (currentContext.current === context) await onAdded();
         } catch (e) {
             if (currentContext.current === context) {
-                setError(e.message || 'Could not add this project.');
+                setError(e.message || communityText('Could not add this project.'));
             }
         } finally {
             actionLocks.current.delete(actionKey);
@@ -155,28 +160,36 @@ const SpaceProjectPicker = ({space, onAdded}) => {
     const projects = tab === 'mine' ? (mine || []) : results;
 
     if (!open) {
-        return <Button onClick={show}><Plus size={16} />{communityText(' Add projects')}</Button>;
+        return <Button onClick={show}><Plus size={16} />{communityText('Add projects')}</Button>;
     }
 
     return (
         <section className={styles.projectPicker}>
-            <header>
-                <div>
-                    <h2>{communityText('Add projects')}</h2>
-                    <p>{communityText('Choose one of your shared or unlisted projects, or search public projects.')}</p>
-                </div>
-                <IconButton
-                    variant="secondary"
-                    className={styles.iconButton}
-                    disabled={Boolean(adding)}
-                    onClick={() => setOpen(false)}
-                    label={communityText('Close project picker')}
-                ><X size={18} /></IconButton>
-            </header>
-            <div className={styles.pickerTabs}>
-                <button type="button" className={tab === 'mine' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('mine')}>{communityText('Your projects')}</button>
-                {space.canManage ? <button type="button" className={tab === 'search' ? styles.pickerTabActive : styles.pickerTab} onClick={() => setTab('search')}>{communityText('Search')}</button> : null}
-            </div>
+            <SectionHeading
+                as="h3"
+                icon={FolderPlus}
+                title={communityText('Add projects')}
+                lead={communityText('Choose one of your shared or unlisted projects, or search public projects.')}
+                actions={(
+                    <IconButton
+                        variant="secondary"
+                        className={styles.iconButton}
+                        disabled={Boolean(adding)}
+                        onClick={() => setOpen(false)}
+                        label={communityText('Close project picker')}
+                    ><X size={18} /></IconButton>
+                )}
+            />
+            <UnderlineTabs
+                items={[
+                    {key: 'mine', label: communityText('Your projects')},
+                    ...(space.canManage ? [{key: 'search', label: communityText('Search')}] : [])
+                ]}
+                value={tab}
+                onChange={setTab}
+                className={styles.pickerTabs}
+                ariaLabel={communityText('Project sources')}
+            />
             {tab === 'search' ? (
                 <form className={styles.projectSearch} onSubmit={search}>
                     <Search size={16} />
@@ -189,11 +202,23 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                     <Button type="submit" variant="secondary" busy={searching} busyLabel={communityText('Searching…')}>{communityText('Search')}</Button>
                 </form>
             ) : null}
-            {error ? <p className={styles.error}>{error}</p> : null}
-            {tab === 'mine' && mine === null && !mineError ? <p className={styles.pickerEmpty}>{communityText('Loading your projects…')}</p> : null}
-            {tab === 'mine' && mineError ? <p className={styles.pickerEmpty}>{mineError} <button type="button" onClick={() => setMineAttempt(attempt => attempt + 1)}>{communityText('Try again')}</button></p> : null}
-            {tab === 'search' && !results.length && !searching ? <p className={styles.pickerEmpty}>{communityText('Search for a public project to add.')}</p> : null}
-            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? <p className={styles.pickerEmpty}>{communityText('You do not have any shared or unlisted projects yet.')}</p> : null}
+            {error ? <Notice variant="error">{error}</Notice> : null}
+            {tab === 'mine' && mine === null && !mineError ? (
+                <StatusMessage compact>{communityText('Loading your projects…')}</StatusMessage>
+            ) : null}
+            {tab === 'mine' && mineError ? (
+                <StatusMessage compact error onRetry={() => setMineAttempt(attempt => attempt + 1)}>{mineError}</StatusMessage>
+            ) : null}
+            {tab === 'search' && !results.length && !searching ? (
+                <EmptyState compact icon={Search} title={communityText('No results yet')}>
+                    {communityText('Search for a public project to add.')}
+                </EmptyState>
+            ) : null}
+            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? (
+                <EmptyState compact icon={FolderPlus} title={communityText('No projects to add')}>
+                    {communityText('You do not have any shared or unlisted projects yet.')}
+                </EmptyState>
+            ) : null}
             <div className={styles.pickerResults}>
                 {projects.map(project => {
                     const added = existingIds.has(project.id);
@@ -202,7 +227,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                             <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
                             <div>
                                 <strong>{project.title}</strong>
-                                <span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span>
+                                <span>{communityText('by')} <UserLink username={project.owner}>{project.owner}</UserLink></span>
                                 {project.visibility === 'unlisted' ? <small>{communityText('Unlisted')}</small> : null}
                             </div>
                             <Button
@@ -212,7 +237,7 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                                 busyLabel={communityText('Adding…')}
                                 onClick={() => add(project)}
                             >
-                                {added ? <><Check size={14} />{communityText(' Added')}</> : <><Plus size={14} />{communityText(' Add')}</>}
+                                {added ? <><Check size={14} />{communityText('Added')}</> : <><Plus size={14} />{communityText('Add')}</>}
                             </Button>
                         </article>
                     );
@@ -221,7 +246,9 @@ const SpaceProjectPicker = ({space, onAdded}) => {
             {tab === 'mine' && mineOffset < mineTotal ? (
                 <Button variant="secondary" busy={mineMoreBusy} busyLabel={communityText('Loading…')} onClick={loadMoreMine}>{communityText('Load more projects')}</Button>
             ) : null}
-            {tab === 'mine' && mineMoreError ? <p className={styles.pickerEmpty}>{communityText('Could not load more projects. Try again.')}</p> : null}
+            {tab === 'mine' && mineMoreError ? (
+                <Notice variant="error">{communityText('Could not load more projects. Try again.')}</Notice>
+            ) : null}
         </section>
     );
 };

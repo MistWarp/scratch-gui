@@ -8,7 +8,12 @@ import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
-import Button from './ui/Button.jsx';
+import CardGrid from './ui/CardGrid.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import PageHeader from './ui/PageHeader.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import {track} from '../analytics';
 import fog from '../../lib/default-project/fog.svg';
 import styles from './HomeWorkspace.module.css';
@@ -49,26 +54,52 @@ export const ContinueProjects = ({username, onProjectCount}) => {
     }, [username, attempt, onProjectCount]);
     if (!username) return null;
     const current = result.username === username ? result : {projects: null, failed: false};
+    const retry = () => setAttempt(value => value + 1);
     return (
         <section className={styles.section} aria-label={communityText('Continue editing')}>
-            <div className={styles.heading}>
-                <div><h1>{communityText('Continue editing')}</h1></div>
-                <Link to="/mystuff?section=projects">{communityText('All your projects ')}<ArrowRight size={16} /></Link>
-            </div>
-            {current.projects === null ? <p role="status">{communityText('Loading your projects…')}</p> : null}
-            {current.failed ? <p role="alert">{communityText("Couldn't load your projects. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></p> : null}
-            {current.projects && !current.projects.length && !current.failed ? (
-                <div className={styles.empty}><Cloud size={22} /><div><strong>{communityText('Your first project starts here.')}</strong><p>{communityText('Try a starter below. Save it to MistWarp and continue here next time.')}</p></div></div>
+            <PageHeader
+                compact
+                title={communityText('Continue editing')}
+                actions={(
+                    <Link to="/mystuff?section=projects" className={styles.link}>
+                        {communityText('All your projects')}
+                        <ArrowRight size={16} />
+                    </Link>
+                )}
+            />
+            {current.projects === null ? <StatusMessage compact>{communityText('Loading your projects…')}</StatusMessage> : null}
+            {current.failed ? (
+                <StatusMessage compact error onRetry={retry}>{communityText('Could not load your projects.')}</StatusMessage>
             ) : null}
-            <div className={styles.projectGrid}>
-                {(current.projects || []).map((project, index) => (
-                    <a className={styles.resumeCard} key={project.id} href={editorUrl({platformProject: project.id})}>
-                        <ProjectThumbnail project={project} className={styles.thumbnail} fallbackClassName={styles.thumbnailFallback} />
-                        <div><span className={styles.meta}>{project.shared ? communityText('Shared') : communityText('Draft')}{communityText(' · Saved ')}{timeAgo(project.edited || project.created)}</span>
-                            <h2>{project.title}</h2><span className={index === 0 ? styles.continueButton : styles.continueLink}>{communityText('Continue editing ')}<ArrowRight size={16} /></span></div>
-                    </a>
-                ))}
-            </div>
+            {current.projects && !current.projects.length && !current.failed ? (
+                <EmptyState compact icon={Cloud} title={communityText('Your first project starts here')}>
+                    {communityText('Try a starter below. Save it to MistWarp and continue here next time.')}
+                </EmptyState>
+            ) : null}
+            {current.projects && current.projects.length ? (
+                <CardGrid min={300}>
+                    {current.projects.map((project, index) => {
+                        const saved = timeAgo(project.edited || project.created);
+                        return (
+                            <a className={styles.resumeCard} key={project.id} href={editorUrl({platformProject: project.id})}>
+                                <ProjectThumbnail project={project} className={styles.thumbnail} fallbackClassName={styles.thumbnailFallback} />
+                                <div>
+                                    <span className={styles.meta}>
+                                        {project.shared ?
+                                            communityText('Shared · Saved {value1}', {value1: saved}) :
+                                            communityText('Draft · Saved {value1}', {value1: saved})}
+                                    </span>
+                                    <h2>{project.title}</h2>
+                                    <span className={index === 0 ? styles.continueButton : styles.continueLink}>
+                                        {communityText('Continue editing')}
+                                        <ArrowRight size={16} />
+                                    </span>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </CardGrid>
+            ) : null}
         </section>
     );
 };
@@ -88,25 +119,65 @@ export const DeviceBackup = () => {
         };
     }, []);
     if (!backup) return null;
-    return <aside className={styles.backup}><HardDrive size={20} /><div><strong>{communityText('Device backup available')}</strong><p>{backup.title} · {timeAgo(backup.created * 1000)}{communityText(' · This browser only')}</p></div><a href={editorUrl({restore: backup.id})}>{communityText('Open backup ')}<ArrowRight size={16} /></a></aside>;
+    return (
+        <Notice
+            icon={HardDrive}
+            className={styles.backup}
+            title={communityText('Device backup available')}
+            action={(
+                <a className={styles.link} href={editorUrl({restore: backup.id})}>
+                    {communityText('Open backup')}
+                    <ArrowRight size={16} />
+                </a>
+            )}
+        >
+            {communityText('{value1} · {value2} · This browser only', {value1: backup.title, value2: timeAgo(backup.created * 1000)})}
+        </Notice>
+    );
 };
 
 const STARTER_ICONS = {clicker: MousePointer2, explorer: Gamepad2, animation: Sparkles};
 
 export const StarterGallery = () => {
     const {text: communityText} = useCommunityText();
-    return (<section className={styles.section} id="starters" aria-labelledby="starter-heading">
-        <div className={styles.heading}><div><h2 id="starter-heading">{communityText('Starter projects')}</h2><p>{communityText('Run a project, change one thing, and save your own version. No sign-in needed to try.')}</p></div><a href={editorUrl()}>{communityText('Start a blank project ')}<ArrowRight size={16} /></a></div>
-        <div className={styles.starterGrid}>
-            {STARTERS.map(starter => {
-                const Icon = STARTER_ICONS[starter.id];
-                return (<a key={starter.id} className={styles.starterCard} href={editorUrl({starter: starter.id})}>
-                    <div className={`${styles.starterArt} ${styles[starter.accent]}`}><span className={styles.kind}><Icon size={16} />{starter.kind}</span><img src={fog} alt="" /><span className={styles.controls}>{starter.control}</span></div>
-                    <div className={styles.starterBody}><h3>{starter.title}</h3><p>{starter.description}</p><span>{communityText('Try this starter ')}<ArrowRight size={16} /></span></div>
-                </a>);
-            })}
-        </div>
-    </section>);
+    return (
+        <section className={styles.section} id="starters" aria-labelledby="starter-heading">
+            <SectionHeading
+                id="starter-heading"
+                icon={Sparkles}
+                title={communityText('Starter projects')}
+                lead={communityText('Run a project, change one thing, and save your own version. No sign-in needed to try.')}
+                actions={(
+                    <a className={styles.link} href={editorUrl()}>
+                        {communityText('Start a blank project')}
+                        <ArrowRight size={16} />
+                    </a>
+                )}
+            />
+            <CardGrid min={300}>
+                {STARTERS.map(starter => {
+                    const Icon = STARTER_ICONS[starter.id];
+                    return (
+                        <a key={starter.id} className={styles.starterCard} href={editorUrl({starter: starter.id})}>
+                            <div className={`${styles.starterArt} ${styles[starter.accent]}`}>
+                                <span className={styles.kind}><Icon size={16} />{starter.kind}</span>
+                                <img src={fog} alt="" />
+                                <span className={styles.controls}>{starter.control}</span>
+                            </div>
+                            <div className={styles.starterBody}>
+                                <h3>{starter.title}</h3>
+                                <p>{starter.description}</p>
+                                <span>
+                                    {communityText('Try this starter')}
+                                    <ArrowRight size={16} />
+                                </span>
+                            </div>
+                        </a>
+                    );
+                })}
+            </CardGrid>
+        </section>
+    );
 };
 
 export const selectActiveChallenge = (spaces, now = Date.now()) => spaces
@@ -128,5 +199,23 @@ export const ActiveChallenge = () => {
         };
     }, []);
     if (!challenge) return null;
-    return <section className={styles.challenge}><Trophy size={32} /><div><h2>{challenge.title}</h2><p>{challenge.theme ? communityText("Theme: {value1} · ", {value1: challenge.theme}) : ''}{communityText('Submissions close ')}{formatDate(challenge.endsAt)}. {challenge.participantCount || 0}{communityText(' creators have joined.')}</p></div><Link to={`/spaces/${challenge._id}`} onClick={() => track('challenge_open', {source: 'home'})}>{communityText('View challenge & enter ')}<ArrowRight size={16} /></Link></section>;
+    const joined = Number(challenge.participantCount) || 0;
+    const summary = [
+        challenge.theme ? communityText('Theme: {value1}.', {value1: challenge.theme}) : '',
+        communityText('Submissions close {value1}.', {value1: formatDate(challenge.endsAt)}),
+        joined === 1 ? communityText('1 creator has joined.') : communityText('{value1} creators have joined.', {value1: joined})
+    ].filter(Boolean).join(' ');
+    return (
+        <section className={styles.challenge}>
+            <Trophy size={32} />
+            <div>
+                <h2>{challenge.title}</h2>
+                <p>{summary}</p>
+            </div>
+            <Link className={styles.link} to={`/spaces/${challenge._id}`} onClick={() => track('challenge_open', {source: 'home'})}>
+                {communityText('View challenge and enter')}
+                <ArrowRight size={16} />
+            </Link>
+        </section>
+    );
 };
