@@ -688,3 +688,12 @@
     width: 100%;
     margin: 0 0 0.5rem;
 }
+
+.friendsSlot {
+    margin: 1rem 0;
+}
+
+.addFriendButton {
+    flex-shrink: 0;
+    margin-left: auto;
+}

@@ -48,7 +48,8 @@ import {
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
-    includeEditDuration: 'Include edit duration'
+    includeEditDuration: 'Include edit duration',
+    friendsVisible: "Let friends see when I'm in the editor and invite me"
 };
 const ACTIVITY_SHARING_OPTIONS = [
     {value: 'ask', label: 'Ask each project'},

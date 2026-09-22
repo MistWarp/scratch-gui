@@ -355,6 +355,7 @@ const PAYLOAD_VALIDATORS = {
         if (!isNonEmptyString(payload.username, LIMITS.MAX_USERNAME)) return 'hello requires username';
         if (!isOptionalString(payload.handle, LIMITS.MAX_USERNAME)) return 'hello handle must be a string';
         if (!isNonEmptyString(payload.roomId, LIMITS.MAX_ROOM_ID)) return 'hello requires roomId';
+        if (!isOptionalString(payload.invite, LIMITS.MAX_ROOM_ID)) return 'hello invite must be a string';
         if (payload.scope && (!isPlainObject(payload.scope) ||
             !isNonEmptyString(payload.scope.projectId, LIMITS.MAX_ID) ||
             !isNonEmptyString(payload.scope.branch, 200))) return 'hello requires a valid project and branch scope';
