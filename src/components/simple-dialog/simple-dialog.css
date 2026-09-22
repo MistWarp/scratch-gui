@@ -35,6 +35,7 @@
 }
 
 .okButton,
+.choiceButton,
 .cancelButton {
     padding: 0.5rem 1rem;
     border: 2px solid transparent;
@@ -46,12 +47,24 @@
 }
 
 .okButton {
-    background-color: var(--ui-primary, #4d97ff);
+    background-color: var(--looks-secondary, #ff4c4c);
     color: white;
+    font-weight: 700;
 }
 
 .okButton:hover {
-    background-color: var(--ui-primary-hover, #3b85ff);
+    background-color: color-mix(in srgb, var(--looks-secondary, #ff4c4c) 88%, black);
+}
+
+.choiceButton {
+    background-color: transparent;
+    border-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    color: var(--text-primary, #575e75);
+    font-weight: 700;
+}
+
+.choiceButton:hover {
+    background-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
 }
 
 .okButton:active {
@@ -59,14 +72,16 @@
 }
 
 .okButton:focus,
+.choiceButton:focus,
 .cancelButton:focus {
-    outline: 2px solid var(--ui-primary, #4d97ff);
+    outline: 2px solid var(--looks-secondary, #ff4c4c);
     outline-offset: 2px;
 }
 
 .cancelButton {
     background-color: var(--ui-secondary, #e6e6e6);
-    color: var(--ui-secondary-foreground, #575e75);
+    color: var(--text-primary, #575e75);
+    font-weight: 700;
 }
 
 .cancelButton:hover {
@@ -93,6 +108,7 @@
     }
 
     .okButton,
+    .choiceButton,
     .cancelButton {
         min-height: 44px;
     }

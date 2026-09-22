@@ -119,7 +119,7 @@ class WindowedModal extends React.Component {
 
     resizeToContentIfNeeded () {
         if (!this.window || !this.contentContainer) return;
-        if (this.props.id !== 'mwProjectThemeModal') return;
+        if (this.props.id !== 'mwProjectThemeModal' && !this.props.fitContent) return;
 
         window.requestAnimationFrame(() => {
             if (!this.window || !this.contentContainer) return;
@@ -220,7 +220,7 @@ class WindowedModal extends React.Component {
             min-height: 0;
         `;
 
-        if (id === 'mwProjectThemeModal') {
+        if (id === 'mwProjectThemeModal' || this.props.fitContent) {
             this.contentContainer.style.height = 'auto';
             this.contentContainer.style.maxHeight = 'none';
             this.contentContainer.style.overflow = 'visible';
@@ -418,6 +418,7 @@ WindowedModal.propTypes = {
     store: PropTypes.object.isRequired,
     width: PropTypes.number,
     height: PropTypes.number,
+    fitContent: PropTypes.bool,
     resizable: PropTypes.bool,
     maximizable: PropTypes.bool,
     minWidth: PropTypes.number,

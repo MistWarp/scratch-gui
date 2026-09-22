@@ -320,7 +320,7 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
 
     const host = {session: hostSession, applier: hostApplier, transport: hostTransport, id: hostTransport.id};
 
-    const addClient = async (username, handle, clientScope = scope) => {
+    const addClient = async (username, handle, clientScope = scope, invite = null) => {
         const applier = new DocApplier();
         const transport = new FakeCollabTransport(hub, nextPeerId('client'));
         const session = new ClientSession({
@@ -329,7 +329,8 @@ const createRoom = async ({clientCount = 2, privacy = 'public', autoSnapshot = t
             roomId: 'room',
             username,
             handle,
-            scope: clientScope
+            scope: clientScope,
+            invite
         });
         const client = {session, applier, transport, id: transport.id, username};
         clientsById.set(transport.id, client);

@@ -7,8 +7,18 @@ import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import Input from '../forms/input.jsx';
+import ValueButton from '../mw-friends-panel/value-button.jsx';
 
-import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine} from 'lucide-react';
+import {
+    Handshake as CollaborationIcon,
+    User,
+    Crown,
+    UserMinus,
+    UserPlus,
+    Copy,
+    AlertTriangle,
+    PenLine
+} from 'lucide-react';
 
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
@@ -26,6 +36,16 @@ const messages = defineMessages({
         defaultMessage: 'Copy room link',
         description: 'Title of the dialog showing the collaboration room link when it could not be copied',
         id: 'mw.collaboration.roomUrlPromptTitle'
+    },
+    friendRequestSent: {
+        defaultMessage: 'Friend request sent to {name}.',
+        description: 'Toast shown after sending a Rotur friend request from the collaboration window',
+        id: 'mw.collaboration.friendRequestSent'
+    },
+    friendRequestFailed: {
+        defaultMessage: 'Could not send a friend request to {name}.',
+        description: 'Toast shown when a Rotur friend request from the collaboration window fails',
+        id: 'mw.collaboration.friendRequestFailed'
     },
     roomUrlPromptMessage: {
         defaultMessage: 'The link could not be copied automatically. Copy it from the field below.',
@@ -80,6 +100,7 @@ class CollaborationModal extends Component {
         this.handleSelectNewRoomPrivacy = this.handleSelectNewRoomPrivacy.bind(this);
         this.handleSelectPrivateNewRoom = this.handleSelectPrivateNewRoom.bind(this);
         this.handleSelectPublicNewRoom = this.handleSelectPublicNewRoom.bind(this);
+        this.handleAddFriend = this.handleAddFriend.bind(this);
     }
 
     componentDidMount () {
@@ -502,6 +523,41 @@ class CollaborationModal extends Component {
         );
     }
 
+    handleAddFriend (username) {
+        const {friendTools, intl} = this.props;
+        friendTools.addFriend(username).then(
+            () => this.props.onShowToast(intl.formatMessage(messages.friendRequestSent, {name: username}), 'success'),
+            () => this.props.onShowToast(intl.formatMessage(messages.friendRequestFailed, {name: username}), 'error')
+        );
+    }
+
+    renderAddFriend (user) {
+        const tools = this.props.friendTools;
+        if (!tools || !tools.ready || !user.handle || !tools.me ||
+            user.handle.toLowerCase() === tools.me.toLowerCase() || tools.isFriend(user.handle)) return null;
+        return (
+            <ValueButton
+                className={styles.addFriendButton}
+                iconElem={UserPlus}
+                size="small"
+                value={user.handle}
+                variant="secondary"
+                onPress={this.handleAddFriend}
+            >
+                <FormattedMessage
+                    defaultMessage="Add friend"
+                    description="Button next to a collaborator that sends them a Rotur friend request"
+                    id="mw.collaboration.addFriend"
+                />
+            </ValueButton>
+        );
+    }
+
+    renderFriends () {
+        if (!this.props.friendsPanel) return null;
+        return <div className={styles.friendsSlot}>{this.props.friendsPanel}</div>;
+    }
+
     renderAlphaBanner () {
         return (
             <div className={styles.alphaBanner}>
@@ -554,6 +610,8 @@ class CollaborationModal extends Component {
                         </button>
                     )}
                 </div>
+
+                {this.renderFriends()}
 
                 <div className={styles.roomActions}>
                     <div className={styles.joinSection}>
@@ -805,6 +863,7 @@ class CollaborationModal extends Component {
                                         )}
                                     </span>
 
+                                    {this.renderAddFriend(user)}
                                     {isHost && user.id !== this.props.currentUserId && (
                                         <Button
                                             className={styles.kickButton}
@@ -824,6 +883,8 @@ class CollaborationModal extends Component {
                         </div>
                     </div>
                 </div>
+
+                {this.renderFriends()}
 
                 {isHost && pendingRequests.length > 0 && (
                     <>
@@ -1127,7 +1188,7 @@ class CollaborationModal extends Component {
                     )}
                 </div>
                 {!project.active && !project.checking && (
-                    <p>{"Live sessions are open only to this project's collaborators. " +
+                    <p>{"Live sessions are open to this project's collaborators and friends you invite. " +
                         'To work separately, create a branch in Project history.'}</p>
                 )}
                 {project.active && project.phase === 'live' && (
@@ -1151,10 +1212,12 @@ class CollaborationModal extends Component {
                                         <span className={styles.userActivity}>{this.describeActivity(user.id)}</span>
                                     )}
                                 </span>
+                                {this.renderAddFriend(user)}
                             </div>
                         ))}
                     </div>
                 )}
+                {this.renderFriends()}
             </Box>
         );
     }
@@ -1207,6 +1270,13 @@ CollaborationModal.propTypes = {
     onShowToast: PropTypes.func.isRequired,
     openSimpleDialog: PropTypes.func.isRequired,
     projectSession: PropTypes.object,
+    friendsPanel: PropTypes.node,
+    friendTools: PropTypes.shape({
+        ready: PropTypes.bool,
+        me: PropTypes.string,
+        isFriend: PropTypes.func,
+        addFriend: PropTypes.func
+    }),
     onOpenBranches: PropTypes.func,
     projectSessionActive: PropTypes.bool,
     projectPeerIds: PropTypes.arrayOf(PropTypes.string),
