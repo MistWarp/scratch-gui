@@ -1,9 +1,13 @@
-/* eslint-disable react/jsx-no-bind, no-alert */
+/* eslint-disable react/jsx-no-bind */
 import React, {useContext, useEffect, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {RotateCcw} from 'lucide-react';
 
-export const SettingsContext = React.createContext({tab: 'Export', translate: value => value});
+export const SettingsContext = React.createContext({
+    tab: 'Export',
+    translate: value => value,
+    confirm: () => Promise.resolve(true)
+});
 
 export const Section = ({tab, reset, children}) => {
     const context = useContext(SettingsContext);
@@ -14,7 +18,10 @@ export const Section = ({tab, reset, children}) => {
                 title={context.translate('reset.reset')}
                 aria-label={context.translate('reset.reset')}
                 onClick={() => {
-                    if (window.confirm(context.translate('reset.confirm'))) reset();
+                    context.confirm(context.translate('reset.reset'), context.translate('reset.confirm'))
+                        .then(accepted => {
+                            if (accepted) reset();
+                        });
                 }}
             ><RotateCcw size={16} /></button>}
             {children}

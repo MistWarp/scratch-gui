@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {AlertTriangle, Plus, RefreshCw, Trash2} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
+import Button from '../button/button.jsx';
 import RestorePoint from './restore-point.jsx';
 import styles from './restore-point-modal.css';
 import {formatBytes} from '../../lib/utils/bytes';
@@ -101,18 +102,18 @@ const RestorePointModal = props => (
                             <p className={styles.confirmationError}>{props.confirmationError}</p>
                         ) : null}
                         <div className={styles.confirmationActions}>
-                            <button
-                                type="button"
-                                className={styles.secondaryButton}
+                            <Button
+                                variant="secondary"
+                                size="small"
                                 disabled={props.confirmationBusy}
                                 onClick={props.onCancelConfirmation}
-                            >{'Cancel'}</button>
-                            <button
-                                type="button"
-                                className={styles.confirmationButton}
+                            >{'Cancel'}</Button>
+                            <Button
+                                variant="danger"
+                                size="small"
                                 disabled={props.confirmationBusy}
                                 onClick={props.onConfirm}
-                            >{props.confirmationBusy ? 'Working…' : props.confirmation.action}</button>
+                            >{props.confirmationBusy ? 'Working…' : props.confirmation.action}</Button>
                         </div>
                     </div>
                 </div>
@@ -181,18 +182,18 @@ const RestorePointModal = props => (
                     >
                         <RefreshCw />
                     </button>
-                    <button
-                        type="button"
-                        className={styles.primaryButton}
+                    <Button
+                        variant="primary"
+                        size="small"
+                        iconElem={Plus}
                         disabled={props.isLoading}
                         onClick={props.onClickCreate}
                     >
-                        <Plus />
                         <FormattedMessage
                             defaultMessage="Create"
                             id="tw.restorePoints.create"
                         />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -206,17 +207,17 @@ const RestorePointModal = props => (
                         />
                     </strong>
                     <span className={styles.errorMessage}>{props.error}</span>
-                    <button
-                        type="button"
-                        className={styles.secondaryButton}
+                    <Button
+                        variant="secondary"
+                        size="small"
+                        iconElem={RefreshCw}
                         onClick={props.onClickRefresh}
                     >
-                        <RefreshCw />
                         <FormattedMessage
                             defaultMessage="Try again"
                             id="tw.restorePoints.retry"
                         />
-                    </button>
+                    </Button>
                 </div>
             ) : props.isLoading ? (
                 <div className={styles.state}>
@@ -293,17 +294,17 @@ const RestorePointModal = props => (
                             id="tw.restorePoints.size2"
                         />
                     </span>
-                    <button
-                        type="button"
-                        className={styles.deleteAllButton}
+                    <Button
+                        variant="secondary"
+                        size="small"
+                        iconElem={Trash2}
                         onClick={props.onClickDeleteAll}
                     >
-                        <Trash2 />
                         <FormattedMessage
                             defaultMessage="Delete all"
                             id="tw.restorePoints.deleteAll"
                         />
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>

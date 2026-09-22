@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
+import Button from '../button/button.jsx';
 import SelectMenu from '../../community/components/ui/SelectMenu.jsx';
 import {
     ModalSidebar,
@@ -177,9 +178,19 @@ const messages = defineMessages({
         id: 'mw.variableManager.refresh',
         defaultMessage: 'Refresh data'
     },
+    deleteConfirmTitle: {
+        id: 'mw.variableManager.deleteConfirmTitle',
+        defaultMessage: 'Delete variable?',
+        description: 'Title of the dialog asking to confirm deleting a variable or list'
+    },
     deleteConfirm: {
         id: 'mw.variableManager.deleteConfirm',
         defaultMessage: 'Delete "{name}"? Blocks using it may also be removed.'
+    },
+    clearConfirmTitle: {
+        id: 'mw.variableManager.clearConfirmTitle',
+        defaultMessage: 'Clear list?',
+        description: 'Title of the dialog asking to confirm removing every item from a list'
     },
     clearConfirm: {
         id: 'mw.variableManager.clearConfirm',
@@ -297,20 +308,20 @@ const CreatePanel = ({canCreateCloud, hasLocalTarget, intl, onCancel, onCreate})
                 role="alert"
             >{error}</div>}
             <div className={styles.createActions}>
-                <button
+                <Button
                     type="button"
-                    className={styles.secondaryButton}
+                    variant="secondary"
                     onClick={onCancel}
                 >
                     {intl.formatMessage(messages.cancel)}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="submit"
-                    className={styles.primaryButton}
+                    variant="primary"
                 >
                     <Plus size={16} />
                     {intl.formatMessage(messages.create)}
-                </button>
+                </Button>
             </div>
         </form>
     );
@@ -324,7 +335,7 @@ CreatePanel.propTypes = {
     onCreate: PropTypes.func
 };
 
-const ListEditor = ({intl, maxLength, onChange, record}) => {
+const ListEditor = ({intl, maxLength, onChange, onConfirm, record}) => {
     const [items, setItems] = useState(() => (Array.isArray(record.value) ? record.value.map(String) : []));
     const [page, setPage] = useState(0);
     const [error, setError] = useState('');
@@ -385,12 +396,14 @@ const ListEditor = ({intl, maxLength, onChange, record}) => {
         if (commit(next)) setPage(Math.floor((next.length - 1) / PAGE_SIZE));
     };
 
-    const clear = () => {
-        // eslint-disable-next-line no-alert
-        if (window.confirm(intl.formatMessage(messages.clearConfirm, {name: record.name}))) {
-            commit([]);
-            setPage(0);
-        }
+    const clear = async () => {
+        const confirmed = await onConfirm(
+            intl.formatMessage(messages.clearConfirmTitle),
+            intl.formatMessage(messages.clearConfirm, {name: record.name})
+        );
+        if (!confirmed) return;
+        commit([]);
+        setPage(0);
     };
 
     return (
@@ -404,22 +417,24 @@ const ListEditor = ({intl, maxLength, onChange, record}) => {
                     }) : 'Empty list'}
                 </span>
                 <div>
-                    <button
+                    <Button
                         type="button"
-                        className={styles.smallButton}
+                        variant="secondary"
+                        size="small"
                         onClick={addItem}
                     >
                         <Plus size={14} />
                         {intl.formatMessage(messages.addItem)}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
-                        className={styles.smallDangerButton}
+                        variant="danger"
+                        size="small"
                         disabled={!items.length}
                         onClick={clear}
                     >
                         {intl.formatMessage(messages.clearList)}
-                    </button>
+                    </Button>
                 </div>
             </div>
             {error && <div
@@ -498,6 +513,7 @@ ListEditor.propTypes = {
     intl: PropTypes.shape({formatMessage: PropTypes.func.isRequired}),
     maxLength: PropTypes.number,
     onChange: PropTypes.func,
+    onConfirm: PropTypes.func.isRequired,
     record: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
@@ -505,7 +521,7 @@ ListEditor.propTypes = {
     })
 };
 
-const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, record}) => {
+const DetailPanel = ({intl, onConfirm, onDelete, onMonitorChange, onRename, onValueChange, record}) => {
     const [name, setName] = useState(record.name);
     const [value, setValue] = useState(String(record.value));
     const [error, setError] = useState('');
@@ -546,17 +562,18 @@ const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, 
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') saveValue();
     };
 
-    const requestDelete = () => {
+    const requestDelete = async () => {
         // Blockly provides its own usage-aware confirmation when more than one
         // block references the variable. Avoid making the user confirm twice.
         if (record.usageCount > 1) {
             onDelete(record);
             return;
         }
-        // eslint-disable-next-line no-alert
-        if (window.confirm(intl.formatMessage(messages.deleteConfirm, {name: record.name}))) {
-            onDelete(record);
-        }
+        const confirmed = await onConfirm(
+            intl.formatMessage(messages.deleteConfirmTitle),
+            intl.formatMessage(messages.deleteConfirm, {name: record.name})
+        );
+        if (confirmed) onDelete(record);
     };
 
     const TypeIcon = record.isCloud ? Cloud : record.type === 'list' ? List : Variable;
@@ -614,6 +631,7 @@ const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, 
                     maxLength={getSetting('list_max_length')}
                     record={record}
                     onChange={items => onValueChange(record, items)}
+                    onConfirm={onConfirm}
                 />
             ) : (
                 <label className={styles.field}>
@@ -629,13 +647,13 @@ const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, 
                         onKeyDown={handleValueKey}
                     />
                     <span className={styles.fieldHelp}>{'Press Ctrl+Enter to save.'}</span>
-                    <button
+                    <Button
                         type="button"
-                        className={styles.primaryButton}
+                        variant="primary"
                         onClick={saveValue}
                     >
                         {intl.formatMessage(messages.save)}
-                    </button>
+                    </Button>
                 </label>
             )}
 
@@ -653,14 +671,14 @@ const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, 
                     {record.monitorVisible ? <Eye size={17} /> : <EyeOff size={17} />}
                     <span>{intl.formatMessage(messages.monitor)}</span>
                 </label>
-                <button
+                <Button
                     type="button"
-                    className={styles.dangerButton}
+                    variant="danger"
                     onClick={requestDelete}
                 >
                     <Trash2 size={16} />
                     {intl.formatMessage(messages.delete)}
-                </button>
+                </Button>
             </div>
         </section>
     );
@@ -668,6 +686,7 @@ const DetailPanel = ({intl, onDelete, onMonitorChange, onRename, onValueChange, 
 
 DetailPanel.propTypes = {
     intl: PropTypes.shape({formatMessage: PropTypes.func.isRequired}),
+    onConfirm: PropTypes.func.isRequired,
     onDelete: PropTypes.func,
     onMonitorChange: PropTypes.func,
     onRename: PropTypes.func,
@@ -687,7 +706,7 @@ DetailPanel.propTypes = {
 };
 
 const VariableManager = props => {
-    const {intl, vm} = props;
+    const {intl, openSimpleDialog, vm} = props;
     const [workspace, setWorkspace] = useState(null);
     const [records, setRecords] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
@@ -696,6 +715,16 @@ const VariableManager = props => {
     const [query, setQuery] = useState('');
     const [creating, setCreating] = useState(false);
     const [mobileView, setMobileView] = useState('list');
+
+    const confirm = useCallback((title, message) => new Promise(resolve => {
+        openSimpleDialog({
+            type: 'confirm',
+            title,
+            message,
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false)
+        });
+    }), [openSimpleDialog]);
 
     const refresh = useCallback(() => {
         const next = collectVariables(vm).map(record => ({
@@ -944,9 +973,9 @@ const VariableManager = props => {
                                         {`${visibleRecords.length} ${visibleRecords.length === 1 ? 'item' : 'items'}`}
                                     </p>
                                 </div>
-                                <button
+                                <Button
                                     type="button"
-                                    className={styles.primaryButton}
+                                    variant="primary"
                                     onClick={() => {
                                         setCreating(true);
                                         setMobileView('content');
@@ -954,7 +983,7 @@ const VariableManager = props => {
                                 >
                                     <Plus size={16} />
                                     {intl.formatMessage(messages.addData)}
-                                </button>
+                                </Button>
                             </header>
                             <div className={styles.toolbar}>
                                 <label className={styles.search}>
@@ -1031,13 +1060,13 @@ const VariableManager = props => {
                                             <Database size={28} />
                                             <strong>{intl.formatMessage(messages.empty)}</strong>
                                             <span>{intl.formatMessage(messages.emptyHelp)}</span>
-                                            <button
+                                            <Button
                                                 type="button"
-                                                className={styles.secondaryButton}
+                                                variant="secondary"
                                                 onClick={() => setCreating(true)}
                                             >
                                                 {intl.formatMessage(messages.addData)}
-                                            </button>
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
@@ -1046,6 +1075,7 @@ const VariableManager = props => {
                                         intl={intl}
                                         record={selected}
                                         records={records}
+                                        onConfirm={confirm}
                                         onDelete={handleDelete}
                                         onMonitorChange={handleMonitorChange}
                                         onRename={handleRename}
@@ -1071,6 +1101,7 @@ VariableManager.propTypes = {
     intl: intlShape,
     isRtl: PropTypes.bool,
     onRequestClose: PropTypes.func,
+    openSimpleDialog: PropTypes.func.isRequired,
     visible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };

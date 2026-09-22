@@ -21,9 +21,8 @@
 .search {
     flex: 1;
     padding: 0 9px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    background: var(--bg-card);
+    background: var(--bg-raised);
     color: var(--text-faint);
 }
 
@@ -73,32 +72,18 @@
     margin: 0 0 6px;
     padding: 0;
     overflow: hidden;
-    border: 1px solid transparent;
     border-radius: var(--radius-xs);
     break-inside: avoid;
 }
 
 .grid button:hover {
-    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 2px var(--accent-strong);
 }
 
 .grid img {
     display: block;
     width: 100%;
     height: auto;
-}
-
-.status,
-.error {
-    display: grid;
-    min-height: 100px;
-    place-items: center;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
-.error {
-    color: var(--mw-danger);
 }
 
 .credit {

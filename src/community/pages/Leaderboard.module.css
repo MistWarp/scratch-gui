@@ -4,29 +4,9 @@
     padding: var(--page-pad);
 }
 
-.page h1 {
-    margin: 0 0 6px;
-    font-size: var(--fs-3xl);
-}
-
-.lead,
-.status {
-    color: var(--text-dim);
-}
-
-.lead {
-    margin: 0 0 24px;
-}
-
-.status {
-    padding: 40px 0;
-    text-align: center;
-}
-
 .tabs {
     display: inline-flex;
     gap: 2px;
-    margin: 0 0 20px;
     padding: 4px;
     border-radius: var(--radius-sm);
     background: var(--bg-card);
@@ -61,14 +41,13 @@
     align-items: center;
     gap: 14px;
     padding: 12px 16px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
 }
 
 .row:hover {
-    border-color: var(--accent-border);
+    background: var(--bg-raised);
 }
 
 .rank {

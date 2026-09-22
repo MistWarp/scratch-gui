@@ -2,10 +2,14 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Navigate, useSearchParams} from 'react-router-dom';
+import {Compass} from 'lucide-react';
 import api from '../api';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import ExploreNav from '../components/ExploreNav.jsx';
 import searchPath from '../search-path.js';
@@ -156,7 +160,7 @@ const Explore = () => {
             }
             setTotal(data.total || 0);
         } catch (requestError) {
-            if (loadMoreVersion.current === version) setLoadMoreError(requestError.message || 'Could not load more projects.');
+            if (loadMoreVersion.current === version) setLoadMoreError(requestError.message || communityText('Could not load more projects.'));
         } finally {
             loadMoreLocks.current.delete(version);
             if (loadMoreVersion.current === version) setLoadingMore(false);
@@ -168,18 +172,22 @@ const Explore = () => {
     return (
         <main className={styles.page}>
             <ExploreNav active="projects" />
-            <div className={styles.head}>
-                <h1>{communityText('Explore')}</h1>
-                <SectionTabs
-                    items={SORTS}
-                    value={sort}
-                    onChange={setSort}
-                    className={styles.tabs}
-                    itemClassName={styles.tab}
-                    activeClassName={styles.tabActive}
-                    ariaLabel="Project sorting"
-                />
-            </div>
+            <PageHeader
+                compact
+                icon={Compass}
+                title={communityText('Explore')}
+                actions={(
+                    <SectionTabs
+                        items={SORTS}
+                        value={sort}
+                        onChange={setSort}
+                        className={styles.tabs}
+                        itemClassName={styles.tab}
+                        activeClassName={styles.tabActive}
+                        ariaLabel="Project sorting"
+                    />
+                )}
+            />
             <div className={styles.categories}>
                 <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>{communityText('All')}</button>
                 <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>{communityText('Looking for feedback')}</button>
@@ -188,11 +196,9 @@ const Explore = () => {
                 ))}
             </div>
             {loading ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage />
             ) : failed ? (
-                <p className={styles.status}>{communityText("Couldn't load.")}{' '}
-                    <Button onClick={() => setAttempt(a => a + 1)}>{communityText('Try again')}</Button>
-                </p>
+                <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load projects.')}</StatusMessage>
             ) : projects.length ? (
                 <div className={styles.grid}>
                     {projects.map(project => (
@@ -204,12 +210,12 @@ const Explore = () => {
                     ))}
                 </div>
             ) : (
-                <p className={styles.status}>{communityText('No projects found.')}</p>
+                <EmptyState icon={Compass} title={communityText('No projects found')}>{communityText('Try another sort or category.')}</EmptyState>
             )}
             {!loading && !failed && projects.length < total ? (
                 <div className={styles.more}>
                     <Button busy={loadingMore} busyLabel={communityText('Loading…')} onClick={loadMore}>
-                        {communityText("Load more ({value1} left)", {value1: total - projects.length})}
+                        {communityText('Load more ({value1} left)', {value1: total - projects.length})}
                     </Button>
                     {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                 </div>

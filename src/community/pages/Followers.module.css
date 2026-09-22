@@ -4,36 +4,6 @@
     padding: var(--page-pad);
 }
 
-.page h1 {
-    font-size: var(--fs-3xl);
-    margin: 10px 0 20px;
-}
-
-.backLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
-.backLink:hover {
-    color: var(--accent-strong);
-}
-
-.status {
-    color: var(--text-dim);
-    text-align: center;
-    padding: 40px 0;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-    gap: 18px;
-}
-
 .cell {
     display: flex;
     flex-direction: column;
@@ -59,10 +29,5 @@
 @media (max-width: 620px) {
     .page {
         padding: 18px 14px 64px;
-    }
-
-    .grid {
-        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
-        gap: 18px 10px;
     }
 }

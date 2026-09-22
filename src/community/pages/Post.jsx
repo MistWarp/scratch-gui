@@ -4,7 +4,8 @@ import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import rotur from '../rotur.js';
 import {useUser} from '../UserContext.jsx';
-import Button from '../components/ui/Button.jsx';
+import IconButton from '../components/ui/IconButton.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import SocialPost from '../components/SocialPost.jsx';
 import styles from './Post.module.css';
 
@@ -23,7 +24,7 @@ const Post = () => {
         setError('');
         rotur.post(id).then(data => {
             if (!active) return;
-            if (!data || !data.id) throw new Error('Post not found.');
+            if (!data || !data.id) throw new Error(communityText('Post not found.'));
             setPost(data);
             if (user) {
                 rotur.viewPost(id).then(result => {
@@ -33,7 +34,7 @@ const Post = () => {
                 }).catch(() => {});
             }
         }).catch(cause => {
-            if (active) setError(cause.message || 'Could not load this post.');
+            if (active) setError(cause.message || communityText('Could not load this post.'));
         });
         return () => {
             active = false;
@@ -43,15 +44,14 @@ const Post = () => {
     return (
         <main className={styles.page}>
             <header className={styles.heading}>
-                <button type="button" onClick={() => navigate(-1)} aria-label={communityText('Go back')}><ArrowLeft size={18} /></button>
+                <IconButton label={communityText('Go back')} onClick={() => navigate(-1)}>
+                    <ArrowLeft size={18} />
+                </IconButton>
                 <h1>{communityText('Post')}</h1>
             </header>
-            {!post && !error ? <p className={styles.status}>{communityText('Loading post…')}</p> : null}
+            {!post && !error ? <StatusMessage>{communityText('Loading post…')}</StatusMessage> : null}
             {error ? (
-                <div className={styles.status} role="alert">
-                    <p>{error}</p>
-                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                </div>
+                <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : null}
             {post ? <SocialPost initialPost={post} detail onChange={setPost} /> : null}
         </main>

@@ -6,6 +6,7 @@ import api, {projectUrl} from '../api';
 import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './RelatedProjects.module.css';
 
 const SEEN_KEY = 'mw:session-projects';
@@ -75,10 +76,11 @@ const RelatedProjects = ({id}) => {
     if (!projects.length) return null;
     return (
         <section className={styles.related}>
-            <div className={styles.head}>
-                <h2><Sparkles size={17} />{text('More like this')}</h2>
-                <NextProjectButton id={id} className={styles.next} />
-            </div>
+            <SectionHeading
+                icon={Sparkles}
+                title={text('More like this')}
+                actions={<NextProjectButton id={id} className={styles.next} />}
+            />
             <div className={styles.list}>
                 {projects.map(project => (
                     <Link

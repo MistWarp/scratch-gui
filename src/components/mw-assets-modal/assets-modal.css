@@ -80,31 +80,6 @@
     gap: 0.5rem;
 }
 
-.dialog-cancel,
-.dialog-confirm,
-.dialog-delete {
-    padding: 0.45rem 0.75rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    background: $ui-modal-background;
-    color: $text-primary;
-    cursor: pointer;
-    font: inherit;
-    font-weight: 700;
-}
-
-.dialog-confirm {
-    border-color: $motion-primary;
-    background: $motion-primary;
-    color: white;
-}
-
-.dialog-delete {
-    border-color: $error-primary;
-    background: $error-primary;
-    color: white;
-}
-
 .toolbar {
     display: flex;
     align-items: center;
@@ -431,9 +406,6 @@
 
     .add-button,
     .folder-button,
-    .dialog-cancel,
-    .dialog-confirm,
-    .dialog-delete,
     .preview-button {
         min-height: 44px;
     }

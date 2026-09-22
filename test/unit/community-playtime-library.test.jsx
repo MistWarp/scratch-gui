@@ -1,5 +1,6 @@
 import React from 'react';
 import {shallow} from 'enzyme';
+import EmptyState from '../../src/community/components/ui/EmptyState.jsx';
 import PlaytimeLibrary, {lastPlayed} from '../../src/community/components/PlaytimeLibrary.jsx';
 
 describe('Playtime library', () => {
@@ -28,8 +29,8 @@ describe('Playtime library', () => {
     test('does not expose projects when a library is private', () => {
         const wrapper = shallow(<PlaytimeLibrary visible={false} />);
 
-        expect(wrapper.text()).toContain('This game library is private.');
-        expect(wrapper.text()).toContain('chosen not to share what they play');
+        expect(wrapper.find(EmptyState).prop('title')).toBe('This game library is private');
+        expect(wrapper.find(EmptyState).children().text()).toContain('chosen not to share what they play');
     });
 
     test('marks a private library as visible to its owner', () => {
@@ -52,6 +53,6 @@ describe('Playtime library', () => {
         />);
 
         expect(wrapper.text()).not.toContain('Played but not saved');
-        expect(wrapper.text()).toContain('No library games with playtime yet.');
+        expect(wrapper.find(EmptyState).prop('title')).toBe('No library games with playtime yet');
     });
 });

@@ -1,9 +1,10 @@
 import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
-import {Eye, FolderOpen, Heart, Play, Users} from 'lucide-react';
+import {BarChart3, Eye, FolderOpen, Heart, Play, Users} from 'lucide-react';
 import api from '../api.js';
-import Button from '../components/ui/Button.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {AnalyticsChart, buildSeries} from './Admin.jsx';
 import styles from './Stats.module.css';
 
@@ -23,18 +24,19 @@ const Stats = () => {
         setError('');
         api.publicStats(30)
             .then(setStats)
-            .catch(cause => setError(cause.message || 'Could not load platform stats.'));
+            .catch(cause => setError(cause.message || communityText('Could not load platform stats.')));
     };
     useEffect(load, []);
 
     return (
         <main className={styles.page}>
-            <header className={styles.head}>
-                <h1>{communityText('MistWarp by the numbers')}</h1>
-                <p>{communityText('A public look at what the community is building and playing.')}</p>
-            </header>
-            {error ? <div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div> : null}
-            {!error && !stats ? <p className={styles.state}>{communityText('Loading stats…')}</p> : null}
+            <PageHeader
+                icon={BarChart3}
+                title={communityText('MistWarp by the numbers')}
+                lead={communityText('A public look at what the community is building and playing.')}
+            />
+            {error ? <StatusMessage error onRetry={load}>{error}</StatusMessage> : null}
+            {!error && !stats ? <StatusMessage>{communityText('Loading stats…')}</StatusMessage> : null}
             {stats ? <>
                 <section className={styles.statGrid} aria-label={communityText('Platform totals')}>
                     <Stat icon={FolderOpen} label={communityText('Public projects')} value={stats.sharedProjects} />
@@ -76,7 +78,9 @@ const Stats = () => {
                         estimateToday
                     />
                 </section>
-                <p className={styles.note}>{communityText('Charts show the last 30 days and refresh from cached aggregate data.')}</p>
+                <p className={styles.note}>
+                    {communityText('Charts show the last 30 days and refresh from cached aggregate data.')}
+                </p>
             </> : null}
         </main>
     );

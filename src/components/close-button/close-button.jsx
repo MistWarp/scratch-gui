@@ -1,8 +1,11 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
+import {ArrowLeft, X} from 'lucide-react';
 
 import styles from './close-button.css';
+
+const iconSize = size => (size === 'small' ? 8 : 16);
 
 const CloseButton = props => (
     <button
@@ -20,14 +23,17 @@ const CloseButton = props => (
         onClick={props.onClick}
     >
         {props.buttonType === 'back' ? (
-            <span className={styles.closeText}>{'←'}</span>
+            <span className={styles.closeText}><ArrowLeft size={iconSize(props.size)} /></span>
         ) : (
             <span
                 className={classNames(styles.closeText, styles.closeIcon, {
                     [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
                 })}
             >
-                {'✕'}
+                <X
+                    size={iconSize(props.size)}
+                    strokeWidth={2.5}
+                />
             </span>
         )}
     </button>
@@ -39,7 +45,6 @@ CloseButton.SIZE_LARGE = 'large';
 CloseButton.COLOR_NEUTRAL = 'neutral';
 CloseButton.COLOR_GREEN = 'green';
 CloseButton.COLOR_ORANGE = 'orange';
-// SVG assets replaced by lucide icons; color handled via CSS classes
 
 CloseButton.propTypes = {
     buttonType: PropTypes.oneOf(['back', 'close']),

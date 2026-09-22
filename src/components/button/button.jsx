@@ -4,6 +4,17 @@ import React from 'react';
 
 import styles from './button.css';
 
+const variantClassNames = {
+    primary: styles.variantPrimary,
+    secondary: styles.variantSecondary,
+    danger: styles.variantDanger
+};
+
+const sizeClassNames = {
+    small: styles.sizeSmall,
+    medium: styles.sizeMedium
+};
+
 const ButtonComponent = ({
     className,
     disabled,
@@ -12,7 +23,9 @@ const ButtonComponent = ({
     iconElem,
     iconSrc,
     onClick,
+    size,
     type,
+    variant,
     children,
     ...props
 }) => {
@@ -35,6 +48,9 @@ const ButtonComponent = ({
     );
     const controlClassName = classNames(
         styles.outlinedButton,
+        variant ? styles.variantButton : null,
+        variant ? variantClassNames[variant] : null,
+        variant ? sizeClassNames[size] : null,
         className
     );
 
@@ -74,11 +90,14 @@ ButtonComponent.propTypes = {
     iconSrc: PropTypes.string,
     iconElem: PropTypes.elementType,
     onClick: PropTypes.func,
-    type: PropTypes.oneOf(['button', 'reset', 'submit'])
+    size: PropTypes.oneOf(['small', 'medium']),
+    type: PropTypes.oneOf(['button', 'reset', 'submit']),
+    variant: PropTypes.oneOf(['primary', 'secondary', 'danger'])
 };
 
 ButtonComponent.defaultProps = {
     disabled: false,
+    size: 'medium',
     type: 'button'
 };
 

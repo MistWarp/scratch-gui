@@ -11,11 +11,9 @@
     margin-bottom: 36px;
     color: var(--text-dim);
     font-size: var(--fs-sm);
-    font-weight: 700;
+    font-weight: 600;
 }
 
-.state {
-    padding: 48px 0;
-    color: var(--text-dim);
-    text-align: center;
+.back:hover {
+    color: var(--mw-text);
 }

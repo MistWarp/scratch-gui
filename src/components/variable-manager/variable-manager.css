@@ -116,53 +116,6 @@
     font-size: 0.75rem;
 }
 
-.primary-button,
-.secondary-button,
-.danger-button,
-.small-button,
-.small-danger-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    min-height: 2.15rem;
-    padding: 0.45rem 0.8rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 6px;
-    background: $ui-primary;
-    color: $text-primary;
-    cursor: pointer;
-    font-size: 0.8125rem;
-    font-weight: 500;
-}
-
-.primary-button {
-    border-color: transparent;
-    background: $looks-secondary;
-    color: white;
-}
-
-.primary-button:hover:not(:disabled),
-.secondary-button:hover:not(:disabled),
-.small-button:hover:not(:disabled) {
-    filter: brightness(0.97);
-}
-
-.danger-button,
-.small-danger-button {
-    border-color: color-mix(in srgb, $error-primary 40%, transparent);
-    background: color-mix(in srgb, $error-primary 10%, transparent);
-    color: $error-primary;
-}
-
-.primary-button:disabled,
-.secondary-button:disabled,
-.small-button:disabled,
-.small-danger-button:disabled {
-    cursor: default;
-    opacity: 0.45;
-}
-
 .icon-button {
     display: inline-grid;
     place-items: center;
@@ -409,7 +362,7 @@
     font-weight: normal;
 }
 
-.field > .primary-button {
+.field > button {
     align-self: flex-end;
     margin-top: 0.2rem;
 }
@@ -471,13 +424,6 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
-}
-
-.small-button,
-.small-danger-button {
-    min-height: 1.75rem;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.72rem;
 }
 
 .list-items {
@@ -620,7 +566,7 @@
     line-height: 1.45;
 }
 
-.empty-state .secondary-button {
+.empty-state button {
     margin-top: 0.35rem;
 }
 

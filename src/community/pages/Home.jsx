@@ -10,6 +10,9 @@ import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import NewsItem from '../components/NewsItem.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import HomeDiscovery from '../components/HomeDiscovery.jsx';
@@ -40,14 +43,6 @@ const describeActivity = item => {
     }
 };
 
-const SectionHead = ({icon: Icon, title, link, linkLabel}) => {
-    const {text: communityText} = useCommunityIntl();
-    return (<div className={styles.sectionHead}>
-        <h2><Icon size={19} />{title}</h2>
-        {link ? <Link to={link}>{linkLabel || communityText('See all')}</Link> : null}
-    </div>);
-};
-
 const PanelLoading = () => <div className={styles.feedScroll}>{[0, 1].map(i => <div key={i} className={styles.skeleton} />)}</div>;
 
 const NewsSection = ({bare = false}) => {
@@ -69,10 +64,10 @@ const NewsSection = ({bare = false}) => {
     }, [attempt]);
     return (
         <section className={styles.feedBox}>
-            {bare ? null : <SectionHead icon={Megaphone} title={communityText('News')} link="/news" linkLabel={communityText('All updates')} />}
+            {bare ? null : <SectionHeading icon={Megaphone} title={communityText('News')} link="/news" linkLabel={communityText('All updates')} />}
             {!items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>{communityText("Couldn't load news. ")}<Button onClick={load}>{communityText('Try again')}</Button></div> : null}
-            {items && !items.length ? <div className={styles.empty}>{communityText('No updates yet.')}</div> : null}
+            {failed ? <StatusMessage compact error onRetry={load}>{communityText("Couldn't load news.")}</StatusMessage> : null}
+            {items && !items.length ? <EmptyState compact icon={Megaphone} title={communityText('No updates yet')}>{communityText('News from MistWarp will show up here.')}</EmptyState> : null}
             {items && items.length ? <div className={`${styles.newsList} ${styles.feedScroll}`}>{items.map(item => <NewsItem compact key={item.id} item={item} onChanged={load} />)}</div> : null}
         </section>
     );
@@ -111,11 +106,11 @@ const FriendsSection = ({user, login, bare = false}) => {
     }, [attempt, viewerName]);
     return (
         <section className={styles.feedBox}>
-            {bare ? null : <SectionHead icon={Users} title={communityText('From people you follow')} />}
-            {!user ? <div className={styles.empty}>{communityText('Sign in to see projects, reviews, and activity from people you follow. ')}<button type="button" onClick={login}>{communityText('Sign in with Rotur')}</button></div> : null}
+            {bare ? null : <SectionHeading icon={Users} title={communityText('From people you follow')} />}
+            {!user ? <SignInPrompt compact onSignIn={login}>{communityText('Sign in to see projects, reviews, and activity from people you follow.')}</SignInPrompt> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>{communityText("Couldn't load activity. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
-            {items && !items.length && user ? <div className={styles.empty}>{communityText('No recent activity yet. ')}<Link to="/explore">{communityText('Find a project you like and follow its creator.')}</Link></div> : null}
+            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load activity.")}</StatusMessage> : null}
+            {items && !items.length && user ? <EmptyState compact icon={Users} title={communityText('No recent activity yet')} action={<Button as={Link} to="/explore">{communityText('Explore projects')}</Button>}>{communityText('Find a project you like and follow its creator.')}</EmptyState> : null}
             {items && items.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
                     {items.slice(0, 4).map((item, index) => {
@@ -167,16 +162,16 @@ const RoadmapSection = ({viewerName, bare = false}) => {
     const activeIdeas = ideas ? ideas.filter(idea => roadmapStatusMatches(idea.status, '')) : null;
     return (
         <section className={styles.feedBox}>
-            {bare ? null : <SectionHead icon={Lightbulb} title={communityText('Roadmap')} link="/roadmap" linkLabel={communityText('Suggest and vote')} />}
+            {bare ? null : <SectionHeading icon={Lightbulb} title={communityText('Roadmap')} link="/roadmap" linkLabel={communityText('Suggest and vote')} />}
             {!ideas && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>{communityText("Couldn't load roadmap suggestions. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
-            {ideas && !ideas.length ? <div className={styles.empty}>{communityText('No suggestions yet. ')}<Link to="/roadmap">{communityText('Add the first one')}</Link></div> : null}
-            {ideas && ideas.length && !activeIdeas.length ? <div className={styles.empty}>{communityText('No active suggestions. ')}<Link to="/roadmap">{communityText('View the roadmap')}</Link></div> : null}
+            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load roadmap suggestions.")}</StatusMessage> : null}
+            {ideas && !ideas.length ? <EmptyState compact icon={Lightbulb} title={communityText('No suggestions yet')} action={<Button as={Link} to="/roadmap">{communityText('Add the first one')}</Button>} /> : null}
+            {ideas && ideas.length && !activeIdeas.length ? <EmptyState compact icon={Lightbulb} title={communityText('No active suggestions')} action={<Button as={Link} to="/roadmap">{communityText('View the roadmap')}</Button>} /> : null}
             {activeIdeas && activeIdeas.length ? (
                 <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
                     {activeIdeas.slice(0, 4).map(idea => (
                         <article key={idea._id} className={styles.roadmapItem}>
-                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={communityText("Open {value1}", {value1: idea.title})} />
+                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={communityText('Open {value1}', {value1: idea.title})} />
                             <ReactionButtons
                                 variant="vertical"
                                 heartKey="like"
@@ -189,7 +184,7 @@ const RoadmapSection = ({viewerName, bare = false}) => {
                             />
                             <div className={styles.roadmapBody}>
                                 <div className={styles.roadmapLabels}>
-                                    {idea.kind === 'bug' ? <span><Bug size={10} />{communityText(' Bug')}</span> : null}
+                                    {idea.kind === 'bug' ? <span><Bug size={10} />{communityText('Bug')}</span> : null}
                                     <span>{idea.category}</span>
                                     <span className={styles[`roadmapStatus${idea.status}`]}>{ROADMAP_STATUS_LABELS[idea.status] || idea.status}</span>
                                 </div>
@@ -289,15 +284,15 @@ const NotificationsSection = ({user, login, bare = false}) => {
         .filter(item => preferences[categoryForNotification(item.type)] !== false);
     return (
         <section className={styles.feedBox}>
-            {bare ? null : <SectionHead icon={Bell} title={communityText('Recent notifications')} link={user ? '/notifications' : null} linkLabel={communityText('See all')} />}
-            {!user ? <div className={styles.empty}>{communityText('Sign in to see your notifications. ')}<button type="button" onClick={login}>{communityText('Sign in with Rotur')}</button></div> : null}
+            {bare ? null : <SectionHeading icon={Bell} title={communityText('Recent notifications')} link={user ? '/notifications' : null} linkLabel={communityText('See all')} />}
+            {!user ? <SignInPrompt compact onSignIn={login}>{communityText('Sign in to see your notifications.')}</SignInPrompt> : null}
             {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <div className={styles.empty}>{communityText("Couldn't load notifications. ")}<Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button></div> : null}
-            {items && !items.length && user ? <div className={styles.empty}>{communityText('Nothing new yet.')}</div> : null}
+            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load notifications.")}</StatusMessage> : null}
+            {items && !items.length && user ? <EmptyState compact icon={Bell} title={communityText('Nothing new yet')} /> : null}
             {items && items.length && !visibleItems.length ? (
-                <div className={styles.empty}>{communityText('Your notification preferences hide all recent activity.')}{' '}
-                    <Link to="/settings?section=notifications">{communityText('Change preferences')}</Link>
-                </div>
+                <EmptyState compact icon={Bell} title={communityText('Nothing to show')} action={<Button as={Link} to="/settings?section=notifications">{communityText('Change preferences')}</Button>}>
+                    {communityText('Your notification preferences hide all recent activity.')}
+                </EmptyState>
             ) : null}
             {visibleItems.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
@@ -337,15 +332,15 @@ const Home = () => {
     }, []);
     return (
         <main className={styles.page}>
-            {loading ? <p role="status">{communityText('Loading your workspace…')}</p> : user ?
+            {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : user ?
                 <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : (
                     <section className={styles.hero}>
                         <div className={styles.heroText}>
                             <h1>{t('home.title')}</h1>
                             <p>{t('home.lead')}</p>
                             <div className={styles.heroActions}>
-                                <a className={styles.primaryButton} href="#starters">{communityText('Try a starter')}</a>
-                                <Link className={styles.secondaryButton} to="/explore">{t('home.explore')}</Link>
+                                <Button variant="primary" as="a" href="#starters"><Rocket size={16} />{communityText('Try a starter')}</Button>
+                                <Button variant="secondary" as={Link} to="/explore">{t('home.explore')}</Button>
                             </div>
                             <div className={styles.heroImport}>
                                 <ScratchImport source="home" />
@@ -359,7 +354,7 @@ const Home = () => {
                             <span>{communityText('Make your first version')}</span>
                             <span>{communityText('Invite someone to improve it')}</span>
                             <span>{communityText('Keep earlier versions to return to')}</span>
-                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker →')}</a>
+                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker')}<ArrowRight size={14} /></a>
                         </div>
                     </section>
                 )}
@@ -368,12 +363,12 @@ const Home = () => {
                     <h2>{communityText('Welcome to MistWarp, {value1}', {value1: viewerName})}</h2>
                     <p>{communityText('Start from a working project, or follow a few creators to fill your feed.')}</p>
                     <div className={styles.heroActions}>
-                        <a className={styles.primaryButton} href="#starters">
+                        <Button variant="primary" as="a" href="#starters">
                             <Rocket size={16} />{communityText('Try a starter')}
-                        </a>
-                        <a className={styles.secondaryButton} href="#discover">
+                        </Button>
+                        <Button variant="secondary" as="a" href="#discover">
                             <UserPlus size={16} />{communityText('Find creators')}
-                        </a>
+                        </Button>
                     </div>
                 </section>
             ) : null}
@@ -515,6 +510,7 @@ const ContinuePlaying = ({username}) => {
     return (
         <ProjectRow
             bare
+            emptyTitle={communityText('Nothing played yet')}
             emptyText={communityText('Games you save to your library show up here after you play them.')}
             title={communityText('Continue playing')}
             icon={Gamepad2}
@@ -554,13 +550,13 @@ const ProjectFeedRow = ({title, icon, sort, link, tag = '', hideEmpty = false, b
     );
 };
 
-const ProjectRow = ({title, icon: Icon, projects, link, onRetry, bare = false, emptyText}) => {
+const ProjectRow = ({title, icon: Icon, projects, link, onRetry, bare = false, emptyTitle, emptyText}) => {
     const {text: communityText} = useCommunityIntl();
     return (<section className={bare ? null : styles.projectSection}>
-        {bare ? null : <SectionHead icon={Icon} title={title} link={link} />}
+        {bare ? null : <SectionHeading icon={Icon} title={title} link={link} />}
         {projects === null ? <div className={styles.projectGrid}>{[0, 1, 2, 3].map(i => <div key={i} className={styles.projectSkeleton} />)}</div> : null}
-        {projects === false ? <div className={styles.empty}>{communityText("Couldn't load projects. ")}<Button onClick={onRetry}>{communityText('Try again')}</Button></div> : null}
-        {Array.isArray(projects) && !projects.length ? <div className={styles.empty}>{emptyText || communityText('No shared projects yet.')}</div> : null}
+        {projects === false ? <StatusMessage compact error onRetry={onRetry}>{communityText("Couldn't load projects.")}</StatusMessage> : null}
+        {Array.isArray(projects) && !projects.length ? <EmptyState compact icon={Icon} title={emptyTitle || communityText('No shared projects yet')}>{emptyText}</EmptyState> : null}
         {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.slice(0, projects.length > 4 ? projects.length - (projects.length % 4) : 4).map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
     </section>);
 };

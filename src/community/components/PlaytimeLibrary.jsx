@@ -1,4 +1,4 @@
-import {getCommunityLocale} from '../locale.js';
+import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -8,51 +8,57 @@ import {projectUrl} from '../api';
 import {formatPlaytime, timeAgo} from '../format';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './PlaytimeLibrary.module.css';
 
 const lastPlayed = value => {
     const timestamp = Number(value);
     if (!(timestamp > 0)) return '';
     const relative = timeAgo(timestamp);
-    return relative === 'just now' ? 'Played just now' : `Played ${relative} ago`;
+    return relative === 'just now' ?
+        formatCommunityMessage('Played just now') :
+        formatCommunityMessage('Played {value1} ago', {value1: relative});
 };
 
 const PlaytimeLibrary = ({
     projects, total, visible, self, loading, error, moreBusy, hasMore, onRetry, onLoadMore
 }) => {
     const {text: communityText} = useCommunityText();
-    if (loading) return <p className={styles.status}>{communityText('Loading game library…')}</p>;
+    if (loading) return <StatusMessage compact>{communityText('Loading game library…')}</StatusMessage>;
     if (error) {
         return (
-            <div className={styles.empty} role="alert">
-                <strong>{communityText('Could not load this game library.')}</strong>
-                <Button variant="secondary" onClick={onRetry}>{communityText('Try again')}</Button>
-            </div>
+            <StatusMessage compact error onRetry={onRetry}>
+                {communityText('Could not load this game library.')}
+            </StatusMessage>
         );
     }
     if (!visible && !self) {
         return (
-            <div className={styles.empty}>
-                <Gamepad2 size={36} />
-                <strong>{communityText('This game library is private.')}</strong>
-                <span>{communityText('This user has chosen not to share what they play.')}</span>
-            </div>
+            <EmptyState compact icon={Gamepad2} title={communityText('This game library is private')}>
+                {communityText('This user has chosen not to share what they play.')}
+            </EmptyState>
         );
     }
     const libraryProjects = projects.filter(project => typeof project.libraryPublic === 'boolean');
     if (!libraryProjects.length) {
         return (
-            <div className={styles.empty}>
-                <Gamepad2 size={36} />
-                <strong>{communityText('No library games with playtime yet.')}</strong>
-                <span>{communityText('Games must be added to the library before their playtime appears here.')}</span>
-            </div>
+            <EmptyState compact icon={Gamepad2} title={communityText('No library games with playtime yet')}>
+                {communityText('Games must be added to the library before their playtime appears here.')}
+            </EmptyState>
         );
     }
     return (
         <React.Fragment>
             <div className={styles.summary}>
-                <strong>{total.toLocaleString(getCommunityLocale())}</strong> {total === 1 ? communityText('library game') : communityText('library games')}{communityText(' played')}{!visible && self ? <span>{communityText('Only visible to you')}</span> : null}
+                <strong>
+                    {total === 1 ?
+                        communityText('1 library game played') :
+                        communityText('{value1} library games played', {
+                            value1: total.toLocaleString(getCommunityLocale())
+                        })}
+                </strong>
+                {!visible && self ? <span>{communityText('Only visible to you')}</span> : null}
             </div>
             <div className={styles.list}>
                 {libraryProjects.map((project, index) => (
@@ -68,7 +74,10 @@ const PlaytimeLibrary = ({
                         </Link>
                         <span className={styles.details}>
                             <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
-                            <small>{communityText('by ')}<a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a></small>
+                            <small>
+                                {communityText('by')}{' '}
+                                <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a>
+                            </small>
                         </span>
                         <span className={styles.playtime}>
                             <strong><Clock3 size={15} /> {formatPlaytime(project.duration, false)}</strong>
@@ -79,7 +88,14 @@ const PlaytimeLibrary = ({
             </div>
             {hasMore ? (
                 <div className={styles.more}>
-                    <Button variant="secondary" busy={moreBusy} busyLabel={communityText('Loading…')} onClick={onLoadMore}>{communityText('Load more games')}</Button>
+                    <Button
+                        variant="secondary"
+                        busy={moreBusy}
+                        busyLabel={communityText('Loading…')}
+                        onClick={onLoadMore}
+                    >
+                        {communityText('Load more games')}
+                    </Button>
                 </div>
             ) : null}
         </React.Fragment>

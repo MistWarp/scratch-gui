@@ -2,7 +2,7 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import PropTypes from 'prop-types';
-import {Archive, ArchiveRestore, Eye, Heart, Pencil, Plus} from 'lucide-react';
+import {Archive, ArchiveRestore, Eye, Heart, Megaphone, Pencil, Plus} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -10,7 +10,11 @@ import {formatDate} from '../format.js';
 import Avatar from '../components/Avatar.jsx';
 import NewsItem from '../components/NewsItem.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import Markdown from '../components/Markdown.jsx';
 import UserLink from '../components/UserLink.jsx';
 import useLatest from '../use-latest.js';
@@ -108,11 +112,11 @@ const News = ({manager = false}) => {
         const options = pollOptions.map(option => option.trim()).filter(Boolean);
         if (!title.trim() || !body.trim() || submitInFlight.current) return;
         if (!newsPollReady(category, pollOptions)) {
-            setError(communityText("Add at least two poll options."));
+            setError(communityText('Add at least two poll options.'));
             return;
         }
         if (!newsLinkReady(linkLabel, linkUrl)) {
-            setError(communityText("Add both a button label and a valid https:// or internal / link."));
+            setError(communityText('Add both a button label and a valid https:// or internal / link.'));
             return;
         }
         submitInFlight.current = true;
@@ -150,31 +154,30 @@ const News = ({manager = false}) => {
     if (manager && (!user || !user.isAdmin)) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>{communityText('You do not have access to news management.')}</p>
+                <StatusMessage error>{communityText('You do not have access to news management.')}</StatusMessage>
             </main>
         );
     }
 
     return (
         <main className={`${styles.page} ${manager ? styles.manager : styles.blog}`}>
-            <header className={styles.pageHead}>
-                <div>
-                    <h1>{manager ? communityText('Manage news') : communityText('News')}</h1>
-                    <p>{manager ? communityText('Write, update, and review the performance of MistWarp posts.') :
-                        communityText('Product updates, releases, and notes from MistWarp.')}</p>
-                </div>
-                <div className={styles.headActions}>
-                    {manager ? (
-                        <Button variant="primary" onClick={startPost}>
-                            <Plus size={15} />{communityText(' New post')}</Button>
-                    ) : null}
-                    {user && user.isAdmin ? (
-                        <Link className={styles.manageLink} to={manager ? '/news' : '/news/manage'}>
+            <PageHeader
+                icon={Megaphone}
+                title={manager ? communityText('Manage news') : communityText('News')}
+                lead={manager ? communityText('Write, update, and review the performance of MistWarp posts.') :
+                    communityText('Product updates, releases, and notes from MistWarp.')}
+                actions={user && user.isAdmin ? (
+                    <React.Fragment>
+                        {manager ? (
+                            <Button variant="primary" onClick={startPost}>
+                                <Plus size={15} />{communityText('New post')}</Button>
+                        ) : null}
+                        <Button as={Link} to={manager ? '/news' : '/news/manage'}>
                             {manager ? communityText('View blog') : communityText('Manage posts')}
-                        </Link>
-                    ) : null}
-                </div>
-            </header>
+                        </Button>
+                    </React.Fragment>
+                ) : null}
+            />
 
             {manager && composing ? (
                 <form
@@ -260,7 +263,7 @@ const News = ({manager = false}) => {
                                     <input
                                         value={option}
                                         maxLength={120}
-                                        placeholder={communityText("Option {value1}", {value1: index + 1})}
+                                        placeholder={communityText('Option {value1}', {value1: index + 1})}
                                         onChange={event => setPollOptions(current => current.map(
                                             (value, optionIndex) => (optionIndex === index ? event.target.value : value)
                                         ))}
@@ -283,12 +286,11 @@ const News = ({manager = false}) => {
                             ) : null}
                         </fieldset>
                     ) : null}
-                    {error ? <div className={styles.error}>{error}</div> : null}
+                    {error ? <Notice variant="error">{error}</Notice> : null}
                     <div className={styles.composerActions}>
                         <Button type="button" onClick={resetComposer} disabled={busy}>{communityText('Cancel')}</Button>
                         <Button
                             variant="primary"
-                            className={styles.submit}
                             type="submit"
                             disabled={busy || !title.trim() || !body.trim()}
                             busy={busy}
@@ -299,11 +301,9 @@ const News = ({manager = false}) => {
             ) : null}
 
             {loadFailed ? (
-                <p className={styles.status}>{communityText("Couldn't load.")}{' '}
-                    <Button onClick={() => load(true)}>{communityText('Try again')}</Button>
-                </p>
+                <StatusMessage error onRetry={() => load(true)}>{communityText("Couldn't load news.")}</StatusMessage>
             ) : items === null ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage />
             ) : visibleItems.length ? (
                 <>
                     {manager ? (
@@ -339,11 +339,13 @@ const News = ({manager = false}) => {
                                         </span>
                                     </div>
                                     <div className={styles.managerActions} role="cell">
-                                        <IconButton label={communityText("Edit {value1}", {value1: item.title})} onClick={() => edit(item)}>
+                                        <IconButton label={communityText('Edit {value1}', {value1: item.title})} onClick={() => edit(item)}>
                                             <Pencil size={15} />
                                         </IconButton>
                                         <IconButton
-                                            label={`${item.archived ? 'Restore' : 'Archive'} ${item.title}`}
+                                            label={item.archived ?
+                                                communityText('Restore {value1}', {value1: item.title}) :
+                                                communityText('Archive {value1}', {value1: item.title})}
                                             onClick={() => archive(item)}
                                         >
                                             {item.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
@@ -366,7 +368,9 @@ const News = ({manager = false}) => {
                     )}
                 </>
             ) : (
-                <p className={styles.status}>{communityText('No updates posted yet.')}</p>
+                <EmptyState icon={Megaphone} title={communityText('No updates yet')}>
+                    {communityText('Posts from MistWarp will show up here.')}
+                </EmptyState>
             )}
         </main>
     );

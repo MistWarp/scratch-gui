@@ -21,6 +21,7 @@ const groupScopes = scopes => {
 const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, onShareAll, onShareNo}) => {
     const {text: communityText} = useCommunityText();
     const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
+    const projectName = data.name || communityText('This project');
     if (type === 'share') {
         return (
             <Modal
@@ -40,17 +41,32 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
                 }
             >
                 <p className={styles.lead}>
-                    {communityText("\"{value1}\" wants to show it on your Rotur profile", {value1: data.name || 'This project'})}
-                    {data.username ? ` (@${data.username}).` : '.'}
+                    {data.username ?
+                        communityText('"{value1}" (@{value2}) wants to show it on your Rotur profile.', {
+                            value1: projectName, value2: data.username
+                        }) :
+                        communityText('"{value1}" wants to show it on your Rotur profile.', {value1: projectName})}
                 </p>
             </Modal>
         );
     }
     const groups = groupScopes(data.scopes);
+    let confirmLead = null;
+    if (payment) {
+        confirmLead = communityText('Allow payment of {value1} credits to @{value2}?', {
+            value1: data.confirmation.amount, value2: data.confirmation.recipient
+        });
+    } else if (type === 'confirm') {
+        confirmLead = data.username ?
+            communityText('Allow this project to {value1} as @{value2}?', {value1: data.label, value2: data.username}) :
+            communityText('Allow this project to {value1}?', {value1: data.label});
+    }
     return (
         <Modal
             icon={ShieldCheck}
-            title={type === 'confirm' ? (payment ? communityText('Confirm payment') : communityText('Confirm account action')) : communityText('Connect to Rotur')}
+            title={type === 'confirm' ?
+                (payment ? communityText('Confirm payment') : communityText('Confirm account action')) :
+                communityText('Connect to Rotur')}
             onDismiss={onDeny}
             actions={
                 <React.Fragment>
@@ -62,24 +78,32 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
                         variant="primary"
                         onClick={onAllow}
                     >
-                        {payment ? communityText('Allow payment') : (type === 'confirm' ? communityText('Allow once') : communityText('Connect'))}
+                        {payment ?
+                            communityText('Allow payment') :
+                            (type === 'confirm' ? communityText('Allow once') : communityText('Connect'))}
                     </Button>
                 </React.Fragment>
             }
         >
             {type === 'confirm' ? (
-                <p className={styles.lead}>
-                    {payment ? communityText("Allow payment of {value1} credits to ", {value1: data.confirmation.amount}) : communityText('Allow this project to ')}
-                    <b>{payment ? `@${data.confirmation.recipient}` : data.label}</b>
-                    {payment ? '?' : (data.username ? communityText(" as @{value1}?", {value1: data.username}) : '?')}
-                    {payment ? '' : communityText(' This action will happen once. It does not give the project ongoing approval.')}
-                </p>
+                <React.Fragment>
+                    <p className={styles.lead}>{confirmLead}</p>
+                    {payment ? null : (
+                        <p className={styles.lead}>
+                            {communityText(
+                                'This action will happen once. It does not give the project ongoing approval.'
+                            )}
+                        </p>
+                    )}
+                </React.Fragment>
             ) : (
                 <React.Fragment>
                     <p className={styles.lead}>
-                        {communityText("\"{value1}\" wants to use your Rotur account", {value1: data.name || 'This project'})}
-                        {data.username ? ` (@${data.username})` : ''}
-                        {communityText(' to:')}
+                        {data.username ?
+                            communityText('"{value1}" (@{value2}) wants to use your Rotur account to:', {
+                                value1: projectName, value2: data.username
+                            }) :
+                            communityText('"{value1}" wants to use your Rotur account to:', {value1: projectName})}
                     </p>
                     {Object.keys(groups).map(label => (
                         <div

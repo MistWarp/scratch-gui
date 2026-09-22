@@ -86,10 +86,8 @@
 .sa-complexity-eyebrow,
 .sa-complexity-section h2 {
   color: var(--text-primary);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   opacity: 0.6;
 }
 

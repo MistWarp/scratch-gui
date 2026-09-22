@@ -13,95 +13,9 @@
     max-width: 1040px;
 }
 
-.hero,
-.detailHero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 22px;
-}
-
-.hero h1,
-.detailHero h1 {
-    margin: 0 0 5px;
-    font-size: var(--fs-3xl);
-}
-
-.hero p,
-.detailHero p {
-    max-width: 620px;
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    line-height: 1.5;
-}
-
-.heroActions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.mineLink {
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
-.detailHero {
-    padding: 18px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-}
-
-.tabs {
-    display: flex;
-    width: fit-content;
-    gap: 24px;
-    margin: 0 0 22px;
-    padding: 0;
-    border-bottom: 1px solid var(--border);
-    background: transparent;
-    overflow-x: auto;
-}
-
-.tab,
-.tabActive {
-    margin-bottom: -1px;
-    padding: 9px 0;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    color: var(--text-dim);
-    background: transparent;
-    font: inherit;
-    font-size: var(--fs-md);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.tabActive {
-    border-bottom-color: var(--accent);
-    color: var(--mw-text);
-    background: transparent;
-}
-
-.grid,
-.projectGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-}
-
-.meta,
-.status {
-    color: var(--text-dim);
-}
-
 .status {
     padding: 36px 0;
+    color: var(--text-dim);
     text-align: center;
 }
 
@@ -125,11 +39,6 @@
     background: var(--bg-card);
 }
 
-.form h2 {
-    margin: 0;
-    font-size: var(--fs-xl);
-}
-
 .form label {
     display: grid;
     gap: 6px;
@@ -140,8 +49,7 @@
 
 .form input,
 .form textarea,
-.form select,
-.addProject input {
+.form select {
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
@@ -234,7 +142,6 @@
 }
 
 .actions,
-.addProject,
 .back {
     display: flex;
     align-items: center;
@@ -249,37 +156,8 @@
     text-decoration: none;
 }
 
-.addProject {
-    margin: 20px 0;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-}
-
-.addProject input {
-    flex: 1;
-}
-
-.check {
-    display: flex !important;
-    align-items: center;
-    align-self: end;
-    min-height: 42px;
-}
-
 .error {
     color: var(--mw-danger);
-}
-
-.success {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin: 0;
-    color: #5fc28b;
-    font-size: var(--fs-sm);
-    font-weight: 700;
 }
 
 .browseTools {
@@ -290,19 +168,14 @@
     margin-bottom: 22px;
 }
 
-.browseTools .tabs {
-    margin: 0;
-}
-
 .spaceSearch {
     display: flex;
     min-width: min(340px, 100%);
     align-items: center;
     gap: 8px;
     padding: 4px 5px 4px 11px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg-card);
+    background: var(--bg-field);
 }
 
 .spaceSearch svg {
@@ -333,77 +206,10 @@
     cursor: pointer;
 }
 
-.inviteBanner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 16px;
-    padding: 13px 15px;
-    border: 1px solid var(--accent-border);
-    border-radius: var(--radius-sm);
-    background: var(--accent-soft);
-}
-
-.inviteBanner > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.inviteBanner > div:first-child > svg {
-    flex: 0 0 auto;
-    color: var(--accent-strong);
-}
-
-.inviteBanner span {
-    display: grid;
-    gap: 2px;
-    color: var(--text-dim);
-    font-size: var(--fs-xs);
-}
-
-.inviteBanner strong {
-    color: var(--mw-text);
-    font-size: var(--fs-sm);
-}
-
-.spaceHero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 20px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-}
-
-.spaceHeroMain {
-    min-width: 0;
-}
-
-.spaceHero h1 {
-    margin: 0 0 6px;
-    font-size: var(--fs-3xl);
-    letter-spacing: -.01em;
-}
-
-.spaceHero p {
-    max-width: 720px;
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    line-height: 1.6;
-    white-space: pre-wrap;
-}
-
 .spaceOwner {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 14px;
     color: var(--text-faint);
     font-size: var(--fs-xs);
 }
@@ -413,19 +219,11 @@
     font-weight: 700;
 }
 
-.spaceHeroActions {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 8px;
-}
-
 .spaceReactions {
     display: flex;
     width: fit-content;
     align-items: center;
     gap: 6px;
-    margin: 12px 0 0;
 }
 
 .spaceReactions a {
@@ -433,7 +231,6 @@
     align-items: center;
     gap: 6px;
     padding: 7px 10px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-xs);
     color: var(--text-dim);
     background: var(--bg-card);
@@ -444,25 +241,8 @@
 }
 
 .spaceReactions a:hover {
-    border-color: var(--accent-border);
-    color: var(--mw-text);
-}
-
-.manageLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    color: var(--mw-text);
     background: var(--bg-raised);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
-.manageLink:hover {
-    border-color: var(--accent-border);
+    color: var(--mw-text);
 }
 
 .spaceOverview {
@@ -479,7 +259,6 @@
     align-items: center;
     gap: 8px;
     padding: 10px 13px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
 }
@@ -504,22 +283,18 @@
     gap: 20px;
     margin-bottom: 24px;
     padding: 14px 16px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
 }
 
-.curatorStrip h2,
-.spaceProjects h2 {
-    margin: 0 0 3px;
-    font-size: var(--fs-xl);
+.curatorHeading {
+    margin-bottom: 0;
 }
 
-.curatorStrip p,
-.spaceProjects > header p {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
+.spaceComments {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
 }
 
 .curatorFaces {
@@ -536,57 +311,6 @@
     color: var(--text-dim);
     font-size: var(--fs-2xs);
     font-weight: 700;
-}
-
-.spaceProjects > header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.spaceComments {
-    margin-top: 28px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border);
-}
-
-.spaceComments > header {
-    margin-bottom: 14px;
-}
-
-.spaceComments h2 {
-    margin: 0 0 3px;
-    font-size: var(--fs-xl);
-}
-
-.spaceComments > header p {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
-.emptyProjects {
-    display: grid;
-    min-height: 0;
-    padding: 34px 20px;
-    place-items: center;
-    align-content: center;
-    gap: 7px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    text-align: center;
-}
-
-.emptyProjects strong {
-    color: var(--mw-text);
-}
-
-.emptyProjects span {
-    font-size: var(--fs-xs);
 }
 
 .projectPicker {
@@ -777,25 +501,6 @@
     cursor: pointer;
 }
 
-.manageHeader {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 18px;
-}
-
-.manageHeader h1 {
-    margin: 3px 0 0;
-    font-size: var(--fs-3xl);
-}
-
-.manageHeader > a {
-    color: var(--accent-strong);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
 .manageLayout {
     display: grid;
     align-items: start;
@@ -807,7 +512,6 @@
     display: grid;
     gap: 4px;
     padding: 6px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
 }
@@ -848,10 +552,13 @@
     display: grid;
     gap: 16px;
     padding: 20px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
+}
+
+.manageCard > .manageCardHeading {
+    margin-bottom: 0;
 }
 
 .manageFormFields {
@@ -861,18 +568,6 @@
     margin: 0;
     padding: 0;
     border: 0;
-}
-
-.manageCard > header h2 {
-    margin: 0 0 3px;
-    font-size: var(--fs-xl);
-}
-
-.manageCard > header p {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-    line-height: 1.5;
 }
 
 .manageFormFields > label,
@@ -1215,14 +910,6 @@
     font-size: var(--fs-xs);
 }
 
-.manageProjectsHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
 .manageProjectList a {
     color: var(--accent-strong);
     font-size: var(--fs-xs);
@@ -1230,7 +917,7 @@
 }
 
 .dangerCard {
-    border-color: color-mix(in srgb, var(--mw-danger) 35%, var(--border));
+    background: color-mix(in srgb, var(--mw-danger) 6%, var(--bg-card));
 }
 
 .transferRow {
@@ -1267,8 +954,6 @@
 }
 
 @media (max-width: 640px) {
-    .hero,
-    .detailHero,
     .formRow {
         display: grid;
         grid-template-columns: 1fr;
@@ -1291,43 +976,18 @@
         grid-template-columns: 1fr;
     }
 
-    .tabs {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
     .typeChoices > div {
         grid-template-columns: 1fr;
     }
 
-    .addProject {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
     .browseTools,
-    .spaceHero,
-    .inviteBanner,
-    .curatorStrip,
-    .spaceProjects > header,
-    .manageHeader,
-    .manageProjectsHeader {
+    .curatorStrip {
         align-items: stretch;
         flex-direction: column;
     }
 
     .spaceSearch {
         box-sizing: border-box;
-    }
-
-    .spaceHeroActions,
-    .inviteBanner .actions {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .manageLink {
-        justify-content: center;
     }
 
     .spaceOverview {

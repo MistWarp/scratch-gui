@@ -6,26 +6,6 @@
     box-shadow: var(--card-shadow);
 }
 
-.heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-}
-
-.heading h2 {
-    margin: 0;
-    font-size: var(--fs-lg);
-}
-
-.heading p,
-.empty {
-    margin: 5px 0 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
 .total {
     display: inline-flex;
     align-items: center;
@@ -43,17 +23,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
     gap: 24px;
-}
-
-.columns h3 {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0 0 10px;
-    color: var(--text-dim);
-    font-size: var(--fs-xs);
-    text-transform: none;
-    letter-spacing: .04em;
 }
 
 .donorList,
@@ -124,16 +93,5 @@
 @media (max-width: 780px) {
     .columns {
         grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 520px) {
-    .heading {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .total {
-        align-self: flex-start;
     }
 }
