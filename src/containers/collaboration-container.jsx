@@ -6,6 +6,7 @@ import {compose} from 'redux';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import ProjectSession from '../components/collaboration-modal/project-session.jsx';
+import FriendsCollab from './mw-friends-collab.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
@@ -184,7 +185,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleJoinRoom (roomId, username, scope = null) {
+    async handleJoinRoom (roomId, username, scope = null, invite = null) {
         const accepted = await new Promise(resolve => this.props.openSimpleDialog({
             type: 'confirm',
             title: 'Join live editing?',
@@ -202,7 +203,7 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'public', this.props.roturHandle, scope
+                roomId, username, false, 'public', this.props.roturHandle, scope, invite
             );
 
             // Don't set connected immediately - wait for connected-to-host event
@@ -594,8 +595,17 @@ class CollaborationContainer extends Component {
                 onLeaveRoom={this.handleLeaveRoom}
             >
                 {/* eslint-disable-next-line react/jsx-no-bind */}
-                {(projectSessionActive, projectSession) => (<React.Fragment>
-                    <CollaborationModal
+                {(projectSessionActive, projectSession) => (<FriendsCollab
+                    projectSession={projectSession}
+                    roturHandle={this.props.roturHandle}
+                    service={this.collaborationService}
+                    onCreateRoom={this.handleCreateRoom}
+                    onJoinRoom={this.handleJoinRoom}
+                    onOpen={this.props.onOpen}
+                >
+                    {(friendsPanel, friendTools) => (<CollaborationModal
+                        friendsPanel={friendsPanel}
+                        friendTools={friendTools}
                         projectSessionActive={projectSessionActive}
                         projectSession={projectSession}
                         onOpenBranches={this.props.onOpenBranches}
@@ -624,8 +634,8 @@ class CollaborationContainer extends Component {
                         onOpenChangeUsername={this.props.onOpenChangeUsername}
                         onShowToast={this.props.onShowToast}
                         openSimpleDialog={this.props.openSimpleDialog}
-                    />
-                </React.Fragment>)}
+                    />)}
+                </FriendsCollab>)}
             </ProjectSession>
         );
     }

@@ -58,10 +58,11 @@ class CollabService extends Emitter {
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
      * @param {object|null} [scope] Project ID and branch required by this room.
+     * @param {string|null} [invite] One-time key from a friend's invite.
      * @returns {Promise<string>} Our peer id.
      */
     async connectToRoom (
-        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null
+        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null, invite = null
     ) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
@@ -71,6 +72,7 @@ class CollabService extends Emitter {
         this.username = handle || username || `User${Math.floor(Math.random() * 1000)}`;
         this.handle = handle || null;
         this.scope = scope;
+        this.invite = isHost ? null : invite;
         this.isHost = isHost;
 
         const transport = new Transport();
@@ -161,7 +163,8 @@ class CollabService extends Emitter {
             username: this.username,
             handle: this.handle,
             hasAsset: md5ext => hasAssetData(this.vm, md5ext),
-            scope: this.scope
+            scope: this.scope,
+            invite: this.invite
         });
         this._session = session;
 
@@ -499,6 +502,16 @@ class CollabService extends Emitter {
 
     approveJoinRequest (requesterId) {
         return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId));
+    }
+
+    addInviteKey (key, username, expiresAt) {
+        if (!this._session || !this.isHost) return false;
+        this._session.addInviteKey(key, username, expiresAt);
+        return true;
+    }
+
+    revokeInviteKey (key) {
+        if (this._session && this.isHost) this._session.revokeInviteKey(key);
     }
 
     denyJoinRequest (requesterId, reason) {

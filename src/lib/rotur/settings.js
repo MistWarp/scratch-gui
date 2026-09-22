@@ -10,6 +10,7 @@ const APP_NAME = 'MistWarp';
 const DEFAULTS = {
     presenceEnabled: true,
     includeEditDuration: true,
+    friendsVisible: true,
     // How project extensions may show activity on your Rotur profile:
     // 'ask' (prompt per project), 'all' (always allow), 'off' (never).
     activitySharing: 'ask'
@@ -28,6 +29,7 @@ const readAll = () => {
         return {
             presenceEnabled: parsed.presenceEnabled !== false,
             includeEditDuration: parsed.includeEditDuration !== false,
+            friendsVisible: parsed.friendsVisible !== false,
             activitySharing: SHARING_MODES.includes(parsed.activitySharing) ?
                 parsed.activitySharing : 'ask'
         };

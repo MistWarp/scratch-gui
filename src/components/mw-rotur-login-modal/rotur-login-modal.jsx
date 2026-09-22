@@ -38,6 +38,21 @@ const messages = defineMessages({
 
 const feature = (id, icon, title, description) => ({id, icon, title, description});
 
+const FRIENDS_FEATURE = feature(
+    'friends',
+    Users,
+    <FormattedMessage
+        defaultMessage="Edit live with friends"
+        description="Rotur login feature title"
+        id="mw.roturLogin.feature.friends.title"
+    />,
+    <FormattedMessage
+        defaultMessage="See which friends are online and invite them to edit with you."
+        description="Rotur login feature description"
+        id="mw.roturLogin.feature.friends.description"
+    />
+);
+
 const COMMUNITY_FEATURES = [
     feature(
         'save',
@@ -51,20 +66,6 @@ const COMMUNITY_FEATURES = [
             defaultMessage="Save from the File menu and restore old versions later."
             description="Rotur login feature description"
             id="mw.roturLogin.feature.save.description"
-        />
-    ),
-    feature(
-        'collab',
-        Users,
-        <FormattedMessage
-            defaultMessage="Live collaboration"
-            description="Rotur login feature title"
-            id="mw.roturLogin.feature.collab.title"
-        />,
-        <FormattedMessage
-            defaultMessage="Open a saved project to your teammates from the Tools menu."
-            description="Rotur login feature description"
-            id="mw.roturLogin.feature.collab.description"
         />
     ),
     feature(
@@ -146,12 +147,12 @@ const STANDALONE_FEATURES = [
 ];
 
 const FEATURES = communityEnabled ?
-    COMMUNITY_FEATURES.concat(ACCOUNT_FEATURES) :
-    ACCOUNT_FEATURES.concat(STANDALONE_FEATURES);
+    [COMMUNITY_FEATURES[0], FRIENDS_FEATURE, ...COMMUNITY_FEATURES.slice(1), ...ACCOUNT_FEATURES] :
+    [FRIENDS_FEATURE, ...ACCOUNT_FEATURES, ...STANDALONE_FEATURES];
 
 const WINDOW_HEIGHTS = communityEnabled ?
     {signedIn: 470, signedOut: 495} :
-    {signedIn: 420, signedOut: 470};
+    {signedIn: 480, signedOut: 530};
 
 const FeatureRow = ({icon: Icon, title, description}) => (
     <li className={styles.feature}>

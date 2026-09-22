@@ -128,10 +128,19 @@ describe('CollaborationContainer', () => {
         await container.handleJoinRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE, null);
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE, null, null);
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
+    });
+
+    test('handleJoinRoom passes a friend invite key through to the service', async () => {
+        const container = instanceOf(mountContainer());
+
+        await container.handleJoinRoom('friend-room', 'Alice', null, 'a'.repeat(32));
+
+        expect(mockCollaborationService.connectToRoom)
+            .toHaveBeenCalledWith('friend-room', 'Alice', false, 'public', ROTUR_HANDLE, null, 'a'.repeat(32));
     });
 
     test('handleJoinRoom reports the error and rethrows', async () => {
