@@ -107,6 +107,22 @@ const removeDiffDirectory = async (pfs, path) => {
 };
 
 
+const isMwpArchive = async input => {
+    let bytes = null;
+    if (input instanceof ArrayBuffer) {
+        bytes = new Uint8Array(input, 0, Math.min(2, input.byteLength));
+    } else if (ArrayBuffer.isView(input)) {
+        bytes = new Uint8Array(input.buffer, input.byteOffset, Math.min(2, input.byteLength));
+    }
+    if (!bytes || bytes.length < 2 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return false;
+    try {
+        const zip = await JSZip.loadAsync(input);
+        return Boolean(zip.file(MWP_MANIFEST));
+    } catch (e) {
+        return false;
+    }
+};
+
 const importMwp = async input => {
     const {zip, manifest, paths} = await loadMwp(input);
     const fs = getFs();
@@ -869,6 +885,7 @@ export {
     inspectMwpCommit,
     inspectMwpFiles,
     inspectMwpPull,
+    isMwpArchive,
     loadMwp,
     normalizeLegacySb3Snapshot,
     restoreMwpVersion,
