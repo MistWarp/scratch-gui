@@ -1,8 +1,10 @@
+@import "../../css/z-index.css";
+
 .toast {
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
-    z-index: 9600;
+    z-index: $z-index-toast;
     display: flex;
     align-items: flex-start;
     gap: 0.625rem;

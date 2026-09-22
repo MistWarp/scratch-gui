@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {FormattedMessage, injectIntl} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import classNames from 'classnames';
 
 import Modal from '../../containers/windowed-modal.jsx';
@@ -10,12 +10,29 @@ import Input from '../forms/input.jsx';
 
 import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine} from 'lucide-react';
 
-import showAlert from '../../addons/window-system/alert';
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
 
 import styles from './collaboration-modal.css';
+
+const messages = defineMessages({
+    roomUrlCopied: {
+        defaultMessage: 'Room link copied to clipboard',
+        description: 'Toast shown after the collaboration room link is copied',
+        id: 'mw.collaboration.roomUrlCopied'
+    },
+    roomUrlPromptTitle: {
+        defaultMessage: 'Copy room link',
+        description: 'Title of the dialog showing the collaboration room link when it could not be copied',
+        id: 'mw.collaboration.roomUrlPromptTitle'
+    },
+    roomUrlPromptMessage: {
+        defaultMessage: 'The link could not be copied automatically. Copy it from the field below.',
+        description: 'Message of the dialog showing the collaboration room link when it could not be copied',
+        id: 'mw.collaboration.roomUrlPromptMessage'
+    }
+});
 
 class CollaborationModal extends Component {
     constructor (props) {
@@ -266,8 +283,7 @@ class CollaborationModal extends Component {
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(roomUrl).then(() => {
-                console.log('Room URL copied to clipboard');
-                showAlert('Room URL copied to clipboard!');
+                this.props.onShowToast(this.props.intl.formatMessage(messages.roomUrlCopied), 'success');
             })
                 .catch(err => {
                     console.error('Failed to copy room URL:', err);
@@ -291,8 +307,7 @@ class CollaborationModal extends Component {
             textArea.select();
             const successful = document.execCommand('copy');
             if (successful) {
-                console.log('Room URL copied to clipboard (fallback)');
-                showAlert('Room URL copied to clipboard!');
+                this.props.onShowToast(this.props.intl.formatMessage(messages.roomUrlCopied), 'success');
             } else {
                 console.warn('Fallback copy failed');
                 this.showUrlPrompt(text);
@@ -306,10 +321,12 @@ class CollaborationModal extends Component {
     }
 
     showUrlPrompt (text) {
-        console.log('Room URL:', text);
-        showAlert(
-            'Could not copy room URL to clipboard. The URL has been logged to the console for manual copying.'
-        );
+        this.props.openSimpleDialog({
+            type: 'prompt',
+            title: this.props.intl.formatMessage(messages.roomUrlPromptTitle),
+            message: this.props.intl.formatMessage(messages.roomUrlPromptMessage),
+            defaultValue: text
+        });
     }
 
     generateRoomCode () {
@@ -406,11 +423,6 @@ class CollaborationModal extends Component {
 
     handleAwaitingApproval () {
         if (CollaborationService?.getInstance().scope) return;
-        console.log('[COLLAB MODAL] Awaiting approval from host', {
-            isConnected: this.props.isConnected,
-            connectionStep: this.state.connectionStep
-        });
-
         this.setState({
             connectionStep: 'pending-approval',
             isConnecting: false,
@@ -420,11 +432,6 @@ class CollaborationModal extends Component {
 
     handleApprovalResolved () {
         if (CollaborationService?.getInstance().scope) return;
-        console.log('[COLLAB MODAL] Approval resolved', {
-            isConnected: this.props.isConnected,
-            connectionStep: this.state.connectionStep
-        });
-
         this.setState({
             connectionStep: this.props.isConnected ? 'connected' : 'connecting',
             error: null
@@ -433,7 +440,6 @@ class CollaborationModal extends Component {
 
     handleJoinDenied (reason) {
         if (CollaborationService?.getInstance().scope) return;
-        console.log('[COLLAB MODAL] Join request denied:', reason);
         this.setState({
             connectionStep: 'join',
             isConnecting: false,
@@ -458,15 +464,13 @@ class CollaborationModal extends Component {
         }
     }
 
-    handleJoinRequestEvent (data) {
+    handleJoinRequestEvent () {
         if (CollaborationService?.getInstance().scope) return;
-        console.log('[COLLAB MODAL] Join request event received:', data);
         if (CollaborationService) {
             try {
                 const service = CollaborationService.getInstance();
                 if (service && service.getPendingJoinRequests) {
                     const pendingRequests = service.getPendingJoinRequests();
-                    console.log('[COLLAB MODAL] Updated pending requests:', pendingRequests);
                     this.setState({pendingRequests});
                 }
             } catch (error) {
@@ -1199,6 +1203,9 @@ class CollaborationModal extends Component {
 }
 
 CollaborationModal.propTypes = {
+    intl: intlShape.isRequired,
+    onShowToast: PropTypes.func.isRequired,
+    openSimpleDialog: PropTypes.func.isRequired,
     projectSession: PropTypes.object,
     onOpenBranches: PropTypes.func,
     projectSessionActive: PropTypes.bool,

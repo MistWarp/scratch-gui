@@ -1,7 +1,7 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
-import ShareWindow from '../../../src/components/mw-share-modal/share-window.jsx';
+import {ShareWindow} from '../../../src/components/mw-share-modal/share-window.jsx';
 import {publishToMistWarp} from '../../../src/lib/community/publish.js';
 import {request} from '../../../src/lib/community/api.js';
 import {getRepoChanges} from '../../../src/lib/git/browser-git.js';
@@ -34,6 +34,7 @@ const makeWindow = (action = 'update') => shallow(
     <ShareWindow
         action={action}
         initialTitle="Project"
+        intl={{formatMessage: message => message.defaultMessage}}
         vm={{}}
         onClose={jest.fn()}
         onPublished={jest.fn()}

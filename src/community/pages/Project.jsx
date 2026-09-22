@@ -8,7 +8,7 @@ import {
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag, CalendarDays,
     ShieldCheck, ShieldAlert, MoreHorizontal, Code2, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
     Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronRight, GitPullRequest, Search,
-    History, GitBranch, Package
+    History, GitBranch, Package, SearchX, LogIn
 } from 'lucide-react';
 import api, {projectUrl, editorUrl, embedUrl, themeCustomFor} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
@@ -50,9 +50,16 @@ import Sidebar from '../components/Sidebar.jsx';
 import ReportModal from '../components/ReportModal.jsx';
 import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 import Dropdown from '../components/ui/Dropdown.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import IconButton from '../components/ui/IconButton.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
@@ -72,7 +79,6 @@ import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import projectRealtime from '../project-realtime.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../../lib/project-prompt-blocking.js';
 import styles from './Project.module.css';
-import tabStyles from '../components/UnderlineTabs.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
 import {track} from '../analytics';
 
@@ -1406,35 +1412,54 @@ const Project = () => {
     if (vanityError && !project) {
         return (
             <main className={styles.page}>
-                <div className={styles.status}>
-                    <p>{vanityError}</p>
-                    <Link className={styles.primary} to="/explore">{communityText('Browse projects')}</Link>
-                </div>
+                <EmptyState
+                    icon={SearchX}
+                    title={communityText('Project not found')}
+                    action={<Button as={Link} to="/explore">{communityText('Browse projects')}</Button>}
+                >{communityText('This project link does not exist.')}</EmptyState>
             </main>
         );
     }
     if (error && errorLoadContext === actionContext && projectLoadContext !== actionContext) {
         return (
             <main className={styles.page}>
-                <div className={styles.status}>
-                    <p>{error}</p>
-                    {error === 'Project not found.' ? <Link className={styles.primary} to="/explore">{communityText('Browse projects')}</Link> : <Button onClick={load}>{communityText('Try again')}</Button>}
-                </div>
+                {error === 'Project not found.' ? (
+                    <EmptyState
+                        icon={SearchX}
+                        title={communityText('Project not found')}
+                        action={<Button as={Link} to="/explore">{communityText('Browse projects')}</Button>}
+                    >{communityText('This project may have been deleted or unshared.')}</EmptyState>
+                ) : (
+                    <StatusMessage error onRetry={load}>{communityText('Could not load this project.')}</StatusMessage>
+                )}
             </main>
         );
     }
     if (!project || projectLoadContext !== actionContext) {
-        return <main className={styles.page}><p className={styles.status}>{resolvingVanity ? communityText('Finding project…') : communityText('Loading…')}</p></main>;
+        return (
+            <main className={styles.page}>
+                <StatusMessage>{resolvingVanity ? communityText('Finding project…') : communityText('Loading…')}</StatusMessage>
+            </main>
+        );
     }
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
+    const activityTabLabels = {
+        'Comments': communityText('Comments'),
+        'Files': communityText('Files'),
+        'Reviews': communityText('Reviews'),
+        'Version control': communityText('Version control'),
+        'Bounties': communityText('Bounties'),
+        'Contribute': communityText('Contribute')
+    };
 
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
     const locked = Boolean(project.locked);
     const hasContent = project.hasContent !== false;
+    const needsCredits = confirmBalance !== null && confirmBalance < price;
     const followThemeDecision = themeMode === 'followed' && user && owner ?
         followedOwner &&
             followedOwner.viewer === String(user.username).toLowerCase() &&
@@ -1498,7 +1523,7 @@ const Project = () => {
                             <Link
                                 to={`/users/${project.owner}`}
                                 className={styles.byline}
-                            >{communityText('by ')}{project.owner}</Link>
+                            >{communityText('by {value1}', {value1: project.owner})}</Link>
                             <GroupTag className={styles.projectGroupTag} username={project.owner} compact />
                             {project.groupTag ? <Link className={styles.groupByline} to={`/groups/${project.groupTag}`}>{communityText('for @')}{project.groupTag}</Link> : null}
                         </div>
@@ -1507,15 +1532,14 @@ const Project = () => {
                 </div>
                 <div className={styles.topActions}>
                     {user && !project.isOwner ? (
-                        <button
-                            type="button"
-                            className={styles.remixButton}
+                        <Button
+                            variant="secondary"
                             onClick={() => {
                                 setSupportSent(false);
                                 setSupportOpen(true);
                             }}
                         >
-                            <Coins size={16} />{communityText('Support')}</button>
+                            <Coins size={16} />{communityText('Support')}</Button>
                     ) : null}
                     {project.isOwner ? (
                         <VisibilityMenu
@@ -1524,49 +1548,45 @@ const Project = () => {
                             disabled={savingVisibility}
                         />
                     ) : project.canRemix ? (
-                        <button
-                            type="button"
-                            className={styles.remixButton}
+                        <Button
+                            variant="secondary"
                             onClick={remix}
                             disabled={userLoading}
                             title={!user && !userLoading ? communityText('Sign in to remix') : null}
                         >
-                            <GitFork size={16} />{communityText('Remix')}</button>
+                            <GitFork size={16} />{communityText('Remix')}</Button>
                     ) : null}
                     {user ? (
-                        <button
-                            type="button"
-                            className={styles.remixButton}
+                        <Button
+                            variant="secondary"
                             onClick={toggleLibrary}
                             disabled={savingLibrary}
                             aria-pressed={Boolean(project.saved)}
                         >
                             {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                             {project.saved ? communityText('Remove from library') : communityText('Save to library')}
-                        </button>
+                        </Button>
                     ) : null}
                     {canViewProjectSource(project) ? (
-                        <a
-                            className={styles.primary}
+                        <Button
+                            as="a"
+                            variant="primary"
                             href={seeInsideHref}
                         >
-                            <ExternalLink size={16} />{communityText('See inside')}</a>
+                            <ExternalLink size={16} />{communityText('See inside')}</Button>
                     ) : null}
                     <Dropdown
                         className={styles.menuWrap}
                         menuClassName={styles.actionMenu}
                         renderTrigger={({open, toggle}) => (
-                            <button
-                                type="button"
-                                className={styles.remixButton}
-                                title={communityText('More actions')}
-                                aria-label={communityText('More actions')}
+                            <IconButton
+                                label={communityText('More actions')}
                                 aria-expanded={open}
                                 aria-haspopup="menu"
                                 onClick={toggle}
                             >
                                 <MoreHorizontal size={18} />
-                            </button>
+                            </IconButton>
                         )}
                     >
                         {({close}) => (
@@ -1695,7 +1715,7 @@ const Project = () => {
 
             {supportOpen ? (
                 <Modal
-                    title={communityText("Support {value1}", {value1: project.owner})}
+                    title={communityText('Support {value1}', {value1: project.owner})}
                     onClose={() => !supporting && setSupportOpen(false)}
                     dismissDisabled={supporting}
                     actions={supportSent ? (
@@ -1709,13 +1729,13 @@ const Project = () => {
                                 busyLabel={communityText('Sending…')}
                                 onClick={supportProject}
                             >
-                                <Coins size={15} />{communityText(' Send ')}{supportAmount || 0}{communityText(' credits')}</Button>
+                                <Coins size={15} />{communityText('Send {value1} credits', {value1: supportAmount || 0})}</Button>
                         </React.Fragment>
                     )}
                 >
                     {supportSent ? (
                         <p className={styles.confirmText}>
-                            {communityText("{value1} credits sent to {value2}.", {value1: supportAmount, value2: project.owner})}
+                            {communityText('{value1} credits sent to {value2}.', {value1: supportAmount, value2: project.owner})}
                         </p>
                     ) : (
                         <React.Fragment>
@@ -1744,57 +1764,27 @@ const Project = () => {
             ) : null}
 
             {deleteConfirm ? (
-                <Modal
+                <ConfirmModal
+                    destructive
                     title={communityText('Delete project?')}
-                    onClose={() => setDeleteConfirm(false)}
-                    dismissDisabled={deletingProject}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="secondary"
-                                className={styles.confirmCancel}
-                                disabled={deletingProject}
-                                onClick={() => setDeleteConfirm(false)}
-                            >{communityText('Cancel')}</Button>
-                            <Button
-                                variant="danger"
-                                className={`${styles.confirmButton} ${styles.deleteConfirmButton}`}
-                                busy={deletingProject}
-                                busyLabel={communityText('Deleting…')}
-                                onClick={removeProject}
-                            >
-                                <Trash2 size={15} />{communityText('Delete project')}</Button>
-                        </React.Fragment>
-                    )}
-                >
-                    <p className={styles.confirmText}>
-                        <strong>{project.title}</strong>{communityText(' will be deleted permanently. This cannot be undone.')}</p>
-                    {actionError ? <p className={styles.confirmError}>{actionError}</p> : null}
-                </Modal>
+                    confirmLabel={<React.Fragment><Trash2 size={15} />{communityText('Delete project')}</React.Fragment>}
+                    busy={deletingProject}
+                    busyLabel={communityText('Deleting…')}
+                    error={actionError}
+                    onConfirm={removeProject}
+                    onCancel={() => setDeleteConfirm(false)}
+                >{communityText('{value1} will be deleted permanently. This cannot be undone.', {value1: project.title})}</ConfirmModal>
             ) : null}
 
             {confirmUnsandboxed ? (
-                <Modal
+                <ConfirmModal
+                    icon={ShieldAlert}
                     title={communityText('Run custom extensions without the sandbox?')}
-                    onClose={() => setConfirmUnsandboxed(false)}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="secondary"
-                                className={styles.confirmCancel}
-                                onClick={() => setConfirmUnsandboxed(false)}
-                            >{communityText('Keep sandbox')}</Button>
-                            <Button
-                                variant="primary"
-                                className={styles.confirmButton}
-                                onClick={confirmRunUnsandboxed}
-                            >
-                                <ShieldAlert size={15} />{communityText('Run anyway')}</Button>
-                        </React.Fragment>
-                    )}
-                >
-                    <p className={styles.confirmText}>{communityText('This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.')}</p>
-                </Modal>
+                    cancelLabel={communityText('Keep sandbox')}
+                    confirmLabel={<React.Fragment><ShieldAlert size={15} />{communityText('Run anyway')}</React.Fragment>}
+                    onConfirm={confirmRunUnsandboxed}
+                    onCancel={() => setConfirmUnsandboxed(false)}
+                >{communityText('This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.')}</ConfirmModal>
             ) : null}
 
             {forkSetup ? (
@@ -1810,14 +1800,10 @@ const Project = () => {
                     <form onSubmit={createFork}>
                         <p className={styles.forkIntro}>{communityText('MistWarp will create a private working copy. Edit and save it, then open its project page and send your changes back.')}</p>
                         {forkBounty ? (
-                            <div className={styles.forkBounty}>
-                                <Trophy size={17} />
-                                <div>
-                                    <span>{communityText('Working on a bounty')}</span>
-                                    <strong>{forkBounty.title}</strong>
-                                    <small>{forkBounty.amount}{communityText(' credits, paid if the project owner merges your pull request')}</small>
-                                </div>
-                            </div>
+                            <Notice variant="info" icon={Trophy} title={communityText('Working on a bounty')} className={styles.forkNotice}>
+                                <p><strong>{forkBounty.title}</strong></p>
+                                <p>{communityText('{value1} credits, paid if the project owner merges your pull request.', {value1: forkBounty.amount})}</p>
+                            </Notice>
                         ) : null}
                         <label className={styles.forkField}>
                             <span>{communityText('Project name')}</span>
@@ -1848,7 +1834,6 @@ const Project = () => {
                         </dl>
                         <div className={styles.confirmActions}>
                             <Button
-                                className={styles.confirmCancel}
                                 onClick={() => {
                                     setForkSetup(null);
                                     setForkBounty(null);
@@ -1857,7 +1842,6 @@ const Project = () => {
                             >{communityText('Cancel')}</Button>
                             <Button
                                 variant="primary"
-                                className={styles.confirmButton}
                                 type="submit"
                                 busy={creatingFork}
                                 busyLabel={communityText('Creating fork…')}
@@ -1903,102 +1887,77 @@ const Project = () => {
                 />
             ) : null}
             {confirmBuy ? (
-                <Modal
+                <ConfirmModal
+                    icon={Coins}
                     title={communityText('Confirm purchase')}
-                    onClose={() => setConfirmBuy(false)}
-                    dismissDisabled={buying || checkoutBusy}
-                    actions={(
+                    confirmLabel={(
                         <React.Fragment>
-                            <Button
-                                variant="secondary"
-                                className={styles.confirmCancel}
-                                disabled={buying || checkoutBusy}
-                                onClick={() => setConfirmBuy(false)}
-                            >{communityText('Cancel')}</Button>
-                            {confirmBalance !== null && confirmBalance < price ? (
-                                <Button
-                                    variant="primary"
-                                    className={styles.confirmButton}
-                                    onClick={openCheckout}
-                                    busy={checkoutBusy}
-                                    busyLabel={communityText('Opening…')}
-                                >
-                                    <Coins size={15} />{communityText('Buy credits')}</Button>
-                            ) : (
-                                <Button
-                                    variant="primary"
-                                    className={styles.confirmButton}
-                                    onClick={doBuy}
-                                    busy={buying}
-                                    busyLabel={communityText('Processing…')}
-                                >
-                                    <Coins size={15} />
-                                    {communityText("Pay {value1} credits", {value1: price})}
-                                </Button>
-                            )}
+                            <Coins size={15} />
+                            {needsCredits ? communityText('Buy credits') : communityText('Pay {value1} credits', {value1: price})}
                         </React.Fragment>
                     )}
+                    busy={needsCredits ? checkoutBusy : buying}
+                    busyLabel={needsCredits ? communityText('Opening…') : communityText('Processing…')}
+                    onConfirm={needsCredits ? openCheckout : doBuy}
+                    onCancel={() => setConfirmBuy(false)}
                 >
                     <p className={styles.confirmText}>
-                        {communityText("Buy {value1} for {value2} credits?", {value1: project.title, value2: price})}
+                        {communityText('Buy {value1} for {value2} credits?', {value1: project.title, value2: price})}
                     </p>
                     {confirmBalance !== null ? (
-                        <p className={styles.confirmBalance}>{communityText("Your balance: {value1} credits", {value1: confirmBalance})}</p>
+                        <p className={styles.confirmBalance}>{communityText('Your balance: {value1} credits', {value1: confirmBalance})}</p>
                     ) : null}
-                </Modal>
+                </ConfirmModal>
             ) : null}
-            {actionError ? <div className={styles.actionError}>{actionError}</div> : null}
+            {actionError ? (
+                <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError(null)}>{actionError}</Notice>
+            ) : null}
             <LiveProjectSession project={project} />
-            {copied ? <div className={styles.actionSuccess}>{communityText('Copied to clipboard.')}</div> : null}
+            {copied ? <Notice variant="success" className={styles.pageNotice}>{communityText('Copied to clipboard.')}</Notice> : null}
             {thumbnailStatus !== 'idle' ? (
-                <div className={styles.actionSuccess}>
+                <Notice variant={thumbnailStatus === 'saving' ? 'info' : 'success'} className={styles.pageNotice}>
                     {thumbnailStatus === 'saving' ? communityText('Saving thumbnail…') : communityText('Thumbnail updated.')}
-                </div>
+                </Notice>
             ) : null}
 
             {visibility === 'unlisted' ? (
-                <div className={styles.visibilityNotice}>
-                    <LinkIcon size={16} />
-                    <span>{communityText('Unlisted. Hidden from search and profiles, but anyone with the link can open it.')}</span>
-                </div>
+                <Notice variant="info" icon={LinkIcon} className={styles.pageNotice}>
+                    {communityText('Unlisted. Hidden from search and profiles, but anyone with the link can open it.')}
+                </Notice>
             ) : null}
             {visibility === 'private' ? (
-                <div className={styles.visibilityNotice}>
-                    <EyeOff size={16} />
-                    <span>{project.contributionOnly ?
+                <Notice variant="info" icon={EyeOff} className={styles.pageNotice}>
+                    {project.contributionOnly ?
                         communityText('Private paid-project remix. It can only be contributed back to the original project.') :
-                        communityText('Unshared. Only you can see this project.')}</span>
-                </div>
+                        communityText('Unshared. Only you can see this project.')}
+                </Notice>
             ) : null}
             {price > 0 ? (
-                <div className={styles.visibilityNotice}>
-                    <Coins size={16} />
-                    <span>
-                        {project.isOwner ?
-                            communityText("Paywalled at {value1} credits.", {value1: price}) :
-                            project.bought ?
-                                communityText('You own this project.') :
-                                communityText("{value1} credits to play this project.", {value1: price})}
-                    </span>
-                </div>
+                <Notice variant="info" icon={Coins} className={styles.pageNotice}>
+                    {project.isOwner ?
+                        communityText('Paywalled at {value1} credits.', {value1: price}) :
+                        project.bought ?
+                            communityText('You own this project.') :
+                            communityText('{value1} credits to play this project.', {value1: price})}
+                </Notice>
             ) : null}
             {projectThemeApplied && !revertTheme ? (
-                <div className={styles.themeNotice}>
-                    <Palette size={16} />
-                    <span className={styles.themeNoticeText}>{communityText('This project applied its own theme.')}</span>
-                    <button
-                        type="button"
-                        className={styles.themeNoticeButton}
-                        onClick={() => {
-                            setRevertTheme(true);
-                            restoreUserTheme();
-                        }}
-                    >{communityText('Use my theme')}</button>
-                    <Link
-                        to="/settings"
-                        className={styles.themeNoticeButton}
-                    >{communityText('Preferences')}</Link>
-                </div>
+                <Notice
+                    variant="info"
+                    icon={Palette}
+                    className={styles.pageNotice}
+                    action={(
+                        <React.Fragment>
+                            <Button
+                                onClick={() => {
+                                    setRevertTheme(true);
+                                    restoreUserTheme();
+                                }}
+                            >{communityText('Use my theme')}</Button>
+                            <Button as={Link} to="/settings">{communityText('Preferences')}</Button>
+                        </React.Fragment>
+                    )}
+                >{communityText('This project applied its own theme.')}</Notice>
             ) : null}
 
             <div className={styles.stageRow}>
@@ -2010,47 +1969,41 @@ const Project = () => {
                         <div className={styles.stageSizer}>
                             {!locked && !hasContent ? (
                                 <div className={styles.paywall}>
-                                    <Upload size={32} />
-                                    <h2 className={styles.paywallTitle}>{communityText('Nothing here yet')}</h2>
-                                    <p className={styles.paywallText}>
+                                    <EmptyState
+                                        icon={Upload}
+                                        title={communityText('Nothing here yet')}
+                                        action={project.isOwner ? (
+                                            <Button as="a" variant="primary" href={editorUrl({platformProject: project.id})}>
+                                                <ExternalLink size={16} />{communityText('Open in editor')}</Button>
+                                        ) : null}
+                                    >
                                         {project.isOwner ?
                                             communityText('No content yet. Open it in the editor and save to upload.') :
                                             communityText('This project has not been uploaded yet.')}
-                                    </p>
-                                    {project.isOwner ? (
-                                        <a
-                                            className={styles.paywallButton}
-                                            href={editorUrl({platformProject: project.id})}
-                                        >
-                                            <ExternalLink size={16} />{communityText('Open in editor')}</a>
-                                    ) : null}
+                                    </EmptyState>
                                 </div>
                             ) : locked ? (
                                 <div className={styles.paywall}>
-                                    <Lock size={32} />
-                                    <h2 className={styles.paywallTitle}>{price}{communityText(' credits to play')}</h2>
-                                    <p className={styles.paywallText}>{communityText('Buy once to play ')}{project.title}{communityText(' whenever you like.')}</p>
-                                    <button
-                                        type="button"
-                                        className={styles.paywallButton}
-                                        onClick={openBuyConfirm}
-                                        disabled={!user || buying}
+                                    <EmptyState
+                                        icon={Lock}
+                                        title={communityText('{value1} credits to play', {value1: price})}
+                                        action={(
+                                            <Button variant="primary" onClick={openBuyConfirm} disabled={!user || buying}>
+                                                <Coins size={16} />{communityText('Buy for {value1} credits', {value1: price})}</Button>
+                                        )}
                                     >
-                                        <Coins size={16} />
-                                        {communityText("Buy for {value1} credits", {value1: price})}
-                                    </button>
-                                    {!user ? (
-                                        <p className={styles.paywallHint}>{communityText('Log in to buy this project.')}</p>
-                                    ) : null}
+                                        {communityText('Buy once to play {value1} whenever you like.', {value1: project.title})}
+                                        {user ? null : ` ${communityText('Log in to buy this project.')}`}
+                                    </EmptyState>
                                 </div>
                             ) : contentError ? (
                                 <div className={styles.paywall}>
-                                    <ShieldAlert size={32} />
-                                    <h2 className={styles.paywallTitle}>{communityText('Project unavailable')}</h2>
-                                    <p className={styles.paywallText}>{communityText('The project file could not be loaded. The creator may need to save it again.')}</p>
+                                    <EmptyState icon={ShieldAlert} title={communityText('Project unavailable')}>
+                                        {communityText('The project file could not be loaded. The creator may need to save it again.')}
+                                    </EmptyState>
                                 </div>
                             ) : followThemeDecision === null ? (
-                                <div className={styles.paywall}>{communityText('Loading project…')}</div>
+                                <div className={styles.paywall}><StatusMessage>{communityText('Loading project…')}</StatusMessage></div>
                             ) : (
                                 <iframe
                                     key={stageSourceKey}
@@ -2070,27 +2023,20 @@ const Project = () => {
                         </div>
                     </div>
                     {customExtensions.length ? (
-                        <div className={unsandboxed ? styles.sandboxNoticeOpen : styles.sandboxNotice}>
-                            {unsandboxed ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
-                            <span className={styles.sandboxText}>
-                                {unsandboxed ?
-                                    communityText('Running with full access to your account. Only for projects you trust.') :
-                                    communityText('Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.')}
-                            </span>
-                            {unsandboxed ? (
-                                <button
-                                    type="button"
-                                    className={styles.sandboxButton}
-                                    onClick={() => setUnsandboxed(false)}
-                                >{communityText('Back to sandbox')}</button>
+                        <Notice
+                            variant={unsandboxed ? 'warning' : 'info'}
+                            icon={unsandboxed ? ShieldAlert : ShieldCheck}
+                            className={styles.stageNotice}
+                            action={unsandboxed ? (
+                                <Button onClick={() => setUnsandboxed(false)}>{communityText('Back to sandbox')}</Button>
                             ) : (
-                                <button
-                                    type="button"
-                                    className={styles.sandboxButton}
-                                    onClick={runUnsandboxed}
-                                >{communityText('Run without sandbox')}</button>
+                                <Button onClick={runUnsandboxed}>{communityText('Run without sandbox')}</Button>
                             )}
-                        </div>
+                        >
+                            {unsandboxed ?
+                                communityText('Running with full access to your account. Only for projects you trust.') :
+                                communityText('Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.')}
+                        </Notice>
                     ) : null}
                     <div className={styles.statsBar}>
                         <ReactionButtons
@@ -2107,7 +2053,7 @@ const Project = () => {
                             disabled={savingLibrary}
                             title={user ? (project.saved ? communityText('Remove from your library') : communityText('Save to your library')) :
                                 communityText('Sign in to save to your library')}
-                            aria-label={communityText("{value1} library, {value2} saves", {value1: project.saved ? 'Remove from' : 'Save to', value2: project.saveCount || 0})}
+                            aria-label={communityText('{value1} library, {value2} saves', {value1: project.saved ? 'Remove from' : 'Save to', value2: project.saveCount || 0})}
                             aria-pressed={Boolean(project.saved)}
                             onClick={saveAfterLogin}
                         >
@@ -2122,7 +2068,7 @@ const Project = () => {
                             <span className={styles.statMuted} title={communityText('Your playtime on this project')}>
                                 <Clock3 size={15} />
                                 {project.myPlaytimeMs > 0 ?
-                                    communityText("{value1} played", {value1: formatPlaytime(project.myPlaytimeMs, false)}) : communityText('Not played yet')}
+                                    communityText('{value1} played', {value1: formatPlaytime(project.myPlaytimeMs, false)}) : communityText('Not played yet')}
                             </span>
                         ) : null}
                         <input
@@ -2144,7 +2090,7 @@ const Project = () => {
                                 {blockStats ? (
                                     <span>
                                         <Blocks size={15} />
-                                        {blockStats.total.toLocaleString(getCommunityLocale())}{communityText(' blocks')}
+                                        {communityText('{value1} blocks', {value1: blockStats.total.toLocaleString(getCommunityLocale())})}
                                     </span>
                                 ) : null}
                                 <ProjectCompatibility compatibility={project.compatibility} compact />
@@ -2159,26 +2105,26 @@ const Project = () => {
 
             <div className={`${styles.bottomGrid} ${tab === 'Files' || tab === 'Version control' ? styles.filesGrid : ''}`}>
                 <section className={styles.commentsCol}>
-                    <div className={styles.commentsHead}>
-                        <nav className={tabStyles.tabs} aria-label={communityText('Project activity')}>
-                            {activityTabsFor(project).map(name => (
-                                <button
-                                    type="button"
-                                    key={name}
-                                    className={name === tab ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab}
-                                    onClick={() => setTab(name)}
-                                >
-                                    {name}
+                    <UnderlineTabs
+                        className={styles.activityTabs}
+                        ariaLabel="Project activity"
+                        value={tab}
+                        onChange={setTab}
+                        items={activityTabsFor(project).map(name => ({
+                            key: name,
+                            label: (
+                                <React.Fragment>
+                                    {activityTabLabels[name] || name}
                                     {name === 'Bounties' && openBountyCount !== null ? (
                                         <b>{openBountyCount}</b>
                                     ) : null}
                                     {name === 'Files' && projectFileCount !== null ? (
                                         <b>{projectFileCount}</b>
                                     ) : null}
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
+                                </React.Fragment>
+                            )
+                        }))}
+                    />
                     {tab === 'Comments' && (
                         <CommentThread
                             projectComments
@@ -2191,17 +2137,16 @@ const Project = () => {
                                 'Buy this project to comment.' : 'Comments are turned off.'}
                             reportContext={`project ${id}`}
                             composerAction={project.isOwner ? (
-                                <button
-                                    type="button"
-                                    className={styles.commentsToggle}
+                                <Button
+                                    variant="secondary"
                                     onClick={toggleComments}
-                                    disabled={savingComments}
+                                    busy={savingComments}
                                 >
                                     {project.commentsOff ?
                                         <MessageSquare size={14} /> :
                                         <MessageSquareOff size={14} />}
                                     {project.commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
-                                </button>
+                                </Button>
                             ) : null}
                         />
                     )}
@@ -2310,25 +2255,19 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
 
     return (
         <section className={styles.bountyPanel} aria-labelledby="project-bounties-title">
-            <div className={styles.bountyHeader}>
-                <h2 id="project-bounties-title">
-                    <Trophy size={17} />
-                    {isFork ? communityText('Bounties on the parent project') : communityText('Bounties')}
-                    <span>{items.length}</span>
-                </h2>
-                {project.isOwner && !isFork ? (
+            <SectionHeading
+                id="project-bounties-title"
+                icon={Trophy}
+                title={isFork ? communityText('Bounties on the parent project') : communityText('Bounties')}
+                count={items.length}
+                actions={project.isOwner && !isFork ? (
                     <Button variant="primary" onClick={onCreate}>
-                        <Plus size={16} />{communityText(' New bounty')}</Button>
+                        <Plus size={16} />{communityText('New bounty')}</Button>
                 ) : !isFork && project.canRemix ? (
-                    <button
-                        type="button"
-                        className={styles.bountyActionPrimary}
-                        disabled={userLoading}
-                        onClick={onRemix}
-                    >
-                        <GitFork size={14} />{communityText(' Remix')}</button>
+                    <Button variant="primary" disabled={userLoading} onClick={onRemix}>
+                        <GitFork size={16} />{communityText('Remix')}</Button>
                 ) : null}
-            </div>
+            />
             {items.length ? (
                 <ul className={styles.bountyList}>
                     {items.map(item => (
@@ -2338,7 +2277,7 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
                                 {item.description ? <p>{item.description}</p> : null}
                             </div>
                             <div className={styles.bountyItemAction}>
-                                <span className={styles.bountyReward}>{item.amount}{communityText(' credits')}</span>
+                                <span className={styles.bountyReward}>{communityText('{value1} credits', {value1: item.amount})}</span>
                                 {!project.isOwner || isFork ? (
                                     isFork && !project.isOwner ? (
                                         <Link className={styles.bountyClaim} to={projectUrl(targetId)}>{communityText('Open parent')}</Link>
@@ -2356,11 +2295,11 @@ const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => 
                     ))}
                 </ul>
             ) : (
-                <p className={styles.bountyEmpty}>
+                <EmptyState icon={Trophy} title={communityText('No open bounties')}>
                     {project.isOwner && !isFork ?
-                        communityText('No open bounties. Fund a specific change when you want contributors to pick it up.') :
+                        communityText('Fund a specific change when you want contributors to pick it up.') :
                         communityText('There are no funded tasks right now. You can still fork the project and send an improvement.')}
-                </p>
+                </EmptyState>
             )}
         </section>
     );
@@ -2383,16 +2322,22 @@ const RemixTree = ({id, baseUrl}) => {
         };
     }, [attempt, id]);
     if (!tree && !failed) return null;
-    if (failed) return <p className={styles.sideEmpty}>{communityText('Could not load remixes. ')}<button type="button" onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</button></p>;
+    if (failed) {
+        return (
+            <StatusMessage error compact onRetry={() => setAttempt(value => value + 1)}>
+                {communityText('Could not load remixes.')}
+            </StatusMessage>
+        );
+    }
     const nodes = tree.nodes || [];
     return (
         <section className={styles.remixPanel}>
             <GitFork size={20} />
             <div>
                 <h2>{communityText('Remix tree')}</h2>
-                <p>{nodes.length > 1 ? communityText("{value1} projects branch from the same original.", {value1: nodes.length}) : communityText('See this project alongside its Git history.')}</p>
+                <p>{nodes.length > 1 ? communityText('{value1} projects branch from the same original.', {value1: nodes.length}) : communityText('See this project alongside its Git history.')}</p>
             </div>
-            <Link to={`${baseUrl || projectUrl(id)}/remixes`}>{communityText('Explore tree ')}<ChevronRight size={15} /></Link>
+            <Link to={`${baseUrl || projectUrl(id)}/remixes`}>{communityText('Explore tree')}<ChevronRight size={15} /></Link>
         </section>
     );
 };
@@ -2452,14 +2397,22 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
             if (idRef.current === actionId) setRestoring(null);
         }
     };
-    if (!history) return <p className={styles.status}>{communityText('Loading…')}</p>;
-    if (history.error) return <p className={styles.status}>{communityText('Could not load version history. ')}<button type="button" onClick={onChange}>{communityText('Try again')}</button></p>;
+    if (!history) return <StatusMessage />;
+    if (history.error) {
+        return <StatusMessage error onRetry={onChange}>{communityText('Could not load version history.')}</StatusMessage>;
+    }
     const commits = history.commits || [];
-    if (!commits.length) return <p className={styles.status}>{communityText('No version history available.')}</p>;
+    if (!commits.length) {
+        return (
+            <EmptyState icon={History} title={communityText('No version history yet')}>
+                {communityText('Saved versions of this project will appear here.')}
+            </EmptyState>
+        );
+    }
     if (history.graph?.nodes?.length) {
         return (
             <>
-                {restoreError ? <p className={styles.status}>{restoreError}</p> : null}
+                {restoreError ? <Notice variant="error" className={styles.pageNotice}>{restoreError}</Notice> : null}
                 <GitGraph
                     projectId={id}
                     graph={history.graph}
@@ -2468,33 +2421,20 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
                     restoring={restoring}
                 />
                 {restoreCandidate ? (
-                    <Modal
+                    <ConfirmModal
+                        icon={History}
                         title={communityText('Restore this version?')}
-                        onClose={() => setRestoreCandidate(null)}
-                        dismissDisabled={Boolean(restoring)}
-                        actions={(
-                            <React.Fragment>
-                                <Button
-                                    variant="secondary"
-                                    className={styles.confirmCancel}
-                                    disabled={Boolean(restoring)}
-                                    onClick={() => setRestoreCandidate(null)}
-                                >{communityText('Cancel')}</Button>
-                                <Button
-                                    variant="primary"
-                                    className={styles.confirmButton}
-                                    busy={Boolean(restoring)}
-                                    busyLabel={communityText('Restoring…')}
-                                    onClick={() => restore(restoreCandidate)}
-                                >{communityText('Restore version')}</Button>
-                            </React.Fragment>
-                        )}
+                        confirmLabel={communityText('Restore version')}
+                        busy={Boolean(restoring)}
+                        busyLabel={communityText('Restoring…')}
+                        error={restoreError}
+                        onConfirm={() => restore(restoreCandidate)}
+                        onCancel={() => setRestoreCandidate(null)}
                     >
-                        <p className={styles.confirmText}>
-                            <strong>{(restoreCandidate.message || 'Saved version').split('\n')[0]}</strong>
-                            {' '}{communityText('will become the current project. Newer versions will stay in the history.')}</p>
-                        {restoreError ? <p className={styles.confirmError}>{restoreError}</p> : null}
-                    </Modal>
+                        {communityText('{value1} will become the current project. Newer versions will stay in the history.', {
+                            value1: (restoreCandidate.message || communityText('Saved version')).split('\n')[0]
+                        })}
+                    </ConfirmModal>
                 ) : null}
             </>
         );
@@ -2541,8 +2481,8 @@ const PullList = ({id, baseUrl, onCount, onNew}) => {
         reload();
     }, [reload]);
 
-    if (!pulls && !loadError) return <p className={styles.status}>{communityText('Loading pull requests…')}</p>;
-    if (loadError) return <p className={styles.status}>{communityText('Could not load pull requests. ')}<button type="button" onClick={reload}>{communityText('Try again')}</button></p>;
+    if (!pulls && !loadError) return <StatusMessage>{communityText('Loading pull requests…')}</StatusMessage>;
+    if (loadError) return <StatusMessage error onRetry={reload}>{communityText('Could not load pull requests.')}</StatusMessage>;
     const openCount = pulls.filter(pull => pull.state === 'open').length;
     const closedCount = pulls.length - openCount;
     const needle = query.trim().toLowerCase();
@@ -2554,23 +2494,32 @@ const PullList = ({id, baseUrl, onCount, onNew}) => {
         <section className={styles.pullBrowser}>
             <div className={styles.pullTools}>
                 <label><Search size={16} /><input value={query} placeholder={communityText('Search pull requests')} onChange={event => setQuery(event.target.value)} /></label>
-                <Button variant="primary" onClick={onNew}><Plus size={16} />{communityText(' New pull request')}</Button>
+                <Button variant="primary" onClick={onNew}><Plus size={16} />{communityText('New pull request')}</Button>
             </div>
             <div className={styles.pullList}>
                 <header>
-                    <button className={state === 'open' ? styles.pullStateActive : ''} onClick={() => setState('open')}><GitPullRequest size={16} /> {openCount}{communityText(' Open')}</button>
-                    <button className={state === 'closed' ? styles.pullStateActive : ''} onClick={() => setState('closed')}>{closedCount}{communityText(' Closed')}</button>
+                    <button type="button" className={state === 'open' ? styles.pullStateActive : ''} onClick={() => setState('open')}><GitPullRequest size={16} />{communityText('{value1} open', {value1: openCount})}</button>
+                    <button type="button" className={state === 'closed' ? styles.pullStateActive : ''} onClick={() => setState('closed')}>{communityText('{value1} closed', {value1: closedCount})}</button>
                 </header>
                 {filtered.length ? filtered.map(pull => (
                     <article key={pull.index} id={`pull-${pull.index}`}>
                         <GitPullRequest className={pull.state === 'open' ? styles.pullOpen : styles.pullClosed} size={18} />
                         <div>
                             <Link to={`${baseUrl || projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
-                            <span>#{pull.index}{communityText(' opened ')}{timeAgo(pull.created)}{communityText(' by ')}<UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
+                            <span>{communityText('#{value1} opened {value2} by', {value1: pull.index, value2: timeAgo(pull.created)})} <UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
                         </div>
                         <span className={styles.pullComments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>
                     </article>
-                )) : <p className={styles.pullEmpty}>{communityText('No ')}{state}{communityText(' pull requests match.')}</p>}
+                )) : (
+                    <EmptyState
+                        compact
+                        icon={GitPullRequest}
+                        className={styles.pullEmpty}
+                        title={state === 'open' ? communityText('No open pull requests') : communityText('No closed pull requests')}
+                    >
+                        {needle ? communityText('No pull requests match your search.') : communityText('Pull requests sent to this project will appear here.')}
+                    </EmptyState>
+                )}
             </div>
         </section>
     );
@@ -2606,7 +2555,7 @@ const OutgoingPullNotice = ({id, targetId}) => {
             <header><GitPullRequest size={16} /><strong>{communityText('Open pull requests from this project')}</strong><span>{pulls.length}</span></header>
             {pulls.map(pull => (
                 <Link key={`${pull.targetProjectId}:${pull.index}`} to={`${projectUrl({id: pull.targetProjectId, vanitySlug: targetVanity})}/pulls/${pull.index}`}>
-                    <span><strong>{pull.title}</strong><small>{communityText('into ')}{targetTitle || pull.targetProjectId}</small></span>
+                    <span><strong>{pull.title}</strong><small>{communityText('into {value1}', {value1: targetTitle || pull.targetProjectId})}</small></span>
                     <span>#{pull.index} <ChevronRight size={14} /></span>
                 </Link>
             ))}
@@ -2614,20 +2563,23 @@ const OutgoingPullNotice = ({id, targetId}) => {
     );
 };
 
-const ReviewStars = ({rating, onChange}) => (
-    <div className={onChange ? styles.reviewStarPicker : styles.reviewStars} aria-label={`${rating} out of 5 stars`}>
-        {[1, 2, 3, 4, 5].map(value => {
-            if (onChange) {
-                return (
-                    <button key={value} type="button" aria-label={`${value} stars`} onClick={() => onChange(value)}>
-                        <Star size={20} fill={value <= rating ? 'currentColor' : 'none'} />
-                    </button>
-                );
-            }
-            return <Star key={value} size={15} fill={value <= rating ? 'currentColor' : 'none'} />;
-        })}
-    </div>
-);
+const ReviewStars = ({rating, onChange}) => {
+    const {text: communityText} = useCommunityText();
+    return (
+        <div className={onChange ? styles.reviewStarPicker : styles.reviewStars} aria-label={communityText('{value1} out of 5 stars', {value1: rating})}>
+            {[1, 2, 3, 4, 5].map(value => {
+                if (onChange) {
+                    return (
+                        <button key={value} type="button" aria-label={communityText('{value1} stars', {value1: value})} onClick={() => onChange(value)}>
+                            <Star size={20} fill={value <= rating ? 'currentColor' : 'none'} />
+                        </button>
+                    );
+                }
+                return <Star key={value} size={15} fill={value <= rating ? 'currentColor' : 'none'} />;
+            })}
+        </div>
+    );
+};
 
 const ReviewPanel = ({id, user, login, ownsProject}) => {
     const {text: communityText} = useCommunityText();
@@ -2680,7 +2632,7 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
             return;
         }
         if (!rating) {
-            setStatus('Choose a star rating first.');
+            setStatus(communityText('Choose a star rating first.'));
             return;
         }
         actionLocks.current.add(actionContext);
@@ -2700,10 +2652,10 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
                 return [data.review, ...withoutMine];
             });
             setHasReview(true);
-            setStatus('Review saved.');
+            setStatus(communityText('Review saved.'));
         } catch (e) {
             if (reviewContextRef.current === actionContext) {
-                setStatus(e.message || 'Could not save your review.');
+                setStatus(e.message || communityText('Could not save your review.'));
             }
         } finally {
             actionLocks.current.delete(actionContext);
@@ -2730,11 +2682,11 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
             setRating(0);
             setMessage('');
             setHasReview(false);
-            setStatus('Review deleted.');
+            setStatus(communityText('Review deleted.'));
             setDeleteConfirm(false);
         } catch (e) {
             if (reviewContextRef.current === actionContext) {
-                setStatus(e.message || 'Could not delete your review.');
+                setStatus(e.message || communityText('Could not delete your review.'));
             }
         } finally {
             actionLocks.current.delete(actionContext);
@@ -2761,10 +2713,14 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
                     <div className={styles.reviewActions}>
                         <Button
                             type="submit"
+                            variant="primary"
                             disabled={busy === 'delete'}
                             busy={busy === 'save'}
                             busyLabel={communityText('Saving…')}
-                        >{user ? communityText('Save review') : communityText('Sign in to review')}</Button>
+                        >
+                            {user ? <Star size={15} /> : <LogIn size={15} />}
+                            {user ? communityText('Save review') : communityText('Sign in to review')}
+                        </Button>
                         {hasReview ? (
                             <Button
                                 type="button"
@@ -2779,10 +2735,14 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
                         {status ? <span>{status}</span> : null}
                     </div>
                 </form>
-            ) : <p className={styles.reviewOwnerHint}>{communityText('You cannot review your own project.')}</p>}
-            {!reviews && !loadError ? <p className={styles.status}>{communityText('Loading reviews…')}</p> : null}
-            {loadError ? <p className={styles.status}>{communityText('Could not load reviews. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
-            {reviews && !reviews.length ? <p className={styles.reviewEmpty}>{communityText('No reviews yet.')}</p> : null}
+            ) : <Notice variant="info">{communityText('You cannot review your own project.')}</Notice>}
+            {!reviews && !loadError ? <StatusMessage compact>{communityText('Loading reviews…')}</StatusMessage> : null}
+            {loadError ? <StatusMessage error compact onRetry={load}>{communityText('Could not load reviews.')}</StatusMessage> : null}
+            {reviews && !reviews.length ? (
+                <EmptyState icon={Star} title={communityText('No reviews yet')}>
+                    {communityText('Reviews from players will appear here.')}
+                </EmptyState>
+            ) : null}
             {reviews && reviews.map(review => (
                 <article key={review._id} className={styles.reviewCard}>
                     <Link to={`/users/${review.author}`}><Avatar username={review.author} size={34} /></Link>
@@ -2800,31 +2760,16 @@ const ReviewPanel = ({id, user, login, ownsProject}) => {
                 </article>
             ))}
             {deleteConfirm ? (
-                <Modal
+                <ConfirmModal
+                    destructive
                     title={communityText('Delete your review?')}
-                    onClose={() => setDeleteConfirm(false)}
-                    dismissDisabled={Boolean(busy)}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="secondary"
-                                className={styles.confirmCancel}
-                                disabled={Boolean(busy)}
-                                onClick={() => setDeleteConfirm(false)}
-                            >{communityText('Cancel')}</Button>
-                            <Button
-                                variant="danger"
-                                className={`${styles.confirmButton} ${styles.deleteConfirmButton}`}
-                                busy={busy === 'delete'}
-                                busyLabel={communityText('Deleting…')}
-                                onClick={remove}
-                            >{communityText('Delete review')}</Button>
-                        </React.Fragment>
-                    )}
-                >
-                    <p className={styles.confirmText}>{communityText('Your rating and review text will be removed.')}</p>
-                    {status ? <p className={styles.confirmError}>{status}</p> : null}
-                </Modal>
+                    confirmLabel={communityText('Delete review')}
+                    busy={Boolean(busy)}
+                    busyLabel={communityText('Deleting…')}
+                    error={status}
+                    onConfirm={remove}
+                    onCancel={() => setDeleteConfirm(false)}
+                >{communityText('Your rating and review text will be removed.')}</ConfirmModal>
             ) : null}
         </div>
     );
@@ -2867,7 +2812,7 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
         if (actionLocks.current.has(context)) return;
         const payload = releasePayload(form);
         if (!payload.version) {
-            setError(communityText("Enter a version before publishing."));
+            setError(communityText('Enter a version before publishing.'));
             return;
         }
         actionLocks.current.add(context);
@@ -2880,7 +2825,7 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
             setReleases(current => [data.release, ...(current || []).filter(item => item._id !== data.release._id)]);
         } catch (e) {
             if (actionContextRef.current === context) {
-                setError(e.message || 'Could not create the release.');
+                setError(e.message || communityText('Could not create the release.'));
             }
         } finally {
             actionLocks.current.delete(context);
@@ -2897,30 +2842,43 @@ const ReleaseList = ({id, isOwner, viewerName}) => {
                         <input value={form.version} disabled={busy} required maxLength={50} placeholder={communityText('Version, such as 1.2.0')} onChange={event => updateForm('version', event.target.value)} />
                         <SelectMenu
                             options={[
-                                {value: 'stable', label: 'Stable'},
-                                {value: 'beta', label: 'Beta'},
-                                {value: 'development', label: 'Development'}
+                                {value: 'stable', label: communityText('Stable')},
+                                {value: 'beta', label: communityText('Beta')},
+                                {value: 'development', label: communityText('Development')}
                             ]}
                             value={form.channel}
                             disabled={busy}
                             onChange={value => updateForm('channel', value)}
-                            ariaLabel="Release channel"
+                            ariaLabel={communityText('Release channel')}
                         />
                     </div>
                     <textarea value={form.notes} disabled={busy} placeholder={communityText('What changed?')} onChange={event => updateForm('notes', event.target.value)} />
-                    <Button type="submit" disabled={busy}>{busy ? communityText('Publishing…') : communityText('Publish release')}</Button>
-                    {error ? <p className={styles.actionError}>{error}</p> : null}
+                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Publishing…')}>
+                        <Package size={15} />{communityText('Publish release')}</Button>
+                    {error ? <Notice variant="error">{error}</Notice> : null}
                 </form>
             ) : null}
-            {!releases && !loadError ? <p className={styles.status}>{communityText('Loading releases…')}</p> : null}
-            {loadError ? <p className={styles.status}>{communityText('Could not load releases. ')}<button type="button" onClick={load}>{communityText('Try again')}</button></p> : null}
-            {releases && !releases.length ? <p className={styles.status}>{communityText('No releases yet.')}</p> : null}
+            {!releases && !loadError ? <StatusMessage>{communityText('Loading releases…')}</StatusMessage> : null}
+            {loadError ? <StatusMessage error onRetry={load}>{communityText('Could not load releases.')}</StatusMessage> : null}
+            {releases && !releases.length ? (
+                <EmptyState icon={Package} title={communityText('No releases yet')}>
+                    {communityText('Published releases will appear here.')}
+                </EmptyState>
+            ) : null}
             {releases && releases.map(release => (
                 <article className={styles.release} key={release._id}>
                     <div><strong>{release.version}</strong> <span className={styles.releaseChannel}>{release.channel}</span></div>
                     <span className={styles.muted}>{timeAgo(release.created)}</span>
                     {release.notes ? <RichText text={release.notes} /> : null}
-                    {release.jsonUrl ? <a className={styles.primary} href={embedUrl({id, projectJsonUrl: release.jsonUrl, assetsBase: release.assetsBase})}>{communityText('Play this release')}</a> : null}
+                    {release.jsonUrl ? (
+                        <Button
+                            as="a"
+                            variant="primary"
+                            className={styles.releasePlay}
+                            href={embedUrl({id, projectJsonUrl: release.jsonUrl, assetsBase: release.assetsBase})}
+                        >
+                            <Play size={15} />{communityText('Play this release')}</Button>
+                    ) : null}
                 </article>
             ))}
         </div>
@@ -3020,7 +2978,7 @@ const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onR
         }
         const payload = contributionPayload(remixProjectId, title, body, bountyId);
         if (!payload.remixProjectId || !payload.title) {
-            setStatus('Add a fork project ID and title before sending.');
+            setStatus(communityText('Add a fork project ID and title before sending.'));
             return;
         }
         actionLocks.current.add(context);
@@ -3037,7 +2995,7 @@ const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onR
             if (sourceProjectId) rememberBountyClaim(sourceProjectId, '');
         } catch (e) {
             if (actionContextRef.current === context) {
-                setStatus(e.message || 'Could not send the contribution.');
+                setStatus(e.message || communityText('Could not send the contribution.'));
             }
         } finally {
             actionLocks.current.delete(context);
@@ -3055,9 +3013,11 @@ const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onR
             </p>
             {!sourceProjectId ? (
                 <div className={styles.contributionRemixPicker}>
-                    {remixes === null ? <p className={styles.muted}>{communityText('Loading your remixes…')}</p> : null}
+                    {remixes === null ? <StatusMessage compact>{communityText('Loading your remixes…')}</StatusMessage> : null}
                     {remixLoadError ? (
-                        <p className={styles.muted}>{communityText('Could not load your remixes. ')}<button type="button" onClick={() => setRemixLoadAttempt(value => value + 1)}>{communityText('Try again')}</button></p>
+                        <StatusMessage error compact onRetry={() => setRemixLoadAttempt(value => value + 1)}>
+                            {communityText('Could not load your remixes.')}
+                        </StatusMessage>
                     ) : null}
                     {remixes?.length ? (
                         <label className={styles.bountySelect}>
@@ -3070,24 +3030,31 @@ const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onR
                                 value={remixProjectId}
                                 disabled={busy}
                                 onChange={setRemixProjectId}
-                                ariaLabel="Remix to contribute"
+                                ariaLabel={communityText('Remix to contribute')}
                                 width={320}
                             />
                         </label>
                     ) : null}
                     {user && remixes && !remixes.length && !remixLoadError ? (
-                        <div className={styles.noContributionRemix}>
-                            <span>{communityText('You do not have a remix of this project yet.')}</span>
-                            {onRemix ? <Button type="button" variant="secondary" onClick={onRemix}>{communityText('Create a remix')}</Button> : null}
-                        </div>
+                        <EmptyState
+                            compact
+                            icon={GitFork}
+                            title={communityText('No remix yet')}
+                            action={onRemix ? (
+                                <Button type="button" variant="primary" onClick={onRemix}>
+                                    <GitFork size={15} />{communityText('Create a remix')}</Button>
+                            ) : null}
+                        >{communityText('You do not have a remix of this project yet.')}</EmptyState>
                     ) : null}
-                    {!user ? <p className={styles.muted}>{communityText('Sign in to choose one of your remixes.')}</p> : null}
+                    {!user ? (
+                        <SignInPrompt compact onSignIn={login}>{communityText('Sign in to choose one of your remixes.')}</SignInPrompt>
+                    ) : null}
                 </div>
             ) : null}
             {openPull ? (
                 <Link className={styles.openContribution} to={`${baseUrl || projectUrl(id)}/pulls/${openPull.index}`}>
                     <GitPullRequest size={17} />
-                    <span><strong>{openPull.title}</strong><small>{communityText('Pull request #')}{openPull.index}{communityText(' is open for this remix')}</small></span>
+                    <span><strong>{openPull.title}</strong><small>{communityText('Pull request #{value1} is open for this remix', {value1: openPull.index})}</small></span>
                     <ChevronRight size={16} />
                 </Link>
             ) : (sourceProjectId || remixProjectId) ? (
@@ -3101,28 +3068,31 @@ const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onR
                     <textarea value={body} disabled={busy} placeholder={communityText('Anything the creator should know')} onChange={event => setBody(event.target.value)} />
                     {bounties.length ? (
                         <label className={styles.bountySelect}>
-                            <span>{communityText('Bounty to claim ')}<small>{communityText('Optional')}</small></span>
+                            <span>{communityText('Bounty to claim')} <small>{communityText('Optional')}</small></span>
                             <SelectMenu
                                 options={[
-                                    {value: '', label: 'No bounty'},
+                                    {value: '', label: communityText('No bounty')},
                                     ...bounties.map(bounty => ({
                                         value: bounty.id,
-                                        label: `${bounty.amount} credits: ${bounty.title}`
+                                        label: communityText('{value1} credits: {value2}', {value1: bounty.amount, value2: bounty.title})
                                     }))
                                 ]}
                                 value={bountyId}
                                 disabled={busy}
                                 onChange={setBountyId}
-                                ariaLabel="Bounty to claim"
+                                ariaLabel={communityText('Bounty to claim')}
                                 width={320}
                             />
                             <small>{communityText('The reward is paid when the project owner merges this pull request.')}</small>
                         </label>
                     ) : null}
-                    <Button type="submit" disabled={busy}>{busy ? communityText('Sending…') : user ? communityText('Create pull request') : communityText('Sign in to contribute')}</Button>
+                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Sending…')}>
+                        {user ? <GitPullRequest size={15} /> : <LogIn size={15} />}
+                        {user ? communityText('Create pull request') : communityText('Sign in to contribute')}
+                    </Button>
                 </React.Fragment>
-            ) : !user ? <Button type="submit">{communityText('Sign in to contribute')}</Button> : null}
-            {status ? <p className={styles.muted}>{status}</p> : null}
+            ) : null}
+            {status ? <Notice variant="error">{status}</Notice> : null}
         </form>
     );
 };

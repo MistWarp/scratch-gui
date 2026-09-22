@@ -1,23 +1,22 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Check, ExternalLink, Palette, Settings, Trash2} from 'lucide-react';
+import {Check, ExternalLink, Palette, Plus, Settings, Trash2, Upload} from 'lucide-react';
 import {Link, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
 import {customThemeManager} from '../../lib/themes/custom-themes.js';
 import {applyTheme, detectTheme, THEME_CHANGE_EVENT} from '../../lib/themes/themePersistance.js';
 import Button from './ui/Button.jsx';
+import CardGrid from './ui/CardGrid.jsx';
+import ConfirmModal from './ui/ConfirmModal.jsx';
+import EmptyState from './ui/EmptyState.jsx';
 import IconButton from './ui/IconButton.jsx';
-import Modal from './ui/Modal.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
 import ThemeCard from './ThemeCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
 import styles from '../pages/MyStuff.module.css';
-
-const VIEWS = [
-    {key: 'library', label: 'Local library'},
-    {key: 'published', label: 'Published on WarpTheme'}
-];
 
 const previewTheme = theme => {
     try {
@@ -56,6 +55,10 @@ const MyStuffThemes = ({username}) => {
     const [attempt, setAttempt] = useState(0);
     const [removeTheme, setRemoveTheme] = useState(null);
     const [removeError, setRemoveError] = useState('');
+    const views = [
+        {key: 'library', label: communityText('Local library')},
+        {key: 'published', label: communityText('Published on WarpTheme')}
+    ];
 
     useEffect(() => {
         const requestedView = params.get('themeView');
@@ -116,110 +119,140 @@ const MyStuffThemes = ({username}) => {
             setRemoveTheme(null);
             setRemoveError('');
         } catch (error) {
-            setRemoveError(error.message || 'Could not remove this theme.');
+            setRemoveError(error.message || communityText('Could not remove this theme.'));
         }
     };
 
+    let body;
+    if (view === 'library') {
+        body = localThemes.length ? (
+            <CardGrid>
+                {localThemes.map(theme => (
+                    <article className={styles.localThemeCard} key={theme.uuid}>
+                        <ThemePreview className={styles.localThemePreview} theme={previewTheme(theme)} />
+                        <div className={styles.localThemeBody}>
+                            <div>
+                                <strong>{theme.name}</strong>
+                                <span>{theme.description || communityText('Saved on this device')}</span>
+                            </div>
+                            <div className={styles.localThemeActions}>
+                                <Button
+                                    disabled={applied === theme.uuid}
+                                    variant="primary"
+                                    onClick={() => applyLocalTheme(theme)}
+                                >
+                                    {applied === theme.uuid ? <Check size={15} /> : <Palette size={15} />}
+                                    {applied === theme.uuid ? communityText('Applied') : communityText('Apply')}
+                                </Button>
+                                <IconButton
+                                    className={styles.localThemeRemove}
+                                    label={communityText('Remove {value1}', {value1: theme.name})}
+                                    variant="danger"
+                                    onClick={() => {
+                                        setRemoveError('');
+                                        setRemoveTheme(theme);
+                                    }}
+                                ><Trash2 size={15} /></IconButton>
+                            </div>
+                        </div>
+                    </article>
+                ))}
+            </CardGrid>
+        ) : (
+            <EmptyState
+                compact
+                icon={Palette}
+                title={communityText('Your library is empty')}
+                action={(
+                    <React.Fragment>
+                        <Button as={Link} variant="primary" to="/settings?section=theme&tab=custom&themeAction=create">
+                            <Plus size={15} />
+                            {communityText('Create a theme')}
+                        </Button>
+                        <Button as={Link} to="/themes">{communityText('Browse themes')}</Button>
+                    </React.Fragment>
+                )}
+            >
+                {communityText('Save a theme from WarpTheme or create one in Theme settings.')}
+            </EmptyState>
+        );
+    } else if (publishedError) {
+        body = (
+            <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>
+                {communityText('Could not load your published themes.')}
+            </StatusMessage>
+        );
+    } else if (published === null) {
+        body = <StatusMessage compact>{communityText('Loading published themes…')}</StatusMessage>;
+    } else if (published.length) {
+        body = (
+            <CardGrid>
+                {published.map(theme => (
+                    <ThemeCard key={theme.id} returnLabel={communityText('Your themes')} theme={theme} />
+                ))}
+            </CardGrid>
+        );
+    } else {
+        body = (
+            <EmptyState
+                compact
+                icon={Upload}
+                title={communityText('You have not published a theme yet')}
+                action={(
+                    <Button as={Link} variant="primary" to="/themes?tab=publish">
+                        <Upload size={15} />
+                        {communityText('Publish a theme')}
+                    </Button>
+                )}
+            >
+                {communityText('Share your current theme with the WarpTheme community.')}
+            </EmptyState>
+        );
+    }
+
     return (
         <section className={styles.themePanel}>
-            <header className={styles.themeHeader}>
-                <div>
-                    <h1>{communityText('Themes')}</h1>
-                    <p>{communityText('Your saved themes live here. Discover more on WarpTheme.')}</p>
-                </div>
-                <div className={styles.themeHeaderActions}>
-                    <Link className={styles.themeBrowseLink} to="/settings?section=theme&tab=custom">
-                        <Settings size={14} />{communityText(' Edit library')}</Link>
-                    <Link className={styles.themeBrowseLink} to="/themes">{communityText('Browse themes ')}<ExternalLink size={14} />
-                    </Link>
-                </div>
-            </header>
+            <SectionHeading
+                icon={Palette}
+                title={communityText('Themes')}
+                lead={communityText('Your saved themes live here. Discover more on WarpTheme.')}
+                actions={(
+                    <React.Fragment>
+                        <Link className={styles.themeBrowseLink} to="/settings?section=theme&tab=custom">
+                            <Settings size={14} />
+                            {communityText('Edit library')}
+                        </Link>
+                        <Link className={styles.themeBrowseLink} to="/themes">
+                            {communityText('Browse themes')}
+                            <ExternalLink size={14} />
+                        </Link>
+                    </React.Fragment>
+                )}
+            />
             <UnderlineTabs
-                items={VIEWS}
+                items={views}
                 value={view}
                 onChange={setView}
                 className={styles.themeTabs}
-                ariaLabel="Theme library sections"
+                ariaLabel={communityText('Theme library sections')}
             />
-            {view === 'library' ? localThemes.length ? (
-                <div className={styles.localThemeGrid}>
-                    {localThemes.map(theme => (
-                        <article className={styles.localThemeCard} key={theme.uuid}>
-                            <ThemePreview className={styles.localThemePreview} theme={previewTheme(theme)} />
-                            <div className={styles.localThemeBody}>
-                                <div>
-                                    <strong>{theme.name}</strong>
-                                    <span>{theme.description || communityText('Saved on this device')}</span>
-                                </div>
-                                <div className={styles.localThemeActions}>
-                                    <Button
-                                        disabled={applied === theme.uuid}
-                                        variant="primary"
-                                        onClick={() => applyLocalTheme(theme)}
-                                    >
-                                        {applied === theme.uuid ? <Check size={15} /> : <Palette size={15} />}
-                                        {applied === theme.uuid ? communityText('Applied') : communityText('Apply')}
-                                    </Button>
-                                    <IconButton
-                                        className={styles.localThemeRemove}
-                                        label={communityText("Remove {value1}", {value1: theme.name})}
-                                        variant="danger"
-                                        onClick={() => {
-                                            setRemoveError('');
-                                            setRemoveTheme(theme);
-                                        }}
-                                    ><Trash2 size={15} /></IconButton>
-                                </div>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            ) : (
-                <div className={styles.themeEmpty}>
-                    <Palette size={26} />
-                    <strong>{communityText('Your library is empty')}</strong>
-                    <span>{communityText('Save a theme from WarpTheme or create one in Theme settings.')}</span>
-                    <div className={styles.themeEmptyActions}>
-                        <Link to="/settings?section=theme&tab=custom&themeAction=create">{communityText('Create a theme')}</Link>
-                        <Link to="/themes">{communityText('Browse themes')}</Link>
-                    </div>
-                </div>
-            ) : publishedError ? (
-                <div className={styles.themeEmpty} role="alert">
-                    <strong>{communityText('Could not load your published themes')}</strong>
-                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                </div>
-            ) : published === null ? (
-                <p className={styles.status}>{communityText('Loading published themes…')}</p>
-            ) : published.length ? (
-                <div className={styles.publishedThemeGrid}>
-                    {published.map(theme => <ThemeCard key={theme.id} returnLabel="Your themes" theme={theme} />)}
-                </div>
-            ) : (
-                <div className={styles.themeEmpty}>
-                    <strong>{communityText('You have not published a theme yet')}</strong>
-                    <span>{communityText('Share your current theme with the WarpTheme community.')}</span>
-                    <Link to="/themes?tab=publish">{communityText('Publish a theme')}</Link>
-                </div>
-            )}
+            {body}
             {removeTheme ? (
-                <Modal
-                    title={communityText('Remove saved theme?')}
+                <ConfirmModal
+                    destructive
                     icon={Trash2}
-                    onClose={() => setRemoveTheme(null)}
-                    onDismiss={() => setRemoveTheme(null)}
-                    actions={(
-                        <React.Fragment>
-                            <Button variant="secondary" onClick={() => setRemoveTheme(null)}>{communityText('Cancel')}</Button>
-                            <Button variant="danger" onClick={confirmRemove}>{communityText('Remove theme')}</Button>
-                        </React.Fragment>
-                    )}
+                    title={communityText('Remove saved theme?')}
+                    confirmLabel={communityText('Remove theme')}
+                    error={removeError}
+                    onConfirm={confirmRemove}
+                    onCancel={() => setRemoveTheme(null)}
                 >
-                    <p>{applied === removeTheme.uuid ?
-                        communityText("\"{value1}\" is active. Removing it will switch MistWarp to its fallback theme.", {value1: removeTheme.name}) :
-                        communityText("\"{value1}\" will be removed from this device.", {value1: removeTheme.name})}</p>
-                    {removeError ? <p className={styles.error} role="alert">{removeError}</p> : null}
-                </Modal>
+                    {applied === removeTheme.uuid ?
+                        communityText('"{value1}" is active. Removing it will switch MistWarp to its fallback theme.', {
+                            value1: removeTheme.name
+                        }) :
+                        communityText('"{value1}" will be removed from this device.', {value1: removeTheme.name})}
+                </ConfirmModal>
             ) : null}
         </section>
     );

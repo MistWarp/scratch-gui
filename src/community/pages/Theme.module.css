@@ -5,14 +5,6 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-block;
-    margin-bottom: 16px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
 .layout {
     display: grid;
     grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.7fr);
@@ -22,24 +14,8 @@
 
 .previewCard {
     overflow: hidden;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
-}
-
-.previewCard > img,
-.previewCard > span {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-}
-
-.previewCard > img {
-    display: block;
-    object-fit: cover;
-}
-
-.previewCard > span {
-    display: block;
 }
 
 .previewFrame {
@@ -54,12 +30,6 @@
     gap: 13px;
 }
 
-.info h1 {
-    margin: 0;
-    font-size: var(--fs-hero);
-    line-height: 1.05;
-}
-
 .creator {
     display: inline-flex;
     align-items: center;
@@ -67,10 +37,7 @@
     justify-self: start;
     color: var(--text-dim);
     font-size: var(--fs-sm);
-}
-
-.creator strong {
-    color: var(--mw-text);
+    font-weight: 600;
 }
 
 .description,
@@ -134,35 +101,10 @@
     padding-top: 5px;
 }
 
-.error,
-.notice {
-    margin: 0;
-    padding: 10px 12px;
-    border-radius: var(--radius-xs);
-    font-size: var(--fs-sm);
-    line-height: 1.45;
-}
-
-.error {
-    border: 1px solid color-mix(in srgb, var(--mw-danger) 35%, transparent);
-    background: color-mix(in srgb, var(--mw-danger) 10%, transparent);
-}
-
-.notice {
-    border: 1px solid var(--accent-border);
-    background: var(--accent-softer);
-}
-
 .help {
     padding-top: 6px;
     border-top: 1px solid var(--border);
     font-size: var(--fs-xs);
-}
-
-.status {
-    padding: 64px 16px;
-    color: var(--text-dim);
-    text-align: center;
 }
 
 @media (max-width: 780px) {

@@ -4,22 +4,26 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useParams, Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {
-    ArrowLeft, ExternalLink, Eye, Coins, Users, Heart, Check, BarChart3, SlidersHorizontal, Bookmark,
-    Link2, UserCog, Plus, Trash2, MessageCircle, Clock3, ShoppingBag
+    Activity, AlertTriangle, BarChart3, Bookmark, Check, ClipboardCheck, Clock3, Coins, Eye, FolderOpen, Gift, Heart,
+    Link2, Lock, MessageCircle, Palette, Plus, ShoppingBag, SlidersHorizontal, Tag, Trash2, Type, UserCog, Users
 } from 'lucide-react';
 import api, {projectUrl, editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
-import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import ProjectDonationAnalytics from '../components/ProjectDonationAnalytics.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Button from '../components/ui/Button.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
-import Modal from '../components/ui/Modal.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import useLatest from '../use-latest.js';
@@ -101,11 +105,8 @@ const projectNavigationState = value => ({
     activityTab: value === 'diagnostics' ? 'diagnostics' : 'feedback'
 });
 
-const PageHeading = ({title, description}) => (
-    <header className={styles.pageHeading}>
-        <h1>{title}</h1>
-        <p>{description}</p>
-    </header>
+const PageHeading = ({icon, title, description}) => (
+    <SectionHeading icon={icon} title={title} lead={description} />
 );
 
 const PageTabs = ({items, value, onChange, label}) => (
@@ -423,36 +424,39 @@ const ManageProject = () => {
     };
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.statusMsg}>{communityText('Loading…')}</p></main>;
+        return <main className={styles.page}><StatusMessage /></main>;
     }
     if (!user) {
         return (
             <main className={styles.page}>
-                <p className={styles.statusMsg}>{communityText('Sign in to manage your projects. ')}<button type="button" onClick={login}>{communityText('Sign in')}</button></p>
+                <SignInPrompt onSignIn={login}>{communityText('Sign in to manage your projects.')}</SignInPrompt>
             </main>
         );
     }
     if (error && errorLoadContext === loadContext) {
         return (
             <main className={styles.page}>
-                <p className={styles.statusMsg}>
-                    {error}{' '}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setError(null);
-                            load();
-                        }}
-                    >{communityText('Try again')}</button>
-                </p>
+                <StatusMessage
+                    error
+                    onRetry={() => {
+                        setError(null);
+                        load();
+                    }}
+                >{error}</StatusMessage>
             </main>
         );
     }
     if (!project || !form || projectLoadContext !== loadContext) {
-        return <main className={styles.page}><p className={styles.statusMsg}>{communityText('Loading…')}</p></main>;
+        return <main className={styles.page}><StatusMessage /></main>;
     }
     if (!project.isOwner) {
-        return <main className={styles.page}><p className={styles.statusMsg}>{communityText('This is not your project.')}</p></main>;
+        return (
+            <main className={styles.page}>
+                <EmptyState icon={Lock} title={communityText('This is not your project')}>
+                    {communityText('Only the owner and team of a project can manage it.')}
+                </EmptyState>
+            </main>
+        );
     }
 
     const analytics = project.analytics || {};
@@ -471,36 +475,32 @@ const ManageProject = () => {
 
     return (
         <main className={styles.page}>
-            <div className={styles.head}>
-                <Link
-                    to="/mystuff?section=projects"
-                    className={styles.back}
-                >
-                    <ArrowLeft size={15} />{communityText('My Stuff')}</Link>
-                <Link
-                    to={projectUrl(project)}
-                    className={styles.viewLink}
-                >
-                    <ExternalLink size={15} />{communityText('Project page')}</Link>
-            </div>
+            <PageHeader
+                compact
+                backTo={projectUrl(project)}
+                backLabel={communityText('Back to project')}
+                title={project.title}
+                lead={communityText('Manage this project and see how it is doing.')}
+                actions={(
+                    <Button as={Link} to="/mystuff?section=projects">
+                        <FolderOpen size={15} />{communityText('My stuff')}</Button>
+                )}
+            />
 
             {transferDetails ? (
-                <Modal
+                <ConfirmModal
+                    destructive
                     icon={UserCog}
                     title={transferDetails.title}
-                    dismissDisabled={transferBusy}
-                    onClose={() => setTransferConfirm('')}
-                    onDismiss={() => setTransferConfirm('')}
-                    actions={(
-                        <React.Fragment>
-                            <Button disabled={transferBusy} variant="secondary" onClick={() => setTransferConfirm('')}>{communityText('Cancel')}</Button>
-                            <Button busy={transferBusy} busyLabel={communityText('Transferring…')} variant="danger" onClick={transferProject}>{transferDetails.action}</Button>
-                        </React.Fragment>
-                    )}
+                    confirmLabel={transferDetails.action}
+                    busy={transferBusy}
+                    busyLabel={communityText('Transferring…')}
+                    error={transferError}
+                    onConfirm={transferProject}
+                    onCancel={() => setTransferConfirm('')}
                 >
-                    <p>{transferDetails.body}</p>
-                    {transferError ? <p className={styles.formStatus} role="alert">{transferError}</p> : null}
-                </Modal>
+                    {transferDetails.body}
+                </ConfirmModal>
             ) : null}
 
             <div className={styles.layout}>
@@ -521,17 +521,7 @@ const ManageProject = () => {
                 <div className={styles.content}>
                     {activeSection === 'overview' ? (
                         <div className={styles.stack}>
-                            <div className={styles.hero}>
-                                <ProjectThumbnail
-                                    project={project}
-                                    className={styles.heroThumb}
-                                    fallbackClassName={styles.heroThumbFallback}
-                                />
-                                <div className={styles.heroText}>
-                                    <h1 className={styles.title}>{project.title}</h1>
-                                    <p className={styles.heroSub}>{communityText('See how your project is doing.')}</p>
-                                </div>
-                            </div>
+                            <PageHeading icon={BarChart3} title={communityText('Analytics')} description={communityText('See how your project is doing.')} />
                             <div className={styles.statGrid}>
                                 <div className={`${styles.stat} ${styles.statViews}`}>
                                     <span className={styles.statIcon}><Eye size={20} /></span>
@@ -580,7 +570,20 @@ const ManageProject = () => {
                                 {perks?.mistwarp?.advancedAnalytics ? <div className={styles.stat}><span className={styles.statIcon}><BarChart3 size={20} /></span><span className={styles.statNumber}>{views > 0 ? `${((buyers.length / views) * 100).toFixed(1)}%` : '0%'}</span><span className={styles.statLabel}>{communityText('View-to-buyer conversion')}</span></div> : null}
                                 {perks?.mistwarp?.advancedAnalytics && buyers.length ? <div className={styles.stat}><span className={styles.statIcon}><Coins size={20} /></span><span className={styles.statNumber}>{roundCredits(revenue / buyers.length)}</span><span className={styles.statLabel}>{communityText('Credits per buyer')}</span></div> : null}
                             </div>
-                            {perks?.mistwarp?.analyticsExport ? <div className={styles.analyticsTools}><span>{communityText('Advanced analytics are included with your ')}{perks.tier}{communityText(' Rotur plan.')}</span><Button variant="secondary" onClick={() => exportAnalyticsCsv(project, analytics)}>{communityText('Export CSV')}</Button></div> : <p className={styles.empty}>{communityText('Rotur Plus adds conversion insights and downloadable analytics. Your current plan keeps ')}{analytics.historyDays === 0 ? communityText('all-time') : communityText("{value1}-day", {value1: analytics.historyDays})}{communityText(' history.')}</p>}
+                            {perks?.mistwarp?.analyticsExport ? (
+                                <Notice
+                                    variant="info"
+                                    action={<Button onClick={() => exportAnalyticsCsv(project, analytics)}>{communityText('Export CSV')}</Button>}
+                                >
+                                    {communityText('Advanced analytics are included with your {value1} Rotur plan.', {value1: perks.tier})}
+                                </Notice>
+                            ) : (
+                                <Notice variant="info">
+                                    {communityText('Rotur Plus adds conversion insights and downloadable analytics. Your current plan keeps {value1} history.', {
+                                        value1: analytics.historyDays === 0 ? communityText('all-time') : communityText('{value1}-day', {value1: analytics.historyDays})
+                                    })}
+                                </Notice>
+                            )}
                             <ProjectDonationAnalytics projectId={project.id} donations={donations} />
                             <StatChart
                                 title={communityText('Views over the last 2 weeks')}
@@ -589,15 +592,15 @@ const ManageProject = () => {
                                 emptyText="No views in the last two weeks."
                             />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Publish checklist')}</h2>
+                                <SectionHeading as="h3" icon={ClipboardCheck} title={communityText('Publish checklist')} />
                                 <ul className={styles.checklist}>
                                     {[
-                                        ['Project uploaded', project.hasContent],
-                                        ['Clear title', project.title && !/^untitled$/i.test(project.title)],
-                                        ['Instructions added', Boolean(project.instructions)],
-                                        ['Description or notes added', Boolean(project.description || project.notes)],
-                                        ['Tags added', Boolean(project.tags && project.tags.length)],
-                                        ['Thumbnail ready', Boolean(project.thumbUrl)]
+                                        [communityText('Project uploaded'), project.hasContent],
+                                        [communityText('Clear title'), project.title && !/^untitled$/i.test(project.title)],
+                                        [communityText('Instructions added'), Boolean(project.instructions)],
+                                        [communityText('Description or notes added'), Boolean(project.description || project.notes)],
+                                        [communityText('Tags added'), Boolean(project.tags && project.tags.length)],
+                                        [communityText('Thumbnail ready'), Boolean(project.thumbUrl)]
                                     ].map(([label, done]) => (
                                         <li key={label} className={done ? styles.checkDone : styles.checkTodo}>
                                             <Check size={15} /> {label}
@@ -619,9 +622,9 @@ const ManageProject = () => {
 
                     {activeSection === 'page' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Project page')} description={communityText('Edit the name, branding, instructions, and public details people see.')} />
+                            <PageHeading icon={SlidersHorizontal} title={communityText('Project page')} description={communityText('Edit the name, branding, instructions, and public details people see.')} />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Name and address')}</h2>
+                                <SectionHeading as="h3" icon={Type} title={communityText('Name and address')} />
                                 <div className={styles.form}>
                                     <label className={styles.field}>
                                         <span>{communityText('Title')}</span>
@@ -635,13 +638,12 @@ const ManageProject = () => {
                                     <label className={styles.field}>
                                         <span>{communityText('Vanity URL')}</span>
                                         <div className={styles.vanityField}><span>{communityText('/p/')}</span><input disabled={saving || !perks?.mistwarp?.vanityProjectUrls} maxLength={40} value={form.vanitySlug} placeholder={communityText('my-project')} onChange={e => set('vanitySlug', e.target.value)} /></div>
-                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open ')}{`/p/${project.vanitySlug}`}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? communityText("Your {value1} plan includes a vanity URL.", {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
+                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} plan includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
                                         <Button
                                             variant="primary"
-                                            className={styles.save}
                                             busy={saving}
                                             busyLabel={communityText('Saving…')}
                                             onClick={save}
@@ -651,7 +653,7 @@ const ManageProject = () => {
                                 </div>
                             </div>
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Branding')}</h2>
+                                <SectionHeading as="h3" icon={Palette} title={communityText('Branding')} />
                                 <div className={styles.brandingGrid}>
                                     <label className={styles.field}>
                                         <span>{communityText('Brand colour')}</span>
@@ -662,7 +664,7 @@ const ManageProject = () => {
                                         <input disabled={saving || !perks?.mistwarp?.customProjectBranding} maxLength={120} value={form.brandingTagline} placeholder={communityText('A short line above your project')} onChange={e => set('brandingTagline', e.target.value)} />
                                     </label>
                                 </div>
-                                <p className={styles.cardHint}>{perks?.mistwarp?.customProjectBranding ? communityText("Included with your {value1} Rotur plan.", {value1: perks.tier}) : communityText('Custom branding is included with Rotur Plus and Pro.')}</p>
+                                <p className={styles.cardHint}>{perks?.mistwarp?.customProjectBranding ? communityText('Included with your {value1} Rotur plan.', {value1: perks.tier}) : communityText('Custom branding is included with Rotur Plus and Pro.')}</p>
                             </div>
                             <ProjectInfoPanel
                                 project={project}
@@ -676,9 +678,9 @@ const ManageProject = () => {
 
                     {activeSection === 'publishing' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Publishing')} description={communityText('Control who can open the project and what they can do with it.')} />
+                            <PageHeading icon={Eye} title={communityText('Publishing')} description={communityText('Control who can open the project and what they can do with it.')} />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Access')}</h2>
+                                <SectionHeading as="h3" icon={Lock} title={communityText('Access')} />
                                 <div className={styles.form}>
                                     <div className={styles.field}>
                                         <span>{communityText('Visibility')}</span>
@@ -699,17 +701,16 @@ const ManageProject = () => {
                                     </div>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
-                                        <Button variant="primary" className={styles.save} busy={saving} busyLabel={communityText('Saving…')} onClick={save}>
-                                            <Check size={16} />{communityText(' Save publishing settings')}</Button>
+                                        <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}>
+                                            <Check size={16} />{communityText('Save publishing settings')}</Button>
                                     </div>
                                 </div>
                             </div>
                             {!project.contributionOnly ? <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Private preview')}</h2>
-                                <p className={styles.empty}>{communityText('Create a private play link that expires after 24 hours.')}</p>
+                                <SectionHeading as="h3" icon={Link2} title={communityText('Private preview')} lead={communityText('Create a private play link that expires after 24 hours.')} />
                                 <div className={styles.inlineAction}>
-                                    <Button variant="secondary" busy={previewBusy} busyLabel={communityText('Creating…')} onClick={createPreview}>
-                                        <Link2 size={16} />{communityText(' Create preview link')}</Button>
+                                    <Button busy={previewBusy} busyLabel={communityText('Creating…')} onClick={createPreview}>
+                                        <Link2 size={16} />{communityText('Create preview link')}</Button>
                                 </div>
                                 {preview ? <div className={styles.previewResult}><input value={preview} readOnly onFocus={event => event.target.select()} /><span>{communityText('Expires in 24 hours.')}</span></div> : null}
                             </div> : null}
@@ -718,12 +719,12 @@ const ManageProject = () => {
 
                     {activeSection === 'sales' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Sales')} description={communityText('Set the price and review who has bought the project.')} />
+                            <PageHeading icon={Coins} title={communityText('Sales')} description={communityText('Set the price and review who has bought the project.')} />
                             <PageTabs
                                 items={[
                                     {key: 'pricing', label: 'Pricing'},
                                     {key: 'products', label: 'In-game products'},
-                                    {key: 'buyers', label: `Buyers${buyers.length ? ` (${buyers.length})` : ''}`}
+                                    {key: 'buyers', label: buyers.length ? communityText('Buyers ({value1})', {value1: buyers.length}) : communityText('Buyers')}
                                 ]}
                                 value={salesTab}
                                 onChange={nextTab => {
@@ -734,7 +735,7 @@ const ManageProject = () => {
                             />
                             {salesTab === 'pricing' ? (
                                 <div className={styles.card}>
-                                    <h2 className={styles.cardTitle}>{communityText('Pricing')}</h2>
+                                    <SectionHeading as="h3" icon={Coins} title={communityText('Pricing')} />
                                     <div className={styles.form}>
                                         <div className={styles.settingsGrid}>
                                             <label className={styles.field}>
@@ -750,18 +751,17 @@ const ManageProject = () => {
                                                 </label>
                                             ) : null}
                                         </div>
-                                        {perks ? <p className={styles.cardHint}>{communityText('Your ')}{perks.tier}{communityText(' plan allows prices up to ')}{perks.mistwarp.maxProjectPrice}{communityText(' credits. MistWarp takes a ')}{perks.mistwarp.salesFeeBasisPoints / 100}{communityText('% fee.')}</p> : null}
+                                        {perks ? <p className={styles.cardHint}>{communityText('Your {value1} plan allows prices up to {value2} credits. MistWarp takes a {value3}% fee.', {value1: perks.tier, value2: perks.mistwarp.maxProjectPrice, value3: perks.mistwarp.salesFeeBasisPoints / 100})}</p> : null}
                                         <div className={styles.formActions}>
                                             {status ? <span className={styles.formStatus}>{status}</span> : null}
-                                            <Button variant="primary" className={styles.save} busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText(' Save price')}</Button>
+                                            <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save price')}</Button>
                                         </div>
                                     </div>
                                 </div>
                             ) : null}
                             {salesTab === 'products' ? (
                                 <div className={styles.card}>
-                                    <h2 className={styles.cardTitle}>{communityText('In-game products')}</h2>
-                                    <p className={styles.empty}>{communityText('Products defined for this project that players can purchase during gameplay using credits.')}</p>
+                                    <SectionHeading as="h3" icon={ShoppingBag} title={communityText('In-game products')} lead={communityText('Products defined for this project that players can purchase during gameplay using credits.')} />
                                     {(project.gameProducts && project.gameProducts.length) ? (
                                         <div className={styles.buyers}>
                                             {project.gameProducts.map(prod => (
@@ -792,23 +792,24 @@ const ManageProject = () => {
                                                     <span className={styles.buyerMeta}>
                                                         <span className={styles.buyerAmount}>
                                                             <Coins size={13} />
-                                                            {prod.price}{communityText(' credits')}</span>
+                                                            {communityText('{value1} credits', {value1: prod.price})}</span>
                                                     </span>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className={styles.empty}>{communityText('No in-game products are configured for this project yet.')}</p>
+                                        <EmptyState compact icon={ShoppingBag} title={communityText('No in-game products yet')}>
+                                            {communityText('No in-game products are configured for this project yet.')}
+                                        </EmptyState>
                                     )}
-                                    <div className={styles.formActions} style={{marginTop: '16px'}}>
-                                        <Link to={editorUrl({platformProject: project.id})}>
-                                            <Button variant="secondary">{communityText('Open in editor to manage products')}</Button>
-                                        </Link>
+                                    <div className={styles.formActions}>
+                                        <Button as="a" href={editorUrl({platformProject: project.id})}>{communityText('Open in editor to manage products')}</Button>
                                     </div>
                                 </div>
                             ) : null}
                             {salesTab === 'buyers' ? (
                                 <div className={styles.card}>
+                                    <SectionHeading as="h3" icon={Users} title={communityText('Buyers')} />
                                     {buyers.length ? (
                                         <ul className={styles.buyers}>
                                             {buyers.slice().reverse().map((buyer, index) => (
@@ -821,7 +822,11 @@ const ManageProject = () => {
                                                 </li>
                                             ))}
                                         </ul>
-                                    ) : <p className={styles.empty}>{paywalled ? communityText('No one has bought this project yet.') : communityText('This project is free. Set a price to start selling it.')}</p>}
+                                    ) : (
+                                        <EmptyState compact icon={Users} title={communityText('No buyers yet')}>
+                                            {paywalled ? communityText('No one has bought this project yet.') : communityText('This project is free. Set a price to start selling it.')}
+                                        </EmptyState>
+                                    )}
                                 </div>
                             ) : null}
                         </div>
@@ -829,9 +834,9 @@ const ManageProject = () => {
 
                     {activeSection === 'ownership' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Ownership')} description={communityText('Move the project to a group or transfer it to someone else.')} />
+                            <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to a group or transfer it to someone else.')} />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Owning group')}</h2>
+                                <SectionHeading as="h3" icon={Tag} title={communityText('Owning group')} />
                                 <div className={styles.form}>
                                     <label className={styles.field}>
                                         <span>{communityText('Rotur group tag')}</span>
@@ -840,16 +845,15 @@ const ManageProject = () => {
                                     </label>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
-                                        <Button variant="primary" className={styles.save} busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText(' Save group')}</Button>
+                                        <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save group')}</Button>
                                     </div>
                                 </div>
                             </div>
                             <div className={`${styles.card} ${styles.dangerCard}`}>
-                                <h2 className={styles.cardTitle}>{communityText('Transfer project')}</h2>
-                                <p className={styles.empty}>{communityText('The new owner gets the project. You will lose owner access.')}</p>
+                                <SectionHeading as="h3" icon={UserCog} title={communityText('Transfer project')} lead={communityText('The new owner gets the project. You will lose owner access.')} />
                                 <div className={styles.transferAction}>
                                     <input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} aria-label={communityText('New owner username')} onChange={event => setTransferOwner(event.target.value)} />
-                                    <Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestProjectTransfer}>{communityText('Transfer')}</Button>
+                                    <Button variant="danger" disabled={!transferOwner.trim() || transferBusy} onClick={requestProjectTransfer}>{communityText('Transfer')}</Button>
                                 </div>
                             </div>
                         </div>
@@ -857,7 +861,7 @@ const ManageProject = () => {
 
                     {activeSection === 'activity' && activityTab === 'diagnostics' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Activity')} description={communityText('Review player feedback and recent runtime health.')} />
+                            <PageHeading icon={MessageCircle} title={communityText('Activity')} description={communityText('Review player feedback and recent runtime health.')} />
                             <PageTabs
                                 items={[{key: 'feedback', label: 'Feedback'}, {key: 'diagnostics', label: 'Diagnostics'}]}
                                 value={activityTab}
@@ -868,22 +872,21 @@ const ManageProject = () => {
                                 label={communityText('Activity sections')}
                             />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Player diagnostics')}</h2>
-                                <p className={styles.empty}>{communityText('Anonymous runtime events from the most recent 500 sessions.')}</p>
+                                <SectionHeading as="h3" icon={Activity} title={communityText('Player diagnostics')} lead={communityText('Anonymous runtime events from the most recent 500 sessions.')} />
                                 {diagnostics ? (
                                     <div className={styles.statGrid}>
                                         <div className={styles.stat}><span className={styles.statNumber}>{diagnostics.counts.load || 0}</span><span className={styles.statLabel}>{communityText('Loads')}</span></div>
                                         <div className={styles.stat}><span className={styles.statNumber}>{diagnostics.counts.start || 0}</span><span className={styles.statLabel}>{communityText('Green flags')}</span></div>
                                         <div className={styles.stat}><span className={styles.statNumber}>{diagnostics.counts.crash || 0}</span><span className={styles.statLabel}>{communityText('Errors')}</span></div>
-                                        <div className={styles.stat}><span className={styles.statNumber}>{Math.round(diagnostics.averageLoadMs || 0)}{communityText(' ms')}</span><span className={styles.statLabel}>{communityText('Average load')}</span></div>
+                                        <div className={styles.stat}><span className={styles.statNumber}>{communityText('{value1} ms', {value1: Math.round(diagnostics.averageLoadMs || 0)})}</span><span className={styles.statLabel}>{communityText('Average load')}</span></div>
                                     </div>
                                 ) : diagnosticsError ? (
-                                    <p className={styles.empty}>{diagnosticsError}{' '}<button type="button" onClick={loadDiagnostics}>{communityText('Try again')}</button></p>
-                                ) : <p className={styles.empty}>{communityText('Loading diagnostics…')}</p>}
+                                    <StatusMessage compact error onRetry={loadDiagnostics}>{diagnosticsError}</StatusMessage>
+                                ) : <StatusMessage compact>{communityText('Loading diagnostics…')}</StatusMessage>}
                             </div>
                             {diagnostics && diagnostics.recent.some(item => item.error) ? (
                                 <div className={styles.card}>
-                                    <h2 className={styles.cardTitle}>{communityText('Recent errors')}</h2>
+                                    <SectionHeading as="h3" icon={AlertTriangle} title={communityText('Recent errors')} />
                                     <ul className={styles.buyers}>
                                         {diagnostics.recent.filter(item => item.error).slice(0, 20).map(item => <li key={item._id} className={styles.buyerRow}><span>{item.error}</span><span className={styles.buyerDate}>{formatDateTime(item.created, 'Date unavailable')}</span></li>)}
                                     </ul>
@@ -893,7 +896,7 @@ const ManageProject = () => {
                     ) : null}
                     {activeSection === 'activity' && activityTab === 'feedback' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Activity')} description={communityText('Review player feedback and recent runtime health.')} />
+                            <PageHeading icon={MessageCircle} title={communityText('Activity')} description={communityText('Review player feedback and recent runtime health.')} />
                             <PageTabs
                                 items={[{key: 'feedback', label: 'Feedback'}, {key: 'diagnostics', label: 'Diagnostics'}]}
                                 value={activityTab}
@@ -904,10 +907,14 @@ const ManageProject = () => {
                                 label={communityText('Activity sections')}
                             />
                             <div className={styles.card}>
-                                <h2 className={styles.cardTitle}>{communityText('Tracked feedback')}</h2>
-                                {!feedback && !feedbackError ? <p className={styles.empty}>{communityText('Loading feedback…')}</p> : null}
-                                {feedbackError ? <p className={styles.empty}>{feedbackError}{' '}<button type="button" onClick={loadFeedback}>{communityText('Try again')}</button></p> : null}
-                                {feedback && !feedback.length ? <p className={styles.empty}>{communityText('No feedback yet.')}</p> : null}
+                                <SectionHeading as="h3" icon={MessageCircle} title={communityText('Tracked feedback')} />
+                                {!feedback && !feedbackError ? <StatusMessage compact>{communityText('Loading feedback…')}</StatusMessage> : null}
+                                {feedbackError ? <StatusMessage compact error onRetry={loadFeedback}>{feedbackError}</StatusMessage> : null}
+                                {feedback && !feedback.length ? (
+                                    <EmptyState compact icon={MessageCircle} title={communityText('No feedback yet')}>
+                                        {communityText('Feedback players send from inside the project will show up here.')}
+                                    </EmptyState>
+                                ) : null}
                                 {feedback && feedback.length ? (
                                     <ul className={styles.buyers}>
                                         {feedback.map(item => (
@@ -932,7 +939,7 @@ const ManageProject = () => {
                     ) : null}
                     {activeSection === 'collaboration' && collaborationTab === 'team' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Collaboration')} description={communityText('Manage project access and funded work.')} />
+                            <PageHeading icon={Users} title={communityText('Collaboration')} description={communityText('Manage project access and funded work.')} />
                             <PageTabs
                                 items={[{key: 'team', label: 'Team'}, {key: 'bounties', label: 'Bounties'}]}
                                 value={collaborationTab}
@@ -942,19 +949,23 @@ const ManageProject = () => {
                                 }}
                                 label={communityText('Collaboration sections')}
                             />
-                            <div className={`${styles.card} ${styles.teamCard}`}>
-                                <div className={styles.teamHead}>
-                                    <div><h2 className={styles.cardTitle}>{communityText('Project team')}</h2><p>{communityText('Give other people access without sharing your account.')}</p></div>
-                                    <Button
-                                        className={styles.addTeam}
-                                        disabled={teamSaving}
-                                        onClick={() => setTeam(current => [
-                                            ...current,
-                                            {username: '', role: 'editor', share: 0}
-                                        ])}
-                                    >
-                                        <Plus size={15} />{communityText(' Add teammate')}</Button>
-                                </div>
+                            <div className={styles.card}>
+                                <SectionHeading
+                                    as="h3"
+                                    icon={Users}
+                                    title={communityText('Project team')}
+                                    lead={communityText('Give other people access without sharing your account.')}
+                                    actions={(
+                                        <Button
+                                            disabled={teamSaving}
+                                            onClick={() => setTeam(current => [
+                                                ...current,
+                                                {username: '', role: 'editor', share: 0}
+                                            ])}
+                                        >
+                                            <Plus size={15} />{communityText('Add teammate')}</Button>
+                                    )}
+                                />
                                 {team.length ? (
                                     <div className={styles.teamList}>
                                         {team.map((member, index) => (
@@ -1011,7 +1022,7 @@ const ManageProject = () => {
                                                 <IconButton
                                                     variant="danger"
                                                     className={styles.removeTeam}
-                                                    label={communityText("Remove {value1}", {value1: member.username || 'teammate'})}
+                                                    label={communityText('Remove {value1}', {value1: member.username || 'teammate'})}
                                                     disabled={teamSaving}
                                                     onClick={() => setTeam(current => current.filter(
                                                         (item, itemIndex) => itemIndex !== index
@@ -1022,24 +1033,27 @@ const ManageProject = () => {
                                             </div>
                                         ))}
                                     </div>
-                                ) : <div className={styles.teamEmpty}><Users size={22} /><strong>{communityText('No teammates yet')}</strong><span>{communityText('Add someone when you are ready to work together.')}</span></div>}
+                                ) : (
+                                    <EmptyState compact icon={Users} title={communityText('No teammates yet')}>
+                                        {communityText('Add someone when you are ready to work together.')}
+                                    </EmptyState>
+                                )}
                                 <div className={styles.teamFooter}>
                                     <span>{teamStatus}</span>
                                     <Button
                                         variant="primary"
-                                        className={styles.save}
                                         busy={teamSaving}
                                         busyLabel={communityText('Saving…')}
                                         onClick={saveTeam}
                                     >
-                                        <Check size={15} />{communityText(' Save team')}</Button>
+                                        <Check size={15} />{communityText('Save team')}</Button>
                                 </div>
                             </div>
                         </div>
                     ) : null}
                     {activeSection === 'collaboration' && collaborationTab === 'bounties' ? (
                         <div className={styles.stack}>
-                            <PageHeading title={communityText('Collaboration')} description={communityText('Manage project access and funded work.')} />
+                            <PageHeading icon={Users} title={communityText('Collaboration')} description={communityText('Manage project access and funded work.')} />
                             <PageTabs
                                 items={[{key: 'team', label: 'Team'}, {key: 'bounties', label: 'Bounties'}]}
                                 value={collaborationTab}
@@ -1122,8 +1136,7 @@ const BountiesPanel = ({project}) => {
     return (
         <div className={styles.stack}>
             <div className={styles.card}>
-                <h2 className={styles.cardTitle}>{communityText('Create a bounty')}</h2>
-                <p className={styles.empty}>{communityText('Offer credits for one clear change. Contributors can choose the bounty before they fork, then link it to their pull request.')}</p>
+                <SectionHeading as="h3" icon={Gift} title={communityText('Create a bounty')} lead={communityText('Offer credits for one clear change. Contributors can choose the bounty before they fork, then link it to their pull request.')} />
                 <form className={styles.form} onSubmit={create}>
                     <input
                         disabled={busy}
@@ -1159,26 +1172,30 @@ const BountiesPanel = ({project}) => {
                             }}
                         />
                     </label>
-                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Funding…')}><Coins size={15} />{communityText(' Fund bounty')}</Button>
+                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Funding…')}><Coins size={15} />{communityText('Fund bounty')}</Button>
                 </form>
                 {status ? <p className={styles.formStatus}>{status}</p> : null}
             </div>
             <div className={styles.card}>
-                <h2 className={styles.cardTitle}>{communityText('Project bounties')}</h2>
-                {items === null ? <p className={styles.empty}>{communityText('Loading…')}</p> : items.length ? (
+                <SectionHeading as="h3" icon={Coins} title={communityText('Project bounties')} />
+                {items === null ? <StatusMessage compact /> : items.length ? (
                     <ul className={styles.buyers}>
                         {items.map(item => (
                             <li key={item.id} className={styles.buyerRow}>
-                                <div><strong>{item.title}</strong><p className={styles.empty}>{item.description}</p></div>
+                                <div><strong>{item.title}</strong><p className={styles.itemNote}>{item.description}</p></div>
                                 <span className={styles.buyerMeta}>
                                     <strong className={styles.buyerAmount}><Coins size={13} />{item.amount}</strong>
                                     <span>{item.status}</span>
-                                    {item.status === 'open' ? <Button variant="secondary" disabled={busy} onClick={() => cancel(item.id)}>{communityText('Cancel')}</Button> : null}
+                                    {item.status === 'open' ? <Button disabled={busy} onClick={() => cancel(item.id)}>{communityText('Cancel')}</Button> : null}
                                 </span>
                             </li>
                         ))}
                     </ul>
-                ) : <p className={styles.empty}>{communityText('No bounties yet.')}</p>}
+                ) : (
+                    <EmptyState compact icon={Gift} title={communityText('No bounties yet')}>
+                        {communityText('Fund a bounty to pay contributors for a specific change.')}
+                    </EmptyState>
+                )}
             </div>
         </div>
     );

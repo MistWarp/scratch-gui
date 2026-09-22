@@ -7,31 +7,36 @@ import api, {editorUrl, projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import UserLink from './UserLink.jsx';
 import Button from './ui/Button.jsx';
+import CardGrid from './ui/CardGrid.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './SharedProjects.module.css';
-
-const ACCESS = {
-    editor: ['Editor', 'Edit and save, even when the owner is offline.'],
-    maintainer: ['Maintainer', 'Edit, publish, and manage changes.'],
-    contributor: ['Contributor', 'Contribute changes through pull requests.'],
-    tester: ['Tester', 'Open and test private drafts.']
-};
 
 const SharedProjectCard = ({project}) => {
     const {text: communityText} = useCommunityText();
-    const [role, description] = ACCESS[project.myRole] || ['Shared access', 'Open this project to see your access.'];
+    const access = {
+        editor: [communityText('Editor'), communityText('Edit and save, even when the owner is offline.')],
+        maintainer: [communityText('Maintainer'), communityText('Edit, publish, and manage changes.')],
+        contributor: [communityText('Contributor'), communityText('Contribute changes through pull requests.')],
+        tester: [communityText('Tester'), communityText('Open and test private drafts.')]
+    };
+    const [role, description] = access[project.myRole] ||
+        [communityText('Shared access'), communityText('Open this project to see your access.')];
     return (
         <article className={styles.card}>
             <Link
                 className={styles.preview}
                 to={projectUrl(project)}
-                aria-label={communityText("View {value1}", {value1: project.title})}
+                aria-label={communityText('View {value1}', {value1: project.title})}
             >
                 <ProjectThumbnail project={project} lazy />
             </Link>
             <div className={styles.details}>
                 <Link className={styles.title} to={projectUrl(project)}>{project.title}</Link>
                 <div className={styles.owner}>
-                    {communityText('Shared by ')}<UserLink username={project.owner}>{project.owner}</UserLink>
+                    <span>{communityText('Shared by')}</span>
+                    <UserLink username={project.owner}>{project.owner}</UserLink>
                 </div>
                 <div className={styles.footer}>
                     <span className={styles.role} title={description}>{role}</span>
@@ -40,7 +45,9 @@ const SharedProjectCard = ({project}) => {
                         href={project.canSaveDirectly ?
                             editorUrl({platformProject: project.id}) : projectUrl(project)}
                         variant={project.canSaveDirectly ? 'primary' : 'secondary'}
-                        aria-label={`${project.canSaveDirectly ? 'Edit' : 'Open'} ${project.title}`}
+                        aria-label={project.canSaveDirectly ?
+                            communityText('Edit {value1}', {value1: project.title}) :
+                            communityText('Open {value1}', {value1: project.title})}
                     >
                         {project.canSaveDirectly ? <Pencil size={14} /> : <ArrowUpRight size={14} />}
                         {project.canSaveDirectly ? communityText('Edit project') : communityText('Open project')}
@@ -66,40 +73,48 @@ const SharedProjects = () => {
                 if (active) setProjects(result.projects);
             })
             .catch(e => {
-                if (active) setError(e.message || 'Could not load shared projects.');
+                if (active) setError(e.message || communityText('Could not load shared projects.'));
             });
         return () => {
             active = false;
         };
     }, [attempt]);
+    const retry = () => setAttempt(value => value + 1);
+    let body;
+    if (error) {
+        body = <StatusMessage compact error onRetry={retry}>{error}</StatusMessage>;
+    } else if (!projects) {
+        body = <StatusMessage compact>{communityText('Loading shared projects…')}</StatusMessage>;
+    } else if (projects.length) {
+        body = (
+            <CardGrid min={260}>
+                {projects.map(project => (
+                    <SharedProjectCard key={project.id} project={project} />
+                ))}
+            </CardGrid>
+        );
+    } else {
+        body = (
+            <EmptyState compact icon={Users} title={communityText('No shared projects yet')}>
+                {communityText('Projects will appear here when someone adds you to their team.')}
+            </EmptyState>
+        );
+    }
     return (
         <section className={styles.section}>
-            <header className={styles.header}>
-                <div>
-                    <h1>{communityText('Shared with you')}</h1>
-                    <p>{communityText('Pick up where your team left off.')}</p>
-                </div>
-                {projects && projects.length ? <span className={styles.count}>
-                    {`${projects.length} ${projects.length === 1 ? 'project' : 'projects'}`}
-                </span> : null}
-            </header>
-            {error ? <div className={styles.empty} role="alert">
-                <p>{error}</p>
-                {/* eslint-disable-next-line react/jsx-no-bind */}
-                <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-            </div> : !projects ? (
-                <p className={styles.loading} role="status">{communityText('Loading shared projects…')}</p>
-            ) : projects.length ? (
-                <div className={styles.grid}>
-                    {projects.map(project => (
-                        <SharedProjectCard key={project.id} project={project} />
-                    ))}
-                </div>
-            ) : <div className={styles.empty}>
-                <Users size={28} aria-hidden="true" />
-                <h2>{communityText('No shared projects yet')}</h2>
-                <p>{communityText('Projects will appear here when someone adds you to their team.')}</p>
-            </div>}
+            <SectionHeading
+                icon={Users}
+                title={communityText('Shared with you')}
+                lead={communityText('Pick up where your team left off.')}
+                actions={projects && projects.length ? (
+                    <span className={styles.count}>
+                        {projects.length === 1 ?
+                            communityText('1 project') :
+                            communityText('{value1} projects', {value1: projects.length})}
+                    </span>
+                ) : null}
+            />
+            {body}
         </section>
     );
 };

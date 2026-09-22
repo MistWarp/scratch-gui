@@ -15,21 +15,3 @@
     margin: 0;
     font-size: var(--fs-3xl);
 }
-
-.heading button {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    place-items: center;
-    border: 1px solid var(--border-soft);
-    border-radius: 50%;
-    background: var(--bg-card);
-    color: var(--mw-text);
-}
-
-.status {
-    padding: 48px 12px;
-    color: var(--text-dim);
-    text-align: center;
-}

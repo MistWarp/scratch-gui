@@ -19,12 +19,6 @@
     font-size: var(--fs-lg);
 }
 
-.empty {
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    margin: 0;
-}
-
 .plot {
     display: block;
     width: 100%;

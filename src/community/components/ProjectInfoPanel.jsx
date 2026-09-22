@@ -9,7 +9,9 @@ import RichText from './RichText.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
 import IconButton from './ui/IconButton.jsx';
+import Notice from './ui/Notice.jsx';
 import styles from './ProjectInfoPanel.module.css';
 
 const parseTags = text => {
@@ -28,8 +30,6 @@ const creditLink = credit => {
     if (url.startsWith('https://') || url.startsWith('http://')) return url;
     return null;
 };
-
-const INFO_TABS = ['About', 'Details'];
 
 const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) => {
     const {text: communityText} = useCommunityText();
@@ -71,7 +71,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
         const projectId = project.id;
         if (saveLocks.current.has(projectId)) return;
         if (parseTags(tagsText).includes('feedback') && !notes.trim()) {
-            setSaveError('Add a question to Creator notes so people know what feedback would help.');
+            setSaveError(communityText('Add a question to Creator notes so people know what feedback would help.'));
             setTab('About');
             return;
         }
@@ -92,7 +92,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
             }
         } catch (e) {
             if (currentProjectId.current === projectId) {
-                setSaveError(e.message || 'Could not save your changes.');
+                setSaveError(e.message || communityText('Could not save your changes.'));
             }
         } finally {
             saveLocks.current.delete(projectId);
@@ -110,14 +110,17 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
     return (
         <aside className={embedded ? `${styles.sidePanel} ${styles.sidePanelEmbedded}` : styles.sidePanel}>
             <UnderlineTabs
-                items={INFO_TABS.map(name => ({key: name, label: name}))}
+                items={[
+                    {key: 'About', label: communityText('About')},
+                    {key: 'Details', label: communityText('Details')}
+                ]}
                 value={tab}
                 onChange={setTab}
                 className={styles.panelTabs}
-                ariaLabel="Project information"
+                ariaLabel={communityText('Project information')}
             />
             <div className={styles.panelBody} role="tabpanel">
-                {saveError ? <p className={styles.panelError}>{saveError}</p> : null}
+                {saveError ? <Notice variant="error" className={styles.panelError}>{saveError}</Notice> : null}
                 {tab === 'About' && (
                     <div className={styles.aboutSections}>
                         {editing ? <section>
@@ -129,7 +132,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                                     onChange={event => {
                                         const tags = parseTags(tagsText).filter(tag => tag !== 'feedback');
                                         if (event.target.checked && tags.length >= 10) {
-                                            setSaveError('Remove a tag in Details to make room for the feedback tag.');
+                                            setSaveError(communityText('Remove a tag in Details to make room for the feedback tag.'));
                                             return;
                                         }
                                         setSaveError('');
@@ -154,7 +157,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                                 />
                             ) : project.instructions ? (
                                 <p className={styles.panelText}><RichText text={project.instructions} /></p>
-                            ) : <p className={styles.panelEmpty}>{communityText('No instructions provided.')}</p>}
+                            ) : (
+                                <EmptyState compact title={communityText('No instructions yet')}>
+                                    {communityText('The creator has not added instructions.')}
+                                </EmptyState>
+                            )}
                         </section>
                         {(editing || project.notes) ? (
                             <section>
@@ -203,8 +210,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                                 {(project.collaboration?.acceptedChanges || 0) > 0 ? (
                                     <div className={styles.acceptedChanges}>
                                         <GitPullRequest size={16} />
-                                        <strong>{project.collaboration.acceptedChanges}</strong>
-                                        <span>{communityText('accepted ')}{project.collaboration.acceptedChanges === 1 ? communityText('contribution') : communityText('contributions')}</span>
+                                        <span>
+                                            {project.collaboration.acceptedChanges === 1 ?
+                                                communityText('1 accepted contribution') :
+                                                communityText('{value1} accepted contributions', {value1: project.collaboration.acceptedChanges})}
+                                        </span>
                                     </div>
                                 ) : null}
                             </div>
@@ -253,7 +263,7 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                                                 className={styles.creditRemove}
                                                 disabled={saving}
                                                 onClick={() => removeCredit(i)}
-                                                label={communityText("Remove credit for {value1}", {value1: c.who || 'unnamed contributor'})}
+                                                label={communityText('Remove credit for {value1}', {value1: c.who || 'unnamed contributor'})}
                                             >
                                                 <X size={14} />
                                             </IconButton>
@@ -343,7 +353,11 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                                 </div>
                             ) : Object.entries(project.compatibility || {}).some(([, supported]) => supported) ? (
                                 <ProjectCompatibility compatibility={project.compatibility} />
-                            ) : <p className={styles.panelEmpty}>{communityText('No controls listed.')}</p>}
+                            ) : (
+                                <EmptyState compact title={communityText('No controls listed')}>
+                                    {communityText('The creator has not listed supported controls.')}
+                                </EmptyState>
+                            )}
                         </section>
                     </div>
                 )}

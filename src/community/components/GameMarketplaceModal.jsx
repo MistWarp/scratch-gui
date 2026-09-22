@@ -7,6 +7,9 @@ import api from '../api';
 import {buyGameProduct} from '../purchase';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import scopeStyles from '../../lib/mw/community-scope.css';
 
 const rowStyle = {
@@ -112,7 +115,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                 ]);
             })
             .catch(e => {
-                if (!cancelled) setError(e.message || 'Could not load this game shop.');
+                if (!cancelled) setError(e.message || communityText('Could not load this game shop.'));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -149,7 +152,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
             }
         } catch (e) {
             if (mounted.current && currentProjectId.current === actionProjectId) {
-                setError(e.message || 'Could not complete the purchase.');
+                setError(e.message || communityText('Could not complete the purchase.'));
             }
         } finally {
             releasePurchase();
@@ -176,12 +179,18 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                     >{communityText('Block this project')}</Button>
                 ) : null}
             >
-                {loading ? <p>{communityText('Loading shop…')}</p> : null}
-                {!loading && !list.length ? <p>{communityText('This project does not have any matching products.')}</p> : null}
+                {loading ? <StatusMessage compact>{communityText('Loading shop…')}</StatusMessage> : null}
+                {!loading && !list.length ? (
+                    <EmptyState compact icon={ShoppingBag} title={communityText('No matching products')}>
+                        {communityText('This project does not have any matching products.')}
+                    </EmptyState>
+                ) : null}
                 {!loading && productId && focused ? (
                     <p>
-                        {communityText("Would you like to buy {value1} for {value2} credits?", {value1: focused.name, value2: focused.price})}
-                        {isDraft ? communityText(' (Test purchase — no credits charged.)') : null}
+                        {communityText('Would you like to buy {value1} for {value2} credits?', {
+                            value1: focused.name, value2: focused.price
+                        })}
+                        {isDraft ? ` ${communityText('This is a test purchase, so no credits are charged.')}` : null}
                     </p>
                 ) : null}
                 {list.map(product => {
@@ -204,7 +213,9 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                                         onClick={() => purchase(product)}
                                     >
                                         <Coins size={15} />
-                                        {owned ? communityText('Already owned') : communityText("Buy ({value1} credits)", {value1: product.price})}
+                                        {owned ?
+                                            communityText('Already owned') :
+                                            communityText('Buy ({value1} credits)', {value1: product.price})}
                                     </Button>
                                     {productId ? (
                                         <Button
@@ -217,7 +228,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                         </div>
                     );
                 })}
-                {error ? <p aria-live="polite">{error}</p> : null}
+                {error ? <Notice variant="error">{error}</Notice> : null}
             </Modal>
         </div>
     );

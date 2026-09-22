@@ -6,6 +6,9 @@ import {Link, useSearchParams} from 'react-router-dom';
 import rotur from '../rotur.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ExploreNav from '../components/ExploreNav.jsx';
 import styles from './Groups.module.css';
 
@@ -47,7 +50,7 @@ const Groups = () => {
             setGroups(Array.isArray(publicGroups) ? publicGroups : []);
             setMine(Array.isArray(myGroups) ? myGroups : []);
         }).catch(e => {
-            if (loadSequence.current === sequence) setError(e.message || 'Could not load groups.');
+            if (loadSequence.current === sequence) setError(e.message || communityText('Could not load groups.'));
         }).finally(() => {
             if (loadSequence.current === sequence) setLoading(false);
         });
@@ -73,12 +76,12 @@ const Groups = () => {
     const cards = query.trim() ? groups : [...mine, ...groups.filter(group => !mineTags.has(group.tag))];
     return (<main className={styles.page}>
         <ExploreNav active="groups" />
-        <header className={styles.header}>
-            <div className={styles.title}>
-                <h1>{communityText('Groups')}</h1><p>{communityText('Organisations that share projects, spaces, members, and funding.')}</p>
-            </div>
-            <Button variant="primary" onClick={() => window.location.assign(ROTUR_GROUP_CREATION_URL)}><Plus size={16} />{communityText(' New group')}</Button>
-        </header>
+        <PageHeader
+            icon={Building2}
+            title={communityText('Groups')}
+            lead={communityText('Organisations that share projects, spaces, members, and funding.')}
+            actions={<Button variant="primary" onClick={() => window.location.assign(ROTUR_GROUP_CREATION_URL)}><Plus size={16} />{communityText('New group')}</Button>}
+        />
 
         <form
             className={styles.search} onSubmit={event => {
@@ -94,13 +97,17 @@ const Groups = () => {
             <label><Search size={16} /><input aria-label={communityText('Search groups')} value={query} onChange={event => setQuery(event.target.value)} placeholder={communityText('Search groups')} /></label>
             <Button type="submit">{communityText('Search')}</Button>
         </form>
-        {error ? <p className={styles.error}>{error} <Button onClick={() => load(requestedQuery)}>{communityText('Try again')}</Button></p> : null}
-        {loading ? <p className={styles.status}>{communityText('Loading groups…')}</p> : null}
-        {!loading && !error && !cards.length ? <p className={styles.status}>{communityText('No groups found.')}</p> : null}
+        {error ? <StatusMessage error onRetry={() => load(requestedQuery)}>{error}</StatusMessage> : null}
+        {loading ? <StatusMessage>{communityText('Loading groups…')}</StatusMessage> : null}
+        {!loading && !error && !cards.length ? (
+            <EmptyState icon={Building2} title={communityText('No groups found')}>
+                {query.trim() ? communityText('Try a different search term.') : communityText('Public Rotur groups will show up here.')}
+            </EmptyState>
+        ) : null}
         <section className={styles.grid}>
             {cards.map(group => (<Link className={styles.card} to={`/groups/${group.tag}`} key={group.tag}>
                 <div className={styles.icon}>{group.icon_url ? <img src={group.icon_url} alt="" /> : <Building2 />}</div>
-                <div><h2>{group.name}</h2><span>@{group.tag}</span><p>{group.description || communityText('A Rotur group on MistWarp.')}</p><small><Users size={14} /> {group.member_count || 0}{communityText(' members')}{mineTags.has(group.tag) ? communityText(' · Joined') : ''}</small></div>
+                <div><h2>{group.name}</h2><span>@{group.tag}</span><p>{group.description || communityText('A Rotur group on MistWarp.')}</p><small><Users size={14} /> {communityText('{count} members', {count: group.member_count || 0})}{mineTags.has(group.tag) ? <span> · {communityText('Joined')}</span> : null}</small></div>
             </Link>))}
         </section>
     </main>);

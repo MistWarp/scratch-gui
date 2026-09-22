@@ -1,10 +1,12 @@
 /* eslint-disable max-len */
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Blocks, Download, Gauge, History, Palette, Trophy, Users, UsersRound} from 'lucide-react';
+import {ArrowRight, Blocks, Download, Gauge, GitCompareArrows, History, Palette, Play, Trophy, Users, UsersRound} from 'lucide-react';
 import {editorUrl} from '../api';
 import {useCommunityIntl} from '../i18n.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
+import Button from '../components/ui/Button.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
 import styles from './Compare.module.css';
 
 const FEATURES = [
@@ -62,11 +64,13 @@ const Compare = () => {
     const {text} = useCommunityIntl();
     return (
         <main className={styles.page}>
-            <header className={styles.head}>
-                <h1>{text('MistWarp compared with Scratch and TurboWarp')}</h1>
-                <p>{text('MistWarp is a Scratch mod built on TurboWarp. Your Scratch projects open as they are.')}</p>
+            <PageHeader
+                icon={GitCompareArrows}
+                title={text('MistWarp compared with Scratch and TurboWarp')}
+                lead={text('MistWarp is a Scratch mod built on TurboWarp. Your Scratch projects open as they are.')}
+            >
                 <ScratchImport source="compare" />
-            </header>
+            </PageHeader>
             <div className={styles.grid}>
                 {FEATURES.map(({icon: Icon, title, body, to, href, action}) => (
                     <section key={title} className={styles.feature}>
@@ -85,9 +89,10 @@ const Compare = () => {
                     <h2>{text('Try it without an account')}</h2>
                     <p>{text('The editor works without signing in. You only need an account to share or save to MistWarp.')}</p>
                 </div>
-                <a className={styles.ctaButton} href={editorUrl({starter: 'clicker'})}>
-                    {text('Open a starter project')}<ArrowRight size={16} />
-                </a>
+                <Button as="a" variant="primary" href={editorUrl({starter: 'clicker'})}>
+                    <Play size={16} aria-hidden="true" />
+                    {text('Open a starter project')}
+                </Button>
             </section>
         </main>
     );

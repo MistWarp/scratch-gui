@@ -33,7 +33,23 @@ const logout = onLogout => {
 
 const getAdminLabel = (openReports, openErrors) => {
     const total = Number(openReports || 0) + Number(openErrors || 0);
-    return total > 0 ? `Admin (${total})` : 'Admin';
+    if (total > 0) {
+        return (
+            <FormattedMessage
+                defaultMessage="Admin ({count})"
+                description="Rotur account menu link to the admin page, with the number of open reports and errors"
+                id="mw.rotur.accountMenu.adminWithCount"
+                values={{count: total}}
+            />
+        );
+    }
+    return (
+        <FormattedMessage
+            defaultMessage="Admin"
+            description="Rotur account menu link to the admin page"
+            id="mw.rotur.accountMenu.admin"
+        />
+    );
 };
 
 const RoturAccount = props => {
@@ -61,7 +77,7 @@ const RoturAccount = props => {
                 onClick={props.onOpenLogin}
             >
                 <FormattedMessage
-                    defaultMessage="Login"
+                    defaultMessage="Sign in"
                     description="Menu bar item to open Rotur login when signed out"
                     id="mw.rotur.menuBar.login"
                 />

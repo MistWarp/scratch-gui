@@ -3,8 +3,8 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useLocation, useNavigate, useParams, Link} from 'react-router-dom';
 import {
-    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, ChevronRight, Pencil, Flag, Coins, Star, Ban,
-    VolumeX, FolderKanban, Palette, Gamepad2
+    UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, Pencil, Flag, Coins, Star, Ban,
+    VolumeX, FolderKanban, Palette, Gamepad2, Users, UserX, EyeOff, ShieldCheck
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
@@ -17,7 +17,14 @@ import ReportModal from '../components/ReportModal.jsx';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';
 import Button from '../components/ui/Button.jsx';
+import CardGrid from '../components/ui/CardGrid.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 import Modal from '../components/ui/Modal.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import ActivityCard from '../components/ActivityCard.jsx';
 import FeaturedProject from '../components/FeaturedProject.jsx';
 import ProfileBadges from '../components/ProfileBadges.jsx';
@@ -31,7 +38,6 @@ import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import {formatPlaytime, safeDate, timeAgo} from '../format';
 import styles from './Profile.module.css';
-import tabStyles from '../components/UnderlineTabs.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
 const PROFILE_TABS = ['projects', 'posts', 'themes'];
@@ -143,7 +149,7 @@ const Profile = () => {
     const [adminReason, setAdminReason] = useState('');
     const [adminMessage, setAdminMessage] = useState('');
     const [adminBusy, setAdminBusy] = useState('');
-    const [adminNote, setAdminNote] = useState('');
+    const [adminNote, setAdminNote] = useState(null);
     const [donating, setDonating] = useState(false);
     const [reviews, setReviews] = useState(null);
     const [safetyBusy, setSafetyBusy] = useState(false);
@@ -271,17 +277,17 @@ const Profile = () => {
     const runAdminAction = useCallback(async (key, action, success) => {
         if (adminBusy) return;
         setAdminBusy(key);
-        setAdminNote('');
+        setAdminNote(null);
         try {
             await action();
             await refreshAdminUser();
-            setAdminNote(success);
+            setAdminNote({text: success, error: false});
         } catch (requestError) {
-            setAdminNote(requestError.message || 'Moderation action failed.');
+            setAdminNote({text: requestError.message || communityText('Moderation action failed.'), error: true});
         } finally {
             setAdminBusy('');
         }
-    }, [adminBusy, refreshAdminUser]);
+    }, [adminBusy, communityText, refreshAdminUser]);
 
     useEffect(() => {
         if (!profile) return;
@@ -426,15 +432,20 @@ const Profile = () => {
     if (error && errorLoadContext === loadContext && profileLoadContext !== loadContext) {
         return (
             <main className={styles.page}>
-                <div className={styles.status}>
-                    <p>{error}</p>
-                    {error === 'Could not load this profile.' ? <Button onClick={load}>{communityText('Try again')}</Button> : <Link to="/explore">{communityText('Browse projects')}</Link>}
-                </div>
+                {error === 'Could not load this profile.' ? (
+                    <StatusMessage error onRetry={load}>{communityText('Could not load this profile.')}</StatusMessage>
+                ) : (
+                    <EmptyState
+                        icon={UserX}
+                        title={communityText('User not found')}
+                        action={<Button as={Link} to="/explore">{communityText('Browse projects')}</Button>}
+                    >{communityText('This user does not exist on Rotur.')}</EmptyState>
+                )}
             </main>
         );
     }
     if (!profile || profileLoadContext !== loadContext) {
-        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
+        return <main className={styles.page}><StatusMessage /></main>;
     }
 
     const projects = (mwUser && mwUser.projects) || [];
@@ -460,32 +471,17 @@ const Profile = () => {
     return (
         <main className={styles.page}>
             {blockConfirmOpen ? (
-                <Modal
+                <ConfirmModal
                     icon={Ban}
-                    title={communityText("Block {value1}?", {value1: profile.username || name})}
-                    onClose={() => setBlockConfirmOpen(false)}
-                    dismissDisabled={safetyBusy}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="danger"
-                                className={styles.blockedButton}
-                                busy={safetyBusy}
-                                busyLabel={communityText('Blocking…')}
-                                onClick={() => toggleSafety('block', true)}
-                            >{communityText('Block user')}</Button>
-                            <Button
-                                variant="secondary"
-                                className={styles.iconButton}
-                                disabled={safetyBusy}
-                                onClick={() => setBlockConfirmOpen(false)}
-                            >{communityText('Cancel')}</Button>
-                        </React.Fragment>
-                    )}
-                >
-                    <p className={styles.modalText}>{communityText('You will stop receiving MistWarp comments and notifications from each other.')}</p>
-                    {actionError ? <p className={styles.actionError}>{actionError}</p> : null}
-                </Modal>
+                    destructive
+                    title={communityText('Block {value1}?', {value1: profile.username || name})}
+                    confirmLabel={communityText('Block user')}
+                    busy={safetyBusy}
+                    busyLabel={communityText('Blocking…')}
+                    error={actionError}
+                    onConfirm={() => toggleSafety('block', true)}
+                    onCancel={() => setBlockConfirmOpen(false)}
+                >{communityText('You will stop receiving MistWarp comments and notifications from each other.')}</ConfirmModal>
             ) : null}
             {reporting ? (
                 <ReportModal
@@ -502,23 +498,27 @@ const Profile = () => {
             ) : null}
             <div className={styles.layout}>
                 <div className={styles.mainColumn}>
-                    {actionError ? <p className={styles.status}>{actionError}</p> : null}
-
-                    {!onMistWarp ? (
-                        <div className={styles.notOnMistwarp}>{communityText('Not on MistWarp yet. This is ')}<UserLink username={profile.username || name}>{profile.username || name}</UserLink>{communityText("'s Rotur profile.")}</div>
+                    {actionError ? (
+                        <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError(null)}>{actionError}</Notice>
                     ) : null}
 
-                    <div className={`${tabStyles.tabs} ${styles.tabs}`} role="tablist" aria-label={communityText('Profile content')}>
-                        <button type="button" role="tab" aria-selected={activeTab === 'projects'} className={activeTab === 'projects' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('projects')}>
-                            <FolderKanban size={15} />{communityText(' Projects ')}<span>{projectTotal}</span>
-                        </button>
-                        <button type="button" role="tab" aria-selected={activeTab === 'posts'} className={activeTab === 'posts' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('posts')}>
-                            <MessageSquare size={15} />{communityText(' Posts ')}<span>{profilePosts.length}</span>
-                        </button>
-                        <button type="button" role="tab" aria-selected={activeTab === 'themes'} className={activeTab === 'themes' ? `${tabStyles.tab} ${tabStyles.tabActive}` : tabStyles.tab} onClick={() => selectTab('themes')}>
-                            <Palette size={15} />{communityText(' Themes ')}<span>{profileThemes?.length || 0}</span>
-                        </button>
-                    </div>
+                    {!onMistWarp ? (
+                        <Notice variant="info" className={styles.pageNotice}>
+                            {communityText("Not on MistWarp yet. This is {value1}'s Rotur profile.", {value1: profile.username || name})}
+                        </Notice>
+                    ) : null}
+
+                    <UnderlineTabs
+                        className={styles.tabs}
+                        ariaLabel="Profile content"
+                        value={activeTab}
+                        onChange={selectTab}
+                        items={[
+                            {key: 'projects', label: <React.Fragment><FolderKanban size={15} />{communityText('Projects')}<b>{projectTotal}</b></React.Fragment>},
+                            {key: 'posts', label: <React.Fragment><MessageSquare size={15} />{communityText('Posts')}<b>{profilePosts.length}</b></React.Fragment>},
+                            {key: 'themes', label: <React.Fragment><Palette size={15} />{communityText('Themes')}<b>{profileThemes?.length || 0}</b></React.Fragment>}
+                        ]}
+                    />
 
                     {activeTab === 'projects' ? (
                         <React.Fragment>
@@ -531,21 +531,20 @@ const Profile = () => {
 
                             {showRecentActivity ? (
                                 <section className={styles.section}>
-                                    <div className={styles.sectionHead}>
-                                        <h2 className={styles.sectionTitle}>{communityText('Recent activity')}</h2>
-                                        <div className={styles.activityActions}>
-                                            {isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>{communityText('Only visible to you')}</span> : null}
-                                            <Link className={styles.libraryLink} to={`/users/${name}/library`}>
-                                                <Gamepad2 size={14} />{communityText(' View game library')}</Link>
-                                        </div>
-                                    </div>
+                                    <SectionHeading
+                                        icon={Gamepad2}
+                                        title={communityText('Recent activity')}
+                                        link={`/users/${name}/library`}
+                                        linkLabel={communityText('View game library')}
+                                        actions={isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>{communityText('Only visible to you')}</span> : null}
+                                    />
                                     {recentActivity.length ? (
                                         <div className={styles.recentActivity}>
                                             {recentActivity.map(item => {
                                                 const projectId = item.projectId || item.id || item._id;
                                                 return (
                                                     <article className={styles.recentActivityItem} key={projectId}>
-                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={communityText("Open {value1}", {value1: item.title})} />
+                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={communityText('Open {value1}', {value1: item.title})} />
                                                         <div className={styles.recentActivityThumb}>
                                                             <img src={item.thumbUrl} alt="" loading="lazy" />
                                                         </div>
@@ -554,7 +553,7 @@ const Profile = () => {
                                                                 className={styles.recentActivityTitle}
                                                                 title={item.title}
                                                             >{item.title}</div>
-                                                            <div className={styles.recentActivityOwner}>{communityText('by ')}<UserLink username={item.owner}>{item.owner}</UserLink></div>
+                                                            <div className={styles.recentActivityOwner}><span>{communityText('by')}</span><UserLink username={item.owner}>{item.owner}</UserLink></div>
                                                             <div className={styles.recentActivityStats}>
                                                                 {item.duration > 0 ?
                                                                     <span>{formatPlaytime(item.duration, false)}</span> : null}
@@ -567,18 +566,23 @@ const Profile = () => {
                                             })}
                                         </div>
                                     ) : (
-                                        <p className={styles.sectionEmpty}>
+                                        <EmptyState
+                                            icon={Gamepad2}
+                                            title={mwUser.recentActivityVisible === false && !isSelf ?
+                                                communityText('Activity is private') :
+                                                communityText('No recent activity')}
+                                        >
                                             {mwUser.recentActivityVisible === false && !isSelf ?
                                                 communityText('This user has chosen not to share what they play.') :
                                                 communityText('Games added to the library will appear here after they are played.')}
-                                        </p>
+                                        </EmptyState>
                                     )}
                                 </section>
                             ) : null}
 
                             {otherProjects.length ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>{communityText('Projects')}</h2>
+                                    <SectionHeading icon={FolderKanban} title={communityText('Projects')} />
                                     <div className={styles.grid}>
                                         {otherProjects.map(project => (
                                             <ProjectCard
@@ -597,13 +601,19 @@ const Profile = () => {
                                             >{communityText('Load more projects')}</Button>
                                         </div>
                                     ) : null}
-                                    {projectsError ? <p className={styles.sectionEmpty}>{projectsError}</p> : null}
+                                    {projectsError ? (
+                                        <StatusMessage error compact onRetry={loadMoreProjects}>{communityText('Could not load more projects.')}</StatusMessage>
+                                    ) : null}
                                 </section>
                             ) : null}
 
                             {user && user.isAdmin && unsharedProjects.length ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>{communityText('Unshared projects (admin only)')}</h2>
+                                    <SectionHeading
+                                        icon={EyeOff}
+                                        title={communityText('Unshared projects')}
+                                        lead={communityText('Only admins can see these projects.')}
+                                    />
                                     <div className={styles.grid}>
                                         {unsharedProjects.map(project => (
                                             <ProjectCard
@@ -617,9 +627,13 @@ const Profile = () => {
 
                             {onMistWarp ? (
                                 <section className={styles.section}>
-                                    <h2 className={styles.sectionTitle}>{communityText('Recent reviews')}</h2>
-                                    {reviews === null ? <p className={styles.sectionEmpty}>{communityText('Loading reviews…')}</p> : null}
-                                    {reviews && !reviews.length ? <p className={styles.sectionEmpty}>{communityText('No reviews yet.')}</p> : null}
+                                    <SectionHeading icon={Star} title={communityText('Recent reviews')} />
+                                    {reviews === null ? <StatusMessage compact>{communityText('Loading reviews…')}</StatusMessage> : null}
+                                    {reviews && !reviews.length ? (
+                                        <EmptyState icon={Star} title={communityText('No reviews yet')}>
+                                            {communityText('Reviews this user writes on projects will appear here.')}
+                                        </EmptyState>
+                                    ) : null}
                                     {reviews && reviews.length ? (
                                         <div className={styles.reviewGrid}>
                                             {reviews.slice(0, 6).map(review => (
@@ -634,7 +648,7 @@ const Profile = () => {
                                                     </div>
                                                     <div
                                                         className={styles.reviewStars}
-                                                        aria-label={communityText("{value1} out of 5 stars", {value1: review.rating})}
+                                                        aria-label={communityText('{value1} out of 5 stars', {value1: review.rating})}
                                                     >
                                                         {[1, 2, 3, 4, 5].map(value => (
                                                             <Star
@@ -657,17 +671,12 @@ const Profile = () => {
                             ) : null}
 
                             <section className={styles.section}>
-                                <div className={styles.sectionHead}>
-                                    <h2 className={styles.sectionTitle}>{communityText('Followers - ')}{profile.followers || followers.length}
-                                    </h2>
-                                    {followers.length ? (
-                                        <Link
-                                            to={`/users/${name}/followers`}
-                                            className={styles.seeAll}
-                                        >{communityText('See all')}<ChevronRight size={14} />
-                                        </Link>
-                                    ) : null}
-                                </div>
+                                <SectionHeading
+                                    icon={Users}
+                                    title={communityText('Followers')}
+                                    count={profile.followers || followers.length}
+                                    link={followers.length ? `/users/${name}/followers` : null}
+                                />
                                 {followers.length ? (
                                     <div className={styles.followersRow}>
                                         {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
@@ -685,18 +694,20 @@ const Profile = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className={styles.sectionEmpty}>{communityText('No followers yet.')}</p>
+                                    <EmptyState icon={Users} title={communityText('No followers yet')}>
+                                        {communityText('People who follow this user will appear here.')}
+                                    </EmptyState>
                                 )}
                             </section>
 
                             {onMistWarp ? (
                                 <section className={styles.section} id="comments">
-                                    <div className={styles.sectionHead}>
-                                        <h2 className={styles.sectionTitle}>{communityText('Comments')}</h2>
-                                        {isSelf ? (
+                                    <SectionHeading
+                                        icon={MessageSquare}
+                                        title={communityText('Comments')}
+                                        actions={isSelf ? (
                                             <Button
                                                 variant="secondary"
-                                                className={styles.commentsToggle}
                                                 onClick={toggleComments}
                                                 busy={commentsBusy}
                                                 busyLabel={commentsOff ? communityText('Turning on…') : communityText('Turning off…')}
@@ -705,7 +716,7 @@ const Profile = () => {
                                                 {commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
                                             </Button>
                                         ) : null}
-                                    </div>
+                                    />
                                     <div className={styles.feed}>
                                         <CommentThread
                                             source={commentSource}
@@ -736,19 +747,20 @@ const Profile = () => {
 
                     {activeTab === 'themes' ? (
                         <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>{communityText('Published themes')}</h2>
+                            <SectionHeading icon={Palette} title={communityText('Published themes')} />
                             {profileThemes === null ? (
-                                <p className={styles.sectionEmpty}>{communityText('Loading themes…')}</p>
+                                <StatusMessage compact>{communityText('Loading themes…')}</StatusMessage>
                             ) : profileThemesError ? (
-                                <div className={styles.sectionEmpty} role="alert">
-                                    <p>{communityText('Could not load published themes.')}</p>
-                                    <Button variant="secondary" onClick={loadThemes}>{communityText('Try again')}</Button>
-                                </div>
+                                <StatusMessage error onRetry={loadThemes}>{communityText('Could not load published themes.')}</StatusMessage>
                             ) : profileThemes.length ? (
-                                <div className={styles.themeGrid}>
+                                <CardGrid>
                                     {profileThemes.map(item => <ThemeCard key={item.id} theme={item} />)}
-                                </div>
-                            ) : <p className={styles.sectionEmpty}>{communityText('No published themes yet.')}</p>}
+                                </CardGrid>
+                            ) : (
+                                <EmptyState icon={Palette} title={communityText('No published themes yet')}>
+                                    {communityText('Themes this user publishes will appear here.')}
+                                </EmptyState>
+                            )}
                         </section>
                     ) : null}
 
@@ -805,8 +817,8 @@ const Profile = () => {
                                     <React.Fragment>
                                         <div className={styles.primaryActions}>
                                             <Button
-                                                variant="primary"
-                                                className={profile.followed ? styles.followingButton : styles.followButton}
+                                                variant={profile.followed ? 'secondary' : 'primary'}
+                                                className={styles.railButton}
                                                 busy={followBusy}
                                                 busyLabel={profile.followed ? communityText('Unfollowing…') : communityText('Following…')}
                                                 onClick={toggleFollow}
@@ -816,8 +828,8 @@ const Profile = () => {
                                             </Button>
                                             <Button
                                                 variant="primary"
-                                                className={styles.followButton}
-                                                title={communityText("Send credits to {value1}", {value1: profile.username || name})}
+                                                className={styles.railButton}
+                                                title={communityText('Send credits to {value1}', {value1: profile.username || name})}
                                                 onClick={() => setDonating(true)}
                                             >
                                                 <Coins size={15} />{communityText('Donate')}</Button>
@@ -826,7 +838,7 @@ const Profile = () => {
                                             {mwUser && mwUser.exists !== false ? (
                                                 <Button
                                                     variant="secondary"
-                                                    className={styles.iconButton}
+                                                    className={styles.railButton}
                                                     disabled={safetyBusy}
                                                     onClick={() => toggleSafety('mute')}
                                                 >
@@ -836,8 +848,8 @@ const Profile = () => {
                                             ) : null}
                                             {mwUser && mwUser.exists !== false ? (
                                                 <Button
-                                                    variant={mwUser.viewerBlocked ? 'secondary' : 'danger'}
-                                                    className={mwUser.viewerBlocked ? styles.blockedButton : styles.iconButton}
+                                                    variant={mwUser.viewerBlocked ? 'danger' : 'secondary'}
+                                                    className={styles.railButton}
                                                     disabled={safetyBusy}
                                                     onClick={() => toggleSafety('block')}
                                                 >
@@ -847,24 +859,26 @@ const Profile = () => {
                                             ) : null}
                                             <Button
                                                 variant="secondary"
-                                                className={styles.iconButton}
+                                                className={styles.railButton}
                                                 onClick={() => setReporting(true)}
                                             >
                                                 <Flag size={15} />{communityText('Report')}</Button>
                                         </div>
                                     </React.Fragment>
                                 ) : !user && !userLoading ? (
-                                    <Button variant="primary" className={styles.followButton} onClick={login}>
+                                    <Button variant="primary" className={styles.railButton} onClick={login}>
                                         <UserPlus size={16} />{communityText('Sign in to follow')}</Button>
                                 ) : null}
                                 {isSelf ? (
-                                    <a
-                                        className={styles.followButton}
+                                    <Button
+                                        as="a"
+                                        variant="primary"
+                                        className={styles.railButton}
                                         href="https://rotur.dev/me"
                                         target="_blank"
                                         rel="noreferrer"
                                     >
-                                        <Pencil size={15} />{communityText('Edit profile')}</a>
+                                        <Pencil size={15} />{communityText('Edit profile')}</Button>
                                 ) : null}
                             </div>
                             <div className={styles.railSection}>
@@ -875,9 +889,9 @@ const Profile = () => {
                             </div>
                             <div className={styles.accountMeta}>
                                 {year ? (
-                                    <span><Calendar size={14} />{communityText('Joined ')}{year}</span>
+                                    <span><Calendar size={14} />{communityText('Joined {value1}', {value1: year})}</span>
                                 ) : null}
-                                {typeof profile.index === 'number' ? <span>{communityText('Account #')}{profile.index}</span> : null}
+                                {typeof profile.index === 'number' ? <span>{communityText('Account #{value1}', {value1: profile.index})}</span> : null}
                             </div>
                             {activities.length ? (
                                 <div className={styles.railSection}>
@@ -893,13 +907,17 @@ const Profile = () => {
                     </section>
                     {user && user.isAdmin && adminUser ? (
                         <section className={styles.adminPanel} aria-labelledby="profile-admin-heading">
-                            <div className={styles.adminPanelHead}>
-                                <div>
-                                    <h2 id="profile-admin-heading">{communityText('Moderate @')}{adminUser.username}</h2>
-                                    <p>{communityText('Only admins can see these tools.')}</p>
-                                </div>
-                                <strong>{adminUser.banned ? communityText('Banned') : (adminUser.standing?.level || communityText('Good standing'))}</strong>
-                            </div>
+                            <SectionHeading
+                                id="profile-admin-heading"
+                                icon={ShieldCheck}
+                                title={communityText('Moderate @{value1}', {value1: adminUser.username})}
+                                lead={communityText('Only admins can see these tools.')}
+                                actions={(
+                                    <strong className={styles.adminStanding}>
+                                        {adminUser.banned ? communityText('Banned') : (adminUser.standing?.level || communityText('Good standing'))}
+                                    </strong>
+                                )}
+                            />
                             <div className={styles.adminFields}>
                                 <label>
                                     <span>{communityText('Account standing')}</span>
@@ -919,7 +937,7 @@ const Profile = () => {
                                     onClick={() => runAdminAction(
                                         'standing',
                                         () => api.admin.setStanding(adminUser.username, adminLevel, adminReason.trim()),
-                                        'Standing updated.'
+                                        communityText('Standing updated.')
                                     )}
                                 >{communityText('Apply')}</Button>
                             </div>
@@ -935,7 +953,7 @@ const Profile = () => {
                                     onClick={() => runAdminAction(
                                         'message',
                                         () => api.admin.messageUser(adminUser.username, adminMessage.trim()).then(() => setAdminMessage('')),
-                                        'Message sent.'
+                                        communityText('Message sent.')
                                     )}
                                 >{communityText('Send message')}</Button>
                             </div>
@@ -946,7 +964,7 @@ const Profile = () => {
                                     onClick={() => runAdminAction(
                                         'comments',
                                         () => api.admin.updateUserProfile(adminUser.username, {commentsOff: !adminUser.commentsOff}),
-                                        adminUser.commentsOff ? 'Profile comments enabled.' : 'Profile comments disabled.'
+                                        adminUser.commentsOff ? communityText('Profile comments enabled.') : communityText('Profile comments disabled.')
                                     )}
                                 >{adminUser.commentsOff ? communityText('Enable comments') : communityText('Disable comments')}</Button>
                                 <Button
@@ -956,11 +974,17 @@ const Profile = () => {
                                         'ban',
                                         () => (adminUser.banned ? api.admin.unban(adminUser.username) :
                                             api.admin.ban(adminUser.username, adminReason.trim())),
-                                        adminUser.banned ? 'User unbanned.' : 'User banned.'
+                                        adminUser.banned ? communityText('User unbanned.') : communityText('User banned.')
                                     )}
                                 >{adminUser.banned ? communityText('Unban user') : communityText('Ban user')}</Button>
                             </div>
-                            {adminNote ? <p className={styles.adminNote}>{adminNote}</p> : null}
+                            {adminNote ? (
+                                <Notice
+                                    variant={adminNote.error ? 'error' : 'success'}
+                                    className={styles.adminNote}
+                                    onDismiss={() => setAdminNote(null)}
+                                >{adminNote.text}</Notice>
+                            ) : null}
                         </section>
                     ) : null}
                 </aside>
@@ -1054,22 +1078,21 @@ export const DonateModal = ({recipient, onClose}) => {
             dismissDisabled={busy}
             icon={Coins}
             onClose={close}
-            title={communityText("Donate to {value1}", {value1: recipient})}
+            title={communityText('Donate to {value1}', {value1: recipient})}
         >
             {sent ? (
                 <div className={styles.donateDone}>
                     <span className={styles.donateDoneIcon}><Coins size={28} /></span>
-                    <p>{communityText("Sent {value1} credits to {value2}.", {value1: sent, value2: recipient})}</p>
+                    <p>{communityText('Sent {value1} credits to {value2}.', {value1: sent, value2: recipient})}</p>
                     <Button
                         variant="primary"
-                        className={styles.donateSend}
                         onClick={close}
                     >{communityText('Done')}</Button>
                 </div>
             ) : (
                 <form className={styles.donateBody} onSubmit={submit}>
                     <p className={styles.donateText}>
-                        {communityText("Send Rotur credits straight to {value1}. This transfers directly from your account.", {value1: recipient})}
+                        {communityText('Send Rotur credits straight to {value1}. This transfers directly from your account.', {value1: recipient})}
                     </p>
                     <input
                         className={styles.donateInput}
@@ -1082,13 +1105,12 @@ export const DonateModal = ({recipient, onClose}) => {
                         required
                         onChange={event => setAmount(event.target.value)}
                     />
-                    {status ? <p className={styles.donateStatus}>{status}</p> : null}
+                    {status ? <Notice variant="error">{status}</Notice> : null}
                     {insufficient ? (
-                        <p className={styles.donateStatus}>{communityText('Not enough credits in your balance. Top up through Stripe, then send again.')}</p>
+                        <Notice variant="warning">{communityText('Not enough credits in your balance. Top up through Stripe, then send again.')}</Notice>
                     ) : null}
                     <Button
                         variant="primary"
-                        className={styles.donateSend}
                         type="submit"
                         busy={busy}
                         busyLabel={insufficient ? communityText('Opening…') : communityText('Sending…')}

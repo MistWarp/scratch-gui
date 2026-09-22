@@ -93,9 +93,9 @@
     min-height: 38px;
     overflow: hidden;
     padding: 9px 12px;
-    border: 1px solid var(--accent-border);
+    border: 0;
     border-radius: var(--radius-xs);
-    background: transparent;
+    background: var(--bg-field);
     color: var(--mw-text);
     text-align: start;
 }
@@ -194,11 +194,18 @@
     min-height: 100px;
     padding: 10px;
     resize: vertical;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: var(--radius-xs);
     background: var(--bg-field);
     color: var(--mw-text);
     font: inherit;
+}
+
+.editForm textarea:focus,
+.reportInput:focus,
+.replies input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .editForm > div {
@@ -208,20 +215,8 @@
     margin-top: 8px;
 }
 
-.error,
-.notice,
-.empty {
-    margin: 10px 0 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
-.error {
-    color: var(--mw-danger);
-}
-
-.notice {
-    color: var(--accent-strong);
+.message {
+    margin-top: 10px;
 }
 
 .replies {
@@ -242,7 +237,7 @@
 .replies input {
     min-width: 0;
     padding: 9px 11px;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: var(--radius-xs);
     background: var(--bg-field);
     color: var(--mw-text);

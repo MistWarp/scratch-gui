@@ -2,11 +2,25 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {BarChart3, FolderOpen} from 'lucide-react';
 
 import menuBarStyles from './menu-bar.css';
 import MwNotifications from './mw-notifications.jsx';
 import {openProductsModal} from '../../reducers/modals.js';
+
+const messages = defineMessages({
+    analytics: {
+        defaultMessage: 'Project analytics',
+        description: 'Menu bar button that opens the project analytics and management window',
+        id: 'mw.editorNav.analytics'
+    },
+    myStuff: {
+        defaultMessage: 'My stuff',
+        description: 'Menu bar link to the signed-in user\'s projects page',
+        id: 'mw.editorNav.myStuff'
+    }
+});
 
 export const NavItem = ({title, icon: Icon, href, onClick, value}) => {
     const Element = href ? 'a' : 'button';
@@ -36,7 +50,7 @@ NavItem.propTypes = {
     value: PropTypes.string
 };
 
-const MwEditorNav = ({username, projectId, onOpenAnalytics}) => {
+const MwEditorNav = ({intl, username, projectId, onOpenAnalytics}) => {
     if (!username) {
         return null;
     }
@@ -46,12 +60,12 @@ const MwEditorNav = ({username, projectId, onOpenAnalytics}) => {
             {hasSavedProject && (
                 <NavItem
                     icon={BarChart3}
-                    title="Project Analytics & Management"
+                    title={intl.formatMessage(messages.analytics)}
                     onClick={onOpenAnalytics}
                 />
             )}
             <NavItem
-                title="My Stuff"
+                title={intl.formatMessage(messages.myStuff)}
                 icon={FolderOpen}
                 href="/mystuff"
             />
@@ -61,12 +75,13 @@ const MwEditorNav = ({username, projectId, onOpenAnalytics}) => {
 };
 
 MwEditorNav.propTypes = {
+    intl: intlShape.isRequired,
     onOpenAnalytics: PropTypes.func.isRequired,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     username: PropTypes.string
 };
 
-export default connect(
+export default injectIntl(connect(
     state => ({
         username: state.scratchGui.rotur.username,
         projectId: state.scratchGui.projectState.projectId
@@ -74,4 +89,4 @@ export default connect(
     dispatch => ({
         onOpenAnalytics: () => dispatch(openProductsModal())
     })
-)(MwEditorNav);
+)(MwEditorNav));

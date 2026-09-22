@@ -5,38 +5,12 @@
     padding: var(--page-pad);
 }
 
-.header,
 .search,
 .search label,
 .card,
 .card small {
     display: flex;
     align-items: center;
-}
-
-.header {
-    justify-content: space-between;
-    gap: 20px;
-    margin: 4px 0 18px;
-}
-
-.title {
-    min-width: 0;
-}
-
-.title h1,
-.title p {
-    margin: 0;
-}
-
-.title h1 {
-    font-size: var(--fs-3xl);
-}
-
-.title p {
-    margin-top: 3px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
 }
 
 .search {
@@ -48,10 +22,8 @@
     width: min(430px, 100%);
     gap: 8px;
     padding: 0 12px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    background: var(--bg-field);
     color: var(--text-faint);
 }
 
@@ -142,16 +114,6 @@
     object-fit: cover;
 }
 
-.error {
-    color: var(--mw-danger);
-}
-
-.status {
-    padding: 44px 20px;
-    color: var(--text-dim);
-    text-align: center;
-}
-
 @media (max-width: 900px) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -161,15 +123,6 @@
 @media (max-width: 620px) {
     .page {
         padding: 22px 14px 70px;
-    }
-
-    .header {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .header > button {
-        align-self: flex-start;
     }
 
     .search label {

@@ -4,14 +4,21 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    Activity, AlertTriangle, Ban, BarChart3, Cloud, Database, Eye, Flag, FolderOpen, HardDrive,
-    Heart, MemoryStick, Newspaper, Puzzle, RefreshCw, ShieldCheck, User
+    Activity, AlertTriangle, ArrowLeft, Ban, BarChart3, Cloud, Database, Download, Eye, Flag, FolderOpen,
+    HardDrive, Heart, MemoryStick, Newspaper, Puzzle, RefreshCw, ShieldCheck, TrendingUp, User
 } from 'lucide-react';
 import api, {projectUrl, embedUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Sidebar from '../components/Sidebar.jsx';
-import Modal from '../components/ui/Modal.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import Button from '../components/ui/Button.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {timeAgo, formatBytes, formatDateTime, formatPlaytime} from '../format';
 import useLatest from '../use-latest.js';
 import copyText from '../copy-text.js';
@@ -21,7 +28,7 @@ const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
 
 const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: BarChart3},
-    {key: 'storage', label: 'Storage & runtime', icon: HardDrive, group: 'System'},
+    {key: 'storage', label: 'Storage and runtime', icon: HardDrive, group: 'System'},
     {key: 'activity', label: 'Activity', icon: Activity, group: 'System'},
     {key: 'reports', label: 'Reports', icon: Flag, group: 'Moderation'},
     {key: 'users', label: 'Users', icon: User, group: 'Moderation'},
@@ -93,7 +100,7 @@ const StorageBreakdown = ({title, icon: Icon, data, detail}) => {
                 <div><h4>{title}</h4><strong>{formatBytes(total)}</strong></div>
                 {detail ? <span>{detail}</span> : null}
             </header>
-            <div className={styles.storageBar} aria-label={communityText("{value1} composition", {value1: title})}>
+            <div className={styles.storageBar} aria-label={communityText('{value1} composition', {value1: title})}>
                 {rows.map(([type, bytes]) => (
                     <span
                         key={type}
@@ -172,10 +179,10 @@ const AnalyticsChart = ({
                 <div className={styles.chartSummary}>
                     <span>{estimateToday ? communityText('Today') : communityText('Latest')} <strong>{latestPoint ? formatValue(latestPoint.value) : communityText('No data')}</strong></span>
                     {Number.isFinite(estimatedValue) ?
-                        <span className={styles.chartEstimate}>{communityText('Est. close ')}<strong>{formatValue(estimatedValue)}</strong></span> : null}
+                        <span className={styles.chartEstimate}>{communityText('Est. close')} <strong>{formatValue(estimatedValue)}</strong></span> : null}
                 </div>
             </div>
-            <svg className={styles.chartPlot} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={communityText("{value1} by date", {value1: title})}>
+            <svg className={styles.chartPlot} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={communityText('{value1} by date', {value1: title})}>
                 {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
                     const y = plot.top + plotHeight - (ratio * plotHeight);
                     return (
@@ -195,7 +202,7 @@ const AnalyticsChart = ({
                         stroke={accent}
                         className={styles.chartProjection}
                     >
-                        <title>{communityText("Estimated end of today: {value1}", {value1: formatValue(estimatedValue)})}</title>
+                        <title>{communityText('Estimated end of today: {value1}', {value1: formatValue(estimatedValue)})}</title>
                     </path>
                 ) : null}
                 {coordinates.filter(point => Number.isFinite(point.y)).map(point => (
@@ -221,7 +228,7 @@ const AnalyticsChart = ({
                         fill="var(--bg-card)"
                         stroke={accent}
                     >
-                        <title>{communityText("Estimated end of today: {value1}", {value1: formatValue(estimatedValue)})}</title>
+                        <title>{communityText('Estimated end of today: {value1}', {value1: formatValue(estimatedValue)})}</title>
                     </circle>
                 ) : null}
                 {tickIndexes.map(index => (coordinates[index] ? (
@@ -262,7 +269,7 @@ const QuotaTile = ({quota}) => {
                 <span className={styles.statLabel}>{communityText('Upload quota')}</span>
             </div>
             <span className={styles.statValue}>{formatBytes(quota.used)}</span>
-            <span className={styles.statDetail}>{communityText('of ')}{formatBytes(quota.limit)}{communityText(' used')}</span>
+            <span className={styles.statDetail}>{communityText('of {value1} used', {value1: formatBytes(quota.limit)})}</span>
             <div className={styles.quotaBarBg}>
                 <div
                     className={styles.quotaBarFill}
@@ -270,7 +277,7 @@ const QuotaTile = ({quota}) => {
                 />
             </div>
             <span className={pct >= 80 ? styles.quotaWarnText : styles.quotaPctText}>
-                {pct >= 80 ? <AlertTriangle size={14} /> : null}{Math.round(pct)}{communityText('% full')}</span>
+                {pct >= 80 ? <AlertTriangle size={14} /> : null}{communityText('{value1}% full', {value1: Math.round(pct)})}</span>
         </div>
     );
 };
@@ -278,19 +285,17 @@ const QuotaTile = ({quota}) => {
 const AdminActionDialog = ({dialog, busy, error, onChange, onCancel, onConfirm}) => {
     const {text: communityText} = useCommunityText();
     if (!dialog) return null;
-    const Icon = dialog.icon || AlertTriangle;
     return (
-        <Modal
-            icon={Icon}
+        <ConfirmModal
+            icon={dialog.icon || AlertTriangle}
             title={dialog.title}
-            dismissDisabled={busy}
-            onClose={onCancel}
-            actions={<React.Fragment>
-                <button className={styles.secondary} disabled={busy} onClick={onCancel}>{communityText('Cancel')}</button>
-                <button className={dialog.danger ? styles.danger : styles.primary} disabled={busy} onClick={onConfirm}>
-                    {busy ? communityText('Working…') : dialog.action}
-                </button>
-            </React.Fragment>}
+            destructive={Boolean(dialog.danger)}
+            busy={busy}
+            busyLabel={communityText('Working…')}
+            confirmLabel={dialog.action}
+            error={error}
+            onCancel={onCancel}
+            onConfirm={onConfirm}
         >
             {dialog.description ? <p>{dialog.description}</p> : null}
             {(dialog.fields || []).map(field => (
@@ -313,8 +318,7 @@ const AdminActionDialog = ({dialog, busy, error, onChange, onCancel, onConfirm})
                     )}
                 </label>
             ))}
-            {error ? <p className={styles.error}>{error}</p> : null}
-        </Modal>
+        </ConfirmModal>
     );
 };
 
@@ -430,10 +434,10 @@ const StatsOverview = ({view}) => {
     };
 
     if (error && !stats) {
-        return <div><h2>{communityText('Stats')}</h2><p className={styles.error}>{error}</p></div>;
+        return <StatusMessage error>{error}</StatusMessage>;
     }
     if (!stats) {
-        return <div><h2>{communityText('Stats')}</h2><p className={styles.status}>{communityText('Loading…')}</p></div>;
+        return <StatusMessage />;
     }
     const projectSeries = buildSeries(stats.projectsByDay, days);
     const updateSeries = buildSeries(stats.projectUpdatesByDay, days);
@@ -468,79 +472,82 @@ const StatsOverview = ({view}) => {
         URL.revokeObjectURL(url);
     };
     const viewHeading = {
-        overview: ['System overview', 'Current platform health and totals.'],
-        storage: ['Storage & runtime', 'Local cache, durable R2 objects, upload queue, and memory.'],
-        activity: ['Activity', 'Traffic, publishing, sessions, and player performance over time.']
+        overview: [communityText('System overview'), communityText('Current platform health and totals.'), BarChart3],
+        storage: [communityText('Storage and runtime'), communityText('Local cache, durable R2 objects, upload queue, and memory.'), HardDrive],
+        activity: [communityText('Activity'), communityText('Traffic, publishing, sessions, and player performance over time.'), Activity]
     }[view || 'overview'];
 
     return (
         <div>
-            <header className={styles.overviewHeader}>
-                <div>
-                    <h2>{viewHeading[0]}</h2>
-                    <p>{viewHeading[1]}</p>
-                </div>
-                {(!view || view === 'activity') ? <div className={styles.rangePicker} aria-label={communityText('Analytics date range')}>
-                    {[7, 30, 90, 365].map(option => (
-                        <button
-                            key={option}
-                            type="button"
-                            className={days === option ? styles.rangeActive : styles.rangeButton}
-                            aria-pressed={days === option}
-                            onClick={() => setDays(option)}
-                        >
-                            {option === 365 ? communityText('1 year') : communityText("{value1} days", {value1: option})}
-                        </button>
-                    ))}
-                </div> : null}
-            </header>
+            <SectionHeading
+                className={styles.overviewHeader}
+                icon={viewHeading[2]}
+                title={viewHeading[0]}
+                lead={viewHeading[1]}
+                actions={(!view || view === 'activity') ? (
+                    <div className={styles.rangePicker} aria-label={communityText('Analytics date range')}>
+                        {[7, 30, 90, 365].map(option => (
+                            <button
+                                key={option}
+                                type="button"
+                                className={days === option ? styles.rangeActive : styles.rangeButton}
+                                aria-pressed={days === option}
+                                onClick={() => setDays(option)}
+                            >
+                                {option === 365 ? communityText('1 year') : communityText('{value1} days', {value1: option})}
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
+            />
             {statsBusy ? <p className={styles.refreshStatus}>{communityText('Updating charts…')}</p> : null}
-            {error ? <p className={styles.error}>{error}</p> : null}
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
 
             {view === 'storage' && storage ? (
                 <section className={styles.overviewSection} aria-labelledby="admin-storage-heading">
-                    <div className={styles.sectionHeading}>
-                        <div>
-                            <h3 id="admin-storage-heading">{communityText('Storage and memory')}</h3>
-                            <p>{communityText('Local disk is the hot layer. R2 holds durable, content-addressed objects.')}</p>
-                        </div>
-                        {storage.r2Configured ? (
-                            <button
-                                type="button"
-                                className={styles.secondary}
-                                disabled={storageSyncBusy}
+                    <SectionHeading
+                        as="h3"
+                        id="admin-storage-heading"
+                        icon={HardDrive}
+                        title={communityText('Storage and memory')}
+                        lead={communityText('Local disk is the hot layer. R2 holds durable, content-addressed objects.')}
+                        actions={storage.r2Configured ? (
+                            <Button
+                                busy={storageSyncBusy}
+                                busyLabel={communityText('Syncing…')}
                                 onClick={syncR2Storage}
                             >
                                 <RefreshCw size={15} />
-                                {storageSyncBusy ? communityText('Syncing…') : communityText('Sync R2 inventory')}
-                            </button>
+                                {communityText('Sync R2 inventory')}
+                            </Button>
                         ) : null}
-                    </div>
+                    />
                     <div className={styles.storageGrid}>
                         <StorageBreakdown
                             title={communityText('Local data')}
                             icon={Database}
                             data={storage.local}
-                            detail={`${formatBytes(storage.local.diskFreeBytes)} disk free`}
+                            detail={communityText('{value1} disk free', {value1: formatBytes(storage.local.diskFreeBytes)})}
                         />
                         <StorageBreakdown
                             title={communityText('R2 storage')}
                             icon={Cloud}
                             data={storage.r2}
-                            detail={storage.r2Configured ? `${num(storage.r2.objects)} objects${storage.r2SyncedAt ?
-                                ` · synced ${timeAgo(storage.r2SyncedAt)}` : ''}` : 'Local mode'}
+                            detail={storage.r2Configured ? (storage.r2SyncedAt ?
+                                communityText('{value1} objects · synced {value2} ago', {value1: num(storage.r2.objects), value2: timeAgo(storage.r2SyncedAt)}) :
+                                communityText('{value1} objects', {value1: num(storage.r2.objects)})) : communityText('Local mode')}
                         />
                         <StorageBreakdown
                             title={communityText('Upload queue')}
                             icon={HardDrive}
                             data={storage.queued}
-                            detail={`${num(storage.queued.objects)} waiting`}
+                            detail={communityText('{value1} waiting', {value1: num(storage.queued.objects)})}
                         />
                         <article className={styles.storagePanel}>
                             <header className={styles.storageHeader}>
                                 <span className={styles.storageIcon}><MemoryStick size={18} /></span>
                                 <div><h4>{communityText('RAM')}</h4><strong>{formatBytes(storage.local.memory.systemBytes)}</strong></div>
-                                <span>{num(storage.local.memory.goroutines)}{communityText(' goroutines')}</span>
+                                <span>{communityText('{value1} goroutines', {value1: num(storage.local.memory.goroutines)})}</span>
                             </header>
                             <dl className={styles.memoryStats}>
                                 <div><dt>{communityText('Heap')}</dt><dd>{formatBytes(storage.local.memory.heapBytes)}</dd></div>
@@ -550,76 +557,83 @@ const StatsOverview = ({view}) => {
                     </div>
                 </section>
             ) : null}
-            {view === 'storage' && !storage && !storageError ? <p className={styles.status}>{communityText('Loading storage…')}</p> : null}
-            {view === 'storage' && storageError ? <p className={styles.error}>{storageError}</p> : null}
+            {view === 'storage' && !storage && !storageError ? <StatusMessage compact>{communityText('Loading storage…')}</StatusMessage> : null}
+            {view === 'storage' && storageError ? <Notice variant="error" className={styles.notice}>{storageError}</Notice> : null}
 
             {(!view || view === 'overview') ? <React.Fragment>
                 {(stats.pendingPayouts > 0 || (quota && (quota.used / quota.limit) * 100 >= 80)) ? (
                     <div className={styles.alerts} aria-label={communityText('Items needing attention')}>
                         {stats.pendingPayouts > 0 ? (
-                            <div className={styles.quotaWarning}>
-                                <AlertTriangle size={16} />
-                                <span>
-                                    {stats.pendingPayouts}{communityText(' creator payout')}{stats.pendingPayouts === 1 ? '' : communityText('s')}{communityText(' failed.')}{' '}{Math.round((stats.pendingPayoutAmount || 0) * 100) / 100}{communityText(' credits are still owed.')}</span>
-                                <button
-                                    className={styles.secondary}
-                                    onClick={retryPayouts}
-                                    disabled={payoutBusy}
-                                >{payoutBusy ? communityText('Retrying…') : communityText('Retry now')}</button>
+                            <Notice
+                                variant="warning"
+                                action={(
+                                    <Button
+                                        busy={payoutBusy}
+                                        busyLabel={communityText('Retrying…')}
+                                        onClick={retryPayouts}
+                                    >{communityText('Retry now')}</Button>
+                                )}
+                            >
+                                {communityText('{value1, plural, one {# creator payout} other {# creator payouts}} failed. {value2} credits are still owed.', {
+                                    value1: stats.pendingPayouts,
+                                    value2: Math.round((stats.pendingPayoutAmount || 0) * 100) / 100
+                                })}
                                 {payoutNote ? <span className={styles.alertNote}>{payoutNote}</span> : null}
-                            </div>
+                            </Notice>
                         ) : null}
                         {quota && (quota.used / quota.limit) * 100 >= 80 ? (
-                            <div className={styles.quotaWarning}>
-                                <AlertTriangle size={16} />
-                                <span>{communityText('Upload storage is ')}{Math.round((quota.used / quota.limit) * 100)}{communityText('% full.')}{' '}{quota.used >= quota.limit ?
+                            <Notice variant="warning">
+                                {communityText('Upload storage is {value1}% full.', {value1: Math.round((quota.used / quota.limit) * 100)})}
+                                {' '}
+                                {quota.used >= quota.limit ?
                                     communityText('New project uploads are blocked until usage drops.') :
                                     communityText('Manage projects soon to free up space.')}
-                                </span>
-                            </div>
+                            </Notice>
                         ) : null}
                     </div>
                 ) : null}
 
                 <section className={styles.overviewSection} aria-labelledby="admin-summary-heading">
-                    <div className={styles.sectionHeading}>
-                        <div>
-                            <h3 id="admin-summary-heading">{communityText('At a glance')}</h3>
-                            <p>{communityText('Current platform totals.')}</p>
-                        </div>
-                    </div>
+                    <SectionHeading
+                        as="h3"
+                        id="admin-summary-heading"
+                        icon={BarChart3}
+                        title={communityText('At a glance')}
+                        lead={communityText('Current platform totals.')}
+                    />
                     <div className={styles.primaryStatGrid}>
                         <StatTile
                             prominent icon={FolderOpen} label={communityText('Projects')} value={num(stats.totalProjects)}
-                            detail={`${num(stats.sharedProjects)} shared`}
+                            detail={communityText('{value1} shared', {value1: num(stats.sharedProjects)})}
                         />
                         <StatTile
                             prominent icon={User} label={communityText('Users')} value={num(stats.totalUsers)}
-                            detail={`${num(stats.bannedUsers)} banned`}
+                            detail={communityText('{value1} banned', {value1: num(stats.bannedUsers)})}
                         />
                         <StatTile
                             prominent icon={Activity} label={communityText('Active sessions')} value={num(stats.activeSessions)}
-                            detail="Signed in now"
+                            detail={communityText('Signed in now')}
                         />
                         <StatTile
                             prominent icon={Flag} label={communityText('Open reports')} value={num(stats.openReports)}
-                            detail={stats.openReports ? 'Needs review' : 'Queue is clear'}
+                            detail={stats.openReports ? communityText('Needs review') : communityText('Queue is clear')}
                         />
                         <StatTile
                             prominent icon={AlertTriangle} label={communityText('Open errors')} value={num(stats.openErrors)}
-                            detail={stats.openErrors ? 'Needs review' : 'Queue is clear'}
+                            detail={stats.openErrors ? communityText('Needs review') : communityText('Queue is clear')}
                         />
                     </div>
                 </section>
 
                 <div className={styles.summaryColumns}>
                     <section className={styles.summaryPanel} aria-labelledby="admin-content-heading">
-                        <div className={styles.sectionHeading}>
-                            <div>
-                                <h3 id="admin-content-heading">{communityText('Projects and storage')}</h3>
-                                <p>{communityText('Publishing state and disk use.')}</p>
-                            </div>
-                        </div>
+                        <SectionHeading
+                            as="h3"
+                            id="admin-content-heading"
+                            icon={FolderOpen}
+                            title={communityText('Projects and storage')}
+                            lead={communityText('Publishing state and disk use.')}
+                        />
                         <div className={styles.compactStatGrid}>
                             <StatTile label={communityText('Shared')} value={num(stats.sharedProjects)} />
                             <StatTile label={communityText('Unshared')} value={num(stats.unsharedProjects)} />
@@ -628,12 +642,13 @@ const StatsOverview = ({view}) => {
                         </div>
                     </section>
                     <section className={styles.summaryPanel} aria-labelledby="admin-community-heading">
-                        <div className={styles.sectionHeading}>
-                            <div>
-                                <h3 id="admin-community-heading">{communityText('Community activity')}</h3>
-                                <p>{communityText('Engagement, publishing, and moderation totals.')}</p>
-                            </div>
-                        </div>
+                        <SectionHeading
+                            as="h3"
+                            id="admin-community-heading"
+                            icon={Heart}
+                            title={communityText('Community activity')}
+                            lead={communityText('Engagement, publishing, and moderation totals.')}
+                        />
                         <div className={styles.compactStatGrid}>
                             <StatTile icon={Eye} label={communityText('Views')} value={num(stats.totalViews)} />
                             <StatTile icon={Heart} label={communityText('Loves')} value={num(stats.totalLoves)} />
@@ -646,79 +661,81 @@ const StatsOverview = ({view}) => {
 
             {view === 'activity' ? <React.Fragment>
                 <section className={styles.overviewSection} aria-labelledby="admin-insights-heading">
-                    <div className={styles.sectionHeading}>
-                        <div>
-                            <h3 id="admin-insights-heading">{communityText('Operational insights')}</h3>
-                            <p>{communityText('Rates and averages that make the raw totals easier to judge.')}</p>
-                        </div>
-                    </div>
+                    <SectionHeading
+                        as="h3"
+                        id="admin-insights-heading"
+                        icon={Activity}
+                        title={communityText('Operational insights')}
+                        lead={communityText('Rates and averages that make the raw totals easier to judge.')}
+                    />
                     <div className={styles.insightGrid}>
                         <StatTile
                             label={communityText('Projects published')}
                             value={percent(stats.sharedProjects, stats.totalProjects)}
-                            detail={`${num(stats.sharedProjects)} of ${num(stats.totalProjects)} projects`}
+                            detail={communityText('{value1} of {value2} projects', {value1: num(stats.sharedProjects), value2: num(stats.totalProjects)})}
                         />
                         <StatTile
-                            label={communityText("Average load, {value1} days", {value1: days})}
+                            label={communityText('Average load, {value1} days', {value1: days})}
                             value={formatLoadTime(stats.averageLoadMs || 0)}
-                            detail={`${num(stats.loadTimeSamples)} completed samples`}
+                            detail={communityText('{value1} completed samples', {value1: num(stats.loadTimeSamples)})}
                         />
                         <StatTile
                             label={communityText('Loads reaching start')}
                             value={percent(stats.totalStarts, stats.totalLoads)}
-                            detail={`${num(stats.totalStarts)} starts from ${num(stats.totalLoads)} loads`}
+                            detail={communityText('{value1} starts from {value2} loads', {value1: num(stats.totalStarts), value2: num(stats.totalLoads)})}
                         />
                         <StatTile
                             label={communityText('Crashes per 100 loads')}
                             value={stats.totalLoads ? ((stats.totalCrashes / stats.totalLoads) * 100).toFixed(2) : '0.00'}
-                            detail={`${num(stats.totalCrashes)} crashes recorded`}
+                            detail={communityText('{value1} crashes recorded', {value1: num(stats.totalCrashes)})}
                         />
                         <StatTile
                             label={communityText('Touch traffic')}
                             value={percent((stats.loadsByDevice || {}).touch, deviceLoads)}
-                            detail={`${num((stats.loadsByDevice || {}).touch)} of ${num(deviceLoads)} device-tagged loads`}
+                            detail={communityText('{value1} of {value2} device-tagged loads', {value1: num((stats.loadsByDevice || {}).touch), value2: num(deviceLoads)})}
                         />
                         <StatTile
                             label={communityText('Average project size')}
                             value={formatBytes(stats.averageProjectBytes || 0)}
-                            detail="Across all projects"
+                            detail={communityText('Across all projects')}
                         />
                         <StatTile
                             label={communityText('Views per project')}
                             value={Number(stats.averageViews || 0).toFixed(1)}
-                            detail={`${num(stats.totalViews)} views total`}
+                            detail={communityText('{value1} views total', {value1: num(stats.totalViews)})}
                         />
                         <StatTile
                             label={communityText('Loves per project')}
                             value={Number(stats.averageLoves || 0).toFixed(1)}
-                            detail={`${num(stats.totalLoves)} loves total`}
+                            detail={communityText('{value1} loves total', {value1: num(stats.totalLoves)})}
                         />
                         <StatTile
                             label={communityText('Projects remixed')}
                             value={percent(stats.totalRemixes, stats.totalProjects)}
-                            detail={`${num(stats.totalRemixes)} remix projects`}
+                            detail={communityText('{value1} remix projects', {value1: num(stats.totalRemixes)})}
                         />
                         <StatTile
                             label={communityText('Recorded playtime')}
                             value={formatPlaytime(stats.totalPlaytimeMs || 0, false)}
-                            detail="All time"
+                            detail={communityText('All time')}
                         />
                     </div>
                 </section>
 
                 <section className={styles.overviewSection} aria-labelledby="admin-trends-heading">
-                    <div className={styles.sectionHeading}>
-                        <div>
-                            <h3 id="admin-trends-heading">{communityText('Trends')}</h3>
-                            <p>{communityText("Dashed lines estimate today's UTC close from its current pace and the prior seven days.")}</p>
-                        </div>
-                    </div>
+                    <SectionHeading
+                        as="h3"
+                        id="admin-trends-heading"
+                        icon={TrendingUp}
+                        title={communityText('Trends')}
+                        lead={communityText("Dashed lines estimate today's UTC close from its current pace and the prior seven days.")}
+                    />
                     <div className={styles.charts}>
                         <AnalyticsChart
                             title={communityText('Average project load time')}
-                            description={communityText("{value1} completed player loads in this period. Days without a sample appear as gaps.", {value1: num(stats.loadTimeSamples)})}
+                            description={communityText('{value1} completed player loads in this period. Days without a sample appear as gaps.', {value1: num(stats.loadTimeSamples)})}
                             series={loadTimeSeries}
-                            yLabel="Milliseconds"
+                            yLabel={communityText('Milliseconds')}
                             formatValue={formatLoadTime}
                             estimateToday={false}
                         />
@@ -726,14 +743,14 @@ const StatsOverview = ({view}) => {
                             title={communityText('Project uploads')}
                             description={communityText('Projects created each day, including shared and unshared projects.')}
                             series={projectSeries}
-                            yLabel="Projects"
+                            yLabel={communityText('Projects')}
                             estimateToday
                         />
                         <AnalyticsChart
                             title={communityText('Project updates')}
                             description={communityText('Projects grouped by their latest edit date. Each project appears once.')}
                             series={updateSeries}
-                            yLabel="Projects"
+                            yLabel={communityText('Projects')}
                             accent="#8b7cf6"
                             estimateToday
                         />
@@ -741,7 +758,7 @@ const StatsOverview = ({view}) => {
                             title={communityText('Player loads')}
                             description={communityText('Completed loads from embedded MistWarp project players.')}
                             series={loadSeries}
-                            yLabel="Loads"
+                            yLabel={communityText('Loads')}
                             accent="#36b37e"
                             estimateToday
                         />
@@ -749,7 +766,7 @@ const StatsOverview = ({view}) => {
                             title={communityText('New users')}
                             description={communityText('Accounts grouped by the date their MistWarp profile was created.')}
                             series={userSeries}
-                            yLabel="Users"
+                            yLabel={communityText('Users')}
                             accent="#e5a84b"
                             estimateToday
                         />
@@ -757,25 +774,30 @@ const StatsOverview = ({view}) => {
                             title={communityText('Current sessions by sign-in date')}
                             description={communityText('Unexpired sign-in sessions only. MistWarp removes sessions after seven days.')}
                             series={loginSeries}
-                            yLabel="Sessions"
+                            yLabel={communityText('Sessions')}
                             accent="#dc6d9a"
                             estimateToday
                         />
                     </div>
                 </section>
 
-                <div className={styles.dataHeader}>
-                    <div>
-                        <h2>{communityText('Daily data')}</h2>
-                        <p>{communityText('Exact values behind the charts. Load averages only use completed loads with a recorded duration.')}</p>
-                    </div>
-                    <div className={styles.dataActions}>
-                        <button type="button" className={styles.secondary} onClick={() => setShowDailyData(!showDailyData)}>
-                            {showDailyData ? communityText('Hide data') : communityText('View data')}
-                        </button>
-                        <button type="button" className={styles.secondary} onClick={exportDailyData}>{communityText('Download CSV')}</button>
-                    </div>
-                </div>
+                <SectionHeading
+                    className={styles.dataHeader}
+                    icon={Database}
+                    title={communityText('Daily data')}
+                    lead={communityText('Exact values behind the charts. Load averages only use completed loads with a recorded duration.')}
+                    actions={(
+                        <React.Fragment>
+                            <Button onClick={() => setShowDailyData(!showDailyData)}>
+                                {showDailyData ? communityText('Hide data') : communityText('View data')}
+                            </Button>
+                            <Button onClick={exportDailyData}>
+                                <Download size={15} />
+                                {communityText('Download CSV')}
+                            </Button>
+                        </React.Fragment>
+                    )}
+                />
                 {showDailyData ? (
                     <div className={styles.dataTableWrap}>
                         <table className={styles.dataTable}>
@@ -832,7 +854,7 @@ const ProjectManager = () => {
         try {
             setError('');
             await api.unpublish(id);
-            setNote('Project unshared.');
+            setNote(communityText('Project unshared.'));
             search(query);
         } catch (e) {
             setError(e.message || 'Could not unshare that project.');
@@ -847,9 +869,9 @@ const ProjectManager = () => {
         setDialogError('');
         setDialog({
             id,
-            title: 'Delete project?',
-            description: `Delete ${project ? project.title : 'this project'} permanently?`,
-            action: 'Delete project',
+            title: communityText('Delete project?'),
+            description: communityText('Delete {value1} permanently?', {value1: project ? project.title : communityText('this project')}),
+            action: communityText('Delete project'),
             danger: true,
             icon: FolderOpen
         });
@@ -866,7 +888,7 @@ const ProjectManager = () => {
             setDialogError('');
             await api.deleteProject(dialog.id);
             setDialog(null);
-            setNote('Project deleted.');
+            setNote(communityText('Project deleted.'));
             search(query);
         } catch (e) {
             setDialogError(e.message || 'Could not delete that project.');
@@ -888,7 +910,7 @@ const ProjectManager = () => {
                 }}
                 onConfirm={confirmRemove}
             />
-            <h2>{communityText('Projects')}</h2>
+            <SectionHeading icon={FolderOpen} title={communityText('Projects')} />
             <div className={styles.addAdmin}>
                 <input
                     className={styles.input}
@@ -899,15 +921,12 @@ const ProjectManager = () => {
                         if (e.key === 'Enter') search(query);
                     }}
                 />
-                <button
-                    className={styles.secondary}
-                    onClick={() => search(query)}
-                >{communityText('Search')}</button>
+                <Button onClick={() => search(query)}>{communityText('Search')}</Button>
             </div>
-            {error ? <p className={styles.error}>{error}</p> : null}
-            {note ? <p className={styles.status}>{note}</p> : null}
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
+            {note ? <Notice variant="success" className={styles.notice}>{note}</Notice> : null}
             {projects === null ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage />
             ) : projects.length ? (
                 <div className={styles.list}>
                     {projects.map(project => (
@@ -920,26 +939,22 @@ const ProjectManager = () => {
                                     <Link to={projectUrl(project)}>{project.title || project.id}</Link>
                                 </span>
                                 <span className={styles.rowMeta}>
-                                    {communityText("by @{value1} · {value2}", {value1: project.owner, value2: project.shared ? 'Shared' : 'Unshared'})}
+                                    {communityText('by @{value1} · {value2}', {value1: project.owner, value2: project.shared ? communityText('Shared') : communityText('Unshared')})}
                                 </span>
                             </div>
                             <div className={styles.rowActions}>
                                 {project.shared ? (
-                                    <button
-                                        className={styles.secondary}
-                                        onClick={() => unshare(project.id)}
-                                    >{communityText('Unshare')}</button>
+                                    <Button onClick={() => unshare(project.id)}>{communityText('Unshare')}</Button>
                                 ) : null}
-                                <button
-                                    className={styles.danger}
-                                    onClick={() => remove(project.id)}
-                                >{communityText('Delete')}</button>
+                                <Button variant="danger" onClick={() => remove(project.id)}>{communityText('Delete')}</Button>
                             </div>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className={styles.status}>{communityText('No projects found.')}</p>
+                <EmptyState compact icon={FolderOpen} title={communityText('No projects found')}>
+                    {communityText('Try a different title, owner, or id.')}
+                </EmptyState>
             )}
         </div>
     );
@@ -1003,7 +1018,7 @@ const UserDetailCard = ({username, onBack}) => {
         setNote('');
         try {
             await api.admin.setStanding(data.username, level, reasonText.trim());
-            setNote('Standing updated.');
+            setNote(communityText('Standing updated.'));
             refresh();
         } catch (e) {
             setError(e.message || 'Action failed.');
@@ -1016,7 +1031,7 @@ const UserDetailCard = ({username, onBack}) => {
         setNote('');
         try {
             await api.admin.messageUser(data.username, message.trim());
-            setNote('Message sent.');
+            setNote(communityText('Message sent.'));
             setMessage('');
         } catch (e) {
             setError(e.message || 'Action failed.');
@@ -1038,7 +1053,7 @@ const UserDetailCard = ({username, onBack}) => {
     const unshareProject = async pid => {
         try {
             await api.unpublish(pid);
-            setNote('Project unshared.');
+            setNote(communityText('Project unshared.'));
             refresh();
         } catch (e) {
             setError(e.message || 'Could not unshare.');
@@ -1051,9 +1066,9 @@ const UserDetailCard = ({username, onBack}) => {
         setDialogError('');
         setDialog({
             id: pid,
-            title: 'Delete project?',
-            description: `Delete ${project ? project.title : 'this project'} permanently?`,
-            action: 'Delete project',
+            title: communityText('Delete project?'),
+            description: communityText('Delete {value1} permanently?', {value1: project ? project.title : communityText('this project')}),
+            action: communityText('Delete project'),
             danger: true,
             icon: FolderOpen
         });
@@ -1070,7 +1085,7 @@ const UserDetailCard = ({username, onBack}) => {
             setDialogError('');
             await api.deleteProject(dialog.id);
             setDialog(null);
-            setNote('Project deleted.');
+            setNote(communityText('Project deleted.'));
             refresh();
         } catch (e) {
             setDialogError(e.message || 'Could not delete.');
@@ -1083,12 +1098,15 @@ const UserDetailCard = ({username, onBack}) => {
     if (error) {
         return (
             <div>
-                <p className={styles.error}>{error}</p>
-                <button className={styles.secondary} onClick={onBack}>{communityText('Back to list')}</button>
+                <Notice variant="error" className={styles.notice}>{error}</Notice>
+                <Button onClick={onBack}>
+                    <ArrowLeft size={15} />
+                    {communityText('Back to list')}
+                </Button>
             </div>
         );
     }
-    if (!data) return <p className={styles.status}>{communityText('Loading user details…')}</p>;
+    if (!data) return <StatusMessage>{communityText('Loading user details…')}</StatusMessage>;
 
     return (
         <div>
@@ -1102,7 +1120,10 @@ const UserDetailCard = ({username, onBack}) => {
                 }}
                 onConfirm={confirmDeleteProject}
             />
-            <button className={styles.secondary} onClick={onBack} style={{marginBottom: 10}}>{communityText('← Back to list')}</button>
+            <Button className={styles.backButton} onClick={onBack}>
+                <ArrowLeft size={15} />
+                {communityText('Back to list')}
+            </Button>
             <div className={styles.userCard}>
                 <div className={styles.userHead}>
                     <Avatar username={data.username} size={44} />
@@ -1113,7 +1134,7 @@ const UserDetailCard = ({username, onBack}) => {
                             <span className={styles.badge}>{(data.standing && data.standing.level) || communityText('good')}</span>
                         </span>
                         <span className={styles.rowMeta}>
-                            {communityText("{value1} followers · {value2} following", {value1: data.followerCount || 0, value2: data.followingCount || 0})}
+                            {communityText('{value1} followers · {value2} following', {value1: data.followerCount || 0, value2: data.followingCount || 0})}
                         </span>
                     </div>
                 </div>
@@ -1131,7 +1152,7 @@ const UserDetailCard = ({username, onBack}) => {
                         value={reasonText}
                         onChange={e => setReasonText(e.target.value)}
                     />
-                    <button className={styles.secondary} onClick={applyStanding}>{communityText('Apply')}</button>
+                    <Button onClick={applyStanding}>{communityText('Apply')}</Button>
                 </div>
 
                 <label className={styles.fieldLabel}>{communityText('Send a message to their notifications')}</label>
@@ -1142,12 +1163,12 @@ const UserDetailCard = ({username, onBack}) => {
                         value={message}
                         onChange={e => setMessage(e.target.value)}
                     />
-                    <button className={styles.secondary} disabled={!message.trim()} onClick={sendMessage}>{communityText('Send')}</button>
+                    <Button disabled={!message.trim()} onClick={sendMessage}>{communityText('Send')}</Button>
                 </div>
 
-                <button className={styles.secondary} onClick={toggleComments}>
+                <Button className={styles.inlineAction} onClick={toggleComments}>
                     {data.commentsOff ? communityText('Enable profile comments') : communityText('Disable profile comments')}
-                </button>
+                </Button>
 
                 {data.quota ? (
                     <div className={styles.quota}>
@@ -1160,7 +1181,7 @@ const UserDetailCard = ({username, onBack}) => {
                                 />
                             </span>
                             <span className={styles.quotaText}>
-                                {communityText("{value1} of {value2}", {value1: formatBytes(data.quota.used), value2: formatBytes(data.quota.limit)})}
+                                {communityText('{value1} of {value2}', {value1: formatBytes(data.quota.used), value2: formatBytes(data.quota.limit)})}
                             </span>
                         </span>
                     </div>
@@ -1180,22 +1201,16 @@ const UserDetailCard = ({username, onBack}) => {
                                 </div>
                                 <div className={styles.rowActions}>
                                     {project.shared ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => unshareProject(project.id)}
-                                        >{communityText('Unshare')}</button>
+                                        <Button onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
                                     ) : null}
-                                    <button
-                                        className={styles.danger}
-                                        onClick={() => deleteProject(project.id)}
-                                    >{communityText('Delete')}</button>
+                                    <Button variant="danger" onClick={() => deleteProject(project.id)}>{communityText('Delete')}</Button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : null}
 
-                {note ? <p className={styles.status} style={{marginTop: 8}}>{note}</p> : null}
+                {note ? <Notice variant="success">{note}</Notice> : null}
             </div>
         </div>
     );
@@ -1243,7 +1258,7 @@ const UserManager = () => {
     if (selected) {
         return (
             <div>
-                <h2>{communityText('Users')}</h2>
+                <SectionHeading icon={User} title={communityText('Users')} />
                 <UserDetailCard username={selected} onBack={() => setSelected(null)} />
             </div>
         );
@@ -1251,7 +1266,7 @@ const UserManager = () => {
 
     return (
         <div>
-            <h2>{communityText('Users')}</h2>
+            <SectionHeading icon={User} title={communityText('Users')} />
             <div className={styles.userToolbar}>
                 <input
                     className={styles.input}
@@ -1275,17 +1290,15 @@ const UserManager = () => {
                     <option value="recent">{communityText('Newest')}</option>
                     <option value="followers">{communityText('Most followed')}</option>
                 </select>
-                <span className={styles.status} style={{fontSize: 13, alignSelf: 'center'}}>
-                    {total.toLocaleString(getCommunityLocale())}{communityText(' total')}</span>
+                <span className={styles.toolbarCount}>
+                    {communityText('{value1} total', {value1: total.toLocaleString(getCommunityLocale())})}
+                </span>
             </div>
             {error ? (
-                <div className={styles.error} role="alert">
-                    {error}{' '}
-                    <button type="button" className={styles.secondary} onClick={() => setLoadAttempt(value => value + 1)}>{communityText('Try again')}</button>
-                </div>
+                <StatusMessage compact error onRetry={() => setLoadAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : null}
             {loading ? (
-                <p className={styles.status}>{communityText('Loading users…')}</p>
+                <StatusMessage>{communityText('Loading users…')}</StatusMessage>
             ) : error ? null : users.length ? (
                 <div className={styles.list}>
                     {users.map(user => {
@@ -1294,8 +1307,7 @@ const UserManager = () => {
                         return (
                             <div
                                 key={user.username}
-                                className={styles.row}
-                                style={{cursor: 'pointer'}}
+                                className={`${styles.row} ${styles.rowClickable}`}
                                 onClick={() => setSelected(user.username)}
                                 role="button"
                                 tabIndex={0}
@@ -1314,22 +1326,19 @@ const UserManager = () => {
                                             onClick={event => event.stopPropagation()}
                                         >{`@${user.username}`}</a>
                                         {user.banned ? (
-                                            <span
-                                                className={styles.badge}
-                                                style={{borderColor: '#e25555', color: '#e25555'}}
-                                            >{communityText('banned')}</span>
+                                            <span className={`${styles.badge} ${styles.badgeDanger}`}>{communityText('banned')}</span>
                                         ) : user.standingLevel && user.standingLevel !== 'good' ? (
                                             <span className={styles.badge}>{user.standingLevel}</span>
                                         ) : null}
                                     </span>
                                     <span className={styles.rowMeta}>
-                                        {communityText("{value1} followers · {value2} projects", {value1: user.followerCount, value2: user.projectCount})}
-                                        {joined ? communityText(" · joined {value1} ago", {value1: joined}) : ''}
+                                        {communityText('{value1} followers · {value2} projects', {value1: user.followerCount, value2: user.projectCount})}
+                                        {joined ? communityText(' · joined {value1} ago', {value1: joined}) : ''}
                                     </span>
                                 </div>
                                 <div className={styles.resetInfo}>
                                     <div className={styles.quotaBar}>
-                                        <span className={styles.quotaFillBg} style={{width: 100}}>
+                                        <span className={`${styles.quotaFillBg} ${styles.quotaFillBgFixed}`}>
                                             <span
                                                 className={styles.quotaFill}
                                                 style={{width: `${Math.min(100, pct)}%`}}
@@ -1345,23 +1354,21 @@ const UserManager = () => {
                     })}
                 </div>
             ) : (
-                <p className={styles.status}>{communityText('No users match that search.')}</p>
+                <EmptyState compact icon={User} title={communityText('No users found')}>
+                    {communityText('No users match that search.')}
+                </EmptyState>
             )}
             {!error && total > 30 ? (
                 <div className={styles.pagination}>
-                    <button
-                        type="button"
-                        className={styles.secondary}
+                    <Button
                         disabled={offset === 0 || loading}
                         onClick={() => setOffset(Math.max(0, offset - 30))}
-                    >{communityText('Previous')}</button>
-                    <span>{communityText("{value1}–{value2} of {value3}", {value1: offset + 1, value2: Math.min(offset + users.length, total), value3: total})}</span>
-                    <button
-                        type="button"
-                        className={styles.secondary}
+                    >{communityText('Previous')}</Button>
+                    <span>{communityText('{value1}–{value2} of {value3}', {value1: offset + 1, value2: Math.min(offset + users.length, total), value3: total})}</span>
+                    <Button
                         disabled={offset + users.length >= total || loading}
                         onClick={() => setOffset(offset + 30)}
-                    >{communityText('Next')}</button>
+                    >{communityText('Next')}</Button>
                 </div>
             ) : null}
         </div>
@@ -1380,9 +1387,9 @@ const EvidenceDetails = ({data}) => {
             <ul className={styles.evidenceMeta}>
                 <li><strong>{communityText('Title:')}</strong> {` ${config.title || ''}`}</li>
                 <li><strong>{communityText('Owner:')}</strong> {` @${config.owner || ''}`}</li>
-                <li><strong>{communityText('Price:')}</strong> {communityText(" {value1} credits", {value1: config.price || 0})}</li>
+                <li><strong>{communityText('Price:')}</strong> {communityText(' {value1} credits', {value1: config.price || 0})}</li>
                 <li><strong>{communityText('Visibility:')}</strong> {` ${visibility}`}</li>
-                {config.revenue ? <li><strong>{communityText('Revenue:')}</strong> {communityText(" {value1} credits", {value1: config.revenue})}</li> : null}
+                {config.revenue ? <li><strong>{communityText('Revenue:')}</strong> {communityText(' {value1} credits', {value1: config.revenue})}</li> : null}
                 {buyers.length ? <li><strong>{communityText('Buyers:')}</strong> {` ${buyers.length}`}</li> : null}
                 {config.snapshotAt ? (
                     <li><strong>{communityText('Captured:')}</strong> {` ${formatDateTime(config.snapshotAt, 'Date unavailable')}`}</li>
@@ -1417,15 +1424,16 @@ const EvidencePanel = ({target}) => {
     };
     return (
         <div className={styles.evidence}>
-            <button
-                className={styles.secondary}
-                onClick={toggle}
-            >{open ? communityText('Hide reported copy') : communityText('View reported copy')}</button>
+            <Button onClick={toggle}>
+                {open ? communityText('Hide reported copy') : communityText('View reported copy')}
+            </Button>
             {open && state.status === 'loading' ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage compact />
             ) : null}
             {open && state.status === 'none' ? (
-                <p className={styles.status}>{communityText('No preserved copy for this report.')}</p>
+                <EmptyState compact icon={Eye} title={communityText('No preserved copy')}>
+                    {communityText('No copy of this project was kept for this report.')}
+                </EmptyState>
             ) : null}
             {open && state.status === 'ready' ? (
                 <EvidenceDetails data={state.data} />
@@ -1470,8 +1478,8 @@ const ExtensionManager = () => {
         try {
             const result = await api.admin.setExtensionPolicy(hash, status);
             setNote(result.affected ?
-                `Made ${result.affected} affected projects private and notified their owners.` :
-                'Extension policy updated.');
+                communityText('Made {value1} affected projects private and notified their owners.', {value1: result.affected}) :
+                communityText('Extension policy updated.'));
             setSource(null);
             setDialog(null);
             setData(current => ({
@@ -1497,9 +1505,9 @@ const ExtensionManager = () => {
                 kind: 'hash',
                 hash,
                 status,
-                title: 'Block extension?',
-                description: 'This makes every project using the extension private and notifies its owner.',
-                action: 'Block extension',
+                title: communityText('Block extension?'),
+                description: communityText('This makes every project using the extension private and notifies its owner.'),
+                action: communityText('Block extension'),
                 danger: true,
                 icon: Puzzle
             });
@@ -1519,8 +1527,8 @@ const ExtensionManager = () => {
         try {
             const result = await api.admin.setExtensionUrlPolicy(url, blocked);
             setNote(result.affected ?
-                `Made ${result.affected} affected projects private and notified their owners.` :
-                'URL policy updated.');
+                communityText('Made {value1} affected projects private and notified their owners.', {value1: result.affected}) :
+                communityText('URL policy updated.'));
             setBlockedUrl('');
             setDialog(null);
             setData(current => ({
@@ -1545,9 +1553,9 @@ const ExtensionManager = () => {
                 kind: 'url',
                 url,
                 blocked,
-                title: 'Block extension URL?',
-                description: 'This makes every project using the URL private and notifies its owner.',
-                action: 'Block URL',
+                title: communityText('Block extension URL?'),
+                description: communityText('This makes every project using the URL private and notifies its owner.'),
+                action: communityText('Block URL'),
                 danger: true,
                 icon: Puzzle
             });
@@ -1565,7 +1573,7 @@ const ExtensionManager = () => {
     const viewSource = async hash => {
         try {
             setError('');
-            setSource({hash, text: 'Loading…'});
+            setSource({hash, text: communityText('Loading…')});
             setSource({hash, text: await api.admin.extensionSource(hash)});
         } catch (e) {
             setSource(null);
@@ -1576,8 +1584,8 @@ const ExtensionManager = () => {
     if (!data) {
         return (
             <div>
-                <h2>{communityText('Extensions')}</h2>
-                <p className={error ? styles.error : styles.status}>{error || communityText('Loading…')}</p>
+                <SectionHeading icon={Puzzle} title={communityText('Extensions')} />
+                {error ? <StatusMessage error onRetry={load}>{error}</StatusMessage> : <StatusMessage />}
             </div>
         );
     }
@@ -1599,11 +1607,19 @@ const ExtensionManager = () => {
         ].some(value => typeof value === 'string' && value.toLowerCase().includes(search));
     });
     const tabs = [
-        {status: 'untrusted', label: 'To be verified'},
-        {status: 'ignored', label: 'Ignored'},
-        {status: 'trusted', label: 'Trusted'},
-        {status: 'blocked', label: 'Blocked'}
-    ];
+        {key: 'untrusted', label: communityText('To be verified')},
+        {key: 'ignored', label: communityText('Ignored')},
+        {key: 'trusted', label: communityText('Trusted')},
+        {key: 'blocked', label: communityText('Blocked')}
+    ].map(item => ({
+        key: item.key,
+        label: (
+            <React.Fragment>
+                {item.label}
+                <b>{allExtensions.filter(extension => extension.status === item.key).length}</b>
+            </React.Fragment>
+        )
+    }));
 
     return (
         <div>
@@ -1617,7 +1633,7 @@ const ExtensionManager = () => {
                 }}
                 onConfirm={confirmPolicy}
             />
-            <h2>{communityText('Extensions')}</h2>
+            <SectionHeading icon={Puzzle} title={communityText('Extensions')} />
             <input
                 type="search"
                 className={`${styles.input} ${styles.extensionSearch}`}
@@ -1626,19 +1642,13 @@ const ExtensionManager = () => {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
             />
-            <div className={styles.extensionTabs}>
-                {tabs.map(item => (
-                    <button
-                        key={item.status}
-                        className={tab === item.status ? styles.extensionTabActive : styles.extensionTab}
-                        onClick={() => setTab(item.status)}
-                    >
-                        {`${item.label} (${
-                            allExtensions.filter(extension => extension.status === item.status).length
-                        })`}
-                    </button>
-                ))}
-            </div>
+            <UnderlineTabs
+                className={styles.tabs}
+                items={tabs}
+                value={tab}
+                onChange={setTab}
+                ariaLabel="Extension status"
+            />
             <div className={styles.addAdmin}>
                 <input
                     className={styles.input}
@@ -1646,13 +1656,13 @@ const ExtensionManager = () => {
                     value={blockedUrl}
                     onChange={e => setBlockedUrl(e.target.value)}
                 />
-                <button
-                    className={styles.danger}
+                <Button
+                    variant="danger"
                     onClick={() => blockedUrl.trim() && setUrlPolicy(blockedUrl.trim(), true)}
-                >{communityText('Block URL')}</button>
+                >{communityText('Block URL')}</Button>
             </div>
-            {error ? <p className={styles.error}>{error}</p> : null}
-            {note ? <p className={styles.status}>{note}</p> : null}
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
+            {note ? <Notice variant="success" className={styles.notice}>{note}</Notice> : null}
             {extensions.length ? (
                 <div className={styles.list}>
                     {extensions.map(extension => (
@@ -1666,22 +1676,22 @@ const ExtensionManager = () => {
                                         <span className={styles.rowTitle}>{extension.metadata.name}</span>
                                     ) : null}
                                     {extension.metadata && extension.metadata.id ? (
-                                        <span className={styles.rowMeta}>{communityText("ID: {value1}", {value1: extension.metadata.id})}</span>
+                                        <span className={styles.rowMeta}>{communityText('ID: {value1}', {value1: extension.metadata.id})}</span>
                                     ) : null}
                                     {extension.metadata && extension.metadata.description ? (
                                         <span className={styles.rowMeta}>{extension.metadata.description}</span>
                                     ) : null}
                                     {extension.metadata && extension.metadata.author ? (
-                                        <span className={styles.rowMeta}>{communityText("By: {value1}", {value1: extension.metadata.author})}</span>
+                                        <span className={styles.rowMeta}>{communityText('By: {value1}', {value1: extension.metadata.author})}</span>
                                     ) : null}
                                     {extension.metadata && extension.metadata.license ? (
                                         <span className={styles.rowMeta}>
-                                            {communityText("License: {value1}", {value1: extension.metadata.license})}
+                                            {communityText('License: {value1}', {value1: extension.metadata.license})}
                                         </span>
                                     ) : null}
                                     <span className={styles.extensionHash}>{extension.hash}</span>
                                     <span className={styles.rowMeta}>
-                                        {communityText("Used in {value1} {value2}", {value1: extension.projectCount, value2: extension.projectCount === 1 ? 'project' : 'projects'})}
+                                        {communityText('Used in {value1, plural, one {# project} other {# projects}}', {value1: extension.projectCount})}
                                     </span>
                                     {extension.urls.map(url => (
                                         <span
@@ -1700,43 +1710,22 @@ const ExtensionManager = () => {
                                 </div>
                                 <div className={styles.rowActions}>
                                     {extension.sourceAvailable ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => viewSource(extension.hash)}
-                                        >{communityText('View source')}</button>
+                                        <Button onClick={() => viewSource(extension.hash)}>{communityText('View source')}</Button>
                                     ) : null}
                                     {!extension.gallery && tab !== 'trusted' ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setPolicy(extension.hash, 'trusted')}
-                                        >{communityText('Trust')}</button>
+                                        <Button onClick={() => setPolicy(extension.hash, 'trusted')}>{communityText('Trust')}</Button>
                                     ) : !extension.gallery ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
-                                        >{communityText('Untrust')}</button>
+                                        <Button onClick={() => setPolicy(extension.hash, 'untrusted')}>{communityText('Untrust')}</Button>
                                     ) : null}
                                     {tab === 'untrusted' ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setPolicy(extension.hash, 'ignored')}
-                                        >{communityText('Ignore')}</button>
+                                        <Button onClick={() => setPolicy(extension.hash, 'ignored')}>{communityText('Ignore')}</Button>
                                     ) : tab === 'ignored' ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
-                                        >{communityText('Review again')}</button>
+                                        <Button onClick={() => setPolicy(extension.hash, 'untrusted')}>{communityText('Review again')}</Button>
                                     ) : null}
                                     {!extension.gallery && tab !== 'blocked' ? (
-                                        <button
-                                            className={styles.danger}
-                                            onClick={() => setPolicy(extension.hash, 'blocked')}
-                                        >{communityText('Block hash')}</button>
+                                        <Button variant="danger" onClick={() => setPolicy(extension.hash, 'blocked')}>{communityText('Block hash')}</Button>
                                     ) : !extension.gallery ? (
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setPolicy(extension.hash, 'untrusted')}
-                                        >{communityText('Unblock')}</button>
+                                        <Button onClick={() => setPolicy(extension.hash, 'untrusted')}>{communityText('Unblock')}</Button>
                                     ) : null}
                                 </div>
                             </div>
@@ -1747,11 +1736,11 @@ const ExtensionManager = () => {
                     ))}
                 </div>
             ) : (
-                <p className={styles.status}>
+                <EmptyState compact icon={Puzzle} title={communityText('No extensions')}>
                     {search ?
                         communityText('No matching extensions.') :
-                        (tab === 'untrusted' ? communityText('No extensions to verify.') : communityText("No {value1} extension hashes.", {value1: tab}))}
-                </p>
+                        (tab === 'untrusted' ? communityText('No extensions to verify.') : communityText('No {value1} extension hashes.', {value1: tab}))}
+                </EmptyState>
             )}
             {tab === 'blocked' && data.blockedUrls && data.blockedUrls.length ? (
                 <div className={styles.list}>
@@ -1761,10 +1750,7 @@ const ExtensionManager = () => {
                             className={styles.row}
                         >
                             <span className={styles.extensionUrl}>{url}</span>
-                            <button
-                                className={styles.secondary}
-                                onClick={() => setUrlPolicy(url, false)}
-                            >{communityText('Unblock URL')}</button>
+                            <Button onClick={() => setUrlPolicy(url, false)}>{communityText('Unblock URL')}</Button>
                         </div>
                     ))}
                 </div>
@@ -1899,8 +1885,8 @@ export const ErrorManager = () => {
     if (!data) {
         return (
             <div>
-                <h2>{communityText('Errors')}</h2>
-                <p className={error ? styles.error : styles.status}>{error || communityText('Loading…')}</p>
+                <SectionHeading icon={AlertTriangle} title={communityText('Errors')} />
+                {error ? <StatusMessage error onRetry={() => load(show)}>{error}</StatusMessage> : <StatusMessage />}
             </div>
         );
     }
@@ -1923,7 +1909,7 @@ export const ErrorManager = () => {
 
     return (
         <div>
-            <h2>{communityText('Errors')}</h2>
+            <SectionHeading icon={AlertTriangle} title={communityText('Errors')} />
             <AdminActionDialog
                 dialog={confirmDeleteAll ? {
                     title: communityText('Delete all errors?'),
@@ -1939,17 +1925,17 @@ export const ErrorManager = () => {
                 onConfirm={removeAll}
             />
             <div className={styles.errorActions}>
-                <button className={styles.secondary} disabled={!responseJson || Boolean(busy)} onClick={copyResponse}>
+                <Button disabled={!responseJson || Boolean(busy)} onClick={copyResponse}>
                     {copied ? communityText('Copied JSON') : communityText('Copy response JSON')}
-                </button>
-                <button
-                    className={styles.danger}
+                </Button>
+                <Button
+                    variant="danger"
                     disabled={Boolean(busy)}
                     onClick={() => {
                         setError('');
                         setConfirmDeleteAll(true);
                     }}
-                >{communityText('Delete all errors')}</button>
+                >{communityText('Delete all errors')}</Button>
             </div>
             <input
                 type="search"
@@ -1959,24 +1945,22 @@ export const ErrorManager = () => {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
             />
-            <div className={styles.extensionTabs}>
-                {[
-                    {value: 'open', label: `Open (${data.openCount || 0})`},
-                    {value: 'resolved', label: 'Resolved'},
-                    {value: 'all', label: 'All'}
-                ].map(item => (
-                    <button
-                        key={item.value}
-                        className={show === item.value ? styles.extensionTabActive : styles.extensionTab}
-                        disabled={Boolean(busy)}
-                        onClick={() => {
-                            setShow(item.value);
-                            setExpanded(null);
-                        }}
-                    >{item.label}</button>
-                ))}
-            </div>
-            {error ? <p className={styles.error}>{error}</p> : null}
+            <UnderlineTabs
+                className={styles.tabs}
+                items={[
+                    {key: 'open', label: <React.Fragment>{communityText('Open')}<b>{data.openCount || 0}</b></React.Fragment>},
+                    {key: 'resolved', label: 'Resolved'},
+                    {key: 'all', label: 'All'}
+                ]}
+                value={show}
+                onChange={value => {
+                    if (busy) return;
+                    setShow(value);
+                    setExpanded(null);
+                }}
+                ariaLabel="Error status"
+            />
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
             {errors.length ? (
                 <div className={styles.list}>
                     {errors.map(item => {
@@ -1998,28 +1982,15 @@ export const ErrorManager = () => {
                                         ) : null}
                                     </div>
                                     <div className={styles.rowActions}>
-                                        <button
-                                            className={styles.secondary}
-                                            onClick={() => setExpanded(isOpen ? null : id)}
-                                        >{isOpen ? communityText('Hide trace') : communityText('View trace')}</button>
+                                        <Button onClick={() => setExpanded(isOpen ? null : id)}>
+                                            {isOpen ? communityText('Hide trace') : communityText('View trace')}
+                                        </Button>
                                         {item.resolved ? (
-                                            <button
-                                                className={styles.secondary}
-                                                disabled={Boolean(busy)}
-                                                onClick={() => setResolved(id, false)}
-                                            >{communityText('Reopen')}</button>
+                                            <Button disabled={Boolean(busy)} onClick={() => setResolved(id, false)}>{communityText('Reopen')}</Button>
                                         ) : (
-                                            <button
-                                                className={styles.secondary}
-                                                disabled={Boolean(busy)}
-                                                onClick={() => setResolved(id, true)}
-                                            >{communityText('Resolve')}</button>
+                                            <Button disabled={Boolean(busy)} onClick={() => setResolved(id, true)}>{communityText('Resolve')}</Button>
                                         )}
-                                        <button
-                                            className={styles.danger}
-                                            disabled={Boolean(busy)}
-                                            onClick={() => remove(id)}
-                                        >{communityText('Delete')}</button>
+                                        <Button variant="danger" disabled={Boolean(busy)} onClick={() => remove(id)}>{communityText('Delete')}</Button>
                                     </div>
                                 </div>
                                 {isOpen ? (
@@ -2050,9 +2021,9 @@ export const ErrorManager = () => {
                     })}
                 </div>
             ) : (
-                <p className={styles.status}>
+                <EmptyState compact icon={AlertTriangle} title={communityText('No errors')}>
                     {search ? communityText('No matching errors.') : communityText('No errors here.')}
-                </p>
+                </EmptyState>
             )}
         </div>
     );
@@ -2120,10 +2091,10 @@ const Admin = () => {
         setDialog({
             kind: 'support-reply',
             report,
-            title: `Reply to @${report.reporter}`,
-            description: 'The reply is sent as a private moderation message. Sending it closes the support request.',
-            action: 'Send and close',
-            fields: [{key: 'message', label: 'Message', value: '', multiline: true, maxLength: 2000}],
+            title: communityText('Reply to @{value1}', {value1: report.reporter}),
+            description: communityText('The reply is sent as a private moderation message. Sending it closes the support request.'),
+            action: communityText('Send and close'),
+            fields: [{key: 'message', label: communityText('Message'), value: '', multiline: true, maxLength: 2000}],
             icon: Flag
         });
     };
@@ -2133,24 +2104,24 @@ const Admin = () => {
         setDialog({
             kind: 'warn-report',
             report,
-            title: 'Warn user?',
-            description: 'The user will see this reason in their moderation notice.',
-            action: 'Send warning',
-            fields: [{key: 'reason', label: 'Reason', value: '', multiline: true, maxLength: 1000}],
+            title: communityText('Warn user?'),
+            description: communityText('The user will see this reason in their moderation notice.'),
+            action: communityText('Send warning'),
+            fields: [{key: 'reason', label: communityText('Reason'), value: '', multiline: true, maxLength: 1000}],
             icon: AlertTriangle
         });
     };
 
     const banFromReport = report => {
-        const who = report.type === 'project' ? 'the owner of this project' :
+        const who = report.type === 'project' ? communityText('the owner of this project') :
             `@${report.targetUser || report.target}`;
         setDialogError('');
         setDialog({
             kind: 'ban-report',
             report,
-            title: `Ban ${who}?`,
-            description: 'They will be locked out of MistWarp until an admin unbans them.',
-            action: 'Ban user',
+            title: communityText('Ban {value1}?', {value1: who}),
+            description: communityText('They will be locked out of MistWarp until an admin unbans them.'),
+            action: communityText('Ban user'),
             danger: true,
             icon: Ban
         });
@@ -2160,13 +2131,13 @@ const Admin = () => {
         setDialogError('');
         setDialog({
             kind: 'ban-user',
-            title: 'Ban user',
-            description: 'The user will be locked out of MistWarp until an admin unbans them.',
-            action: 'Ban user',
+            title: communityText('Ban user'),
+            description: communityText('The user will be locked out of MistWarp until an admin unbans them.'),
+            action: communityText('Ban user'),
             danger: true,
             fields: [
-                {key: 'username', label: 'Username', value: '', maxLength: 80},
-                {key: 'reason', label: 'Reason', value: '', multiline: true, maxLength: 1000}
+                {key: 'username', label: communityText('Username'), value: '', maxLength: 80},
+                {key: 'reason', label: communityText('Reason'), value: '', multiline: true, maxLength: 1000}
             ],
             icon: Ban
         });
@@ -2186,15 +2157,15 @@ const Admin = () => {
         if (actionLocks.current.has(actionKey)) return;
         const values = Object.fromEntries((dialog.fields || []).map(field => [field.key, field.value.trim()]));
         if (dialog.kind === 'support-reply' && !values.message) {
-            setDialogError('Enter a reply.');
+            setDialogError(communityText('Enter a reply.'));
             return;
         }
         if (dialog.kind === 'warn-report' && !values.reason) {
-            setDialogError('Enter a warning reason.');
+            setDialogError(communityText('Enter a warning reason.'));
             return;
         }
         if (dialog.kind === 'ban-user' && !values.username) {
-            setDialogError('Enter a username.');
+            setDialogError(communityText('Enter a username.'));
             return;
         }
         actionLocks.current.add(actionKey);
@@ -2258,10 +2229,16 @@ const Admin = () => {
     };
 
     if (loading) {
-        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
+        return <main className={styles.page}><StatusMessage /></main>;
     }
     if (!user || !user.isAdmin) {
-        return <main className={styles.page}><p className={styles.status}>{communityText('This page is for admins.')}</p></main>;
+        return (
+            <main className={styles.page}>
+                <EmptyState icon={ShieldCheck} title={communityText('Admins only')}>
+                    {communityText('This page is for admins.')}
+                </EmptyState>
+            </main>
+        );
     }
 
     const openCount = reports ? reports.length : 0;
@@ -2284,8 +2261,8 @@ const Admin = () => {
                 }}
                 onConfirm={confirmDialog}
             />
-            <h1>{communityText('Admin')}</h1>
-            {error ? <p className={styles.error}>{error}</p> : null}
+            <PageHeader icon={ShieldCheck} title={communityText('Admin')} />
+            {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
 
             <div className={styles.layout}>
                 <Sidebar
@@ -2304,9 +2281,9 @@ const Admin = () => {
 
                     {active === 'reports' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Open reports')}</h2>
+                            <SectionHeading icon={Flag} title={communityText('Open reports')} count={openCount} />
                             {reports === null ? (
-                                <p className={styles.status}>{communityText('Loading…')}</p>
+                                <StatusMessage />
                             ) : reports.length ? (
                                 <div className={styles.list}>
                                     {reports.map(report => (
@@ -2316,16 +2293,16 @@ const Admin = () => {
                                         >
                                             <div className={styles.rowInfo}>
                                                 <span className={styles.rowTitle}>
-                                                    {report.type === 'support' ? communityText("{value1} request from @{value2}", {value1: report.supportType || 'Support', value2: report.reporter}) : report.type === 'project' ? (
+                                                    {report.type === 'support' ? communityText('{value1} request from @{value2}', {value1: report.supportType || 'Support', value2: report.reporter}) : report.type === 'project' ? (
                                                         <Link
                                                             to={projectUrl(report.target)}
-                                                        >{communityText("Project {value1}", {value1: report.target})}</Link>
+                                                        >{communityText('Project {value1}', {value1: report.target})}</Link>
                                                     ) : report.type === 'user' ? (
                                                         <Link
                                                             to={`/users/${report.target}`}
                                                         >{`@${report.target}`}</Link>
                                                     ) : report.type === 'bounty' ? (
-                                                        <Link to={`/bounties/${report.target}`}>{communityText("Bounty {value1}", {value1: report.target})}</Link>
+                                                        <Link to={`/bounties/${report.target}`}>{communityText('Bounty {value1}', {value1: report.target})}</Link>
                                                     ) : report.type === 'comment' && report.context ? (
                                                         (() => {
                                                             const ctx = report.context;
@@ -2335,7 +2312,7 @@ const Admin = () => {
                                                                 return (
                                                                     <Link
                                                                         to={`${projectUrl(pid)}#comment-id-${target}`}
-                                                                    >{communityText("Comment {value1}", {value1: target})}</Link>
+                                                                    >{communityText('Comment {value1}', {value1: target})}</Link>
                                                                 );
                                                             }
                                                             if (ctx.startsWith('profile ')) {
@@ -2343,18 +2320,18 @@ const Admin = () => {
                                                                 return (
                                                                     <Link
                                                                         to={`/users/${uname}#comment-id-${target}`}
-                                                                    >{communityText("Comment {value1}", {value1: target})}</Link>
+                                                                    >{communityText('Comment {value1}', {value1: target})}</Link>
                                                                 );
                                                             }
                                                             return `Comment ${target}`;
                                                         })()
                                                     ) : (
-                                                        communityText("Comment {value1}", {value1: report.target})
+                                                        communityText('Comment {value1}', {value1: report.target})
                                                     )}
                                                 </span>
                                                 <span className={styles.rowMeta}>
-                                                    {communityText("Reported by @{value1}{value2}", {value1: report.reporter, value2: timeAgo(report.created) ? ` · ${timeAgo(report.created)} ago` : ''})}
-                                                    {report.type !== 'support' && report.context ? communityText(" · in {value1}", {value1: report.context}) : ''}
+                                                    {communityText('Reported by @{value1}{value2}', {value1: report.reporter, value2: timeAgo(report.created) ? ` · ${timeAgo(report.created)} ago` : ''})}
+                                                    {report.type !== 'support' && report.context ? communityText(' · in {value1}', {value1: report.context}) : ''}
                                                 </span>
                                                 <span className={styles.reason}>{report.reason}</span>
                                                 {report.type === 'support' && report.context ? <span className={styles.reason}>{report.context}</span> : null}
@@ -2363,31 +2340,31 @@ const Admin = () => {
                                                 ) : null}
                                             </div>
                                             <div className={styles.rowActions}>
-                                                {report.type === 'support' ? <button className={styles.secondary} onClick={() => replyToSupport(report)}>{communityText('Reply and close')}</button> : null}
-                                                {report.type === 'project' ? (
-                                                    <button
-                                                        className={styles.secondary}
-                                                        onClick={() => act(report.id, 'unshare_project')}
-                                                    >{communityText('Unshare')}</button>
+                                                {report.type === 'support' ? (
+                                                    <Button onClick={() => replyToSupport(report)}>{communityText('Reply and close')}</Button>
                                                 ) : null}
-                                                {report.type !== 'support' ? <button
-                                                    className={styles.secondary}
-                                                    onClick={() => warnFromReport(report)}
-                                                >{report.type === 'project' ? communityText('Warn owner') : communityText('Warn user')}</button> : null}
-                                                {report.type !== 'support' ? <button
-                                                    className={styles.danger}
-                                                    onClick={() => banFromReport(report)}
-                                                >{report.type === 'project' ? communityText('Ban owner') : communityText('Ban user')}</button> : null}
-                                                <button
-                                                    className={styles.secondary}
-                                                    onClick={() => act(report.id, 'dismiss')}
-                                                >{communityText('Dismiss')}</button>
+                                                {report.type === 'project' ? (
+                                                    <Button onClick={() => act(report.id, 'unshare_project')}>{communityText('Unshare')}</Button>
+                                                ) : null}
+                                                {report.type !== 'support' ? (
+                                                    <Button onClick={() => warnFromReport(report)}>
+                                                        {report.type === 'project' ? communityText('Warn owner') : communityText('Warn user')}
+                                                    </Button>
+                                                ) : null}
+                                                {report.type !== 'support' ? (
+                                                    <Button variant="danger" onClick={() => banFromReport(report)}>
+                                                        {report.type === 'project' ? communityText('Ban owner') : communityText('Ban user')}
+                                                    </Button>
+                                                ) : null}
+                                                <Button onClick={() => act(report.id, 'dismiss')}>{communityText('Dismiss')}</Button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className={styles.status}>{communityText('No open reports.')}</p>
+                                <EmptyState compact icon={Flag} title={communityText('No open reports')}>
+                                    {communityText('The moderation queue is clear.')}
+                                </EmptyState>
                             )}
                         </section>
                     ) : null}
@@ -2418,11 +2395,11 @@ const Admin = () => {
 
                     {active === 'bans' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Bans')}</h2>
-                            <button
-                                className={styles.secondary}
-                                onClick={banByName}
-                            >{communityText('Ban a user…')}</button>
+                            <SectionHeading
+                                icon={Ban}
+                                title={communityText('Bans')}
+                                actions={<Button onClick={banByName}>{communityText('Ban a user…')}</Button>}
+                            />
                             {bans.length ? (
                                 <div className={styles.list}>
                                     {bans.map(ban => (
@@ -2437,39 +2414,35 @@ const Admin = () => {
                                             <div className={styles.rowInfo}>
                                                 <span className={styles.rowTitle}>{`@${ban.username}`}</span>
                                                 <span className={styles.rowMeta}>
-                                                    {communityText("Banned by @{value1}{value2}", {value1: ban.by, value2: timeAgo(ban.created) ? ` · ${timeAgo(ban.created)} ago` : ''})}
+                                                    {communityText('Banned by @{value1}{value2}', {value1: ban.by, value2: timeAgo(ban.created) ? ` · ${timeAgo(ban.created)} ago` : ''})}
                                                     {ban.reason ? ` · ${ban.reason}` : ''}
                                                 </span>
                                             </div>
                                             <div className={styles.rowActions}>
-                                                <button
-                                                    className={styles.secondary}
-                                                    onClick={() => unban(ban.username)}
-                                                >{communityText('Unban')}</button>
+                                                <Button onClick={() => unban(ban.username)}>{communityText('Unban')}</Button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className={styles.status}>{communityText('Nobody is banned.')}</p>
+                                <EmptyState compact icon={Ban} title={communityText('No banned users')}>
+                                    {communityText('Nobody is banned.')}
+                                </EmptyState>
                             )}
                         </section>
                     ) : null}
 
                     {active === 'admins' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Admins')}</h2>
+                            <SectionHeading icon={ShieldCheck} title={communityText('Admins')} />
                             <div className={styles.addAdmin}>
                                 <input
                                     className={styles.input}
-                                    placeholder={communityText('username')}
+                                    placeholder={communityText('Username')}
                                     value={newAdmin}
                                     onChange={e => setNewAdmin(e.target.value)}
                                 />
-                                <button
-                                    className={styles.secondary}
-                                    onClick={addAdmin}
-                                >{communityText('Add admin')}</button>
+                                <Button onClick={addAdmin}>{communityText('Add admin')}</Button>
                             </div>
                             <div className={styles.list}>
                                 {admins.map(admin => (
@@ -2489,10 +2462,7 @@ const Admin = () => {
                                         </div>
                                         <div className={styles.rowActions}>
                                             {admin.super ? null : (
-                                                <button
-                                                    className={styles.secondary}
-                                                    onClick={() => removeAdmin(admin.username)}
-                                                >{communityText('Remove')}</button>
+                                                <Button onClick={() => removeAdmin(admin.username)}>{communityText('Remove')}</Button>
                                             )}
                                         </div>
                                     </div>

@@ -4,56 +4,11 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 18px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
-.header,
-.files,
-.rootCommit {
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-}
-
-.header {
-    padding: 18px;
-}
-
-/* Spacing around the shared UnderlineTabs; tab visuals live there. */
-.views {
-    margin: 18px 0;
-}
-
-.title,
 .meta {
     display: flex;
     align-items: center;
-    gap: 9px;
-}
-
-.title h1 {
-    margin: 0;
-    color: var(--mw-text);
-    font-size: var(--fs-2xl);
-}
-
-.manageButton {
-    min-height: 32px;
-    margin-inline-start: auto;
-    padding: 6px 10px;
-    font-size: var(--fs-xs);
-}
-
-.meta {
     flex-wrap: wrap;
-    margin-top: 13px;
+    gap: 9px;
     color: var(--text-dim);
     font-size: var(--fs-xs);
 }
@@ -75,79 +30,12 @@
     align-items: start;
 }
 
-.files {
-    position: sticky;
-    top: 18px;
-    display: grid;
-    max-height: calc(100vh - 40px);
-    overflow: auto;
-}
-
-.files label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin: 10px;
-    padding: 0 9px;
-    border: 1px solid var(--border);
-    background: var(--bg-field);
-    border-radius: var(--radius-xs);
-    color: var(--text-faint);
-}
-
-.files input {
-    width: 100%;
-    min-width: 0;
-    height: 36px;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: var(--mw-text);
-    font: inherit;
-    font-size: var(--fs-sm);
-}
-
-.files button {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-    padding: 9px 11px;
-    overflow: hidden;
-    border: 0;
-    border-top: 1px solid var(--border-soft);
-    background: transparent;
-    color: var(--text-dim);
-    font: inherit;
-    font-size: var(--fs-xs);
-    text-align: start;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.files button span {
-    margin-inline-start: auto;
-}
-
-.files .active {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
 .diff {
     min-width: 0;
 }
 
 .diff > div {
     margin-top: 0;
-}
-
-.rootCommit,
-.state {
-    margin-top: 20px;
-    padding: 28px;
-    color: var(--text-dim);
-    text-align: center;
 }
 
 .loadingCard {
@@ -236,8 +124,7 @@
     border-color: var(--accent);
 }
 
-.noCoAuthors,
-.manageError {
+.noCoAuthors {
     margin: 0;
     font-size: var(--fs-xs);
     line-height: 1.45;
@@ -306,18 +193,13 @@
     gap: 8px;
 }
 
-.manageError {
-    color: var(--mw-danger);
+.manageNotice {
+    margin-top: 12px;
 }
 
 @media (max-width: 860px) {
     .layout {
         grid-template-columns: 1fr;
-    }
-
-    .files {
-        position: static;
-        max-height: 260px;
     }
 }
 
@@ -330,18 +212,6 @@
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    .title {
-        flex-wrap: wrap;
-    }
-
-    .title h1 {
-        flex: 1 1 calc(100% - 32px);
-    }
-
-    .manageButton {
-        margin-inline-start: 29px;
     }
 
     .addCollaborator {

@@ -1,3 +1,5 @@
+@import "../../css/z-index.css";
+
 .extras {
     display: flex;
     align-items: center;
@@ -117,7 +119,7 @@
     border-radius: 12px;
     padding: 6px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
-    z-index: 10000;
+    z-index: $z-index-toast;
     opacity: 0;
     transform: translateY(10px) scale(0.96);
     transition: opacity 0.25s ease, transform 0.25s ease;

@@ -15,6 +15,9 @@
 }
 
 .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: var(--accent-strong);
     font-weight: 700;
     border: none;

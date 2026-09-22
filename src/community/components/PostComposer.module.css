@@ -89,7 +89,6 @@
     position: relative;
     min-height: 80px;
     overflow: hidden;
-    border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
     background: var(--bg-field);
 }
@@ -159,10 +158,16 @@
 .schedule input {
     min-width: 0;
     padding: 8px 10px;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: var(--radius-xs);
     background: var(--bg-field);
     color: var(--mw-text);
+}
+
+.pollEditor input:focus,
+.schedule input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .schedule {
@@ -174,10 +179,8 @@
     font-size: var(--fs-xs);
 }
 
-.error {
-    margin: 8px 0 0;
-    color: var(--mw-danger);
-    font-size: var(--fs-sm);
+.message {
+    margin-top: 8px;
 }
 
 @media (max-width: 680px) {

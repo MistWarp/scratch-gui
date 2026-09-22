@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {ArrowLeft, CalendarDays, Library, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
+import {CalendarDays, Library, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -11,6 +11,12 @@ import CommentThread from '../components/CommentThread.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import Button from '../components/ui/Button.jsx';
+import CardGrid from '../components/ui/CardGrid.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import Challenge from './Challenge.jsx';
 import Collection from './Collection.jsx';
@@ -19,7 +25,6 @@ import useLatest from '../use-latest.js';
 import {formatDate, safeDate} from '../format.js';
 import styles from './Spaces.module.css';
 
-const KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
 const spaceLoadMessage = error => {
     if (error && error.status === 404) return 'Space not found.';
     return 'Could not load this space.';
@@ -113,7 +118,7 @@ const Space = () => {
             else await api.followSpace(id);
             await load();
         } catch (e) {
-            setError(e.message || 'Could not update follow status.');
+            setError(e.message || communityText('Could not update follow status.'));
         }
     };
 
@@ -123,7 +128,7 @@ const Space = () => {
             await api.respondSpaceInvitation(id, accepted);
             await load();
         } catch (e) {
-            setError(e.message || 'Could not respond to the invitation.');
+            setError(e.message || communityText('Could not respond to the invitation.'));
         }
     };
 
@@ -142,28 +147,24 @@ const Space = () => {
                 myReaction: data.myReaction
             }));
         } catch (e) {
-            setError(e.message || 'Could not rate this space.');
+            setError(e.message || communityText('Could not rate this space.'));
         }
     };
 
     if (failed && failedLoadContext === loadContext) {
         return (
             <main className={styles.page}>
-                <p className={styles.status}>
-                    {failed}{' '}
-                    {failed !== 'Space not found.' ? (
-                        <Button
-                            onClick={() => {
-                                setFailed('');
-                                load().catch(() => {});
-                            }}
-                        >{communityText('Try again')}</Button>
-                    ) : null}
-                </p>
+                <StatusMessage
+                    error
+                    onRetry={failed === 'Space not found.' ? null : () => {
+                        setFailed('');
+                        load().catch(() => {});
+                    }}
+                >{communityText(failed)}</StatusMessage>
             </main>
         );
     }
-    if (!space || spaceLoadContext !== loadContext) return <main className={styles.page}><p className={styles.status}>{communityText('Loading space…')}</p></main>;
+    if (!space || spaceLoadContext !== loadContext) return <main className={styles.page}><StatusMessage>{communityText('Loading space…')}</StatusMessage></main>;
     if (space.kind === 'challenge') return <Challenge id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'studio') return <Studio id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'collection') return <Collection id={id} space={space} user={user} login={login} load={load} />;
@@ -174,34 +175,42 @@ const Space = () => {
 
     return (
         <main className={`${styles.page} ${styles.spacePage}`}>
-            <Link to="/spaces" className={styles.back}><ArrowLeft size={15} />{communityText(' All spaces')}</Link>
+            <PageHeader
+                backTo="/spaces"
+                backLabel={communityText('All spaces')}
+                icon={Library}
+                title={space.title}
+                lead={space.description || communityText('No description yet.')}
+                actions={(
+                    <React.Fragment>
+                        <Button variant={space.following ? 'secondary' : 'primary'} onClick={follow}>
+                            {space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}
+                            {space.following ? communityText('Following') : communityText('Follow')}
+                        </Button>
+                        {space.canManage ? <Button as={Link} to={`/spaces/${id}/manage`}><Settings size={16} />{communityText('Manage space')}</Button> : null}
+                    </React.Fragment>
+                )}
+            >
+                <div className={styles.spaceOwner}>
+                    <Avatar username={space.owner} size={30} />
+                    <span>{communityText('Created by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
+                </div>
+            </PageHeader>
             {space.invited ? (
-                <section className={styles.inviteBanner}>
-                    <div><Users size={20} /><span><strong>{communityText('You have been invited to curate this ')}{KIND_LABELS[space.kind].toLowerCase()}.</strong>{communityText(' Curators can add and remove projects and update its details.')}</span></div>
-                    <div className={styles.actions}>
-                        <Button onClick={() => respondToInvite(true)}>{communityText('Accept invitation')}</Button>
-                        <Button variant="secondary" onClick={() => respondToInvite(false)}>{communityText('Decline')}</Button>
-                    </div>
-                </section>
+                <Notice
+                    icon={Users}
+                    title={communityText('You have been invited to curate this space.')}
+                    action={(
+                        <React.Fragment>
+                            <Button variant="primary" onClick={() => respondToInvite(true)}>{communityText('Accept invitation')}</Button>
+                            <Button variant="secondary" onClick={() => respondToInvite(false)}>{communityText('Decline')}</Button>
+                        </React.Fragment>
+                    )}
+                >
+                    {communityText('Curators can add and remove projects and update its details.')}
+                </Notice>
             ) : null}
-            <header className={styles.spaceHero}>
-                <div className={styles.spaceHeroMain}>
-                    <h1>{space.title}</h1>
-                    <p>{space.description || communityText('No description yet.')}</p>
-                    <div className={styles.spaceOwner}>
-                        <Avatar username={space.owner} size={30} />
-                        <span>{KIND_LABELS[space.kind] || communityText('Space')}{communityText(' created by ')}<Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
-                    </div>
-                </div>
-                <div className={styles.spaceHeroActions}>
-                    <Button variant={space.following ? 'secondary' : 'primary'} onClick={follow}>
-                        {space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}
-                        {space.following ? communityText('Following') : communityText('Follow')}
-                    </Button>
-                    {space.canManage ? <Link to={`/spaces/${id}/manage`} className={styles.manageLink}><Settings size={16} />{communityText(' Manage space')}</Link> : null}
-                </div>
-            </header>
-            {error ? <p className={styles.error}>{error}</p> : null}
+            {error ? <Notice variant="error">{error}</Notice> : null}
 
             <div className={styles.spaceReactions}>
                 <ReactionButtons
@@ -210,23 +219,25 @@ const Space = () => {
                     activeReaction={space.myReaction || ''}
                     onReact={react}
                 />
-                <a href="#space-comments"><MessageCircle size={16} /><span>{space.commentCount || 0}</span>{communityText(' comments')}</a>
+                <a href="#space-comments"><MessageCircle size={16} />{communityText('{count} comments', {count: space.commentCount || 0})}</a>
             </div>
 
             <section className={styles.spaceOverview}>
-                <div><strong>{space.projects.length}</strong><span>{space.projects.length === 1 ? communityText('project') : communityText('projects')}</span></div>
-                <div><strong>{space.followerCount}</strong><span>{space.followerCount === 1 ? communityText('follower') : communityText('followers')}</span></div>
-                <div><strong>{curators.length + 1}</strong><span>{curators.length ? communityText('team members') : communityText('team member')}</span></div>
+                <div><strong>{space.projects.length}</strong><span>{communityText('{count, plural, one {project} other {projects}}', {count: space.projects.length})}</span></div>
+                <div><strong>{space.followerCount}</strong><span>{communityText('{count, plural, one {follower} other {followers}}', {count: space.followerCount})}</span></div>
+                <div><strong>{curators.length + 1}</strong><span>{communityText('{count, plural, one {team member} other {team members}}', {count: curators.length + 1})}</span></div>
                 {space.kind === 'challenge' && deadline ? (
-                    <div><CalendarDays size={18} /><span>{communityText('Ends ')}{formatDate(deadline)}</span></div>
+                    <div><CalendarDays size={18} /><span>{communityText('Ends {date}', {date: formatDate(deadline)})}</span></div>
                 ) : null}
             </section>
 
             <section className={styles.curatorStrip}>
-                <div>
-                    <h2>{communityText('Curated by')}</h2>
-                    <p>{communityText('The people who choose and organise projects in this space.')}</p>
-                </div>
+                <SectionHeading
+                    icon={Users}
+                    title={communityText('Curated by')}
+                    lead={communityText('The people who choose and organise projects in this space.')}
+                    className={styles.curatorHeading}
+                />
                 <div className={styles.curatorFaces}>
                     {[space.owner, ...curators].map(name => (
                         <Link key={name} to={`/users/${name}`} title={name}><Avatar username={name} size={34} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>
@@ -234,15 +245,23 @@ const Space = () => {
                 </div>
             </section>
 
-            <section className={styles.spaceProjects}>
-                <header>
-                    <div><h2>{communityText('Projects')}</h2><p>{space.openSubmissions ? communityText('This space is open for project submissions.') : communityText('Curators choose the projects shown here.')}</p></div>
-                    {canAdd ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
-                </header>
-                {space.projects.length ? <div className={styles.projectGrid}>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <div className={styles.emptyProjects}><Library size={28} /><strong>{communityText('No projects yet')}</strong><span>{canAdd ? communityText('Add the first project to get this space started.') : communityText('The curators have not added anything yet.')}</span></div>}
+            <section>
+                <SectionHeading
+                    icon={Library}
+                    title={communityText('Projects')}
+                    lead={space.openSubmissions ? communityText('This space is open for project submissions.') : communityText('Curators choose the projects shown here.')}
+                    actions={canAdd ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
+                />
+                {space.projects.length ? (
+                    <CardGrid>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid>
+                ) : (
+                    <EmptyState icon={Library} title={communityText('No projects yet')}>
+                        {canAdd ? communityText('Add the first project to get this space started.') : communityText('The curators have not added anything yet.')}
+                    </EmptyState>
+                )}
             </section>
             <section id="space-comments" className={styles.spaceComments}>
-                <header><h2>{communityText('Comments')}</h2><p>{communityText('Talk about this space and reply to other people.')}</p></header>
+                <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk about this space and reply to other people.')} />
                 <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`${space.kind} ${space.title}`} />
             </section>
         </main>

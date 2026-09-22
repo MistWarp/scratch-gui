@@ -7,15 +7,16 @@ import {CellMeasurer, CellMeasurerCache} from 'react-virtualized/dist/commonjs/C
 import List from 'react-virtualized/dist/commonjs/List';
 import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
 import {Link} from 'react-router-dom';
-import {ExternalLink, Heart, MessageCircle, Pin, Trash2} from 'lucide-react';
+import {ExternalLink, Heart, MessageCircle, MessageSquare, Pin, Trash2} from 'lucide-react';
 import api from '../api.js';
 import rotur from '../rotur';
 import {timeAgo} from '../format';
 import Avatar from './Avatar.jsx';
-import Button from './ui/Button.jsx';
+import ConfirmModal from './ui/ConfirmModal.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
 import RichText from './RichText.jsx';
 import GroupTag from './GroupTag.jsx';
-import Modal from './ui/Modal.jsx';
 import PostAttachment from './PostAttachment.jsx';
 import PostComposer from './PostComposer.jsx';
 import UserLink from './UserLink.jsx';
@@ -103,11 +104,15 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
             onChange(posts.filter(post => post.id !== id));
             setConfirmingDelete('');
         } catch (cause) {
-            setError(cause.message || 'Could not delete this post.');
+            setError(cause.message || communityText('Could not delete this post.'));
         } finally {
             deleteInFlight.current.delete(id);
             setDeleting('');
         }
+    };
+    const cancelDelete = () => {
+        setConfirmingDelete('');
+        setError('');
     };
 
     const sorted = sortProfilePosts(posts);
@@ -132,7 +137,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
             api.checkPostMilestones(post.id).catch(() => {});
         } catch (cause) {
             onChange(posts);
-            setError(cause.message || 'Could not update this post.');
+            setError(cause.message || communityText('Could not update this post.'));
         } finally {
             setLiking('');
         }
@@ -155,7 +160,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                         <UserLink username={post.user || username}><strong>{post.user || username}</strong></UserLink>
                         <GroupTag username={post.user || username} compact />
                         {post.pinned ? (
-                            <span className={styles.pinned}><Pin size={11} />{communityText(' Pinned')}</span>
+                            <span className={styles.pinned}><Pin size={11} />{communityText('Pinned')}</span>
                         ) : null}
                         {when ? (
                             <time
@@ -194,10 +199,10 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                         >
                             <Heart size={15} fill={liked ? 'currentColor' : 'none'} /> {postMetricCount(post.likes)}
                         </button>
-                        <span aria-label={communityText("{value1} replies", {value1: postMetricCount(post.replies)})}>
+                        <span aria-label={communityText('{value1} replies', {value1: postMetricCount(post.replies)})}>
                             <MessageCircle size={15} /> {postMetricCount(post.replies)}
                         </span>
-                        <Link to={pouncePostUrl(post.id)}>{communityText('Open post ')}<ExternalLink size={13} /></Link>
+                        <Link to={pouncePostUrl(post.id)}>{communityText('Open post')}<ExternalLink size={13} /></Link>
                     </footer>
                 </div>
             </article>
@@ -206,35 +211,19 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
     return (
         <div className={styles.posts}>
             {confirmingDelete ? (
-                <Modal
+                <ConfirmModal
+                    destructive
                     icon={Trash2}
                     title={communityText('Delete profile post?')}
-                    dismissDisabled={deleting === confirmingDelete}
-                    onClose={() => {
-                        setConfirmingDelete('');
-                        setError('');
-                    }}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                disabled={deleting === confirmingDelete}
-                                onClick={() => {
-                                    setConfirmingDelete('');
-                                    setError('');
-                                }}
-                            >{communityText('Cancel')}</Button>
-                            <Button
-                                variant="danger"
-                                busy={deleting === confirmingDelete}
-                                busyLabel={communityText('Deleting…')}
-                                onClick={() => remove(confirmingDelete)}
-                            >{communityText('Delete post')}</Button>
-                        </React.Fragment>
-                    )}
+                    confirmLabel={communityText('Delete post')}
+                    busy={deleting === confirmingDelete}
+                    busyLabel={communityText('Deleting…')}
+                    error={error}
+                    onConfirm={() => remove(confirmingDelete)}
+                    onCancel={cancelDelete}
                 >
-                    <p>{communityText('This permanently deletes the post from your Rotur profile.')}</p>
-                    {error ? <p className={styles.error} role="alert">{error}</p> : null}
-                </Modal>
+                    {communityText('This permanently deletes the post from your Rotur profile.')}
+                </ConfirmModal>
             ) : null}
             {editable && viewer ? (
                 <PostComposer
@@ -243,11 +232,13 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) =>
                     onPosted={post => onChange([post, ...posts])}
                 />
             ) : null}
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
             {!sorted.length ? (
-                <p className={styles.empty}>
-                    {editable ? communityText('You have not posted anything yet.') : communityText("{value1} has not posted anything yet.", {value1: username})}
-                </p>
+                <EmptyState compact icon={MessageSquare} title={communityText('No posts yet')}>
+                    {editable ?
+                        communityText('You have not posted anything yet.') :
+                        communityText('{value1} has not posted anything yet.', {value1: username})}
+                </EmptyState>
             ) : null}
             <div className={styles.list}>
                 {sorted.length > VIRTUALIZATION_THRESHOLD ? (

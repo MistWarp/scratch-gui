@@ -6,6 +6,10 @@ import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
+import Notice from './ui/Notice.jsx';
+import SectionHeading from './ui/SectionHeading.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './CollectionSaveModal.module.css';
 
 const CollectionSaveModal = ({project, onClose}) => {
@@ -24,6 +28,11 @@ const CollectionSaveModal = ({project, onClose}) => {
     const [loadAttempt, setLoadAttempt] = useState(0);
     const actionLocks = useRef(new Set());
     const canSave = project.shared || project.visibility === 'public' || project.visibility === 'unlisted';
+    const visibilityLabels = {
+        public: communityText('Public'),
+        unlisted: communityText('Unlisted'),
+        private: communityText('Private')
+    };
 
     useEffect(() => {
         let active = true;
@@ -41,7 +50,7 @@ const CollectionSaveModal = ({project, onClose}) => {
                 }
             })
             .catch(e => {
-                if (active) setError(e.message || 'Could not load your collections.');
+                if (active) setError(e.message || communityText('Could not load your collections.'));
             });
         return () => {
             active = false;
@@ -69,10 +78,12 @@ const CollectionSaveModal = ({project, onClose}) => {
             setCollections(current => current.map(item => (
                 item._id === collection._id ? data.space : item
             )));
-            setStatus(saved ? `Removed from ${collection.title}.` : `Saved to ${collection.title}.`);
+            setStatus(saved ?
+                communityText('Removed from {value1}.', {value1: collection.title}) :
+                communityText('Saved to {value1}.', {value1: collection.title}));
         } catch (e) {
             if (actionContextRef.current === context) {
-                setError(e.message || 'Could not update this collection.');
+                setError(e.message || communityText('Could not update this collection.'));
             }
         } finally {
             actionLocks.current.delete(actionKey);
@@ -111,23 +122,69 @@ const CollectionSaveModal = ({project, onClose}) => {
                     )));
                 } catch (e) {
                     if (actionContextRef.current === context) {
-                        setError(
-                            `Created ${collection.title}, but could not save this project. ${e.message || ''}`.trim()
-                        );
+                        const detail = e.message || '';
+                        setError(`${communityText('Created {value1}, but could not save this project.', {
+                            value1: collection.title
+                        })} ${detail}`.trim());
                     }
                     return;
                 }
             }
-            setStatus(canSave ? `Created ${collection.title} and saved this project.` : `Created ${collection.title}.`);
+            setStatus(canSave ?
+                communityText('Created {value1} and saved this project.', {value1: collection.title}) :
+                communityText('Created {value1}.', {value1: collection.title}));
         } catch (e) {
             if (actionContextRef.current === context) {
-                setError(e.message || 'Could not create the collection.');
+                setError(e.message || communityText('Could not create the collection.'));
             }
         } finally {
             actionLocks.current.delete(actionKey);
             if (actionContextRef.current === context) setBusy('');
         }
     };
+
+    let listBody = null;
+    if (collections === null && !error) {
+        listBody = <StatusMessage compact>{communityText('Loading collections…')}</StatusMessage>;
+    } else if (collections === null && error) {
+        listBody = (
+            <StatusMessage compact error onRetry={() => setLoadAttempt(attempt => attempt + 1)}>
+                {error}
+            </StatusMessage>
+        );
+    } else if (collections && !collections.length) {
+        listBody = (
+            <EmptyState compact icon={Library} title={communityText('No collections yet')}>
+                {communityText('You do not have any collections yet.')}
+            </EmptyState>
+        );
+    } else if (collections && collections.length) {
+        listBody = (
+            <div className={styles.list}>
+                {collections.map(collection => {
+                    const saved = savedIds.has(collection._id);
+                    let state = communityText('Save');
+                    if (busy === collection._id) state = communityText('Saving…');
+                    else if (saved) state = <><Check size={15} />{communityText('Saved')}</>;
+                    return (
+                        <button
+                            key={collection._id}
+                            type="button"
+                            className={saved ? styles.collectionSaved : styles.collection}
+                            disabled={!canSave || Boolean(busy)}
+                            onClick={() => toggle(collection)}
+                        >
+                            <span>
+                                <strong>{collection.title}</strong>
+                                <small>{visibilityLabels[collection.visibility] || collection.visibility}</small>
+                            </span>
+                            <span className={styles.saveState}>{state}</span>
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
 
     return (
         <Modal
@@ -137,7 +194,9 @@ const CollectionSaveModal = ({project, onClose}) => {
             dismissDisabled={Boolean(busy)}
         >
             {!canSave ? (
-                <p className={styles.notice}>{communityText('Share this project or make it unlisted before adding it to a collection.')}</p>
+                <Notice variant="warning">
+                    {communityText('Share this project or make it unlisted before adding it to a collection.')}
+                </Notice>
             ) : null}
             <form className={styles.create} onSubmit={create}>
                 <label>
@@ -174,54 +233,15 @@ const CollectionSaveModal = ({project, onClose}) => {
                 </div>
             </form>
             <div className={styles.divider} />
-            <div className={styles.heading}>
-                <strong>{communityText('Your collections')}</strong>
-                <span>{collections ? collections.length : ''}</span>
-            </div>
-            {collections === null && !error ? <p className={styles.empty}>{communityText('Loading collections…')}</p> : null}
-            {collections && !collections.length ? (
-                <p className={styles.empty}>{communityText('You do not have any collections yet.')}</p>
-            ) : null}
-            {collections && collections.length ? (
-                <div className={styles.list}>
-                    {collections.map(collection => {
-                        const saved = savedIds.has(collection._id);
-                        return (
-                            <button
-                                key={collection._id}
-                                type="button"
-                                className={saved ? styles.collectionSaved : styles.collection}
-                                disabled={!canSave || Boolean(busy)}
-                                onClick={() => toggle(collection)}
-                            >
-                                <span>
-                                    <strong>{collection.title}</strong>
-                                    <small>{collection.visibility}</small>
-                                </span>
-                                <span className={styles.saveState}>
-                                    {busy === collection._id ?
-                                        communityText('Saving…') : saved ? <><Check size={15} />{communityText(' Saved')}</> : communityText('Save')}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            ) : null}
-            {error ? (
-                <p className={styles.error} role="alert">
-                    {error}
-                    {collections === null ? (
-                        <>
-                            {' '}
-                            <Button
-                                variant="secondary"
-                                onClick={() => setLoadAttempt(attempt => attempt + 1)}
-                            >{communityText('Try again')}</Button>
-                        </>
-                    ) : null}
-                </p>
-            ) : null}
-            {status ? <p className={styles.status} aria-live="polite">{status}</p> : null}
+            <SectionHeading
+                as="h3"
+                icon={Library}
+                title={communityText('Your collections')}
+                count={collections ? collections.length : null}
+            />
+            {listBody}
+            {error && collections !== null ? <Notice variant="error">{error}</Notice> : null}
+            {status ? <Notice variant="success">{status}</Notice> : null}
         </Modal>
     );
 };

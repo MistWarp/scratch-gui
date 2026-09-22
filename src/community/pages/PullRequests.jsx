@@ -8,6 +8,9 @@ import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.j
 import Avatar from '../components/Avatar.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import styles from './PullRequests.module.css';
@@ -32,7 +35,7 @@ const PullRequests = () => {
             setPulls(pullData.pulls || []);
             setPageMeta({title: `Pull requests · ${loadedProject.title}`});
         } catch (loadError) {
-            setError(loadError.message || 'Could not load pull requests.');
+            setError(loadError.message || communityText('Could not load pull requests.'));
         }
     }, [id]);
 
@@ -52,35 +55,42 @@ const PullRequests = () => {
         window.location.href = `${baseUrl}#contribute`;
     };
 
-    if (resolving) return <main className={styles.page}><p className={styles.state}>{communityText('Finding project…')}</p></main>;
-    if (resolveError) return <main className={styles.page}><div className={styles.state}><p>{resolveError}</p></div></main>;
-    if (error) return <main className={styles.page}><div className={styles.state}><p>{error}</p><Button onClick={load}>{communityText('Try again')}</Button></div></main>;
-    if (!project || !pulls) return <main className={styles.page}><p className={styles.state}>{communityText('Loading pull requests…')}</p></main>;
+    if (resolving) return <main className={styles.page}><StatusMessage>{communityText('Finding project…')}</StatusMessage></main>;
+    if (resolveError) return <main className={styles.page}><StatusMessage error>{resolveError}</StatusMessage></main>;
+    if (error) return <main className={styles.page}><StatusMessage error onRetry={load}>{error}</StatusMessage></main>;
+    if (!project || !pulls) return <main className={styles.page}><StatusMessage>{communityText('Loading pull requests…')}</StatusMessage></main>;
 
     return (
         <main className={styles.page}>
-            <header className={styles.header}>
-                <div><Link to={baseUrl}>{project.title}</Link><h1>{communityText('Pull requests')}</h1></div>
-                <Button variant="primary" onClick={newPull}><Plus size={16} />{communityText(' New pull request')}</Button>
-            </header>
-            <div className={styles.tools}>
-                <label><Search size={16} /><input value={query} placeholder={communityText('Search pull requests')} onChange={event => setQuery(event.target.value)} /></label>
-            </div>
+            <PageHeader
+                compact
+                icon={GitPullRequest}
+                backTo={baseUrl}
+                backLabel={project.title}
+                title={communityText('Pull requests')}
+                actions={<Button variant="primary" onClick={newPull}><Plus size={16} />{communityText('New pull request')}</Button>}
+            >
+                <label className={styles.search}><Search size={16} /><input value={query} placeholder={communityText('Search pull requests')} onChange={event => setQuery(event.target.value)} /></label>
+            </PageHeader>
             <section className={styles.list}>
                 <header>
-                    <button className={state === 'open' ? styles.active : ''} onClick={() => setState('open')}><GitPullRequest size={16} /> {openCount}{communityText(' Open')}</button>
-                    <button className={state === 'closed' ? styles.active : ''} onClick={() => setState('closed')}>{closedCount}{communityText(' Closed')}</button>
+                    <button type="button" className={state === 'open' ? styles.active : ''} onClick={() => setState('open')}><GitPullRequest size={16} /> {communityText('{count} open', {count: openCount})}</button>
+                    <button type="button" className={state === 'closed' ? styles.active : ''} onClick={() => setState('closed')}>{communityText('{count} closed', {count: closedCount})}</button>
                 </header>
                 {filtered.length ? filtered.map(pull => (
                     <article key={pull.index}>
                         <GitPullRequest className={pull.state === 'open' ? styles.openIcon : styles.closedIcon} size={18} />
                         <div>
                             <Link to={`${baseUrl}/pulls/${pull.index}`}>{pull.title}</Link>
-                            <span>#{pull.index}{communityText(' opened ')}{timeAgo(pull.created)}{communityText(' by ')}<UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
+                            <span><UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> {communityText('#{index} opened {time} by {user}', {index: pull.index, time: timeAgo(pull.created), user: pull.user})}</span>
                         </div>
                         <span className={styles.comments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>
                     </article>
-                )) : <p className={styles.empty}>{communityText('No ')}{state}{communityText(' pull requests match.')}</p>}
+                )) : (
+                    <EmptyState compact icon={GitPullRequest} title={state === 'open' ? communityText('No open pull requests match') : communityText('No closed pull requests match')}>
+                        {query.trim() ? communityText('Try a different search term.') : communityText('Pull requests will show up here once someone contributes.')}
+                    </EmptyState>
+                )}
             </section>
         </main>
     );

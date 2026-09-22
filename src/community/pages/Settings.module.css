@@ -4,17 +4,6 @@
     padding: var(--page-pad);
 }
 
-.page h1 {
-    margin: 0 0 6px;
-    font-size: var(--fs-3xl);
-}
-
-.lead {
-    margin: 0 0 28px;
-    color: var(--text-dim);
-    line-height: 1.55;
-}
-
 .layout {
     display: grid;
     grid-template-columns: 210px minmax(0, 1fr);
@@ -34,13 +23,13 @@
     box-shadow: var(--card-shadow);
 }
 
-.card h2 {
-    margin: 0 0 16px;
-    font-size: var(--fs-lg);
-}
-
 .themeContent {
     min-height: 220px;
+}
+
+.appearance {
+    --ui-primary: var(--bg-raised);
+    --ui-black-transparent: transparent;
 }
 
 .appearanceSection {
@@ -49,26 +38,20 @@
     border-top: 1px solid var(--mw-border);
 }
 
-.risk {
-    margin: 0 0 14px;
-    border: 1px solid color-mix(in srgb, #e0245e 35%, transparent);
-    border-radius: var(--radius-xs);
-    background: color-mix(in srgb, #e0245e 10%, transparent);
-    color: var(--mw-text);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
-    padding: 10px 12px;
+.noticeBefore {
+    margin-bottom: 14px;
 }
 
-.riskAction {
-    margin-top: 8px;
-    border: 1px solid color-mix(in srgb, var(--mw-text) 25%, transparent);
-    border-radius: var(--radius-xs);
-    background: transparent;
-    color: var(--mw-text);
-    font-size: var(--fs-sm);
-    padding: 6px 12px;
-    cursor: pointer;
+.noticeAfter {
+    margin-top: 14px;
+}
+
+.sectionAction {
+    margin-top: 14px;
+}
+
+.subheading {
+    margin-top: 22px;
 }
 
 .note {
@@ -83,8 +66,12 @@
     text-decoration: underline;
 }
 
-.error {
-    color: var(--mw-danger);
+.noteLinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 14px 0 0;
+    font-size: var(--fs-md);
 }
 
 .safetyGroups {
@@ -99,9 +86,7 @@
     padding-top: 20px;
 }
 
-.safetyGroups h3,
-.dataAction h3,
-.dangerZone h3 {
+.dataAction h3 {
     margin: 0 0 8px;
     font-size: var(--fs-md);
 }
@@ -117,18 +102,7 @@
     padding: 10px 0;
 }
 
-.safetyRow button,
-.dataAction button,
-.deleteButton {
-    border: 1px solid var(--mw-border);
-    border-radius: var(--radius-xs);
-    background: var(--mw-input);
-    color: var(--mw-text);
-    padding: 8px 12px;
-}
-
-.dataAction p,
-.dangerZone p {
+.dataAction p {
     margin: 0;
     color: var(--mw-text-muted);
     font-size: var(--fs-sm);
@@ -137,46 +111,19 @@
 
 .dangerZone {
     margin-top: 22px;
-    border: 1px solid color-mix(in srgb, var(--mw-danger) 50%, transparent);
     border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--mw-danger) 8%, transparent);
     padding: 16px;
-}
-
-.dangerZone .field {
-    margin-top: 14px;
 }
 
 .deleteButton {
     margin-top: 12px;
-    border-color: var(--mw-danger);
-    background: var(--mw-danger);
-    color: #fff;
 }
 
-.deleteButton:disabled {
-    opacity: .45;
-    cursor: not-allowed;
-}
-
-.modalText {
-    margin: 0;
-    color: var(--mw-text-muted);
-    font-size: var(--fs-md);
-    line-height: 1.5;
-}
-
-.gameDataJson {
-    overflow: auto;
-    max-height: 240px;
-    margin: 12px 0 0;
-    border: 1px solid var(--border);
+.itemVisual {
+    flex-shrink: 0;
     border-radius: var(--radius-xs);
-    background: var(--bg-raised);
-    color: var(--mw-text);
-    padding: 12px;
-    font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
-    white-space: pre-wrap;
-    word-break: break-word;
+    object-fit: contain;
 }
 
 .accountRow {
@@ -259,24 +206,6 @@
     .layout {
         grid-template-columns: minmax(0, 1fr);
         gap: 16px;
-    }
-
-    .sidebar {
-        display: flex;
-        overflow-x: auto;
-        padding: 6px;
-    }
-
-    .sidebarItem,
-    .sidebarActive {
-        width: auto;
-        flex: 0 0 auto;
-        padding: 9px 12px;
-        white-space: nowrap;
-    }
-
-    .sidebarItem {
-        background: var(--bg-raised);
     }
 
     .card {

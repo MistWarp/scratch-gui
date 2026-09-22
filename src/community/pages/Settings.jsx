@@ -1,14 +1,22 @@
 /* eslint-disable max-len */
 import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink} from 'lucide-react';
+import {
+    Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink, SlidersHorizontal,
+    PanelTop, Paintbrush, Brush, Lock, Ban, VolumeX, Save, Package
+} from 'lucide-react';
 import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
-import Modal from '../components/ui/Modal.jsx';
 import Button from '../components/ui/Button.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import Notice from '../components/ui/Notice.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {Switch, SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
@@ -506,8 +514,11 @@ const Settings = () => {
     };
     return (
         <main className={styles.page}>
-            <h1>{communityText('Settings')}</h1>
-            <p className={styles.lead}>{communityText('These settings apply across all of MistWarp, including the editor and site.')}</p>
+            <PageHeader
+                icon={SlidersHorizontal}
+                title={communityText('Settings')}
+                lead={communityText('These settings apply across all of MistWarp, including the editor and site.')}
+            />
 
             <div className={styles.layout}>
                 <Sidebar
@@ -521,10 +532,10 @@ const Settings = () => {
                     {activeSection === 'theme' ? (
                         <section className={styles.card}>
                             <UnderlineTabs items={THEME_TABS} value={themeTab} onChange={setThemeTab} className={styles.themeTabs} ariaLabel="Theme sections" />
-                            {themeTab === 'appearance' ? <div className={styles.themeContent}>
+                            {themeTab === 'appearance' ? <div className={`${styles.themeContent} ${styles.appearance}`}>
                                 <ThemeAccentPanel theme={theme} onChangeTheme={applyAndPersist} />
                                 <div className={styles.appearanceSection}>
-                                    <h2>{communityText('Menu bar')}</h2>
+                                    <SectionHeading icon={PanelTop} title={communityText('Menu bar')} />
                                     <div className={styles.settingRows}>
                                         <SwitchRow
                                             checked={accentMenuBar}
@@ -541,8 +552,11 @@ const Settings = () => {
                                 </div>
                             </div> : null}
                             {themeTab === 'projects' ? <div className={styles.themeContent}>
-                                <h2>{communityText('Project themes')}</h2>
-                                <p className={styles.lead}>{communityText('Some projects come with their own MistWarp theme. Choose when the player should switch to it.')}</p>
+                                <SectionHeading
+                                    icon={Paintbrush}
+                                    title={communityText('Project themes')}
+                                    lead={communityText('Some projects come with their own MistWarp theme. Choose when the player should switch to it.')}
+                                />
                                 <label className={styles.field}>
                                     <span>{communityText('Apply project themes for')}</span>
                                     <select className={styles.input} value={projectThemeMode} onChange={event => changeProjectThemeMode(event.target.value)}>
@@ -551,7 +565,7 @@ const Settings = () => {
                                 </label>
                             </div> : null}
                             {themeTab === 'custom' ? <div className={styles.themeContent}>
-                                <h2>{communityText('Custom themes')}</h2>
+                                <SectionHeading icon={Brush} title={communityText('Custom themes')} />
                                 <CustomThemesPage
                                     initialTab={searchParams.get('themeAction') || 'library'}
                                     theme={theme}
@@ -565,24 +579,23 @@ const Settings = () => {
 
                     {activeSection === 'presence' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Presence')}</h2>
+                            <SectionHeading icon={Radio} title={communityText('Presence')} />
                             {user && !presenceOk ? (
-                                <div className={styles.risk}>
-                                    {communityText('Your current Rotur login is missing the ')}
-                                    <strong>{communityText('account:profile')}</strong>
-                                    {communityText(' permission, so your editor activity cannot be shared. ')}
-                                    {communityText('Log in again to grant it.')}
-                                    <div>
+                                <Notice
+                                    variant="warning"
+                                    className={styles.noticeBefore}
+                                    action={(
                                         <Button
-                                            className={styles.riskAction}
                                             busy={presenceBusy}
                                             busyLabel={communityText('Logging in…')}
                                             onClick={reloginForPresence}
                                         >
                                             {communityText('Log in again')}
                                         </Button>
-                                    </div>
-                                </div>
+                                    )}
+                                >
+                                    {communityText('Your current Rotur login is missing the account:profile permission, so your editor activity cannot be shared. Log in again to grant it.')}
+                                </Notice>
                             ) : null}
                             <div className={styles.settingRows}>
                                 {Object.entries(PRESENCE_LABELS).map(([key, label]) => (
@@ -607,7 +620,8 @@ const Settings = () => {
                                 </label>
                             </div>
                             {activityGrantCount > 0 ? (
-                                <Button onClick={resetActivityGrants}>{communityText('Reset per-project choices (')}{activityGrantCount})
+                                <Button className={styles.sectionAction} onClick={resetActivityGrants}>
+                                    {communityText('Reset per-project choices ({value1})', {value1: activityGrantCount})}
                                 </Button>
                             ) : null}
                         </section>
@@ -615,8 +629,11 @@ const Settings = () => {
 
                     {activeSection === 'notifications' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Notifications')}</h2>
-                            <p className={styles.lead}>{communityText('Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.')}</p>
+                            <SectionHeading
+                                icon={Bell}
+                                title={communityText('Notifications')}
+                                lead={communityText('Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.')}
+                            />
                             <div className={styles.settingRows}>
                                 {NOTIFICATION_SETTINGS.map(([key, label]) => (
                                     <SwitchRow
@@ -632,8 +649,11 @@ const Settings = () => {
 
                     {activeSection === 'privacy' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Privacy')}</h2>
-                            <p className={styles.lead}>{communityText('Choose which MistWarp activity appears publicly on your profile.')}</p>
+                            <SectionHeading
+                                icon={Eye}
+                                title={communityText('Privacy')}
+                                lead={communityText('Choose which MistWarp activity appears publicly on your profile.')}
+                            />
                             {!user ? <p className={styles.note}>{communityText('Sign in to manage profile privacy.')}</p> : (
                                 <div className={styles.settingRows}>
                                     <SwitchRow
@@ -645,21 +665,27 @@ const Settings = () => {
                                     />
                                 </div>
                             )}
-                            {privacyStatus ? (
-                                <p className={styles.note} aria-live="polite">
-                                    {privacyStatus}{' '}
-                                    {privacyLoadError ? (
-                                        <Button onClick={() => setPrivacyAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                                    ) : null}
-                                </p>
+                            {privacyStatus && privacyLoadError ? (
+                                <Notice
+                                    variant="error"
+                                    className={styles.noticeAfter}
+                                    action={<Button onClick={() => setPrivacyAttempt(value => value + 1)}>{communityText('Try again')}</Button>}
+                                >
+                                    {privacyStatus}
+                                </Notice>
+                            ) : privacyStatus ? (
+                                <p className={styles.note} aria-live="polite">{privacyStatus}</p>
                             ) : null}
                         </section>
                     ) : null}
 
                     {activeSection === 'identity' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Identity')}</h2>
-                            <p className={styles.lead}>{communityText('Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.')}</p>
+                            <SectionHeading
+                                icon={User}
+                                title={communityText('Identity')}
+                                lead={communityText('Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.')}
+                            />
                             {user ? (
                                 <div className={styles.accountRow}>
                                     <div>
@@ -670,7 +696,7 @@ const Settings = () => {
                                         href="https://rotur.dev/me"
                                         target="_blank"
                                         rel="noreferrer"
-                                    >{communityText('Change username ')}<ExternalLink size={13} /></a>
+                                    >{communityText('Change username')}<ExternalLink size={13} /></a>
                                 </div>
                             ) : null}
                             <label
@@ -695,18 +721,24 @@ const Settings = () => {
 
                     {activeSection === 'safety' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Safety')}</h2>
-                            <p className={styles.lead}>{communityText('Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.')}</p>
+                            <SectionHeading
+                                icon={Shield}
+                                title={communityText('Safety')}
+                                lead={communityText('Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.')}
+                            />
                             {!user ? <p className={styles.note}>{communityText('Sign in to manage blocked and muted users.')}</p> : null}
                             {safetyError ? (
-                                <p className={styles.error}>
-                                    {safetyError}{' '}
-                                    <Button onClick={() => setSafetyAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                                </p>
+                                <Notice
+                                    variant="error"
+                                    className={styles.noticeBefore}
+                                    action={<Button onClick={() => setSafetyAttempt(value => value + 1)}>{communityText('Try again')}</Button>}
+                                >
+                                    {safetyError}
+                                </Notice>
                             ) : null}
                             {user && !safetyError ? <div className={styles.safetyGroups}>
                                 <div>
-                                    <h3>{communityText('Blocked users')}</h3>
+                                    <SectionHeading as="h3" icon={Ban} title={communityText('Blocked users')} />
                                     {safety.blocked.length ? safety.blocked.map(name => (
                                         <div className={styles.safetyRow} key={name}>
                                             <Link to={`/users/${name}`}>@{name}</Link>
@@ -717,10 +749,14 @@ const Settings = () => {
                                                 onClick={() => removeSafetyEntry('blocked', name)}
                                             >{communityText('Unblock')}</Button>
                                         </div>
-                                    )) : <p className={styles.note}>{communityText('You have not blocked anyone.')}</p>}
+                                    )) : (
+                                        <EmptyState compact title={communityText('No blocked users')}>
+                                            {communityText('You have not blocked anyone.')}
+                                        </EmptyState>
+                                    )}
                                 </div>
                                 <div>
-                                    <h3>{communityText('Muted users')}</h3>
+                                    <SectionHeading as="h3" icon={VolumeX} title={communityText('Muted users')} />
                                     {safety.muted.length ? safety.muted.map(name => (
                                         <div className={styles.safetyRow} key={name}>
                                             <Link to={`/users/${name}`}>@{name}</Link>
@@ -731,12 +767,20 @@ const Settings = () => {
                                                 onClick={() => removeSafetyEntry('muted', name)}
                                             >{communityText('Unmute')}</Button>
                                         </div>
-                                    )) : <p className={styles.note}>{communityText('You have not muted anyone.')}</p>}
+                                    )) : (
+                                        <EmptyState compact title={communityText('No muted users')}>
+                                            {communityText('You have not muted anyone.')}
+                                        </EmptyState>
+                                    )}
                                 </div>
                             </div> : null}
                             <div className={styles.safetySection}>
-                                <h3>{communityText('Project permissions')}</h3>
-                                <p className={styles.lead}>{communityText('Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.')}</p>
+                                <SectionHeading
+                                    as="h3"
+                                    icon={Lock}
+                                    title={communityText('Project permissions')}
+                                    lead={communityText('Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.')}
+                                />
                                 {Object.entries(blockedProjectPrompts).length > 0 ? (
                                     <div>
                                         {Object.entries(blockedProjectPrompts).map(([key, value]) => (
@@ -747,17 +791,26 @@ const Settings = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className={styles.note}>{communityText('No projects are blocked from asking for permission.')}</p>
+                                    <EmptyState compact title={communityText('No blocked projects')}>
+                                        {communityText('No projects are blocked from asking for permission.')}
+                                    </EmptyState>
                                 )}
                             </div>
-                            <p className={styles.note}>{communityText('For immediate safety concerns, ')}<Link to="/support?topic=safety">{communityText('contact MistWarp support')}</Link>.</p>
+                            <p className={styles.note}>
+                                {communityText('Contact MistWarp support for immediate safety concerns.')}
+                                {' '}
+                                <Link to="/support?topic=safety">{communityText('Contact support')}</Link>
+                            </p>
                         </section>
                     ) : null}
 
                     {activeSection === 'data' ? (
                         <section className={styles.card}>
-                            <h2>{communityText('Your MistWarp data')}</h2>
-                            <p className={styles.lead}>{communityText('These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.')}</p>
+                            <SectionHeading
+                                icon={Database}
+                                title={communityText('Your MistWarp data')}
+                                lead={communityText('These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.')}
+                            />
                             <UnderlineTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} ariaLabel="Data sections" />
                             {dataTab === 'account' ? <React.Fragment>
                                 <div className={styles.dataAction}>
@@ -772,7 +825,9 @@ const Settings = () => {
                                     />
                                 </div>
                                 {!user ? (
-                                    <Button className={styles.riskAction} onClick={login}>{communityText('Sign in with Rotur')}</Button>
+                                    <SignInPrompt compact onSignIn={login}>
+                                        {communityText('Sign in to download or delete your MistWarp data.')}
+                                    </SignInPrompt>
                                 ) : (
                                     <React.Fragment>
                                         <div className={styles.dataAction}>
@@ -788,14 +843,20 @@ const Settings = () => {
                                             >{communityText('Download')}</Button>
                                         </div>
                                         <div className={styles.dangerZone}>
-                                            <h3>{communityText('Delete your MistWarp data')}</h3>
-                                            <p>{communityText('This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.')}</p>
-                                            <label className={styles.field}>{communityText('Type ')}<strong>{user.username}</strong>{communityText(' to confirm')}<input
-                                                className={styles.input}
-                                                disabled={Boolean(dataBusy)}
-                                                value={deleteConfirmation}
-                                                onChange={event => setDeleteConfirmation(event.target.value)}
+                                            <SectionHeading
+                                                as="h3"
+                                                icon={Trash2}
+                                                title={communityText('Delete your MistWarp data')}
+                                                lead={communityText('This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.')}
                                             />
+                                            <label className={styles.field}>
+                                                <span>{communityText('Type {value1} to confirm', {value1: user.username})}</span>
+                                                <input
+                                                    className={styles.input}
+                                                    disabled={Boolean(dataBusy)}
+                                                    value={deleteConfirmation}
+                                                    onChange={event => setDeleteConfirmation(event.target.value)}
+                                                />
                                             </label>
                                             <Button
                                                 variant="danger"
@@ -803,31 +864,37 @@ const Settings = () => {
                                                 disabled={Boolean(dataBusy) ||
                                                 !matchesDeleteConfirmation(deleteConfirmation, user.username)}
                                                 onClick={openDeleteModal}
-                                            >{communityText('Delete MistWarp data')}</Button>
+                                            ><Trash2 size={15} />{communityText('Delete MistWarp data')}</Button>
                                         </div>
                                     </React.Fragment>
                                 )}
                                 {dataStatus && !deleteModalOpen ? <p className={styles.note} aria-live="polite">{dataStatus}</p> : null}
-                                <p className={styles.note}>{communityText('Read the ')}<Link to="/trust">{communityText('privacy and community terms')}</Link>{communityText(', or ')}<a href="https://rotur.dev/me" target="_blank" rel="noreferrer">{communityText('manage your Rotur account')}</a>.</p>
+                                <p className={styles.noteLinks}>
+                                    <Link to="/trust">{communityText('Privacy and community terms')}</Link>
+                                    <a href="https://rotur.dev/me" target="_blank" rel="noreferrer">{communityText('Manage your Rotur account')}</a>
+                                </p>
                             </React.Fragment> : null}
                             {dataTab === 'games' ? <React.Fragment>
                                 {!user ? (
-                                    <Button className={styles.riskAction} onClick={login}>{communityText('Sign in with Rotur')}</Button>
+                                    <SignInPrompt compact onSignIn={login}>
+                                        {communityText('Sign in to manage your game saves and portable items.')}
+                                    </SignInPrompt>
                                 ) : gameDataState === 'loading' ? (
-                                    <p className={styles.note}>{communityText('Loading game data…')}</p>
+                                    <StatusMessage compact>{communityText('Loading game data…')}</StatusMessage>
                                 ) : gameDataState === 'error' ? (
-                                    <p className={styles.note} aria-live="polite">
-                                        {gameDataError}{' '}
-                                        <Button onClick={() => setGameDataAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                                    </p>
+                                    <StatusMessage compact error onRetry={() => setGameDataAttempt(value => value + 1)}>
+                                        {gameDataError}
+                                    </StatusMessage>
                                 ) : (
                                     <React.Fragment>
-                                        <h3>{communityText('Project saves')}</h3>
+                                        <SectionHeading as="h3" icon={Save} title={communityText('Project saves')} />
                                         {gameSaves.length ? gameSaves.map(save => (
                                             <div className={styles.dataAction} key={save.projectId}>
                                                 <div>
                                                     <h3>{save.title}</h3>
-                                                    <p>{save.owner ? communityText("by @{value1} · ", {value1: save.owner}) : ''}{save.bytes}{communityText(' bytes · revision ')}{save.revision}</p>
+                                                    <p>{save.owner ?
+                                                        communityText('by @{value1} · {value2} bytes · revision {value3}', {value1: save.owner, value2: save.bytes, value3: save.revision}) :
+                                                        communityText('{value1} bytes · revision {value2}', {value1: save.bytes, value2: save.revision})}</p>
                                                 </div>
                                                 <Button
                                                     variant="danger"
@@ -835,18 +902,31 @@ const Settings = () => {
                                                     onClick={() => setSaveToDelete(save)}
                                                 >{communityText('Delete save')}</Button>
                                             </div>
-                                        )) : <p className={styles.note}>{communityText('You do not have any project save data yet.')}</p>}
-                                        <h3>{communityText('Portable items')}</h3>
-                                        <p className={styles.note}>{communityText('Games see only items they define or explicitly allow from other projects.')}</p>
+                                        )) : (
+                                            <EmptyState compact title={communityText('No project saves')}>
+                                                {communityText('You do not have any project save data yet.')}
+                                            </EmptyState>
+                                        )}
+                                        <SectionHeading
+                                            as="h3"
+                                            icon={Package}
+                                            className={styles.subheading}
+                                            title={communityText('Portable items')}
+                                            lead={communityText('Games see only items they define or explicitly allow from other projects.')}
+                                        />
                                         {portableItems.length ? portableItems.map(item => (
                                             <div className={styles.dataAction} key={item.id}>
                                                 <div>
                                                     <h3>{item.name}</h3>
-                                                    <p>{item.id}{communityText(' · quantity ')}{item.quantity}{communityText(' · from ')}{item.originProjectTitle}</p>
+                                                    <p>{communityText('{value1} · quantity {value2} · from {value3}', {value1: item.id, value2: item.quantity, value3: item.originProjectTitle})}</p>
                                                 </div>
-                                                {item.visual && item.visual.url ? <img alt="" src={item.visual.url} width="56" height="56" style={{objectFit: 'contain', borderRadius: 8}} /> : null}
+                                                {item.visual && item.visual.url ? <img className={styles.itemVisual} alt="" src={item.visual.url} width="56" height="56" /> : null}
                                             </div>
-                                        )) : <p className={styles.note}>{communityText('You do not own any portable game items yet.')}</p>}
+                                        )) : (
+                                            <EmptyState compact title={communityText('No portable items')}>
+                                                {communityText('You do not own any portable game items yet.')}
+                                            </EmptyState>
+                                        )}
                                     </React.Fragment>
                                 )}
                             </React.Fragment> : null}
@@ -859,52 +939,33 @@ const Settings = () => {
                 </div>
             </div>
             {deleteModalOpen && user ? (
-                <Modal
+                <ConfirmModal
                     icon={Trash2}
                     title={communityText('Delete MistWarp data?')}
-                    onClose={closeDeleteModal}
-                    dismissDisabled={dataBusy === 'delete'}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="danger"
-                                className={styles.deleteButton}
-                                busy={dataBusy === 'delete'}
-                                busyLabel={communityText('Deleting…')}
-                                onClick={deleteData}
-                            >{communityText('Delete permanently')}</Button>
-                            <Button
-                                disabled={dataBusy === 'delete'}
-                                onClick={closeDeleteModal}
-                            >{communityText('Cancel')}</Button>
-                        </React.Fragment>
-                    )}
+                    destructive
+                    busy={dataBusy === 'delete'}
+                    busyLabel={communityText('Deleting…')}
+                    confirmLabel={communityText('Delete permanently')}
+                    error={dataBusy === 'delete' ? '' : dataStatus}
+                    onConfirm={deleteData}
+                    onCancel={closeDeleteModal}
                 >
-                    <p className={styles.modalText}>{communityText('MistWarp will delete projects and profile data for ')}<strong>{user.username}</strong>.
-                        {' '}{communityText('Public comments and other shared history will be anonymized. This cannot be undone.')}</p>
-                    {dataStatus ? <p className={styles.note} aria-live="polite">{dataStatus}</p> : null}
-                </Modal>
+                    {communityText('MistWarp will delete projects and profile data for @{value1}. Public comments and other shared history will be anonymized. This cannot be undone.', {value1: user.username})}
+                </ConfirmModal>
             ) : null}
             {saveToDelete ? (
-                <Modal
+                <ConfirmModal
                     icon={Trash2}
                     title={communityText('Delete game save?')}
-                    onClose={() => setSaveToDelete(null)}
-                    dismissDisabled={dataBusy === `game-delete:${saveToDelete.projectId}`}
-                    actions={(
-                        <React.Fragment>
-                            <Button
-                                variant="danger"
-                                busy={dataBusy === `game-delete:${saveToDelete.projectId}`}
-                                busyLabel={communityText('Deleting…')}
-                                onClick={deleteGameSave}
-                            >{communityText('Delete save')}</Button>
-                            <Button disabled={Boolean(dataBusy)} onClick={() => setSaveToDelete(null)}>{communityText('Cancel')}</Button>
-                        </React.Fragment>
-                    )}
+                    destructive
+                    busy={dataBusy === `game-delete:${saveToDelete.projectId}`}
+                    busyLabel={communityText('Deleting…')}
+                    confirmLabel={communityText('Delete save')}
+                    onConfirm={deleteGameSave}
+                    onCancel={() => setSaveToDelete(null)}
                 >
-                    <p className={styles.modalText}>{communityText('Delete your production save for ')}<strong>{saveToDelete.title}</strong>{communityText('? The project will start you with a new save next time.')}</p>
-                </Modal>
+                    {communityText('Delete your production save for {value1}? The project will start you with a new save next time.', {value1: saveToDelete.title})}
+                </ConfirmModal>
             ) : null}
         </main>
     );

@@ -53,6 +53,7 @@ describe('native Variable Manager workflows', () => {
             <ListEditor
                 intl={intl}
                 maxLength={1000}
+                onConfirm={() => Promise.resolve(true)}
                 record={{id: 'list', name: 'items', value: ['first']}}
                 onChange={onChange}
             />

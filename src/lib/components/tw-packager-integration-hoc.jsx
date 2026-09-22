@@ -3,6 +3,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {getIsShowingProject} from '../../reducers/project-state';
+import {openSimpleDialog} from '../../reducers/modals';
 import PackagerWindow from '../../containers/packager.jsx';
 import windowManager from '../../addons/window-system/window-manager';
 
@@ -21,7 +22,7 @@ const PackagerIntegrationHOC = WrappedComponent => {
         };
 
         render () {
-            const {canOpenPackager, reduxProjectTitle, locale, vm, ...props} = this.props;
+            const {canOpenPackager, confirm, reduxProjectTitle, locale, vm, ...props} = this.props;
             return (<React.Fragment>
                 <WrappedComponent
                     {...props}
@@ -33,6 +34,7 @@ const PackagerIntegrationHOC = WrappedComponent => {
                     vm={vm}
                     projectTitle={reduxProjectTitle}
                     locale={locale}
+                    confirm={confirm}
                     onClose={() => this.setState({open: false})}
                 />}
             </React.Fragment>);
@@ -40,6 +42,7 @@ const PackagerIntegrationHOC = WrappedComponent => {
     }
     PackagerIntegrationComponent.propTypes = {
         canOpenPackager: PropTypes.bool,
+        confirm: PropTypes.func.isRequired,
         reduxProjectTitle: PropTypes.string,
         locale: PropTypes.string,
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -51,6 +54,14 @@ const PackagerIntegrationHOC = WrappedComponent => {
         projectId: state.scratchGui.projectState.projectId,
         locale: state.locales.locale,
         vm: state.scratchGui.vm
+    }), dispatch => ({
+        confirm: (title, message) => new Promise(resolve => dispatch(openSimpleDialog({
+            type: 'confirm',
+            title,
+            message,
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false)
+        })))
     }))(PackagerIntegrationComponent);
 };
 

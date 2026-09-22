@@ -26,11 +26,6 @@
     border-color: var(--accent);
 }
 
-.error {
-    color: #e25555;
-    font-size: var(--fs-sm);
-}
-
 .sent {
     margin: 0;
     color: var(--mw-text);

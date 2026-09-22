@@ -4,33 +4,6 @@
     gap: 0;
 }
 
-.signedOut,
-.empty {
-    color: var(--text-dim);
-    padding: 14px 0;
-}
-
-.signedOut {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.signedOut button {
-    border: 0;
-    border-radius: var(--radius-xs);
-    background: var(--accent);
-    color: var(--accent-contrast);
-    padding: 7px 12px;
-    font: inherit;
-    font-size: var(--fs-sm);
-    font-weight: 700;
-}
-
-.signedOut button:hover {
-    background: var(--accent-strong);
-}
-
 .commentGroup {
     padding: 16px 0;
     border-bottom: 1px solid var(--border-soft);
@@ -102,8 +75,11 @@
 }
 
 .edited {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     color: var(--text-faint);
-    font-size: var(--fs-sm);
+    font-size: var(--fs-xs);
 }
 
 .pinned {
@@ -393,48 +369,6 @@
     gap: 8px;
 }
 
-.post {
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border: none;
-    font-weight: 700;
-    font-size: var(--fs-md);
-    padding: 7px 18px;
-    border-radius: var(--radius-xs);
-}
-
-.post:disabled {
-    opacity: 0.55;
-}
-
-.cancel {
-    background: var(--bg-field);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-    padding: 7px 16px;
-    border-radius: var(--radius-xs);
-}
-
-.cancel:hover {
-    color: var(--mw-text);
-    border-color: var(--accent-border);
-}
-
-.deleteConfirm {
-    border: 1px solid var(--mw-danger);
-    border-radius: var(--radius-xs);
-    background: var(--mw-danger);
-    color: #fff;
-    font-size: var(--fs-md);
-    font-weight: 700;
-    padding: 7px 16px;
-}
-
-.deleteConfirm:disabled {
-    opacity: 0.55;
-}
-
 .modalText,
 .commentPreview {
     margin: 0;
@@ -457,10 +391,8 @@
     word-break: break-word;
 }
 
-.error {
-    color: #e0245e;
-    font-size: var(--fs-sm);
-    margin-top: 6px;
+.message {
+    margin-top: 8px;
 }
 
 .showMore {
@@ -487,13 +419,6 @@
     margin: 10px 0 4px;
 }
 
-.moreError {
-    margin: 10px 0 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    text-align: center;
-}
-
 @media (max-width: 620px) {
     .commentTools {
         grid-template-columns: 1fr;
@@ -514,12 +439,6 @@
 
     .kindMenu {
         width: 140px;
-    }
-
-    .post,
-    .cancel,
-    .deleteConfirm {
-        min-height: 44px;
     }
 }
 

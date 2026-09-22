@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 
 import VariableManager from '../components/variable-manager/variable-manager.jsx';
-import {closeVariableManagerModal, openVariableManagerModal} from '../reducers/modals.js';
+import {closeVariableManagerModal, openSimpleDialog, openVariableManagerModal} from '../reducers/modals.js';
 
 class TWVariableManager extends React.Component {
     componentDidMount () {
@@ -43,6 +43,7 @@ class TWVariableManager extends React.Component {
                 isRtl={this.props.isRtl}
                 visible={this.props.visible}
                 vm={this.props.vm}
+                openSimpleDialog={this.props.openSimpleDialog}
                 onRequestClose={this.props.onClose}
             />
         );
@@ -53,6 +54,7 @@ TWVariableManager.propTypes = {
     isRtl: PropTypes.bool,
     onClose: PropTypes.func.isRequired,
     onOpen: PropTypes.func.isRequired,
+    openSimpleDialog: PropTypes.func.isRequired,
     visible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
@@ -65,7 +67,8 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onOpen: () => dispatch(openVariableManagerModal()),
-    onClose: () => dispatch(closeVariableManagerModal())
+    onClose: () => dispatch(closeVariableManagerModal()),
+    openSimpleDialog: config => dispatch(openSimpleDialog(config))
 });
 
 export {TWVariableManager};

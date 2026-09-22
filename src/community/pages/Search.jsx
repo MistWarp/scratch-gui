@@ -2,6 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link, Navigate, useSearchParams} from 'react-router-dom';
+import {Search as SearchIcon} from 'lucide-react';
 import api from '../api';
 import rotur from '../rotur';
 import useLatest from '../use-latest.js';
@@ -10,6 +11,10 @@ import SpaceCard from '../components/SpaceCard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import SectionHeading from '../components/ui/SectionHeading.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {rankSections} from '../search-rank.js';
@@ -111,9 +116,9 @@ const Search = () => {
                         <span className={styles.personName}>{person.username}</span>
                         {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                         <span className={styles.personMeta}>
-                            {person.followers ?? 0} {person.followers === 1 ? communityText('follower') : communityText('followers')}
+                            {communityText('{count, plural, one {# follower} other {# followers}}', {count: person.followers ?? 0})}
                             {' · '}
-                            {person.projects} {person.projects === 1 ? communityText('project') : communityText('projects')}
+                            {communityText('{count, plural, one {# project} other {# projects}}', {count: person.projects || 0})}
                         </span>
                     </div>
                 </Link>
@@ -142,32 +147,30 @@ const Search = () => {
 
     return (
         <main className={styles.page}>
-            <h1 className={styles.title}>{communityText("Results for \"{value1}\"", {value1: q})}</h1>
-            <UnderlineTabs
-                items={tabs}
-                value={tab}
-                onChange={key => setParam('tab', key, 'all')}
-                ariaLabel="Search result types"
-                className={styles.tabs}
-            />
-            {loading ? <p className={styles.status}>{communityText('Searching…')}</p> : failed ? (
-                <p className={styles.status}>{communityText("Couldn't load these results.")}{' '}
-                    <Button onClick={() => setAttempt(a => a + 1)}>{communityText('Try again')}</Button>
-                </p>
+            <PageHeader compact icon={SearchIcon} title={communityText('Results for "{value1}"', {value1: q})}>
+                <UnderlineTabs
+                    items={tabs}
+                    value={tab}
+                    onChange={key => setParam('tab', key, 'all')}
+                    ariaLabel="Search result types"
+                />
+            </PageHeader>
+            {loading ? <StatusMessage>{communityText('Searching…')}</StatusMessage> : failed ? (
+                <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load these results.')}</StatusMessage>
             ) : tab === 'all' ? (
                 sections.length ? sections.map(section => (
                     <section key={section.key} className={styles.section}>
-                        <div className={styles.sectionHead}>
-                            <h2>{communityText(section.heading)}</h2>
-                            {section.total > section.items.length ? (
+                        <SectionHeading
+                            title={communityText(section.heading)}
+                            actions={section.total > section.items.length ? (
                                 <button type="button" className={styles.seeAll} onClick={() => setParam('tab', section.key, 'all')}>
-                                    {communityText("See all {value1}", {value1: section.total})}
+                                    {communityText('See all {value1}', {value1: section.total})}
                                 </button>
                             ) : null}
-                        </div>
+                        />
                         {section.render(section.items)}
                     </section>
-                )) : <p className={styles.status}>{communityText('Nothing matched that search.')}</p>
+                )) : <EmptyState icon={SearchIcon} title={communityText('Nothing matched that search')}>{communityText('Try a different search term.')}</EmptyState>
             ) : tab === 'projects' ? (
                 <>
                     <SectionTabs
@@ -179,20 +182,20 @@ const Search = () => {
                         activeClassName={styles.sortActive}
                         ariaLabel="Project sorting"
                     />
-                    {projects.length ? projectGrid(projects) : <p className={styles.status}>{communityText('No projects matched that search.')}</p>}
+                    {projects.length ? projectGrid(projects) : <EmptyState icon={SearchIcon} title={communityText('No projects matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
                     {projects.length < projectTotal ? (
                         <div className={styles.more}>
                             <Button busy={loadingMore} busyLabel={communityText('Loading…')} onClick={loadMore}>
-                                {communityText("Load more ({value1} left)", {value1: projectTotal - projects.length})}
+                                {communityText('Load more ({value1} left)', {value1: projectTotal - projects.length})}
                             </Button>
                             {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
                         </div>
                     ) : null}
                 </>
             ) : tab === 'people' ? (
-                people.length ? peopleList(people) : <p className={styles.status}>{communityText('No people matched that search.')}</p>
+                people.length ? peopleList(people) : <EmptyState icon={SearchIcon} title={communityText('No people matched that search')}>{communityText('Try a different search term.')}</EmptyState>
             ) : (
-                spaces.length ? spaceGrid(spaces) : <p className={styles.status}>{communityText('No studios or challenges matched that search.')}</p>
+                spaces.length ? spaceGrid(spaces) : <EmptyState icon={SearchIcon} title={communityText('No studios or challenges matched that search')}>{communityText('Try a different search term.')}</EmptyState>
             )}
         </main>
     );

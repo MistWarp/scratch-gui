@@ -5,14 +5,8 @@
     padding: var(--page-pad);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 18px;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 700;
+.invite {
+    margin-bottom: 16px;
 }
 
 .layout {
@@ -22,20 +16,12 @@
     gap: 42px;
 }
 
-.sidebar h1 {
-    margin: 0 0 16px;
-    font-size: var(--fs-3xl);
-    line-height: 1.15;
-    overflow-wrap: anywhere;
-}
-
 .cover,
 .coverFallback {
     display: grid;
     width: 100%;
     aspect-ratio: 4 / 3;
     place-items: center;
-    border: 1px solid var(--border);
     border-radius: var(--radius-xs);
     color: var(--text-faint);
     background: var(--bg-card);
@@ -52,7 +38,6 @@
 .description {
     margin-top: 14px;
     padding: 14px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-xs);
     color: var(--text-dim);
     background: var(--bg-card);
@@ -69,17 +54,9 @@
 .actions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 9px;
     margin-top: 12px;
-}
-
-.actions a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-dim);
-    font-size: var(--fs-xs);
-    font-weight: 700;
 }
 
 .stats {
@@ -119,46 +96,8 @@
     min-width: 0;
 }
 
-/* Spacing around the shared UnderlineTabs; tab visuals live there. */
 .tabs {
     margin-bottom: 28px;
-}
-
-.projects > header,
-.comments > header,
-.curators > header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-}
-
-.projects h2,
-.comments h2,
-.curators h2 {
-    margin: 0 0 3px;
-    font-size: var(--fs-2xl);
-}
-
-.projects header p,
-.comments header p,
-.curators header p {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
-.projectGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 18px;
-}
-
-.comments > header {
-    align-items: center;
-    justify-content: flex-start;
-    gap: 9px;
 }
 
 .curators > div {
@@ -184,54 +123,6 @@
     color: var(--text-faint);
 }
 
-.empty {
-    display: grid;
-    min-height: 220px;
-    place-items: center;
-    align-content: center;
-    gap: 7px;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    color: var(--text-faint);
-}
-
-.empty strong {
-    color: var(--mw-text);
-}
-
-.empty span {
-    font-size: var(--fs-xs);
-}
-
-.invite {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px 0;
-    border-top: 1px solid var(--accent-border);
-    border-bottom: 1px solid var(--accent-border);
-}
-
-.invite > div {
-    display: grid;
-    flex: 1;
-    gap: 2px;
-}
-
-.invite span {
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-}
-
-.error {
-    padding: 10px 0;
-    border-top: 1px solid var(--mw-danger);
-    border-bottom: 1px solid var(--mw-danger);
-    color: var(--mw-danger);
-    font-size: var(--fs-xs);
-}
-
 @media (max-width: 760px) {
     .layout {
         grid-template-columns: 1fr;
@@ -244,7 +135,6 @@
         gap: 12px 16px;
     }
 
-    .sidebar h1,
     .stats {
         grid-column: 1 / -1;
     }

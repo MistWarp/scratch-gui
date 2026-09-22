@@ -8,7 +8,9 @@ import api from '../api';
 import useLatest from '../use-latest.js';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
-import Button from '../components/ui/Button.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UserStatus from '../components/UserStatus.jsx';
 import styles from './Leaderboard.module.css';
 
@@ -51,20 +53,25 @@ const Stat = ({board, person}) => {
         return (
             <span className={styles.stat}>
                 <Heart size={16} />
-                {(person.loves || 0).toLocaleString(getCommunityLocale())}{communityText(' loves')}</span>
+                {communityText('{count} loves', {count: (person.loves || 0).toLocaleString(getCommunityLocale())})}
+            </span>
         );
     }
     if (board === 'views') {
         return (
             <span className={styles.stat}>
                 <Play size={16} />
-                {(person.views || 0).toLocaleString(getCommunityLocale())}{communityText(' views')}</span>
+                {communityText('{count} views', {count: (person.views || 0).toLocaleString(getCommunityLocale())})}
+            </span>
         );
     }
     return (
         <span className={styles.stat}>
             <Users size={16} />
-            {(person.follower_count || 0).toLocaleString(getCommunityLocale())}{communityText(' followers')}</span>
+            {communityText('{count} followers', {
+                count: (person.follower_count || 0).toLocaleString(getCommunityLocale())
+            })}
+        </span>
     );
 };
 
@@ -94,7 +101,7 @@ const Leaderboard = () => {
             .then(fresh(setUsers))
             .catch(fresh(() => {
                 setUsers([]);
-                setError(communityText("Could not load the leaderboard."));
+                setError(communityText('Could not load the leaderboard.'));
             }));
     }, [attempt, board, beginLoad]);
 
@@ -107,26 +114,25 @@ const Leaderboard = () => {
 
     return (
         <main className={styles.page}>
-            <h1>{active.title}</h1>
-            <p className={styles.lead}>{active.lead}</p>
-            <SectionTabs
-                items={BOARDS}
-                value={board}
-                onChange={selectBoard}
-                className={styles.tabs}
-                itemClassName={styles.tab}
-                activeClassName={styles.tabActive}
-                ariaLabel="Leaderboard type"
-            />
+            <PageHeader icon={Trophy} title={communityText(active.title)} lead={communityText(active.lead)}>
+                <SectionTabs
+                    items={BOARDS}
+                    value={board}
+                    onChange={selectBoard}
+                    className={styles.tabs}
+                    itemClassName={styles.tab}
+                    activeClassName={styles.tabActive}
+                    ariaLabel="Leaderboard type"
+                />
+            </PageHeader>
             {users === null ? (
-                <p className={styles.status}>{communityText('Loading…')}</p>
+                <StatusMessage />
             ) : error ? (
-                <div className={styles.status}>
-                    <p>{error}</p>
-                    <Button onClick={() => setAttempt(value => value + 1)}>{communityText('Try again')}</Button>
-                </div>
+                <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : !users.length ? (
-                <p className={styles.status}>{communityText('No one on this leaderboard yet.')}</p>
+                <EmptyState icon={Trophy} title={communityText('No one on this leaderboard yet')}>
+                    {communityText('Check back once the community has been active for a while.')}
+                </EmptyState>
             ) : (
                 <ol className={styles.list}>
                     {users.map((person, position) => (
@@ -145,12 +151,17 @@ const Leaderboard = () => {
                                 <span className={styles.identity}>
                                     <strong>{person.username}</strong>
                                     {board === 'followers' ? (
-                                        <span>{typeof person.index === 'number' ?
-                                            communityText("Account #{value1}", {value1: person.index}) : communityText('Account number unavailable')}</span>
+                                        <span>
+                                            {typeof person.index === 'number' ?
+                                                communityText('Account #{value1}', {value1: person.index}) :
+                                                communityText('Account number unavailable')}
+                                        </span>
                                     ) : (
                                         <span>
-                                            {communityText("{value1} shared ", {value1: person.projects || 0})}
-                                            {person.projects === 1 ? communityText('project') : communityText('projects')}
+                                            {communityText(
+                                                '{count, plural, one {# shared project} other {# shared projects}}',
+                                                {count: person.projects || 0}
+                                            )}
                                         </span>
                                     )}
                                     {board === 'followers' && person.status ? (

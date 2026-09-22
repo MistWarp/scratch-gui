@@ -1,6 +1,8 @@
+import classNames from 'classnames';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+import loaderStyles from '../loader/loader.css';
 import styles from './collab-loader.css';
 import topBlock from '../loader/top-block.svg';
 import middleBlock from '../loader/middle-block.svg';
@@ -10,37 +12,37 @@ const CollabLoader = ({isLoading, message, progress}) => {
     if (!isLoading) return null;
 
     return (
-        <div className={styles.background}>
+        <div className={classNames(loaderStyles.background, loaderStyles.fullscreen)}>
             <div className={styles.container}>
-                <div className={styles.blockAnimation}>
+                <div className={loaderStyles.blockAnimation}>
                     <img
-                        className={styles.topBlock}
+                        className={loaderStyles.topBlock}
                         src={topBlock}
                         draggable={false}
                     />
                     <img
-                        className={styles.middleBlock}
+                        className={loaderStyles.middleBlock}
                         src={middleBlock}
                         draggable={false}
                     />
                     <img
-                        className={styles.bottomBlock}
+                        className={loaderStyles.bottomBlock}
                         src={bottomBlock}
                         draggable={false}
                     />
                 </div>
 
-                <div className={styles.title}>
+                <div className={loaderStyles.title}>
                     {message || 'Waiting for host...'}
                 </div>
 
-                <div className={styles.message}>
+                <div className={loaderStyles.message}>
                     {progress > 0 ? 'Host is loading project...' : 'Please wait'}
                 </div>
 
-                <div className={styles.barOuter}>
+                <div className={loaderStyles.barOuter}>
                     <div
-                        className={styles.barInner}
+                        className={loaderStyles.barInner}
                         style={{width: `${progress}%`}}
                     />
                 </div>

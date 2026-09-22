@@ -2,11 +2,12 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import {Eye, EyeOff, GripVertical, Lock, Pencil} from 'lucide-react';
+import {Award, Eye, EyeOff, GripVertical, Lock, Pencil} from 'lucide-react';
 import rotur from '../rotur';
 import safeIconSvg from '../safe-icon.js';
-import Button from './ui/Button.jsx';
+import EmptyState from './ui/EmptyState.jsx';
 import Modal from './ui/Modal.jsx';
+import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ProfileBadges.module.css';
 
 const badgeShape = PropTypes.shape({
@@ -61,7 +62,7 @@ const BadgeDetail = ({badge, position}) => {
         >
             <span className={styles.tooltipHead}>
                 <strong>{badge.name}</strong>
-                {badge.evolving ? <span>{communityText('Level ')}{badge.level || 1}</span> : null}
+                {badge.evolving ? <span>{communityText('Level {value1}', {value1: badge.level || 1})}</span> : null}
             </span>
             {badge.issuer ? <span className={styles.issuer}>{badge.issuer}</span> : null}
             {badge.description ? <span className={styles.description}>{badge.description}</span> : null}
@@ -120,7 +121,7 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
             setPreferences(result.preferences || {hidden_badges: [], badge_order: []});
         }).catch(cause => {
             if (active.current && loadSequence.current === sequence) {
-                setError(cause.message || 'Could not load your badges.');
+                setError(cause.message || communityText('Could not load your badges.'));
             }
         }).finally(() => {
             if (active.current && loadSequence.current === sequence) setLoading(false);
@@ -155,7 +156,7 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
             if (active.current) {
                 setBadges(previousBadges);
                 setPreferences(previousPreferences);
-                setError(cause.message || 'Could not save your badges.');
+                setError(cause.message || communityText('Could not save your badges.'));
             }
         } finally {
             releaseSave();
@@ -195,18 +196,19 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
     return (
         <Modal title={communityText('Edit badges')} onClose={onClose} dismissDisabled={saving}>
             <div className={styles.editorIntro}>
-                <p>{communityText('Drag badges into the order you want. Hidden badges stay here but disappear from your profile.')}</p>
+                <p>
+                    {communityText(
+                        'Drag badges into the order you want. Hidden badges stay here but disappear from your profile.'
+                    )}
+                </p>
                 {saving ? <span>{communityText('Saving…')}</span> : null}
             </div>
-            {loading ? <p className={styles.editorState}>{communityText('Loading badges…')}</p> : null}
-            {error ? (
-                <div className={styles.editorError} role="alert">
-                    <span>{error}</span>
-                    <Button onClick={load}>{communityText('Try again')}</Button>
-                </div>
-            ) : null}
+            {loading ? <StatusMessage compact>{communityText('Loading badges…')}</StatusMessage> : null}
+            {error ? <StatusMessage compact error onRetry={load}>{error}</StatusMessage> : null}
             {!loading && !error && !badges.length ? (
-                <p className={styles.editorState}>{communityText('You do not have any badges yet.')}</p>
+                <EmptyState compact icon={Award} title={communityText('No badges yet')}>
+                    {communityText('You do not have any badges yet.')}
+                </EmptyState>
             ) : null}
             {!loading && badges.length ? (
                 <div className={styles.editorList}>
@@ -233,12 +235,14 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
                             onDragEnd={() => setDraggedId('')}
                         >
                             {badge.pinned ? (
-                                <span className={styles.lock} title={communityText('Always first')}><Lock size={16} /></span>
+                                <span className={styles.lock} title={communityText('Always first')}>
+                                    <Lock size={16} />
+                                </span>
                             ) : (
                                 <button
                                     type="button"
                                     className={styles.grip}
-                                    aria-label={communityText("Reorder {value1}", {value1: badge.name})}
+                                    aria-label={communityText('Reorder {value1}', {value1: badge.name})}
                                     title={communityText('Drag to reorder. Use the arrow keys to move.')}
                                     disabled={saving}
                                     onKeyDown={event => {
@@ -268,8 +272,10 @@ const BadgeEditor = ({onClose, onVisibleChange}) => {
                                 type="button"
                                 className={styles.visibility}
                                 aria-label={badge.pinned ?
-                                    communityText("{value1} is always visible", {value1: badge.name}) :
-                                    `${badge.hidden ? 'Show' : 'Hide'} ${badge.name}`
+                                    communityText('{value1} is always visible', {value1: badge.name}) :
+                                    (badge.hidden ?
+                                        communityText('Show {value1}', {value1: badge.name}) :
+                                        communityText('Hide {value1}', {value1: badge.name}))
                                 }
                                 disabled={badge.pinned || saving}
                                 onClick={() => toggle(badge)}
@@ -330,7 +336,9 @@ const ProfileBadges = ({badges, editable, onChange}) => {
                             key={badge.id || `${badge.name}-${index}`}
                             type="button"
                             className={styles.badge}
-                            aria-label={`${badge.name}: ${badge.description || 'badge'}`}
+                            aria-label={communityText('{value1}: {value2}', {
+                                value1: badge.name, value2: badge.description || communityText('Badge')
+                            })}
                             aria-describedby={activeTooltip && activeTooltip.badge === badge ?
                                 'profile-badge-tooltip' : null}
                             onMouseEnter={event => showTooltip(badge, event.currentTarget)}

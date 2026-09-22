@@ -26,8 +26,7 @@ const StandingBanner = () => {
                     target="_blank"
                     rel="noreferrer"
                     className={styles.link}
-                    style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-                >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
+                >{communityText('View on rotur.dev')}<ExternalLink size={12} />
                 </a>
                 <button
                     type="button"
@@ -47,10 +46,13 @@ const StandingBanner = () => {
                     target="_blank"
                     rel="noreferrer"
                     className={styles.link}
-                    style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-                >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
+                >{communityText('View on rotur.dev')}<ExternalLink size={12} />
                 </a>
-                <button type="button" className={styles.link} onClick={dismissSignInError}>{communityText('Dismiss')}</button>
+                <button
+                    type="button"
+                    className={styles.link}
+                    onClick={dismissSignInError}
+                >{communityText('Dismiss')}</button>
             </div>
         );
     }
@@ -73,8 +75,7 @@ const StandingBanner = () => {
                 target="_blank"
                 rel="noreferrer"
                 className={styles.link}
-                style={{display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-            >{communityText('View on rotur.dev ')}<ExternalLink size={12} />
+            >{communityText('View on rotur.dev')}<ExternalLink size={12} />
             </a>
             <Link
                 to="/notifications"
